@@ -17,3 +17,4 @@ def find_all_paths(graph, start, end, mode = 'OUT', maxlen = None):
       for e in end:
           all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
   return all_paths 
+   
