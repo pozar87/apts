@@ -65,7 +65,7 @@ class Equipment(object):
      
   def add_vertex(self, node_name, equipment = None, node_type = Type.GENERIC):
     """ 
-    Add single node to graph. Return vertex
+    Add single node to graph. Return new vertex
     """
     self.connection_garph.add_vertex(node_name) 
     node = self.connection_garph.vs.find(name = node_name)
@@ -73,8 +73,10 @@ class Equipment(object):
     if equipment is not None:
       node_type = equipment.type()
       node_label = equipment.label()
+    elif node_type == Type.GENERIC:
+      node_label = node_name 
     else:
-      node_label = "" 
+      node_label = ""  
     
     node[constants.NodeLabels.TYPE] = node_type  
     node[constants.NodeLabels.LABEL] = node_label  
@@ -85,38 +87,6 @@ class Equipment(object):
   def add_edge(self, node_from, node_to):
     self.connection_garph.add_edge(node_from, node_to)
 
-  def register_telescope(self, new_telescope):
-    """ 
-    Telescope node is build out of multipe vertices - telescope and its outputs.  
-    """    
-    #add telescope vertex
-    self.add_vertex(new_telescope.id(), new_telescope) 
-    #add telescope output vertex
-    self.add_vertex(new_telescope.out_id(), node_type = Type.OUTPUT) 
-    #connect telescope vertex to space
-    self.add_edge(Equipment.SPACE_ID, new_telescope.id())
-    #connect telescope vertex to its outpus
-    self.add_edge(new_telescope.id(), new_telescope.out_id())
-    
-  def register_ocular(self, new_okular):    
-    #add ocular vertex
-    self.add_vertex(new_okular.id(), new_okular)
-    #add ocular input vertex
-    self.add_vertex(new_okular.in_id(), node_type = Type.INPUT) 
-    #connect ocular with output image vertex 
-    self.add_edge(new_okular.id(), Equipment.IMAGE_ID)
-    #connect input to ocular vertex 
-    self.add_edge(new_okular.in_id(), new_okular.id())
-  
-  def register_barlow(self, new_barlow):   
-    #add barlow vertex
-    self.add_vertex(new_barlow.id(), new_barlow)
-    #add barlow input vertex
-    self.add_vertex(new_barlow.in_id(), node_type = Type.INPUT) 
-    #add barlow output vertex
-    self.add_vertex(new_barlow.out_id(), node_type = Type.OUTPUT) 
-    #connect barlow with output vertex 
-    self.add_edge(new_barlow.id(), new_barlow.out_id())
-    #connect input with barlow vertex
-    self.add_edge(new_barlow.in_id(), new_barlow.id())
-    
+  def register(self, optical_eqipment): 
+    optical_eqipment.register(self)
+ 
