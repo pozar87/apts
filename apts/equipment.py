@@ -8,8 +8,9 @@ from . import constants
 from .models.optical import *
 
 class Equipment(object):
-  """This class represents all possesed astronomical equpiment. Allows to computer
-  all possiable hardware configuration. It uses directed graph for internal processing. 
+  """
+  This class represents all possessed astronomical equipment. Allows to compute all possible 
+  hardware configuration. It uses directed graph for internal processing.
   """
   
   SPACE_ID = "space"
@@ -65,7 +66,7 @@ class Equipment(object):
      
   def add_vertex(self, node_name, equipment = None, node_type = Type.GENERIC):
     """ 
-    Add single node to graph. Return new vertex
+    Add single node to graph. Return new vertex.
     """
     self.connection_garph.add_vertex(node_name) 
     node = self.connection_garph.vs.find(name = node_name)
@@ -88,5 +89,8 @@ class Equipment(object):
     self.connection_garph.add_edge(node_from, node_to)
 
   def register(self, optical_eqipment): 
+    """ 
+    Register any optical equipment in a optical graph.
+    """
     optical_eqipment.register(self)
  

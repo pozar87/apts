@@ -56,7 +56,8 @@ class Telescope(OpticalEqipment):
 
   def register(self, equipment):
     """ 
-    Register itself in optical equipment graph. Telescope node is build out of two vertices - telescope node and its outputs.  
+    Register telescope in optical equipment graph. Telescope node is build out of two vertices:
+    telescope node and its output. Telescop node is automatically connected with SPACE node.  
     """ 
     #add telescope vertex   
     super(Telescope, self).register(equipment)
@@ -77,6 +78,10 @@ class Ocular(OpticalEqipment):
     super(Ocular, self).__init__(focal_length, vendor)
     
   def register(self, equipment):
+    """ 
+    Register ocular in optical equipment graph. Ocular node is build out of two vertices:
+    ocular node and its input. Ocular node is automatically connected with output IMAGE node.  
+    """ 
     #add ocular vertex
     super(Ocular, self).register(equipment)
     #add ocular input vertex
@@ -88,7 +93,7 @@ class Ocular(OpticalEqipment):
     
 class Barlow(OpticalEqipment):   
   """
-  Class representing barlow lense
+  Class representing Barlow lense
   """
   
   def __init__(self, magnification, vendor = "unknown barlow", input_size = "1.25", output_size = "1.25"):
@@ -98,6 +103,10 @@ class Barlow(OpticalEqipment):
     super(Barlow, self).__init__(0, vendor)
     
   def register(self, equipment):
+    """ 
+    Register barlow lense in optical equipment graph. Barlow node is build out of three vertices:
+    barlow node its input and output. Ocular node is automatically connected with them.  
+    """ 
     #add barlow vertex
     super(Barlow, self).register(equipment)
     #add barlow input vertex
