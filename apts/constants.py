@@ -1,8 +1,11 @@
-class NodeLabels(object):
+class NodeLabels:
   TYPE = "node_type"
+  EQUIPMENT = "equipment"
   #igraph require "label"
   LABEL = "label"
   #igraph require "color"
   COLOR = "color"
-  EQUIPMENT = "equipment" 
+  #igraph require "name"
+  NAME = "name"
+
 

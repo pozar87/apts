@@ -1,11 +1,9 @@
 import igraph
-import operator
-import functools
 
-from . import utils
-from . import constants
-
+from .constants import NodeLabels
+from .utils import Utils
 from .models.optical import *
+from .optics import Optics
 
 class Equipment(object):
   """
@@ -34,23 +32,15 @@ class Equipment(object):
     space_node = self.connection_garph.vs.find(name=Equipment.SPACE_ID)
     image_node = self.connection_garph.vs.find(name=Equipment.IMAGE_ID)
     results = []
-    for optical_path in utils.find_all_paths(self.connection_garph, space_node.index, image_node.index):
-      result = [self.connection_garph.vs.find(name=id)[constants.NodeLabels.EQUIPMENT] for id in optical_path]
+    for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, image_node.index):
+      result = [self.connection_garph.vs.find(name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
       results.append([item for item in result if item is not None])
     return results 
   
   def get_possiable_zooms(self):
-    result = [self.compute_zoom(path) for path in self.get_possiable_paths()]
+    result = [Optics.compute_zoom(path) for path in self.get_possiable_paths()]
     result.sort()
     return result
-  
-  def compute_zoom(self, path):
-    telescop = path[0]
-    okular = path[-1]
-    barlow = [item.magnification for item in path[1:-1]]
-    magnification = functools.reduce(operator.mul, barlow, 1)
-    zoom = telescop.focal_length * magnification / okular.focal_length
-    return zoom
       
   def plot_connection_garph(self):
     return igraph.plot(self.connection_garph)
@@ -59,8 +49,8 @@ class Equipment(object):
     for out_node in self.connection_garph.vs.select(node_type = Type.OUTPUT):
       for in_node in self.connection_garph.vs.select(node_type = Type.INPUT):
         #connect all outputs with all inputs, excluding connecting part to itself
-        out_id = out_node["name"].split("_")[0]
-        in_id = in_node["name"].split("_")[0]
+        out_id = OpticalEqipment.get_parent_id(out_node[NodeLabels.NAME])
+        in_id = OpticalEqipment.get_parent_id(in_node[NodeLabels.NAME])
         if out_id != in_id:
           self.add_edge(out_node, in_node)
      
@@ -79,10 +69,10 @@ class Equipment(object):
     else:
       node_label = ""  
     
-    node[constants.NodeLabels.TYPE] = node_type  
-    node[constants.NodeLabels.LABEL] = node_label  
-    node[constants.NodeLabels.COLOR] = Equipment.COLORS[node_type]
-    node[constants.NodeLabels.EQUIPMENT] = equipment
+    node[NodeLabels.TYPE] = node_type
+    node[NodeLabels.LABEL] = node_label
+    node[NodeLabels.COLOR] = Equipment.COLORS[node_type]
+    node[NodeLabels.EQUIPMENT] = equipment
     return node  
   
   def add_edge(self, node_from, node_to):

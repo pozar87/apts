@@ -44,6 +44,8 @@ class OpticalEqipment:
   def out_id(self):
     return self._id + self.OUT
   
+  def get_parent_id(name):
+    return name.split("_")[0]
 
 class Telescope(OpticalEqipment):
   """
