@@ -7,13 +7,19 @@ class Type(Enum):
   OUTPUT = 3
   GENERIC = 4  
 
+class ConnectionType(Enum):
+  F_1_25 = 1
+  F_2 = 2
+  T2 = 3
+
 class OpticalEqipment:
   """
   Basic class for optical equipment
   """
   
-  OUT = "_out"
-  IN = "_in"
+  _SEPARATOR = "_"
+  OUT = "out"
+  IN = "in"
   
   def __init__(self, focal_length, vendor):
     self._id = str(uuid.uuid4())
@@ -21,13 +27,10 @@ class OpticalEqipment:
     
     self.focal_length = focal_length
     self.vendor = vendor 
-
-  def register(self, equipment):
-    #register equipment vertex
-    equipment.add_vertex(self.id(), self) 
     
   def __str__(self):
-    return "{}, f={}".format(self.vendor,self.focal_length)
+    # Format: <vendor>
+    return "{} f={}".format(self.vendor)
 
   def type(self):
     return self._type
@@ -38,22 +41,40 @@ class OpticalEqipment:
   def id(self):
     return self._id  
     
-  def in_id(self):
-    return self._id + self.IN
+  def in_id(self, connection_type):
+    return self._SEPARATOR.join([self._id, connection_type.name, self.IN])
     
-  def out_id(self):
-    return self._id + self.OUT
+  def out_id(self, connection_type):
+    return self._SEPARATOR.join([self._id, connection_type.name, self.OUT])
   
   def get_parent_id(name):
-    return name.split("_")[0]
+    return name.split(OpticalEqipment._SEPARATOR)[0]
+
+  def _register(self, equipment):
+    # Register equipment node
+    equipment.add_vertex(self.id(), self)
+
+  def _register_output(self, equipment, connection_type = ConnectionType.F_1_25):
+    # Add output node
+    equipment.add_vertex(self.out_id(connection_type), node_type = Type.OUTPUT, connection_type = connection_type)
+    # Connect node to its output
+    equipment.add_edge(self.id(), self.out_id(connection_type))
+
+  def _register_input(self, equipment, connection_type = ConnectionType.F_1_25):
+    # Add input node
+    equipment.add_vertex(self.in_id(connection_type), node_type = Type.INPUT, connection_type = connection_type)
+    # Connect node to its input
+    equipment.add_edge(self.in_id(connection_type), self.id())
 
 class Telescope(OpticalEqipment):
   """
   Class representing telescope
   """
 
-  def __init__(self, focal_length, vendor = "unknown telescope", output_size = "1.25"):
-    self.output_size = output_size
+  def __init__(self, aperture, focal_length, vendor = "unknown telescope", connection_type = ConnectionType.F_1_25, t2_output = False):
+    self.aperture = aperture
+    self.connection_type = connection_type
+    self.t2_output = t2_output
     super(Telescope, self).__init__(focal_length, vendor)
 
   def register(self, equipment):
@@ -61,22 +82,28 @@ class Telescope(OpticalEqipment):
     Register telescope in optical equipment graph. Telescope node is build out of two vertices:
     telescope node and its output. Telescop node is automatically connected with SPACE node.  
     """ 
-    #add telescope vertex   
-    super(Telescope, self).register(equipment)
-    #add telescope output vertex
-    equipment.add_vertex(self.out_id(), node_type = Type.OUTPUT) 
-    #connect telescope vertex to space
+    # Add telescope node
+    super(Telescope, self)._register(equipment)
+    # Add telescope output node and connect it to telescope
+    self._register_output(equipment, self.connection_type)
+    # Connect telescope node to space node
     equipment.add_edge(equipment.SPACE_ID, self.id())
-    #connect telescope vertex to its outpus
-    equipment.add_edge(self.id(), self.out_id())
+    # Handling optional T2 ouptout
+    if self.t2_output:
+      self._register_output(equipment, ConnectionType.T2)
+
+  def __str__(self):
+    # Format: <vendor> <apertur>/<focal length>
+    return "Telescope\n{} {}/{}".format(self.vendor, self.aperture, self.focal_length)
+
        
 class Ocular(OpticalEqipment):   
   """
   Class representing ocular
   """
   
-  def __init__(self, focal_length,vendor = "unknown ocular", input_size = "1.25"):
-    self.input_size = input_size
+  def __init__(self, focal_length,vendor = "unknown ocular", connection_type = ConnectionType.F_1_25):
+    self.connection_type = connection_type
     super(Ocular, self).__init__(focal_length, vendor)
     
   def register(self, equipment):
@@ -84,23 +111,25 @@ class Ocular(OpticalEqipment):
     Register ocular in optical equipment graph. Ocular node is build out of two vertices:
     ocular node and its input. Ocular node is automatically connected with output IMAGE node.  
     """ 
-    #add ocular vertex
-    super(Ocular, self).register(equipment)
-    #add ocular input vertex
-    equipment.add_vertex(self.in_id(), node_type = Type.INPUT) 
-    #connect ocular with output image vertex 
-    equipment.add_edge(self.id(), equipment.IMAGE_ID)
-    #connect input to ocular vertex 
-    equipment.add_edge(self.in_id(), self.id())
+    # Add ocular node
+    super(Ocular, self)._register(equipment)
+    # Add ocular input node and connect it to ocular
+    self._register_input(equipment, self.connection_type)
+    # Connect ocular with output eye node
+    equipment.add_edge(self.id(), equipment.EYE_ID)
+
+  def __str__(self):
+    # Format: <vendor> f=<focal_length>
+    return "Ocular\n{} f={}".format(self.vendor, self.focal_length)
     
 class Barlow(OpticalEqipment):   
   """
   Class representing Barlow lense
   """
   
-  def __init__(self, magnification, vendor = "unknown barlow", input_size = "1.25", output_size = "1.25"):
-    self.input_size = input_size
-    self.output_size = output_size
+  def __init__(self, magnification, vendor = "unknown barlow", connection_type = ConnectionType.F_1_25, t2_output = False):
+    self.connection_type = connection_type
+    self.t2_output = t2_output
     self.magnification = magnification
     super(Barlow, self).__init__(0, vendor)
     
@@ -109,17 +138,43 @@ class Barlow(OpticalEqipment):
     Register barlow lense in optical equipment graph. Barlow node is build out of three vertices:
     barlow node its input and output. Ocular node is automatically connected with them.  
     """ 
-    #add barlow vertex
-    super(Barlow, self).register(equipment)
-    #add barlow input vertex
-    equipment.add_vertex(self.in_id(), node_type = Type.INPUT) 
-    #add barlow output vertex
-    equipment.add_vertex(self.out_id(), node_type = Type.OUTPUT) 
-    #connect barlow with output vertex 
-    equipment.add_edge(self.id(), self.out_id())
-    #connect input with barlow vertex
-    equipment.add_edge(self.in_id(), self.id())
-    
+    # Add barlow lense node
+    super(Barlow, self)._register(equipment)
+    # Add barlow lense output node and connect it to barlow lense
+    self._register_output(equipment, self.connection_type)
+    # Add barlow lense input node and connect it to barlow lense
+    self._register_input(equipment, self.connection_type)
+    # Handling optional T2 ouptout
+    if self.t2_output:
+      self._register_output(equipment, ConnectionType.T2)
+
   def __str__(self):
-    return "{}, x{}".format(self.vendor,self.magnification)
+    # Format: <vendor> x<magnification>
+    return "Berlow lense\n{} x{}".format(self.vendor, self.magnification)
+
+
+class Camera(OpticalEqipment):
+  """
+  Class representing DSLR camera mounted via T2 adapter
+  """
+
+  def __init__(self, sensor_width, sensor_height, width, height, vendor = "unknown camera", connection_type = ConnectionType.T2):
+    self.connection_type = connection_type
+    self.sensor_width = sensor_width
+    self.sensor_height = sensor_height
+    self.width = width
+    self.height = height
+    super(Camera, self).__init__(0, vendor)
+
+  def register(self, equipment):
+    # Add camera node
+    super(Camera, self)._register(equipment)
+    # Add camera input node and connect it to camera
+    self._register_input(equipment, self.connection_type)
+    # Connect camera with output image node
+    equipment.add_edge(self.id(), equipment.IMAGE_ID)
+
+  def __str__(self):
+    # Format: <vendor> <width>x<height>
+    return "Camera\n{} {}x{}".format(self.vendor, self.sensor_width, self.sensor_height)
 
