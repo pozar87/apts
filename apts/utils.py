@@ -20,3 +20,11 @@ class Utils:
             all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
     return all_paths
    
+  def decdeg2dms(dd, pretty = False):
+    mnt, sec = divmod(dd * 3600, 60)
+    deg, mnt = divmod(mnt, 60)
+    if pretty:
+      return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
+    else:
+      return deg, mnt, sec
+   

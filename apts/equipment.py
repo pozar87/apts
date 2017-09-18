@@ -3,7 +3,7 @@ import igraph
 from .constants import NodeLabels
 from .utils import Utils
 from .models.optical import *
-from .optics import Optics
+from .optics import *
 
 class Equipment(object):
   """
@@ -29,7 +29,7 @@ class Equipment(object):
     self.add_vertex(Equipment.EYE_ID)
     self.add_vertex(Equipment.IMAGE_ID)
   
-  def _get_possiable_paths(self, output_id):
+  def _get_paths(self, output_id):
     # Connect all outputs with inputs
     self.connect()
     space_node = self.connection_garph.vs.find(name=Equipment.SPACE_ID)
@@ -37,22 +37,22 @@ class Equipment(object):
     results = []
     for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, image_node.index):
       result = [self.connection_garph.vs.find(name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
-      results.append([item for item in result if item is not None])
+      results.append(OpticalPath([item for item in result if item is not None]))
     return results 
   
-  def get_possiable_paths_for_eye(self):
-    return self._get_possiable_paths(Equipment.EYE_ID)
+  def get_eye_paths(self):
+    return self._get_paths(Equipment.EYE_ID)
 
-  def get_possiable_paths_for_image(self):
-    return self._get_possiable_paths(Equipment.IMAGE_ID)
+  def get_image_paths(self):
+    return self._get_paths(Equipment.IMAGE_ID)
 
-  def get_possiable_zooms(self):
-    result = [Optics.compute_zoom(path) for path in self.get_possiable_paths_for_eye()]
+  def get_eye_zooms(self):
+    result = [OpticsUtils.compute_zoom(path) for path in self.get_eye_paths()]
     result.sort()
     return result
 
-  def get_possiable_camera_zooms(self):
-    result = [Optics.compute_camera_zoom(path) for path in self.get_possiable_paths_for_image()]
+  def get_camera_zooms(self):
+    result = [OpticsUtils.compute_zoom(path) for path in self.get_image_paths()]
     result.sort()
     return result
       
@@ -79,7 +79,7 @@ class Equipment(object):
 
     if equipment is not None:
       node_type = equipment.type()
-      node_label = equipment.label()
+      node_label = "\n".join([equipment.get_name(),equipment.label()])
     elif node_type == Type.GENERIC:
       node_label = node_name 
     else:
