@@ -93,7 +93,7 @@ class Telescope(OpticalEqipment):
   def register(self, equipment):
     """ 
     Register telescope in optical equipment graph. Telescope node is build out of two vertices:
-    telescope node and its output. Telescop node is automatically connected with SPACE node.  
+    telescope node and its output. Telescope node is automatically connected with SPACE node.  
     """ 
     # Add telescope node
     super(Telescope, self)._register(equipment)
@@ -101,12 +101,12 @@ class Telescope(OpticalEqipment):
     self._register_output(equipment, self.connection_type)
     # Connect telescope node to space node
     equipment.add_edge(equipment.SPACE_ID, self.id())
-    # Handling optional T2 ouptout
+    # Handling optional T2 output
     if self.t2_output:
       self._register_output(equipment, ConnectionType.T2)
 
   def __str__(self):
-    # Format: <vendor> <apertur>/<focal length>
+    # Format: <vendor> <aperture>/<focal length>
     return "{} {}/{}".format(self.vendor, self.aperture, self.focal_length)
 
        
@@ -144,7 +144,7 @@ class Eyepiece(OpticalEqipment):
     
 class Barlow(OpticalEqipment):   
   """
-  Class representing Barlow lense
+  Class representing Barlow lenses
   """
   
   def __init__(self, magnification, vendor = "unknown barlow", connection_type = ConnectionType.F_1_25, t2_output = False):
@@ -155,14 +155,14 @@ class Barlow(OpticalEqipment):
     
   def register(self, equipment):
     """ 
-    Register barlow lense in optical equipment graph. Barlow node is build out of three vertices:
+    Register barlow lens in optical equipment graph. Barlow node is build out of three vertices:
     barlow node its input and output. Ocular node is automatically connected with them.  
     """ 
-    # Add barlow lense node
+    # Add barlow lens node
     super(Barlow, self)._register(equipment)
-    # Add barlow lense output node and connect it to barlow lense
+    # Add barlow lens output node and connect it to barlow lens
     self._register_output(equipment, self.connection_type)
-    # Add barlow lense input node and connect it to barlow lense
+    # Add barlow lens input node and connect it to barlow lens
     self._register_input(equipment, self.connection_type)
     # Handling optional T2 ouptout
     if self.t2_output:

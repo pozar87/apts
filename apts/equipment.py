@@ -1,4 +1,9 @@
-import igraph
+import igraph as ig
+import pandas as pd
+import seaborn as sns
+sns.set_style('whitegrid') #TODO: make this global and configurable in all apts
+
+
 
 from .constants import NodeLabels
 from .utils import Utils
@@ -23,7 +28,7 @@ class Equipment(object):
   } 
   
   def __init__(self):
-    self.connection_garph = igraph.Graph(directed=True)
+    self.connection_garph = ig.Graph(directed=True)
     # Register standard input and outputs
     self.add_vertex(Equipment.SPACE_ID)
     self.add_vertex(Equipment.EYE_ID)
@@ -31,35 +36,47 @@ class Equipment(object):
   
   def _get_paths(self, output_id):
     # Connect all outputs with inputs
-    self.connect()
+    self._connect()
+    # Find input and output nodes 
     space_node = self.connection_garph.vs.find(name=Equipment.SPACE_ID)
-    image_node = self.connection_garph.vs.find(name=output_id)
+    output_node = self.connection_garph.vs.find(name=output_id)
     results = []
-    for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, image_node.index):
+    results_set = set()
+    for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, output_node.index):
       result = [self.connection_garph.vs.find(name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
-      results.append(OpticalPath([item for item in result if item is not None]))
-    return results 
+      telescope, barlows, output = OpticsUtils.expand([item for item in result if item is not None])
+      op = OpticalPath(telescope, barlows, output)
+      if op.elements() not in results_set:
+        results_set.add(op.elements())
+        results.append(op)
+    return results
   
-  def get_eye_paths(self):
-    return self._get_paths(Equipment.EYE_ID)
-
-  def get_image_paths(self):
-    return self._get_paths(Equipment.IMAGE_ID)
-
-  def get_eye_zooms(self):
-    result = [OpticsUtils.compute_zoom(path) for path in self.get_eye_paths()]
+  def get_zooms(self, node_id):
+    result = [OpticsUtils.compute_zoom(path) for path in self._get_paths(node_id)]
     result.sort()
     return result
-
-  def get_camera_zooms(self):
-    result = [OpticsUtils.compute_zoom(path) for path in self.get_image_paths()]
-    result.sort()
-    return result
-      
+    
+  def data(self): #TODO: Refactor needed
+    columns=['label','type','zoom','useful_zoom','fov','elements']
+    def append(result_data, columns, type_name, paths):
+      for path in paths:
+        data = [[path.label(), type_name, path.zoom(), path.zoom() < path.telescope.max_useful_zoom(), path.fov(), path.length()]]
+        result_data = result_data.append(pd.DataFrame(data, columns=columns), ignore_index=True)
+      return result_data 
+    result_data = pd.DataFrame(columns=columns)
+    result_data = append(result_data, columns, 'eye', self._get_paths(Equipment.EYE_ID))
+    result_data = append(result_data, columns, 'image', self._get_paths(Equipment.IMAGE_ID))
+    return result_data    
+  
+  def plot_fov(self, to_plot):
+    x = self.data()[[to_plot,'type','label']].sort_values(by=to_plot)
+    df = pd.DataFrame([{row[1]:row[0]} for row in x.values], index=x['label'].values)
+    df.plot(kind="bar", stacked = True) 
+    
   def plot_connection_garph(self):
-    return igraph.plot(self.connection_garph)
+    return ig.plot(self.connection_garph)
      
-  def connect(self):
+  def _connect(self):
     for out_node in self.connection_garph.vs.select(node_type = Type.OUTPUT):
       # Get output type
       connection_type = out_node[NodeLabels.CONNECTION_TYPE]
@@ -94,7 +111,7 @@ class Equipment(object):
     return node  
   
   def add_edge(self, node_from, node_to):
-    # Add edge if ony it doesn't exist
+    # Add edge if only it doesn't exist
     if not self.connection_garph.are_connected(node_from, node_to): #TODO: are_connected is the right method?
       self.connection_garph.add_edge(node_from, node_to)
 

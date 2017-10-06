@@ -5,38 +5,55 @@ import math
 from .utils import Utils
 
 class OpticsUtils:
-  def _expand(path):
+  def expand(path):
     # First item in the path should be the telescope
-    telescop = path[0]
+    telescope = path[0]
     # Last item in the path is output
     output = path[-1]
     # Barlow lenses are in the middle
-    barlows = [item.magnification for item in path[1:-1]]
-    return (telescop, barlows, output)
+    barlows = path[1:-1]
+    return (telescope, barlows, output)
 
-  def compute_zoom(path):
-    # First item in the path should be the telescopem second barows lenses and finally eyepiece
-    telescop, barlows, output = OpticsUtils._expand(path)
+  def barlows_multiplications(barlows):
+    return [barlow.magnification for barlow in barlows]
+
+  def compute_zoom(telescope, barlows, output):
     # Multiply all barlows
-    magnification = functools.reduce(operator.mul, barlows, 1)
-    zoom = telescop.focal_length * magnification / output.zoom_divider()
+    magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
+    zoom = telescope.focal_length * magnification / output.zoom_divider()
     return zoom
 
-  def compute_field_of_view(path):
-    telescop, barlows, output = OpticsUtils._expand(path)
-    magnification = functools.reduce(operator.mul, barlows, 1)
-    zoom = OpticsUtils.compute_zoom(path)
+  def compute_field_of_view(telescop, barlows, output):
+    magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
+    zoom = OpticsUtils.compute_zoom(telescop, barlows, output)
     return output.field_of_view(telescop, zoom, magnification) #TODO: this is not best way to do it
     
-class OpticalPath(list):
-  def __init__(self, *args):
-    list.__init__(self, *args)
-    self._zoom = OpticsUtils.compute_zoom(self)
-    self._field_of_view = OpticsUtils.compute_field_of_view(self)
+class OpticalPath:
+  def __init__(self, telescope, barlows, output):
+    self.telescope = telescope
+    self.barlows = barlows
+    self.output = output
+    self._zoom = OpticsUtils.compute_zoom(telescope, barlows, output)
+    self._field_of_view = OpticsUtils.compute_field_of_view(telescope, barlows, output)
 
   def zoom(self):
-    return self.zoom
+    return self._zoom
+  
+  def label(self):
+    return ", ".join([str(self.telescope)]+[str(item) for item in self.barlows]+[str(self.output)])
+  
+  def length(self):
+    return 2 + len(self.barlows)
+  
+  def fov(self):
+    return self._field_of_view  
+ 
+  def elements(self):
+    """Return immutable set of elements - used for removing redundant optical paths"""
+    elements = set((self.telescope,self.output))
+    elements |= set(self.barlows)
+    return frozenset(elements)
     
-  def print(self):
-    items = "\n * ".join([str(item) for item in self]) 
-    print("""Setup:\n * {}\nZoom: {:.2f}\nField of view: {}""".format(items, self._zoom, Utils.decdeg2dms(self._field_of_view, True))) 
+  #def print(self):
+  #  items = "\n * ".join([str(item) for item in self]) 
+  #  print("""Setup:\n * {}\nZoom: {:.2f}\nField of view: {}""".format(items, self._zoom, Utils.decdeg2dms(self._field_of_view, True))) 
