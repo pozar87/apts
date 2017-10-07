@@ -60,7 +60,7 @@ class Equipment(object):
     columns=['label','type','zoom','useful_zoom','fov','elements']
     def append(result_data, columns, type_name, paths):
       for path in paths:
-        data = [[path.label(), type_name, path.zoom(), path.zoom() < path.telescope.max_useful_zoom(), path.fov(), path.length()]]
+        data = [[path.label(), type_name, path.zoom().magnitude, path.zoom() < path.telescope.max_useful_zoom(), path.fov().magnitude, path.length()]]
         result_data = result_data.append(pd.DataFrame(data, columns=columns), ignore_index=True)
       return result_data 
     result_data = pd.DataFrame(columns=columns)
@@ -68,7 +68,7 @@ class Equipment(object):
     result_data = append(result_data, columns, 'image', self._get_paths(Equipment.IMAGE_ID))
     return result_data    
   
-  def plot_fov(self, to_plot):
+  def plot(self, to_plot):
     x = self.data()[[to_plot,'type','label']].sort_values(by=to_plot)
     df = pd.DataFrame([{row[1]:row[0]} for row in x.values], index=x['label'].values)
     df.plot(kind="bar", stacked = True) 

@@ -1,3 +1,8 @@
+import pint
+
+# Unit registry
+ureg = pint.UnitRegistry()
+
 class Utils:
 
   def find_all_paths(graph, start, end, mode = 'OUT', maxlen = None):

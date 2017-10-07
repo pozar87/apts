@@ -1,6 +1,9 @@
 import uuid
-import math
+import numpy
+
+from apts.utils import ureg
 from enum import Enum
+
 
 class Type(Enum):
   OPTICAL = 1
@@ -26,7 +29,7 @@ class OpticalEqipment:
     self._id = str(uuid.uuid4())
     self._type = Type.OPTICAL 
     
-    self.focal_length = focal_length
+    self.focal_length = focal_length * ureg.mm
     self.vendor = vendor 
 
   def get_name(self):
@@ -68,7 +71,7 @@ class OpticalEqipment:
 
   def __str__(self):
     # Format: <vendor>
-    return "{} f={}".format(self.vendor)
+    return "{} f={}".format(self.vendor, self.focal_length)
 
 class Telescope(OpticalEqipment):
   """
@@ -77,7 +80,7 @@ class Telescope(OpticalEqipment):
 
   def __init__(self, aperture, focal_length, vendor = "unknown telescope", connection_type = ConnectionType.F_1_25, t2_output = False):
     super(Telescope, self).__init__(focal_length, vendor)
-    self.aperture = aperture
+    self.aperture = aperture * ureg.mm
     self.connection_type = connection_type
     self.t2_output = t2_output
 
@@ -88,7 +91,7 @@ class Telescope(OpticalEqipment):
     return self.aperture / 6
 
   def max_useful_zoom(self):
-    return self.aperture * 2
+    return self.aperture.magnitude * 2
 
   def register(self, equipment):
     """ 
@@ -107,7 +110,7 @@ class Telescope(OpticalEqipment):
 
   def __str__(self):
     # Format: <vendor> <aperture>/<focal length>
-    return "{} {}/{}".format(self.vendor, self.aperture, self.focal_length)
+    return "{} {}/{}".format(self.vendor, self.aperture.magnitude, self.focal_length.magnitude)
 
        
 class Eyepiece(OpticalEqipment):
@@ -118,7 +121,7 @@ class Eyepiece(OpticalEqipment):
   def __init__(self, focal_length, vendor = "unknown ocular", field_of_view = 52, connection_type = ConnectionType.F_1_25):
     super(Eyepiece, self).__init__(focal_length, vendor)
     self._connection_type = connection_type
-    self._field_of_view = field_of_view
+    self._field_of_view = field_of_view * ureg.deg
 
   def register(self, equipment):
     """ 
@@ -139,7 +142,7 @@ class Eyepiece(OpticalEqipment):
     return self._field_of_view / zoom
 
   def __str__(self):
-    return "{} f={}".format(self.vendor, self.focal_length)
+    return "{} f={}".format(self.vendor, self.focal_length.magnitude)
     # Format: <vendor> f=<focal_length>
     
 class Barlow(OpticalEqipment):   
@@ -180,13 +183,13 @@ class Camera(OpticalEqipment):
   def __init__(self, sensor_width, sensor_height, width, height, vendor = "unknown camera", connection_type = ConnectionType.T2):
     super(Camera, self).__init__(0, vendor)
     self.connection_type = connection_type
-    self.sensor_width = sensor_width
-    self.sensor_height = sensor_height
+    self.sensor_width = sensor_width * ureg.mm
+    self.sensor_height = sensor_height * ureg.mm
     self.width = width
     self.height = height
 
   def pixel_size(self):
-    return math.sqrt(self.sensor_width**2 + self.sensor_height**2)/math.sqrt(self.width**2 + self.height**2)
+    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)/math.sqrt(self.width**2 + self.height**2)
 
   def register(self, equipment):
     # Add camera node
@@ -197,12 +200,12 @@ class Camera(OpticalEqipment):
     equipment.add_edge(self.id(), equipment.IMAGE_ID)
 
   def zoom_divider(self):
-    return math.sqrt(self.sensor_width**2 + self.sensor_height**2)
+    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
 
   def field_of_view(self, telescop, zoom, magnification):
-    return self.sensor_height * 3438 / (telescop.focal_length * magnification) / 60
+    return self.sensor_height * 3438 / (telescop.focal_length * magnification) / 60 * ureg.deg
 
   def __str__(self):
     # Format: <vendor> <width>x<height>
-    return "{} {}x{}".format(self.vendor, self.sensor_width, self.sensor_height)
+    return "{} {}x{}".format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
 
