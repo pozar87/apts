@@ -1,7 +1,8 @@
 import ephem
 import pytz
-from dateutil import tz
+import datetime
 
+from dateutil import tz
 
 from .utils import ureg
 from .weather import Weather 
@@ -14,20 +15,29 @@ class Place(ephem.Observer):
     self.elevation = 300
     self.sun = ephem.Sun()
     self.sun.compute(self)
+    self.moon = ephem.Moon()
+    self.moon.compute(self)
     self.weather = Weather(lat,lon)
     self.local_timezone = tz.gettz(self.weather.local_timezone)
- 
+  
+  def _next_setting_time(self, obj):
+    return self.next_setting(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+  
+  def _next_rising_time(self, obj):
+    return self.next_rising(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+    
   def sunset(self):
-    return self.next_setting(self.sun).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+    return self._next_setting_time(self.sun)
   
   def sunrise(self):
-    return self.next_rising(self.sun).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+    return self._next_rising_time(self.sun)
     
-  def sun_observation(self): 
-    prevrise = self.next_rising(self.sun)
-    transit = self.next_transit(self.sun)
-    nextset = self.next_setting(self.sun) 
-    return (str(prevrise), str(transit), str(nextset))
+  def moonset(self):
+    return self._next_setting_time(self.moon)
+  
+  def moonrise(self):
+    return self._next_rising_time(self.moon)
+   
    
 class Observation:
 
@@ -43,11 +53,13 @@ class Observation:
     self.observation_stop = self.place.sunrise()
   
   def _mark_observation(self,plot):
-    plot.axvspan(self.observation_start, self.observation_stop, color='gray', alpha=0.2)
+    now = datetime.datetime.utcnow().astimezone(self.place.local_timezone)
+    plot.axvspan(min(now,self.observation_start), self.observation_stop, color='gray', alpha=0.2)
+    plot.axvspan(min(now,self.place.moonrise()), self.place.moonset(), color='yellow', alpha=0.2)
   
   def plot_weather(self):
     import matplotlib.pyplot as plt #TODO: move it form here
-    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(15, 10))
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(13, 9))
     # Clouds
     plt = self.place.weather.plot_clouds(ax=axes[0,0])
     plt.axhspan(0, Observation.MAX_CLOUDS_TRESHOLD, color='green', alpha=0.2)
@@ -64,6 +76,4 @@ class Observation:
     plt = self.place.weather.plot_pressure_and_ozone(ax=axes[1,1])
     self._mark_observation(plt)
     fig.tight_layout()
- 
-    
-    
+   

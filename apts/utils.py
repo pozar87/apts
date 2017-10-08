@@ -1,7 +1,32 @@
 import pint
+from enum import Enum
 
 # Unit registry
 ureg = pint.UnitRegistry()
+
+class OpticalType(Enum):
+  OPTICAL = 1
+  INPUT = 2
+  OUTPUT = 3
+  GENERIC = 4  
+
+class ConnectionType(Enum):
+  F_1_25 = 1
+  F_2 = 2
+  T2 = 3
+
+class Constants:
+
+  SPACE_ID = "Space"
+  EYE_ID   = "Eye"
+  IMAGE_ID = "Image"
+ 
+  COLORS = {
+      OpticalType.OPTICAL : "blue",
+      OpticalType.INPUT : "red",
+      OpticalType.OUTPUT : "green",
+      OpticalType.GENERIC : "yellow"
+  } 
 
 class Utils:
 

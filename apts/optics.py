@@ -19,25 +19,30 @@ class OpticsUtils:
 
   def compute_zoom(telescope, barlows, output):
     # Multiply all barlows
-    magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
-    zoom = telescope.focal_length * magnification / output.zoom_divider()
-    return zoom
+    magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1) 
+    return telescope.focal_length * magnification / output.zoom_divider()
 
   def compute_field_of_view(telescop, barlows, output):
-    magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
+    barlow_magnification = functools.reduce(operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
     zoom = OpticsUtils.compute_zoom(telescop, barlows, output)
-    return output.field_of_view(telescop, zoom, magnification) #TODO: this is not best way to do it
+    return output.field_of_view(telescop, zoom, barlow_magnification) #TODO: this is not best way to do it
     
 class OpticalPath:
+  """
+  Class for optical path
+  """
   def __init__(self, telescope, barlows, output):
     self.telescope = telescope
     self.barlows = barlows
     self.output = output
-    self._zoom = OpticsUtils.compute_zoom(telescope, barlows, output)
-    self._field_of_view = OpticsUtils.compute_field_of_view(telescope, barlows, output)
+      
+  @classmethod
+  def from_path(cls, path):
+    telescope, barlows, output = OpticsUtils.expand(path)
+    return cls(telescope, barlows, output)
 
   def zoom(self):
-    return self._zoom
+    return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
   
   def label(self):
     return ", ".join([str(self.telescope)]+[str(item) for item in self.barlows]+[str(self.output)])
@@ -46,10 +51,15 @@ class OpticalPath:
     return 2 + len(self.barlows)
   
   def fov(self):
-    return self._field_of_view  
+    return OpticsUtils.compute_field_of_view(self.telescope, self.barlows, self.output) 
+ 
+  def brightness(self):
+    return self.output.brightness(self.telescope, self.zoom())
  
   def elements(self):
-    """Return immutable set of elements - used for removing redundant optical paths"""
+    """
+    Return immutable set of elements - used for removing redundant optical paths
+    """
     elements = set((self.telescope,self.output))
     elements |= set(self.barlows)
     return frozenset(elements)

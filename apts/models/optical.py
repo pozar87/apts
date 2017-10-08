@@ -1,20 +1,8 @@
 import uuid
 import numpy
 
-from apts.utils import ureg
+from apts.utils import *
 from enum import Enum
-
-
-class Type(Enum):
-  OPTICAL = 1
-  INPUT = 2
-  OUTPUT = 3
-  GENERIC = 4  
-
-class ConnectionType(Enum):
-  F_1_25 = 1
-  F_2 = 2
-  T2 = 3
 
 class OpticalEqipment:
   """
@@ -27,7 +15,7 @@ class OpticalEqipment:
   
   def __init__(self, focal_length, vendor):
     self._id = str(uuid.uuid4())
-    self._type = Type.OPTICAL 
+    self._type = OpticalType.OPTICAL 
     
     self.focal_length = focal_length * ureg.mm
     self.vendor = vendor 
@@ -59,13 +47,13 @@ class OpticalEqipment:
 
   def _register_output(self, equipment, connection_type = ConnectionType.F_1_25):
     # Add output node
-    equipment.add_vertex(self.out_id(connection_type), node_type = Type.OUTPUT, connection_type = connection_type)
+    equipment.add_vertex(self.out_id(connection_type), node_type = OpticalType.OUTPUT, connection_type = connection_type)
     # Connect node to its output
     equipment.add_edge(self.id(), self.out_id(connection_type))
 
   def _register_input(self, equipment, connection_type = ConnectionType.F_1_25):
     # Add input node
-    equipment.add_vertex(self.in_id(connection_type), node_type = Type.INPUT, connection_type = connection_type)
+    equipment.add_vertex(self.in_id(connection_type), node_type = OpticalType.INPUT, connection_type = connection_type)
     # Connect node to its input
     equipment.add_edge(self.in_id(connection_type), self.id())
 
@@ -77,7 +65,6 @@ class Telescope(OpticalEqipment):
   """
   Class representing telescope
   """
-
   def __init__(self, aperture, focal_length, vendor = "unknown telescope", connection_type = ConnectionType.F_1_25, t2_output = False):
     super(Telescope, self).__init__(focal_length, vendor)
     self.aperture = aperture * ureg.mm
@@ -86,6 +73,9 @@ class Telescope(OpticalEqipment):
 
   def speed(self):
     return self.aperture / self.focal_length
+
+  def max_range(self):
+    return 2 + 5*numpy.log10(self.aperture.magnitude)
 
   def min_useful_zoom(self):
     return self.aperture / 6
@@ -103,7 +93,7 @@ class Telescope(OpticalEqipment):
     # Add telescope output node and connect it to telescope
     self._register_output(equipment, self.connection_type)
     # Connect telescope node to space node
-    equipment.add_edge(equipment.SPACE_ID, self.id())
+    equipment.add_edge(Constants.SPACE_ID, self.id())
     # Handling optional T2 output
     if self.t2_output:
       self._register_output(equipment, ConnectionType.T2)
@@ -112,16 +102,34 @@ class Telescope(OpticalEqipment):
     # Format: <vendor> <aperture>/<focal length>
     return "{} {}/{}".format(self.vendor, self.aperture.magnitude, self.focal_length.magnitude)
 
+class OutputOpticalEqipment(OpticalEqipment):
+
+  def __init__(self, focal_length, vendor):
+    super(OutputOpticalEqipment, self).__init__(focal_length, vendor) 
+    
+  def exit_pupil(self, telescop, zoom):
+    return telescop.aperture / zoom
+    
+  def brightness(self, telescop, zoom):
+    return (self.exit_pupil(telescop, zoom)/(7 * ureg.mm))**2 * 100
        
-class Eyepiece(OpticalEqipment):
+class Eyepiece(OutputOpticalEqipment):
   """
   Class representing ocular
   """
-  
   def __init__(self, focal_length, vendor = "unknown ocular", field_of_view = 52, connection_type = ConnectionType.F_1_25):
     super(Eyepiece, self).__init__(focal_length, vendor)
     self._connection_type = connection_type
     self._field_of_view = field_of_view * ureg.deg
+
+  def zoom_divider(self):
+    return self.focal_length
+    
+  def field_of_view(self, telescop, zoom, barlow_magnification):
+    return self._field_of_view / zoom
+
+  def output_type(self):
+    return Constants.EYE_ID
 
   def register(self, equipment):
     """ 
@@ -133,23 +141,52 @@ class Eyepiece(OpticalEqipment):
     # Add ocular input node and connect it to ocular
     self._register_input(equipment, self._connection_type)
     # Connect ocular with output eye node
-    equipment.add_edge(self.id(), equipment.EYE_ID)
-
-  def zoom_divider(self):
-    return self.focal_length
-    
-  def field_of_view(self, telescop, zoom, magnification):
-    return self._field_of_view / zoom
+    equipment.add_edge(self.id(), Constants.EYE_ID)
 
   def __str__(self):
     return "{} f={}".format(self.vendor, self.focal_length.magnitude)
     # Format: <vendor> f=<focal_length>
-    
+
+class Camera(OutputOpticalEqipment):
+  """
+  Class representing DSLR camera mounted via T2 adapter
+  """
+  def __init__(self, sensor_width, sensor_height, width, height, vendor = "unknown camera", connection_type = ConnectionType.T2):
+    super(Camera, self).__init__(0, vendor)
+    self.connection_type = connection_type
+    self.sensor_width = sensor_width * ureg.mm
+    self.sensor_height = sensor_height * ureg.mm
+    self.width = width
+    self.height = height
+
+  def pixel_size(self):
+    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)/math.sqrt(self.width**2 + self.height**2)
+
+  def zoom_divider(self):
+    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
+
+  def field_of_view(self, telescop, zoom, barlow_magnification):
+    return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * ureg.deg
+  
+  def output_type(self):
+    return Constants.IMAGE_ID
+  
+  def register(self, equipment):
+    # Add camera node
+    super(Camera, self)._register(equipment)
+    # Add camera input node and connect it to camera
+    self._register_input(equipment, self.connection_type)
+    # Connect camera with output image node
+    equipment.add_edge(self.id(), Constants.IMAGE_ID)
+
+  def __str__(self):
+    # Format: <vendor> <width>x<height>
+    return "{} {}x{}".format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
+  
 class Barlow(OpticalEqipment):   
   """
   Class representing Barlow lenses
   """
-  
   def __init__(self, magnification, vendor = "unknown barlow", connection_type = ConnectionType.F_1_25, t2_output = False):
     super(Barlow, self).__init__(0, vendor)
     self.connection_type = connection_type
@@ -174,38 +211,4 @@ class Barlow(OpticalEqipment):
   def __str__(self):
     # Format: <vendor> x<magnification>
     return "{} x{}".format(self.vendor, self.magnification)
-
-class Camera(OpticalEqipment):
-  """
-  Class representing DSLR camera mounted via T2 adapter
-  """
-
-  def __init__(self, sensor_width, sensor_height, width, height, vendor = "unknown camera", connection_type = ConnectionType.T2):
-    super(Camera, self).__init__(0, vendor)
-    self.connection_type = connection_type
-    self.sensor_width = sensor_width * ureg.mm
-    self.sensor_height = sensor_height * ureg.mm
-    self.width = width
-    self.height = height
-
-  def pixel_size(self):
-    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)/math.sqrt(self.width**2 + self.height**2)
-
-  def register(self, equipment):
-    # Add camera node
-    super(Camera, self)._register(equipment)
-    # Add camera input node and connect it to camera
-    self._register_input(equipment, self.connection_type)
-    # Connect camera with output image node
-    equipment.add_edge(self.id(), equipment.IMAGE_ID)
-
-  def zoom_divider(self):
-    return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
-
-  def field_of_view(self, telescop, zoom, magnification):
-    return self.sensor_height * 3438 / (telescop.focal_length * magnification) / 60 * ureg.deg
-
-  def __str__(self):
-    # Format: <vendor> <width>x<height>
-    return "{} {}x{}".format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
 
