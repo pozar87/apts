@@ -4,6 +4,8 @@ from .equipment import Equipment
 from .observations import Place, Observation
 from .weather import Weather 
 from .notify import Notify
+from .catalog import Catalog
+from .utils import Utils
 
 user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
 

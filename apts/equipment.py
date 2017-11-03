@@ -3,8 +3,6 @@ import pandas as pd
 import seaborn as sns
 sns.set_style('whitegrid') #TODO: make this global and configurable in all apts
 
-
-
 from .constants import NodeLabels
 from .utils import Utils, Constants
 from .models.optical import *

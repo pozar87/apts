@@ -1,4 +1,5 @@
 import pint
+
 from enum import Enum
 
 # Unit registry
@@ -57,4 +58,5 @@ class Utils:
       return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
     else:
       return deg, mnt, sec
+   
    
