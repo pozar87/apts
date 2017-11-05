@@ -15,6 +15,7 @@ from string import Template
 from .utils import ureg
 from .weather import Weather 
 from .catalog import Catalog
+from .conditions import Conditions
 
 class Place(ephem.Observer):
   def __init__(self, lat, lon, name = "", elevation = 300, *args):
@@ -50,19 +51,6 @@ class Place(ephem.Observer):
   
   def moonrise(self):
     return self._next_rising_time(self.moon)
-
-class Conditions:
-  MAX_CLOUDS = 0.2
-  MAX_PRECIP_PROBABILITY = 0.05 
-  MAX_PRECIP_INTENSITY = 0.05
-  MAX_WIND = 10
-  MIN_TEMPERATURE = 0
-  MAX_TEMPERATURE = 20
-  MIN_WEATHER_GOODNES = 0.8
-  MAX_RETURN = "01:00:00" 
-  
-  MIN_OBJECT_ALTITUDE = 15  
-  MAX_OBJECT_MAGNITUDE = 9
    
 class Observation:
 
