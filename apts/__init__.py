@@ -1,8 +1,10 @@
-import os, shutil, configparser
+import os
+import shutil
+import configparser
 
 from .equipment import Equipment
 from .observations import Place, Observation
-from .weather import Weather 
+from .weather import Weather
 from .notify import Notify
 from .catalog import Catalog
 from .utils import Utils
@@ -19,4 +21,3 @@ Notify.EMAIL_ADDRESS = config['notification']['email_address']
 Notify.EMAIL_PASSWORD = config['notification']['email_password']
 
 __version__ = '0.2.1'
-
