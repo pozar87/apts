@@ -3,6 +3,7 @@ import pytz
 import io
 import pandas
 import numpy
+import base64
 import matplotlib.dates as mdates
 
 from dateutil import tz
@@ -87,7 +88,7 @@ class Observation:
         (visible_messier.Magnitude < self.conditions.MAX_OBJECT_MAGNITUDE)].sort_values(sort_by, ascending=[1])
     return visible_messier
 
-  def plot_visible_messier(self):
+  def _generate_plot_messier(self):
     messier = self.get_visible_messier(
     )[['Messier', 'Transit', 'Altitude', 'Width']]
     plot = messier.plot(
@@ -116,6 +117,7 @@ class Observation:
     self._mark_observation(plot)
     self._mark_good_conditions(
         plot, self.conditions.MIN_OBJECT_ALTITUDE, 90)
+    return plot.get_figure()    
 
   def _normalize_dates(self, start, stop):
     now = datetime.utcnow().astimezone(self.place.local_timezone)
@@ -139,16 +141,24 @@ class Observation:
 
   def plot_weather(self):
     plot = self._generate_plot_weather()
+    
+  def plot_messier(self):
+    plot = self._generate_plot_messier()  
 
   def get_weather_plot_bytes(self):
-    plot = self._generate_plot_weather()
+    return self._plot_to_bytes(self._generate_plot_weather())
+  
+  def get_messier_plot_bytes(self):
+    return self._plot_to_bytes(self._generate_plot_messier())  
+
+  def _plot_to_bytes(self, plot):
     plot_bytes = io.BytesIO()
     plot.savefig(plot_bytes, format='png')
     # Prevent showing plot in ipython
     pyplot.close(plot)
     plot_bytes.seek(0)
     return plot_bytes
-
+    
   def _computer_weather_goodnse(self):
     # Get critical weather data
     data = self.place.weather.get_critical_data(self.start, self.stop)
@@ -170,14 +180,20 @@ class Observation:
     return self._computer_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNES
 
   def to_html(self):
-    with open("./apts/templates/message.html.template") as template_file:
+    with open("./apts/templates/notification.html.template") as template_file:
       template = Template(template_file.read())
       data = {
-          "title": "Astro Pożar",
-          #"weather_image_data" : self._encode_weather_plot(),
-          "equipment_table": self.equipment.data().to_html()
+          "title" : "APTS",
+          "summary" : "Summary",
+          "weather" : "Weather",
+          "messier" : "Messier",
+          "messier_table" : self.get_visible_messier().to_html(),
+          "equipment" : "Equipment",
+          "equipment_table" : self.equipment.data().to_html(),
+          "start" : str(self.start),
+          "stop" : str(self.stop)
       }
-      return template.substitute(data)
+      return str(template.substitute(data))
     return ""
 
   def _generate_plot_weather(self):
