@@ -4,6 +4,7 @@ import io
 import pandas
 import numpy
 import base64
+import pkg_resources
 import matplotlib.dates as mdates
 
 from dateutil import tz
@@ -54,6 +55,8 @@ class Place(ephem.Observer):
 
 
 class Observation:
+
+  NOTIFICATION = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
 
   def __init__(self, place, equipment, conditions=Conditions()):
     self.place = place
@@ -180,7 +183,7 @@ class Observation:
     return self._computer_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNES
 
   def to_html(self):
-    with open("./apts/templates/notification.html.template") as template_file:
+    with open(Observation.NOTIFICATION) as template_file:
       template = Template(template_file.read())
       data = {
           "title" : "APTS",
