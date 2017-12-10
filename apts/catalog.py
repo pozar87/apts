@@ -2,11 +2,12 @@ import pandas
 import ephem
 import pytz
 import numpy
+import pkg_resources
 
 
 class Catalog:
 
-  MESSIER = pandas.read_csv("./apts/data/messier.csv")
+  MESSIER = pandas.read_csv(pkg_resources.resource_filename('apts', 'data/messier.csv'))
 
   def fixed_body(RA, Dec):
     # Create body at given coordinates
