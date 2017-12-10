@@ -12,7 +12,7 @@ setup(
     version=apts.__version__,
     url='http://github.com/pozar87/apts/',
     license='Apache Software License',
-    author='Łukasz Pożarlik',
+    author='Lukasz Pozarlik',
     tests_require=['pytest'],
     install_requires=[''],
     #cmdclass={'test': PyTest},
