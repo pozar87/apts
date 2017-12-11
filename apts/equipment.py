@@ -1,8 +1,8 @@
 import igraph as ig
 import pandas as pd
-#import seaborn as sns
+import seaborn as sns
 # TODO: make this global and configurable in all apts
-#sns.set_style('whitegrid')
+sns.set_style('whitegrid')
 
 from .constants import NodeLabels
 from .utils import Utils, Constants
