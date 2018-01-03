@@ -227,7 +227,7 @@ class Observation:
     plt = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
     self._mark_observation(plt)
     # Visibility
-    plt = self.place.weather.plot_visibility(ax=axes[3, 1])
-    self._mark_observation(plt)
-    fig.tight_layout()
+    #plt = self.place.weather.plot_visibility(ax=axes[3, 1])
+    #self._mark_observation(plt)
+    #fig.tight_layout()
     return fig
