@@ -154,6 +154,7 @@ class Observation:
           "equipment_table" : self.equipment.data().to_html(),
           "start" : str(self.start),
           "stop" : str(self.stop),
+          "objects" : len(self.get_visible_messier()),
           "map" : "Observation place",
           "lat" : numpy.rad2deg(self.place.lat),
           "lon" : numpy.rad2deg(self.place.lon)
