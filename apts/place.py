@@ -6,7 +6,7 @@ from dateutil import tz
 from .weather import Weather
 
 class Place(ephem.Observer):
-  def __init__(self, lat, lon, name="", elevation = 300, *args):
+  def __init__(self, lat, lon, name="", elevation=300, *args):
     ephem.Observer.__init__(self, *args)
     self.lat = str(lat)
     self.lon = str(lon)

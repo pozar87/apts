@@ -54,6 +54,10 @@
       </table>
     </div>
     <div>
+      <h2>$map</h2>
+      <a href="https://www.google.com/maps/dir//$lat,$lon/"><img src="https://maps.googleapis.com/maps/api/staticmap?center=$lat,$lon&zoom=13&scale=1&size=600x300&maptype=roadmap&format=png&visual_refresh=true&markers=icon:https://aminoapps.com/static/bower/emojify.js/images/emoji/telescope.png%7Cshadow:true%7C$lat,$lon" alt="Google Map of $lat,$lon"></a>
+    </div>
+    <div>
       <h2>$messier</h2>
       $messier_table
     </div>

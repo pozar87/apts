@@ -1,5 +1,3 @@
-import ephem
-import pytz
 import io
 import pandas
 import numpy
@@ -7,52 +5,13 @@ import base64
 import pkg_resources
 import matplotlib.dates as mdates
 
-from dateutil import tz
 from datetime import datetime, timedelta
 from matplotlib import pyplot
 from string import Template
 
 from .utils import ureg
-from .weather import Weather
 from .catalog import Catalog
 from .conditions import Conditions
-
-
-class Place(ephem.Observer):
-  def __init__(self, lat, lon, name="", elevation=300, *args):
-    ephem.Observer.__init__(self, *args)
-    self.lat = str(lat)
-    self.lon = str(lon)
-    self.name = name
-    self.elevation = 300
-    # Sun
-    self.sun = ephem.Sun()
-    self.sun.compute(self)
-    # Moon
-    self.moon = ephem.Moon()
-    self.moon.compute(self)
-
-    self.weather = Weather(lat, lon)
-    self.local_timezone = tz.gettz(self.weather.local_timezone)
-
-  def _next_setting_time(self, obj):
-    return self.next_setting(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
-
-  def _next_rising_time(self, obj):
-    return self.next_rising(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
-
-  def sunset(self):
-    return self._next_setting_time(self.sun)
-
-  def sunrise(self):
-    return self._next_rising_time(self.sun)
-
-  def moonset(self):
-    return self._next_setting_time(self.moon)
-
-  def moonrise(self):
-    return self._next_rising_time(self.moon)
-
 
 class Observation:
 
@@ -63,7 +22,7 @@ class Observation:
     self.equipment = equipment
     self.conditions = conditions
     self.start, self.stop = self._normalize_dates(
-        place.sunset(), place.sunrise())
+        place.sunset_time(), place.sunrise_time())
     self.local_messier = Catalog.MESSIER.copy()
     # Compute time limit
     max_return_time = [int(value)
@@ -133,7 +92,7 @@ class Observation:
     plot.axvspan(self.start, self.stop, color='gray', alpha=0.2)
     # Add marker for moon
     moon_start, moon_stop = self._normalize_dates(
-        self.place.moonrise(), self.place.moonset())
+        self.place.moonrise_time(), self.place.moonset_time())
     plot.axvspan(moon_start, moon_stop, color='yellow', alpha=0.1)
     # Add marker for time limit
     plot.axvline(self.start, color='orange', linestyle='--')
@@ -194,7 +153,10 @@ class Observation:
           "equipment" : "Equipment",
           "equipment_table" : self.equipment.data().to_html(),
           "start" : str(self.start),
-          "stop" : str(self.stop)
+          "stop" : str(self.stop),
+          "map" : "Observation place",
+          "lat" : numpy.rad2deg(self.place.lat),
+          "lon" : numpy.rad2deg(self.place.lon)
       }
       return str(template.substitute(data))
     return ""
@@ -227,7 +189,7 @@ class Observation:
     plt = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
     self._mark_observation(plt)
     # Visibility
-    #plt = self.place.weather.plot_visibility(ax=axes[3, 1])
-    #self._mark_observation(plt)
-    #fig.tight_layout()
+    plt = self.place.weather.plot_visibility(ax=axes[3, 1])
+    self._mark_observation(plt)
+    fig.tight_layout()
     return fig

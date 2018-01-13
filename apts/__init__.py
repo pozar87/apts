@@ -3,7 +3,8 @@ import shutil
 import configparser
 
 from .equipment import Equipment
-from .observations import Place, Observation
+from .observations import Observation
+from .place import Place
 from .weather import Weather
 from .notify import Notify
 from .catalog import Catalog
@@ -20,4 +21,4 @@ Weather.API_URL = config['weather']['api_url']
 Notify.EMAIL_ADDRESS = config['notification']['email_address']
 Notify.EMAIL_PASSWORD = config['notification']['email_password']
 
-__version__ = '0.2.3'
+__version__ = '0.2.9'

@@ -62,4 +62,5 @@ class Utils:
     if pretty:
       return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
     else:
-      return deg, mnt, sec
+      return deg, mnt, sec    
+      

@@ -15,7 +15,7 @@ class Notify:
 
   def send(self, observations):
     message = MIMEMultipart('mixed')
-    message['Subject'] = "Good weather!"
+    message['Subject'] = "Good weather in {}".format(observations.place.name)
     message['From'] = Notify.EMAIL_ADDRESS
     message['To'] = self.email
 
