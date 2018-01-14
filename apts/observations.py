@@ -1,4 +1,3 @@
-import io
 import pandas
 import numpy
 import base64
@@ -9,8 +8,8 @@ from datetime import datetime, timedelta
 from matplotlib import pyplot
 from string import Template
 
-from .utils import ureg
-from .catalog import Catalog
+from .utils import ureg, Utils
+from .messier import Messier
 from .conditions import Conditions
 
 class Observation:
@@ -23,7 +22,7 @@ class Observation:
     self.conditions = conditions
     self.start, self.stop = self._normalize_dates(
         place.sunset_time(), place.sunrise_time())
-    self.local_messier = Catalog.MESSIER.copy()
+    self.local_messier = Messier(self.place)
     # Compute time limit
     max_return_time = [int(value)
                        for value in self.conditions.MAX_RETURN.split(":")]
@@ -31,24 +30,9 @@ class Observation:
         hour=max_return_time[0], minute=max_return_time[1], second=max_return_time[2])
     self.time_limit = time_limit if time_limit > self.start else time_limit + \
         timedelta(days=1)
-    # Compute transit of messier objects
-    self.local_messier['Transit'] = self.local_messier[['RA', 'Dec']].apply(
-        lambda body: Catalog.compute_tranzit(Catalog.fixed_body(body.RA, body.Dec), self.place), axis=1)
-    # Compute altitude of messier objects at transit
-    self.local_messier['Altitude'] = self.local_messier[['RA', 'Dec', 'Transit']].apply(
-        lambda body: Catalog.altitude_at_transit(Catalog.fixed_body(body.RA, body.Dec), self.place, body.Transit), axis=1)
-
-  def get_visible_messier(self, hours_margin=0, sort_by=['Transit']):
-    visible_messier = self.local_messier
-    visible_messier = visible_messier[
-        # Filter objects by they transit
-        (visible_messier.Transit > self.start - timedelta(hours=hours_margin)) &
-        (visible_messier.Transit < self.time_limit + timedelta(hours=hours_margin)) &
-        # Filter objects by they min altitude at transit
-        (visible_messier.Altitude > self.conditions.MIN_OBJECT_ALTITUDE) &
-        # Filter object by they magnitude
-        (visible_messier.Magnitude < self.conditions.MAX_OBJECT_MAGNITUDE)].sort_values(sort_by, ascending=[1])
-    return visible_messier
+  
+  def get_visible_messier(self):
+    return self.local_messier.get_visible(self.conditions, self.start, self.time_limit)
 
   def _generate_plot_messier(self):
     messier = self.get_visible_messier(
@@ -107,21 +91,7 @@ class Observation:
   def plot_messier(self):
     plot = self._generate_plot_messier()  
 
-  def get_weather_plot_bytes(self):
-    return self._plot_to_bytes(self._generate_plot_weather())
-  
-  def get_messier_plot_bytes(self):
-    return self._plot_to_bytes(self._generate_plot_messier())  
-
-  def _plot_to_bytes(self, plot):
-    plot_bytes = io.BytesIO()
-    plot.savefig(plot_bytes, format='png')
-    # Prevent showing plot in ipython
-    pyplot.close(plot)
-    plot_bytes.seek(0)
-    return plot_bytes
-    
-  def _computer_weather_goodnse(self):
+  def _compute_weather_goodnse(self):
     # Get critical weather data
     data = self.place.weather.get_critical_data(self.start, self.stop)
     # Get only data defore time limit
@@ -139,23 +109,19 @@ class Observation:
     return good_hours / all_hours
 
   def weather_is_good(self):
-    return self._computer_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNES
+    return self._compute_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNES
 
   def to_html(self):
     with open(Observation.NOTIFICATION) as template_file:
       template = Template(template_file.read())
       data = {
           "title" : "APTS",
-          "summary" : "Summary",
-          "weather" : "Weather",
-          "messier" : "Messier",
-          "messier_table" : self.get_visible_messier().to_html(),
-          "equipment" : "Equipment",
-          "equipment_table" : self.equipment.data().to_html(),
-          "start" : str(self.start),
-          "stop" : str(self.stop),
+          "start" : Utils.format_date(self.start),
+          "stop" : Utils.format_date(self.stop),
           "objects" : len(self.get_visible_messier()),
-          "map" : "Observation place",
+          "messier_table" : self.get_visible_messier().to_html(),
+          "equipment_table" : self.equipment.data().to_html(),
+          "place_name" : self.place.name,
           "lat" : numpy.rad2deg(self.place.lat),
           "lon" : numpy.rad2deg(self.place.lon)
       }

@@ -1,8 +1,11 @@
 import smtplib
+
+from matplotlib import pyplot
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-import email
+
+from .utils import Utils
 
 
 class Notify:
@@ -30,14 +33,10 @@ class Notify:
     message.attach(text_message)
     
     # Add weather image
-    weather_image = MIMEImage(observations.get_weather_plot_bytes().read())
-    message.attach(weather_image)
+    self.attach_image(observations._generate_plot_weather())
 
     # Add messier image
-    messier_image = MIMEImage(observations.get_messier_plot_bytes().read())
-    message.attach(messier_image)
-
-    #print(message.as_string())
+    self.attach_image(observations._generate_plot_messier())
 
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.ehlo()
@@ -45,3 +44,8 @@ class Notify:
     server.login(Notify.EMAIL_ADDRESS, Notify.EMAIL_PASSWORD)
     server.sendmail(Notify.EMAIL_ADDRESS, self.email, message.as_string())
     server.quit()
+  
+  def attach_image(self, message, plot):
+    bytes = Utils.plot_to_bytes(plot)
+    image = MIMEImage(bytes.read())
+    message.attach(image)   

@@ -7,7 +7,7 @@ from .observations import Observation
 from .place import Place
 from .weather import Weather
 from .notify import Notify
-from .catalog import Catalog
+from .catalogs import Catalogs
 from .utils import Utils
 
 user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"

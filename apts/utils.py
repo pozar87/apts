@@ -1,6 +1,8 @@
+import io
 import pint
 
 from enum import Enum
+from matplotlib import pyplot
 
 # Unit registry
 ureg = pint.UnitRegistry()
@@ -62,5 +64,16 @@ class Utils:
     if pretty:
       return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
     else:
-      return deg, mnt, sec    
+      return deg, mnt, sec 
+      
+  def format_date(date):
+    return date.strftime("%Y-%m-%d %H:%M")  
+    
+  def plot_to_bytes(plot):
+    plot_bytes = io.BytesIO()
+    plot.savefig(plot_bytes, format='png')
+    # Prevent showing plot in ipython
+    pyplot.close(plot)
+    plot_bytes.seek(0)
+    return plot_bytes       
       
