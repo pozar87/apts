@@ -10,6 +10,7 @@ from string import Template
 
 from .utils import ureg, Utils
 from .messier import Messier
+from .planets import Planets
 from .conditions import Conditions
 
 class Observation:
@@ -23,6 +24,7 @@ class Observation:
     self.start, self.stop = self._normalize_dates(
         place.sunset_time(), place.sunrise_time())
     self.local_messier = Messier(self.place)
+    self.local_planets = Planets(self.place)
     # Compute time limit
     max_return_time = [int(value)
                        for value in self.conditions.MAX_RETURN.split(":")]
@@ -33,6 +35,10 @@ class Observation:
   
   def get_visible_messier(self):
     return self.local_messier.get_visible(self.conditions, self.start, self.time_limit)
+
+  def get_visible_planets(self):
+    return self.local_planets.get_visible(self.conditions, self.start, self.time_limit)
+
 
   def _generate_plot_messier(self):
     messier = self.get_visible_messier(
