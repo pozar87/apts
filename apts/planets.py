@@ -7,7 +7,7 @@ from .objects import Objects
 class Planets(Objects):
   def __init__(self, place):
    super(Planets, self).__init__(place)
-   # Init object list with all planets
+   # Init object list with all planets   
    self.objects = pandas.DataFrame([
       ephem.Mercury(), 
       ephem.Venus(), 
@@ -26,7 +26,7 @@ class Planets(Objects):
    # Calculate planets magnitude
    self.objects['Magnitude'] = self.objects[['Name']].apply(
      lambda body: body.Name.mag, axis=1)
-   # Calculate planets Ra
+   # Calculate planets RA
    self.objects['RA'] = self.objects[['Name']].apply(
      lambda body: numpy.degrees(body.Name.ra)*24/360, axis=1)
    # Calculate planets Dec
