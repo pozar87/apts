@@ -1,5 +1,6 @@
 import ephem
 import pandas 
+import numpy
 
 from .objects import Objects
 
@@ -25,6 +26,19 @@ class Planets(Objects):
    # Calculate planets magnitude
    self.objects['Magnitude'] = self.objects[['Name']].apply(
      lambda body: body.Name.mag, axis=1)
+   # Calculate planets Ra
+   self.objects['RA'] = self.objects[['Name']].apply(
+     lambda body: numpy.degrees(body.Name.ra)*24/360, axis=1)
+   # Calculate planets Dec
+   self.objects['Dec'] = self.objects[['Name']].apply(
+     lambda body: numpy.degrees(body.Name.dec), axis=1)
+   # Calculate planets distance from Earth
+   self.objects['Distance'] = self.objects[['Name']].apply(
+     lambda body: body.Name.earth_distance, axis=1)
+   # Calculate planets phase
+   self.objects['Phase'] = self.objects[['Name']].apply(
+     lambda body: body.Name.phase, axis=1)
+     
      
      
      
