@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pozar87/apts.svg?branch=master)](https://travis-ci.org/pozar87/apts)
+
 # apts - Astro-Pożar Tool Set
 Set of tools for automatic astrophotography images acquisition and processing.
 
