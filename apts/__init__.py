@@ -10,24 +10,15 @@ from .notify import Notify
 from .catalogs import Catalogs
 from .utils import Utils
 
-# Default values for configuration values
-DEFAULTS = {
-    'weather': {
-        'api_key': 'unknown',
-        'api_url': 'unknown'
-    },
-    'notification': {
-        'email_address': 'unknown',
-        'email_password': 'unknown'
-    }
-}
 
-# Init config with default values
-config = configparser.SafeConfigParser(DEFAULTS)
+# Init config 
+config = configparser.SafeConfigParser()
 
-# Read users configuration
+# Read configurations
+example_config = "./examples/apts.ini"
 user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
-config.read(user_config)
+candidates = [example_config, user_config]
+config.read(candidates)
 
 # Load static fields from config
 Weather.API_KEY = config['weather']['api_key']
