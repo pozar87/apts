@@ -1,8 +1,8 @@
-pandas>=0.22.0
-numpy>=1.14.0
 matplotlib>=2.1.2
-pyephem>=3.7.6.0
-pytz>=2017.3
+numpy>=1.14.0
+pandas>=0.22.0
 pint>=0.8.1
+pyephem>=3.7.6.0
 python-igraph>=0.7.1.post6
+pint>=0.8.1
 seaborn>=0.8.1
