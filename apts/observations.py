@@ -39,7 +39,6 @@ class Observation:
   def get_visible_planets(self):
     return self.local_planets.get_visible(self.conditions, self.start, self.time_limit)
 
-
   def _generate_plot_messier(self):
     messier = self.get_visible_messier(
     )[['Messier', 'Transit', 'Altitude', 'Width']]
@@ -77,20 +76,6 @@ class Observation:
     new_stop = stop
     return (new_start, new_stop)
 
-  def _mark_observation(self, plot):
-    # Add marker for night
-    plot.axvspan(self.start, self.stop, color='gray', alpha=0.2)
-    # Add marker for moon
-    moon_start, moon_stop = self._normalize_dates(
-        self.place.moonrise_time(), self.place.moonset_time())
-    plot.axvspan(moon_start, moon_stop, color='yellow', alpha=0.1)
-    # Add marker for time limit
-    plot.axvline(self.start, color='orange', linestyle='--')
-    plot.axvline(self.time_limit, color='orange', linestyle='--')
-
-  def _mark_good_conditions(self, plot, minimal, maximal):
-    plot.axhspan(minimal, maximal, color='green', alpha=0.1)
-
   def plot_weather(self):
     plot = self._generate_plot_weather()
     
@@ -124,7 +109,9 @@ class Observation:
           "title" : "APTS",
           "start" : Utils.format_date(self.start),
           "stop" : Utils.format_date(self.stop),
-          "objects" : len(self.get_visible_messier()),
+          "planets_count" : len(self.get_visible_planets()),
+          "messier_count" : len(self.get_visible_messier()),
+          "planets_table" : self.get_visible_planets().to_html(),
           "messier_table" : self.get_visible_messier().to_html(),
           "equipment_table" : self.equipment.data().to_html(),
           "place_name" : self.place.name,
@@ -133,6 +120,20 @@ class Observation:
       }
       return str(template.substitute(data))
     return ""
+
+  def _mark_observation(self, plot):
+    # Add marker for night
+    plot.axvspan(self.start, self.stop, color='gray', alpha=0.2)
+    # Add marker for moon
+    moon_start, moon_stop = self._normalize_dates(
+        self.place.moonrise_time(), self.place.moonset_time())
+    plot.axvspan(moon_start, moon_stop, color='yellow', alpha=0.1)
+    # Add marker for time limit
+    plot.axvline(self.start, color='orange', linestyle='--')
+    plot.axvline(self.time_limit, color='orange', linestyle='--')
+
+  def _mark_good_conditions(self, plot, minimal, maximal):
+    plot.axhspan(minimal, maximal, color='green', alpha=0.1)
 
   def _generate_plot_weather(self):
     fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18))

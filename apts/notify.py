@@ -33,10 +33,10 @@ class Notify:
     message.attach(text_message)
     
     # Add weather image
-    self.attach_image(observations._generate_plot_weather())
+    Notify.attach_image(message, observations._generate_plot_weather())
 
     # Add messier image
-    self.attach_image(observations._generate_plot_messier())
+    Notify.attach_image(message, observations._generate_plot_messier())
 
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.ehlo()
@@ -45,7 +45,7 @@ class Notify:
     server.sendmail(Notify.EMAIL_ADDRESS, self.email, message.as_string())
     server.quit()
   
-  def attach_image(self, message, plot):
+  def attach_image(message, plot):
     bytes = Utils.plot_to_bytes(plot)
     image = MIMEImage(bytes.read())
     message.attach(image)   

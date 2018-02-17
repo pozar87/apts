@@ -34,6 +34,7 @@ class Objects:
     return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def altitude_at_transit(self, body, transit):
+    # Calculate objects altitude at transit time
     self.place.date = transit.astimezone(pytz.UTC)
     body.compute(self.place)
     return numpy.degrees(body.alt)
