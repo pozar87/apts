@@ -23,7 +23,7 @@ DEFAULTS = {
 }
 
 # Init config with default values
-config = configparser.ConfigParser(DEFAULTS)
+config = configparser.SafeConfigParser(DEFAULTS)
 
 # Read users configuration
 user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
