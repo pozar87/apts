@@ -10,9 +10,23 @@ from .notify import Notify
 from .catalogs import Catalogs
 from .utils import Utils
 
-user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
+# Default values for configuration values
+DEFAULTS = {
+    'weather': {
+        'api_key': 'unknown',
+        'api_url': 'unknown'
+    },
+    'notification': {
+        'email_address': 'unknown',
+        'email_password': 'unknown'
+    }
+}
 
-config = configparser.ConfigParser()
+# Init config with default values
+config = configparser.ConfigParser(DEFAULTS)
+
+# Read users configuration
+user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
 config.read(user_config)
 
 # Load static fields from config
