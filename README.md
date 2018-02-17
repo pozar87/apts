@@ -17,7 +17,7 @@ Create a *~/.config/apts/apts.ini* file with following content:
 ```
 [weather]
 # Settings for weather API 
-api_url = http://example.com
+api_url = <api_url>
 api_key = <api_key>
 
 [notification]
