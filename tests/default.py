@@ -1,7 +1,7 @@
 from apts import *
 
 def setup_equipment():
-  # Setup basic equipment setup
+  # Setup basic equipment
   e = Equipment()
   e.register(equipment.Telescope(150, 750, t2_output = True))
   e.register(equipment.Eyepiece(25))
