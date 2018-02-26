@@ -72,10 +72,10 @@ class Equipment:
                          self._get_paths(Constants.IMAGE_ID))
     return result_data
 
-  def plot(self, to_plot):
+  def plot(self, to_plot, **kwargs):
     data = self.data()[[to_plot, 'type', 'label']].sort_values(by=to_plot)
     pd.DataFrame([{row[1]:row[0]} for row in data.values], index=data['label'].values).plot(
-        kind="bar", stacked=True, title=to_plot)
+        kind="bar", stacked=True, title=to_plot, kwargs)
 
   def plot_connection_garph(self):
     return ig.plot(self.connection_garph)
