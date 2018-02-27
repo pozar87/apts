@@ -1,6 +1,7 @@
 import igraph as ig
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 # TODO: make this global and configurable in all apts
 sns.set_style('whitegrid')
 
@@ -72,13 +73,31 @@ class Equipment:
                          self._get_paths(Constants.IMAGE_ID))
     return result_data
 
-  def plot(self, to_plot, **kwargs):
-    kwargs = {'kind': "bar",
-    'stacked' :  True,
-    'title' : to_plot
-    }
+  def plot_zoom(self, **args):
+    """Plot available magnification"""
+    self._plot('zoom', 'Available zoom', 'Used equipment', 'Magnification', **args)
+
+  def plot_fov(self, **args):
+    """Plot available fields of view"""
+    self._plot('fov', 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
+
+  def _plot(self, to_plot, title, x_label, y_label, autolayout = False, multiline_labels = True, **args):
+    data = self._filter_and_merge(to_plot, multiline_labels)
+    if autolayout:
+      plt.rcParams.update({'figure.autolayout': True})
+    ax = data.plot(kind = 'bar', title = title, stacked = True , **args)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    plt.xticks(rotation=45)
+
+  def _filter_and_merge(self, to_plot, multiline_labels):
+    """This methods filter data to plot and merge Eye and Image series together"""
+    # Filter only relevant data - by to_plot key
     data = self.data()[[to_plot, 'type', 'label']].sort_values(by=to_plot)
-    pd.DataFrame([{row[1]:row[0]} for row in data.values], index=data['label'].values).plot(**kwargs)
+    # Split label by ',' if multiline_labels is set to true
+    labels = [label.replace(',','\n') if  multiline_labels else label for label in  data['label'].values]
+    # Merge Image and Eye series together  
+    return pd.DataFrame([{row[1]:row[0]} for row in data.values], index=labels)
 
   def plot_connection_garph(self):
     return ig.plot(self.connection_garph)
