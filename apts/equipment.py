@@ -88,7 +88,6 @@ class Equipment:
     ax = data.plot(kind = 'bar', title = title, stacked = True , **args)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    plt.xticks(rotation=45)
 
   def _filter_and_merge(self, to_plot, multiline_labels):
     """This methods filter data to plot and merge Eye and Image series together"""
@@ -99,8 +98,10 @@ class Equipment:
     # Merge Image and Eye series together  
     return pd.DataFrame([{row[1]:row[0]} for row in data.values], index=labels)
 
-  def plot_connection_garph(self):
-    return ig.plot(self.connection_garph)
+  def plot_connection_graph(self, **args):
+    # Connect all outputs with inputs
+    self._connect()
+    return ig.plot(self.connection_garph, **args)
 
   def _connect(self):
     for out_node in self.connection_garph.vs.select(node_type=OpticalType.OUTPUT):
