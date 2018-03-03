@@ -2,6 +2,7 @@ import igraph as ig
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import cairo as ca
 # TODO: make this global and configurable in all apts
 sns.set_style('whitegrid')
 
@@ -102,6 +103,11 @@ class Equipment:
     # Connect all outputs with inputs
     self._connect()
     return ig.plot(self.connection_garph, **args)
+
+  def plot_connection_graph_svg(self, **args):
+    surface = ca.ImageSurface(ca.FORMAT_ARGB32, 600, 400)
+    plot = self.plot_connection_graph(target=surface, **args)
+    return plot._repr_svg_()
 
   def _connect(self):
     for out_node in self.connection_garph.vs.select(node_type=OpticalType.OUTPUT):

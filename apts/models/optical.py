@@ -216,7 +216,7 @@ class Barlow(OpticalEqipment):
         self._register_output(equipment, self.connection_type)
         # Add barlow lens input node and connect it to barlow lens
         self._register_input(equipment, self.connection_type)
-        # Handling optional T2 ouptout
+        # Handling optional T2 outpout
         if self.t2_output:
             self._register_output(equipment, ConnectionType.T2)
 
