@@ -1,14 +1,14 @@
 import ephem
 import pytz
 
-from tzwhere import tzwhere
+from timezonefinder import TimezoneFinder
 from dateutil import tz
 
 from .weather import Weather
 
 class Place(ephem.Observer):
   
-  tzw = tzwhere.tzwhere()
+  tf = TimezoneFinder()
 
   def __init__(self, lat, lon, name="", elevation=300, *args):
     ephem.Observer.__init__(self, *args)
@@ -24,7 +24,7 @@ class Place(ephem.Observer):
     # Moon
     self.moon = ephem.Moon()
     self.moon.compute(self)
-    self.local_timezone = tz.gettz(Place.tzw.tzNameAt(lat,lon))
+    self.local_timezone = tz.gettz(Place.tf.timezone_at(lat=lat,lng=lon))
 
   def get_weather(self):
     self.weather = Weather(self.lat_numeric, self.lon_numeric, self.local_timezone)
