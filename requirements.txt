@@ -5,3 +5,4 @@ pint>=0.8.1
 pyephem>=3.7.6.0
 python-igraph>=0.7.1.post6
 seaborn>=0.8.1
+pycairo>=1.16.2
