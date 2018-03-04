@@ -10,11 +10,11 @@ class Weather:
   API_KEY = ""
   API_URL = ""
 
-  def __init__(self, lat, lon):
+  def __init__(self, lat, lon, local_timezone):
     self.lat = lat
     self.lon = lon
+    self.local_timezone = local_timezone
     self.data = self.download_data()
-    self.local_timezone = ""
 
   def _filter_data(self, rows, hours):
     # Always add time column
@@ -95,7 +95,6 @@ class Weather:
                  "pressure",
                  "ozone"]
       json_data = json.loads(url.read().decode())
-      self.local_timezone = json_data["timezone"]
       raw_data = [[(item[column] if column in item.keys() else 'none')
                    for column in columns] for item in json_data["hourly"]["data"]]
       result = pd.DataFrame(raw_data, columns=columns)
