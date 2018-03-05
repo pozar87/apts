@@ -28,17 +28,17 @@ class Weather:
     plt = data.plot(x="time", ylim=(0, 1.05), title="Clouds", **args)
     return plt
 
-  def plot_precip(self, hours=24, **args):
+  def plot_precipitation(self, hours=24, **args):
     data = self._filter_data(
         ["precipIntensity", "precipProbability"], hours)
     plt = data.plot(
-        x="time", title="Precip intensity and probability", **args)
+        x="time", title="precipitation intensity and probability", **args)
     return plt
 
-  def plot_precip_type_summary(self, hours=24, **args):
+  def plot_precipitation_type_summary(self, hours=24, **args):
     data = self._filter_data(["precipType"], hours)
     plt = data.groupby('precipType').size().plot(
-        kind='pie', label="Precip type summary", **args)
+        kind='pie', label="precipitation type summary", **args)
     return plt
 
   def plot_clouds_summary(self, hours=24, **args):

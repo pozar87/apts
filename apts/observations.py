@@ -91,7 +91,7 @@ class Observation:
     # Get hours with good conditions
     result = data[
         (data.cloudCover < self.conditions.MAX_CLOUDS) &
-        (data.precipProbability < self.conditions.MAX_PRECIP_PROBABILITY) &
+        (data.precipProbability < self.conditions.MAX_PRECIPATION_PROBABILITY) &
         (data.windSpeed < self.conditions.MAX_WIND) &
         (data.temperature > self.conditions.MIN_TEMPERATURE) &
         (data.temperature < self.conditions.MAX_TEMPERATURE)]
@@ -100,7 +100,7 @@ class Observation:
     return good_hours / all_hours
 
   def weather_is_good(self):
-    return self._compute_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNES
+    return self._compute_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNESS
 
   def to_html(self):
     with open(Observation.NOTIFICATION) as template_file:
@@ -143,13 +143,13 @@ class Observation:
     self._mark_good_conditions(plt, 0, self.conditions.MAX_CLOUDS)
     # Cloud summary
     plt = self.place.weather.plot_clouds_summary(ax=axes[0, 1])
-    # Precip
-    plt = self.place.weather.plot_precip(ax=axes[1, 0])
+    # Precipation
+    plt = self.place.weather.plot_precipitation(ax=axes[1, 0])
     self._mark_observation(plt)
     self._mark_good_conditions(
-        plt, 0, self.conditions.MAX_PRECIP_PROBABILITY)
-    # Precip type summary
-    plt = self.place.weather.plot_precip_type_summary(ax=axes[1, 1])
+        plt, 0, self.conditions.MAX_PRECIPATION_PROBABILITY)
+    # precipitation type summary
+    plt = self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1])
     # Temperature
     plt = self.place.weather.plot_temperature(ax=axes[2, 0])
     self._mark_observation(plt)
