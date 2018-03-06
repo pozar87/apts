@@ -39,7 +39,7 @@ class Observation:
   def get_visible_planets(self):
     return self.local_planets.get_visible(self.conditions, self.start, self.time_limit)
 
-  def _generate_plot_messier(self):
+  def _generate_plot_messier(self, **args):
     messier = self.get_visible_messier(
     )[['Messier', 'Transit', 'Altitude', 'Width']]
     plot = messier.plot(
@@ -50,8 +50,7 @@ class Observation:
         linestyle='none',
         xlim=[self.start - timedelta(minutes=15),
               self.time_limit + timedelta(minutes=15)],
-        ylim=(0, 90),
-        figsize=(17, 5))
+        ylim=(0, 90), **args)
 
     last_position = [0, 0]
     offset_index = 0
@@ -76,11 +75,11 @@ class Observation:
     new_stop = stop
     return (new_start, new_stop)
 
-  def plot_weather(self):
-    plot = self._generate_plot_weather()
+  def plot_weather(self, **args):
+    plot = self._generate_plot_weather(**args)
     
-  def plot_messier(self):
-    plot = self._generate_plot_messier()  
+  def plot_messier(self, **args):
+    plot = self._generate_plot_messier(**args)  
 
   def _compute_weather_goodnse(self):
     # Get critical weather data
@@ -135,7 +134,7 @@ class Observation:
   def _mark_good_conditions(self, plot, minimal, maximal):
     plot.axhspan(minimal, maximal, color='green', alpha=0.1)
 
-  def _generate_plot_weather(self):
+  def _generate_plot_weather(self, **args):
     fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18))
     # Clouds
     plt = self.place.weather.plot_clouds(ax=axes[0, 0])
