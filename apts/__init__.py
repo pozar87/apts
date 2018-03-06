@@ -26,4 +26,4 @@ Weather.API_URL = config['weather']['api_url']
 Notify.EMAIL_ADDRESS = config['notification']['email_address']
 Notify.EMAIL_PASSWORD = config['notification']['email_password']
 
-__version__ = '0.2.12'
+__version__ = '0.2.13'
