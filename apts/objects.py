@@ -1,8 +1,10 @@
 import ephem
 import numpy
 import pytz
+import datetime
 
 from datetime import timedelta
+
 
 class Objects:    
   def __init__(self, place):
@@ -31,6 +33,7 @@ class Objects:
 
   def compute_tranzit(self, body):
     # Return transit time in local time
+    self.place.date = datetime.datetime.now()
     return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def altitude_at_transit(self, body, transit):
