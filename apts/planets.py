@@ -16,28 +16,31 @@ class Planets(Objects):
       ephem.Saturn(), 
       ephem.Uranus(), 
       ephem.Neptune()], 
-      columns=['Name'])
+      columns=['Ephem'])
+   # Add name
+   self.objects['Name'] = self.objects[['Ephem']].apply(
+     lambda body: body.Ephem.name, axis=1)   
    # Compute transit of planets at given place   
-   self.objects['Transit'] = self.objects[['Name']].apply(
-     lambda body: self.compute_tranzit(body.Name), axis=1)
+   self.objects['Transit'] = self.objects[['Ephem']].apply(
+     lambda body: self.compute_tranzit(body.Ephem), axis=1)
    # Compute altitude of planets at transit (at given place)
-   self.objects['Altitude'] = self.objects[['Name', 'Transit']].apply(
-     lambda body: self.altitude_at_transit(body.Name, body.Transit), axis=1)
+   self.objects['Altitude'] = self.objects[['Ephem', 'Transit']].apply(
+     lambda body: self.altitude_at_transit(body.Ephem, body.Transit), axis=1)
    # Calculate planets magnitude
-   self.objects['Magnitude'] = self.objects[['Name']].apply(
-     lambda body: body.Name.mag, axis=1)
+   self.objects['Magnitude'] = self.objects[['Ephem']].apply(
+     lambda body: body.Ephem.mag, axis=1)
    # Calculate planets RA
-   self.objects['RA'] = self.objects[['Name']].apply(
-     lambda body: numpy.degrees(body.Name.ra)*24/360, axis=1)
+   self.objects['RA'] = self.objects[['Ephem']].apply(
+     lambda body: numpy.degrees(body.Ephem.ra)*24/360, axis=1)
    # Calculate planets Dec
-   self.objects['Dec'] = self.objects[['Name']].apply(
-     lambda body: numpy.degrees(body.Name.dec), axis=1)
+   self.objects['Dec'] = self.objects[['Ephem']].apply(
+     lambda body: numpy.degrees(body.Ephem.dec), axis=1)
    # Calculate planets distance from Earth
-   self.objects['Distance'] = self.objects[['Name']].apply(
-     lambda body: body.Name.earth_distance, axis=1)
+   self.objects['Distance'] = self.objects[['Ephem']].apply(
+     lambda body: body.Ephem.earth_distance, axis=1)
    # Calculate planets phase
-   self.objects['Phase'] = self.objects[['Name']].apply(
-     lambda body: body.Name.phase, axis=1)
+   self.objects['Phase'] = self.objects[['Ephem']].apply(
+     lambda body: body.Ephem.phase, axis=1)
      
      
      
