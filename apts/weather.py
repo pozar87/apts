@@ -5,7 +5,7 @@ import pandas as pd
 
 from datetime import datetime, timedelta
 
-requests_cache.install_cache('apts_cache')
+requests_cache.install_cache('apts_cache', backend='memory', expire_after=300)
 
 
 class Weather:
