@@ -1,8 +1,11 @@
-import urllib.request
+import requests
+import requests_cache
 import json
 import pandas as pd
 
 from datetime import datetime, timedelta
+
+requests_cache.install_cache('apts_cache')
 
 
 class Weather:
@@ -78,8 +81,7 @@ class Weather:
     return plt
 
   def download_data(self):
-    #print(Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon))
-    with urllib.request.urlopen(Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)) as url:
+    with requests.get(Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)) as data:
       columns = ["time",
                  "summary",
                  "precipType",
@@ -94,7 +96,7 @@ class Weather:
                  "visibility",
                  "pressure",
                  "ozone"]
-      json_data = json.loads(url.read().decode())
+      json_data = json.loads(data.text)
       raw_data = [[(item[column] if column in item.keys() else 'none')
                    for column in columns] for item in json_data["hourly"]["data"]]
       result = pd.DataFrame(raw_data, columns=columns)

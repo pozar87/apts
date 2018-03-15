@@ -8,3 +8,4 @@ seaborn>=0.8.1
 pycairo>=1.16.2
 timezonefinder>=2.1.0
 pytz>=2018.3
+requests-cache>=0.4.13
