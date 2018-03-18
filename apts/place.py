@@ -64,11 +64,10 @@ class Place(ephem.Observer):
   
   def moon_phase(self):
     lunation = self.moon_path()['lunation'][48]
-    return int(lunation*100)
+    return int(lunation+0.5)*100
   
   def moon_path(self):
-    #self.date = date.today() 
-  
+    self.date = date.today()
     result = []
     for i in range(24*4): # compute position for every 15 minutes  
       self.moon.compute(self)  
@@ -83,8 +82,7 @@ class Place(ephem.Observer):
              lunation]
       result.append(row)
       self.date += ephem.minute*15  
-   
-    return pd.DataFrame(result, columns = ['time','moon altitude','moon azimuth','local_time','phase','lunation'])
+    return pd.DataFrame(result, columns = ['time','moon altitude','azimuth','local_time','phase','lunation'])
   
   def plot_moon_path(self, **args):
     def add_marker(label, position):
@@ -92,12 +90,13 @@ class Place(ephem.Observer):
       plt.text(position, 1, label, weight='bold', horizontalalignment='center')
 
     data = self.moon_path() 
-    plt = data.plot(x='moon azimuth', y='moon altitude', title='Moon altitude', style='.-', **args) 
-    # Add 
+    plt = data.plot(x='azimuth', y='moon altitude', title='Moon altitude', style='.-', **args) 
+    # Add cardinal direction
     add_marker('E', 90)
     add_marker('S', 180)
     add_marker('W', 270)
     
+    # Plot horizon
     plt.axhspan(0, -50, color='gray', alpha=0.2)
     plt.set_xlim(45,315)
     plt.locator_params(nbins=20)
