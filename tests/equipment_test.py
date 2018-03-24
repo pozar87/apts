@@ -49,4 +49,4 @@ def test_camera():
   e.register(equipment.Camera(30, 40, 100, 200))
   # Zoom of camera (sqrt(30^2 + 40^2) = 50)
   data = e.data()
-  assert data[data.type == "Image"].iloc[0][Labels.ZOOM] == 15
+  assert data[data.Type == "Image"].iloc[0][Labels.ZOOM] == 15
