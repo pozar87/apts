@@ -8,13 +8,13 @@ from datetime import datetime, timedelta
 from matplotlib import pyplot
 from string import Template
 
-from .utils import ureg, Utils
+from .utils import ureg, Utils, Labels
 from .messier import Messier
 from .planets import Planets
 from .conditions import Conditions
 
-class Observation:
 
+class Observation:
   NOTIFICATION = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
 
   def __init__(self, place, equipment, conditions=Conditions()):
@@ -22,17 +22,17 @@ class Observation:
     self.equipment = equipment
     self.conditions = conditions
     self.start, self.stop = self._normalize_dates(
-        place.sunset_time(), place.sunrise_time())
+      place.sunset_time(), place.sunrise_time())
     self.local_messier = Messier(self.place)
     self.local_planets = Planets(self.place)
     # Compute time limit
     max_return_time = [int(value)
-                       for value in self.conditions.MAX_RETURN.split(":")]
+                       for value in self.conditions.max_return.split(":")]
     time_limit = self.start.replace(
-        hour=max_return_time[0], minute=max_return_time[1], second=max_return_time[2])
+      hour=max_return_time[0], minute=max_return_time[1], second=max_return_time[2])
     self.time_limit = time_limit if time_limit > self.start else time_limit + \
-        timedelta(days=1)
-  
+                                                                 timedelta(days=1)
+
   def get_visible_messier(self):
     return self.local_messier.get_visible(self.conditions, self.start, self.time_limit)
 
@@ -41,23 +41,23 @@ class Observation:
 
   def _generate_plot_messier(self, **args):
     messier = self.get_visible_messier(
-    )[['Messier', 'Transit', 'Altitude', 'Width']]
+    )[[Labels.MESSIER, Labels.TRANSIT, Labels.ALTITUDE, Labels.WIDTH]]
     plot = messier.plot(
-        x='Transit',
-        y='Altitude',
-        marker='o',
-        #markersize = messier['Width'],
-        linestyle='none',
-        xlim=[self.start - timedelta(minutes=15),
-              self.time_limit + timedelta(minutes=15)],
-        ylim=(0, 90), **args)
+      x=Labels.TRANSIT,
+      y=Labels.ALTITUDE,
+      marker='o',
+      # markersize = messier['Width'],
+      linestyle='none',
+      xlim=[self.start - timedelta(minutes=15),
+            self.time_limit + timedelta(minutes=15)],
+      ylim=(0, 90), **args)
 
     last_position = [0, 0]
     offset_index = 0
     offsets = [(-25, -12), (5, 5), (-25, 5), (5, -12)]
     for obj in messier.values:
       distance = (((mdates.date2num(
-          obj[1]) - last_position[0]) * 100)**2 + (obj[2] - last_position[1])**2)**0.5
+        obj[1]) - last_position[0]) * 100) ** 2 + (obj[2] - last_position[1]) ** 2) ** 0.5
       offset_index = offset_index + (1 if distance < 5 else 0)
       plot.annotate(obj[0],
                     (mdates.date2num(obj[1]), obj[2]),
@@ -66,8 +66,8 @@ class Observation:
       last_position = [mdates.date2num(obj[1]), obj[2]]
     self._mark_observation(plot)
     self._mark_good_conditions(
-        plot, self.conditions.MIN_OBJECT_ALTITUDE, 90)
-    return plot.get_figure()    
+      plot, self.conditions.min_object_altitude, 90)
+    return plot.get_figure()
 
   def _normalize_dates(self, start, stop):
     now = datetime.utcnow().astimezone(self.place.local_timezone)
@@ -77,9 +77,9 @@ class Observation:
 
   def plot_weather(self, **args):
     plot = self._generate_plot_weather(**args)
-    
+
   def plot_messier(self, **args):
-    plot = self._generate_plot_messier(**args)  
+    plot = self._generate_plot_messier(**args)
 
   def _compute_weather_goodnse(self):
     # Get critical weather data
@@ -89,33 +89,33 @@ class Observation:
     all_hours = len(data)
     # Get hours with good conditions
     result = data[
-        (data.cloudCover < self.conditions.MAX_CLOUDS) &
-        (data.precipProbability < self.conditions.MAX_PRECIPATION_PROBABILITY) &
-        (data.windSpeed < self.conditions.MAX_WIND) &
-        (data.temperature > self.conditions.MIN_TEMPERATURE) &
-        (data.temperature < self.conditions.MAX_TEMPERATURE)]
+      (data.cloudCover < self.conditions.max_clouds) &
+      (data.precipProbability < self.conditions.max_precipitation_probability) &
+      (data.windSpeed < self.conditions.max_wind) &
+      (data.temperature > self.conditions.min_temperature) &
+      (data.temperature < self.conditions.max_temperature)]
     good_hours = len(result)
     # Return relative number of good hours
     return good_hours / all_hours
 
   def weather_is_good(self):
-    return self._compute_weather_goodnse() > self.conditions.MIN_WEATHER_GOODNESS
+    return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
 
   def to_html(self):
     with open(Observation.NOTIFICATION) as template_file:
       template = Template(template_file.read())
       data = {
-          "title" : "APTS",
-          "start" : Utils.format_date(self.start),
-          "stop" : Utils.format_date(self.stop),
-          "planets_count" : len(self.get_visible_planets()),
-          "messier_count" : len(self.get_visible_messier()),
-          "planets_table" : self.get_visible_planets().to_html(),
-          "messier_table" : self.get_visible_messier().to_html(),
-          "equipment_table" : self.equipment.data().to_html(),
-          "place_name" : self.place.name,
-          "lat" : numpy.rad2deg(self.place.lat),
-          "lon" : numpy.rad2deg(self.place.lon)
+        "title": "APTS",
+        "start": Utils.format_date(self.start),
+        "stop": Utils.format_date(self.stop),
+        "planets_count": len(self.get_visible_planets()),
+        "messier_count": len(self.get_visible_messier()),
+        "planets_table": self.get_visible_planets().to_html(),
+        "messier_table": self.get_visible_messier().to_html(),
+        "equipment_table": self.equipment.data().to_html(),
+        "place_name": self.place.name,
+        "lat": numpy.rad2deg(self.place.lat),
+        "lon": numpy.rad2deg(self.place.lon)
       }
       return str(template.substitute(data))
     return ""
@@ -125,7 +125,7 @@ class Observation:
     plot.axvspan(self.start, self.stop, color='gray', alpha=0.2)
     # Add marker for moon
     moon_start, moon_stop = self._normalize_dates(
-        self.place.moonrise_time(), self.place.moonset_time())
+      self.place.moonrise_time(), self.place.moonset_time())
     plot.axvspan(moon_start, moon_stop, color='yellow', alpha=0.1)
     # Add marker for time limit
     plot.axvline(self.start, color='orange', linestyle='--')
@@ -139,25 +139,25 @@ class Observation:
     # Clouds
     plt = self.place.weather.plot_clouds(ax=axes[0, 0])
     self._mark_observation(plt)
-    self._mark_good_conditions(plt, 0, self.conditions.MAX_CLOUDS)
+    self._mark_good_conditions(plt, 0, self.conditions.max_clouds)
     # Cloud summary
     plt = self.place.weather.plot_clouds_summary(ax=axes[0, 1])
     # Precipation
     plt = self.place.weather.plot_precipitation(ax=axes[1, 0])
     self._mark_observation(plt)
     self._mark_good_conditions(
-        plt, 0, self.conditions.MAX_PRECIPATION_PROBABILITY)
+      plt, 0, self.conditions.max_precipitation_probability)
     # precipitation type summary
     plt = self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1])
     # Temperature
     plt = self.place.weather.plot_temperature(ax=axes[2, 0])
     self._mark_observation(plt)
     self._mark_good_conditions(
-        plt, self.conditions.MIN_TEMPERATURE, self.conditions.MAX_TEMPERATURE)
+      plt, self.conditions.min_temperature, self.conditions.max_temperature)
     # Wind
     plt = self.place.weather.plot_wind(ax=axes[2, 1])
     self._mark_observation(plt)
-    self._mark_good_conditions(plt, 0, self.conditions.MAX_WIND)
+    self._mark_good_conditions(plt, 0, self.conditions.max_wind)
     # Pressure
     plt = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
     self._mark_observation(plt)

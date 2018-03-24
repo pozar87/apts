@@ -38,11 +38,16 @@ class Labels:
   LABEL = 'Label'
   TYPE = 'Type'
   ZOOM = 'Zoom'
-  USEFUL_ZOOM = 'Useful zoom'
+  USEFUL_ZOOM = 'Useful'
   FOV = 'FoV'
   RANGE = 'Range'
   BRIGHTNESS = 'Brightness'
   ELEMENTS = 'Elements'
+
+  MESSIER = 'Messier'
+  TRANSIT = 'Transit'
+  ALTITUDE = 'Altitude'
+  WIDTH = 'Width'
 
 class Utils:
 
