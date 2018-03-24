@@ -34,6 +34,15 @@ class Constants:
       OpticalType.GENERIC: "yellow"
   }
 
+class Labels:
+  LABEL = 'Label'
+  TYPE = 'Type'
+  ZOOM = 'Zoom'
+  USEFUL_ZOOM = 'Useful zoom'
+  FOV = 'FoV'
+  RANGE = 'Range'
+  BRIGHTNESS = 'Brightness'
+  ELEMENTS = 'Elements'
 
 class Utils:
 
@@ -64,16 +73,15 @@ class Utils:
     if pretty:
       return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
     else:
-      return deg, mnt, sec 
-      
+      return deg, mnt, sec
+
   def format_date(date):
-    return date.strftime("%Y-%m-%d %H:%M")  
-    
+    return date.strftime("%Y-%m-%d %H:%M")
+
   def plot_to_bytes(plot):
     plot_bytes = io.BytesIO()
     plot.savefig(plot_bytes, format='png')
     # Prevent showing plot in ipython
     pyplot.close(plot)
     plot_bytes.seek(0)
-    return plot_bytes       
-      
+    return plot_bytes
