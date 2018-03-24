@@ -4,26 +4,27 @@ import pytz
 import datetime
 
 from datetime import timedelta
+from apts import utils
 
 
-class Objects:    
+class Objects:
   def __init__(self, place):
     self.place = place
-  
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=['Transit']):
+
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[utils.Labels.TRANSIT]):
     visible = self.objects
     visible = visible[
-        # Filter objects by they transit
-        (visible.Transit > start - timedelta(hours=hours_margin)) &
-        (visible.Transit < stop + timedelta(hours=hours_margin)) &
-        # Filter objects by they min altitude at transit
-        (visible.Altitude > conditions.MIN_OBJECT_ALTITUDE) &
-        # Filter object by they magnitude
-        (visible.Magnitude < conditions.MAX_OBJECT_MAGNITUDE)]
+      # Filter objects by they transit
+      (visible.Transit > start - timedelta(hours=hours_margin)) &
+      (visible.Transit < stop + timedelta(hours=hours_margin)) &
+      # Filter objects by they min altitude at transit
+      (visible.Altitude > conditions.min_object_altitude) &
+      # Filter object by they magnitude
+      (visible.Magnitude < conditions.max_object_magnitude)]
     # Sort objects by given order    
-    visible = visible.sort_values(sort_by, ascending=[1])    
-    return visible      
-  
+    visible = visible.sort_values(sort_by, ascending=[1])
+    return visible
+
   def fixed_body(RA, Dec):
     # Create body at given coordinates
     body = ephem.FixedBody()

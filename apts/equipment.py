@@ -5,9 +5,12 @@ import matplotlib.pyplot as plt
 import cairo as ca
 # TODO: make this global and configurable in all apts
 sns.set_style('whitegrid')
+# Disable label trimming in pandas tables
+pd.set_option('display.max_colwidth', -1)
+
 
 from .constants import NodeLabels
-from .utils import Utils, Constants
+from .utils import Labels
 from .models.optical import *
 from .optics import *
 
@@ -50,8 +53,8 @@ class Equipment:
     return result
 
   def data(self):
-    columns = ['label', 'type', 'zoom', 'useful_zoom',
-               'fov', 'range', 'brightness', 'elements']
+    columns = [Labels.LABEL, Labels.TYPE, Labels.ZOOM, Labels.USEFUL_ZOOM,
+               Labels.FOV, Labels.RANGE, Labels.BRIGHTNESS, Labels.ELEMENTS]
 
     def append(result_data, columns, paths):
       for path in paths:
@@ -76,11 +79,11 @@ class Equipment:
 
   def plot_zoom(self, **args):
     """Plot available magnification"""
-    self._plot('zoom', 'Available zoom', 'Used equipment', 'Magnification', **args)
+    self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
 
   def plot_fov(self, **args):
     """Plot available fields of view"""
-    self._plot('fov', 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
+    self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
 
   def _plot(self, to_plot, title, x_label, y_label, autolayout = False, multiline_labels = True, **args):
     data = self._filter_and_merge(to_plot, multiline_labels)
@@ -93,9 +96,9 @@ class Equipment:
   def _filter_and_merge(self, to_plot, multiline_labels):
     """This methods filter data to plot and merge Eye and Image series together"""
     # Filter only relevant data - by to_plot key
-    data = self.data()[[to_plot, 'type', 'label']].sort_values(by=to_plot)
+    data = self.data()[[to_plot, Labels.TYPE, Labels.LABEL]].sort_values(by=to_plot)
     # Split label by ',' if multiline_labels is set to true
-    labels = [label.replace(',','\n') if  multiline_labels else label for label in  data['label'].values]
+    labels = [label.replace(',','\n') if  multiline_labels else label for label in  data[Labels.LABEL].values]
     # Merge Image and Eye series together  
     return pd.DataFrame([{row[1]:row[0]} for row in data.values], index=labels)
 

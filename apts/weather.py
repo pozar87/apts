@@ -35,7 +35,7 @@ class Weather:
     data = self._filter_data(
         ["precipIntensity", "precipProbability"], hours)
     plt = data.plot(
-        x="time", title="precipitation intensity and probability", **args)
+        x="time", title="Precipitation intensity and probability", **args)
     return plt
 
   def plot_precipitation_type_summary(self, hours=24, **args):

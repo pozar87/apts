@@ -40,9 +40,11 @@ class Place(ephem.Observer):
     self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
 
   def _next_setting_time(self, obj):
+    #self.date = date.today()
     return self.next_setting(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
   def _next_rising_time(self, obj):
+    #self.date = date.today()
     return self.next_rising(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
   def sunset_time(self):
@@ -63,7 +65,7 @@ class Place(ephem.Observer):
     return letter
   
   def moon_phase(self):
-    lunation = self.moon_path()['lunation'][48]
+    lunation = self.moon_path()['Lunation'][48]
     return int(lunation+0.5)*100
   
   def moon_path(self):
@@ -77,12 +79,12 @@ class Place(ephem.Observer):
       row = [ephem.localtime(self.date).time(), 
              deg(self.moon.alt),
              deg(self.moon.az),  
-             ephem.localtime(self.date).strftime("%H:%M"),  
+             self.date.datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone).strftime("%H:%M"),  
              self.moon.phase,
              lunation]
       result.append(row)
       self.date += ephem.minute*15  
-    return pd.DataFrame(result, columns = ['time','moon altitude','azimuth','local_time','phase','lunation'])
+    return pd.DataFrame(result, columns = ['Time','Moon altitude','Azimuth','Local_time','Phase','Lunation'])
   
   def plot_moon_path(self, **args):
     def add_marker(label, position):
@@ -90,15 +92,21 @@ class Place(ephem.Observer):
       plt.text(position, 1, label, weight='bold', horizontalalignment='center')
 
     data = self.moon_path() 
-    plt = data.plot(x='azimuth', y='moon altitude', title='Moon altitude', style='.-', **args) 
+    plt = data.plot(x='Azimuth', y='Moon altitude', title='Moon altitude', style='.-', **args) 
     # Add cardinal direction
-    add_marker('E', 90)
-    add_marker('S', 180)
-    add_marker('W', 270)
+    if self.lat > 0:
+      add_marker('E', 90)
+      add_marker('S', 180)
+      add_marker('W', 270)
+      plt.set_xlim(45,315)
+    else:  
+      add_marker('E', 90)
+      add_marker('S', 180)
+      add_marker('W', 270)
+      plt.set_xlim(0,360)
     
     # Plot horizon
     plt.axhspan(0, -50, color='gray', alpha=0.2)
-    plt.set_xlim(45,315)
     plt.locator_params(nbins=20)
     lim = plt.set_ylim(bottom=-10)
     
