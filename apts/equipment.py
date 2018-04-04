@@ -1,17 +1,16 @@
+import cairo as ca
 import igraph as ig
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import cairo as ca
+
 # TODO: make this global and configurable in all apts
 sns.set_style('whitegrid')
 # Disable label trimming in pandas tables
 pd.set_option('display.max_colwidth', -1)
 
-
 from .constants import NodeLabels
-from .utils import Labels
-from .models.optical import *
+from .opticalequipment import *
 from .optics import *
 
 
@@ -38,9 +37,9 @@ class Equipment:
     results_set = set()
     for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, output_node.index):
       result = [self.connection_garph.vs.find(
-          name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
+        name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
       op = OpticalPath.from_path(
-          [item for item in result if item is not None])
+        [item for item in result if item is not None])
       if op.elements() not in results_set:
         results_set.add(op.elements())
         results.append(op)
@@ -67,8 +66,9 @@ class Equipment:
                  path.brightness().magnitude,
                  path.length()]]
         result_data = result_data.append(pd.DataFrame(
-            data, columns=columns), ignore_index=True)
+          data, columns=columns), ignore_index=True)
       return result_data
+
     # TODO: This is still not best way to add data
     result_data = pd.DataFrame(columns=columns)
     result_data = append(result_data, columns,
@@ -85,11 +85,11 @@ class Equipment:
     """Plot available fields of view"""
     self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
 
-  def _plot(self, to_plot, title, x_label, y_label, autolayout = False, multiline_labels = True, **args):
+  def _plot(self, to_plot, title, x_label, y_label, autolayout=False, multiline_labels=True, **args):
     data = self._filter_and_merge(to_plot, multiline_labels)
     if autolayout:
       plt.rcParams.update({'figure.autolayout': True})
-    ax = data.plot(kind = 'bar', title = title, stacked = True , **args)
+    ax = data.plot(kind='bar', title=title, stacked=True, **args)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
@@ -98,9 +98,9 @@ class Equipment:
     # Filter only relevant data - by to_plot key
     data = self.data()[[to_plot, Labels.TYPE, Labels.LABEL]].sort_values(by=to_plot)
     # Split label by ',' if multiline_labels is set to true
-    labels = [label.replace(',','\n') if  multiline_labels else label for label in  data[Labels.LABEL].values]
+    labels = [label.replace(',', '\n') if multiline_labels else label for label in data[Labels.LABEL].values]
     # Merge Image and Eye series together  
-    return pd.DataFrame([{row[1]:row[0]} for row in data.values], index=labels)
+    return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
 
   def plot_connection_graph(self, **args):
     # Connect all outputs with inputs
@@ -108,8 +108,8 @@ class Equipment:
     return ig.plot(self.connection_garph, **args)
 
   def plot_connection_graph_svg(self, **args):
-    surface = ca.ImageSurface(ca.FORMAT_ARGB32, 600, 400)
-    plot = self.plot_connection_graph(target=surface, **args)
+    surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
+    plot = self.plot_connection_graph(target=surface, margin=80, **args)
     return plot._repr_svg_()
 
   def _connect(self):
@@ -119,7 +119,7 @@ class Equipment:
       for in_node in self.connection_garph.vs.select(node_type=OpticalType.INPUT, connection_type=connection_type):
         # Connect all outputs with all inputs, excluding connecting part to itself
         out_id = OpticalEqipment.get_parent_id(
-            out_node[NodeLabels.NAME])
+          out_node[NodeLabels.NAME])
         in_id = OpticalEqipment.get_parent_id(in_node[NodeLabels.NAME])
         if out_id != in_id:
           self.add_edge(out_node, in_node)
@@ -128,7 +128,7 @@ class Equipment:
     """ 
     Add single node to graph. Return new vertex.
     """
-    self.connection_garph.add_vertex(node_name)
+    self.connection_garph.add_vertex(node_name, label_dist=1.5)
     node = self.connection_garph.vs.find(name=node_name)
 
     if equipment is not None:
@@ -136,6 +136,10 @@ class Equipment:
       node_label = "\n".join([equipment.get_name(), equipment.label()])
     elif node_type == OpticalType.GENERIC:
       node_label = node_name
+    elif node_type == OpticalType.INPUT:
+      node_label = str(connection_type) + " " + OpticalEqipment.IN
+    elif node_type == OpticalType.OUTPUT:
+      node_label = str(connection_type) + " " + OpticalEqipment.OUT
     else:
       node_label = ""
 

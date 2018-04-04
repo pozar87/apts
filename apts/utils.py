@@ -1,7 +1,7 @@
 import io
 import pint
 
-from enum import Enum
+from enum import Enum, auto
 from matplotlib import pyplot
 
 # Unit registry
@@ -9,16 +9,19 @@ ureg = pint.UnitRegistry()
 
 
 class OpticalType(Enum):
-  OPTICAL = 1
-  INPUT = 2
-  OUTPUT = 3
-  GENERIC = 4
+  OPTICAL = auto()
+  INPUT = auto()
+  OUTPUT = auto()
+  GENERIC = auto()
 
 
 class ConnectionType(Enum):
-  F_1_25 = 1
-  F_2 = 2
-  T2 = 3
+  F_1_25 = auto()
+  F_2 = auto()
+  T2 = auto()
+
+  def __str__(self):
+    return self.name.replace('F_','').replace('_','.')
 
 
 class Constants:
@@ -28,9 +31,9 @@ class Constants:
   IMAGE_ID = "Image"
 
   COLORS = {
-      OpticalType.OPTICAL: "blue",
-      OpticalType.INPUT: "red",
-      OpticalType.OUTPUT: "green",
+      OpticalType.OPTICAL: "#4B0082",
+      OpticalType.INPUT: "#D3D3D3",
+      OpticalType.OUTPUT: "#A9A9A9",
       OpticalType.GENERIC: "yellow"
   }
 
