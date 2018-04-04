@@ -1,17 +1,15 @@
-import os
-import shutil
 import configparser
+import os
 
+from .catalogs import Catalogs
 from .equipment import Equipment
+from .notify import Notify
 from .observations import Observation
 from .place import Place
-from .weather import Weather
-from .notify import Notify
-from .catalogs import Catalogs
 from .utils import Utils
+from .weather import Weather
 
-
-# Init config 
+# Init config
 config = configparser.SafeConfigParser()
 
 # Read configurations
@@ -26,4 +24,4 @@ Weather.API_URL = config['weather']['api_url']
 Notify.EMAIL_ADDRESS = config['notification']['email_address']
 Notify.EMAIL_PASSWORD = config['notification']['email_password']
 
-__version__ = '0.2.16'
+__version__ = '0.2.18'
