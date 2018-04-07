@@ -16,7 +16,7 @@ class Barlow(OpticalEqipment):
   def register(self, equipment):
     """
     Register barlow lens in optical equipment graph. Barlow node is build out of three vertices:
-    barlow node its input and output. Ocular node is automatically connected with them.
+    barlow node its input and output. Barlow node is automatically connected with them.
     """
     # Add barlow lens node
     super(Barlow, self)._register(equipment)
@@ -24,7 +24,7 @@ class Barlow(OpticalEqipment):
     self._register_output(equipment, self.connection_type)
     # Add barlow lens input node and connect it to barlow lens
     self._register_input(equipment, self.connection_type)
-    # Handling optional T2 outpout
+    # Handling optional T2 output
     if self.t2_output:
       self._register_output(equipment, ConnectionType.T2)
 
