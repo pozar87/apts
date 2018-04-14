@@ -1,6 +1,4 @@
-import pandas
 import numpy
-import base64
 import pkg_resources
 import matplotlib.dates as mdates
 
@@ -8,9 +6,9 @@ from datetime import datetime, timedelta
 from matplotlib import pyplot
 from string import Template
 
-from .utils import ureg, Utils, Labels
-from .messier import Messier
-from .planets import Planets
+from .utils import Utils, Labels
+from .objects.messier import Messier
+from .objects.planets import Planets
 from .conditions import Conditions
 
 
@@ -67,6 +65,7 @@ class Observation:
     self._mark_observation(plot)
     self._mark_good_conditions(
       plot, self.conditions.min_object_altitude, 90)
+    Utils.annotate_plot(plot, 'Altitude [°]')
     return plot.get_figure()
 
   def _normalize_dates(self, start, stop):
@@ -76,10 +75,10 @@ class Observation:
     return (new_start, new_stop)
 
   def plot_weather(self, **args):
-    plot = self._generate_plot_weather(**args)
+    self._generate_plot_weather(**args)
 
   def plot_messier(self, **args):
-    plot = self._generate_plot_messier(**args)
+    self._generate_plot_messier(**args)
 
   def _compute_weather_goodnse(self):
     # Get critical weather data

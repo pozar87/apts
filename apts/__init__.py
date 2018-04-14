@@ -1,6 +1,9 @@
 import configparser
 import os
 
+import pandas as pd
+import seaborn as sns
+
 from .catalogs import Catalogs
 from .equipment import Equipment
 from .notify import Notify
@@ -10,7 +13,7 @@ from .utils import Utils
 from .weather import Weather
 
 # Init config
-config = configparser.SafeConfigParser()
+config = configparser.ConfigParser()
 
 # Read configurations
 example_config = "./examples/apts.ini"
@@ -19,9 +22,14 @@ candidates = [example_config, user_config]
 config.read(candidates)
 
 # Load static fields from config
-Weather.API_KEY = config['weather']['api_key']
-Weather.API_URL = config['weather']['api_url']
-Notify.EMAIL_ADDRESS = config['notification']['email_address']
-Notify.EMAIL_PASSWORD = config['notification']['email_password']
+Weather.API_KEY = config.get('weather', 'api_key', fallback="")
+Weather.API_URL = config.get('weather', 'api_url', fallback="")
+Notify.EMAIL_ADDRESS = config.get('notification', 'email_address', fallback="")
+Notify.EMAIL_PASSWORD = config.get('notification', 'email_password', fallback="")
 
-__version__ = '0.2.17'
+# Seaborn style
+sns.set_style(config.get('style', 'seaborn', fallback='whitegrid'))
+# Disable label trimming in pandas tables
+pd.set_option('display.max_colwidth', config.getint('style', 'max_colwidth', fallback=-1))
+
+__version__ = '0.2.18'

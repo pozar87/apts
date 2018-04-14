@@ -2,12 +2,6 @@ import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
-
-# TODO: make this global and configurable in all apts
-sns.set_style('whitegrid')
-# Disable label trimming in pandas tables
-pd.set_option('display.max_colwidth', -1)
 
 from .constants import NodeLabels
 from .opticalequipment import *
@@ -75,14 +69,29 @@ class Equipment:
                          self._get_paths(Constants.EYE_ID))
     result_data = append(result_data, columns,
                          self._get_paths(Constants.IMAGE_ID))
+    result_data.index.name = 'ID'
     return result_data
 
   def plot_zoom(self, **args):
-    """Plot available magnification"""
-    self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
+    """
+    Plot available magnification
+    """
+    plot = self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
+    # Add marker for maximal useful zoom
+    max_zoom = self.max_zoom()
+    plot.axhline(max_zoom, color='orange', linestyle='--')
+    plot.annotate("Max useful zoom due to atmosphere", (0, max_zoom - 15))
+
+  def max_zoom(self):
+    """
+    Max useful zoom due to atmosphere
+    """
+    return 300
 
   def plot_fov(self, **args):
-    """Plot available fields of view"""
+    """
+    Plot available fields of view
+    """
     self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
 
   def _plot(self, to_plot, title, x_label, y_label, autolayout=False, multiline_labels=True, **args):
@@ -92,24 +101,31 @@ class Equipment:
     ax = data.plot(kind='bar', title=title, stacked=True, **args)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    return ax
 
   def _filter_and_merge(self, to_plot, multiline_labels):
-    """This methods filter data to plot and merge Eye and Image series together"""
+    """
+    This methods filter data to plot and merge Eye and Image series together
+    """
     # Filter only relevant data - by to_plot key
     data = self.data()[[to_plot, Labels.TYPE, Labels.LABEL]].sort_values(by=to_plot)
-    # Split label by ',' if multiline_labels is set to true
-    labels = [label.replace(',', '\n') if multiline_labels else label for label in data[Labels.LABEL].values]
-    # Merge Image and Eye series together  
+    if (len(data) <= 8):
+      # Split label by ',' if multiline_labels is set to true
+      labels = [label.replace(',', '\n') if multiline_labels else label for label in data[Labels.LABEL].values]
+    else:
+      # For more than 8 option display only ids
+      labels = data.index
+    # Merge Image and Eye series together
     return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
 
   def plot_connection_graph(self, **args):
     # Connect all outputs with inputs
     self._connect()
-    return ig.plot(self.connection_garph, **args)
+    return ig.plot(self.connection_garph, margin=80, **args)
 
   def plot_connection_graph_svg(self, **args):
     surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
-    plot = self.plot_connection_graph(target=surface, margin=80, **args)
+    plot = self.plot_connection_graph(target=surface, **args)
     return plot._repr_svg_()
 
   def _connect(self):
@@ -153,7 +169,6 @@ class Equipment:
 
   def add_edge(self, node_from, node_to):
     # Add edge if only it doesn't exist
-    # TODO: are_connected is the right method?
     if not self.connection_garph.are_connected(node_from, node_to):
       self.connection_garph.add_edge(node_from, node_to)
 

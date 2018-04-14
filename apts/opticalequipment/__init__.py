@@ -1,4 +1,4 @@
-from .berlow import *
+from .barlow import *
 from .camera import *
 from .eyepiece import *
 from .telescope import *

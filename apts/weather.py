@@ -4,12 +4,13 @@ import json
 import pandas as pd
 
 from datetime import datetime, timedelta
+from .utils import Utils
+
 
 requests_cache.install_cache('apts_cache', backend='memory', expire_after=300)
 
 
 class Weather:
-
   API_KEY = ""
   API_URL = ""
 
@@ -28,56 +29,62 @@ class Weather:
 
   def plot_clouds(self, hours=24, **args):
     data = self._filter_data(["cloudCover"], hours)
-    plt = data.plot(x="time", ylim=(0, 1.05), title="Clouds", **args)
+    plt = data.plot(x="time", ylim=(0, 105), title='Clouds', **args)
+    Utils.annotate_plot(plt, 'Cloud cover [%]')
     return plt
 
   def plot_precipitation(self, hours=24, **args):
     data = self._filter_data(
-        ["precipIntensity", "precipProbability"], hours)
+      ["precipIntensity", "precipProbability"], hours)
     plt = data.plot(
-        x="time", title="Precipitation intensity and probability", **args)
+      x="time", title='Precipitation intensity and probability', **args)
+    Utils.annotate_plot(plt, 'Probability')
     return plt
 
   def plot_precipitation_type_summary(self, hours=24, **args):
     data = self._filter_data(["precipType"], hours)
     plt = data.groupby('precipType').size().plot(
-        kind='pie', label="precipitation type summary", **args)
+      kind='pie', label="Precipitation type summary", **args)
     return plt
 
   def plot_clouds_summary(self, hours=24, **args):
     data = self._filter_data(["summary"], hours)
     plt = data.groupby('summary').size().plot(
-        kind='pie', label="Cloud summary", **args)
+      kind='pie', label='Cloud summary', **args)
     return plt
 
   def plot_temperature(self, hours=24, **args):
     data = self._filter_data(
-        ["temperature", "apparentTemperature", "dewPoint"], hours)
+      ["temperature", "apparentTemperature", "dewPoint"], hours)
     plt = data.plot(x="time", title="Temperatures", **args)
+    Utils.annotate_plot(plt, 'Temperature [°C]')
     return plt
 
   def plot_wind(self, hours=24, **args):
     max_wind_speed = self.data[["windSpeed"]].max().max()
     data = self._filter_data(["windSpeed"], hours)
     plt = data.plot(x="time", y="windSpeed", ylim=(
-        0, max_wind_speed + 1), title="Wind speed", **args)
+      0, max_wind_speed + 1), title="Wind speed", **args)
+    Utils.annotate_plot(plt, 'Wind speed [km/h]')
     return plt
 
-  def plot_pressure_and_ozone(self,  hours=24, **args):
+  def plot_pressure_and_ozone(self, hours=24, **args):
     data = self._filter_data(["pressure", "ozone"], hours)
     plt = data.plot(x="time", title="Pressure and Ozone",
-                    secondary_y=['ozone'],  **args)
+                    secondary_y=['ozone'], **args)
+    Utils.annotate_plot(plt, 'Pressure [hPa]')
     return plt
 
   def get_critical_data(self, start, stop):
     data = self._filter_data(
-        ["cloudCover", "precipProbability", "windSpeed", "temperature"], hours=24)
+      ["cloudCover", "precipProbability", "windSpeed", "temperature"], hours=24)
     return data[(data.time > start) & (data.time < stop)]
 
   def plot_visibility(self, hours=24, **args):
     data = self._filter_data(["visibility"], hours)
     plt = data[data.visibility != 'none'].plot(
-        x="time", title="Visibility", **args)
+      x="time", title="Visibility", **args)
+    Utils.annotate_plot(plt, 'Visibility [km]')
     return plt
 
   def download_data(self):
@@ -100,7 +107,9 @@ class Weather:
       raw_data = [[(item[column] if column in item.keys() else 'none')
                    for column in columns] for item in json_data["hourly"]["data"]]
       result = pd.DataFrame(raw_data, columns=columns)
+      # Convert units
+      result['precipProbability'] *= 100
+      result['cloudCover'] *= 100
       result.time = result.time.astype('datetime64[s]').dt.tz_localize(
-          'UTC').dt.tz_convert(self.local_timezone)
-      #result.time = result.time.astype('datetime64[s]')
+        'UTC').dt.tz_convert(self.local_timezone)
       return result
