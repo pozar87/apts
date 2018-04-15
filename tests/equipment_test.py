@@ -8,10 +8,10 @@ def test_zoom():
   row = e.data().iloc[0]
   # Only possiable zoom should be 750/25 = 30
   assert row[Labels.ZOOM] == 30
-  # Only possiable fov should be 1.733 ± 0.001
-  assert row[Labels.FOV] == pytest.approx(1.733, 0.001)
+  # Only possiable fov should be 2.333 ± 0.001
+  assert row[Labels.FOV] == pytest.approx(2.333, 0.001)
   # Range 12.880 ± 0.001
-  assert row[Labels.RANGE] == pytest.approx(12.880, 0.001)
+  assert row[Labels.RANGE] == pytest.approx(13.580, 0.001)
 
 
 def test_barlow():
@@ -50,3 +50,7 @@ def test_camera():
   # Zoom of camera (sqrt(30^2 + 40^2) = 50)
   data = e.data()
   assert data[data.Type == "Image"].iloc[0][Labels.ZOOM] == 15
+
+def test_telecsope():
+  t = equipment.Telescope(150, 750)
+  assert t.dawes_limit().magnitude == pytest.approx(0.773, 0.001)

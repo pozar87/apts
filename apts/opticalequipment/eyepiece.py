@@ -7,12 +7,12 @@ class Eyepiece(OutputOpticalEqipment):
   Class representing ocular
   """
 
-  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=52, connection_type=ConnectionType.F_1_25):
+  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25):
     super(Eyepiece, self).__init__(focal_length, vendor)
     self._connection_type = connection_type
     self._field_of_view = field_of_view * ureg.deg
 
-  def zoom_divider(self):
+  def _zoom_divider(self):
     return self.focal_length
 
   def field_of_view(self, telescop, zoom, barlow_magnification):

@@ -22,7 +22,7 @@ class Camera(OutputOpticalEqipment):
   def pixel_size(self):
     return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(self.width ** 2 + self.height ** 2)
 
-  def zoom_divider(self):
+  def _zoom_divider(self):
     return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)
 
   def field_of_view(self, telescop, zoom, barlow_magnification):

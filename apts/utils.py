@@ -39,6 +39,8 @@ class Constants:
 
 
 class Labels:
+  DAWES_LIMIT = 'Dawes\' limit'
+  EXIT_PUPIL = 'Exit pupil'
   LABEL = 'Label'
   TYPE = 'Type'
   ZOOM = 'Zoom'

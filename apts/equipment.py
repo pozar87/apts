@@ -40,6 +40,11 @@ class Equipment:
     return results
 
   def get_zooms(self, node_id):
+    """
+    Compute all possible zooms
+    :param node_id:
+    :return: sorted list of zooms
+    """
     result = [OpticsUtils.compute_zoom(path)
               for path in self._get_paths(node_id)]
     result.sort()
@@ -47,30 +52,30 @@ class Equipment:
 
   def data(self):
     columns = [Labels.LABEL, Labels.TYPE, Labels.ZOOM, Labels.USEFUL_ZOOM,
-               Labels.FOV, Labels.RANGE, Labels.BRIGHTNESS, Labels.ELEMENTS]
+               Labels.FOV, Labels.EXIT_PUPIL, Labels.DAWES_LIMIT, Labels.RANGE, Labels.BRIGHTNESS, Labels.ELEMENTS]
 
-    def append(result_data, columns, paths):
+    def append(result_data, paths):
       for path in paths:
         data = [[path.label(),
                  path.output.output_type(),
                  path.zoom().magnitude,
                  path.zoom() < path.telescope.max_useful_zoom(),
                  path.fov().magnitude,
-                 path.telescope.max_range(),
+                 path.output.focal_length / path.telescope.focal_ratio(),
+                 path.telescope.dawes_limit(),
+                 path.telescope.limiting_magnitude(),
                  path.brightness().magnitude,
                  path.length()]]
         result_data = result_data.append(pd.DataFrame(
           data, columns=columns), ignore_index=True)
       return result_data
 
-    # TODO: This is still not best way to add data
-    result_data = pd.DataFrame(columns=columns)
-    result_data = append(result_data, columns,
-                         self._get_paths(Constants.EYE_ID))
-    result_data = append(result_data, columns,
-                         self._get_paths(Constants.IMAGE_ID))
-    result_data.index.name = 'ID'
-    return result_data
+    result = pd.DataFrame(columns=columns)
+    result = append(result, self._get_paths(Constants.EYE_ID))
+    result = append(result, self._get_paths(Constants.IMAGE_ID))
+    # Add ID column as first
+    result['ID'] = result.index
+    return result[['ID'] + columns]
 
   def plot_zoom(self, **args):
     """
@@ -86,13 +91,15 @@ class Equipment:
     """
     Max useful zoom due to atmosphere
     """
-    return 300
+    return 350
 
   def plot_fov(self, **args):
     """
     Plot available fields of view
     """
-    self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
+    plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
+    vals = plot.get_yticks()
+    plot.set_yticklabels([Utils.decdeg2dms(x, pretty=True) for x in vals])
 
   def _plot(self, to_plot, title, x_label, y_label, autolayout=False, multiline_labels=True, **args):
     data = self._filter_and_merge(to_plot, multiline_labels)

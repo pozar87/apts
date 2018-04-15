@@ -16,17 +16,46 @@ class Telescope(OpticalEqipment):
     self.connection_type = connection_type
     self.t2_output = t2_output
 
-  def speed(self):
-    return self.aperture / self.focal_length
+  def focal_ratio(self):
+    return self.focal_length / self.aperture
 
-  def max_range(self):
-    return 2 + 5 * numpy.log10(self.aperture.magnitude)
+  def dawes_limit(self):
+    """
+    Calculate the maximum resolving power of your telescope using the Dawes' Limit formula.
+    https://en.wikipedia.org/wiki/Dawes%27_limit
+    :return: limit in arcsecond
+    """
+    return round((11.6 / self.aperture.to('cm')).magnitude, 3) * ureg.arcsecond
+
+  def rayleigh_limit(self):
+    """
+    Calculate the maximum resolving power of your telescope using the Rayleigh Limit formula.
+    https://en.wikipedia.org/wiki/Angular_resolution
+    :return: limit in arcsecond
+    """
+    return round((13.8 / self.aperture.to('cm')).magnitude, 3) * ureg.arcsecond
+
+  def limiting_magnitude(self):
+    """
+    Calculate a telescopes approximate limiting magnitude.
+    :return: range in magnitude
+    """
+    return 7.7 + 5 * numpy.log10(self.aperture.to('cm').magnitude)
+
+  def light_grasp_ratio(self, other_aperture):
+    """
+    Calculate the light grasp ratio between two telescopes.
+    :param other_aperture: aperture in mm
+    :return: ratio between telescope and other aperture
+    """
+    other_aperture *= ureg.mm
+    return self.aperture ** 2 / other_aperture ** 2
 
   def min_useful_zoom(self):
     return self.aperture / 6
 
   def max_useful_zoom(self):
-    return self.aperture.magnitude * 2
+    return self.aperture.magnitude * 2.5
 
   def register(self, equipment):
     """

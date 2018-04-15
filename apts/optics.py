@@ -22,7 +22,7 @@ class OpticsUtils:
     # Multiply all barlows
     magnification = functools.reduce(
         operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
-    return telescope.focal_length * magnification / output.zoom_divider()
+    return telescope.focal_length * magnification / output._zoom_divider()
 
   def compute_field_of_view(telescop, barlows, output):
     barlow_magnification = functools.reduce(
