@@ -88,6 +88,10 @@ class Utils:
     else:
       return deg, mnt, sec
 
+  def dms2decdeg(dms):
+    deg, mnt, sec = dms
+    return deg + mnt / 60 + sec / 3600
+
   def format_date(date):
     return date.strftime("%Y-%m-%d %H:%M")
 

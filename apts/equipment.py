@@ -84,8 +84,8 @@ class Equipment:
     plot = self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
     # Add marker for maximal useful zoom
     max_zoom = self.max_zoom()
-    plot.axhline(max_zoom, color='orange', linestyle='--')
-    plot.annotate("Max useful zoom due to atmosphere", (0, max_zoom - 15))
+    plot.axhline(max_zoom, color='orange', linestyle='--', alpha=0.5)
+    plot.annotate("Max useful zoom due to atmosphere", (0, max_zoom + 2), alpha=0.5)
 
   def max_zoom(self):
     """
@@ -97,9 +97,21 @@ class Equipment:
     """
     Plot available fields of view
     """
+
+    def add_line(description, position):
+      position = Utils.dms2decdeg(position)
+      plot.axhline(position, color='orange', linestyle='--', alpha=0.5)
+      plot.annotate(description, (0, position + 0.03), alpha=0.5)
+
     plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
     vals = plot.get_yticks()
     plot.set_yticklabels([Utils.decdeg2dms(x, pretty=True) for x in vals])
+    # M31 width is 2°58'
+    add_line("M31 size", (2, 58, 0))
+    # Pleiades width is 1°50'
+    add_line("Pleiades size", (1, 50, 0))
+    # Average moon size is 0°31'42"
+    add_line("Moon size", (0, 31, 42))
 
   def _plot(self, to_plot, title, x_label, y_label, autolayout=False, multiline_labels=True, **args):
     data = self._filter_and_merge(to_plot, multiline_labels)
@@ -108,6 +120,7 @@ class Equipment:
     ax = data.plot(kind='bar', title=title, stacked=True, **args)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    ax.legend(loc='upper right')
     return ax
 
   def _filter_and_merge(self, to_plot, multiline_labels):
