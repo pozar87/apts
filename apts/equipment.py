@@ -84,8 +84,8 @@ class Equipment:
     plot = self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
     # Add marker for maximal useful zoom
     max_zoom = self.max_zoom()
-    plot.axhline(max_zoom, color='orange', linestyle='--', alpha=0.5)
-    plot.annotate("Max useful zoom due to atmosphere", (0, max_zoom + 2), alpha=0.5)
+    plot.axhline(max_zoom, color='orange', linestyle='--', alpha=0.7)
+    plot.annotate("Max useful zoom due to atmosphere", (-0.4, max_zoom + 2), alpha=0.7)
 
   def max_zoom(self):
     """
@@ -100,8 +100,8 @@ class Equipment:
 
     def add_line(description, position):
       position = Utils.dms2decdeg(position)
-      plot.axhline(position, color='orange', linestyle='--', alpha=0.5)
-      plot.annotate(description, (0, position + 0.03), alpha=0.5)
+      plot.axhline(position, color='orange', linestyle='--', alpha=0.7)
+      plot.annotate(description, (-0.4, position + 0.03), alpha=0.7)
 
     plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
     vals = plot.get_yticks()

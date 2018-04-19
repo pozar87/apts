@@ -3,17 +3,17 @@ class DefaultConditions:
   Class containing default thresholds for observation quality.
   """
   # Fraction of cloud cover
-  MAX_CLOUDS = 0.2  # unitless, range [0,1]
+  MAX_CLOUDS = 20  # [%], range [0,100]
   # Acceptable chance and intensity of atmospheric precipitation
-  MAX_PRECIPITATION_PROBABILITY = 0.05  # unitless, range [0,1]
-  MAX_PRECIPITATION_INTENSITY = 0.05  # [mm], range [0,∞)
+  MAX_PRECIPITATION_PROBABILITY = 5  # [%], range [0,100]
+  MAX_PRECIPITATION_INTENSITY = 5  # [mm], range [0,∞)
   # Acceptable wind speed
   MAX_WIND = 10  # [km/h], range [0,∞)
   # Acceptable temperature range
   MIN_TEMPERATURE = 0  # [C°]
   MAX_TEMPERATURE = 20  # [C°]
   # Threshold for abstract measurement of weather goodness. 0 - crappy weather, 1 - best weather
-  MIN_WEATHER_GOODNESS = 0.8  # unitless, range [0,1]
+  MIN_WEATHER_GOODNESS = 80  # [%], range [0,100]
   # Max acceptable hour of return
   MAX_RETURN = "01:00:00"
   # Minimal object (i.e. Messier) altitude (https://en.wikipedia.org/wiki/Horizontal_coordinate_system)
