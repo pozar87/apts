@@ -2,7 +2,7 @@
 
 # APTS - AstroPhotography Tool Set
 
-Set of tools amateur astronomers and astrophotographers. Aim to help with equipment management, images acquisition and processing as well as notifying about good weather condition in nearby stargazing spots. This project was formerly known as **Astro-Pożar Tool Set**. Its going to be a open source library for stargazer.cloud service.
+Set of tools amateur astronomers and astrophotographers. Aim to help with equipment management, images acquisition and processing as well as notifying about good weather condition in nearby stargazing spots. This project was formerly known as **Astro-Pożar Tool Set**. Its going to be a open source library for [stargazer.cloud](https://staging.stargazer.cloud) service.
 
 ## Features
 * Register your optical equipment and compute all possible magnifications (including DSLR)
