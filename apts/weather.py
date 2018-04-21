@@ -1,11 +1,11 @@
+import json
+from datetime import datetime, timedelta
+
+import pandas as pd
 import requests
 import requests_cache
-import json
-import pandas as pd
 
-from datetime import datetime, timedelta
 from .utils import Utils
-
 
 requests_cache.install_cache('apts_cache', backend='memory', expire_after=300)
 

@@ -15,7 +15,7 @@ class DefaultConditions:
   # Threshold for abstract measurement of weather goodness. 0 - crappy weather, 1 - best weather
   MIN_WEATHER_GOODNESS = 80  # [%], range [0,100]
   # Max acceptable hour of return
-  MAX_RETURN = "01:00:00"
+  MAX_RETURN = "02:00:00"
   # Minimal object (i.e. Messier) altitude (https://en.wikipedia.org/wiki/Horizontal_coordinate_system)
   MIN_OBJECT_ALTITUDE = 15  # [°], range [0,90]
   # Maximal object brightness (https://en.wikipedia.org/wiki/Apparent_magnitude)

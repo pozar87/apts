@@ -1,15 +1,15 @@
-import numpy
-import pkg_resources
-import matplotlib.dates as mdates
-
 from datetime import datetime, timedelta
-from matplotlib import pyplot
 from string import Template
 
-from .utils import Utils, Labels
+import matplotlib.dates as mdates
+import numpy
+import pkg_resources
+from matplotlib import pyplot
+
+from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.planets import Planets
-from .conditions import Conditions
+from .utils import Utils, Labels
 
 
 class Observation:
@@ -94,8 +94,8 @@ class Observation:
       (data.temperature > self.conditions.min_temperature) &
       (data.temperature < self.conditions.max_temperature)]
     good_hours = len(result)
-    # Return relative number of good hours
-    return good_hours / all_hours
+    # Return relative % of good hours
+    return good_hours / all_hours * 100
 
   def weather_is_good(self):
     return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
@@ -117,7 +117,6 @@ class Observation:
         "lon": numpy.rad2deg(self.place.lon)
       }
       return str(template.substitute(data))
-    return ""
 
   def _mark_observation(self, plot):
     # Add marker for night

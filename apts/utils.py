@@ -1,9 +1,9 @@
 import io
-import pint
-
 from enum import Enum, auto
-from matplotlib import pyplot
+
 import matplotlib.dates as mdates
+import pint
+from matplotlib import pyplot
 
 # Unit registry
 ureg = pint.UnitRegistry()

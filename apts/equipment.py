@@ -61,7 +61,7 @@ class Equipment:
                  path.zoom().magnitude,
                  path.zoom() < path.telescope.max_useful_zoom(),
                  path.fov().magnitude,
-                 path.output.focal_length / path.telescope.focal_ratio(),
+                 path.output.focal_length / (path.telescope.focal_ratio() * path.effective_barlow()),
                  path.telescope.dawes_limit(),
                  path.telescope.limiting_magnitude(),
                  path.brightness().magnitude,

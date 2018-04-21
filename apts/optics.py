@@ -1,8 +1,5 @@
-import operator
 import functools
-import math
-
-from .utils import Utils
+import operator
 
 
 class OpticsUtils:
@@ -15,21 +12,20 @@ class OpticsUtils:
     barlows = path[1:-1]
     return (telescope, barlows, output)
 
-  def barlows_multiplications(barlows):
-    return [barlow.magnification for barlow in barlows]
+  def barlows_multiplications(barlows_list):
+    barlows = [barlow.magnification for barlow in barlows_list]
+    # Multiply all barlows
+    return functools.reduce(operator.mul, barlows, 1)
 
   def compute_zoom(telescope, barlows, output):
-    # Multiply all barlows
-    magnification = functools.reduce(
-        operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
+    magnification = OpticsUtils.barlows_multiplications(barlows)
     return telescope.focal_length * magnification / output._zoom_divider()
 
   def compute_field_of_view(telescop, barlows, output):
-    barlow_magnification = functools.reduce(
-        operator.mul, OpticsUtils.barlows_multiplications(barlows), 1)
+    magnification = OpticsUtils.barlows_multiplications(barlows)
     zoom = OpticsUtils.compute_zoom(telescop, barlows, output)
     # TODO: this is not best way to do it
-    return output.field_of_view(telescop, zoom, barlow_magnification)
+    return output.field_of_view(telescop, zoom, magnification)
 
 
 class OpticalPath:
@@ -49,6 +45,9 @@ class OpticalPath:
 
   def zoom(self):
     return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
+
+  def effective_barlow(self):
+    return OpticsUtils.barlows_multiplications(self.barlows)
 
   def label(self):
     return ", ".join([str(self.telescope)] + [str(item) for item in self.barlows] + [str(self.output)])
