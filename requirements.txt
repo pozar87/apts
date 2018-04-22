@@ -5,6 +5,7 @@ pint>=0.8.1
 ephem>=3.7.6.0
 python-igraph>=0.7.1.post6
 seaborn>=0.8.1
+docutils>=0.14
 pycairo>=1.16.2
 timezonefinder>=2.1.0
 pytz>=2018.3
