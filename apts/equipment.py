@@ -98,14 +98,16 @@ class Equipment:
     Plot available fields of view
     """
 
+    def formatter(tick, pos):
+      return Utils.decdeg2dms(tick, pretty=True)
+
     def add_line(description, position):
       position = Utils.dms2decdeg(position)
       plot.axhline(position, color='orange', linestyle='--', alpha=0.7)
       plot.annotate(description, (-0.4, position + 0.03), alpha=0.7)
 
     plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
-    vals = plot.get_yticks()
-    plot.set_yticklabels([Utils.decdeg2dms(x, pretty=True) for x in vals])
+    plot.yaxis.set_major_formatter(plt.FuncFormatter(formatter))
     # M31 width is 2°58'
     add_line("M31 size", (2, 58, 0))
     # Pleiades width is 1°50'
