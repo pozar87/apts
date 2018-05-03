@@ -29,3 +29,11 @@ class ObjectTableLabels:
   DISTANCE = 'Distance'
   # Phase
   PHASE = 'Phase'
+  # Apparent size
+  SIZE = 'Size'
+  # Elongation
+  ELONGATION = 'Elongation'
+  # Rising
+  RISING = 'Rising'
+  # Setting
+  SETTING = 'Setting'

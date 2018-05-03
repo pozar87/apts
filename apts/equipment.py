@@ -108,12 +108,12 @@ class Equipment:
 
     plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
     plot.yaxis.set_major_formatter(plt.FuncFormatter(formatter))
-    # M31 width is 2°58'
-    add_line("M31 size", (2, 58, 0))
     # Pleiades width is 1°50'
     add_line("Pleiades size", (1, 50, 0))
     # Average moon size is 0°31'42"
     add_line("Moon size", (0, 31, 42))
+    # M51 width is 0°11'
+    add_line("M51 size", (0, 11, 0))
 
   def _plot(self, to_plot, title, x_label, y_label, autolayout=False, multiline_labels=True, **args):
     data = self._filter_and_merge(to_plot, multiline_labels)

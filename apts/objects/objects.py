@@ -37,6 +37,16 @@ class Objects:
     self.place.date = datetime.datetime.now()
     return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
+  def _compute_setting(self, body):
+    # Return setting time in local time
+    self.place.date = datetime.datetime.now()
+    return self.place.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
+
+  def _compute_rising(self, body):
+    # Return rising time in local time
+    self.place.date = datetime.datetime.now()
+    return self.place.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
+
   def _altitude_at_transit(self, body, transit):
     # Calculate objects altitude at transit time
     self.place.date = transit.astimezone(pytz.UTC)
