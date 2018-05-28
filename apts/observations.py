@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from string import Template
+from IPython.display import SVG
+import svgwrite as svg
 
 import matplotlib.dates as mdates
 import numpy
@@ -31,11 +33,35 @@ class Observation:
     self.time_limit = time_limit if time_limit > self.start else time_limit + \
                                                                  timedelta(days=1)
 
-  def get_visible_messier(self):
-    return self.local_messier.get_visible(self.conditions, self.start, self.time_limit)
+  def get_visible_messier(self, **args):
+    return self.local_messier.get_visible(self.conditions, self.start, self.time_limit, **args)
 
-  def get_visible_planets(self):
-    return self.local_planets.get_visible(self.conditions, self.start, self.time_limit)
+  def get_visible_planets(self, **args):
+    return self.local_planets.get_visible(self.conditions, self.start, self.time_limit, **args)
+
+  def plot_visible_planets_svg(self, **args):
+    visible_planets = self.get_visible_planets(**args)
+    dwg = svg.Drawing()
+    # Set y offset to biggest planet
+    y = int(visible_planets[['Size']].max())
+    # Set x offset to constant value
+    x = 20
+    last_radius = None
+    for planet in visible_planets[['Name', 'Size', 'Phase']].values:
+      name, radius, phase = planet[0], planet[1], str(round(planet[2], 2))
+      if last_radius is None:
+        y += radius
+        x += radius
+      else:
+        x += radius + last_radius + 35
+      last_radius = radius
+      dwg.add(svg.shapes.Circle(center=(x, y), r=radius, stroke="black", stroke_width="1", fill="#e4e4e4"))
+      dwg.add(svg.text.Text(name, insert=(x, y + radius + 15), text_anchor='middle'))
+      dwg.add(svg.text.Text(phase + '%', insert=(x, y - radius - 4), text_anchor='middle'))
+    return dwg.tostring()
+
+  def plot_visible_planets(self):
+    return SVG(self.plot_visible_planets_svg())
 
   def _generate_plot_messier(self, **args):
     messier = self.get_visible_messier(
@@ -75,6 +101,8 @@ class Observation:
     return (new_start, new_stop)
 
   def plot_weather(self, **args):
+    if self.place.weather is None:
+      self.place.get_weather()
     self._generate_plot_weather(**args)
 
   def plot_messier(self, **args):
@@ -98,6 +126,8 @@ class Observation:
     return good_hours / all_hours * 100
 
   def weather_is_good(self):
+    if self.place.weather is None:
+      self.place.get_weather()
     return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
 
   def to_html(self):
@@ -119,6 +149,9 @@ class Observation:
       return str(template.substitute(data))
 
   def _mark_observation(self, plot):
+    # Check if there is a plot
+    if plot is None:
+      return
     # Add marker for night
     plot.axvspan(self.start, self.stop, color='gray', alpha=0.2)
     # Add marker for moon
@@ -130,6 +163,9 @@ class Observation:
     plot.axvline(self.time_limit, color='orange', linestyle='--')
 
   def _mark_good_conditions(self, plot, minimal, maximal):
+    # Check if there is a plot
+    if plot is None:
+      return
     plot.axhspan(minimal, maximal, color='green', alpha=0.1)
 
   def _generate_plot_weather(self, **args):

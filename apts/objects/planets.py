@@ -61,6 +61,8 @@ class Planets(Objects):
 
   def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[utils.Labels.TRANSIT]):
     visible = self.objects
+    # Add ID collumn
+    visible['ID'] = visible.index
     visible = visible[
       # Filter objects by they rising and setting or transit
       ((visible.Setting < stop + timedelta(hours=hours_margin)) |

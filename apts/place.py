@@ -32,6 +32,7 @@ class Place(ephem.Observer):
     self.moon = ephem.Moon()
     self.moon.compute(self)
     self.local_timezone = tz.gettz(Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal))
+    self.weather = None
 
   def get_weather(self):
     self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
@@ -55,12 +56,15 @@ class Place(ephem.Observer):
     return self._next_rising_time(self.moon)
 
   def _moon_phase_letter(self):
-    lunation = self.moon_phase() / 100
+    lunation = self.moon_lunation() / 100
     letter = chr(ord('A') + int(round(lunation * 26)))
     return letter
 
-  def moon_phase(self):
+  def moon_lunation(self):
     return int(self.moon_path()['Lunation'][48] * 100)
+
+  def moon_phase(self):
+    return int(self.moon_path()['Phase'][48])
 
   def moon_path(self):
     self.date = datetime.date.today()

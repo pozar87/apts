@@ -29,51 +29,72 @@ class Weather:
 
   def plot_clouds(self, hours=24, **args):
     data = self._filter_data(["cloudCover"], hours)
-    plt = data.plot(x="time", ylim=(0, 105), title='Clouds', **args)
-    Utils.annotate_plot(plt, 'Cloud cover [%]')
-    return plt
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(x="time", ylim=(0, 105), title='Clouds', **args)
+    Utils.annotate_plot(plot, 'Cloud cover [%]')
+    return plot
 
   def plot_precipitation(self, hours=24, **args):
     data = self._filter_data(
       ["precipIntensity", "precipProbability"], hours)
-    plt = data.plot(
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(
       x="time", title='Precipitation intensity and probability', **args)
-    Utils.annotate_plot(plt, 'Probability')
-    return plt
+    Utils.annotate_plot(plot, 'Probability')
+    return plot
 
   def plot_precipitation_type_summary(self, hours=24, **args):
     data = self._filter_data(["precipType"], hours)
-    plt = data.groupby('precipType').size().plot(
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.groupby('precipType').size().plot(
       kind='pie', label="Precipitation type summary", **args)
-    return plt
+    return plot
 
   def plot_clouds_summary(self, hours=24, **args):
     data = self._filter_data(["summary"], hours)
-    plt = data.groupby('summary').size().plot(
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.groupby('summary').size().plot(
       kind='pie', label='Cloud summary', **args)
-    return plt
+    return plot
 
   def plot_temperature(self, hours=24, **args):
     data = self._filter_data(
       ["temperature", "apparentTemperature", "dewPoint"], hours)
-    plt = data.plot(x="time", title="Temperatures", **args)
-    Utils.annotate_plot(plt, 'Temperature [°C]')
-    return plt
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(x="time", title="Temperatures", **args)
+    Utils.annotate_plot(plot, 'Temperature [°C]')
+    return plot
 
   def plot_wind(self, hours=24, **args):
     max_wind_speed = self.data[["windSpeed"]].max().max()
     data = self._filter_data(["windSpeed"], hours)
-    plt = data.plot(x="time", y="windSpeed", ylim=(
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(x="time", y="windSpeed", ylim=(
       0, max_wind_speed + 1), title="Wind speed", **args)
-    Utils.annotate_plot(plt, 'Wind speed [km/h]')
-    return plt
+    Utils.annotate_plot(plot, 'Wind speed [km/h]')
+    return plot
 
   def plot_pressure_and_ozone(self, hours=24, **args):
     data = self._filter_data(["pressure", "ozone"], hours)
-    plt = data.plot(x="time", title="Pressure and Ozone",
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(x="time", title="Pressure and Ozone",
                     secondary_y=['ozone'], **args)
-    Utils.annotate_plot(plt, 'Pressure [hPa]')
-    return plt
+    Utils.annotate_plot(plot, 'Pressure [hPa]')
+    return plot
 
   def get_critical_data(self, start, stop):
     data = self._filter_data(
@@ -82,10 +103,14 @@ class Weather:
 
   def plot_visibility(self, hours=24, **args):
     data = self._filter_data(["visibility"], hours)
-    plt = data[data.visibility != 'none'].plot(
+    data = data[data.visibility != 'none']
+    # Check if there is something to plot
+    if data.empty:
+      return None
+    plot = data.plot(
       x="time", title="Visibility", **args)
-    Utils.annotate_plot(plt, 'Visibility [km]')
-    return plt
+    Utils.annotate_plot(plot, 'Visibility [km]')
+    return plot
 
   def download_data(self):
     with requests.get(Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)) as data:
