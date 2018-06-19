@@ -33,8 +33,4 @@ sns.set_style(config.get('style', 'seaborn', fallback='whitegrid'))
 # Disable label trimming in pandas tables
 pd.set_option('display.max_colwidth', config.getint('style', 'max_colwidth', fallback=-1))
 
-# load the logging configuration
-logging_config = os.path.expanduser("~") + "/.config/apts/logging.ini"
-logging.config.fileConfig(logging_config)
-
 __version__ = '0.2.24'
