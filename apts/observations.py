@@ -45,7 +45,7 @@ class Observation:
     visible_planets = self.get_visible_planets(**args)
     dwg = svg.Drawing()
     # Set y offset to biggest planet
-    y = int(visible_planets[['Size']].max())
+    y = int(visible_planets[['Size']].max() + 12)
     # Set x offset to constant value
     x = 20
     # Set delta to constant value
