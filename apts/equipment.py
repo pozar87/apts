@@ -1,3 +1,5 @@
+import logging
+
 import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
@@ -6,6 +8,8 @@ import pandas as pd
 from .constants import NodeLabels
 from .opticalequipment import *
 from .optics import *
+
+logger = logging.getLogger(__name__)
 
 
 class Equipment:
@@ -151,6 +155,7 @@ class Equipment:
     return plot._repr_svg_()
 
   def _connect(self):
+    logger.debug("Connecting nodes")
     for out_node in self.connection_garph.vs.select(node_type=OpticalType.OUTPUT):
       # Get output type
       connection_type = out_node[NodeLabels.CONNECTION_TYPE]

@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -6,6 +7,8 @@ import requests
 import requests_cache
 
 from .utils import Utils
+
+logger = logging.getLogger(__name__)
 
 requests_cache.install_cache('apts_cache', backend='memory', expire_after=300)
 
@@ -24,7 +27,7 @@ class Weather:
     # Always add time column
     columns = ["time"] + rows
     # Calculate time horizon base on number of hours (max is 48h as longer predictions are inacurate)
-    time_horizon = datetime.now() + timedelta(hours=min(hours, 48))
+    time_horizon = datetime.utcnow().replace(tzinfo=self.local_timezone) + timedelta(hours=min(hours, 48))
     return self.data[columns][self.data.time < time_horizon]
 
   def plot_clouds(self, hours=24, **args):
@@ -92,7 +95,7 @@ class Weather:
     if data.empty:
       return None
     plot = data.plot(x="time", title="Pressure and Ozone",
-                    secondary_y=['ozone'], **args)
+                     secondary_y=['ozone'], **args)
     Utils.annotate_plot(plot, 'Pressure [hPa]')
     return plot
 
@@ -103,7 +106,7 @@ class Weather:
 
   def plot_visibility(self, hours=24, **args):
     data = self._filter_data(["visibility"], hours)
-    data = data[data.visibility != 'none']
+    data = data.query("visibility != 'none'")
     # Check if there is something to plot
     if data.empty:
       return None
@@ -113,7 +116,9 @@ class Weather:
     return plot
 
   def download_data(self):
-    with requests.get(Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)) as data:
+    url = Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)
+    with requests.get(url) as data:
+      logger.debug("Download weather from: {}".format(url))
       columns = ["time",
                  "summary",
                  "precipType",

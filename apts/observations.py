@@ -1,17 +1,19 @@
+import logging
 from datetime import datetime, timedelta
 from string import Template
-from IPython.display import SVG
-import svgwrite as svg
 
 import matplotlib.dates as mdates
 import numpy
 import pkg_resources
+import svgwrite as svg
 from matplotlib import pyplot
 
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.planets import Planets
 from .utils import Utils, Labels
+
+logger = logging.getLogger(__name__)
 
 
 class Observation:
@@ -46,6 +48,8 @@ class Observation:
     y = int(visible_planets[['Size']].max())
     # Set x offset to constant value
     x = 20
+    # Set delta to constant value
+    minimal_delta = 52
     last_radius = None
     for planet in visible_planets[['Name', 'Size', 'Phase']].values:
       name, radius, phase = planet[0], planet[1], str(round(planet[2], 2))
@@ -53,7 +57,7 @@ class Observation:
         y += radius
         x += radius
       else:
-        x += radius + last_radius + 35
+        x += max(radius + last_radius + 10, minimal_delta)
       last_radius = radius
       dwg.add(svg.shapes.Circle(center=(x, y), r=radius, stroke="black", stroke_width="1", fill="#e4e4e4"))
       dwg.add(svg.text.Text(name, insert=(x, y + radius + 15), text_anchor='middle'))
@@ -61,6 +65,11 @@ class Observation:
     return dwg.tostring()
 
   def plot_visible_planets(self):
+    try:
+      from IPython.display import SVG
+    except:
+      logger.warning("You can plot images only in Ipython notebook!")
+      return
     return SVG(self.plot_visible_planets_svg())
 
   def _generate_plot_messier(self, **args):
@@ -122,6 +131,7 @@ class Observation:
       (data.temperature > self.conditions.min_temperature) &
       (data.temperature < self.conditions.max_temperature)]
     good_hours = len(result)
+    logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
     # Return relative % of good hours
     return good_hours / all_hours * 100
 
