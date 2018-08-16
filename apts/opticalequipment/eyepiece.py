@@ -1,5 +1,6 @@
-from apts.utils import *
 from .abstract import OutputOpticalEqipment
+from ..constants import GraphConstants
+from ..utils import *
 
 
 class Eyepiece(OutputOpticalEqipment):
@@ -19,7 +20,7 @@ class Eyepiece(OutputOpticalEqipment):
     return self._field_of_view / zoom
 
   def output_type(self):
-    return Constants.EYE_ID
+    return GraphConstants.EYE_ID
 
   def register(self, equipment):
     """
@@ -31,7 +32,7 @@ class Eyepiece(OutputOpticalEqipment):
     # Add ocular input node and connect it to ocular
     self._register_input(equipment, self._connection_type)
     # Connect ocular with output eye node
-    equipment.add_edge(self.id(), Constants.EYE_ID)
+    equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
   def __str__(self):
     return "{} f={}".format(self.vendor, self.focal_length.magnitude)

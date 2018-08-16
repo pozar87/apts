@@ -2,8 +2,9 @@ import math
 
 import numpy
 
-from apts.utils import *
 from .abstract import OutputOpticalEqipment
+from ..constants import GraphConstants
+from ..utils import *
 
 
 class Camera(OutputOpticalEqipment):
@@ -30,7 +31,7 @@ class Camera(OutputOpticalEqipment):
     return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * ureg.deg
 
   def output_type(self):
-    return Constants.IMAGE_ID
+    return GraphConstants.IMAGE_ID
 
   def register(self, equipment):
     # Add camera node
@@ -38,7 +39,7 @@ class Camera(OutputOpticalEqipment):
     # Add camera input node and connect it to camera
     self._register_input(equipment, self.connection_type)
     # Connect camera with output image node
-    equipment.add_edge(self.id(), Constants.IMAGE_ID)
+    equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 
   def __str__(self):
     # Format: <vendor> <width>x<height>

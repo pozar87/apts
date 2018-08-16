@@ -1,5 +1,4 @@
-import pytest
-from default import *
+from apts.catalogs import Catalogs
 
 def test_messier_catalog():
   c = Catalogs.MESSIER

@@ -5,7 +5,7 @@ import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .constants import NodeLabels
+from .constants import NodeLabels, GraphConstants, EquipmentTableLabels, OpticalType
 from .opticalequipment import *
 from .optics import *
 
@@ -21,15 +21,15 @@ class Equipment:
   def __init__(self):
     self.connection_garph = ig.Graph(directed=True)
     # Register standard input and outputs
-    self.add_vertex(Constants.SPACE_ID)
-    self.add_vertex(Constants.EYE_ID)
-    self.add_vertex(Constants.IMAGE_ID)
+    self.add_vertex(GraphConstants.SPACE_ID)
+    self.add_vertex(GraphConstants.EYE_ID)
+    self.add_vertex(GraphConstants.IMAGE_ID)
 
   def _get_paths(self, output_id):
     # Connect all outputs with inputs
     self._connect()
     # Find input and output nodes
-    space_node = self.connection_garph.vs.find(name=Constants.SPACE_ID)
+    space_node = self.connection_garph.vs.find(name=GraphConstants.SPACE_ID)
     output_node = self.connection_garph.vs.find(name=output_id)
     results = []
     results_set = set()
@@ -55,8 +55,16 @@ class Equipment:
     return result
 
   def data(self):
-    columns = [Labels.LABEL, Labels.TYPE, Labels.ZOOM, Labels.USEFUL_ZOOM,
-               Labels.FOV, Labels.EXIT_PUPIL, Labels.DAWES_LIMIT, Labels.RANGE, Labels.BRIGHTNESS, Labels.ELEMENTS]
+    columns = [EquipmentTableLabels.LABEL,
+               EquipmentTableLabels.TYPE,
+               EquipmentTableLabels.ZOOM,
+               EquipmentTableLabels.USEFUL_ZOOM,
+               EquipmentTableLabels.FOV,
+               EquipmentTableLabels.EXIT_PUPIL,
+               EquipmentTableLabels.DAWES_LIMIT,
+               EquipmentTableLabels.RANGE,
+               EquipmentTableLabels.BRIGHTNESS,
+               EquipmentTableLabels.ELEMENTS]
 
     def append(result_data, paths):
       for path in paths:
@@ -75,8 +83,8 @@ class Equipment:
       return result_data
 
     result = pd.DataFrame(columns=columns)
-    result = append(result, self._get_paths(Constants.EYE_ID))
-    result = append(result, self._get_paths(Constants.IMAGE_ID))
+    result = append(result, self._get_paths(GraphConstants.EYE_ID))
+    result = append(result, self._get_paths(GraphConstants.IMAGE_ID))
     # Add ID column as first
     result['ID'] = result.index
     return result[['ID'] + columns]
@@ -85,7 +93,7 @@ class Equipment:
     """
     Plot available magnification
     """
-    plot = self._plot(Labels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
+    plot = self._plot(EquipmentTableLabels.ZOOM, 'Available zoom', 'Used equipment', 'Magnification', **args)
     # Add marker for maximal useful zoom
     max_zoom = self.max_zoom()
     plot.axhline(max_zoom, color='orange', linestyle='--', alpha=0.7)
@@ -110,7 +118,8 @@ class Equipment:
       plot.axhline(position, color='orange', linestyle='--', alpha=0.7)
       plot.annotate(description, (-0.4, position + 0.03), alpha=0.7)
 
-    plot = self._plot(Labels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]', **args)
+    plot = self._plot(EquipmentTableLabels.FOV, 'Available fields of view', 'Used equipment', 'Field if view [°]',
+                      **args)
     plot.yaxis.set_major_formatter(plt.FuncFormatter(formatter))
     # Pleiades width is 1°50'
     add_line("Pleiades size", (1, 50, 0))
@@ -134,10 +143,11 @@ class Equipment:
     This methods filter data to plot and merge Eye and Image series together
     """
     # Filter only relevant data - by to_plot key
-    data = self.data()[[to_plot, Labels.TYPE, Labels.LABEL]].sort_values(by=to_plot)
+    data = self.data()[[to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]].sort_values(by=to_plot)
     if (len(data) <= 8):
       # Split label by ',' if multiline_labels is set to true
-      labels = [label.replace(',', '\n') if multiline_labels else label for label in data[Labels.LABEL].values]
+      labels = [label.replace(',', '\n') if multiline_labels else label for label in
+                data[EquipmentTableLabels.LABEL].values]
     else:
       # For more than 8 option display only ids
       labels = data.index
@@ -188,7 +198,7 @@ class Equipment:
 
     node[NodeLabels.TYPE] = node_type
     node[NodeLabels.LABEL] = node_label
-    node[NodeLabels.COLOR] = Constants.COLORS[node_type]
+    node[NodeLabels.COLOR] = GraphConstants.COLORS[node_type]
     node[NodeLabels.EQUIPMENT] = equipment
     node[NodeLabels.CONNECTION_TYPE] = connection_type
 

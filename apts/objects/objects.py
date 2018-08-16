@@ -4,14 +4,14 @@ import pytz
 import datetime
 
 from datetime import timedelta
-from apts import utils
+from ..constants import ObjectTableLabels
 
 
 class Objects:
   def __init__(self, place):
     self.place = place
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[utils.Labels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index

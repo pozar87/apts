@@ -4,7 +4,6 @@ import ephem
 import numpy
 import pandas
 
-from apts import utils
 from .objects import Objects
 from ..constants import ObjectTableLabels
 
@@ -59,7 +58,7 @@ class Planets(Objects):
     self.objects[ObjectTableLabels.PHASE] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.phase, axis=1)
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[utils.Labels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index

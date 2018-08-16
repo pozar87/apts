@@ -1,5 +1,5 @@
 from .objects import Objects
-from apts.catalogs import Catalogs
+from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
 
 

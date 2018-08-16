@@ -1,7 +1,8 @@
 import numpy
 
 from .abstract import OpticalEqipment
-from ..utils import ConnectionType, Constants, ureg
+from ..utils import ConnectionType, ureg
+from ..constants import GraphConstants
 
 
 class Telescope(OpticalEqipment):
@@ -67,7 +68,7 @@ class Telescope(OpticalEqipment):
     # Add telescope output node and connect it to telescope
     self._register_output(equipment, self.connection_type)
     # Connect telescope node to space node
-    equipment.add_edge(Constants.SPACE_ID, self.id())
+    equipment.add_edge(GraphConstants.SPACE_ID, self.id())
     # Handling optional T2 output
     if self.t2_output:
       self._register_output(equipment, ConnectionType.T2)

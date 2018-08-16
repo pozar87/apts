@@ -1,0 +1,11 @@
+class EquipmentTableLabels:
+  DAWES_LIMIT = 'Dawes\' limit'
+  EXIT_PUPIL = 'Exit pupil'
+  LABEL = 'Label'
+  TYPE = 'Type'
+  ZOOM = 'Zoom'
+  USEFUL_ZOOM = 'Useful'
+  FOV = 'FoV'
+  RANGE = 'Range'
+  BRIGHTNESS = 'Brightness'
+  ELEMENTS = 'Elements'

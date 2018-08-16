@@ -9,13 +9,6 @@ from matplotlib import pyplot
 ureg = pint.UnitRegistry()
 
 
-class OpticalType(Enum):
-  OPTICAL = auto()
-  INPUT = auto()
-  OUTPUT = auto()
-  GENERIC = auto()
-
-
 class ConnectionType(Enum):
   F_1_25 = auto()
   F_2 = auto()
@@ -23,37 +16,6 @@ class ConnectionType(Enum):
 
   def __str__(self):
     return self.name.replace('F_', '').replace('_', '.')
-
-
-class Constants:
-  SPACE_ID = "Space"
-  EYE_ID = "Eye"
-  IMAGE_ID = "Image"
-
-  COLORS = {
-    OpticalType.OPTICAL: "#4B0082",
-    OpticalType.INPUT: "#D3D3D3",
-    OpticalType.OUTPUT: "#A9A9A9",
-    OpticalType.GENERIC: "yellow"
-  }
-
-
-class Labels:
-  DAWES_LIMIT = 'Dawes\' limit'
-  EXIT_PUPIL = 'Exit pupil'
-  LABEL = 'Label'
-  TYPE = 'Type'
-  ZOOM = 'Zoom'
-  USEFUL_ZOOM = 'Useful'
-  FOV = 'FoV'
-  RANGE = 'Range'
-  BRIGHTNESS = 'Brightness'
-  ELEMENTS = 'Elements'
-
-  MESSIER = 'Messier'
-  TRANSIT = 'Transit'
-  ALTITUDE = 'Altitude'
-  WIDTH = 'Width'
 
 
 class Utils:

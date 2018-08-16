@@ -1,6 +1,7 @@
-import pytest
-from default import *
 from math import radians as rad
+
+from . import setup_place
+
 
 def test_place_coordinates():
   p = setup_place()

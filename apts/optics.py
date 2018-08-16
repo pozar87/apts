@@ -68,7 +68,3 @@ class OpticalPath:
     elements = set((self.telescope, self.output))
     elements |= set(self.barlows)
     return frozenset(elements)
-
-  # def print(self):
-  #  items = "\n * ".join([str(item) for item in self])
-  #  print("""Setup:\n * {}\nZoom: {:.2f}\nField of view: {}""".format(items, self._zoom, Utils.decdeg2dms(self._field_of_view, True)))

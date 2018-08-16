@@ -16,6 +16,6 @@ my_equipment.register(opticalequipment.Eyepiece(10, sky_watcher))
 my_place = Place(lat=50.1637973, lon=19.7855169, name="Zelków")
 my_observation = Observation(my_place, my_equipment)
 
-if my_observation.weather_is_good():
+if my_observation.is_weather_good():
   notify = Notify('lpozarlik@gmail.com')
   notify.send(my_observation)

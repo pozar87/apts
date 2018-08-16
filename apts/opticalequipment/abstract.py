@@ -1,6 +1,7 @@
 import uuid
 
-from ..utils import OpticalType, ConnectionType, ureg
+from ..constants import OpticalType
+from ..utils import ConnectionType, ureg
 
 
 class OpticalEqipment:

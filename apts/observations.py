@@ -11,13 +11,14 @@ from matplotlib import pyplot
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.planets import Planets
-from .utils import Utils, Labels
+from .utils import Utils
+from .constants import ObjectTableLabels
 
 logger = logging.getLogger(__name__)
 
 
 class Observation:
-  NOTIFICATION = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
+  NOTIFICATION_TEMPLATE = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
 
   def __init__(self, place, equipment, conditions=Conditions()):
     self.place = place
@@ -74,10 +75,13 @@ class Observation:
 
   def _generate_plot_messier(self, **args):
     messier = self.get_visible_messier(
-    )[[Labels.MESSIER, Labels.TRANSIT, Labels.ALTITUDE, Labels.WIDTH]]
+    )[[ObjectTableLabels.MESSIER,
+       ObjectTableLabels.TRANSIT,
+       ObjectTableLabels.ALTITUDE,
+       ObjectTableLabels.WIDTH]]
     plot = messier.plot(
-      x=Labels.TRANSIT,
-      y=Labels.ALTITUDE,
+      x=ObjectTableLabels.TRANSIT,
+      y=ObjectTableLabels.ALTITUDE,
       marker='o',
       # markersize = messier['Width'],
       linestyle='none',
@@ -135,13 +139,13 @@ class Observation:
     # Return relative % of good hours
     return good_hours / all_hours * 100
 
-  def weather_is_good(self):
+  def is_weather_good(self):
     if self.place.weather is None:
       self.place.get_weather()
     return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
 
   def to_html(self):
-    with open(Observation.NOTIFICATION) as template_file:
+    with open(Observation.NOTIFICATION_TEMPLATE) as template_file:
       template = Template(template_file.read())
       data = {
         "title": "APTS",
