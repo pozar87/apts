@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from aenum import Enum, auto
 
 
 class OpticalType(Enum):

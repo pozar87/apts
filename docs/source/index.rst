@@ -10,6 +10,8 @@ Welcome to apts's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   apts
+
 
 
 Indices and tables

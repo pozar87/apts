@@ -4,14 +4,6 @@ apts package
 Submodules
 ----------
 
-apts\.apts module
------------------
-
-.. automodule:: apts.apts
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 apts\.constants module
 ----------------------
 
