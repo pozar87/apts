@@ -1,5 +1,5 @@
 import io
-from enum import Enum, auto
+from aenum import Enum, auto
 
 import matplotlib.dates as mdates
 import pint
