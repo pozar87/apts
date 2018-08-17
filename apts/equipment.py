@@ -5,7 +5,7 @@ import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .constants import NodeLabels, GraphConstants, EquipmentTableLabels, OpticalType
+from .constants import *
 from .opticalequipment import *
 from .optics import *
 
