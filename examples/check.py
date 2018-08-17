@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from apts import *
+from apts import Equipment, opticalequipment, observations, place, notify
 
 my_equipment = Equipment()
 
@@ -13,9 +13,9 @@ my_equipment.register(opticalequipment.Barlow(2, sky_watcher, t2_output = True))
 my_equipment.register(opticalequipment.Eyepiece(25, sky_watcher))
 my_equipment.register(opticalequipment.Eyepiece(10, sky_watcher))
 
-my_place = Place(lat=50.1637973, lon=19.7855169, name="Zelków")
-my_observation = Observation(my_place, my_equipment)
+my_place = place.Place(lat=50.1637973, lon=19.7855169, name="Zelków")
+my_observation = observations.Observation(my_place, my_equipment)
 
 if my_observation.is_weather_good():
-  notify = Notify('lpozarlik@gmail.com')
+  notify = notify.Notify('example@gmail.com')
   notify.send(my_observation)

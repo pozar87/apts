@@ -10,5 +10,5 @@ timezonefinder>=2.1.0
 pytz>=2018.3
 requests-cache>=0.4.13
 svgwrite>=1.1.12
-pyside>=1.2.4
+PySide2>=5.11.0
 aenum>=2.0.6
