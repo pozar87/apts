@@ -113,6 +113,7 @@ class Place(ephem.Observer):
 
     # Plot time for altitudes 
     for obj in data.iloc[::5, :].values:
-      plt.annotate(obj[3], (obj[2] - 10, obj[1]))
+      if(obj[1] > 0):
+        plt.annotate(obj[3], (obj[2] - 10, obj[1]))
 
     return plt
