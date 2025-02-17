@@ -38,7 +38,8 @@ class OpticalEqipment:
   def out_id(self, connection_type):
     return self._SEPARATOR.join([self._id, connection_type.name, self.OUT])
 
-  def get_parent_id(name):
+  @staticmethod
+  def get_parent_id(name : str):
     return name.split(OpticalEqipment._SEPARATOR)[0]
 
   def _register(self, equipment):

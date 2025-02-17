@@ -3,6 +3,8 @@ import operator
 
 
 class OpticsUtils:
+
+  @staticmethod
   def expand(path):
     # First item in the path should be the telescope
     telescope = path[0]
@@ -12,25 +14,28 @@ class OpticsUtils:
     barlows = path[1:-1]
     return (telescope, barlows, output)
 
+  @staticmethod
   def barlows_multiplications(barlows_list):
     barlows = [barlow.magnification for barlow in barlows_list]
     # Multiply all barlows
     return functools.reduce(operator.mul, barlows, 1)
 
+  @staticmethod
   def compute_zoom(telescope, barlows, output):
     magnification = OpticsUtils.barlows_multiplications(barlows)
     return telescope.focal_length * magnification / output._zoom_divider()
 
-  def compute_field_of_view(telescop, barlows, output):
+  @staticmethod
+  def compute_field_of_view(telescope, barlows, output):
     magnification = OpticsUtils.barlows_multiplications(barlows)
-    zoom = OpticsUtils.compute_zoom(telescop, barlows, output)
+    zoom = OpticsUtils.compute_zoom(telescope, barlows, output)
     # TODO: this is not best way to do it
-    return output.field_of_view(telescop, zoom, magnification)
+    return output.field_of_view(telescope, zoom, magnification)
 
 
 class OpticalPath:
   """
-  Class for optical path
+  Class representing an optical path in a telescope setup.
   """
 
   def __init__(self, telescope, barlows, output):

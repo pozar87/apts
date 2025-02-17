@@ -58,7 +58,7 @@ class Planets(Objects):
     self.objects[ObjectTableLabels.PHASE] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.phase, axis=1)
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index
@@ -73,5 +73,5 @@ class Planets(Objects):
       # Filter object by they magnitude
       (visible.Magnitude < conditions.max_object_magnitude)]
     # Sort objects by given order
-    visible = visible.sort_values(sort_by, ascending=[1])
+    visible = visible.sort_values(by = sort_by, ascending=True)
     return visible

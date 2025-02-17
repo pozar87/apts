@@ -2,7 +2,7 @@ import pytest
 
 from apts import equipment
 from apts.constants import EquipmentTableLabels
-from apts.equipment import Barlow
+from apts.opticalequipment import Barlow
 from . import setup_equipment
 
 
@@ -31,9 +31,9 @@ def test_barlow_stacking():
   e = setup_equipment()
   e.register(equipment.Barlow(2))
   e.register(equipment.Barlow(3))
-  # Get row with biggest zoom 
+  # Get row with biggest zoom
   row = e.data().sort_values([EquipmentTableLabels.ZOOM], ascending=[0]).iloc[0]
-  # With two stacked barlows max zoom should be 180 (30 * 3 * 2) 
+  # With two stacked barlows max zoom should be 180 (30 * 3 * 2)
   assert row[EquipmentTableLabels.ZOOM] == 180
   # Using 4 elements
   assert row[EquipmentTableLabels.ELEMENTS] == 4

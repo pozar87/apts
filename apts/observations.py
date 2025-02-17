@@ -1,10 +1,10 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from string import Template
 
 import matplotlib.dates as mdates
 import numpy
-import pkg_resources
+from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Observation:
-  NOTIFICATION_TEMPLATE = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
+  NOTIFICATION_TEMPLATE = str(resources.files('apts').joinpath('templates/notification.html.template'))
 
   def __init__(self, place, equipment, conditions=Conditions()):
     self.place = place
@@ -108,7 +108,7 @@ class Observation:
     return plot.get_figure()
 
   def _normalize_dates(self, start, stop):
-    now = datetime.utcnow().astimezone(self.place.local_timezone)
+    now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
     new_start = start if start < stop else now
     new_stop = stop
     return (new_start, new_stop)

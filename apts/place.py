@@ -4,7 +4,7 @@ from math import radians as rad, degrees as deg
 import ephem
 import matplotlib.font_manager as font_manager
 import pandas as pd
-import pkg_resources
+from importlib import resources
 import pytz
 from dateutil import tz
 from timezonefinder import TimezoneFinder
@@ -13,8 +13,8 @@ from .weather import Weather
 
 
 class Place(ephem.Observer):
-  MOON_FONT = font_manager.FontProperties(fname=pkg_resources.resource_filename('apts', 'data/moon_phases.ttf'),
-                                          size=50)
+  MOON_FONT = font_manager.FontProperties(fname=str(resources.files('apts').joinpath('data/moon_phases.ttf')),
+                                            size=50)
   TF = TimezoneFinder()
 
   def __init__(self, lat, lon, name="", elevation=300, *args):
@@ -111,7 +111,7 @@ class Place(ephem.Observer):
     plt.text(180, 10, self._moon_phase_letter(), fontproperties=Place.MOON_FONT, horizontalalignment='center')
     plt.text(180, 15, str(self.moon_phase()) + '%', color='gray', horizontalalignment='center')
 
-    # Plot time for altitudes 
+    # Plot time for altitudes
     for obj in data.iloc[::5, :].values:
       if(obj[1] > 0):
         plt.annotate(obj[3], (obj[2] - 10, obj[1]))

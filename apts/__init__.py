@@ -2,7 +2,6 @@ import configparser
 import os
 import logging.config
 
-import pandas as pd
 import seaborn as sns
 
 from .catalogs import Catalogs
@@ -12,6 +11,9 @@ from .observations import Observation
 from .place import Place
 from .utils import Utils
 from .weather import Weather
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # Init config
 config = configparser.ConfigParser()
@@ -31,6 +33,6 @@ Notify.EMAIL_PASSWORD = config.get('notification', 'email_password', fallback=""
 # Seaborn style
 sns.set_style(config.get('style', 'seaborn', fallback='whitegrid'))
 # Disable label trimming in pandas tables
-pd.set_option('display.max_colwidth', config.getint('style', 'max_colwidth', fallback=-1))
+#pd.set_option('display.max_colwidth', config.getint('style', 'max_colwidth', fallback=-1))
 
 __version__ = '0.2.28'

@@ -11,7 +11,7 @@ class Objects:
   def __init__(self, place):
     self.place = place
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index
@@ -23,8 +23,8 @@ class Objects:
       (visible.Altitude > conditions.min_object_altitude) &
       # Filter object by they magnitude
       (visible.Magnitude < conditions.max_object_magnitude)]
-    # Sort objects by given order    
-    visible = visible.sort_values(sort_by, ascending=[1])
+    # Sort objects by given order
+    visible = visible.sort_values(by=sort_by, ascending=True)
     return visible
 
   def fixed_body(RA, Dec):
