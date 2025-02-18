@@ -17,8 +17,9 @@ class Place(ephem.Observer):
                                             size=50)
   TF = TimezoneFinder()
 
-  def __init__(self, lat, lon, name="", elevation=300, *args):
+  def __init__(self, lat, lon, name="", elevation=300, date = ephem.Date(datetime.datetime.now(datetime.UTC)), *args):
     ephem.Observer.__init__(self, *args)
+    self.date = date
     self.lat = rad(lat)
     self.lon = rad(lon)
     self.lat_decimal = lat

@@ -7,7 +7,7 @@ import pandas as pd
 
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
 from .opticalequipment import *
-from .optics import *
+from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
 
 logger = logging.getLogger(__name__)

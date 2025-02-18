@@ -37,6 +37,7 @@ class Observation:
                                                                  timedelta(days=1)
 
   def get_visible_messier(self, **args):
+    self.local_messier.compute()
     return self.local_messier.get_visible(self.conditions, self.start, self.time_limit, **args)
 
   def get_visible_planets(self, **args):
@@ -116,10 +117,10 @@ class Observation:
   def plot_weather(self, **args):
     if self.place.weather is None:
       self.place.get_weather()
-    self._generate_plot_weather(**args)
+    return self._generate_plot_weather(**args)
 
   def plot_messier(self, **args):
-    self._generate_plot_messier(**args)
+    return self._generate_plot_messier(**args)
 
   def _compute_weather_goodnse(self):
     # Get critical weather data

@@ -1,10 +1,12 @@
+import logging
 import ephem
 import numpy
 import pytz
-import datetime
 
 from datetime import timedelta
 from ..constants import ObjectTableLabels
+
+logger = logging.getLogger(__name__)
 
 
 class Objects:
@@ -27,6 +29,7 @@ class Objects:
     visible = visible.sort_values(by=sort_by, ascending=True)
     return visible
 
+  @staticmethod
   def fixed_body(RA, Dec):
     # Create body at given coordinates
     body = ephem.FixedBody()
@@ -36,21 +39,24 @@ class Objects:
 
   def _compute_tranzit(self, body):
     # Return transit time in local time
-    self.place.date = datetime.datetime.now()
+    #self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing transit time for body {body} at {self.place.date}")
     return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _compute_setting(self, body):
     # Return setting time in local time
-    self.place.date = datetime.datetime.now()
+    #self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing setting time for body {body} at {self.place.date}")
     return self.place.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _compute_rising(self, body):
     # Return rising time in local time
-    self.place.date = datetime.datetime.now()
+    #self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing rising time for body {body} at {self.place.date}")
     return self.place.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _altitude_at_transit(self, body, transit):
     # Calculate objects altitude at transit time
-    self.place.date = transit.astimezone(pytz.UTC)
+    #self.place.date = transit.astimezone(pytz.UTC)
     body.compute(self.place)
     return numpy.degrees(body.alt)

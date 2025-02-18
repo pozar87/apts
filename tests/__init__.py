@@ -1,4 +1,5 @@
 from apts import equipment, observations, place
+import ephem
 
 def setup_equipment():
   # Setup basic equipment
@@ -9,14 +10,16 @@ def setup_equipment():
 
 
 def setup_place():
-  p = place.Place(lat=50.1637973, lon=19.7855169)
+  p = place.Place(
+      lat=50.1637973,
+      lon=19.7855169,
+      date = ephem.Date('2025/02/18 20:00:00'))
   return p
 
 
 def setup_observation():
   # Setup basic observations
   p = setup_place()
-  p.date = '2000/01/01 01:00:00'
   e = setup_equipment()
   o = observations.Observation(p, e)
   return o
