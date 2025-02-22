@@ -1,3 +1,4 @@
+from pandas._libs.missing import NA
 from apts import equipment, observations, place
 import ephem
 
@@ -11,9 +12,10 @@ def setup_equipment():
 
 def setup_place():
   p = place.Place(
+      name='Zelków',
       lat=50.1637973,
       lon=19.7855169,
-      date = ephem.Date('2025/02/18 20:00:00'))
+      date = ephem.Date('2025/02/18 12:00:00'))
   return p
 
 

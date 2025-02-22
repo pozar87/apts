@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
-from .opticalequipment import *
+from .opticalequipment import OpticalEquipment, Telescope, Camera, Eyepiece, Barlow
 from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
 
@@ -45,7 +45,7 @@ class Equipment:
         results.append(op)
     return results
 
-  def get_zooms(self, node_id):
+  def get_zooms(self, node_id) -> list[float]:
     """
     Compute all possible zooms
     :param node_id:
@@ -56,7 +56,7 @@ class Equipment:
     result.sort()
     return result
 
-  def data(self):
+  def data(self) -> pd.DataFrame:
     columns = [EquipmentTableLabels.LABEL,
                EquipmentTableLabels.TYPE,
                EquipmentTableLabels.ZOOM,
@@ -184,9 +184,9 @@ class Equipment:
       connection_type = out_node[NodeLabels.CONNECTION_TYPE]
       for in_node in self.connection_garph.vs.select(node_type=OpticalType.INPUT, connection_type=connection_type):
         # Connect all outputs with all inputs, excluding connecting part to itself
-        out_id = OpticalEqipment.get_parent_id(
+        out_id = OpticalEquipment.get_parent_id(
           out_node[NodeLabels.NAME])
-        in_id = OpticalEqipment.get_parent_id(in_node[NodeLabels.NAME])
+        in_id = OpticalEquipment.get_parent_id(in_node[NodeLabels.NAME])
         if out_id != in_id:
           self.add_edge(out_node, in_node)
     logger.debug(self.connection_garph)
@@ -205,9 +205,9 @@ class Equipment:
     elif node_type == OpticalType.GENERIC:
       node_label = node_name
     elif node_type == OpticalType.INPUT:
-      node_label = str(connection_type) + " " + OpticalEqipment.IN
+      node_label = str(connection_type) + " " + OpticalEquipment.IN
     elif node_type == OpticalType.OUTPUT:
-      node_label = str(connection_type) + " " + OpticalEqipment.OUT
+      node_label = str(connection_type) + " " + OpticalEquipment.OUT
     else:
       node_label = ""
 

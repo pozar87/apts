@@ -41,6 +41,7 @@ class Observation:
     return self.local_messier.get_visible(self.conditions, self.start, self.time_limit, **args)
 
   def get_visible_planets(self, **args):
+    self.local_planets.compute()
     return self.local_planets.get_visible(self.conditions, self.start, self.time_limit, **args)
 
   def plot_visible_planets_svg(self, **args):
@@ -215,3 +216,6 @@ class Observation:
     self._mark_observation(plt)
     fig.tight_layout()
     return fig
+
+  def __str__(self) -> str:
+    return f"Observation at {self.place.name} from {self.start} to {self.time_limit}"

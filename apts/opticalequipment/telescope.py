@@ -1,11 +1,11 @@
 import numpy
 
-from .abstract import OpticalEqipment
+from .abstract import OpticalEquipment
 from ..utils import ConnectionType, ureg
 from ..constants import GraphConstants
 
 
-class Telescope(OpticalEqipment):
+class Telescope(OpticalEquipment):
   """
   Class representing telescope
   """

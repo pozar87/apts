@@ -1,4 +1,5 @@
 import datetime
+import logging
 from math import radians as rad, degrees as deg
 
 import ephem
@@ -11,6 +12,7 @@ from timezonefinder import TimezoneFinder
 
 from .weather import Weather
 
+logger = logging.getLogger(__name__)
 
 class Place(ephem.Observer):
   MOON_FONT = font_manager.FontProperties(fname=str(resources.files('apts').joinpath('data/moon_phases.ttf')),
@@ -34,27 +36,28 @@ class Place(ephem.Observer):
     self.moon.compute(self)
     self.local_timezone = tz.gettz(Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal))
     self.weather = None
+    logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
   def get_weather(self):
     self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
 
-  def _next_setting_time(self, obj):
-    return self.next_setting(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+  def _next_setting_time(self, obj, start):
+    return self.next_setting(obj, start=start).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
-  def _next_rising_time(self, obj):
-    return self.next_rising(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+  def _next_rising_time(self, obj, start):
+    return self.next_rising(obj, start=start).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
   def sunset_time(self):
-    return self._next_setting_time(self.sun)
+    return self._next_setting_time(self.sun, start=self.date)
 
   def sunrise_time(self):
-    return self._next_rising_time(self.sun)
+    return self._next_rising_time(self.sun, start=self.date)
 
   def moonset_time(self):
-    return self._next_setting_time(self.moon)
+    return self._next_setting_time(self.moon, start=self.date)
 
   def moonrise_time(self):
-    return self._next_rising_time(self.moon)
+    return self._next_rising_time(self.moon, start=self.date)
 
   def _moon_phase_letter(self):
     lunation = self.moon_lunation() / 100

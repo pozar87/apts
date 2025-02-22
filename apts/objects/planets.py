@@ -7,7 +7,6 @@ import pandas
 from .objects import Objects
 from ..constants import ObjectTableLabels
 
-
 class Planets(Objects):
   def __init__(self, place):
     super(Planets, self).__init__(place)
@@ -24,6 +23,10 @@ class Planets(Objects):
     # Add name
     self.objects[ObjectTableLabels.NAME] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.name, axis=1)
+    # Compute positions
+    self.compute()
+
+  def compute(self):
     # Compute transit of planets at given place
     self.objects[ObjectTableLabels.TRANSIT] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: self._compute_tranzit(body.Ephem), axis=1)
