@@ -1,4 +1,3 @@
-from pandas._libs.missing import NA
 from apts import equipment, observations, place
 import ephem
 

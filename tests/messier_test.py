@@ -2,7 +2,6 @@ from . import setup_observation
 
 def test_visiable_messier():
   o = setup_observation()
-  print(o)
   m = o.get_visible_messier()
   assert len(m) == 11
 

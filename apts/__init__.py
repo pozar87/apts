@@ -33,7 +33,6 @@ try:
 except AttributeError:
     logger.setLevel(logging.DEBUG)
     logger.warning(f"Invalid logging level '{log_level}' in config. Using DEBUG level.")
-logger.setLevel(logging.DEBUG)
 
 # Load static fields from config
 setattr(Weather, 'API_KEY', config.get('weather', 'api_key', fallback=""))
