@@ -14,8 +14,8 @@ class GraphConstants:
   IMAGE_ID = "Image"
 
   COLORS = {
-    OpticalType.OPTICAL: "#4B0082",
+    OpticalType.GENERIC: "#FFFF00",
     OpticalType.INPUT: "#D3D3D3",
-    OpticalType.OUTPUT: "#A9A9A9",
-    OpticalType.GENERIC: "yellow"
+    OpticalType.OPTICAL: "#4B0082",
+    OpticalType.OUTPUT: "#A9A9A9"
   }

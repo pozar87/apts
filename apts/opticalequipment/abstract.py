@@ -4,7 +4,7 @@ from ..constants import OpticalType
 from ..utils import ConnectionType, ureg
 
 
-class OpticalEqipment:
+class OpticalEquipment:
   """
   Basic class for optical equipment
   """
@@ -38,8 +38,9 @@ class OpticalEqipment:
   def out_id(self, connection_type):
     return self._SEPARATOR.join([self._id, connection_type.name, self.OUT])
 
-  def get_parent_id(name):
-    return name.split(OpticalEqipment._SEPARATOR)[0]
+  @staticmethod
+  def get_parent_id(name : str):
+    return name.split(OpticalEquipment._SEPARATOR)[0]
 
   def _register(self, equipment):
     # Register equipment node
@@ -64,7 +65,7 @@ class OpticalEqipment:
     return "{} f={}".format(self.vendor, self.focal_length)
 
 
-class OutputOpticalEqipment(OpticalEqipment):
+class OutputOpticalEqipment(OpticalEquipment):
 
   def __init__(self, focal_length, vendor):
     super(OutputOpticalEqipment, self).__init__(focal_length, vendor)

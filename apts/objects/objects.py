@@ -1,17 +1,21 @@
+import logging
 import ephem
 import numpy
 import pytz
-import datetime
+import pandas
 
 from datetime import timedelta
 from ..constants import ObjectTableLabels
+
+logger = logging.getLogger(__name__)
 
 
 class Objects:
   def __init__(self, place):
     self.place = place
+    self.objects : pandas.DataFrame = pandas.DataFrame()
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index
@@ -23,10 +27,11 @@ class Objects:
       (visible.Altitude > conditions.min_object_altitude) &
       # Filter object by they magnitude
       (visible.Magnitude < conditions.max_object_magnitude)]
-    # Sort objects by given order    
-    visible = visible.sort_values(sort_by, ascending=[1])
+    # Sort objects by given order
+    visible = visible.sort_values(by=sort_by, ascending=True)
     return visible
 
+  @staticmethod
   def fixed_body(RA, Dec):
     # Create body at given coordinates
     body = ephem.FixedBody()
@@ -36,21 +41,20 @@ class Objects:
 
   def _compute_tranzit(self, body):
     # Return transit time in local time
-    self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing transit time for body {body.name} at {self.place.date}")
     return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _compute_setting(self, body):
     # Return setting time in local time
-    self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing setting time for body {body.name} at {self.place.date}")
     return self.place.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _compute_rising(self, body):
     # Return rising time in local time
-    self.place.date = datetime.datetime.now()
+    logger.debug(f"Computing rising time for body {body.name} at {self.place.date}")
     return self.place.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
 
   def _altitude_at_transit(self, body, transit):
     # Calculate objects altitude at transit time
-    self.place.date = transit.astimezone(pytz.UTC)
     body.compute(self.place)
     return numpy.degrees(body.alt)

@@ -13,6 +13,10 @@ from .place import Place
 from .utils import Utils
 from .weather import Weather
 
+__all__ = ['Catalogs', 'Equipment', 'Observation', 'Place', 'Utils']
+
+logger = logging.getLogger(__name__)
+
 # Init config
 config = configparser.ConfigParser()
 
@@ -22,15 +26,23 @@ user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
 candidates = [example_config, user_config]
 config.read(candidates)
 
+# Set logging level from config
+log_level = config.get('logging', 'level', fallback='DEBUG')
+try:
+    logger.setLevel(getattr(logging, log_level.upper()))
+except AttributeError:
+    logger.setLevel(logging.DEBUG)
+    logger.warning(f"Invalid logging level '{log_level}' in config. Using DEBUG level.")
+
 # Load static fields from config
-Weather.API_KEY = config.get('weather', 'api_key', fallback="")
-Weather.API_URL = config.get('weather', 'api_url', fallback="")
-Notify.EMAIL_ADDRESS = config.get('notification', 'email_address', fallback="")
-Notify.EMAIL_PASSWORD = config.get('notification', 'email_password', fallback="")
+setattr(Weather, 'API_KEY', config.get('weather', 'api_key', fallback=""))
+setattr(Weather, 'API_URL', config.get('weather', 'api_url', fallback=""))
+setattr(Notify, 'EMAIL_ADDRESS', config.get('notification', 'email_address', fallback=""))
+setattr(Notify, 'EMAIL_PASSWORD', config.get('notification', 'email_password', fallback=""))
 
 # Seaborn style
-sns.set_style(config.get('style', 'seaborn', fallback='whitegrid'))
+sns.set_style('whitegrid' if config.get('style', 'seaborn', fallback='whitegrid') == 'whitegrid' else 'white')
 # Disable label trimming in pandas tables
-pd.set_option('display.max_colwidth', config.getint('style', 'max_colwidth', fallback=-1))
+pd.set_option('display.max_colwidth', None)
 
-__version__ = '0.2.28'
+__version__ = '0.3.0'

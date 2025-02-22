@@ -5,16 +5,17 @@ import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .constants import *
-from .opticalequipment import *
-from .optics import *
+from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
+from .opticalequipment import OpticalEquipment, Telescope, Camera, Eyepiece, Barlow
+from .optics import OpticalPath, OpticsUtils
+from .utils import Utils
 
 logger = logging.getLogger(__name__)
 
 
 class Equipment:
   """
-  This class represents all possessed astronomical equipment. Allows to compute all possible 
+  This class represents all possessed astronomical equipment. Allows to compute all possible
   hardware configuration. It uses directed graph for internal processing.
   """
 
@@ -33,9 +34,10 @@ class Equipment:
     output_node = self.connection_garph.vs.find(name=output_id)
     results = []
     results_set = set()
+    logger.debug(f"Space {space_node}, Output {output_node}")
     for optical_path in Utils.find_all_paths(self.connection_garph, space_node.index, output_node.index):
-      result = [self.connection_garph.vs.find(
-        name=id)[NodeLabels.EQUIPMENT] for id in optical_path]
+      logger.debug(f"Optical Path: {optical_path}")
+      result = [self.connection_garph.vs[id][NodeLabels.EQUIPMENT] for id in optical_path]
       op = OpticalPath.from_path(
         [item for item in result if item is not None])
       if op.elements() not in results_set:
@@ -43,7 +45,7 @@ class Equipment:
         results.append(op)
     return results
 
-  def get_zooms(self, node_id):
+  def get_zooms(self, node_id) -> list[float]:
     """
     Compute all possible zooms
     :param node_id:
@@ -54,7 +56,7 @@ class Equipment:
     result.sort()
     return result
 
-  def data(self):
+  def data(self) -> pd.DataFrame:
     columns = [EquipmentTableLabels.LABEL,
                EquipmentTableLabels.TYPE,
                EquipmentTableLabels.ZOOM,
@@ -67,20 +69,31 @@ class Equipment:
                EquipmentTableLabels.ELEMENTS]
 
     def append(result_data, paths):
-      for path in paths:
-        data = [[path.label(),
-                 path.output.output_type(),
-                 path.zoom().magnitude,
-                 path.zoom() < path.telescope.max_useful_zoom(),
-                 path.fov().magnitude,
-                 path.output.focal_length / (path.telescope.focal_ratio() * path.effective_barlow()),
-                 path.telescope.dawes_limit(),
-                 path.telescope.limiting_magnitude(),
-                 path.brightness().magnitude,
-                 path.length()]]
-        result_data = result_data.append(pd.DataFrame(
-          data, columns=columns), ignore_index=True)
-      return result_data
+        rows = []
+        logging.debug("Appending paths {paths}")
+        for path in paths:
+            rows.append([path.label(),
+                        path.output.output_type(),
+                        path.zoom().magnitude,
+                        path.zoom() < path.telescope.max_useful_zoom(),
+                        path.fov().magnitude,
+                        path.output.focal_length / (path.telescope.focal_ratio() * path.effective_barlow()),
+                        path.telescope.dawes_limit(),
+                        path.telescope.limiting_magnitude(),
+                        path.brightness().magnitude,
+                        path.length()])
+
+        if rows:  # Only create and concatenate if there are rows to add
+            new_data = pd.DataFrame(rows, columns=columns)
+            if result_data.empty:
+                result_data = new_data
+            else:
+                # Ensure dtypes match before concatenation
+                for col in result_data.columns:
+                    new_data[col] = new_data[col].astype(result_data[col].dtype)
+                result_data = pd.concat([result_data, new_data], ignore_index=True)
+        return result_data
+
 
     result = pd.DataFrame(columns=columns)
     result = append(result, self._get_paths(GraphConstants.EYE_ID))
@@ -171,16 +184,18 @@ class Equipment:
       connection_type = out_node[NodeLabels.CONNECTION_TYPE]
       for in_node in self.connection_garph.vs.select(node_type=OpticalType.INPUT, connection_type=connection_type):
         # Connect all outputs with all inputs, excluding connecting part to itself
-        out_id = OpticalEqipment.get_parent_id(
+        out_id = OpticalEquipment.get_parent_id(
           out_node[NodeLabels.NAME])
-        in_id = OpticalEqipment.get_parent_id(in_node[NodeLabels.NAME])
+        in_id = OpticalEquipment.get_parent_id(in_node[NodeLabels.NAME])
         if out_id != in_id:
           self.add_edge(out_node, in_node)
+    logger.debug(self.connection_garph)
 
   def add_vertex(self, node_name, equipment=None, node_type=OpticalType.GENERIC, connection_type=None):
-    """ 
+    """
     Add single node to graph. Return new vertex.
     """
+    logger.debug(f"Adding vertex {node_name}")
     self.connection_garph.add_vertex(node_name, label_dist=1.5)
     node = self.connection_garph.vs.find(name=node_name)
 
@@ -190,9 +205,9 @@ class Equipment:
     elif node_type == OpticalType.GENERIC:
       node_label = node_name
     elif node_type == OpticalType.INPUT:
-      node_label = str(connection_type) + " " + OpticalEqipment.IN
+      node_label = str(connection_type) + " " + OpticalEquipment.IN
     elif node_type == OpticalType.OUTPUT:
-      node_label = str(connection_type) + " " + OpticalEqipment.OUT
+      node_label = str(connection_type) + " " + OpticalEquipment.OUT
     else:
       node_label = ""
 
@@ -205,12 +220,13 @@ class Equipment:
     return node
 
   def add_edge(self, node_from, node_to):
+    logger.debug(f"Adding edge {node_from} -> {node_to}")
     # Add edge if only it doesn't exist
-    if not self.connection_garph.are_connected(node_from, node_to):
+    if not self.connection_garph.are_adjacent(node_from, node_to):
       self.connection_garph.add_edge(node_from, node_to)
 
   def register(self, optical_eqipment):
-    """ 
+    """
     Register any optical equipment in a optical graph.
     """
     optical_eqipment.register(self)

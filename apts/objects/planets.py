@@ -7,7 +7,6 @@ import pandas
 from .objects import Objects
 from ..constants import ObjectTableLabels
 
-
 class Planets(Objects):
   def __init__(self, place):
     super(Planets, self).__init__(place)
@@ -24,6 +23,10 @@ class Planets(Objects):
     # Add name
     self.objects[ObjectTableLabels.NAME] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.name, axis=1)
+    # Compute positions
+    self.compute()
+
+  def compute(self):
     # Compute transit of planets at given place
     self.objects[ObjectTableLabels.TRANSIT] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: self._compute_tranzit(body.Ephem), axis=1)
@@ -58,7 +61,7 @@ class Planets(Objects):
     self.objects[ObjectTableLabels.PHASE] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.phase, axis=1)
 
-  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=[ObjectTableLabels.TRANSIT]):
+  def get_visible(self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT):
     visible = self.objects
     # Add ID collumn
     visible['ID'] = visible.index
@@ -73,5 +76,5 @@ class Planets(Objects):
       # Filter object by they magnitude
       (visible.Magnitude < conditions.max_object_magnitude)]
     # Sort objects by given order
-    visible = visible.sort_values(sort_by, ascending=[1])
+    visible = visible.sort_values(by = sort_by, ascending=True)
     return visible

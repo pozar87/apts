@@ -1,24 +1,27 @@
 import datetime
+import logging
 from math import radians as rad, degrees as deg
 
 import ephem
 import matplotlib.font_manager as font_manager
 import pandas as pd
-import pkg_resources
+from importlib import resources
 import pytz
 from dateutil import tz
 from timezonefinder import TimezoneFinder
 
 from .weather import Weather
 
+logger = logging.getLogger(__name__)
 
 class Place(ephem.Observer):
-  MOON_FONT = font_manager.FontProperties(fname=pkg_resources.resource_filename('apts', 'data/moon_phases.ttf'),
-                                          size=50)
+  MOON_FONT = font_manager.FontProperties(fname=str(resources.files('apts').joinpath('data/moon_phases.ttf')),
+                                            size=50)
   TF = TimezoneFinder()
 
-  def __init__(self, lat, lon, name="", elevation=300, *args):
+  def __init__(self, lat, lon, name="", elevation=300, date = ephem.Date(datetime.datetime.now(datetime.UTC)), *args):
     ephem.Observer.__init__(self, *args)
+    self.date = date
     self.lat = rad(lat)
     self.lon = rad(lon)
     self.lat_decimal = lat
@@ -33,27 +36,28 @@ class Place(ephem.Observer):
     self.moon.compute(self)
     self.local_timezone = tz.gettz(Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal))
     self.weather = None
+    logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
   def get_weather(self):
     self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
 
-  def _next_setting_time(self, obj):
-    return self.next_setting(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+  def _next_setting_time(self, obj, start):
+    return self.next_setting(obj, start=start).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
-  def _next_rising_time(self, obj):
-    return self.next_rising(obj).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+  def _next_rising_time(self, obj, start):
+    return self.next_rising(obj, start=start).datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
 
   def sunset_time(self):
-    return self._next_setting_time(self.sun)
+    return self._next_setting_time(self.sun, start=self.date)
 
   def sunrise_time(self):
-    return self._next_rising_time(self.sun)
+    return self._next_rising_time(self.sun, start=self.date)
 
   def moonset_time(self):
-    return self._next_setting_time(self.moon)
+    return self._next_setting_time(self.moon, start=self.date)
 
   def moonrise_time(self):
-    return self._next_rising_time(self.moon)
+    return self._next_rising_time(self.moon, start=self.date)
 
   def _moon_phase_letter(self):
     lunation = self.moon_lunation() / 100
@@ -111,7 +115,7 @@ class Place(ephem.Observer):
     plt.text(180, 10, self._moon_phase_letter(), fontproperties=Place.MOON_FONT, horizontalalignment='center')
     plt.text(180, 15, str(self.moon_phase()) + '%', color='gray', horizontalalignment='center')
 
-    # Plot time for altitudes 
+    # Plot time for altitudes
     for obj in data.iloc[::5, :].values:
       if(obj[1] > 0):
         plt.annotate(obj[3], (obj[2] - 10, obj[1]))

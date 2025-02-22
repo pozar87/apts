@@ -1,10 +1,10 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from string import Template
 
 import matplotlib.dates as mdates
 import numpy
-import pkg_resources
+from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class Observation:
-  NOTIFICATION_TEMPLATE = pkg_resources.resource_filename('apts', 'templates/notification.html.template')
+  NOTIFICATION_TEMPLATE = str(resources.files('apts').joinpath('templates/notification.html.template'))
 
   def __init__(self, place, equipment, conditions=Conditions()):
     self.place = place
@@ -37,9 +37,11 @@ class Observation:
                                                                  timedelta(days=1)
 
   def get_visible_messier(self, **args):
+    self.local_messier.compute()
     return self.local_messier.get_visible(self.conditions, self.start, self.time_limit, **args)
 
   def get_visible_planets(self, **args):
+    self.local_planets.compute()
     return self.local_planets.get_visible(self.conditions, self.start, self.time_limit, **args)
 
   def plot_visible_planets_svg(self, **args):
@@ -108,7 +110,7 @@ class Observation:
     return plot.get_figure()
 
   def _normalize_dates(self, start, stop):
-    now = datetime.utcnow().astimezone(self.place.local_timezone)
+    now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
     new_start = start if start < stop else now
     new_stop = stop
     return (new_start, new_stop)
@@ -116,10 +118,10 @@ class Observation:
   def plot_weather(self, **args):
     if self.place.weather is None:
       self.place.get_weather()
-    self._generate_plot_weather(**args)
+    return self._generate_plot_weather(**args)
 
   def plot_messier(self, **args):
-    self._generate_plot_messier(**args)
+    return self._generate_plot_messier(**args)
 
   def _compute_weather_goodnse(self):
     # Get critical weather data
@@ -214,3 +216,6 @@ class Observation:
     self._mark_observation(plt)
     fig.tight_layout()
     return fig
+
+  def __str__(self) -> str:
+    return f"Observation at {self.place.name} from {self.start} to {self.time_limit}"

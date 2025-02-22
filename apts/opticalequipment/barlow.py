@@ -1,8 +1,8 @@
-from .abstract import OpticalEqipment
+from .abstract import OpticalEquipment
 from ..utils import ConnectionType
 
 
-class Barlow(OpticalEqipment):
+class Barlow(OpticalEquipment):
   """
   Class representing Barlow lenses
   """
