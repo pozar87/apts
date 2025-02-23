@@ -15,7 +15,7 @@ requests_cache.install_cache('apts_cache', backend='memory', expire_after=300)
 
 class Weather:
   API_KEY = ""
-  API_URL = ""
+  API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
   def __init__(self, lat, lon, local_timezone):
     self.lat = lat
@@ -116,9 +116,10 @@ class Weather:
     return plot
 
   def download_data(self):
-    url = Weather.API_URL.format(Weather.API_KEY, self.lat, self.lon)
+    url = Weather.API_URL.format(apikey=Weather.API_KEY, lat=self.lat, lon=self.lon)
+    logger.debug("Download weather from: {}".format(url))
     with requests.get(url) as data:
-      logger.debug("Download weather from: {}".format(url))
+      logger.debug(f"Data {data}")
       columns = ["time",
                  "summary",
                  "precipType",
