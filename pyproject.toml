@@ -1,3 +1,6 @@
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+
+[tool.ruff]
+exclude = [".venv"]
