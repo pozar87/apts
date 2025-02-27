@@ -8,7 +8,6 @@ pycairo>=1.16.2
 python-igraph>=0.7.1.post6
 PySide6>=6.0.0
 requests-cache>=0.4.13
-requests-mock>=1.12.1
 seaborn>=0.8.1
 svgwrite>=1.1.12
 timezonefinder>=2.1.0

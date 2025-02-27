@@ -51,7 +51,6 @@ class Observation:
         )
 
     def get_visible_planets(self, **args):
-        self.local_planets.compute()
         return self.local_planets.get_visible(
             self.conditions, self.start, self.time_limit, **args
         )
