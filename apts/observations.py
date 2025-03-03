@@ -72,21 +72,25 @@ class Observation:
                 x += radius
             else:
                 x += max(radius + last_radius + 10, minimal_delta)
-            last_radius = radius
-            dwg.add(
-                dwg.circle(
-                    center=(x, y),
-                    r=radius,
-                    stroke="black",
-                    stroke_width="1",
-                    fill="#e4e4e4",
+                last_radius = radius
+                dwg.add(
+                    dwg.circle(
+                        center=(x, y),
+                        r=radius,
+                        stroke="black",
+                        stroke_width="1",
+                        fill="#e4e4e4",
+                    )
                 )
-            )
-            dwg.add(dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle"))
-            dwg.add(
-                dwg.text(phase + "%", insert=(x, y - radius - 4), text_anchor="middle")
-            )
-        return dwg.tostring()
+                dwg.add(
+                    dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle")
+                )
+                dwg.add(
+                    dwg.text(
+                        phase + "%", insert=(x, y - radius - 4), text_anchor="middle"
+                    )
+                )
+                return dwg.tostring()
 
     def plot_visible_planets(self):
         try:
@@ -94,7 +98,7 @@ class Observation:
         except ImportError:
             logger.warning("You can plot images only in Ipython notebook!")
             return
-        return SVG(self.plot_visible_planets_svg())
+            return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
         messier = self.get_visible_messier()[
@@ -135,10 +139,10 @@ class Observation:
                 textcoords="offset points",
             )
             last_position = [mdates.date2num(obj[1]), obj[2]]
-        self._mark_observation(plot)
-        self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(plot, "Altitude [°]")
-        return plot.get_figure()
+            self._mark_observation(plot)
+            self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
+            Utils.annotate_plot(plot, "Altitude [°]")
+            return plot.get_figure()
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
@@ -149,7 +153,7 @@ class Observation:
     def plot_weather(self, **args):
         if self.place.weather is None:
             self.place.get_weather()
-        return self._generate_plot_weather(**args)
+            return self._generate_plot_weather(**args)
 
     def plot_messier(self, **args):
         return self._generate_plot_messier(**args)
@@ -175,8 +179,15 @@ class Observation:
 
     def is_weather_good(self):
         if self.place.weather is None:
-            self.place.get_weather()
-        return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
+            try:
+                self.place.get_weather()
+                return (
+                    self._compute_weather_goodnse()
+                    > self.conditions.min_weather_goodness
+                )
+            except Exception as e:
+                logger.error(f"Failed to get weather data: {e}")
+                return False
 
     def to_html(self):
         with open(Observation.NOTIFICATION_TEMPLATE) as template_file:
@@ -200,22 +211,22 @@ class Observation:
         # Check if there is a plot
         if plot is None:
             return
-        # Add marker for night
-        plot.axvspan(self.start, self.stop, color="gray", alpha=0.2)
-        # Add marker for moon
-        moon_start, moon_stop = self._normalize_dates(
-            self.place.moonrise_time(), self.place.moonset_time()
-        )
-        plot.axvspan(moon_start, moon_stop, color="yellow", alpha=0.1)
-        # Add marker for time limit
-        plot.axvline(self.start, color="orange", linestyle="--")
-        plot.axvline(self.time_limit, color="orange", linestyle="--")
+            # Add marker for night
+            plot.axvspan(self.start, self.stop, color="gray", alpha=0.2)
+            # Add marker for moon
+            moon_start, moon_stop = self._normalize_dates(
+                self.place.moonrise_time(), self.place.moonset_time()
+            )
+            plot.axvspan(moon_start, moon_stop, color="yellow", alpha=0.1)
+            # Add marker for time limit
+            plot.axvline(self.start, color="orange", linestyle="--")
+            plot.axvline(self.time_limit, color="orange", linestyle="--")
 
     def _mark_good_conditions(self, plot, minimal, maximal):
         # Check if there is a plot
         if plot is None:
             return
-        plot.axhspan(minimal, maximal, color="green", alpha=0.1)
+            plot.axhspan(minimal, maximal, color="green", alpha=0.1)
 
     def _generate_plot_weather(self, **args):
         fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18))
