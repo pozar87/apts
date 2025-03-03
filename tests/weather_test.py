@@ -43,4 +43,5 @@ def test_weather_api_error():
     m.get(requests_mock.ANY, status_code=500)
 
     p = setup_place()
-    assert p.get_weather() == None
+    with pytest.raises(json.decoder.JSONDecodeError):
+      p.get_weather()
