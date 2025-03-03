@@ -175,7 +175,7 @@ class Equipment:
   def plot_connection_graph_svg(self, **args):
     surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
     plot = self.plot_connection_graph(target=surface, **args)
-    return plot._repr_svg_()
+    return plot._repr_svg_()[0] # SVG string is first in tuple
 
   def _connect(self):
     logger.debug("Connecting nodes")
