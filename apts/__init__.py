@@ -43,4 +43,4 @@ sns.set_style('whitegrid' if config.get('style', 'seaborn', fallback='whitegrid'
 # Disable label trimming in pandas tables
 pd.set_option('display.max_colwidth', None)
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'

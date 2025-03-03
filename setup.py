@@ -49,6 +49,6 @@ setup(
     'Topic :: Software Development :: Libraries :: Python Modules',
   ],
   extras_require={
-    'testing': ['pytest'],
+    'testing': ['pytest', 'requests-mock>=1.12.1'],
   }
 )
