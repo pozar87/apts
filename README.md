@@ -2,31 +2,82 @@
 
 # APTS - AstroPhotography Tool Set
 
-Set of tools amateur astronomers and astrophotographers. Aim to help with equipment management, images acquisition and processing as well as notifying about good weather condition in nearby stargazing spots. This project was formerly known as **Astro-Pożar Tool Set**. Its going to be a open source library for [stargazer.cloud](https://staging.stargazer.cloud) service.
+A comprehensive suite of tools for amateur astronomers and astrophotographers. APTS helps with equipment management, image acquisition planning, processing, and provides notifications about optimal weather conditions for stargazing. This project was formerly known as **Astro-Pożar Tool Set** and is now an open source library supporting the [stargazer.cloud](https://staging.stargazer.cloud) service.
 
 ## Features
-* Register your optical equipment and compute all possible magnifications (including DSLR)
-* Plot avaliable zoom and fov
-* Register locations and check the weather at nearest night. Calculate condition goodness acording to configurable tresholds and settings 
-* Plot summary of weather conditions on a charts
-* Check visible planets and Messier objects 
-* Send email with notification about weather conditions and objects 
 
+- **Equipment Management**
+  - Register telescopes, eyepieces, cameras, and accessories
+  - Compute all possible magnifications (including DSLR configurations)
+  - Plot available zoom levels and fields of view
 
-## Configuration 
+- **Location and Weather**
+  - Register observation locations
+  - Check weather forecasts for your viewing spots
+  - Calculate observing conditions based on configurable thresholds
+  - Generate visual summaries of weather conditions
 
-Create a *~/.config/apts/apts.ini* file with following content:
+- **Astronomical Objects**
+  - Track visible planets
+  - Find observable Messier objects based on your location and time
+  - Plan your viewing sessions for optimal results
 
+- **Notifications**
+  - Receive email alerts about favorable weather conditions
+  - Get updates on interesting celestial objects visible at your location
+
+## Installation
+
+```bash
+pip install apts
 ```
+
+## Configuration
+
+Create a *~/.config/apts/apts.ini* file with the following content:
+
+```ini
 [weather]
-# Settings for weather API 
-api_url = <api_url>
+# Settings for weather pirateweather.net API Kye
 api_key = <api_key>
 
 [notification]
-# Gmail address
+# Email configuration
 email_address = <email>
-# Gmail pass - use google application passwords!
+# If using Gmail, use Google application passwords
 email_password = <password>
-
 ```
+
+## Quick Start
+
+```python
+from apts import equipment, place, observations
+
+# Set up your equipment
+my_telescope = equipment.Telescope("My 8-inch", 200, 1000)
+my_eyepiece = equipment.Eyepiece("25mm Plössl", 25)
+
+my_equipment = Equipment()
+my_equipment.register(my_telescope)
+my_equipment.register(my_eyepiece)
+
+# Create a viewing location
+backyard = place.Place("Backyard", latitude=40.7128, longitude=-74.0060)
+
+# Check conditions
+conditions = backyard.is_weather_good()
+print(f"Viewing conditions tonight: {conditions}")
+
+my_observation = observations.Observation(backyard, my_equipment)
+
+# Find observable Messier objects
+visible_objects = my_observation.get_visible_messier()
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
