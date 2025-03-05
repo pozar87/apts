@@ -170,6 +170,8 @@ class Observation:
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
         # Return relative % of good hours
+        if all_hours == 0:
+            return 0
         return good_hours / all_hours * 100
 
     def is_weather_good(self):

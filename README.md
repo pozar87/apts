@@ -32,14 +32,13 @@ A comprehensive suite of tools for amateur astronomers and astrophotographers. A
 pip install apts
 ```
 
-## Configuration 
+## Configuration
 
 Create a *~/.config/apts/apts.ini* file with the following content:
 
 ```ini
 [weather]
-# Settings for weather API 
-api_url = <api_url>
+# Settings for weather pirateweather.net API Kye
 api_key = <api_key>
 
 [notification]
@@ -52,21 +51,27 @@ email_password = <password>
 ## Quick Start
 
 ```python
-from apts import equipment, place, weather, observations
+from apts import equipment, place, observations
 
 # Set up your equipment
 my_telescope = equipment.Telescope("My 8-inch", 200, 1000)
 my_eyepiece = equipment.Eyepiece("25mm Plössl", 25)
 
+my_equipment = Equipment()
+my_equipment.register(my_telescope)
+my_equipment.register(my_eyepiece)
+
 # Create a viewing location
 backyard = place.Place("Backyard", latitude=40.7128, longitude=-74.0060)
 
 # Check conditions
-conditions = weather.get_conditions(backyard)
-print(f"Viewing conditions tonight: {conditions.quality}")
+conditions = backyard.is_weather_good()
+print(f"Viewing conditions tonight: {conditions}")
 
-# Find observable objects
-visible_objects = observations.get_visible_objects(backyard)
+my_observation = observations.Observation(backyard, my_equipment)
+
+# Find observable Messier objects
+visible_objects = my_observation.get_visible_messier()
 ```
 
 ## Contributing
