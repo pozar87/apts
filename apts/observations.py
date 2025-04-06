@@ -57,15 +57,25 @@ class Observation:
     def plot_visible_planets_svg(self, **args):
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing()
-        # Set y offset to biggest planet
-        y = int(visible_planets[["Size"]].max() + 12)
+        # Set y offset to biggest planet - extract magnitude from pint.Quantity
+        max_size = visible_planets[["Size"]].max().iloc[0]
+        max_size_val = max_size.magnitude if hasattr(max_size, 'magnitude') else max_size
+        y = int(max_size_val + 12)
         # Set x offset to constant value
         x = 20
         # Set delta to constant value
         minimal_delta = 52
         last_radius = None
         for planet in visible_planets[["Name", "Size", "Phase"]].values:
-            name, radius, phase = planet[0], planet[1], str(round(planet[2], 2))
+            name = planet[0]
+            # Handle radius as pint.Quantity
+            radius_with_units = planet[1]
+            radius = radius_with_units.magnitude if hasattr(radius_with_units, 'magnitude') else radius_with_units
+            # Handle phase as pint.Quantity
+            phase_with_units = planet[2]
+            phase = phase_with_units.magnitude if hasattr(phase_with_units, 'magnitude') else phase_with_units
+            phase_str = str(round(phase, 2))
+            
             if last_radius is None:
                 y += radius
                 x += radius
@@ -83,7 +93,7 @@ class Observation:
             )
             dwg.add(dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle"))
             dwg.add(
-                dwg.text(phase + "%", insert=(x, y - radius - 4), text_anchor="middle")
+                dwg.text(phase_str + "%", insert=(x, y - radius - 4), text_anchor="middle")
             )
         return dwg.tostring()
 

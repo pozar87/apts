@@ -26,7 +26,8 @@ class Objects:
       # Filter objects by they min altitude at transit
       (visible.Altitude > conditions.min_object_altitude) &
       # Filter object by they magnitude
-      (visible.Magnitude < conditions.max_object_magnitude)]
+      # Handle pint.Quantity objects for magnitude
+      (visible.Magnitude.apply(lambda x: x.magnitude if hasattr(x, 'magnitude') else x) < conditions.max_object_magnitude)]
     # Sort objects by given order
     visible = visible.sort_values(by=sort_by, ascending=True)
     return visible
@@ -35,8 +36,16 @@ class Objects:
   def fixed_body(RA, Dec):
     # Create body at given coordinates
     body = ephem.FixedBody()
-    body._ra = str(RA)
-    body._dec = str(Dec)
+    # Handle pint.Quantity objects
+    if hasattr(RA, 'magnitude'):
+      body._ra = str(RA.magnitude)
+    else:
+      body._ra = str(RA)
+    
+    if hasattr(Dec, 'magnitude'):
+      body._dec = str(Dec.magnitude)
+    else:
+      body._dec = str(Dec)
     return body
 
   def _compute_tranzit(self, body):
