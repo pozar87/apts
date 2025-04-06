@@ -20,12 +20,30 @@ def test_messier_catalog():
   assert largest_objects.iloc[0]["Messier"] == "M31"
   assert largest_objects.iloc[0]["NGC"] == "NGC 224"
   # Check data types
-  assert c["Messier"].dtype == "object"
-  assert c["NGC"].dtype == "object"
-  assert c["Name"].dtype == "object"
-  assert c["Type"].dtype == "object"
-  # Now using pint units, so dtype is object
+  # String columns should have 'string' dtype
+  assert c["Messier"].dtype == "string"
+  assert c["NGC"].dtype == "string"
+  assert c["Name"].dtype == "string"
+  assert c["Type"].dtype == "string"
+  assert c["Constellation"].dtype == "string"
+  
+  # Unit columns should have attributes of pint.Quantity
   assert hasattr(c["RA"].iloc[0], 'magnitude')
-  assert hasattr(c["Dec"].iloc[0], 'magnitude')
+  assert hasattr(c["RA"].iloc[0], 'units')
+  assert c["RA"].iloc[0].units == 'hour'
+  
+  assert hasattr(c["Dec"].iloc[0], 'magnitude') 
+  assert hasattr(c["Dec"].iloc[0], 'units')
+  assert c["Dec"].iloc[0].units == 'degree'
+  
   assert hasattr(c["Distance"].iloc[0], 'magnitude')
+  assert hasattr(c["Distance"].iloc[0], 'units')
+  assert str(c["Distance"].iloc[0].units) == 'light_year'
+  
   assert hasattr(c["Width"].iloc[0], 'magnitude')
+  assert hasattr(c["Width"].iloc[0], 'units')
+  assert c["Width"].iloc[0].units == 'arcminute'
+  
+  assert hasattr(c["Magnitude"].iloc[0], 'magnitude')
+  assert hasattr(c["Magnitude"].iloc[0], 'units')
+  assert c["Magnitude"].iloc[0].units == 'mag'

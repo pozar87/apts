@@ -24,6 +24,8 @@ class Planets(Objects):
     # Add name
     self.objects[ObjectTableLabels.NAME] = self.objects[[ObjectTableLabels.EPHEM]].apply(
       lambda body: body.Ephem.name, axis=1)
+    # Set proper dtype for string columns
+    self.objects[ObjectTableLabels.NAME] = self.objects[ObjectTableLabels.NAME].astype('string')
     # Compute positions
     self.compute()
 
