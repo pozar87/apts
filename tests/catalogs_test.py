@@ -14,15 +14,18 @@ def test_messier_catalog():
   assert c.iloc[81]["NGC"] == "NGC 3034"
   assert c.iloc[81]["Name"] == "Cigar Galaxy"
   # Andromeda is the biggest galaxy
-  assert c.sort_values(['Width'], ascending=[0]).iloc[0]["Name"] == "Andromeda Galaxy"
-  assert c.sort_values(['Width'], ascending=[0]).iloc[0]["Messier"] == "M31"
-  assert c.sort_values(['Width'], ascending=[0]).iloc[0]["NGC"] == "NGC 224"
+  # Sort using magnitude value of Width 
+  largest_objects = c.sort_values(by='Width', key=lambda x: x.apply(lambda y: y.magnitude if hasattr(y, 'magnitude') else y), ascending=False)
+  assert largest_objects.iloc[0]["Name"] == "Andromeda Galaxy"
+  assert largest_objects.iloc[0]["Messier"] == "M31"
+  assert largest_objects.iloc[0]["NGC"] == "NGC 224"
   # Check data types
   assert c["Messier"].dtype == "object"
   assert c["NGC"].dtype == "object"
   assert c["Name"].dtype == "object"
   assert c["Type"].dtype == "object"
-  assert c["RA"].dtype == "float64"
-  assert c["Dec"].dtype == "float64"
-  assert c["Distance"].dtype == "int64"
-  assert c["Width"].dtype == "float64"
+  # Now using pint units, so dtype is object
+  assert hasattr(c["RA"].iloc[0], 'magnitude')
+  assert hasattr(c["Dec"].iloc[0], 'magnitude')
+  assert hasattr(c["Distance"].iloc[0], 'magnitude')
+  assert hasattr(c["Width"].iloc[0], 'magnitude')
