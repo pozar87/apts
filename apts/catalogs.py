@@ -8,6 +8,11 @@ class Catalogs:
         # Load Messier catalogue data
         messier_df = pd.read_csv(str(resources.files('apts').joinpath('data/messier.csv')))
 
+        # Set proper dtypes for string columns
+        string_columns = ['Messier', 'NGC', 'Name', 'Type', 'Constellation']
+        for column in string_columns:
+            messier_df[column] = messier_df[column].astype('string')
+
         # Create unit registry
         ureg = pint.UnitRegistry()
 
