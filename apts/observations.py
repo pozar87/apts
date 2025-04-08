@@ -164,52 +164,67 @@ class Observation:
         return self._generate_plot_messier(**args)
         
     def _generate_plot_planets(self, **args):
-        planets = self.get_visible_planets()[
-            [
-                ObjectTableLabels.NAME,
-                ObjectTableLabels.TRANSIT,
-                ObjectTableLabels.ALTITUDE,
-                ObjectTableLabels.SIZE,
-                ObjectTableLabels.MAGNITUDE,
-            ]
-        ]
-        plot = planets.plot(
-            x=ObjectTableLabels.TRANSIT,
-            y=ObjectTableLabels.ALTITUDE,
-            marker="o",
-            # Use size for marker size, but normalize it for better visualization
-            markersize = planets[ObjectTableLabels.SIZE].apply(
-                lambda x: (x.magnitude if hasattr(x, 'magnitude') else x) * 2 + 5
-            ),
-            linestyle="none",
-            xlim=[
+        # Get visible planets
+        planets_df = self.get_visible_planets().copy()
+        
+        if len(planets_df) == 0:
+            # Create an empty plot if no planets are visible
+            fig, ax = pyplot.subplots()
+            ax.set_xlim([
                 self.start - timedelta(minutes=15),
                 self.time_limit + timedelta(minutes=15),
-            ],
-            ylim=(0, 90),
-            **args,
-        )
-
-        last_position = [0, 0]
-        offset_index = 0
-        offsets = [(-25, -12), (5, 5), (-25, 5), (5, -12)]
-        for obj in planets.values:
-            distance = (
-                ((mdates.date2num(obj[1]) - last_position[0]) * 100) ** 2
-                + (obj[2] - last_position[1]) ** 2
-            ) ** 0.5
-            offset_index = offset_index + (1 if distance < 5 else 0)
-            plot.annotate(
-                obj[0],
-                (mdates.date2num(obj[1]), obj[2]),
-                xytext=offsets[offset_index % len(offsets)],
+            ])
+            ax.set_ylim(0, 90)
+            self._mark_observation(ax)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+            Utils.annotate_plot(ax, "Altitude [°]")
+            return fig
+        
+        # Convert Pint quantities to plain values for plotting
+        # We need to convert all quantity fields to plain values first
+        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
+            if hasattr(planets_df[col].iloc[0], 'magnitude'):
+                planets_df[col] = planets_df[col].apply(
+                    lambda x: x.magnitude if hasattr(x, 'magnitude') else x
+                )
+        
+        # Create a matplotlib figure directly instead of using pandas plot
+        fig, ax = pyplot.subplots()
+        
+        # Plot each planet individually
+        for _, planet in planets_df.iterrows():
+            transit = planet[ObjectTableLabels.TRANSIT]
+            altitude = planet[ObjectTableLabels.ALTITUDE]
+            size = planet[ObjectTableLabels.SIZE]
+            name = planet[ObjectTableLabels.NAME]
+            
+            # Scale marker size for better visualization
+            marker_size = size * 0.5 + 8
+            
+            # Plot the point
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o')
+            
+            # Add annotation
+            ax.annotate(
+                name,
+                (transit, altitude),
+                xytext=(5, 5),
                 textcoords="offset points",
             )
-            last_position = [mdates.date2num(obj[1]), obj[2]]
-        self._mark_observation(plot)
-        self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(plot, "Altitude [°]")
-        return plot.get_figure()
+        
+        # Configure axes
+        ax.set_xlim([
+            self.start - timedelta(minutes=15),
+            self.time_limit + timedelta(minutes=15),
+        ])
+        ax.set_ylim(0, 90)
+        
+        # Add observation markers and styling
+        self._mark_observation(ax)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+        Utils.annotate_plot(ax, "Altitude [°]")
+        
+        return fig
         
     def plot_planets(self, **args):
         return self._generate_plot_planets(**args)
