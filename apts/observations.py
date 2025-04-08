@@ -148,7 +148,7 @@ class Observation:
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
             altitude = obj[ObjectTableLabels.ALTITUDE]
-            obj_type = obj[ObjectTableLabels.TYPE]
+            obj_type = obj['Type'] # Use string literal for column name
             width = obj[ObjectTableLabels.WIDTH]
             height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
             messier_id = obj[ObjectTableLabels.MESSIER]
