@@ -75,7 +75,7 @@ class Observation:
             phase_with_units = planet[2]
             phase = phase_with_units.magnitude if hasattr(phase_with_units, 'magnitude') else phase_with_units
             phase_str = str(round(phase, 2))
-            
+
             if last_radius is None:
                 y += radius
                 x += radius
@@ -108,7 +108,7 @@ class Observation:
     def _generate_plot_messier(self, **args):
         # Get visible Messier objects with necessary columns
         messier_df = self.get_visible_messier().copy()
-        
+
         if len(messier_df) == 0:
             # Create an empty plot if no objects are visible
             fig, ax = pyplot.subplots()
@@ -142,7 +142,7 @@ class Observation:
                 )
 
         # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(16, 12))
+        fig, ax = pyplot.subplots(figsize=(18, 12))
 
         # Plot each Messier object individually
         for _, obj in messier_df.iterrows():
@@ -152,14 +152,10 @@ class Observation:
             width = obj[ObjectTableLabels.WIDTH]
             height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
             messier_id = obj[ObjectTableLabels.MESSIER]
-            
+
             # Calculate marker size based on object dimensions
             # Use geometric mean of width and height for a balanced measure
-            size = (width * height) ** 0.5
-            
-            # Scale the size logarithmically for better visualization
-            # This prevents huge objects from dominating the plot while small ones remain visible
-            marker_size = 3 * numpy.log(size + 1) + 5
+            marker_size = (width * height) ** 0.5
 
             # Get color based on object type
             color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
@@ -175,14 +171,14 @@ class Observation:
                 xytext=(5, 5),
                 textcoords="offset points",
             )
-        
+
         # Configure axes
         ax.set_xlim([
             self.start - timedelta(minutes=15),
             self.time_limit + timedelta(minutes=15),
         ])
         ax.set_ylim(0, 90)
-        
+
         # Add observation markers and styling
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
@@ -211,11 +207,11 @@ class Observation:
 
     def plot_messier(self, **args):
         return self._generate_plot_messier(**args)
-        
+
     def _generate_plot_planets(self, **args):
         # Get visible planets
         planets_df = self.get_visible_planets().copy()
-        
+
         if len(planets_df) == 0:
             # Create an empty plot if no planets are visible
             fig, ax = pyplot.subplots()
@@ -228,7 +224,7 @@ class Observation:
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
             Utils.annotate_plot(ax, "Altitude [°]")
             return fig
-        
+
         # Convert Pint quantities to plain values for plotting
         # We need to convert all quantity fields to plain values first
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
@@ -236,23 +232,23 @@ class Observation:
                 planets_df[col] = planets_df[col].apply(
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
-        
+
         # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(16, 12))
-        
+        fig, ax = pyplot.subplots(figsize=(18, 12))
+
         # Plot each planet individually
         for _, planet in planets_df.iterrows():
             transit = planet[ObjectTableLabels.TRANSIT]
             altitude = planet[ObjectTableLabels.ALTITUDE]
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
-            
+
             # Scale marker size for better visualization
             marker_size = size * 0.5 + 8
-            
+
             # Plot the point
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
-            
+
             # Add annotation
             ax.annotate(
                 name,
@@ -260,21 +256,21 @@ class Observation:
                 xytext=(5, 5),
                 textcoords="offset points",
             )
-        
+
         # Configure axes
         ax.set_xlim([
             self.start - timedelta(minutes=15),
             self.time_limit + timedelta(minutes=15),
         ])
         ax.set_ylim(0, 90)
-        
+
         # Add observation markers and styling
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
-        
+
         return fig
-        
+
     def plot_planets(self, **args):
         return self._generate_plot_planets(**args)
 
