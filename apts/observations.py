@@ -142,7 +142,7 @@ class Observation:
                 )
 
         # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(18, 12))
+        fig, ax = pyplot.subplots(figsize=(18, 12), **args)
 
         # Plot each Messier object individually
         for _, obj in messier_df.iterrows():
@@ -192,7 +192,7 @@ class Observation:
         ]
         ax.legend(handles=legend_handles, title="Object Types")
 
-        return fig
+        #return fig
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
@@ -234,7 +234,7 @@ class Observation:
                 )
 
         # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(18, 12))
+        fig, ax = pyplot.subplots(figsize=(18, 12), **args)
 
         # Plot each planet individually
         for _, planet in planets_df.iterrows():
@@ -269,7 +269,7 @@ class Observation:
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
 
-        return fig
+        #return fig
 
     def plot_planets(self, **args):
         return self._generate_plot_planets(**args)
