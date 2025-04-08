@@ -106,12 +106,19 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
+        # Check if an axes object is provided
+        ax = args.pop('ax', None)
+        fig = None
+        if ax:
+            fig = ax.figure # Use the figure associated with the provided axes
+
         # Get visible Messier objects with necessary columns
         messier_df = self.get_visible_messier().copy()
 
         if len(messier_df) == 0:
             # Create an empty plot if no objects are visible
-            fig, ax = pyplot.subplots()
+            if ax is None: # Only create if ax was not provided
+                fig, ax = pyplot.subplots(**args) # Pass remaining args
             ax.set_xlim([
                 self.start - timedelta(minutes=15),
                 self.time_limit + timedelta(minutes=15),
@@ -192,7 +199,7 @@ class Observation:
         ]
         ax.legend(handles=legend_handles, title="Object Types")
 
-        #return fig
+        return fig # Return the figure object
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
@@ -269,7 +276,7 @@ class Observation:
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
 
-        #return fig
+        return fig # Return the figure object
 
     def plot_planets(self, **args):
         return self._generate_plot_planets(**args)
