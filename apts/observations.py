@@ -6,7 +6,7 @@ import matplotlib.dates as mdates
 import numpy
 from importlib import resources
 import svgwrite as svg
-from matplotlib import pyplot
+from matplotlib import pyplot, lines
 
 from .conditions import Conditions
 from .objects.messier import Messier
@@ -121,21 +121,34 @@ class Observation:
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
             Utils.annotate_plot(ax, "Altitude [°]")
             return fig
-        
+
+        # Define colors for Messier object types
+        messier_type_colors = {
+            "Galaxy": "blue",
+            "Globular Cluster": "red",
+            "Open Cluster": "green",
+            "Nebula": "purple",
+            "Planetary Nebula": "orange",
+            "Supernova Remnant": "brown",
+            "Other": "grey",  # For types not explicitly listed
+        }
+        plotted_types = {} # To store handles for the legend
+
         # Convert Pint quantities to plain values for plotting
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
             if col in messier_df.columns and hasattr(messier_df[col].iloc[0], 'magnitude'):
                 messier_df[col] = messier_df[col].apply(
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
-        
-        # Create a matplotlib figure directly
-        fig, ax = pyplot.subplots()
-        
+
+        # Create a matplotlib figure directly with increased size
+        fig, ax = pyplot.subplots(figsize=(16, 12))
+
         # Plot each Messier object individually
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
             altitude = obj[ObjectTableLabels.ALTITUDE]
+            obj_type = obj[ObjectTableLabels.TYPE]
             width = obj[ObjectTableLabels.WIDTH]
             height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
             messier_id = obj[ObjectTableLabels.MESSIER]
@@ -147,10 +160,14 @@ class Observation:
             # Scale the size logarithmically for better visualization
             # This prevents huge objects from dominating the plot while small ones remain visible
             marker_size = 3 * numpy.log(size + 1) + 5
-            
-            # Plot the point
-            ax.scatter(transit, altitude, s=marker_size**2, marker='o')
-            
+
+            # Get color based on object type
+            color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
+            plotted_types[obj_type] = color # Store for legend
+
+            # Plot the point with color
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
+
             # Add annotation with the Messier ID
             ax.annotate(
                 messier_id,
@@ -170,7 +187,15 @@ class Observation:
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
-        
+
+        # Add legend
+        legend_handles = [
+            lines.Line2D([0], [0], marker='o', color='w', label=obj_type,
+                         markerfacecolor=color, markersize=10)
+            for obj_type, color in plotted_types.items()
+        ]
+        ax.legend(handles=legend_handles, title="Object Types")
+
         return fig
 
     def _normalize_dates(self, start, stop):
