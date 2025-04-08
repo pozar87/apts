@@ -237,8 +237,8 @@ class Observation:
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
         
-        # Create a matplotlib figure directly instead of using pandas plot
-        fig, ax = pyplot.subplots()
+        # Create a matplotlib figure directly with increased size
+        fig, ax = pyplot.subplots(figsize=(16, 12))
         
         # Plot each planet individually
         for _, planet in planets_df.iterrows():
