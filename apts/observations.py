@@ -162,6 +162,57 @@ class Observation:
 
     def plot_messier(self, **args):
         return self._generate_plot_messier(**args)
+        
+    def _generate_plot_planets(self, **args):
+        planets = self.get_visible_planets()[
+            [
+                ObjectTableLabels.NAME,
+                ObjectTableLabels.TRANSIT,
+                ObjectTableLabels.ALTITUDE,
+                ObjectTableLabels.SIZE,
+                ObjectTableLabels.MAGNITUDE,
+            ]
+        ]
+        plot = planets.plot(
+            x=ObjectTableLabels.TRANSIT,
+            y=ObjectTableLabels.ALTITUDE,
+            marker="o",
+            # Use size for marker size, but normalize it for better visualization
+            markersize = planets[ObjectTableLabels.SIZE].apply(
+                lambda x: (x.magnitude if hasattr(x, 'magnitude') else x) * 2 + 5
+            ),
+            linestyle="none",
+            xlim=[
+                self.start - timedelta(minutes=15),
+                self.time_limit + timedelta(minutes=15),
+            ],
+            ylim=(0, 90),
+            **args,
+        )
+
+        last_position = [0, 0]
+        offset_index = 0
+        offsets = [(-25, -12), (5, 5), (-25, 5), (5, -12)]
+        for obj in planets.values:
+            distance = (
+                ((mdates.date2num(obj[1]) - last_position[0]) * 100) ** 2
+                + (obj[2] - last_position[1]) ** 2
+            ) ** 0.5
+            offset_index = offset_index + (1 if distance < 5 else 0)
+            plot.annotate(
+                obj[0],
+                (mdates.date2num(obj[1]), obj[2]),
+                xytext=offsets[offset_index % len(offsets)],
+                textcoords="offset points",
+            )
+            last_position = [mdates.date2num(obj[1]), obj[2]]
+        self._mark_observation(plot)
+        self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
+        Utils.annotate_plot(plot, "Altitude [°]")
+        return plot.get_figure()
+        
+    def plot_planets(self, **args):
+        return self._generate_plot_planets(**args)
 
     def _compute_weather_goodnse(self):
         # Get critical weather data
