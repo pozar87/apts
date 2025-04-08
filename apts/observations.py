@@ -106,48 +106,72 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
-        messier = self.get_visible_messier()[
-            [
-                ObjectTableLabels.MESSIER,
-                ObjectTableLabels.TRANSIT,
-                ObjectTableLabels.ALTITUDE,
-                ObjectTableLabels.WIDTH,
-            ]
-        ]
-        plot = messier.plot(
-            x=ObjectTableLabels.TRANSIT,
-            y=ObjectTableLabels.ALTITUDE,
-            marker="o",
-            # markersize = messier['Width'],
-            linestyle="none",
-            xlim=[
+        # Get visible Messier objects with necessary columns
+        messier_df = self.get_visible_messier().copy()
+        
+        if len(messier_df) == 0:
+            # Create an empty plot if no objects are visible
+            fig, ax = pyplot.subplots()
+            ax.set_xlim([
                 self.start - timedelta(minutes=15),
                 self.time_limit + timedelta(minutes=15),
-            ],
-            ylim=(0, 90),
-            **args,
-        )
-
-        last_position = [0, 0]
-        offset_index = 0
-        offsets = [(-25, -12), (5, 5), (-25, 5), (5, -12)]
-        for obj in messier.values:
-            distance = (
-                ((mdates.date2num(obj[1]) - last_position[0]) * 100) ** 2
-                + (obj[2] - last_position[1]) ** 2
-            ) ** 0.5
-            offset_index = offset_index + (1 if distance < 5 else 0)
-            plot.annotate(
-                obj[0],
-                (mdates.date2num(obj[1]), obj[2]),
-                xytext=offsets[offset_index % len(offsets)],
+            ])
+            ax.set_ylim(0, 90)
+            self._mark_observation(ax)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+            Utils.annotate_plot(ax, "Altitude [°]")
+            return fig
+        
+        # Convert Pint quantities to plain values for plotting
+        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
+            if col in messier_df.columns and hasattr(messier_df[col].iloc[0], 'magnitude'):
+                messier_df[col] = messier_df[col].apply(
+                    lambda x: x.magnitude if hasattr(x, 'magnitude') else x
+                )
+        
+        # Create a matplotlib figure directly
+        fig, ax = pyplot.subplots()
+        
+        # Plot each Messier object individually
+        for _, obj in messier_df.iterrows():
+            transit = obj[ObjectTableLabels.TRANSIT]
+            altitude = obj[ObjectTableLabels.ALTITUDE]
+            width = obj[ObjectTableLabels.WIDTH]
+            height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
+            messier_id = obj[ObjectTableLabels.MESSIER]
+            
+            # Calculate marker size based on object dimensions
+            # Use geometric mean of width and height for a balanced measure
+            size = (width * height) ** 0.5
+            
+            # Scale the size logarithmically for better visualization
+            # This prevents huge objects from dominating the plot while small ones remain visible
+            marker_size = 3 * numpy.log(size + 1) + 5
+            
+            # Plot the point
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o')
+            
+            # Add annotation with the Messier ID
+            ax.annotate(
+                messier_id,
+                (transit, altitude),
+                xytext=(5, 5),
                 textcoords="offset points",
             )
-            last_position = [mdates.date2num(obj[1]), obj[2]]
-        self._mark_observation(plot)
-        self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(plot, "Altitude [°]")
-        return plot.get_figure()
+        
+        # Configure axes
+        ax.set_xlim([
+            self.start - timedelta(minutes=15),
+            self.time_limit + timedelta(minutes=15),
+        ])
+        ax.set_ylim(0, 90)
+        
+        # Add observation markers and styling
+        self._mark_observation(ax)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+        Utils.annotate_plot(ax, "Altitude [°]")
+        
+        return fig
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
