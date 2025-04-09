@@ -106,6 +106,7 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
+        print(args)
         # Check if an axes object is provided
         ax = args.pop('ax', None)
         fig = None
@@ -148,8 +149,14 @@ class Observation:
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
 
-        # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        # Use provided axes or create new ones if none are provided
+        if ax is None:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        else:
+            # Use the figure associated with the provided axes
+            fig = ax.figure
+            # Potentially adjust figure size if needed, though this might be complex
+            # fig.set_size_inches(18, 12) # Example, might have side effects
 
         # Plot each Messier object individually
         for _, obj in messier_df.iterrows():
@@ -240,8 +247,15 @@ class Observation:
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
 
-        # Create a matplotlib figure directly with increased size
-        fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        # Use provided axes or create new ones if none are provided
+        ax = args.pop('ax', None) # Extract ax from args if present
+        if ax is None:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        else:
+            # Use the figure associated with the provided axes
+            fig = ax.figure
+            # Potentially adjust figure size if needed
+            # fig.set_size_inches(18, 12)
 
         # Plot each planet individually
         for _, planet in planets_df.iterrows():
@@ -347,7 +361,23 @@ class Observation:
         plot.axhspan(minimal, maximal, color="green", alpha=0.1)
 
     def _generate_plot_weather(self, **args):
-        fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18))
+        # Weather plots often need multiple subplots.
+        # If an 'ax' is passed, it's ambiguous which subplot it refers to.
+        # It's generally better for the caller (plot_png) to not pass 'ax'
+        # for multi-plot functions like this one, and let this function
+        # create its own figure and axes.
+        # However, if we *must* support a passed axes array:
+        axes_arg = args.pop('ax', None) # Check if 'ax' (expecting an array) was passed
+
+        if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
+            axes = axes_arg
+            fig = axes[0, 0].figure # Get figure from the first subplot's axes
+            # We might need to resize the existing figure if its layout doesn't match
+            # fig.set_size_inches(13, 18) # Example
+        else:
+            # Create new figure and axes if none suitable were provided
+            fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
+
         # Clouds
         plt = self.place.weather.plot_clouds(ax=axes[0, 0])
         self._mark_observation(plt)
