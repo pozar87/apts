@@ -74,3 +74,8 @@ def test_plot_messier():
   o = setup_observation()
   result = o.plot_messier()
   assert result is not None
+  
+def test_plot_planets():
+  o = setup_observation()
+  result = o.plot_planets()
+  assert result is not None

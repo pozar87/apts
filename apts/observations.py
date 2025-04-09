@@ -6,7 +6,7 @@ import matplotlib.dates as mdates
 import numpy
 from importlib import resources
 import svgwrite as svg
-from matplotlib import pyplot
+from matplotlib import pyplot, lines
 
 from .conditions import Conditions
 from .objects.messier import Messier
@@ -75,7 +75,7 @@ class Observation:
             phase_with_units = planet[2]
             phase = phase_with_units.magnitude if hasattr(phase_with_units, 'magnitude') else phase_with_units
             phase_str = str(round(phase, 2))
-            
+
             if last_radius is None:
                 y += radius
                 x += radius
@@ -106,48 +106,107 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
-        messier = self.get_visible_messier()[
-            [
-                ObjectTableLabels.MESSIER,
-                ObjectTableLabels.TRANSIT,
-                ObjectTableLabels.ALTITUDE,
-                ObjectTableLabels.WIDTH,
-            ]
-        ]
-        plot = messier.plot(
-            x=ObjectTableLabels.TRANSIT,
-            y=ObjectTableLabels.ALTITUDE,
-            marker="o",
-            # markersize = messier['Width'],
-            linestyle="none",
-            xlim=[
+        print(args)
+        # Check if an axes object is provided
+        ax = args.pop('ax', None)
+        fig = None
+        if ax:
+            fig = ax.figure # Use the figure associated with the provided axes
+
+        # Get visible Messier objects with necessary columns
+        messier_df = self.get_visible_messier().copy()
+
+        if len(messier_df) == 0:
+            # Create an empty plot if no objects are visible
+            if ax is None: # Only create if ax was not provided
+                fig, ax = pyplot.subplots(**args) # Pass remaining args
+            ax.set_xlim([
                 self.start - timedelta(minutes=15),
                 self.time_limit + timedelta(minutes=15),
-            ],
-            ylim=(0, 90),
-            **args,
-        )
+            ])
+            ax.set_ylim(0, 90)
+            self._mark_observation(ax)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+            Utils.annotate_plot(ax, "Altitude [°]")
+            return fig
 
-        last_position = [0, 0]
-        offset_index = 0
-        offsets = [(-25, -12), (5, 5), (-25, 5), (5, -12)]
-        for obj in messier.values:
-            distance = (
-                ((mdates.date2num(obj[1]) - last_position[0]) * 100) ** 2
-                + (obj[2] - last_position[1]) ** 2
-            ) ** 0.5
-            offset_index = offset_index + (1 if distance < 5 else 0)
-            plot.annotate(
-                obj[0],
-                (mdates.date2num(obj[1]), obj[2]),
-                xytext=offsets[offset_index % len(offsets)],
+        # Define colors for Messier object types
+        messier_type_colors = {
+            "Galaxy": "blue",
+            "Globular Cluster": "red",
+            "Open Cluster": "green",
+            "Nebula": "purple",
+            "Planetary Nebula": "orange",
+            "Supernova Remnant": "brown",
+            "Other": "grey",  # For types not explicitly listed
+        }
+        plotted_types = {} # To store handles for the legend
+
+        # Convert Pint quantities to plain values for plotting
+        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
+            if col in messier_df.columns and hasattr(messier_df[col].iloc[0], 'magnitude'):
+                messier_df[col] = messier_df[col].apply(
+                    lambda x: x.magnitude if hasattr(x, 'magnitude') else x
+                )
+
+        # Use provided axes or create new ones if none are provided
+        if ax is None:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        else:
+            # Use the figure associated with the provided axes
+            fig = ax.figure
+            # Potentially adjust figure size if needed, though this might be complex
+            # fig.set_size_inches(18, 12) # Example, might have side effects
+
+        # Plot each Messier object individually
+        for _, obj in messier_df.iterrows():
+            transit = obj[ObjectTableLabels.TRANSIT]
+            altitude = obj[ObjectTableLabels.ALTITUDE]
+            obj_type = obj['Type'] # Use string literal for column name
+            width = obj[ObjectTableLabels.WIDTH]
+            height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
+            messier_id = obj[ObjectTableLabels.MESSIER]
+
+            # Calculate marker size based on object dimensions
+            # Use geometric mean of width and height for a balanced measure
+            marker_size = (width * height) ** 0.5
+
+            # Get color based on object type
+            color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
+            plotted_types[obj_type] = color # Store for legend
+
+            # Plot the point with color
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
+
+            # Add annotation with the Messier ID
+            ax.annotate(
+                messier_id,
+                (transit, altitude),
+                xytext=(5, 5),
                 textcoords="offset points",
             )
-            last_position = [mdates.date2num(obj[1]), obj[2]]
-        self._mark_observation(plot)
-        self._mark_good_conditions(plot, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(plot, "Altitude [°]")
-        return plot.get_figure()
+
+        # Configure axes
+        ax.set_xlim([
+            self.start - timedelta(minutes=15),
+            self.time_limit + timedelta(minutes=15),
+        ])
+        ax.set_ylim(0, 90)
+
+        # Add observation markers and styling
+        self._mark_observation(ax)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+        Utils.annotate_plot(ax, "Altitude [°]")
+
+        # Add legend
+        legend_handles = [
+            lines.Line2D([0], [0], marker='o', color='w', label=obj_type,
+                         markerfacecolor=color, markersize=10)
+            for obj_type, color in plotted_types.items()
+        ]
+        ax.legend(handles=legend_handles, title="Object Types")
+
+        return fig # Return the figure object
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
@@ -162,6 +221,79 @@ class Observation:
 
     def plot_messier(self, **args):
         return self._generate_plot_messier(**args)
+
+    def _generate_plot_planets(self, **args):
+        # Get visible planets
+        planets_df = self.get_visible_planets().copy()
+
+        if len(planets_df) == 0:
+            # Create an empty plot if no planets are visible
+            fig, ax = pyplot.subplots()
+            ax.set_xlim([
+                self.start - timedelta(minutes=15),
+                self.time_limit + timedelta(minutes=15),
+            ])
+            ax.set_ylim(0, 90)
+            self._mark_observation(ax)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+            Utils.annotate_plot(ax, "Altitude [°]")
+            return fig
+
+        # Convert Pint quantities to plain values for plotting
+        # We need to convert all quantity fields to plain values first
+        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
+            if hasattr(planets_df[col].iloc[0], 'magnitude'):
+                planets_df[col] = planets_df[col].apply(
+                    lambda x: x.magnitude if hasattr(x, 'magnitude') else x
+                )
+
+        # Use provided axes or create new ones if none are provided
+        ax = args.pop('ax', None) # Extract ax from args if present
+        if ax is None:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+        else:
+            # Use the figure associated with the provided axes
+            fig = ax.figure
+            # Potentially adjust figure size if needed
+            # fig.set_size_inches(18, 12)
+
+        # Plot each planet individually
+        for _, planet in planets_df.iterrows():
+            transit = planet[ObjectTableLabels.TRANSIT]
+            altitude = planet[ObjectTableLabels.ALTITUDE]
+            size = planet[ObjectTableLabels.SIZE]
+            name = planet[ObjectTableLabels.NAME]
+
+            # Scale marker size for better visualization
+            marker_size = size * 0.5 + 8
+
+            # Plot the point
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o')
+
+            # Add annotation
+            ax.annotate(
+                name,
+                (transit, altitude),
+                xytext=(5, 5),
+                textcoords="offset points",
+            )
+
+        # Configure axes
+        ax.set_xlim([
+            self.start - timedelta(minutes=15),
+            self.time_limit + timedelta(minutes=15),
+        ])
+        ax.set_ylim(0, 90)
+
+        # Add observation markers and styling
+        self._mark_observation(ax)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+        Utils.annotate_plot(ax, "Altitude [°]")
+
+        return fig # Return the figure object
+
+    def plot_planets(self, **args):
+        return self._generate_plot_planets(**args)
 
     def _compute_weather_goodnse(self):
         # Get critical weather data
@@ -229,7 +361,23 @@ class Observation:
         plot.axhspan(minimal, maximal, color="green", alpha=0.1)
 
     def _generate_plot_weather(self, **args):
-        fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18))
+        # Weather plots often need multiple subplots.
+        # If an 'ax' is passed, it's ambiguous which subplot it refers to.
+        # It's generally better for the caller (plot_png) to not pass 'ax'
+        # for multi-plot functions like this one, and let this function
+        # create its own figure and axes.
+        # However, if we *must* support a passed axes array:
+        axes_arg = args.pop('ax', None) # Check if 'ax' (expecting an array) was passed
+
+        if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
+            axes = axes_arg
+            fig = axes[0, 0].figure # Get figure from the first subplot's axes
+            # We might need to resize the existing figure if its layout doesn't match
+            # fig.set_size_inches(13, 18) # Example
+        else:
+            # Create new figure and axes if none suitable were provided
+            fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
+
         # Clouds
         plt = self.place.weather.plot_clouds(ax=axes[0, 0])
         self._mark_observation(plt)

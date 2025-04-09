@@ -103,3 +103,4 @@ ENV/
 
 # Idea
 .idea
+.aider*
