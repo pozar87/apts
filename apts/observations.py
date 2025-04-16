@@ -321,9 +321,19 @@ class Observation:
             self.place.get_weather()
         return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
 
-    def to_html(self):
-        with open(Observation.NOTIFICATION_TEMPLATE) as template_file:
-            template = Template(template_file.read())
+    def to_html(self, custom_template=None, css=None):
+        template_path = custom_template if custom_template else Observation.NOTIFICATION_TEMPLATE
+        with open(template_path) as template_file:
+            template_content = template_file.read()
+            
+            # If custom CSS is provided, inject it into the template
+            if css:
+                # Find the closing style tag and insert custom CSS before it
+                style_end_pos = template_content.find("</style>")
+                if style_end_pos != -1:
+                    template_content = template_content[:style_end_pos] + css + template_content[style_end_pos:]
+            
+            template = Template(template_content)
             data = {
                 "title": "APTS",
                 "start": Utils.format_date(self.start),

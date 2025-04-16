@@ -14,7 +14,7 @@ class Notify:
   def __init__(self, email):
     self.email = email
 
-  def send(self, observations):
+  def send(self, observations, custom_template=None, css=None):
     message = MIMEMultipart('mixed')
     message['Subject'] = "Good weather in {}".format(observations.place.name)
     message['From'] = Notify.EMAIL_ADDRESS
@@ -23,7 +23,7 @@ class Notify:
     text = "This is fallback message"
 
     # Add html message content
-    html_message = MIMEText(observations.to_html(), 'html')
+    html_message = MIMEText(observations.to_html(custom_template=custom_template, css=css), 'html')
     message.attach(html_message)
     
     # Add fallback msessage

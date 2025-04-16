@@ -25,6 +25,7 @@ A comprehensive suite of tools for amateur astronomers and astrophotographers. A
 - **Notifications**
   - Receive email alerts about favorable weather conditions
   - Get updates on interesting celestial objects visible at your location
+  - Customize notification templates with your own HTML and CSS
 
 ## Installation
 
