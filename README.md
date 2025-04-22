@@ -38,15 +38,32 @@ Create a *~/.config/apts/apts.ini* file with the following content:
 
 ```ini
 [weather]
-# Settings for weather pirateweather.net API Kye
+# Settings for weather API (e.g., pirateweather.net)
 api_key = <api_key>
 
 [notification]
-# Email configuration
-email_address = <email>
-# If using Gmail, use Google application passwords
-email_password = <password>
+# Recipient email address for notifications
+recipient_email = <your_email@example.com>
+
+# SMTP Server Configuration for sending emails
+smtp_host = smtp.example.com
+smtp_port = 587
+smtp_user = <your_smtp_username_or_email>
+# Use app password if using Gmail/2FA
+smtp_password = <your_smtp_password_or_app_password>
+# Use TLS (True/False) - Recommended: True
+smtp_use_tls = True
+
+[style]
+# Seaborn style for plots (e.g., whitegrid, darkgrid, white, dark)
+seaborn = whitegrid
+
+[logging]
+# Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+level = INFO
 ```
+
+**Note:** The notification settings (SMTP host, port, user, password, TLS usage, and recipient email) are read from the configuration file when you instantiate the `apts.Notify` class in your script.
 
 ## Quick Start
 
