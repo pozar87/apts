@@ -32,37 +32,37 @@ class Notify:
 
         text = "This is fallback message"
 
-    # Add html message content
-    html_message = MIMEText(observations.to_html(), 'html')
-    message.attach(html_message)
-    
-    # Add fallback msessage
-    text_message = MIMEText(text, 'plain')
-    message.attach(text_message)
-    
-    # Add weather image
-    Notify.attach_image(message, observations._generate_plot_weather())
+        # Add html message content
+        html_message = MIMEText(observations.to_html(), 'html')
+        message.attach(html_message)
 
-    # Add messier image
-    Notify.attach_image(message, observations._generate_plot_messier())
+        # Add fallback msessage
+        text_message = MIMEText(text, 'plain')
+        message.attach(text_message)
 
-    try:
-        server = smtplib.SMTP(self.smtp_host, self.smtp_port)
-        server.ehlo()
-        if self.smtp_use_tls:
-            server.starttls()
-            server.ehlo()  # Re-identify after starting TLS
-        # Only login if user/password are provided
-        if self.smtp_user and self.smtp_password:
-            server.login(self.smtp_user, self.smtp_password)
-        server.sendmail(self.smtp_user, self.recipient_email, message.as_string())
-    finally:
-        # Ensure server connection is closed
+        # Add weather image
+        Notify.attach_image(message, observations._generate_plot_weather())
+
+        # Add messier image
+        Notify.attach_image(message, observations._generate_plot_messier())
+
         try:
-            server.quit()
-        except Exception:
-            # Ignore errors during quit if connection failed earlier
-            pass
+            server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+            server.ehlo()
+            if self.smtp_use_tls:
+                server.starttls()
+                server.ehlo()  # Re-identify after starting TLS
+            # Only login if user/password are provided
+            if self.smtp_user and self.smtp_password:
+                server.login(self.smtp_user, self.smtp_password)
+            server.sendmail(self.smtp_user, self.recipient_email, message.as_string())
+        finally:
+            # Ensure server connection is closed
+            try:
+                server.quit()
+            except Exception:
+                # Ignore errors during quit if connection failed earlier
+                pass
 
     @staticmethod
     def attach_image(message, plot):
