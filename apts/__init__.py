@@ -1,9 +1,9 @@
-import configparser
-import os
 import logging.config
-
 import pandas as pd
 import seaborn as sns
+
+# Import the config object from the new config module
+from .config import config
 
 from .catalogs import Catalogs
 from .equipment import Equipment
