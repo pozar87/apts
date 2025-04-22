@@ -68,27 +68,71 @@ level = INFO
 ## Quick Start
 
 ```python
-from apts import equipment, place, observations
+import configparser
+import os
+from apts import Equipment, Place, Observation, Notify
+from apts.opticalequipment import Telescope, Eyepiece # Import specific equipment types
 
-# Set up your equipment
-my_telescope = equipment.Telescope("My 8-inch", 200, 1000)
-my_eyepiece = equipment.Eyepiece("25mm Plössl", 25)
+# --- Configuration Loading ---
+config = configparser.ConfigParser()
+# Define potential config file locations
+config_files = [
+    'examples/apts.ini', # Example config in project dir
+    os.path.expanduser('~/.config/apts/apts.ini') # User-specific config
+]
+found_configs = config.read(config_files)
+if not found_configs:
+    print("Warning: No configuration file found. Notifications may fail.")
+    # Handle missing config appropriately (e.g., exit or use defaults)
+
+# --- Equipment Setup ---
+# Note: Equipment details could also come from config or another source
+my_telescope = Telescope(vendor="MyScope", aperture=200, focal_length=1000)
+my_eyepiece = Eyepiece(vendor="MyEP", focal_length=25)
 
 my_equipment = Equipment()
 my_equipment.register(my_telescope)
 my_equipment.register(my_eyepiece)
 
-# Create a viewing location
-backyard = place.Place("Backyard", latitude=40.7128, longitude=-74.0060)
+# --- Location Setup ---
+# Note: Location details could also come from config
+backyard = Place(name="Backyard", lat='40.7128', lon='-74.0060') # Use strings for lat/lon
 
-# Check conditions
-conditions = backyard.is_weather_good()
-print(f"Viewing conditions tonight: {conditions}")
+# --- Observation Planning ---
+my_observation = Observation(backyard, my_equipment)
 
-my_observation = observations.Observation(backyard, my_equipment)
+# Example: Get visible Messier objects (assuming conditions are suitable)
+# visible_messier = my_observation.get_visible_messier()
+# print(visible_messier)
 
-# Find observable Messier objects
-visible_objects = my_observation.get_visible_messier()
+# Example: Generate plots (these methods return matplotlib figures)
+# weather_plot = my_observation.plot_weather()
+# messier_plot = my_observation.plot_visible_messier()
+# planets_plot = my_observation.plot_visible_planets()
+# weather_plot.show() # Display the plot
+
+# --- Sending Notification (Example) ---
+# Check if notification settings are present in the config
+if config.has_section('notification') and config.has_option('notification', 'recipient_email'):
+    try:
+        notifier = Notify(
+            recipient_email=config.get("notification", "recipient_email"),
+            smtp_host=config.get("notification", "smtp_host"),
+            smtp_port=config.getint("notification", "smtp_port"),
+            smtp_user=config.get("notification", "smtp_user"),
+            smtp_password=config.get("notification", "smtp_password"),
+            smtp_use_tls=config.getboolean("notification", "smtp_use_tls")
+        )
+        print("Sending notification...")
+        # The send method expects an Observation object which contains
+        # the data and methods to generate plots and HTML content.
+        notifier.send(my_observation)
+        print("Notification sent.")
+    except Exception as e:
+        print(f"Error sending notification: {e}")
+else:
+    print("Notification settings not found in configuration. Skipping email.")
+
 ```
 
 ## Contributing
