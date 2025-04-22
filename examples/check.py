@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Basic example
 from apts import Equipment, opticalequipment, observations, place, notify
 
 my_equipment = Equipment()
