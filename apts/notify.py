@@ -40,7 +40,7 @@ class Notify:
              print(f"Warning: SMTP host ('{self.smtp_host}') or user ('{self.smtp_user}') not configured. Email notifications may fail.")
 
 
-    def send(self, observations):
+    def send(self, observations, custom_template=None, css=None):
         message = MIMEMultipart("mixed")
         message["Subject"] = f"Good weather in {observations.place.name}"
         # Use the configured SMTP user as the 'From' address
@@ -50,7 +50,7 @@ class Notify:
         text = "This is fallback message"
 
         # Add html message content
-        html_message = MIMEText(observations.to_html(), 'html')
+        html_message = MIMEText(observations.to_html(custom_template=custom_template, css=css), 'html')
         message.attach(html_message)
 
         # Add fallback msessage
