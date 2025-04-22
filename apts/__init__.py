@@ -33,14 +33,14 @@ try:
 except AttributeError:
     logger.setLevel(logging.DEBUG)
     logger.warning(f"Invalid logging level '{log_level}' in config. Using DEBUG level.")
+
 # Load static fields from config
+# Weather API Key
 setattr(Weather, "API_KEY", config.get("weather", "api_key", fallback=""))
-setattr(
-    Notify, "EMAIL_ADDRESS", config.get("notification", "email_address", fallback="")
-)
-setattr(
-    Notify, "EMAIL_PASSWORD", config.get("notification", "email_password", fallback="")
-)
+
+# Note: Notification settings (SMTP host, port, user, pass, recipient, TLS)
+# are now read directly from the config when instantiating the Notify class,
+# rather than being set as class attributes here.
 
 # Seaborn style
 sns.set_style(

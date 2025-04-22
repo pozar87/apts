@@ -7,20 +7,30 @@ from .utils import Utils
 
 
 class Notify:
+    def __init__(
+        self,
+        recipient_email,
+        smtp_host,
+        smtp_port,
+        smtp_user,
+        smtp_password,
+        smtp_use_tls=True,
+    ):
+        self.recipient_email = recipient_email
+        self.smtp_host = smtp_host
+        self.smtp_port = int(smtp_port)  # Ensure port is integer
+        self.smtp_user = smtp_user
+        self.smtp_password = smtp_password
+        self.smtp_use_tls = smtp_use_tls
 
-  EMAIL_ADDRESS = ''
-  EMAIL_PASSWORD = ''
+    def send(self, observations):
+        message = MIMEMultipart("mixed")
+        message["Subject"] = f"Good weather in {observations.place.name}"
+        # Use the configured SMTP user as the 'From' address
+        message["From"] = self.smtp_user
+        message["To"] = self.recipient_email
 
-  def __init__(self, email):
-    self.email = email
-
-  def send(self, observations):
-    message = MIMEMultipart('mixed')
-    message['Subject'] = "Good weather in {}".format(observations.place.name)
-    message['From'] = Notify.EMAIL_ADDRESS
-    message['To'] = self.email
-
-    text = "This is fallback message"
+        text = "This is fallback message"
 
     # Add html message content
     html_message = MIMEText(observations.to_html(), 'html')
@@ -36,14 +46,26 @@ class Notify:
     # Add messier image
     Notify.attach_image(message, observations._generate_plot_messier())
 
-    server = smtplib.SMTP('smtp.gmail.com:587')
-    server.ehlo()
-    server.starttls()
-    server.login(Notify.EMAIL_ADDRESS, Notify.EMAIL_PASSWORD)
-    server.sendmail(Notify.EMAIL_ADDRESS, self.email, message.as_string())
-    server.quit()
-  
-  def attach_image(message, plot):
-    bytes = Utils.plot_to_bytes(plot)
-    image = MIMEImage(bytes.read())
-    message.attach(image)   
+    try:
+        server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+        server.ehlo()
+        if self.smtp_use_tls:
+            server.starttls()
+            server.ehlo()  # Re-identify after starting TLS
+        # Only login if user/password are provided
+        if self.smtp_user and self.smtp_password:
+            server.login(self.smtp_user, self.smtp_password)
+        server.sendmail(self.smtp_user, self.recipient_email, message.as_string())
+    finally:
+        # Ensure server connection is closed
+        try:
+            server.quit()
+        except Exception:
+            # Ignore errors during quit if connection failed earlier
+            pass
+
+    @staticmethod
+    def attach_image(message, plot):
+        plot_bytes = Utils.plot_to_bytes(plot)
+        image = MIMEImage(plot_bytes.read())
+        message.attach(image)
