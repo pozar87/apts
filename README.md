@@ -112,19 +112,17 @@ my_observation = Observation(backyard, my_equipment)
 # weather_plot.show() # Display the plot
 
 # --- Sending Notification (Example) ---
-# Check if notification settings are present in the config
+# Check if the recipient email is configured
 if config.has_section('notification') and config.has_option('notification', 'recipient_email'):
-    try:
-        notifier = Notify(
-            recipient_email=config.get("notification", "recipient_email"),
-            smtp_host=config.get("notification", "smtp_host"),
-            smtp_port=config.getint("notification", "smtp_port"),
-            smtp_user=config.get("notification", "smtp_user"),
-            smtp_password=config.get("notification", "smtp_password"),
-            smtp_use_tls=config.getboolean("notification", "smtp_use_tls")
-        )
-        print("Sending notification...")
-        # The send method expects an Observation object which contains
+    recipient = config.get("notification", "recipient_email")
+    if recipient and recipient != '<email>': # Check if it's set and not the placeholder
+        try:
+            # Instantiate Notify with only the recipient email.
+            # SMTP details are read from config within the Notify class.
+            notifier = Notify(recipient_email=recipient)
+
+            print("Sending notification...")
+            # The send method expects an Observation object which contains
         # the data and methods to generate plots and HTML content.
         notifier.send(my_observation)
         print("Notification sent.")

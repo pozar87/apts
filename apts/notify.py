@@ -3,6 +3,8 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# Import the config object initialized in apts/__init__.py
+from . import config
 from .utils import Utils
 
 
@@ -15,35 +17,35 @@ class Notify:
     uses them to connect to the specified SMTP server for sending emails.
 
     Example Usage:
-        config = configparser.ConfigParser()
-        config.read('path/to/your/apts.ini')
-
-        notifier = Notify(
-            recipient_email=config.get("notification", "recipient_email"),
-            smtp_host=config.get("notification", "smtp_host"),
-            smtp_port=config.getint("notification", "smtp_port"),
-            smtp_user=config.get("notification", "smtp_user"),
-            smtp_password=config.get("notification", "smtp_password"),
-            smtp_use_tls=config.getboolean("notification", "smtp_use_tls")
-        )
+        # Assuming 'config' is loaded elsewhere or using apts's default loading
+        # recipient = config.get("notification", "recipient_email") # Or get from args
+        notifier = Notify(recipient_email="user@example.com")
         # Assuming 'observation_data' is an Observation object
         notifier.send(observation_data)
     """
-    def __init__(
-        self,
-        recipient_email,
-        smtp_host,
-        smtp_port,
-        smtp_user,
-        smtp_password,
-        smtp_use_tls=True,
-    ):
+    def __init__(self, recipient_email):
         self.recipient_email = recipient_email
-        self.smtp_host = smtp_host
-        self.smtp_port = int(smtp_port)  # Ensure port is integer
-        self.smtp_user = smtp_user
-        self.smtp_password = smtp_password
-        self.smtp_use_tls = smtp_use_tls
+
+        # Read SMTP settings directly from the config object
+        try:
+            self.smtp_host = config.get("notification", "smtp_host")
+            # Use getint for port, provide fallback or let it raise error if missing
+            self.smtp_port = config.getint("notification", "smtp_port", fallback=587)
+            self.smtp_user = config.get("notification", "smtp_user", fallback=None)
+            self.smtp_password = config.get("notification", "smtp_password", fallback=None)
+            # Use getboolean for TLS flag
+            self.smtp_use_tls = config.getboolean("notification", "smtp_use_tls", fallback=True)
+        except Exception as e:
+            # Handle missing configuration gracefully or re-raise
+            # For now, let's log a warning and potentially fail later if needed
+            print(f"Warning: Could not load all SMTP settings from config: {e}")
+            # Set defaults or None to indicate missing config
+            self.smtp_host = getattr(self, 'smtp_host', None) # Keep if already set
+            self.smtp_port = getattr(self, 'smtp_port', 587)
+            self.smtp_user = getattr(self, 'smtp_user', None)
+            self.smtp_password = getattr(self, 'smtp_password', None)
+            self.smtp_use_tls = getattr(self, 'smtp_use_tls', True)
+
 
     def send(self, observations):
         message = MIMEMultipart("mixed")
