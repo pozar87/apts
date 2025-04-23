@@ -1,9 +1,9 @@
-import configparser
-import os
 import logging.config
-
 import pandas as pd
 import seaborn as sns
+
+# Import the config object from the new config module
+from .config import config
 
 from .catalogs import Catalogs
 from .equipment import Equipment
@@ -17,37 +17,37 @@ __all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils"]
 
 logger = logging.getLogger(__name__)
 
-# Init config
-config = configparser.ConfigParser()
-
-# Read configurations
-example_config = "./examples/apts.ini"
-user_config = os.path.expanduser("~") + "/.config/apts/apts.ini"
-candidates = [example_config, user_config]
-config.read(candidates)
-
-# Set logging level from config
-log_level = config.get("logging", "level", fallback="DEBUG")
+# Set logging level from the imported config
+log_level_str = config.get("logging", "level", fallback="INFO") # Default to INFO
 try:
-    logger.setLevel(getattr(logging, log_level.upper()))
+    log_level = getattr(logging, log_level_str.upper())
+    # Basic logging configuration for the library
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logger.info(f"Logging level set to {log_level_str}")
 except AttributeError:
-    logger.setLevel(logging.DEBUG)
-    logger.warning(f"Invalid logging level '{log_level}' in config. Using DEBUG level.")
-# Load static fields from config
-setattr(Weather, "API_KEY", config.get("weather", "api_key", fallback=""))
-setattr(
-    Notify, "EMAIL_ADDRESS", config.get("notification", "email_address", fallback="")
-)
-setattr(
-    Notify, "EMAIL_PASSWORD", config.get("notification", "email_password", fallback="")
-)
+    logging.basicConfig(level=logging.INFO) # Fallback level
+    logger.warning(f"Invalid logging level '{log_level_str}' in config. Using INFO level.")
 
-# Seaborn style
-sns.set_style(
-    "whitegrid"
-    if config.get("style", "seaborn", fallback="whitegrid") == "whitegrid"
-    else "white"
-)
+# Load static fields from the imported config
+# Weather API Key
+weather_api_key = config.get("weather", "api_key", fallback="")
+if weather_api_key:
+    setattr(Weather, "API_KEY", weather_api_key)
+else:
+    logger.warning("Weather API key not found in configuration. Weather features may fail.")
+
+# Note: Notification settings are handled within the Notify class using the imported config.
+
+# Seaborn style from the imported config
+seaborn_style = config.get("style", "seaborn", fallback="whitegrid")
+try:
+    sns.set_style(seaborn_style)
+    logger.info(f"Seaborn style set to '{seaborn_style}'")
+except ValueError:
+    logger.warning(f"Invalid seaborn style '{seaborn_style}' in config. Using default 'whitegrid'.")
+    sns.set_style("whitegrid")
+
+
 # Disable label trimming in pandas tables
 pd.set_option("display.max_colwidth", None)
 
