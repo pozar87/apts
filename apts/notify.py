@@ -9,6 +9,9 @@ from .config import config
 from .utils import Utils
 
 
+logger = logging.getLogger(__name__)
+
+
 class Notify:
     """
     Handles sending email notifications with observation details and plots.
