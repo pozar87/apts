@@ -40,6 +40,9 @@ class Notify:
         self.smtp_use_tls = config.getboolean(
             "notification", "smtp_use_tls", fallback=True
         )
+        self.sender_email = config.get(
+            "notification", "sender_email", fallback="noreply@stargazer.earth"
+        ) # Read sender email from config
 
         # Basic check if essential settings are missing
         if not self.smtp_host or not self.smtp_user:
