@@ -1,3 +1,4 @@
+import logging
 import smtplib
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -39,9 +40,8 @@ class Notify:
 
         # Basic check if essential settings are missing
         if not self.smtp_host or not self.smtp_user:
-            # TODO: Use proper logging here instead of print
-            print(
-                f"Warning: SMTP host ('{self.smtp_host}') or user ('{self.smtp_user}') not configured. Email notifications may fail."
+            logger.warning(
+                f"SMTP host ('{self.smtp_host}') or user ('{self.smtp_user}') not configured. Email notifications may fail."
             )
 
     def send(self, observations, custom_template=None, css=None):
@@ -82,13 +82,13 @@ class Notify:
                 server.login(self.smtp_user, self.smtp_password)
 
             # Add debug output
-            print(
+            logger.info(
                 f"Sending email to {self.recipient_email} via {self.smtp_host}:{self.smtp_port}"
             )
             server.sendmail(message["From"], self.recipient_email, message.as_string())
-            print("Email sent successfully")
+            logger.info("Email sent successfully")
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email: {e}", exc_info=True) # Add exc_info for traceback
         finally:
             # Ensure server connection is closed
             try:
