@@ -50,10 +50,8 @@ class Notify:
     def send(self, observations, custom_template=None, css=None):
         message = MIMEMultipart("mixed")
         message["Subject"] = f"Good weather in {observations.place.name}"
-        # Use a proper email address here, not just the SMTP username
-        message["From"] = (
-            "noreply@stargazer.earth"  # or whatever your actual sending address is
-        )
+        # Use the configured sender email address
+        message["From"] = self.sender_email
         message["To"] = self.recipient_email
 
         text = "This is fallback message"
