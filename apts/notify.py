@@ -70,10 +70,14 @@ class Notify:
         message.attach(text_message)
 
         # Add weather image
-        Notify.attach_image(message, observations._generate_plot_weather())
+        Notify.attach_image(
+            message, observations._generate_plot_weather(), filename="weather_plot.png"
+        )
 
         # Add messier image
-        Notify.attach_image(message, observations._generate_plot_messier())
+        Notify.attach_image(
+            message, observations._generate_plot_messier(), filename="messier_plot.png"
+        )
 
         try:
             server = smtplib.SMTP(self.smtp_host, self.smtp_port)
@@ -104,7 +108,10 @@ class Notify:
                 pass
 
     @staticmethod
-    def attach_image(message, plot):
+    def attach_image(message, plot, filename="image.png"):
+        """Attaches a plot image to the email message."""
         plot_bytes = Utils.plot_to_bytes(plot)
         image = MIMEImage(plot_bytes.read())
+        # Add header to specify filename for the attachment
+        image.add_header('Content-Disposition', 'attachment', filename=filename)
         message.attach(image)
