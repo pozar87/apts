@@ -19,20 +19,10 @@ class Notify:
     This class requires SMTP server details to be passed during initialization.
     It reads these settings (host, port, user, password, TLS preference) and
     uses them to connect to the specified SMTP server for sending emails.
-
-    Example Usage:
-        # Assuming 'config' is loaded elsewhere or using apts's default loading
-        # recipient = config.get("notification", "recipient_email") # Or get from args
-        notifier = Notify(recipient_email="user@example.com")
-        # Assuming 'observation_data' is an Observation object
-        notifier.send(observation_data)
     """
 
     def __init__(self, recipient_email):
         self.recipient_email = recipient_email
-
-        # Read SMTP settings directly from the imported config object
-        # Use fallback values to avoid errors if keys are missing
         self.smtp_host = config.get("notification", "smtp_host", fallback=None)
         self.smtp_port = config.getint("notification", "smtp_port", fallback=587)
         self.smtp_user = config.get("notification", "smtp_user", fallback=None)
@@ -42,76 +32,110 @@ class Notify:
         )
         self.sender_email = config.get(
             "notification", "sender_email", fallback=None
-        )  # Read sender email from config
+        )
 
-        # Basic check if essential settings are missing
         if not self.smtp_host or not self.smtp_user:
             logger.warning(
                 f"SMTP host ('{self.smtp_host}') or user ('{self.smtp_user}') not configured. Email notifications may fail."
             )
 
     def send(self, observations, custom_template=None, css=None):
-        message = MIMEMultipart("mixed")
-        message["Subject"] = f"Good weather in {observations.place.name}"
-        # Use the configured sender email address
-        message["From"] = self.sender_email
-        message["To"] = self.recipient_email
+        # Overall message container: multipart/alternative for text and HTML versions
+        msg_root = MIMEMultipart('alternative')
+        msg_root["Subject"] = f"Good weather in {observations.place.name}"
+        msg_root["From"] = self.sender_email
+        msg_root["To"] = self.recipient_email
 
-        text = "This is fallback message"
+        # Fallback plain text message
+        plain_text_fallback = "This is a fallback message. Please enable HTML to see the full content."
+        text_part = MIMEText(plain_text_fallback, "plain")
+        msg_root.attach(text_part)
 
-        # Add html message content
-        html_message = MIMEText(
-            observations.to_html(custom_template=custom_template, css=css), "html"
-        )
-        message.attach(html_message)
+        # Create multipart/related for HTML and inline images
+        msg_related = MIMEMultipart('related')
+        
+        # HTML message content
+        html_content = observations.to_html(custom_template=custom_template, css=css)
+        html_part = MIMEText(html_content, "html")
+        msg_related.attach(html_part) # First part of related is the HTML
 
-        # Add fallback msessage
-        text_message = MIMEText(text, "plain")
-        message.attach(text_message)
+        # Add weather image (inline)
+        logger.info("Generating weather plot for email...")
+        weather_plot_fig = observations.plot_weather() # Call public method
+        if weather_plot_fig:
+            self.attach_image(msg_related, weather_plot_fig, filename="weather_plot.png")
+        else:
+            logger.warning("observations.plot_weather() returned None or an invalid plot object, not attaching weather plot.")
 
-        # Add weather image
-        Notify.attach_image(
-            message, observations._generate_plot_weather(), filename="weather_plot.png"
-        )
-
-        # Add messier image
-        Notify.attach_image(
-            message, observations._generate_plot_messier(), filename="messier_plot.png"
-        )
+        # Add messier image (inline)
+        logger.info("Generating messier plot for email...")
+        messier_plot_fig = observations.plot_messier() # Call public method
+        if messier_plot_fig:
+            self.attach_image(msg_related, messier_plot_fig, filename="messier_plot.png")
+        else:
+            logger.warning("observations.plot_messier() returned None or an invalid plot object, not attaching messier plot.")
+            
+        # Attach the multipart/related part to the multipart/alternative part
+        msg_root.attach(msg_related)
 
         try:
             server = smtplib.SMTP(self.smtp_host, self.smtp_port)
-            server.ehlo()  # Add explicit EHLO command
+            server.ehlo()
             if self.smtp_use_tls:
                 server.starttls()
-                server.ehlo()  # Add second EHLO after TLS
-            # Only login if user/password are provided
+                server.ehlo()
+            
             if self.smtp_user and self.smtp_password:
                 server.login(self.smtp_user, self.smtp_password)
 
-            # Add debug output
             logger.info(
                 f"Sending email to {self.recipient_email} via {self.smtp_host}:{self.smtp_port}"
             )
-            server.sendmail(message["From"], self.recipient_email, message.as_string())
+            server.sendmail(msg_root["From"], self.recipient_email, msg_root.as_string())
             logger.info("Email sent successfully")
         except Exception as e:
             logger.error(
                 f"Failed to send email: {e}", exc_info=True
-            )  # Add exc_info for traceback
+            )
         finally:
-            # Ensure server connection is closed
             try:
-                server.quit()
+                if 'server' in locals() and server: 
+                    server.quit()
             except Exception:
-                # Ignore errors during quit if connection failed earlier
                 pass
 
     @staticmethod
     def attach_image(message, plot, filename="image.png"):
-        """Attaches a plot image to the email message."""
-        plot_bytes = Utils.plot_to_bytes(plot)
-        image = MIMEImage(plot_bytes.read())
-        # Add header to specify filename for the attachment
-        image.add_header('Content-Disposition', 'attachment', filename=filename)
-        message.attach(image)
+        """Attaches a plot image to the email message for inline display."""
+        if plot is None: # Check if plot object itself is None
+            logger.warning(f"Plot object for {filename} is None. Skipping attachment.")
+            return
+
+        plot_bytes = Utils.plot_to_bytes(plot) 
+        if plot_bytes is None:
+            logger.warning(f"plot_to_bytes returned None for {filename}. Skipping attachment.")
+            return
+
+        try:
+            img_data = plot_bytes.getvalue() if hasattr(plot_bytes, 'getvalue') else plot_bytes.read()
+
+            if not img_data:
+                logger.warning(f"Image data is empty for {filename} after plot_to_bytes. Skipping attachment.")
+                return
+            
+            image = MIMEImage(img_data)
+            image.add_header('Content-ID', f'<{filename}>') 
+            image.add_header('Content-Disposition', 'inline', filename=filename)
+            message.attach(image)
+            logger.info(f"Attached inline image {filename} with CID <{filename}>")
+        except Exception as e:
+            logger.error(f"Failed to create or attach MIMEImage for {filename}: {e}", exc_info=True)
+
+    def __str__(self) -> str:
+        return (
+            f"Notify(recipient_email='{self.recipient_email}', "
+            f"smtp_host='{self.smtp_host}',"
+            f"smtp_port={self.smtp_port}, "
+            f"smtp_user='{self.smtp_user}', "
+            f"sender_email='{self.sender_email}')"
+        )
