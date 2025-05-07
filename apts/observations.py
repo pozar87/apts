@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from string import Template
 
 import matplotlib.dates as mdates
-import numpy
+import numpy # Retained for potential use by other functions if Observation.to_html is modified
 from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot, lines
@@ -106,107 +106,88 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
-        print(args)
-        # Check if an axes object is provided
         ax = args.pop('ax', None)
         fig = None
         if ax:
-            fig = ax.figure # Use the figure associated with the provided axes
+            fig = ax.figure 
 
-        # Get visible Messier objects with necessary columns
-        messier_df = self.get_visible_messier().copy()
+        try:
+            messier_df = self.get_visible_messier().copy()
 
-        if len(messier_df) == 0:
-            # Create an empty plot if no objects are visible
-            if ax is None: # Only create if ax was not provided
-                fig, ax = pyplot.subplots(**args) # Pass remaining args
-            ax.set_xlim([
-                self.start - timedelta(minutes=15),
-                self.time_limit + timedelta(minutes=15),
-            ])
+            if len(messier_df) == 0:
+                if ax is None:
+                    fig, ax = pyplot.subplots(**args)
+                ax.set_xlim([
+                    self.start - timedelta(minutes=15),
+                    self.time_limit + timedelta(minutes=15),
+                ])
+                ax.set_ylim(0, 90)
+                self._mark_observation(ax)
+                self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
+                Utils.annotate_plot(ax, "Altitude [°]")
+                logger.info("Generated empty Messier plot as no objects are visible.")
+                return fig
+
+            messier_type_colors = {
+                "Galaxy": "blue", "Globular Cluster": "red", "Open Cluster": "green",
+                "Nebula": "purple", "Planetary Nebula": "orange", 
+                "Supernova Remnant": "brown", "Other": "grey",
+            }
+            plotted_types = {}
+
+            for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
+                if col in messier_df.columns and hasattr(messier_df[col].iloc[0], 'magnitude'):
+                    messier_df[col] = messier_df[col].apply(
+                        lambda x: x.magnitude if hasattr(x, 'magnitude') else x
+                    )
+
+            if ax is None:
+                fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+            else:
+                fig = ax.figure 
+
+            for _, obj in messier_df.iterrows():
+                transit = obj[ObjectTableLabels.TRANSIT]
+                altitude = obj[ObjectTableLabels.ALTITUDE]
+                obj_type = obj['Type'] 
+                width = obj[ObjectTableLabels.WIDTH]
+                height = obj['Height'] if 'Height' in obj else width
+                messier_id = obj[ObjectTableLabels.MESSIER]
+                marker_size = (width * height) ** 0.5
+                color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
+                plotted_types[obj_type] = color
+                ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
+                ax.annotate(messier_id, (transit, altitude), xytext=(5, 5), textcoords="offset points")
+
+            ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
             self._mark_observation(ax)
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
             Utils.annotate_plot(ax, "Altitude [°]")
+            legend_handles = [
+                lines.Line2D([0], [0], marker='o', color='w', label=obj_type,
+                             markerfacecolor=color, markersize=10)
+                for obj_type, color in plotted_types.items()
+            ]
+            ax.legend(handles=legend_handles, title="Object Types")
+            logger.info("Successfully generated Messier plot.")
             return fig
 
-        # Define colors for Messier object types
-        messier_type_colors = {
-            "Galaxy": "blue",
-            "Globular Cluster": "red",
-            "Open Cluster": "green",
-            "Nebula": "purple",
-            "Planetary Nebula": "orange",
-            "Supernova Remnant": "brown",
-            "Other": "grey",  # For types not explicitly listed
-        }
-        plotted_types = {} # To store handles for the legend
-
-        # Convert Pint quantities to plain values for plotting
-        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
-            if col in messier_df.columns and hasattr(messier_df[col].iloc[0], 'magnitude'):
-                messier_df[col] = messier_df[col].apply(
-                    lambda x: x.magnitude if hasattr(x, 'magnitude') else x
-                )
-
-        # Use provided axes or create new ones if none are provided
-        if ax is None:
-            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
-        else:
-            # Use the figure associated with the provided axes
-            fig = ax.figure
-            # Potentially adjust figure size if needed, though this might be complex
-            # fig.set_size_inches(18, 12) # Example, might have side effects
-
-        # Plot each Messier object individually
-        for _, obj in messier_df.iterrows():
-            transit = obj[ObjectTableLabels.TRANSIT]
-            altitude = obj[ObjectTableLabels.ALTITUDE]
-            obj_type = obj['Type'] # Use string literal for column name
-            width = obj[ObjectTableLabels.WIDTH]
-            height = obj['Height'] if 'Height' in obj else width  # Use width if height is not available
-            messier_id = obj[ObjectTableLabels.MESSIER]
-
-            # Calculate marker size based on object dimensions
-            # Use geometric mean of width and height for a balanced measure
-            marker_size = (width * height) ** 0.5
-
-            # Get color based on object type
-            color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
-            plotted_types[obj_type] = color # Store for legend
-
-            # Plot the point with color
-            ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
-
-            # Add annotation with the Messier ID
-            ax.annotate(
-                messier_id,
-                (transit, altitude),
-                xytext=(5, 5),
-                textcoords="offset points",
-            )
-
-        # Configure axes
-        ax.set_xlim([
-            self.start - timedelta(minutes=15),
-            self.time_limit + timedelta(minutes=15),
-        ])
-        ax.set_ylim(0, 90)
-
-        # Add observation markers and styling
-        self._mark_observation(ax)
-        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(ax, "Altitude [°]")
-
-        # Add legend
-        legend_handles = [
-            lines.Line2D([0], [0], marker='o', color='w', label=obj_type,
-                         markerfacecolor=color, markersize=10)
-            for obj_type, color in plotted_types.items()
-        ]
-        ax.legend(handles=legend_handles, title="Object Types")
-
-        return fig # Return the figure object
+        except Exception as e:
+            logger.error(f"Error generating Messier plot: {e}", exc_info=True)
+            if ax is None:
+                fig, ax = pyplot.subplots(**args) 
+            else:
+                ax.clear()
+                fig = ax.figure
+            
+            ax.text(0.5, 0.5, 'Error generating Messier plot.\nSee logs for details.',
+                    horizontalalignment='center', verticalalignment='center',
+                    fontsize=12, color='red', wrap=True, transform=ax.transAxes) 
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_title("Messier Plot Error")
+            return fig
 
     def _normalize_dates(self, start, stop):
         now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
@@ -215,93 +196,70 @@ class Observation:
         return (new_start, new_stop)
 
     def plot_weather(self, **args):
+        logger.info(f"plot_weather called for place: {self.place.name}. Current self.place.weather is: {type(self.place.weather)}")
         if self.place.weather is None:
-            self.place.get_weather()
+            logger.info("self.place.weather is None, calling self.place.get_weather()...")
+            try:
+                self.place.get_weather()
+                logger.info(f"self.place.get_weather() called. self.place.weather is now: {type(self.place.weather)}")
+                if self.place.weather is not None:
+                    # Add a log for a key attribute if it exists, e.g., hourly data
+                    if hasattr(self.place.weather, 'hourly') and self.place.weather.hourly is not None:
+                        logger.info(f"Weather hourly data length: {len(self.place.weather.hourly.time) if hasattr(self.place.weather.hourly, 'time') else 'N/A'}")
+                    else:
+                        logger.info("Weather hourly data is None or not present after get_weather.")
+            except Exception as e:
+                logger.error(f"Error calling self.place.get_weather(): {e}", exc_info=True)
+        else:
+            logger.info("self.place.weather already exists, not calling get_weather().")
         return self._generate_plot_weather(**args)
 
     def plot_messier(self, **args):
         return self._generate_plot_messier(**args)
 
     def _generate_plot_planets(self, **args):
-        # Get visible planets
         planets_df = self.get_visible_planets().copy()
-
         if len(planets_df) == 0:
-            # Create an empty plot if no planets are visible
             fig, ax = pyplot.subplots()
-            ax.set_xlim([
-                self.start - timedelta(minutes=15),
-                self.time_limit + timedelta(minutes=15),
-            ])
+            ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
             self._mark_observation(ax)
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
             Utils.annotate_plot(ax, "Altitude [°]")
             return fig
 
-        # Convert Pint quantities to plain values for plotting
-        # We need to convert all quantity fields to plain values first
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
             if hasattr(planets_df[col].iloc[0], 'magnitude'):
                 planets_df[col] = planets_df[col].apply(
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
-
-        # Use provided axes or create new ones if none are provided
-        ax = args.pop('ax', None) # Extract ax from args if present
+        ax = args.pop('ax', None)
         if ax is None:
             fig, ax = pyplot.subplots(figsize=(18, 12), **args)
         else:
-            # Use the figure associated with the provided axes
             fig = ax.figure
-            # Potentially adjust figure size if needed
-            # fig.set_size_inches(18, 12)
-
-        # Plot each planet individually
         for _, planet in planets_df.iterrows():
             transit = planet[ObjectTableLabels.TRANSIT]
             altitude = planet[ObjectTableLabels.ALTITUDE]
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
-
-            # Scale marker size for better visualization
             marker_size = size * 0.5 + 8
-
-            # Plot the point
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
-
-            # Add annotation
-            ax.annotate(
-                name,
-                (transit, altitude),
-                xytext=(5, 5),
-                textcoords="offset points",
-            )
-
-        # Configure axes
-        ax.set_xlim([
-            self.start - timedelta(minutes=15),
-            self.time_limit + timedelta(minutes=15),
-        ])
+            ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
+        ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
         ax.set_ylim(0, 90)
-
-        # Add observation markers and styling
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
-
-        return fig # Return the figure object
+        return fig
 
     def plot_planets(self, **args):
         return self._generate_plot_planets(**args)
 
     def _compute_weather_goodnse(self):
-        # Get critical weather data
         data = self.place.weather.get_critical_data(self.start, self.stop)
-        # Get only data defore time limit
         data = data[data.time <= self.time_limit]
         all_hours = len(data)
-        # Get hours with good conditions
         result = data[
             (data.cloudCover < self.conditions.max_clouds)
             & (data.precipProbability < self.conditions.max_precipitation_probability)
@@ -311,28 +269,26 @@ class Observation:
         ]
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
-        # Return relative % of good hours
         if all_hours == 0:
             return 0
         return good_hours / all_hours * 100
 
     def is_weather_good(self):
         if self.place.weather is None:
+            logger.info("is_weather_good: self.place.weather is None, calling get_weather.")
             self.place.get_weather()
+        else:
+            logger.info("is_weather_good: self.place.weather already exists.")
         return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
 
     def to_html(self, custom_template=None, css=None):
         template_path = custom_template if custom_template else Observation.NOTIFICATION_TEMPLATE
         with open(template_path) as template_file:
             template_content = template_file.read()
-            
-            # If custom CSS is provided, inject it into the template
             if css:
-                # Find the closing style tag and insert custom CSS before it
                 style_end_pos = template_content.find("</style>")
                 if style_end_pos != -1:
                     template_content = template_content[:style_end_pos] + css + template_content[style_end_pos:]
-            
             template = Template(template_content)
             data = {
                 "title": "APTS",
@@ -350,76 +306,96 @@ class Observation:
             return str(template.substitute(data))
 
     def _mark_observation(self, plot):
-        # Check if there is a plot
-        if plot is None:
-            return
-        # Add marker for night
+        if plot is None: return
         plot.axvspan(self.start, self.stop, color="gray", alpha=0.2)
-        # Add marker for moon
-        moon_start, moon_stop = self._normalize_dates(
-            self.place.moonrise_time(), self.place.moonset_time()
-        )
+        moon_start, moon_stop = self._normalize_dates(self.place.moonrise_time(), self.place.moonset_time())
         plot.axvspan(moon_start, moon_stop, color="yellow", alpha=0.1)
-        # Add marker for time limit
         plot.axvline(self.start, color="orange", linestyle="--")
         plot.axvline(self.time_limit, color="orange", linestyle="--")
 
     def _mark_good_conditions(self, plot, minimal, maximal):
-        # Check if there is a plot
-        if plot is None:
-            return
+        if plot is None: return
         plot.axhspan(minimal, maximal, color="green", alpha=0.1)
 
     def _generate_plot_weather(self, **args):
-        # Weather plots often need multiple subplots.
-        # If an 'ax' is passed, it's ambiguous which subplot it refers to.
-        # It's generally better for the caller (plot_png) to not pass 'ax'
-        # for multi-plot functions like this one, and let this function
-        # create its own figure and axes.
-        # However, if we *must* support a passed axes array:
-        axes_arg = args.pop('ax', None) # Check if 'ax' (expecting an array) was passed
+        logger.info(f"_generate_plot_weather called. self.place.weather type: {type(self.place.weather)}")
+        if self.place.weather is None:
+            logger.warning("_generate_plot_weather: self.place.weather is None. Cannot generate plots. Returning error plot.")
+            fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
+            ax_err.text(0.5, 0.5, 'Weather data not available for plotting.\n(self.place.weather was None)',
+                        horizontalalignment='center', verticalalignment='center',
+                        fontsize=12, color='orange', wrap=True, transform=ax_err.transAxes)
+            ax_err.set_xticks([])
+            ax_err.set_yticks([])
+            ax_err.set_title("Weather Plot Information")
+            return fig_err
+        try:
+            axes_arg = args.pop('ax', None)
+            fig = None
+            axes = None 
 
-        if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
-            axes = axes_arg
-            fig = axes[0, 0].figure # Get figure from the first subplot's axes
-            # We might need to resize the existing figure if its layout doesn't match
-            # fig.set_size_inches(13, 18) # Example
-        else:
-            # Create new figure and axes if none suitable were provided
-            fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
+            if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
+                axes = axes_arg
+                fig = axes[0, 0].figure
+                logger.debug("Using provided axes for weather plot.")
+            else:
+                fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
+                logger.debug("Created new figure and axes for weather plot.")
 
-        # Clouds
-        plt = self.place.weather.plot_clouds(ax=axes[0, 0])
-        self._mark_observation(plt)
-        self._mark_good_conditions(plt, 0, self.conditions.max_clouds)
-        # Cloud summary
-        plt = self.place.weather.plot_clouds_summary(ax=axes[0, 1])
-        # Precipation
-        plt = self.place.weather.plot_precipitation(ax=axes[1, 0])
-        self._mark_observation(plt)
-        self._mark_good_conditions(
-            plt, 0, self.conditions.max_precipitation_probability
-        )
-        # precipitation type summary
-        plt = self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1])
-        # Temperature
-        plt = self.place.weather.plot_temperature(ax=axes[2, 0])
-        self._mark_observation(plt)
-        self._mark_good_conditions(
-            plt, self.conditions.min_temperature, self.conditions.max_temperature
-        )
-        # Wind
-        plt = self.place.weather.plot_wind(ax=axes[2, 1])
-        self._mark_observation(plt)
-        self._mark_good_conditions(plt, 0, self.conditions.max_wind)
-        # Pressure
-        plt = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
-        self._mark_observation(plt)
-        # Visibility
-        plt = self.place.weather.plot_visibility(ax=axes[3, 1])
-        self._mark_observation(plt)
-        fig.tight_layout()
-        return fig
+            logger.debug("Plotting clouds...")
+            plt_clouds = self.place.weather.plot_clouds(ax=axes[0, 0])
+            self._mark_observation(plt_clouds)
+            self._mark_good_conditions(plt_clouds, 0, self.conditions.max_clouds)
+            
+            logger.debug("Plotting clouds summary...")
+            self.place.weather.plot_clouds_summary(ax=axes[0, 1])
+
+            logger.debug("Plotting precipitation...")
+            plt_precip = self.place.weather.plot_precipitation(ax=axes[1, 0])
+            self._mark_observation(plt_precip)
+            self._mark_good_conditions(plt_precip, 0, self.conditions.max_precipitation_probability)
+
+            logger.debug("Plotting precipitation type summary...")
+            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1])
+
+            logger.debug("Plotting temperature...")
+            plt_temp = self.place.weather.plot_temperature(ax=axes[2, 0])
+            self._mark_observation(plt_temp)
+            self._mark_good_conditions(plt_temp, self.conditions.min_temperature, self.conditions.max_temperature)
+
+            logger.debug("Plotting wind...")
+            plt_wind = self.place.weather.plot_wind(ax=axes[2, 1])
+            self._mark_observation(plt_wind)
+            self._mark_good_conditions(plt_wind, 0, self.conditions.max_wind)
+
+            logger.debug("Plotting pressure and ozone...")
+            plt_pressure = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
+            self._mark_observation(plt_pressure)
+
+            logger.debug("Plotting visibility...")
+            plt_visibility = self.place.weather.plot_visibility(ax=axes[3, 1])
+            self._mark_observation(plt_visibility)
+            
+            fig.tight_layout()
+            logger.info("Successfully generated Weather plot.")
+            return fig
+
+        except Exception as e:
+            logger.error(f"Error generating Weather plot details: {e}", exc_info=True)
+            try:
+                if 'fig' in locals() and fig is not None:
+                    pyplot.close(fig) 
+            except Exception as close_exc:
+                logger.error(f"Error closing figure during weather plot error handling: {close_exc}")
+
+            fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
+            ax_err.text(0.5, 0.5, 'Error generating Weather plot details.\nSee logs for specifics.',
+                        horizontalalignment='center', verticalalignment='center',
+                        fontsize=12, color='red', wrap=True, transform=ax_err.transAxes)
+            ax_err.set_xticks([])
+            ax_err.set_yticks([])
+            ax_err.set_title("Weather Plot Error")
+            return fig_err
 
     def __str__(self) -> str:
         return (
