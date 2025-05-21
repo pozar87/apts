@@ -143,11 +143,16 @@ def test_messier_recomputation_with_date():
     # Assert that the new transit time is different from the original
     assert new_transit_time_m1 != original_transit_time_m1
 
-    # Assert that the new transit time is approximately 3 minutes 56 seconds earlier (sidereal day)
-    time_difference = original_transit_time_m1 - new_transit_time_m1
-    # timedelta for 3m56s is timedelta(minutes=3, seconds=56)
-    # We check if it's within a small window, e.g., 3m50s to 4m00s
-    assert datetime.timedelta(minutes=3, seconds=50) < time_difference < datetime.timedelta(minutes=4, seconds=0)
+    # Assert that the new transit time is approximately 1 solar day minus ~3m 56s (sidereal correction) after the original.
+    # This means the actual interval between the two transits will be ~23h 56m 4s.
+    time_difference = new_transit_time_m1 - original_transit_time_m1 # Changed order of subtraction
+
+    # Lower bound: 1 day - 4 minutes = 23 hours 56 minutes 0 seconds
+    expected_interval_lower = datetime.timedelta(days=1) - datetime.timedelta(minutes=4, seconds=0)
+    # Upper bound: 1 day - 3 minutes 50 seconds = 23 hours 56 minutes 10 seconds
+    expected_interval_upper = datetime.timedelta(days=1) - datetime.timedelta(minutes=3, seconds=50)
+
+    assert expected_interval_lower < time_difference < expected_interval_upper
 
 
 def test_planets_backward_compatibility():

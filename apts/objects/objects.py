@@ -50,16 +50,19 @@ class Objects:
 
   def _compute_tranzit(self, body, observer):
     # Return transit time in local time
+    body.compute(observer) # Ensure body's ephemeris is updated for the observer
     logger.debug(f"Computing transit time for body {body.name} at {observer.date}")
     return observer.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
   def _compute_setting(self, body, observer):
     # Return setting time in local time
+    body.compute(observer) # Ensure body's ephemeris is updated for the observer
     logger.debug(f"Computing setting time for body {body.name} at {observer.date}")
     return observer.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
   def _compute_rising(self, body, observer):
     # Return rising time in local time
+    body.compute(observer) # Ensure body's ephemeris is updated for the observer
     logger.debug(f"Computing rising time for body {body.name} at {observer.date}")
     return observer.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
