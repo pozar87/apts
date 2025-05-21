@@ -37,24 +37,37 @@ class Planets(Objects):
         # Compute positions
         self.compute()
 
-    def compute(self):
+    def compute(self, calculation_date=None):
+        if calculation_date:
+            temp_observer = ephem.Observer()
+            temp_observer.lat = self.place.lat
+            temp_observer.lon = self.place.lon
+            temp_observer.elevation = self.place.elevation
+            temp_observer.pressure = getattr(self.place, 'pressure', 0)
+            temp_observer.temp = getattr(self.place, 'temp', 15)
+            temp_observer.horizon = self.place.horizon
+            temp_observer.date = ephem.Date(calculation_date)
+            observer_to_use = temp_observer
+        else:
+            observer_to_use = self.place
+
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.TRANSIT] = self.objects[
             [ObjectTableLabels.EPHEM]
-        ].apply(lambda body: self._compute_tranzit(body.Ephem), axis=1)
+        ].apply(lambda body: self._compute_tranzit(body.Ephem, observer_to_use), axis=1)
         # Compute rising of planets at given place
         self.objects[ObjectTableLabels.RISING] = self.objects[
             [ObjectTableLabels.EPHEM]
-        ].apply(lambda body: self._compute_rising(body.Ephem), axis=1)
+        ].apply(lambda body: self._compute_rising(body.Ephem, observer_to_use), axis=1)
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.SETTING] = self.objects[
             [ObjectTableLabels.EPHEM]
-        ].apply(lambda body: self._compute_setting(body.Ephem), axis=1)
+        ].apply(lambda body: self._compute_setting(body.Ephem, observer_to_use), axis=1)
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.EPHEM, ObjectTableLabels.TRANSIT]
         ].apply(
-            lambda body: self._altitude_at_transit(body.Ephem, body.Transit), axis=1
+            lambda body: self._altitude_at_transit(body.Ephem, body.Transit, observer_to_use), axis=1
         )
         # Calculate planets magnitude
         self.objects[ObjectTableLabels.MAGNITUDE] = self.objects[

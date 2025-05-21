@@ -1,4 +1,15 @@
-from . import setup_observation
+from . import setup_observation, setup_place
+from apts.objects import Planets, Messier
+from apts.constants import ObjectTableLabels
+import datetime
+# timedelta is part of datetime
+import ephem
+import pytz # For timezone awareness
+
+# Helper to get initial datetime from setup_place
+INITIAL_EPHEM_DATE_STR = '2025/02/18 12:00:00'
+INITIAL_DT = datetime.datetime.strptime(INITIAL_EPHEM_DATE_STR, '%Y/%m/%d %H:%M:%S').replace(tzinfo=pytz.UTC)
+
 
 def test_visiable_messier():
   o = setup_observation()
@@ -79,3 +90,87 @@ def test_plot_planets():
   o = setup_observation()
   result = o.plot_planets()
   assert result is not None
+
+
+def test_planets_recomputation_with_date():
+    place = setup_place() # Uses fixed date '2025/02/18 12:00:00'
+    planets = Planets(place)
+    
+    # Store the original transit time for Mars
+    original_transit_time_mars = planets.objects.loc[planets.objects[ObjectTableLabels.NAME] == 'Mars', ObjectTableLabels.TRANSIT].iloc[0]
+    
+    # Define a new calculation_date
+    new_calculation_date = INITIAL_DT + datetime.timedelta(days=1)
+    
+    # Call compute with the new date
+    planets.compute(calculation_date=new_calculation_date)
+    
+    # Get the new transit time for Mars
+    new_transit_time_mars = planets.objects.loc[planets.objects[ObjectTableLabels.NAME] == 'Mars', ObjectTableLabels.TRANSIT].iloc[0]
+    
+    # Assert that the new transit time is different from the original
+    assert new_transit_time_mars != original_transit_time_mars
+    
+    # Assert that the new transit time is approximately 24 hours after the original
+    # Mars' transit shifts by about 24 hours and ~39 minutes per solar day.
+    # We'll check if it's within a reasonable window (e.g., 23 to 25 hours to be safe, or more precisely for Mars)
+    # For a more precise check: ephem.Mars().transit_time for two consecutive days.
+    # For simplicity, we'll check if it's roughly one day later.
+    expected_new_transit_time = original_transit_time_mars + datetime.timedelta(days=1)
+    # Allow for some variation due to planetary motion, not exactly 24h.
+    # Mars' solar day is approx 24h 39m. So transit will be later.
+    time_difference = new_transit_time_mars - original_transit_time_mars
+    assert datetime.timedelta(hours=24, minutes=30) < time_difference < datetime.timedelta(hours=24, minutes=50)
+
+
+def test_messier_recomputation_with_date():
+    place = setup_place() # Uses fixed date '2025/02/18 12:00:00'
+    messier = Messier(place)
+
+    # Store the original transit time for M1 (Crab Nebula)
+    # Assuming M1 is in the catalog and its name is 'M1' in the 'Messier' column
+    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Define a new calculation_date
+    new_calculation_date = INITIAL_DT + datetime.timedelta(days=1)
+
+    # Call compute with the new date
+    messier.compute(calculation_date=new_calculation_date)
+
+    # Get the new transit time for M1
+    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Assert that the new transit time is different from the original
+    assert new_transit_time_m1 != original_transit_time_m1
+
+    # Assert that the new transit time is approximately 3 minutes 56 seconds earlier (sidereal day)
+    time_difference = original_transit_time_m1 - new_transit_time_m1
+    # timedelta for 3m56s is timedelta(minutes=3, seconds=56)
+    # We check if it's within a small window, e.g., 3m50s to 4m00s
+    assert datetime.timedelta(minutes=3, seconds=50) < time_difference < datetime.timedelta(minutes=4, seconds=0)
+
+
+def test_planets_backward_compatibility():
+    place = setup_place()
+    planets = Planets(place)
+    original_transit_time_mars = planets.objects.loc[planets.objects[ObjectTableLabels.NAME] == 'Mars', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Call compute without arguments
+    planets.compute()
+    new_transit_time_mars = planets.objects.loc[planets.objects[ObjectTableLabels.NAME] == 'Mars', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Assert that the transit time has not changed
+    assert new_transit_time_mars == original_transit_time_mars
+
+
+def test_messier_backward_compatibility():
+    place = setup_place()
+    messier = Messier(place)
+    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Call compute without arguments
+    messier.compute()
+    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+
+    # Assert that the transit time has not changed
+    assert new_transit_time_m1 == original_transit_time_m1

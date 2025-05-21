@@ -48,22 +48,22 @@ class Objects:
       body._dec = str(Dec)
     return body
 
-  def _compute_tranzit(self, body):
+  def _compute_tranzit(self, body, observer):
     # Return transit time in local time
-    logger.debug(f"Computing transit time for body {body.name} at {self.place.date}")
-    return self.place.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
+    logger.debug(f"Computing transit time for body {body.name} at {observer.date}")
+    return observer.next_transit(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
-  def _compute_setting(self, body):
+  def _compute_setting(self, body, observer):
     # Return setting time in local time
-    logger.debug(f"Computing setting time for body {body.name} at {self.place.date}")
-    return self.place.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
+    logger.debug(f"Computing setting time for body {body.name} at {observer.date}")
+    return observer.next_setting(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
-  def _compute_rising(self, body):
+  def _compute_rising(self, body, observer):
     # Return rising time in local time
-    logger.debug(f"Computing rising time for body {body.name} at {self.place.date}")
-    return self.place.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(self.place.local_timezone)
+    logger.debug(f"Computing rising time for body {body.name} at {observer.date}")
+    return observer.next_rising(body).datetime().replace(tzinfo=pytz.UTC).astimezone(observer.local_timezone)
 
-  def _altitude_at_transit(self, body, transit):
+  def _altitude_at_transit(self, body, transit, observer):
     # Calculate objects altitude at transit time
-    body.compute(self.place)
+    body.compute(observer)
     return numpy.degrees(body.alt)
