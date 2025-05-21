@@ -8,6 +8,7 @@ import pint
 from .objects import Objects
 from ..constants import ObjectTableLabels
 from ..utils import ureg
+from apts.place import Place
 
 
 class Planets(Objects):
@@ -39,14 +40,28 @@ class Planets(Objects):
 
     def compute(self, calculation_date=None):
         if calculation_date:
-            temp_observer = ephem.Observer()
-            temp_observer.lat = self.place.lat
-            temp_observer.lon = self.place.lon
-            temp_observer.elevation = self.place.elevation
-            temp_observer.pressure = getattr(self.place, 'pressure', 0)
-            temp_observer.temp = getattr(self.place, 'temp', 15)
+            # Instantiate as Place object
+            temp_observer = Place(lat=self.place.lat_decimal, 
+                                  lon=self.place.lon_decimal, 
+                                  elevation=self.place.elevation,
+                                  name=self.place.name + "_temp") # Add name to avoid issues if Place requires it
+            
+            # Copy relevant attributes
+            # lat, lon, elevation are set by Place constructor
+            # local_timezone is determined by Place constructor based on lon/lat
+            temp_observer.pressure = self.place.pressure
+            temp_observer.temp = self.place.temp
             temp_observer.horizon = self.place.horizon
+            
+            # Set the date
             temp_observer.date = ephem.Date(calculation_date)
+            
+            # Recompute sun and moon for the new date
+            temp_observer.sun = ephem.Sun()
+            temp_observer.sun.compute(temp_observer)
+            temp_observer.moon = ephem.Moon()
+            temp_observer.moon.compute(temp_observer)
+            
             observer_to_use = temp_observer
         else:
             observer_to_use = self.place

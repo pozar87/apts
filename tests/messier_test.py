@@ -129,7 +129,7 @@ def test_messier_recomputation_with_date():
 
     # Store the original transit time for M1 (Crab Nebula)
     # Assuming M1 is in the catalog and its name is 'M1' in the 'Messier' column
-    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.MESSIER] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
 
     # Define a new calculation_date
     new_calculation_date = INITIAL_DT + datetime.timedelta(days=1)
@@ -138,7 +138,7 @@ def test_messier_recomputation_with_date():
     messier.compute(calculation_date=new_calculation_date)
 
     # Get the new transit time for M1
-    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.MESSIER] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
 
     # Assert that the new transit time is different from the original
     assert new_transit_time_m1 != original_transit_time_m1
@@ -166,11 +166,11 @@ def test_planets_backward_compatibility():
 def test_messier_backward_compatibility():
     place = setup_place()
     messier = Messier(place)
-    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+    original_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.MESSIER] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
 
     # Call compute without arguments
     messier.compute()
-    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.ID] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
+    new_transit_time_m1 = messier.objects.loc[messier.objects[ObjectTableLabels.MESSIER] == 'M1', ObjectTableLabels.TRANSIT].iloc[0]
 
     # Assert that the transit time has not changed
     assert new_transit_time_m1 == original_transit_time_m1
