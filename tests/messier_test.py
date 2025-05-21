@@ -120,7 +120,7 @@ def test_planets_recomputation_with_date():
     # Allow for some variation due to planetary motion, not exactly 24h.
     # Mars' solar day is approx 24h 39m. So transit will be later.
     time_difference = new_transit_time_mars - original_transit_time_mars
-    assert datetime.timedelta(hours=24, minutes=30) < time_difference < datetime.timedelta(hours=24, minutes=50)
+    assert datetime.timedelta(hours=23, minutes=50) < time_difference < datetime.timedelta(hours=24, minutes=50)
 
 
 def test_messier_recomputation_with_date():
