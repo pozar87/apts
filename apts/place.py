@@ -54,32 +54,68 @@ class Place(ephem.Observer):
         self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
 
     def _next_setting_time(self, obj, start):
-        return (
-            self.next_setting(obj, start=start)
-            .datetime()
-            .replace(tzinfo=pytz.UTC)
-            .astimezone(self.local_timezone)
-        )
+        try:
+            return (
+                self.next_setting(obj, start=start)
+                .datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(self.local_timezone)
+            )
+        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            return None
 
     def _next_rising_time(self, obj, start):
-        return (
-            self.next_rising(obj, start=start)
-            .datetime()
-            .replace(tzinfo=pytz.UTC)
-            .astimezone(self.local_timezone)
-        )
+        try:
+            return (
+                self.next_rising(obj, start=start)
+                .datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(self.local_timezone)
+            )
+        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            return None
 
-    def sunset_time(self):
-        return self._next_setting_time(self.sun, start=self.date)
+    def sunset_time(self, target_date=None):
+        if target_date:
+            dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
+            start_date = ephem.Date(dt_utc)
+        else:
+            start_date = self.date
+        return self._next_setting_time(self.sun, start=start_date)
 
-    def sunrise_time(self):
-        return self._next_rising_time(self.sun, start=self.date)
+    def sunrise_time(self, target_date=None):
+        if target_date:
+            dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
+            start_date = ephem.Date(dt_utc)
+        else:
+            start_date = self.date
+        return self._next_rising_time(self.sun, start=start_date)
 
     def moonset_time(self):
         return self._next_setting_time(self.moon, start=self.date)
 
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date)
+
+    def get_time_relative_to_sunset(self, target_date, offset_minutes=0):
+        # Get sunset time for the target_date
+        sunset_dt = self.sunset_time(target_date=target_date)
+
+        # If sunset doesn't occur (e.g., polar day/night)
+        if sunset_dt is None:
+            return (None, None)
+
+        # Apply the offset
+        # sunset_dt is already a timezone-aware local datetime object
+        local_datetime_obs_time = sunset_dt + datetime.timedelta(minutes=offset_minutes)
+
+        # Convert local observation time to UTC datetime
+        utc_datetime_obs_time = local_datetime_obs_time.astimezone(datetime.timezone.utc)
+
+        # Convert UTC datetime to ephem.Date
+        corresponding_ephem_date_obs_time = ephem.Date(utc_datetime_obs_time)
+
+        return (local_datetime_obs_time, corresponding_ephem_date_obs_time)
 
     def _moon_phase_letter(self):
         lunation = self.moon_lunation() / 100
