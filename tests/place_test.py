@@ -24,25 +24,23 @@ class TestPlace:
     def mid_latitude_place(self):
         """A place in a mid-latitude for general testing."""
         # Using Golden, CO as an example
-        local_tz = pytz.timezone(GOLDEN_COORDS["tz_name"])
-        # Place expects init_date to be UTC
+        # local_timezone is determined by Place based on lat/lon
+        # Place constructor expects 'date' argument for the initial date
         return Place(
             lat=GOLDEN_COORDS["lat"],
             lon=GOLDEN_COORDS["lon"],
-            local_timezone=local_tz,
-            init_date=DEFAULT_INIT_DATE_UTC
+            date=DEFAULT_INIT_DATE_UTC
         )
 
     @pytest.fixture
     def north_pole_place(self):
         """A place at the North Pole for testing polar phenomena."""
-        local_tz = pytz.timezone(NORTH_POLE_COORDS["tz_name"])
-        # Place expects init_date to be UTC
+        # local_timezone is determined by Place based on lat/lon (though for poles, it might default or be less defined)
+        # Place constructor expects 'date' argument for the initial date
         return Place(
             lat=NORTH_POLE_COORDS["lat"],
             lon=NORTH_POLE_COORDS["lon"],
-            local_timezone=local_tz,
-            init_date=DEFAULT_INIT_DATE_UTC # init_date doesn't matter much for polar tests with target_date
+            date=DEFAULT_INIT_DATE_UTC # date argument for Place constructor
         )
 
     def test_place_coordinates_fixture(self, mid_latitude_place):
@@ -52,7 +50,29 @@ class TestPlace:
         assert p.lat == rad(GOLDEN_COORDS["lat"])
         assert p.lon_decimal == GOLDEN_COORDS["lon"]
         assert p.lon == rad(GOLDEN_COORDS["lon"])
+        # The local_timezone is internally determined, so we should check it against the expected tz_name
+        # This requires Place to store the tz_name or the timezone object in a predictable way.
+        # Assuming Place sets self.local_timezone correctly based on coordinates:
         assert p.local_timezone == pytz.timezone(GOLDEN_COORDS["tz_name"])
+
+    def test_place_internal_timezone_assignment(self):
+        """Test that Place correctly assigns local_timezone based on coordinates."""
+        # Instantiate Place without a specific date, let it default.
+        # Focus is on timezone assignment from lat/lon.
+        place_instance = Place(lat=GOLDEN_COORDS["lat"], lon=GOLDEN_COORDS["lon"])
+
+        assert place_instance.local_timezone is not None, "local_timezone should be set"
+        
+        # self.local_timezone is a pytz timezone object.
+        # Its string representation or .zone attribute gives the name.
+        expected_tz_name = GOLDEN_COORDS["tz_name"]
+        
+        # Assuming local_timezone is a dateutil.tz.tzfile object as per new subtask description
+        # Access its name via the .zone attribute
+        expected_tz_name = GOLDEN_COORDS["tz_name"]
+        assert hasattr(place_instance.local_timezone, 'zone'), "local_timezone should have a 'zone' attribute"
+        assert place_instance.local_timezone.zone == expected_tz_name, \
+            f"Expected timezone zone {expected_tz_name}, got {place_instance.local_timezone.zone}"
 
     # --- Tests for sunset_time() and sunrise_time() ---
 
