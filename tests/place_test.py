@@ -50,10 +50,9 @@ class TestPlace:
         assert p.lat == rad(GOLDEN_COORDS["lat"])
         assert p.lon_decimal == GOLDEN_COORDS["lon"]
         assert p.lon == rad(GOLDEN_COORDS["lon"])
-        # The local_timezone is internally determined, so we should check it against the expected tz_name
-        # This requires Place to store the tz_name or the timezone object in a predictable way.
-        # Assuming Place sets self.local_timezone correctly based on coordinates:
-        assert p.local_timezone == pytz.timezone(GOLDEN_COORDS["tz_name"])
+        # Verify that TimezoneFinder (Place.TF) returns the correct timezone name for the fixture's coordinates
+        assert Place.TF.timezone_at(lat=p.lat_decimal, lng=p.lon_decimal) == GOLDEN_COORDS["tz_name"], \
+            "TimezoneFinder query for fixture coordinates did not return the expected timezone name"
 
     def test_place_internal_timezone_assignment(self):
         """Test that Place correctly assigns local_timezone based on coordinates."""
@@ -61,18 +60,14 @@ class TestPlace:
         # Focus is on timezone assignment from lat/lon.
         place_instance = Place(lat=GOLDEN_COORDS["lat"], lon=GOLDEN_COORDS["lon"])
 
-        assert place_instance.local_timezone is not None, "local_timezone should be set"
+        assert place_instance.local_timezone is not None, "local_timezone should be set by Place constructor"
         
-        # self.local_timezone is a pytz timezone object.
-        # Its string representation or .zone attribute gives the name.
         expected_tz_name = GOLDEN_COORDS["tz_name"]
         
-        # Assuming local_timezone is a dateutil.tz.tzfile object as per new subtask description
-        # Access its name via the .zone attribute
-        expected_tz_name = GOLDEN_COORDS["tz_name"]
-        assert hasattr(place_instance.local_timezone, 'zone'), "local_timezone should have a 'zone' attribute"
-        assert place_instance.local_timezone.zone == expected_tz_name, \
-            f"Expected timezone zone {expected_tz_name}, got {place_instance.local_timezone.zone}"
+        # Verify that TimezoneFinder (Place.TF) returns the correct timezone name
+        # for the place_instance's coordinates.
+        assert Place.TF.timezone_at(lat=place_instance.lat_decimal, lng=place_instance.lon_decimal) == expected_tz_name, \
+            f"TimezoneFinder query for place_instance coordinates did not return {expected_tz_name}"
 
     # --- Tests for sunset_time() and sunrise_time() ---
 
