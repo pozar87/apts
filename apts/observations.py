@@ -22,27 +22,79 @@ class Observation:
         resources.files("apts").joinpath("templates/notification.html.template")
     )
 
-    def __init__(self, place, equipment, conditions=Conditions()):
+    def __init__(self, place, equipment, conditions=Conditions(), target_date=None, offset_to_sunset_minutes=0):
         self.place = place
         self.equipment = equipment
         self.conditions = conditions
-        self.start, self.stop = self._normalize_dates(
-            place.sunset_time(), place.sunrise_time()
-        )
+
+        # Initialize core attributes that depend on date calculations
+        self.effective_ephem_date = None
+        self.start_time_for_observation_window = None
+        self.stop_time_for_observation_window = None
+        self.observation_local_time = None
+        self.start = None
+        self.stop = None
+        self.time_limit = None
+
+        if target_date:
+            # New behavior: use target_date and offset
+            local_dt_obs_time, ephem_dt_obs_time = self.place.get_time_relative_to_sunset(
+                target_date, offset_to_sunset_minutes
+            )
+
+            if ephem_dt_obs_time is None:
+                logger.warning(
+                    f"Could not determine observation time for {self.place.name} "
+                    f"on {target_date} with offset {offset_to_sunset_minutes} mins. "
+                    "Sun may be always up or down, or another issue occurred."
+                )
+                # Attributes remain None, subsequent operations should handle this
+            else:
+                self.effective_ephem_date = ephem_dt_obs_time
+                self.observation_local_time = local_dt_obs_time
+                self.start_time_for_observation_window = self.place.sunset_time(target_date=target_date)
+                self.stop_time_for_observation_window = self.place.sunrise_time(target_date=target_date)
+        else:
+            # Legacy behavior: use place.date
+            self.effective_ephem_date = self.place.date
+            self.start_time_for_observation_window = self.place.sunset_time()
+            self.stop_time_for_observation_window = self.place.sunrise_time()
+            # self.observation_local_time remains None for legacy mode
+
+        # Normalize start and stop dates for the observation window
+        if self.start_time_for_observation_window is not None and \
+           self.stop_time_for_observation_window is not None:
+            self.start, self.stop = self._normalize_dates(
+                self.start_time_for_observation_window, self.stop_time_for_observation_window
+            )
+        # If not, self.start and self.stop remain None
+
+        # Instantiate Messier and Planets objects
         self.local_messier = Messier(self.place)
         self.local_planets = Planets(self.place)
-        # Compute time limit
-        max_return_time = [
-            int(value) for value in self.conditions.max_return.split(":")
-        ]
-        time_limit = self.start.replace(
-            hour=max_return_time[0],
-            minute=max_return_time[1],
-            second=max_return_time[2],
-        )
-        self.time_limit = (
-            time_limit if time_limit > self.start else time_limit + timedelta(days=1)
-        )
+
+        # Compute Messier and Planets data if an effective date was determined
+        if self.effective_ephem_date is not None:
+            self.local_messier.compute(calculation_date=self.effective_ephem_date)
+            self.local_planets.compute(calculation_date=self.effective_ephem_date)
+        # Else: Objects are instantiated but not computed with a specific date.
+        # Their get_visible methods should handle self.start being None.
+
+        # Compute time limit for observation
+        if self.start is not None:
+            max_return_values = [
+                int(value) for value in self.conditions.max_return.split(":")
+            ]
+            time_limit_dt = self.start.replace(
+                hour=max_return_values[0],
+                minute=max_return_values[1],
+                second=max_return_values[2],
+            )
+            # Ensure time_limit is after self.start, if it's on the same day but earlier, add a day
+            self.time_limit = (
+                time_limit_dt if time_limit_dt > self.start else time_limit_dt + timedelta(days=1)
+            )
+        # If self.start is None, self.time_limit remains None.
 
     def get_visible_messier(self, **args):
         return self.local_messier.get_visible(
