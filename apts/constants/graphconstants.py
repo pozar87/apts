@@ -6,6 +6,7 @@ class OpticalType(Enum):
   INPUT = auto()
   OUTPUT = auto()
   GENERIC = auto()
+  BINOCULARS = auto()
 
 
 class GraphConstants:
@@ -17,5 +18,6 @@ class GraphConstants:
     OpticalType.GENERIC: "#FFFF00",
     OpticalType.INPUT: "#D3D3D3",
     OpticalType.OPTICAL: "#4B0082",
-    OpticalType.OUTPUT: "#A9A9A9"
+    OpticalType.OUTPUT: "#A9A9A9",
+    OpticalType.BINOCULARS: "#00FF00"  # Green for Binoculars
   }
