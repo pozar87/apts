@@ -28,6 +28,14 @@ apts\.optics module
     :undoc-members:
     :show-inheritance:
 
+apts\.opticalequipment module
+-----------------------------
+
+.. automodule:: apts.opticalequipment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 apts\.utils module
 ------------------
 
