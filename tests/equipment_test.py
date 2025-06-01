@@ -148,7 +148,7 @@ def test_binoculars_in_equipment_data():
     expected_exit_pupil = 42.0 / 8.0  # 5.25
     assert bino_row[EquipmentTableLabels.EXIT_PUPIL] == pytest.approx(expected_exit_pupil)
 
-    expected_dawes = 11.6 / 4.2 # Dawes: 11.6 / 4.2cm
+    expected_dawes = round(11.6 / 4.2, 3) # Dawes: 11.6 / 4.2cm, rounded to 3 decimal places
     assert bino_row[EquipmentTableLabels.DAWES_LIMIT] == pytest.approx(expected_dawes)
 
     expected_range = 7.7 + 5 * np.log10(4.2) # Range: 7.7 + 5 * log10(4.2cm)
