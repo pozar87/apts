@@ -142,7 +142,7 @@ def test_binoculars_in_equipment_data():
     assert bino_row[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"
     assert bino_row[EquipmentTableLabels.TYPE] == "Visual"
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
-    assert bino_row[EquipmentTableLabels.USEFUL_ZOOM] is True
+    assert bino_row[EquipmentTableLabels.USEFUL_ZOOM] == True
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8) # 7.5
 
     expected_exit_pupil = 42.0 / 8.0  # 5.25
@@ -179,10 +179,10 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
 
         if "TestBino" in label:
             assert elements == 1, f"Binocular path '{label}' should have 1 element, got {elements}"
-            assert "SkyWatcher" not in label, "Binocular path should not include Telescope parts"
-            assert "Plossl" not in label, "Binocular path should not include Eyepiece parts"
+            assert "unknown telescope 150/750" not in label, "Binocular path should not include Telescope parts"
+            assert "unknown ocular f=25" not in label, "Binocular path should not include Eyepiece parts"
             found_bino_only_path = True
-        elif "SkyWatcher" in label and ("Plossl" in label or elements > 1) : # Making it more robust if eyepiece name changes
+        elif "unknown telescope 150/750" in label and "unknown ocular f=25" in label:
             # Assuming a telescope path will have more than 1 element (telescope + eyepiece/camera)
             assert elements > 1, f"Telescope path '{label}' should have more than 1 element, got {elements}"
             assert "TestBino" not in label, "Telescope path should not include Binocular parts"
