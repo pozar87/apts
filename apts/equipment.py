@@ -26,95 +26,6 @@ class Equipment:
     hardware configuration. It uses directed graph for internal processing.
     """
 
-<<<<<<< HEAD
-  def data(self) -> pd.DataFrame:
-    columns = [
-        EquipmentTableLabels.LABEL,
-        EquipmentTableLabels.TYPE,
-        EquipmentTableLabels.ZOOM,
-        EquipmentTableLabels.USEFUL_ZOOM,
-        EquipmentTableLabels.FOV,
-        EquipmentTableLabels.EXIT_PUPIL,
-        EquipmentTableLabels.DAWES_LIMIT,
-        EquipmentTableLabels.RANGE,
-        EquipmentTableLabels.BRIGHTNESS,
-        EquipmentTableLabels.ELEMENTS
-    ]
-
-    # Import Binoculars here to keep it local to where it's used for isinstance
-    # and avoid potential circular imports if Binoculars ever needed Equipment.
-    from .opticalequipment.binoculars import Binoculars
-
-    def append(result_data, paths):
-        rows = []
-        logging.debug(f"Appending paths {paths}")
-        for path in paths:
-            # path.telescope is the main optic (telescope or binoculars)
-            # path.output is the final element (eyepiece, camera, or binoculars itself)
-
-            # Determine if the main optic is Binoculars
-            is_binoculars = isinstance(path.telescope, Binoculars)
-
-            # Calculate useful_zoom
-            useful_zoom_value = True # Default for binoculars
-            if not is_binoculars:
-                if hasattr(path.telescope, 'max_useful_zoom'):
-                    # max_useful_zoom() on Telescope returns a float, zoom() is a Quantity
-                    useful_zoom_value = path.zoom().magnitude < path.telescope.max_useful_zoom()
-                else:
-                    useful_zoom_value = False # Should not happen for Telescope objects
-
-            # Get output type. For Binoculars, path.output is the Binocular instance.
-            output_type_value = path.output.output_type()
-
-            # Calculate Exit Pupil
-            # path.exit_pupil() now returns a Quantity (e.g., mm)
-            exit_pupil_value = path.exit_pupil().to('mm').magnitude
-            if exit_pupil_value < 0: # Guard against potential negative values
-                exit_pupil_value = 0
-
-            rows.append([
-                path.label(),
-                output_type_value,
-                path.zoom().magnitude,
-                useful_zoom_value,
-                path.fov().magnitude,
-                exit_pupil_value,
-                path.telescope.dawes_limit().magnitude, # dawes_limit() in Binoculars/Telescope returns Quantity
-                path.telescope.limiting_magnitude(),    # limiting_magnitude() in Binoculars/Telescope returns float/int
-                path.brightness().magnitude, # brightness() in OpticalPath returns Quantity
-                path.length() # length() in OpticalPath returns int
-            ])
-
-        if rows:
-            new_data = pd.DataFrame(rows, columns=columns)
-            if result_data.empty:
-                result_data = new_data
-            else:
-                for col in result_data.columns:
-                    if result_data[col].dtype != new_data[col].dtype:
-                        # Try to convert new_data's column to result_data's dtype if they are compatible
-                        try:
-                            new_data[col] = new_data[col].astype(result_data[col].dtype)
-                        except Exception as e:
-                            logging.warning(f"Could not align dtype for column {col}: {e}. This might lead to concat issues.")
-                result_data = pd.concat([result_data, new_data], ignore_index=True)
-        return result_data
-
-    result = pd.DataFrame(columns=columns)
-    result = append(result, self._get_paths(GraphConstants.EYE_ID))
-    result = append(result, self._get_paths(GraphConstants.IMAGE_ID))
-
-    # Add ID column as first
-    if not result.empty: # Only add ID if DataFrame is not empty
-        result['ID'] = result.index
-        result = result[['ID'] + columns]
-    else: # If empty, ensure ID column exists for consistency if expected by other code
-        result['ID'] = [] # Initialize with empty list or appropriate empty type for ID
-        result = result[['ID'] + columns]
-
-    return result
-=======
     def __init__(self):
         self.connection_garph = ig.Graph(directed=True)
         # Register standard input and outputs
@@ -252,7 +163,6 @@ class Equipment:
                 "ID"
             ] = []  # Initialize with empty list or appropriate empty type for ID
             result = result[["ID"] + columns]
->>>>>>> jules_wip_17765179038779601474
 
         return result
 
