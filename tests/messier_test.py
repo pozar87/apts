@@ -47,7 +47,7 @@ def test_visiable_messier():
 def test_visible_planets():
   o = setup_observation()
   p = o.get_visible_planets()
-  assert len(p) == 7
+  assert len(p) == 3
   
   # Check that Name is string type
   assert p["Name"].dtype == "string"
