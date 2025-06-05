@@ -103,7 +103,7 @@ class Observation:
 
     def get_visible_planets(self, **args):
         return self.local_planets.get_visible(
-            self.conditions, self.start, self.time_limit, **args
+            self.conditions, self.start, self.time_limit, hours_margin=0.5, **args
         )
 
     def plot_visible_planets_svg(self, **args):
@@ -273,7 +273,7 @@ class Observation:
         planets_df = self.get_visible_planets().copy()
         if len(planets_df) == 0:
             fig, ax = pyplot.subplots()
-            ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
+            ax.set_xlim([self.start - timedelta(hours=0.5), self.time_limit + timedelta(hours=0.5)])
             ax.set_ylim(0, 90)
             self._mark_observation(ax)
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
@@ -298,7 +298,13 @@ class Observation:
             marker_size = size * 0.5 + 8
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
             ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
-        ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
+
+        # NEW: Dynamic xlim calculation for non-empty plot
+        min_transit_time = planets_df[ObjectTableLabels.TRANSIT].min()
+        max_transit_time = planets_df[ObjectTableLabels.TRANSIT].max()
+        ax.set_xlim([min_transit_time - timedelta(minutes=30), max_transit_time + timedelta(minutes=30)])
+
+        # Other plot settings (existing code)
         ax.set_ylim(0, 90)
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)

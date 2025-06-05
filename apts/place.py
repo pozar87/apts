@@ -27,7 +27,7 @@ class Place(ephem.Observer):
         lon,
         name="",
         elevation=300,
-        date=ephem.Date(datetime.datetime.now(datetime.UTC)),
+        date=ephem.Date(datetime.datetime.now(datetime.timezone.utc)),
         *args,
     ):
         ephem.Observer.__init__(self, *args)
