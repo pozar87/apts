@@ -319,8 +319,22 @@ class Equipment:
     def add_edge(self, node_from, node_to):
         logger.debug(f"Adding edge {node_from} -> {node_to}")
         # Add edge if only it doesn't exist
-        if not self.connection_garph.are_adjacent(node_from, node_to):
-            self.connection_garph.add_edge(node_from, node_to)
+        # Check if an edge already exists. igraph's are_connected expects vertex IDs.
+        # error=False ensures it returns a special value (like -1 or an invalid EID)
+        # if no edge exists, instead of raising an error.
+        # We consider directedness based on the graph type.
+
+        source_id = node_from if isinstance(node_from, str) else node_from.index
+        target_id = node_to if isinstance(node_to, str) else node_to.index
+
+        existing_edge = self.connection_garph.get_eid(
+            source_id,
+            target_id,
+            directed=True,
+            error=False
+        )
+        if existing_edge < 0: # An edge ID is non-negative if it exists
+            self.connection_garph.add_edge(source_id, target_id)
 
     def register(self, optical_eqipment):
         """
