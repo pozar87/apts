@@ -4,6 +4,7 @@ from string import Template
 
 import matplotlib.dates as mdates
 import numpy # Retained for potential use by other functions if Observation.to_html is modified
+import pandas as pd
 from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot, lines
@@ -299,10 +300,17 @@ class Observation:
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
             ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
 
-        # NEW: Dynamic xlim calculation for non-empty plot
+        # Dynamic xlim calculation for non-empty plot
         min_transit_time = planets_df[ObjectTableLabels.TRANSIT].min()
         max_transit_time = planets_df[ObjectTableLabels.TRANSIT].max()
-        ax.set_xlim([min_transit_time - timedelta(minutes=30), max_transit_time + timedelta(minutes=30)])
+
+        if pd.isna(min_transit_time) or pd.isna(max_transit_time):
+            # Fallback if no valid transit times for xlim (e.g., all visible planets are circumpolar/never up for transit)
+            # This uses the observation window (defined by start and time_limit) with a margin.
+            ax.set_xlim([self.start - timedelta(hours=0.5), self.time_limit + timedelta(hours=0.5)])
+        else:
+            # Use transit times for xlim if valid, with a 30-minute padding
+            ax.set_xlim([min_transit_time - timedelta(minutes=30), max_transit_time + timedelta(minutes=30)])
 
         # Other plot settings (existing code)
         ax.set_ylim(0, 90)

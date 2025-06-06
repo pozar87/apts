@@ -90,6 +90,14 @@ class TestPlanetsGetVisible(unittest.TestCase):
                 ObjectTableLabels.SETTING: self.stop_time + timedelta(hours=1),
                 ObjectTableLabels.MAGNITUDE: (self.conditions.max_object_magnitude.magnitude + 1.0) * ureg.mag,
             },
+            {
+                ObjectTableLabels.EPHEM: MockEphemBody("PlanetCircumpolar", mag=1.0),
+                ObjectTableLabels.NAME: "PlanetCircumpolar",
+                ObjectTableLabels.TRANSIT: pd.NaT,
+                ObjectTableLabels.RISING: self.start_time - timedelta(hours=5), # Well before start
+                ObjectTableLabels.SETTING: self.stop_time + timedelta(hours=5),  # Well after stop
+                ObjectTableLabels.MAGNITUDE: 1.0 * ureg.mag,
+            },
         ]
         # Overwrite the .objects DataFrame with mock data
         self.planets.objects = pd.DataFrame(self.mock_planets_data)
@@ -123,14 +131,15 @@ class TestPlanetsGetVisible(unittest.TestCase):
         )
         visible_names = sorted(visible_planets_df[ObjectTableLabels.NAME].tolist())
 
-        expected_visible = sorted(["PlanetInWindow", "PlanetInMarginBefore", "PlanetInMarginAfter", "PlanetOutsideMarginBefore", "PlanetOutsideMarginAfter"])
+        expected_visible = sorted(["PlanetInWindow", "PlanetInMarginBefore", "PlanetInMarginAfter", "PlanetOutsideMarginBefore", "PlanetOutsideMarginAfter", "PlanetCircumpolar"])
         self.assertEqual(visible_names, expected_visible,
                          f"Visible planets with margin do not match expected. Got: {visible_names}, Expected: {expected_visible}")
 
         self.assertIn("PlanetOutsideMarginBefore", visible_names, "PlanetOutsideMarginBefore SHOULD BE visible with margin due to rise/set overlap")
         self.assertIn("PlanetOutsideMarginAfter", visible_names, "PlanetOutsideMarginAfter SHOULD BE visible with margin due to rise/set overlap")
+        self.assertIn("PlanetCircumpolar", visible_names, "PlanetCircumpolar should be visible")
         self.assertNotIn("PlanetTooDim", visible_names, "PlanetTooDim should NOT be visible due to magnitude")
-        self.assertEqual(len(visible_names), 5, f"Incorrect number of visible planets with margin. Got {len(visible_names)}, expected 5.")
+        self.assertEqual(len(visible_names), 6, f"Incorrect number of visible planets with margin. Got {len(visible_names)}, expected 6.")
 
     def test_get_visible_planets_without_margin(self):
         # Test with hours_margin = 0 (default)
@@ -139,7 +148,7 @@ class TestPlanetsGetVisible(unittest.TestCase):
         )
         visible_names = sorted(visible_planets_df[ObjectTableLabels.NAME].tolist())
 
-        expected_visible = sorted(["PlanetInWindow", "PlanetInMarginBefore", "PlanetInMarginAfter", "PlanetOutsideMarginBefore", "PlanetOutsideMarginAfter"])
+        expected_visible = sorted(["PlanetInWindow", "PlanetInMarginBefore", "PlanetInMarginAfter", "PlanetOutsideMarginBefore", "PlanetOutsideMarginAfter", "PlanetCircumpolar"])
         self.assertEqual(visible_names, expected_visible,
                          f"Visible planets without margin do not match expected. Got: {visible_names}, Expected: {expected_visible}")
 
@@ -147,8 +156,9 @@ class TestPlanetsGetVisible(unittest.TestCase):
         self.assertIn("PlanetInMarginAfter", visible_names, "PlanetInMarginAfter SHOULD BE visible without margin due to rise/set overlap")
         self.assertIn("PlanetOutsideMarginBefore", visible_names, "PlanetOutsideMarginBefore SHOULD BE visible without margin due to rise/set overlap")
         self.assertIn("PlanetOutsideMarginAfter", visible_names, "PlanetOutsideMarginAfter SHOULD BE visible without margin due to rise/set overlap")
+        self.assertIn("PlanetCircumpolar", visible_names, "PlanetCircumpolar should be visible")
         self.assertNotIn("PlanetTooDim", visible_names, "PlanetTooDim should NOT be visible due to magnitude")
-        self.assertEqual(len(visible_names), 5, f"Incorrect number of visible planets without margin. Got {len(visible_names)}, expected 5.")
+        self.assertEqual(len(visible_names), 6, f"Incorrect number of visible planets without margin. Got {len(visible_names)}, expected 6.")
 
 if __name__ == '__main__':
     unittest.main()
