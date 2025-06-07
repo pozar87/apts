@@ -213,6 +213,9 @@ class Observation:
 
             ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
+            # Format the x-axis to display time in the local timezone
+            date_format = mdates.DateFormatter('%H:%M:%S %Z', tz=self.place.local_timezone)
+            ax.xaxis.set_major_formatter(date_format)
             self._mark_observation(ax)
             self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
             Utils.annotate_plot(ax, "Altitude [°]")
