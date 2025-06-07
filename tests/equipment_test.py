@@ -49,12 +49,78 @@ def test_multi_barlow():
   assert len(e.data()[EquipmentTableLabels.ZOOM]) == 4
 
 
-def test_camera():
+def test_camera_path_with_setup_equipment(): # Renamed
   e = setup_equipment()
-  e.register(equipment.Camera(30, 40, 100, 200))
-  # Zoom of camera (sqrt(30^2 + 40^2) = 50)
-  data = e.data()
-  assert data[data.Type == "Image"].iloc[0][EquipmentTableLabels.ZOOM] == 15
+  # The telescope from setup_equipment() is Telescope(150, 750, t2_output=True, vendor="unknown telescope")
+  # Let's find this telescope instance from the equipment graph for later assertion
+  from apts.constants import NodeLabels # Import NodeLabels
+  setup_tele = None
+  for v in e.connection_garph.vs:
+      node_equipment = v.attributes().get(NodeLabels.EQUIPMENT) # Use NodeLabels for graph attributes
+      if isinstance(node_equipment, equipment.Telescope) and \
+         node_equipment.focal_length.magnitude == 750 and \
+         node_equipment.aperture.magnitude == 150:
+          setup_tele = node_equipment
+          break
+  assert setup_tele is not None, "Could not find the telescope from setup_equipment"
+
+  cam_vendor = "OriginalTestCam"
+  cam = equipment.Camera(30, 40, 100, 200, vendor=cam_vendor) # Added vendor
+  e.register(cam)
+
+  # Retrieve OpticalPath objects
+  all_image_ops = e._get_paths(GraphConstants.IMAGE_ID)
+  target_op = None
+  for op in all_image_ops:
+      # Identify the path with the setup_tele and the new cam
+      if (isinstance(op.telescope, equipment.Telescope) and
+          op.telescope.focal_length.magnitude == 750 and # Check properties of setup_tele
+          isinstance(op.output, equipment.Camera) and
+          op.output.vendor == cam_vendor and
+          not op.barlows and # Ensure no barlows
+          op.length() == 2):
+          target_op = op
+          break
+
+  assert target_op is not None, "Specific Telescope -> Camera path not found"
+
+  # Verify components
+  assert target_op.telescope == setup_tele
+  assert target_op.output == cam
+  assert not target_op.barlows
+
+  # Verify Calculations
+  # Zoom: telescope.focal_length / camera._zoom_divider()
+  # The existing test asserted zoom == 15. Let's verify this with the formula.
+  # Camera._zoom_divider() = sqrt(sensor_width^2 + sensor_height^2)
+  # For Camera(30, 40, ...), sensor_width=30, sensor_height=40.
+  # _zoom_divider = sqrt(30^2 + 40^2) = sqrt(900 + 1600) = sqrt(2500) = 50.
+  # Telescope focal length = 750mm.
+  # Expected zoom = 750 / 50 = 15.
+  expected_zoom = setup_tele.focal_length.magnitude / cam._zoom_divider().magnitude
+  assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
+  assert target_op.zoom().magnitude == pytest.approx(15) # Confirm original assertion value
+
+  # FOV: (camera.sensor_height.magnitude * 3438 / (telescope.focal_length.magnitude * 1.0)) / 60
+  expected_fov = (cam.sensor_height.magnitude * 3438 /
+                  (setup_tele.focal_length.magnitude * 1.0)) / 60 # No barlow (mag=1.0)
+  assert target_op.fov().magnitude == pytest.approx(expected_fov)
+
+  # Verify the original DataFrame check for completeness, though target_op checks are more robust
+  data_df = e.data()
+  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+
+  # Find the row corresponding to target_op for DataFrame value check
+  found_in_df = False
+  for _, row in image_paths_df.iterrows():
+      if (cam_vendor in row[EquipmentTableLabels.LABEL] and
+          setup_tele.vendor in row[EquipmentTableLabels.LABEL] and # "unknown telescope"
+          row[EquipmentTableLabels.ELEMENTS] == 2):
+          assert row[EquipmentTableLabels.ZOOM] == pytest.approx(15)
+          found_in_df = True
+          break
+  assert found_in_df, "Path not found or zoom incorrect in DataFrame for the specific Camera path"
+
 
 def test_telecsope():
   t = equipment.Telescope(150, 750)
@@ -106,12 +172,12 @@ def test_binoculars_registration_and_graph():
     # 2. Connected from SPACE
     space_node = eq.connection_garph.vs.find(name=GraphConstants.SPACE_ID)
     bino_vertex_index = eq.connection_garph.vs.find(name=bino_node_id_in_graph).index
-    assert eq.connection_garph.are_adjacent(space_node.index, bino_vertex_index), \
+    assert eq.connection_garph.get_eid(space_node.index, bino_vertex_index, directed=True, error=False) >= 0, \
         "Binoculars not connected from SPACE"
 
     # 3. Connected to EYE
     eye_node = eq.connection_garph.vs.find(name=GraphConstants.EYE_ID)
-    assert eq.connection_garph.are_adjacent(bino_vertex_index, eye_node.index), \
+    assert eq.connection_garph.get_eid(bino_vertex_index, eye_node.index, directed=True, error=False) >= 0, \
         "Binoculars not connected to EYE"
 
     # 4. Ensure no input/output connection points were created for binoculars
@@ -193,3 +259,274 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
 
     bino_paths_count = sum(["TestBino" in label for label in data_df[EquipmentTableLabels.LABEL]])
     assert bino_paths_count == 1, "Expected exactly one path containing the TestBino"
+
+
+# --- T2 Adapter Tests ---
+
+def test_telescope_to_camera_direct_t2():
+    """Test Telescope directly connected to Camera via T2."""
+    eq = equipment.Equipment()
+    from apts.constants import OpticalType, GraphConstants # Added GraphConstants
+    from apts.opticalequipment import Telescope, Camera
+
+    # Telescope with T2 output
+    # Parameters: aperture, focal_length, vendor="unknown telescope", t2_output=False
+    tele = Telescope(150, 750, t2_output=True, vendor="TestScopeT2")
+    # Camera defaults to T2 connection
+    # Parameters: chip_w, chip_h, pixel_w, pixel_h, vendor="unknown camera"
+    cam = Camera(22.2, 14.8, 4.3, 4.3, vendor="TestCamT2")
+
+    eq.register(tele)
+    eq.register(cam)
+
+    data_df = eq.data()
+
+    # Filter for paths that result in an "Image" type output
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID] # Corrected to use GraphConstants.IMAGE_ID
+
+    assert not image_paths.empty, "No image paths found for Telescope direct to Camera (T2)"
+
+    # Assuming one primary path for this simple setup
+    # If multiple, this might need adjustment or looping through paths
+    path_info = image_paths.iloc[0]
+
+    assert path_info[EquipmentTableLabels.ELEMENTS] == 2, \
+        f"Expected 2 elements, got {path_info[EquipmentTableLabels.ELEMENTS]}"
+
+    # Verify label contains both component names (vendors)
+    assert tele.vendor in path_info[EquipmentTableLabels.LABEL]
+    assert cam.vendor in path_info[EquipmentTableLabels.LABEL]
+    # Optional: Check zoom/FOV if a simple formula exists for direct T2 projection
+    # For prime focus, zoom is often considered focal_length_tele / diagonal_sensor_size_mm
+    # This might require more detailed calculation based on how OpticalPath calculates it.
+
+    # --- Detailed OpticalPath verification ---
+    all_image_ops = eq._get_paths(GraphConstants.IMAGE_ID)
+    target_op = None
+    for op in all_image_ops:
+            if (tele.vendor in op.label() and
+            cam.vendor in op.label() and
+                op.length() == 2): # Corrected to use op.length()
+                target_op = op    # Indented
+                break             # Indented
+
+    assert target_op is not None, "Could not find the specific Telescope->Camera OpticalPath"
+
+    # Verify components
+    assert target_op.telescope == tele
+    assert target_op.output == cam # Changed .camera to .output
+    assert not target_op.barlows # No barlows in this path
+
+    # Verify calculations
+    # op.zoom() internally calls: OpticsUtils.compute_camera_zoom(self.telescope, self.output, self.barlow_magnification())
+    # OpticsUtils.compute_camera_zoom: return telescope.focal_length / camera._zoom_divider() * barlow_magnification
+
+    # Use target_op.output (which is the camera instance 'cam') for camera-specific attributes
+    expected_zoom = tele.focal_length.magnitude / target_op.output._zoom_divider().magnitude
+    assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
+
+    # op.fov() calls camera.field_of_view(self.telescope, self.zoom(), self.barlow_magnification())
+    # The zoom argument to camera.field_of_view is not used in its formula.
+    expected_fov = (target_op.output.sensor_height.magnitude * 3438 /
+                    (tele.focal_length.magnitude * 1.0)) / 60 # Barlow mag is 1.0 for this path
+    assert target_op.fov().magnitude == pytest.approx(expected_fov)
+
+
+def test_telescope_barlow_t2_camera():
+    """Test Telescope to Barlow (T2 output) to Camera."""
+    eq = equipment.Equipment()
+    from apts.constants import OpticalType, GraphConstants # For IMAGE_ID consistency
+    from apts.utils import ConnectionType # Corrected import for ConnectionType
+    from apts.opticalequipment import Telescope, Barlow, Camera
+
+    # Telescope with standard 1.25" output
+    tele = Telescope(150, 750, vendor="MainScope")
+    # Barlow with 1.25" input, but T2 output
+    barlow_t2 = Barlow(magnification=2.0,
+                       connection_type=ConnectionType.F_1_25,
+                       t2_output=True,
+                       vendor="BarlowT2Out")
+    # Camera defaults to T2 connection
+    cam = Camera(12.48, 9.98, 2.4, 2.4, vendor="MicroCam")
+
+    eq.register(tele)
+    eq.register(barlow_t2)
+    eq.register(cam)
+
+    data_df = eq.data()
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID] # Corrected to use GraphConstants.IMAGE_ID
+
+    assert not image_paths.empty, "No image paths found for Telescope -> Barlow (T2) -> Camera"
+
+    path_info = image_paths.iloc[0]
+
+    assert path_info[EquipmentTableLabels.ELEMENTS] == 3, \
+        f"Expected 3 elements, got {path_info[EquipmentTableLabels.ELEMENTS]}"
+
+    assert tele.vendor in path_info[EquipmentTableLabels.LABEL]
+    assert barlow_t2.vendor in path_info[EquipmentTableLabels.LABEL]
+    assert cam.vendor in path_info[EquipmentTableLabels.LABEL]
+    # Optional: Check zoom/FOV. Zoom should reflect Barlow's magnification.
+    # e.g., if direct camera zoom was X, with 2x Barlow it should be 2X.
+
+    # --- Detailed OpticalPath verification ---
+    all_image_ops = eq._get_paths(GraphConstants.IMAGE_ID)
+    target_op = None
+    for op in all_image_ops:
+        if (tele.vendor in op.label() and
+            barlow_t2.vendor in op.label() and
+            cam.vendor in op.label() and
+            op.length() == 3): # Corrected to use op.length()
+            target_op = op
+            break
+
+    assert target_op is not None, "Could not find the specific Telescope->Barlow->Camera OpticalPath"
+
+    # Verify components
+    assert target_op.telescope == tele
+    assert target_op.output == cam # Changed .camera to .output
+    assert len(target_op.barlows) == 1
+    assert target_op.barlows[0] == barlow_t2
+    assert target_op.effective_barlow() == pytest.approx(barlow_t2.magnification) # Changed to effective_barlow
+
+    # Verify calculations
+    expected_zoom = (tele.focal_length.magnitude / target_op.output._zoom_divider().magnitude) * barlow_t2.magnification
+    assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
+
+    expected_fov = (target_op.output.sensor_height.magnitude * 3438 /
+                    (tele.focal_length.magnitude * barlow_t2.magnification)) / 60
+    assert target_op.fov().magnitude == pytest.approx(expected_fov)
+
+
+def test_telescope_std_barlow_t2_camera_variation():
+    """Confirms Telescope (standard) -> Barlow (standard_in, T2_out) -> Camera connection."""
+    eq = equipment.Equipment()
+    from apts.constants import OpticalType, GraphConstants
+    from apts.utils import ConnectionType # Corrected import
+    from apts.opticalequipment import Telescope, Barlow, Camera
+
+    tele = Telescope(100, 500, vendor="ScopeStdOut") # Default F_1_25 output
+    barlow = Barlow(magnification=1.5,
+                    connection_type=ConnectionType.F_1_25, # Standard input
+                    t2_output=True,
+                    vendor="BarlowT2Var")
+    cam = Camera(10, 10, 5, 5, vendor="CamT2Var") # T2 input
+
+    eq.register(tele)
+    eq.register(barlow)
+    eq.register(cam)
+
+    data_df = eq.data()
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+
+    assert not image_paths.empty, "No image paths found for Telescope (std) -> Barlow (T2 out) -> Camera"
+
+    # Find the specific path
+    correct_path_found = False
+    for _, row in image_paths.iterrows():
+        if (tele.vendor in row[EquipmentTableLabels.LABEL] and
+            barlow.vendor in row[EquipmentTableLabels.LABEL] and
+            cam.vendor in row[EquipmentTableLabels.LABEL] and
+            row[EquipmentTableLabels.ELEMENTS] == 3):
+            correct_path_found = True
+            break
+    assert correct_path_found, "Specific Telescope (std) -> Barlow (T2 out) -> Camera path not found or element count incorrect"
+
+    # --- Detailed OpticalPath verification ---
+    all_image_ops = eq._get_paths(GraphConstants.IMAGE_ID)
+    target_op = None
+    for op_path in all_image_ops: # Renamed op to op_path to avoid conflict with outer scope if any
+        # Check label and number of elements to identify the correct path
+        if (tele.vendor in op_path.label() and
+            barlow.vendor in op_path.label() and
+            cam.vendor in op_path.label() and
+            op_path.length() == 3): # Corrected to use op_path.length() (removed duplicate line)
+            target_op = op_path
+            break
+
+    assert target_op is not None, "Could not find the specific Telescope->Barlow->Camera OpticalPath for detailed check"
+
+    # Verify components
+    assert target_op.telescope == tele
+    assert target_op.output == cam # Changed .camera to .output
+    assert len(target_op.barlows) == 1
+    assert target_op.barlows[0] == barlow
+    assert target_op.effective_barlow() == pytest.approx(barlow.magnification) # Changed to effective_barlow
+
+    # Verify calculations
+    expected_zoom = (tele.focal_length.magnitude / target_op.output._zoom_divider().magnitude) * barlow.magnification
+    assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
+
+    expected_fov = (target_op.output.sensor_height.magnitude * 3438 /
+                    (tele.focal_length.magnitude * barlow.magnification)) / 60
+    assert target_op.fov().magnitude == pytest.approx(expected_fov)
+
+
+def test_connection_specificity_tele_no_t2_output_to_t2_camera():
+    """Test Telescope (no T2 out) does not connect to Camera (only T2 in)."""
+    eq = equipment.Equipment()
+    from apts.constants import OpticalType, GraphConstants
+    from apts.utils import ConnectionType # Corrected import
+    from apts.opticalequipment import Telescope, Camera
+
+    # Telescope with F_1_25 output, t2_output=False by default
+    tele_no_t2 = Telescope(80, 400, vendor="TeleNoT2", connection_type=ConnectionType.F_1_25)
+    # Camera with only T2 input (default)
+    cam_t2_only = Camera(10, 10, 5, 5, vendor="CamOnlyT2")
+
+    eq.register(tele_no_t2)
+    eq.register(cam_t2_only)
+
+    data_df = eq.data()
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+
+    # We expect NO paths that are just these two items.
+    # If any image path exists, it must not be a direct connection of these two.
+    direct_connection_found = False
+    for _, row in image_paths.iterrows():
+        if (tele_no_t2.vendor in row[EquipmentTableLabels.LABEL] and
+            cam_t2_only.vendor in row[EquipmentTableLabels.LABEL] and
+            row[EquipmentTableLabels.ELEMENTS] == 2):
+            direct_connection_found = True
+            break
+    assert not direct_connection_found, \
+        f"Unexpected direct path found between Telescope (no T2 out) and Camera (T2 in): {row[EquipmentTableLabels.LABEL] if direct_connection_found else ''}"
+
+
+def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
+    """Test Barlow (no T2 out) does not connect to Camera (only T2 in) in a sequence."""
+    eq = equipment.Equipment()
+    from apts.constants import OpticalType, GraphConstants
+    from apts.utils import ConnectionType # Corrected import
+    from apts.opticalequipment import Telescope, Barlow, Camera
+
+    tele = Telescope(100, 500, vendor="SeqScope") # Standard F_1_25 output
+    # Barlow with F_1_25 input, but t2_output explicitly False
+    barlow_no_t2 = Barlow(magnification=2.0,
+                          connection_type=ConnectionType.F_1_25,
+                          t2_output=False,
+                          vendor="BarlowNoT2")
+    cam_t2_only = Camera(10, 10, 5, 5, vendor="SeqCamT2") # T2 input
+
+    eq.register(tele)
+    eq.register(barlow_no_t2)
+    eq.register(cam_t2_only)
+
+    data_df = eq.data()
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+
+    problematic_path_found = False
+    for _, row in image_paths.iterrows():
+        is_problem_path = (
+            tele.vendor in row[EquipmentTableLabels.LABEL] and
+            barlow_no_t2.vendor in row[EquipmentTableLabels.LABEL] and
+            cam_t2_only.vendor in row[EquipmentTableLabels.LABEL] and
+            row[EquipmentTableLabels.ELEMENTS] == 3 # Path with all three
+        )
+        if is_problem_path:
+            # This path should not form if Barlow cannot output to T2 for the camera
+            problematic_path_found = True
+            break
+
+    assert not problematic_path_found, \
+        f"Path formed with Barlow (no T2 out) to Camera (T2 in): {row[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"

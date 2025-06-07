@@ -150,11 +150,14 @@ class Notify:
             return
 
         try:
-            img_data = (
-                plot_bytes.getvalue()
-                if hasattr(plot_bytes, "getvalue")
-                else plot_bytes.read()
-            )
+            # If plot_bytes is already bytes, use it directly.
+            # Otherwise, assume it's a file-like object (like BytesIO) and try getvalue or read.
+            if isinstance(plot_bytes, bytes):
+                img_data = plot_bytes
+            elif hasattr(plot_bytes, "getvalue"):
+                img_data = plot_bytes.getvalue()
+            else:
+                img_data = plot_bytes.read()
 
             if not img_data:
                 logger.warning(
@@ -162,7 +165,7 @@ class Notify:
                 )
                 return
 
-            image = MIMEImage(img_data)
+            image = MIMEImage(img_data, _subtype="png") # Added _subtype
             image.add_header("Content-ID", f"<{filename}>")
             image.add_header("Content-Disposition", "inline", filename=filename)
             message.attach(image)
