@@ -121,15 +121,14 @@ class Planets(Objects):
         visible = self.objects
         # Add ID collumn
         visible["ID"] = visible.index
+
+        eff_start = start - timedelta(hours=hours_margin)
+        eff_stop = stop + timedelta(hours=hours_margin)
+
         visible = visible[
-            # Filter objects by they rising and setting or transit
-            (
-                (visible.Setting < stop + timedelta(hours=hours_margin))
-                | (visible.Rising < stop + timedelta(hours=hours_margin))
-                | (
-                    (visible.Transit > start - timedelta(hours=hours_margin))
-                    & (visible.Transit < stop + timedelta(hours=hours_margin))
-                )
+            ( # Combined time-based visibility conditions
+                ((visible.Transit > eff_start) & (visible.Transit < eff_stop)) |
+                ((visible.Rising < eff_stop) & (visible.Setting > eff_start))
             )
             &
             # Filter object by they magnitude
@@ -138,7 +137,9 @@ class Planets(Objects):
                 visible.Magnitude.apply(
                     lambda x: x.magnitude if hasattr(x, "magnitude") else x
                 )
-                < conditions.max_object_magnitude
+                < (conditions.max_object_magnitude.magnitude \
+                   if hasattr(conditions.max_object_magnitude, "magnitude") \
+                   else conditions.max_object_magnitude)
             )
         ]
         # Sort objects by given order
