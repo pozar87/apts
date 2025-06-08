@@ -161,7 +161,7 @@ class Observation:
         ax = args.pop('ax', None)
         fig = None
         if ax:
-            fig = ax.figure 
+            fig = ax.figure
 
         try:
             messier_df = self.get_visible_messier().copy()
@@ -182,7 +182,7 @@ class Observation:
 
             messier_type_colors = {
                 "Galaxy": "blue", "Globular Cluster": "red", "Open Cluster": "green",
-                "Nebula": "purple", "Planetary Nebula": "orange", 
+                "Nebula": "purple", "Planetary Nebula": "orange",
                 "Supernova Remnant": "brown", "Other": "grey",
             }
             plotted_types = {}
@@ -196,12 +196,12 @@ class Observation:
             if ax is None:
                 fig, ax = pyplot.subplots(figsize=(18, 12), **args)
             else:
-                fig = ax.figure 
+                fig = ax.figure
 
             for _, obj in messier_df.iterrows():
                 transit = obj[ObjectTableLabels.TRANSIT]
                 altitude = obj[ObjectTableLabels.ALTITUDE]
-                obj_type = obj['Type'] 
+                obj_type = obj['Type']
                 width = obj[ObjectTableLabels.WIDTH]
                 height = obj['Height'] if 'Height' in obj else width
                 messier_id = obj[ObjectTableLabels.MESSIER]
@@ -231,14 +231,14 @@ class Observation:
         except Exception as e:
             logger.error(f"Error generating Messier plot: {e}", exc_info=True)
             if ax is None:
-                fig, ax = pyplot.subplots(**args) 
+                fig, ax = pyplot.subplots(**args)
             else:
                 ax.clear()
                 fig = ax.figure
-            
+
             ax.text(0.5, 0.5, 'Error generating Messier plot.\nSee logs for details.',
                     horizontalalignment='center', verticalalignment='center',
-                    fontsize=12, color='red', wrap=True, transform=ax.transAxes) 
+                    fontsize=12, color='red', wrap=True, transform=ax.transAxes)
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title("Messier Plot Error")
@@ -299,9 +299,10 @@ class Observation:
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
             marker_size = size * 0.5 + 8
+            logger.debug(f"Plotting planet {name} at transit {transit} with altitude {altitude} and size {size}")
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
             ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
-        ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
+        #ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
         ax.set_ylim(0, 90)
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
@@ -387,7 +388,7 @@ class Observation:
         try:
             axes_arg = args.pop('ax', None)
             fig = None
-            axes = None 
+            axes = None
 
             if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
                 axes = axes_arg
@@ -401,7 +402,7 @@ class Observation:
             plt_clouds = self.place.weather.plot_clouds(ax=axes[0, 0])
             self._mark_observation(plt_clouds)
             self._mark_good_conditions(plt_clouds, 0, self.conditions.max_clouds)
-            
+
             logger.debug("Plotting clouds summary...")
             self.place.weather.plot_clouds_summary(ax=axes[0, 1])
 
@@ -430,7 +431,7 @@ class Observation:
             logger.debug("Plotting visibility...")
             plt_visibility = self.place.weather.plot_visibility(ax=axes[3, 1])
             self._mark_observation(plt_visibility)
-            
+
             fig.tight_layout()
             logger.info("Successfully generated Weather plot.")
             return fig
@@ -439,7 +440,7 @@ class Observation:
             logger.error(f"Error generating Weather plot details: {e}", exc_info=True)
             try:
                 if 'fig' in locals() and fig is not None:
-                    pyplot.close(fig) 
+                    pyplot.close(fig)
             except Exception as close_exc:
                 logger.error(f"Error closing figure during weather plot error handling: {close_exc}")
 
