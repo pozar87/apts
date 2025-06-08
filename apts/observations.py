@@ -303,7 +303,7 @@ class Observation:
             ax.scatter(transit, altitude, s=marker_size**2, marker='o')
             ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
         #ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
-        ax.set_ylim(0, 90)
+        #ax.set_ylim(0, 90)
         self._mark_observation(ax)
         self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
         Utils.annotate_plot(ax, "Altitude [°]")
