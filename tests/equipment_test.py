@@ -1,10 +1,11 @@
 import pytest
 import numpy as np # Added for np.log10
+import pandas as pd # Added for DataFrame operations
 
 from apts import equipment
 from apts.constants import EquipmentTableLabels, GraphConstants # Added GraphConstants
-from apts.opticalequipment import Barlow, Binoculars # Added Binoculars
-from apts.utils import ureg # Added ureg
+from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece # Added Telescope, Camera, Eyepiece
+from apts.utils import ureg, ConnectionType # Added ureg, ConnectionType
 from . import setup_equipment
 
 
@@ -530,3 +531,52 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
 
     assert not problematic_path_found, \
         f"Path formed with Barlow (no T2 out) to Camera (T2 in): {row[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"
+
+
+# --- Brightness Tests ---
+
+def test_camera_path_brightness_is_nan():
+    """Test that brightness for a camera path is NaN."""
+    eq = equipment.Equipment()
+    # Telescope with T2 output
+    scope_t2 = Telescope(aperture=80, focal_length=400, vendor="TestScopeT2", t2_output=True)
+    # Camera with T2 input (default)
+    cam = Camera(sensor_width=22.2, sensor_height=14.8, width=5184, height=3456, vendor="TestCamT2")
+
+    eq.register(scope_t2)
+    eq.register(cam)
+
+    df = eq.data()
+    assert not df.empty, "Equipment data frame is empty"
+
+    camera_rows = df[df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    assert not camera_rows.empty, "No camera output paths found in DataFrame."
+
+    # Check if all brightness values in camera_rows are NaN
+    assert camera_rows[EquipmentTableLabels.BRIGHTNESS].isnull().all(), \
+        f"Brightness for camera paths should be NaN. Got: {camera_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+
+def test_eyepiece_path_brightness_is_numeric():
+    """Test that brightness for an eyepiece path is numeric and non-negative."""
+    eq = equipment.Equipment()
+    # Telescope with default F_1_25 output
+    scope = Telescope(aperture=80, focal_length=400, vendor="TestScopeVisual")
+    # Eyepiece with F_1_25 input
+    ep = Eyepiece(focal_length=10, vendor="TestEPVisual", field_of_view=50, connection_type=ConnectionType.F_1_25)
+
+    eq.register(scope)
+    eq.register(ep)
+
+    df = eq.data()
+    assert not df.empty, "Equipment data frame is empty"
+
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == GraphConstants.EYE_ID]
+    assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
+
+    # Check that all brightness values are not NaN (i.e., they are numbers)
+    assert eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].notnull().all(), \
+        f"Brightness for eyepiece paths should be a number. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+
+    # Check that all brightness values are non-negative
+    assert (eyepiece_rows[EquipmentTableLabels.BRIGHTNESS] >= 0).all(), \
+        f"Brightness for eyepiece paths should be non-negative. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"

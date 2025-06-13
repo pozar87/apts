@@ -41,6 +41,9 @@ class Camera(OutputOpticalEqipment):
     # Connect camera with output image node
     equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 
+  def is_visual_output(self):
+    return False
+
   def __str__(self):
     # Format: <vendor> <width>x<height>
     return "{} {}x{}".format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
