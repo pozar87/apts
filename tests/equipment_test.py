@@ -562,7 +562,7 @@ def test_eyepiece_path_brightness_is_numeric():
     # Telescope with default F_1_25 output
     scope = Telescope(aperture=80, focal_length=400, vendor="TestScopeVisual")
     # Eyepiece with F_1_25 input
-    ep = Eyepiece(focal_length=10, vendor="TestEPVisual", fov=50, connection_type=ConnectionType.F_1_25)
+    ep = Eyepiece(focal_length=10, vendor="TestEPVisual", apparent_fov=50, connection_type=ConnectionType.F_1_25)
 
     eq.register(scope)
     eq.register(ep)
