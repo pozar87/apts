@@ -202,18 +202,30 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
                 self.assertEqual(returned_fig, mock_fig)
                 mock_pyplot.subplots.assert_called_once()
-                mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
-                mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-                mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", scenario_data["expected_effective_dark_mode"])
-                mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=expected_style['TEXT_COLOR'])
+                if scenario_data["expected_effective_dark_mode"]:
+                    mock_fig.patch.set_facecolor.assert_called_with('#1C1C3A')
+                    mock_ax.set_facecolor.assert_called_with('#2A004F')
+                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color='#FFFFFF')
+                    if not self.mock_messier_df.empty:
+                        mock_legend.get_frame().set_facecolor.assert_called_with('#2A004F')
+                        mock_legend.get_frame().set_edgecolor.assert_called_with('#CCCCCC')
+                        mock_legend.get_title().set_color.assert_called_with('#FFFFFF')
+                        for text_mock in mock_legend.get_texts():
+                            text_mock.set_color.assert_called_with('#FFFFFF')
+                else: # Light mode assertions remain using expected_style from get_plot_style(False)
+                    mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+                    mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=expected_style['TEXT_COLOR'])
+                    if not self.mock_messier_df.empty:
+                        mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                        mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+                        mock_legend.get_title().set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                        for text_mock in mock_legend.get_texts():
+                            text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
+                mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", scenario_data["expected_effective_dark_mode"])
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()
-                    mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-                    mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
-                    mock_legend.get_title().set_color.assert_called_with(expected_style['TEXT_COLOR'])
-                    for text_mock in mock_legend.get_texts():
-                        text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
     @patch('apts.observations.svg.Drawing')
     @patch('apts.observations.get_dark_mode')
@@ -246,12 +258,20 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
                 self.observation.plot_visible_planets_svg(dark_mode_override=scenario_data["override"])
 
-                mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
-                if not mock_planets_df.empty:
-                    mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
-                                                             stroke=expected_style['AXIS_COLOR'], fill=expected_style['AXES_FACE_COLOR'], stroke_width="1")
-                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                                           text_anchor="middle", fill=expected_style['TEXT_COLOR'])
+                if scenario_data["expected_effective_dark_mode"]:
+                    mock_svg_drawing.assert_called_with(style={'background-color': '#1C1C3A'})
+                    if not mock_planets_df.empty:
+                        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
+                                                                 stroke='#CCCCCC', fill='#2A004F', stroke_width="1")
+                        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                               text_anchor="middle", fill='#FFFFFF')
+                else: # Light mode assertions
+                    mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
+                    if not mock_planets_df.empty:
+                        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
+                                                                 stroke=expected_style['AXIS_COLOR'], fill=expected_style['AXES_FACE_COLOR'], stroke_width="1")
+                        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                               text_anchor="middle", fill=expected_style['TEXT_COLOR'])
 
 
 if __name__ == '__main__':

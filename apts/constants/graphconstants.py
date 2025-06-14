@@ -23,22 +23,29 @@ class GraphConstants:
   }
 
   DARK_COLORS = {
-    OpticalType.GENERIC: "#FFFFE0",  # Light Yellow
-    OpticalType.INPUT: "#C0C0C0",  # Silver
-    OpticalType.OPTICAL: "#BB86FC",  # Light Purple
-    OpticalType.OUTPUT: "#BEBEBE",  # LightGray
-    OpticalType.BINOCULARS: "#90EE90"  # Light Green
+    OpticalType.GENERIC: '#5A1A75',      # Bright Purple
+    OpticalType.INPUT: '#999999',        # Muted Light Gray
+    OpticalType.OPTICAL: '#5A1A75',      # Bright Purple
+    OpticalType.OUTPUT: '#BBBBBB',       # Another Muted Light Gray
+    OpticalType.BINOCULARS: '#007447'    # Vibrant Green
   }
 
   DARK_MODE_STYLE = {
-    "BACKGROUND_COLOR": "#121212",
-    "TEXT_COLOR": "#E0E0E0",
-    "AXIS_COLOR": "#B0B0B0",
-    "GRID_COLOR": "#4A4A4A",
-    "FIGURE_FACE_COLOR": "#121212",
-    "AXES_FACE_COLOR": "#202020",
-    "AXES_EDGE_COLOR": "#B0B0B0",
-    "TICK_COLOR": "#B0B0B0"
+    'BACKGROUND_COLOR': '#1C1C3A',      # Deep Space Blue
+    'FIGURE_FACE_COLOR': '#1C1C3A',     # Deep Space Blue
+    'AXES_FACE_COLOR': '#2A004F',       # Dark Indigo variant
+    'TEXT_COLOR': '#FFFFFF',            # White
+    'AXIS_COLOR': '#CCCCCC',            # Light Gray
+    'TICK_COLOR': '#CCCCCC',            # Light Gray
+    'GRID_COLOR': '#404040',            # Subtle Dark Gray
+    'SPAN_BACKGROUND_COLOR': '#FFFFFF', # White (for low alpha spans)
+    'GOOD_CONDITION_HL_COLOR': '#007447',# Vibrant Green (for low alpha highlights)
+    'MOON_SPAN_COLOR': '#5A1A75',       # Bright Purple (for low alpha moon spans)
+    'ERROR_TEXT_COLOR': '#FF6B6B',      # Light red
+    'WARNING_TEXT_COLOR': '#FFCC00',    # Light orange
+    # AXES_EDGE_COLOR is often the same as AXIS_COLOR or TEXT_COLOR depending on theme.
+    # Using AXIS_COLOR for now. If a different edge is needed, it can be added.
+    'AXES_EDGE_COLOR': '#CCCCCC'        # Light Gray (same as AXIS_COLOR)
   }
 
   LIGHT_MODE_STYLE = {

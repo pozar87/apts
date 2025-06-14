@@ -203,11 +203,26 @@ class Observation:
                 logger.info("Generated empty Messier plot as no objects are visible.")
                 return fig
 
-            messier_type_colors = { # These are specific, might need dark mode alternatives later
+            messier_type_colors = {
                 "Galaxy": "blue", "Globular Cluster": "red", "Open Cluster": "green",
                 "Nebula": "purple", "Planetary Nebula": "orange",
                 "Supernova Remnant": "brown", "Other": "grey",
             }
+            DARK_MESSIER_TYPE_COLORS = {
+                "Galaxy": '#5A1A75',        # Bright Purple
+                "Globular Cluster": '#CCCCCC', # Light Gray
+                "Open Cluster": '#FFFFFF',      # White
+                "Nebula": '#5A1A75',        # Bright Purple (or a different shade)
+                "Planetary Nebula": '#007447',# Vibrant Green
+                "Supernova Remnant": '#BBBBBB', # Muted Light Gray
+                "Other": '#999999',          # Another Muted Gray
+            }
+
+            if effective_dark_mode:
+                current_messier_colors = DARK_MESSIER_TYPE_COLORS
+            else:
+                current_messier_colors = messier_type_colors
+
             plotted_types = {}
 
             for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, 'Height']:
@@ -224,7 +239,7 @@ class Observation:
                 height = obj['Height'] if 'Height' in obj else width
                 messier_id = obj[ObjectTableLabels.MESSIER]
                 marker_size = (width * height) ** 0.5
-                color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
+                color = current_messier_colors.get(obj_type, current_messier_colors["Other"])
                 plotted_types[obj_type] = color
                 ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
                 ax.annotate(messier_id, (transit, altitude), xytext=(5, 5), textcoords="offset points", color=style['TEXT_COLOR'])
@@ -444,23 +459,21 @@ class Observation:
 
     def _mark_observation(self, plot, dark_mode_enabled: bool, style: dict):
         if plot is None: return
-        # Use a semi-transparent version of text color for spans, or a dedicated span color if available
-        span_bg_color = style.get('SPAN_BACKGROUND_COLOR', style['TEXT_COLOR'])
-
-        plot.axvspan(self.start, self.stop, color=span_bg_color, alpha=0.1 if dark_mode_enabled else 0.2)
+        # Use dedicated span colors from the style dictionary
+        plot.axvspan(self.start, self.stop, color=style.get('SPAN_BACKGROUND_COLOR', '#DDDDDD' if not dark_mode_enabled else '#FFFFFF'),
+                     alpha=0.07 if dark_mode_enabled else 0.2) # Default light mode color if key missing
         moon_start, moon_stop = self._normalize_dates(self.place.moonrise_time(), self.place.moonset_time())
-        # Moon span could be a different color, e.g. a light yellow or use span_bg_color
-        moon_span_color = style.get('MOON_SPAN_COLOR', '#FFFFE0' if dark_mode_enabled else 'yellow')
-        plot.axvspan(moon_start, moon_stop, color=moon_span_color, alpha=0.05 if dark_mode_enabled else 0.1)
+        plot.axvspan(moon_start, moon_stop, color=style.get('MOON_SPAN_COLOR', '#FFFFE0' if not dark_mode_enabled else '#5A1A75'),
+                     alpha=0.07 if dark_mode_enabled else 0.1) # Default light mode color if key missing
 
         plot.axvline(self.start, color=style['GRID_COLOR'], linestyle="--")
         plot.axvline(self.time_limit, color=style['GRID_COLOR'], linestyle="--")
 
     def _mark_good_conditions(self, plot, minimal, maximal, dark_mode_enabled: bool, style: dict):
         if plot is None: return
-        # Use a semi-transparent version of a highlight color or grid color
-        good_condition_color = style.get('GOOD_CONDITION_HL_COLOR', style['GRID_COLOR'])
-        plot.axhspan(minimal, maximal, color=good_condition_color, alpha=0.1 if dark_mode_enabled else 0.1) # Alpha adjusted for visibility
+        # Use dedicated good condition highlight color
+        plot.axhspan(minimal, maximal, color=style.get('GOOD_CONDITION_HL_COLOR', '#90EE90' if not dark_mode_enabled else '#007447'),
+                     alpha=0.1) # Default light mode color if key missing. Alpha is same for both.
 
     def _generate_plot_weather(self, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:

@@ -114,20 +114,30 @@ def test_plot_clouds_dark_mode_styles(
 
     # Check that figure and axes face colors are set when plot creates them
     # (plot_clouds creates the fig/ax if not passed in)
-    mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
-    mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+    mock_ax.get_title.return_value = "Clouds" # Ensure get_title returns the expected string for title check
 
-    # Configure mock_ax.get_title before the call to plot_clouds
-    # The title is set by data.plot(title="Clouds")
-    mock_ax.get_title.return_value = "Clouds"
-    mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
+    if expected_effective_dark_mode:
+        mock_fig.patch.set_facecolor.assert_called_with('#1C1C3A')
+        mock_ax.set_facecolor.assert_called_with('#2A004F')
+        mock_ax.set_title.assert_any_call("Clouds", color='#FFFFFF')
+        if mock_ax.get_legend() is not None and mock_legend.get_frame() is not None: # Check if legend and its frame exist
+            mock_legend.get_frame().set_facecolor.assert_called_with('#2A004F')
+            mock_legend.get_frame().set_edgecolor.assert_called_with('#CCCCCC')
+            for text_mock in mock_legend.get_texts():
+                text_mock.set_color.assert_called_with('#FFFFFF')
+    else: # Light mode assertions
+        mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+        mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+        mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
+        if mock_ax.get_legend() is not None and mock_legend.get_frame() is not None: # Check if legend and its frame exist
+            mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+            mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+            for text_mock in mock_legend.get_texts():
+                text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
-    if mock_ax.get_legend() is not None : # Check if legend was actually created by the plot
-        mock_ax.get_legend.assert_called() # Should be called if legend exists
-        mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-        mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
-        for text_mock in mock_legend.get_texts():
-            text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+    if mock_ax.get_legend() is not None: # This check should be outside the if/else for dark/light
+        mock_ax.get_legend.assert_called()
+
 
     mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode)
 
