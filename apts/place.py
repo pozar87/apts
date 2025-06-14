@@ -180,23 +180,24 @@ class Place(ephem.Observer):
 
         data = self.moon_path()
 
-        # Ensure 'ax' can be passed in args for consistency, or get it from pandas plot
-        ax = args.pop('ax', None)
-        if ax is None:
-            # If no ax is passed, pandas plot creates one. We need to get the figure from it.
-            # This is a common pattern, but direct figure creation might offer more control if needed.
-            plot_ax = data.plot(
-                x="Azimuth", y="Moon altitude", title="Moon altitude", style=".-", **args
-            )
-            ax = plot_ax # data.plot() returns an AxesSubplot
-            fig = ax.figure
-        else:
-            # If ax is passed, use it directly
-            fig = ax.figure
-            data.plot(
-                x="Azimuth", y="Moon altitude", title="Moon altitude", style=".-", ax=ax, **args
-            )
+        passed_ax = args.pop('ax', None) # Renamed to avoid confusion
 
+        plot_kwargs = {
+            "x": "Azimuth",
+            "y": "Moon altitude",
+            "title": "Moon altitude", # This title is styled later by direct ax.set_title
+            "style": ".-",
+            **args  # Pass through any other user-supplied keyword arguments
+        }
+
+        if passed_ax is not None:
+            plot_kwargs['ax'] = passed_ax # Add 'ax' to kwargs only if it was provided
+            data.plot(**plot_kwargs) # Plot on the provided ax
+            ax = passed_ax # Use the axes that was passed in
+            fig = ax.figure # Get figure from provided ax
+        else:
+            ax = data.plot(**plot_kwargs) # Let pandas create a new ax and figure
+            fig = ax.figure # Get figure from newly created ax
 
         fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
         ax.set_facecolor(style['AXES_FACE_COLOR'])

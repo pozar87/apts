@@ -333,7 +333,7 @@ class TestPlacePlotting(unittest.TestCase):
 
                 self.place.plot_moon_path(dark_mode_override=scenario_data["override"])
 
-                mock_df_plot.assert_called_with(x="Azimuth", y="Moon altitude", title="Moon altitude", style=".-", ax=None) # ax=None as it's popped
+                mock_df_plot.assert_called_once_with(x="Azimuth", y="Moon altitude", title="Moon altitude", style=".-")
 
                 mock_fig_patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
                 mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
