@@ -8,7 +8,7 @@ from typing import Optional
 
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
 from .config import get_dark_mode
-from .constants.graphconstants import get_plot_style
+from .constants.graphconstants import get_plot_style, get_plot_colors
 from .opticalequipment import (
     OpticalEquipment,
     Telescope,
@@ -299,14 +299,33 @@ class Equipment:
         # Merge Image and Eye series together
         return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
 
-    def plot_connection_graph(self, **args):
+    def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
         # Connect all outputs with inputs
         self._connect()
-        return ig.plot(self.connection_garph, margin=80, **args)
 
-    def plot_connection_graph_svg(self, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        current_plot_style = get_plot_style(effective_dark_mode)
+        current_node_colors = get_plot_colors(effective_dark_mode)
+
+        visual_style = {}
+        visual_style["background"] = current_plot_style.get('BACKGROUND_COLOR', '#FFFFFF') # Default to white if not found
+        visual_style["vertex_color"] = [current_node_colors.get(v_type, '#000000') for v_type in self.connection_garph.vs[NodeLabels.TYPE]] # Default to black
+        visual_style["vertex_label_color"] = current_plot_style.get('TEXT_COLOR', '#000000') # Default to black
+        visual_style["edge_color"] = current_plot_style.get('AXIS_COLOR', '#000000') # Default to black
+        # Add other style elements if necessary, e.g., vertex_size, vertex_label_dist
+        visual_style["vertex_label_dist"] = 1.5 # As it was in add_vertex
+        visual_style["vertex_size"] = 20 # A default size
+
+        return ig.plot(self.connection_garph, margin=80, visual_style=visual_style, **args)
+
+    def plot_connection_graph_svg(self, dark_mode_override: Optional[bool] = None, **args):
         surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
-        plot = self.plot_connection_graph(target=surface, **args)
+        # Pass dark_mode_override to the plot_connection_graph call
+        plot = self.plot_connection_graph(target=surface, dark_mode_override=dark_mode_override, **args)
         return plot._repr_svg_()[0]  # SVG string is first in tuple
 
     def _connect(self):
@@ -352,7 +371,6 @@ class Equipment:
 
         node[NodeLabels.TYPE] = node_type
         node[NodeLabels.LABEL] = node_label
-        node[NodeLabels.COLOR] = GraphConstants.COLORS[node_type]
         node[NodeLabels.EQUIPMENT] = equipment
         node[NodeLabels.CONNECTION_TYPE] = connection_type
 
