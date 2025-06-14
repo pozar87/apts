@@ -15,7 +15,7 @@ from .objects.planets import Planets
 from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
-from apts.constants.graphconstants import get_plot_style, get_plot_colors
+from apts.constants.graphconstants import get_plot_style, get_plot_colors, OpticalType # Added OpticalType
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +289,7 @@ class Observation:
         new_stop = stop
         return (new_start, new_stop)
 
-    def plot_weather(self, **args):
+    def plot_weather(self, dark_mode_override: Optional[bool] = None, **args): # Added dark_mode_override
         logger.info(f"plot_weather called for place: {self.place.name}. Current self.place.weather is: {type(self.place.weather)}")
         if self.place.weather is None:
             logger.info("self.place.weather is None, calling self.place.get_weather()...")
