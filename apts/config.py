@@ -20,5 +20,28 @@ if not found_configs:
 else:
     logger.info(f"Loaded configuration from: {found_configs}")
 
+# Ensure [Display] section and dark_mode option exist with a default value
+if not config.has_section('Display'):
+    config.add_section('Display')
+if not config.has_option('Display', 'dark_mode'):
+    config.set('Display', 'dark_mode', 'false')
+
+
 # Optional: Helper function for safer config access (can be added if needed)
 # def get_config_value(section, option, fallback=None, value_type=str): ...
+
+def get_dark_mode() -> bool:
+    """
+    Reads the dark_mode setting from the [Display] section.
+
+    Returns:
+        bool: The value of dark_mode, or False if not found.
+    """
+    try:
+        return config.getboolean('Display', 'dark_mode')
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        logger.warning(
+            "No 'dark_mode' option found in section [Display]. "
+            "Defaulting to False."
+        )
+        return False

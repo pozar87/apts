@@ -5,6 +5,8 @@ import matplotlib.dates as mdates
 from pint import UnitRegistry
 from matplotlib import pyplot
 
+from apts.constants.graphconstants import get_plot_style
+
 # Unit registry
 ureg = UnitRegistry()
 # Define astronomical units that might not be in Pint by default
@@ -72,7 +74,16 @@ class Utils:
     def date_format(date_time):
         return date_time.isoformat(timespec="seconds")
 
-    def annotate_plot(plot, y_label):
-        plot.set_xlabel("Time")
-        plot.set_ylabel(y_label)
+    def annotate_plot(plot, y_label, dark_mode_enabled: bool):
+        style = get_plot_style(dark_mode_enabled)
+
+        plot.set_xlabel("Time", color=style['TEXT_COLOR'])
+        plot.set_ylabel(y_label, color=style['TEXT_COLOR'])
         plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M"))
+        plot.tick_params(axis='x', colors=style['TICK_COLOR'])
+        plot.tick_params(axis='y', colors=style['TICK_COLOR'])
+
+        plot.spines['bottom'].set_color(style['AXIS_COLOR'])
+        plot.spines['top'].set_color(style['AXIS_COLOR'])
+        plot.spines['left'].set_color(style['AXIS_COLOR'])
+        plot.spines['right'].set_color(style['AXIS_COLOR'])

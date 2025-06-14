@@ -1,13 +1,53 @@
 import os
 import unittest
 import tempfile
+import datetime # Added
 from unittest.mock import patch, mock_open
+import pandas as pd
+from unittest.mock import MagicMock, call # Added MagicMock and call
 from apts.observations import Observation
+from apts.constants.graphconstants import get_plot_style, OpticalType, GraphConstants # Added GraphConstants
+from apts.constants.objecttablelabels import ObjectTableLabels # Added ObjectTableLabels
+from apts.utils import ureg # Added ureg for Quantity
 from tests import setup_observation
+from apts.conditions import Conditions # Import Conditions at the top level
+
+
+# MockPlace and MockEquipment classes are removed
 
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
+
+        # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
+        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+            obs_local_tz = datetime.timezone.utc
+        elif isinstance(self.observation.place.local_timezone, str):
+            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+        else:
+            obs_local_tz = self.observation.place.local_timezone
+
+        if self.observation.start is None:
+            self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+
+        if self.observation.stop is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
+            else:
+                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
+        if self.observation.time_limit is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                time_limit_dt = self.observation.start.replace(
+                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                )
+                self.observation.time_limit = (
+                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                )
+            else:
+                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
         self.default_template_content = """<!doctype html>
 <html>
   <head>
@@ -77,6 +117,226 @@ class TestObservationTemplate(unittest.TestCase):
         finally:
             # Clean up
             os.unlink(temp_path)
+
+
+class TestObservationPlottingStyles(unittest.TestCase):
+    def setUp(self):
+        self.observation = setup_observation()
+        # If specific conditions are needed for these tests, set them here:
+        self.observation.conditions.min_object_altitude = 10 * ureg.deg
+
+        # Ensure place.local_timezone is tz-aware
+        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+            obs_local_tz = datetime.timezone.utc
+        elif isinstance(self.observation.place.local_timezone, str):
+            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+        else:
+            obs_local_tz = self.observation.place.local_timezone
+
+        if self.observation.start is None:
+             self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+
+        if self.observation.stop is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
+            else:
+                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
+        if self.observation.time_limit is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                time_limit_dt = self.observation.start.replace(
+                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                )
+                self.observation.time_limit = (
+                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                )
+            else:
+                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
+        # Mock the get_visible_messier to return a non-empty DataFrame
+        # to avoid early exit from _generate_plot_messier
+        mock_messier_data = {
+            'Messier': ['M1'],
+            'Type': ['Nebula'],
+            'RA': ['05h 34m 31.94s'],
+            'Dec': ['+22° 00′ 52.2″'],
+            'Magnitude': [8.4 * ureg.mag],
+            'Constellation': ['Tau'],
+            'Size': [ureg.arcmin * 6], # Using Quantity for size
+            'Distance': [6.523 * 1000 * ureg.light_year],
+            'Altitude': [45 * ureg.deg], # Using Quantity
+            'Azimuth': [180 * ureg.deg], # Using Quantity
+            'Transit': [pd.Timestamp('2023-01-01 22:00:00', tz='UTC')],
+            'Width': [6.0 * ureg.arcmin], # Using Quantity
+            'Height': [4.0 * ureg.arcmin] # Using Quantity
+        }
+        self.mock_messier_df = pd.DataFrame(mock_messier_data)
+        # Ensure DataFrame columns with pint Quantities are correctly typed if needed by the method
+        # For _generate_plot_messier, it seems to handle .magnitude internally.
+
+        # Mock data for planet color tests
+        self.mock_planets_data_for_color_test = pd.DataFrame({
+            ObjectTableLabels.NAME: ['Mars', 'Jupiter', 'UnknownPlanet'],
+            ObjectTableLabels.TRANSIT: [pd.Timestamp('2023-01-01 22:00:00', tz='UTC')] * 3,
+            ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 3,
+            ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 3,
+            ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 3 # For SVG plot
+        })
+
+    @patch('apts.observations.Utils.annotate_plot')
+    @patch('apts.observations.pyplot')
+    @patch('apts.observations.get_dark_mode')
+    def test_generate_plot_messier_dark_mode_styles(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
+
+        # Mock get_visible_messier to control its output (already in setUp)
+        self.observation.get_visible_messier = MagicMock(return_value=self.mock_messier_df)
+
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
+
+                # Reset mocks that accumulate calls for each subtest
+                mock_pyplot.reset_mock()
+                mock_annotate_plot.reset_mock()
+
+                # Mock the subplots call and the returned axes object for this subtest run
+                mock_ax = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax.figure = mock_fig
+                mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+                # Mock legend calls for this subtest run
+                mock_legend = MagicMock()
+                mock_ax.legend.return_value = mock_legend
+                mock_legend.get_frame.return_value = MagicMock()
+                mock_legend.get_title.return_value = MagicMock()
+                mock_legend.get_texts.return_value = [MagicMock()] # Assume at least one text item for simplicity
+
+                returned_fig = self.observation._generate_plot_messier(dark_mode_override=scenario_data["override"])
+
+                self.assertEqual(returned_fig, mock_fig)
+                mock_pyplot.subplots.assert_called_once()
+                if scenario_data["expected_effective_dark_mode"]:
+                    mock_fig.patch.set_facecolor.assert_called_with('#1C1C3A')
+                    mock_ax.set_facecolor.assert_called_with('#2A004F')
+                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color='#FFFFFF')
+                    if not self.mock_messier_df.empty:
+                        mock_legend.get_frame().set_facecolor.assert_called_with('#2A004F')
+                        mock_legend.get_frame().set_edgecolor.assert_called_with('#CCCCCC')
+                        mock_legend.get_title().set_color.assert_called_with('#FFFFFF')
+                        for text_mock in mock_legend.get_texts():
+                            text_mock.set_color.assert_called_with('#FFFFFF')
+                else: # Light mode assertions remain using expected_style from get_plot_style(False)
+                    mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+                    mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=expected_style['TEXT_COLOR'])
+                    if not self.mock_messier_df.empty:
+                        mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                        mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+                        mock_legend.get_title().set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                        for text_mock in mock_legend.get_texts():
+                            text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+
+                mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", scenario_data["expected_effective_dark_mode"])
+                if not self.mock_messier_df.empty:
+                    mock_ax.legend.assert_called_once()
+
+    @patch('apts.observations.svg.Drawing')
+    @patch('apts.observations.get_dark_mode')
+    def test_plot_visible_planets_svg_dark_mode_styles(self, mock_get_dark_mode, mock_svg_drawing):
+        # Use the more detailed mock_planets_data_for_color_test
+        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
+
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
+
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
+
+                # Reset svg.Drawing mock and prepare its return value for this subtest
+                mock_svg_drawing.reset_mock()
+                mock_dwg_instance = MagicMock()
+                mock_svg_drawing.return_value = mock_dwg_instance
+
+                self.observation.plot_visible_planets_svg(dark_mode_override=scenario_data["override"])
+
+                fills_called = [call.kwargs['fill'] for call in mock_dwg_instance.circle.call_args_list]
+                self.assertEqual(mock_dwg_instance.circle.call_count, 3)
+
+                if scenario_data["expected_effective_dark_mode"]:
+                    mock_svg_drawing.assert_called_with(style={'background-color': '#1C1C3A'})
+                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Mars'], fills_called)
+                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Jupiter'], fills_called)
+                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
+                    # Check one text call for color
+                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                           text_anchor="middle", fill='#FFFFFF')
+                else: # Light mode assertions
+                    mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
+                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Mars'], fills_called)
+                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Jupiter'], fills_called)
+                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
+                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                           text_anchor="middle", fill=expected_style['TEXT_COLOR'])
+
+    @patch('apts.observations.Utils.annotate_plot')
+    @patch('apts.observations.pyplot')
+    @patch('apts.observations.get_dark_mode')
+    def test_generate_plot_planets_specific_colors(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
+        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
+
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
+
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                effective_dark_mode = scenario_data["expected_effective_dark_mode"]
+
+                mock_pyplot.reset_mock()
+                mock_annotate_plot.reset_mock()
+                mock_ax = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax.figure = mock_fig
+                mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+                self.observation._generate_plot_planets(dark_mode_override=scenario_data["override"])
+
+                mock_ax.scatter.assert_called()
+                self.assertEqual(mock_ax.scatter.call_count, 3)
+
+                colors_called = [call.kwargs['color'] for call in mock_ax.scatter.call_args_list] # Changed 'c' to 'color'
+
+                if effective_dark_mode:
+                    expected_mars_color = GraphConstants.PLANET_COLORS_DARK['Mars']
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK['Jupiter']
+                    default_color = GraphConstants.DARK_COLORS[OpticalType.GENERIC]
+                else:
+                    expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT['Mars']
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT['Jupiter']
+                    default_color = GraphConstants.COLORS[OpticalType.GENERIC]
+
+                self.assertIn(expected_mars_color, colors_called)
+                self.assertIn(expected_jupiter_color, colors_called)
+                self.assertIn(default_color, colors_called) # For 'UnknownPlanet'
 
 if __name__ == '__main__':
     unittest.main()
