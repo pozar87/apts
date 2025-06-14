@@ -311,16 +311,50 @@ class Equipment:
         current_plot_style = get_plot_style(effective_dark_mode)
         current_node_colors = get_plot_colors(effective_dark_mode)
 
-        visual_style = {}
-        visual_style["background"] = current_plot_style.get('BACKGROUND_COLOR', '#FFFFFF') # Default to white if not found
-        visual_style["vertex_color"] = [current_node_colors.get(v_type, '#000000') for v_type in self.connection_garph.vs[NodeLabels.TYPE]] # Default to black
-        visual_style["vertex_label_color"] = current_plot_style.get('TEXT_COLOR', '#000000') # Default to black
-        visual_style["edge_color"] = current_plot_style.get('AXIS_COLOR', '#000000') # Default to black
-        # Add other style elements if necessary, e.g., vertex_size, vertex_label_dist
-        visual_style["vertex_label_dist"] = 1.5 # As it was in add_vertex
-        visual_style["vertex_size"] = 20 # A default size
+        logger.debug(f"plot_connection_graph: effective_dark_mode = {effective_dark_mode}")
+        logger.debug(f"plot_connection_graph: current_plot_style = {current_plot_style}")
+        logger.debug(f"plot_connection_graph: current_node_colors = {current_node_colors}")
 
-        return ig.plot(self.connection_garph, margin=80, visual_style=visual_style, **args)
+        vertex_types = list(self.connection_garph.vs[NodeLabels.TYPE]) # Collect to log
+        logger.debug(f"plot_connection_graph: Vertex NodeTypes = {vertex_types}")
+
+        # Calculate vertex colors with a default for missing types (e.g., red to see if it's hit)
+        # Using a distinct default like bright green (#00FF00) for debugging this specific issue
+        # if the user reported "all red", this helps see if the default is hit.
+        # The previous default was black. The user saw red. Let's use a new color for the default.
+        vertex_colors_list = [current_node_colors.get(v_type, '#FF00FF') for v_type in vertex_types] # Magenta default
+        logger.debug(f"plot_connection_graph: Calculated vertex_colors_list for direct assignment = {vertex_colors_list}")
+
+        # Determine general text color for labels
+        text_color = current_plot_style.get('TEXT_COLOR', '#000000') # Black default for text
+        logger.debug(f"plot_connection_graph: text_color for labels = {text_color}")
+
+        if len(self.connection_garph.vs) == len(vertex_colors_list):
+            for i, color_val in enumerate(vertex_colors_list):
+                self.connection_garph.vs[i]['color'] = color_val
+                self.connection_garph.vs[i]['label_color'] = text_color
+                self.connection_garph.vs[i]['size'] = 20       # Default size
+                self.connection_garph.vs[i]['label_dist'] = 1.5 # Default label distance
+        else:
+            logger.error("Mismatch between number of vertices and calculated colors. Skipping direct vertex property assignment.")
+
+        background_color = current_plot_style.get('BACKGROUND_COLOR', '#D3D3D3') # Light gray default for debugging background
+        logger.debug(f"plot_connection_graph: background_color = {background_color}")
+
+        edge_color_val = current_plot_style.get('AXIS_COLOR', '#A9A9A9') # DarkGray default for debugging edges
+        logger.debug(f"plot_connection_graph: edge_color_val = {edge_color_val}")
+
+        # Call ig.plot(). Vertex-specific properties are now set on the graph itself.
+        # Pass general styling for background and edges.
+        return ig.plot(
+            self.connection_garph,
+            margin=80,
+            background=background_color,
+            edge_color=edge_color_val,
+            # vertex_color, vertex_label_color, vertex_size, vertex_label_dist
+            # are now set directly on graph.vs attributes.
+            **args
+        )
 
     def plot_connection_graph_svg(self, dark_mode_override: Optional[bool] = None, **args):
         surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
