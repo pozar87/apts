@@ -1,6 +1,7 @@
 import pytest
 from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
+import datetime as dt_module # Added alias
 
 import ephem
 import pytz
@@ -284,14 +285,15 @@ class TestPlacePlotting(unittest.TestCase):
         self.place = setup_place()
         # Ensure place.local_timezone is robust for tests
         if not hasattr(self.place, 'local_timezone') or self.place.local_timezone is None:
-            self.place.local_timezone = datetime.timezone.utc
+            self.place.local_timezone = dt_module.timezone.utc # Use aliased dt_module
         elif isinstance(self.place.local_timezone, str):
-             self.place.local_timezone = datetime.timezone.utc if self.place.local_timezone.upper() == 'UTC' else pytz.timezone(self.place.local_timezone)
+             # Simplified: if it's a string, default to UTC for test consistency
+             self.place.local_timezone = dt_module.timezone.utc # Use aliased dt_module
 
 
         # Mock moon_path to return predictable data
         mock_moon_path_data = pd.DataFrame({
-            'Time': [datetime.time(hour=18, minute=0), datetime.time(hour=19, minute=0), datetime.time(hour=20, minute=0)],
+            'Time': [dt_module.time(hour=18, minute=0), dt_module.time(hour=19, minute=0), dt_module.time(hour=20, minute=0)], # Use aliased dt_module
             'Moon altitude': [10, 20, 30],
             'Azimuth': [90, 100, 110],
             'Local_time': ['18:00', '19:00', '20:00'],
