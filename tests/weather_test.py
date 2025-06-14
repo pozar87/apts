@@ -121,6 +121,10 @@ def test_plot_clouds_dark_mode_styles(
     mock_legend_text_item = MagicMock()
     mock_legend.get_texts.return_value = [mock_legend_text_item]
 
+    # Configure mock_ax.get_title before the call to plot_clouds
+    # The title is set by data.plot(title="Clouds") within weather.plot_clouds
+    mock_ax.get_title.return_value = "Clouds"
+
     # Call the method to be tested with the override value
     ax_returned = weather.plot_clouds(hours=1, dark_mode_override=override_value)
 
@@ -129,7 +133,7 @@ def test_plot_clouds_dark_mode_styles(
 
     # Check that figure and axes face colors are set when plot creates them
     # (plot_clouds creates the fig/ax if not passed in)
-    mock_ax.get_title.return_value = "Clouds" # Ensure get_title returns the expected string for title check
+    # mock_ax.get_title.return_value = "Clouds" # Moved to before the call
 
     if expected_effective_dark_mode:
         mock_fig_patch.set_facecolor.assert_called_with('#1C1C3A')
