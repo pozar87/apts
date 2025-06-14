@@ -9,57 +9,43 @@ from apts.observations import Observation
 from apts.constants.graphconstants import get_plot_style, OpticalType # Added get_plot_style, OpticalType
 from apts.utils import ureg # Added ureg for Quantity
 from tests import setup_observation
+from apts.conditions import Conditions # Import Conditions at the top level
 
 
-# Mock place and equipment for Observation instantiation if setup_observation isn't sufficient
-class MockPlace:
-    def __init__(self):
-        self.name = "MockPlace"
-        self.lat = 0 * ureg.deg
-        self.lon = 0 * ureg.deg
-        self.local_timezone = datetime.timezone.utc # Changed to datetime.timezone.utc
-        self.date = pd.Timestamp('2023-01-01 00:00:00', tz='UTC') # dummy date
-
-    def sunset_time(self, target_date=None):
-        return pd.Timestamp('2023-01-01 18:00:00', tz='UTC')
-
-    def sunrise_time(self, target_date=None):
-        return pd.Timestamp('2023-01-02 06:00:00', tz='UTC')
-
-    def moonrise_time(self):
-        return pd.Timestamp('2023-01-01 20:00:00', tz='UTC')
-
-    def moonset_time(self):
-        return pd.Timestamp('2023-01-02 04:00:00', tz='UTC')
-
-class MockEquipment:
-    def data(self): # Add a data method if Observation init or other methods need it
-        return pd.DataFrame()
-
+# MockPlace and MockEquipment classes are removed
 
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
-        # self.observation = setup_observation() # This might be too complex, use simpler mocks for plotting
-        # Simpler setup for plotting tests to avoid deep dependencies of setup_observation
-        self.mock_place = MockPlace()
-        self.mock_equipment = MockEquipment()
-        # Mock conditions if necessary, or use default
-        from apts.conditions import Conditions
-        self.conditions = Conditions()
-        self.observation = Observation(self.mock_place, self.mock_equipment, self.conditions)
+        self.observation = setup_observation()
 
-        # Ensure self.start and self.time_limit are set for plotting methods
-        # These would normally be set by Observation.__init__ based on place.sunset/sunrise
-        # Forcing them here if not set by the simplified Observation init
+        # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
+        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+            obs_local_tz = datetime.timezone.utc
+        elif isinstance(self.observation.place.local_timezone, str):
+            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+        else:
+            obs_local_tz = self.observation.place.local_timezone
+
         if self.observation.start is None:
-            self.observation.start = pd.Timestamp('2023-01-01 18:00:00', tz='UTC')
-        if self.observation.time_limit is None:
-            self.observation.time_limit = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+            self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                self.observation.stop = self.observation.start + pd.Timedelta(hours=8) # Default 8 hour observation
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
             else:
-                self.observation.stop = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
+        if self.observation.time_limit is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                time_limit_dt = self.observation.start.replace(
+                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                )
+                self.observation.time_limit = (
+                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                )
+            else:
+                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
 
         self.default_template_content = """<!doctype html>
 <html>
@@ -134,22 +120,38 @@ class TestObservationTemplate(unittest.TestCase):
 
 class TestObservationPlottingStyles(unittest.TestCase):
     def setUp(self):
-        self.mock_place = MockPlace()
-        self.mock_equipment = MockEquipment()
-        from apts.conditions import Conditions
-        self.conditions = Conditions(min_object_altitude=10*ureg.deg) # Ensure min_object_altitude is a Quantity
-        self.observation = Observation(self.mock_place, self.mock_equipment, self.conditions)
+        self.observation = setup_observation()
+        # If specific conditions are needed for these tests, set them here:
+        self.observation.conditions.min_object_altitude = 10 * ureg.deg
 
-        # Ensure self.start and self.time_limit are set.
+        # Ensure place.local_timezone is tz-aware
+        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+            obs_local_tz = datetime.timezone.utc
+        elif isinstance(self.observation.place.local_timezone, str):
+            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+        else:
+            obs_local_tz = self.observation.place.local_timezone
+
         if self.observation.start is None:
-             self.observation.start = pd.Timestamp('2023-01-01 18:00:00', tz='UTC')
-        if self.observation.time_limit is None:
-            self.observation.time_limit = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+             self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
             else:
-                self.observation.stop = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+
+        if self.observation.time_limit is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                time_limit_dt = self.observation.start.replace(
+                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                )
+                self.observation.time_limit = (
+                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                )
+            else:
+                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
 
         # Mock the get_visible_messier to return a non-empty DataFrame
         # to avoid early exit from _generate_plot_messier
