@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from string import Template
+from typing import Optional # Added Optional
 
 import matplotlib.dates as mdates
 import numpy # Retained for potential use by other functions if Observation.to_html is modified
@@ -108,10 +109,14 @@ class Observation:
             self.conditions, self.start, self.time_limit, **args
         )
 
-    def plot_visible_planets_svg(self, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
-        # colors = get_plot_colors(dark_mode_enabled) # Not strictly needed as style dict has most
+    def plot_visible_planets_svg(self, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        # colors = get_plot_colors(effective_dark_mode) # Not strictly needed as style dict has most
 
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing(style={'background-color': style['BACKGROUND_COLOR']})
@@ -163,10 +168,14 @@ class Observation:
             return
         return SVG(self.plot_visible_planets_svg())
 
-    def _generate_plot_messier(self, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
-        # plot_colors = get_plot_colors(dark_mode_enabled) # Messier uses specific type colors
+    def _generate_plot_messier(self, dark_mode_override: Optional[bool] = None, **args): # Added dark_mode_override from previous step
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        # plot_colors = get_plot_colors(effective_dark_mode) # Messier uses specific type colors
 
         ax = args.pop('ax', None)
         fig = None
@@ -187,9 +196,9 @@ class Observation:
                     self.time_limit + timedelta(minutes=15),
                 ])
                 ax.set_ylim(0, 90)
-                self._mark_observation(ax, dark_mode_enabled, style)
-                self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
-                Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+                self._mark_observation(ax, effective_dark_mode, style)
+                self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style)
+                Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
                 ax.set_title("Messier Objects Altitude", color=style['TEXT_COLOR'])
                 logger.info("Generated empty Messier plot as no objects are visible.")
                 return fig
@@ -224,9 +233,9 @@ class Observation:
             ax.set_ylim(0, 90)
             date_format = mdates.DateFormatter('%H:%M:%S %Z', tz=self.place.local_timezone)
             ax.xaxis.set_major_formatter(date_format)
-            self._mark_observation(ax, dark_mode_enabled, style)
-            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
-            Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+            self._mark_observation(ax, effective_dark_mode, style)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style)
+            Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
 
             legend_handles = [
                 lines.Line2D([0], [0], marker='o', color='w', label=obj_type, # 'w' background for marker for visibility
@@ -250,7 +259,7 @@ class Observation:
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR']) # Ensure figure bg is set
             ax.set_facecolor(style['AXES_FACE_COLOR']) # Ensure axes bg is set
 
-            error_text_color = '#FF6B6B' if dark_mode_enabled else 'red'
+            error_text_color = '#FF6B6B' if effective_dark_mode else 'red'
             ax.text(0.5, 0.5, 'Error generating Messier plot.\nSee logs for details.',
                     horizontalalignment='center', verticalalignment='center',
                     fontsize=12, color=error_text_color, wrap=True, transform=ax.transAxes)
@@ -282,15 +291,25 @@ class Observation:
                 logger.error(f"Error calling self.place.get_weather(): {e}", exc_info=True)
         else:
             logger.info("self.place.weather already exists, not calling get_weather().")
-        return self._generate_plot_weather(**args)
+        return self._generate_plot_weather(dark_mode_override=dark_mode_override, **args)
 
-    def plot_messier(self, **args):
-        return self._generate_plot_messier(**args)
+    def plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
+        return self._generate_plot_messier(dark_mode_override=dark_mode_override, **args)
 
-    def _generate_plot_planets(self, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
-        plot_colors = get_plot_colors(dark_mode_enabled)
+    # Note: _generate_plot_messier already updated in a previous step to have dark_mode_override
+    # For this step, we just ensure its signature is correct if it wasn't.
+    # The actual use of dark_mode_override is in the next step.
+    # def _generate_plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
+    # existing body ...
+
+    def _generate_plot_planets(self, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        plot_colors = get_plot_colors(effective_dark_mode)
 
         ax = args.pop('ax', None)
         fig = None
@@ -306,9 +325,9 @@ class Observation:
         if len(planets_df) == 0:
             ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
-            self._mark_observation(ax, dark_mode_enabled, style)
-            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
-            Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+            self._mark_observation(ax, effective_dark_mode, style)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style)
+            Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
             ax.set_title("Planets Altitude", color=style['TEXT_COLOR'])
             return fig
 
@@ -319,7 +338,7 @@ class Observation:
                 )
 
         # Use a generic color for planets if available, or let matplotlib cycle
-        planet_scatter_color = plot_colors.get(ObjectTableLabels.GENERIC, None)
+        planet_scatter_color = plot_colors.get(OpticalType.GENERIC, None)
 
         for _, planet in planets_df.iterrows():
             transit = planet[ObjectTableLabels.TRANSIT]
@@ -335,9 +354,9 @@ class Observation:
         # ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)]) # This might be too restrictive if planets are outside this
         # ax.set_ylim(0, 90) # Altitude is usually 0-90
 
-        self._mark_observation(ax, dark_mode_enabled, style)
-        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
-        Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+        self._mark_observation(ax, effective_dark_mode, style)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style)
+        Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
         ax.set_title("Planets Altitude", color=style['TEXT_COLOR'])
 
         # Simple legend if needed (e.g. if colors vary by planet type, which they don't here)
@@ -350,8 +369,8 @@ class Observation:
         # text.set_color(style['TEXT_COLOR'])
         return fig
 
-    def plot_planets(self, **args):
-        return self._generate_plot_planets(**args)
+    def plot_planets(self, dark_mode_override: Optional[bool] = None, **args):
+        return self._generate_plot_planets(dark_mode_override=dark_mode_override, **args)
 
     def _compute_weather_goodnse(self):
         data = self.place.weather.get_critical_data(self.start, self.stop)
@@ -377,6 +396,27 @@ class Observation:
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
         return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
+
+    # plot_weather is a public method, add dark_mode_override
+    def plot_weather(self, dark_mode_override: Optional[bool] = None, **args):
+        logger.info(f"plot_weather called for place: {self.place.name}. Current self.place.weather is: {type(self.place.weather)}")
+        if self.place.weather is None:
+            logger.info("self.place.weather is None, calling self.place.get_weather()...")
+            try:
+                self.place.get_weather()
+                logger.info(f"self.place.get_weather() called. self.place.weather is now: {type(self.place.weather)}")
+                if self.place.weather is not None:
+                    # Add a log for a key attribute if it exists, e.g., hourly data
+                    if hasattr(self.place.weather, 'hourly') and self.place.weather.hourly is not None:
+                        logger.info(f"Weather hourly data length: {len(self.place.weather.hourly.time) if hasattr(self.place.weather.hourly, 'time') else 'N/A'}")
+                    else:
+                        logger.info("Weather hourly data is None or not present after get_weather.")
+            except Exception as e:
+                logger.error(f"Error calling self.place.get_weather(): {e}", exc_info=True)
+        else:
+            logger.info("self.place.weather already exists, not calling get_weather().")
+        return self._generate_plot_weather(dark_mode_override=dark_mode_override, **args)
+
 
     def to_html(self, custom_template=None, css=None):
         template_path = custom_template if custom_template else Observation.NOTIFICATION_TEMPLATE
@@ -422,9 +462,13 @@ class Observation:
         good_condition_color = style.get('GOOD_CONDITION_HL_COLOR', style['GRID_COLOR'])
         plot.axhspan(minimal, maximal, color=good_condition_color, alpha=0.1 if dark_mode_enabled else 0.1) # Alpha adjusted for visibility
 
-    def _generate_plot_weather(self, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def _generate_plot_weather(self, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
 
         logger.info(f"_generate_plot_weather called. self.place.weather type: {type(self.place.weather)}")
         if self.place.weather is None:
@@ -432,7 +476,7 @@ class Observation:
             fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
             fig_err.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
             ax_err.set_facecolor(style['AXES_FACE_COLOR'])
-            warning_color = '#FFCC00' if dark_mode_enabled else 'orange' # Light orange for dark mode
+            warning_color = '#FFCC00' if effective_dark_mode else 'orange' # Light orange for dark mode
             ax_err.text(0.5, 0.5, 'Weather data not available for plotting.\n(self.place.weather was None)',
                         horizontalalignment='center', verticalalignment='center',
                         fontsize=12, color=warning_color, wrap=True, transform=ax_err.transAxes)
@@ -461,42 +505,43 @@ class Observation:
 
             logger.debug("Plotting clouds...")
             # The plot_clouds method itself will need to be dark_mode aware.
-            # For now, we pass dark_mode_enabled and style to _mark_observation/_mark_good_conditions
-            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0]) # This should return the axis
-            if plt_clouds_ax: self._mark_observation(plt_clouds_ax, dark_mode_enabled, style)
-            if plt_clouds_ax: self._mark_good_conditions(plt_clouds_ax, 0, self.conditions.max_clouds, dark_mode_enabled, style)
+            # The plot_clouds method itself (and others from weather.py) will use their own dark_mode_override logic.
+            # The dark_mode_override is passed to them from the public plot_weather method.
+            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0], dark_mode_override=dark_mode_override)
+            if plt_clouds_ax: self._mark_observation(plt_clouds_ax, effective_dark_mode, style)
+            if plt_clouds_ax: self._mark_good_conditions(plt_clouds_ax, 0, self.conditions.max_clouds, effective_dark_mode, style)
 
             logger.debug("Plotting clouds summary...")
-            self.place.weather.plot_clouds_summary(ax=axes[0, 1]) # This also needs to be dark_mode aware
+            self.place.weather.plot_clouds_summary(ax=axes[0, 1], dark_mode_override=dark_mode_override)
 
             logger.debug("Plotting precipitation...")
-            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0])
-            if plt_precip_ax: self._mark_observation(plt_precip_ax, dark_mode_enabled, style)
-            if plt_precip_ax: self._mark_good_conditions(plt_precip_ax, 0, self.conditions.max_precipitation_probability, dark_mode_enabled, style)
+            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0], dark_mode_override=dark_mode_override)
+            if plt_precip_ax: self._mark_observation(plt_precip_ax, effective_dark_mode, style)
+            if plt_precip_ax: self._mark_good_conditions(plt_precip_ax, 0, self.conditions.max_precipitation_probability, effective_dark_mode, style)
 
             logger.debug("Plotting precipitation type summary...")
-            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1]) # Dark mode aware
+            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1], dark_mode_override=dark_mode_override)
 
             logger.debug("Plotting temperature...")
-            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0])
-            if plt_temp_ax: self._mark_observation(plt_temp_ax, dark_mode_enabled, style)
-            if plt_temp_ax: self._mark_good_conditions(plt_temp_ax, self.conditions.min_temperature, self.conditions.max_temperature, dark_mode_enabled, style)
+            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0], dark_mode_override=dark_mode_override)
+            if plt_temp_ax: self._mark_observation(plt_temp_ax, effective_dark_mode, style)
+            if plt_temp_ax: self._mark_good_conditions(plt_temp_ax, self.conditions.min_temperature, self.conditions.max_temperature, effective_dark_mode, style)
 
             logger.debug("Plotting wind...")
-            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1])
-            if plt_wind_ax: self._mark_observation(plt_wind_ax, dark_mode_enabled, style)
-            if plt_wind_ax: self._mark_good_conditions(plt_wind_ax, 0, self.conditions.max_wind, dark_mode_enabled, style)
+            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1], dark_mode_override=dark_mode_override)
+            if plt_wind_ax: self._mark_observation(plt_wind_ax, effective_dark_mode, style)
+            if plt_wind_ax: self._mark_good_conditions(plt_wind_ax, 0, self.conditions.max_wind, effective_dark_mode, style)
 
             logger.debug("Plotting pressure and ozone...")
-            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
-            if plt_pressure_ax: self._mark_observation(plt_pressure_ax, dark_mode_enabled, style)
+            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0], dark_mode_override=dark_mode_override)
+            if plt_pressure_ax: self._mark_observation(plt_pressure_ax, effective_dark_mode, style)
 
             logger.debug("Plotting visibility...")
-            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1])
-            if plt_visibility_ax: self._mark_observation(plt_visibility_ax, dark_mode_enabled, style)
+            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1], dark_mode_override=dark_mode_override)
+            if plt_visibility_ax: self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
 
             fig.tight_layout()
-            logger.info("Successfully generated Weather plot (figure setup). Sub-plot styling depends on weather.py methods.")
+            logger.info("Successfully generated Weather plot (figure setup). Sub-plot styling uses dark_mode_override.")
             return fig
 
         except Exception as e:
@@ -512,7 +557,7 @@ class Observation:
             fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
             fig_err.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
             ax_err.set_facecolor(style['AXES_FACE_COLOR'])
-            error_color = '#FF6B6B' if dark_mode_enabled else 'red' # Light red for dark mode
+            error_color = '#FF6B6B' if effective_dark_mode else 'red' # Light red for dark mode
             ax_err.text(0.5, 0.5, 'Error generating Weather plot details.\nSee logs for specifics.',
                         horizontalalignment='center', verticalalignment='center',
                         fontsize=12, color=error_color, wrap=True, transform=ax_err.transAxes)

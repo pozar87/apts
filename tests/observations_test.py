@@ -1,6 +1,7 @@
 import os
 import unittest
 import tempfile
+import datetime # Added
 from unittest.mock import patch, mock_open
 import pandas as pd
 from unittest.mock import MagicMock, call # Added MagicMock and call
@@ -16,7 +17,7 @@ class MockPlace:
         self.name = "MockPlace"
         self.lat = 0 * ureg.deg
         self.lon = 0 * ureg.deg
-        self.local_timezone = 'UTC'
+        self.local_timezone = datetime.timezone.utc # Changed to datetime.timezone.utc
         self.date = pd.Timestamp('2023-01-01 00:00:00', tz='UTC') # dummy date
 
     def sunset_time(self, target_date=None):
@@ -165,78 +166,54 @@ class TestObservationPlottingStyles(unittest.TestCase):
     @patch('apts.observations.pyplot')
     @patch('apts.observations.get_dark_mode')
     def test_generate_plot_messier_dark_mode_styles(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
-        # --- Test Dark Mode Enabled ---
-        mock_get_dark_mode.return_value = True
-        dark_style = get_plot_style(True)
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
 
-        # Mock the subplots call and the returned axes object
-        mock_ax = MagicMock()
-        mock_fig = MagicMock()
-        mock_ax.figure = mock_fig
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
-
-        # Mock legend calls
-        mock_legend = MagicMock()
-        mock_ax.legend.return_value = mock_legend
-        mock_legend.get_frame.return_value = MagicMock()
-        mock_legend.get_title.return_value = MagicMock()
-        mock_legend.get_texts.return_value = [MagicMock()]
-
-        # Mock get_visible_messier to control its output
+        # Mock get_visible_messier to control its output (already in setUp)
         self.observation.get_visible_messier = MagicMock(return_value=self.mock_messier_df)
 
-        returned_fig = self.observation._generate_plot_messier()
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
 
-        self.assertEqual(returned_fig, mock_fig)
-        mock_pyplot.subplots.assert_called_once()
-        mock_fig.patch.set_facecolor.assert_called_with(dark_style['FIGURE_FACE_COLOR'])
-        mock_ax.set_facecolor.assert_called_with(dark_style['AXES_FACE_COLOR'])
-        mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", True)
-        mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=dark_style['TEXT_COLOR'])
+                # Reset mocks that accumulate calls for each subtest
+                mock_pyplot.reset_mock()
+                mock_annotate_plot.reset_mock()
 
-        # Check legend styling
-        mock_ax.legend.assert_called_once() # Check if legend() was called
-        mock_legend.get_frame().set_facecolor.assert_called_with(dark_style['AXES_FACE_COLOR'])
-        mock_legend.get_frame().set_edgecolor.assert_called_with(dark_style['AXIS_COLOR'])
-        mock_legend.get_title().set_color.assert_called_with(dark_style['TEXT_COLOR'])
-        for text_mock in mock_legend.get_texts():
-            text_mock.set_color.assert_called_with(dark_style['TEXT_COLOR'])
+                # Mock the subplots call and the returned axes object for this subtest run
+                mock_ax = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax.figure = mock_fig
+                mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
-        # --- Test Dark Mode Disabled ---
-        mock_get_dark_mode.return_value = False
-        light_style = get_plot_style(False)
+                # Mock legend calls for this subtest run
+                mock_legend = MagicMock()
+                mock_ax.legend.return_value = mock_legend
+                mock_legend.get_frame.return_value = MagicMock()
+                mock_legend.get_title.return_value = MagicMock()
+                mock_legend.get_texts.return_value = [MagicMock()] # Assume at least one text item for simplicity
 
-        # Reset mocks for the second call
-        mock_pyplot.reset_mock()
-        mock_annotate_plot.reset_mock()
-        mock_ax.reset_mock()
-        mock_fig.reset_mock()
-        mock_legend.reset_mock()
-        mock_legend.get_frame.return_value.reset_mock()
-        mock_legend.get_title.return_value.reset_mock()
-        for text_mock in mock_legend.get_texts.return_value: # type: ignore
-            text_mock.reset_mock()
+                returned_fig = self.observation._generate_plot_messier(dark_mode_override=scenario_data["override"])
 
-        # Re-assign mocks for return values
-        mock_ax.figure = mock_fig
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
-        mock_ax.legend.return_value = mock_legend
+                self.assertEqual(returned_fig, mock_fig)
+                mock_pyplot.subplots.assert_called_once()
+                mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+                mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", scenario_data["expected_effective_dark_mode"])
+                mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=expected_style['TEXT_COLOR'])
 
-
-        returned_fig_light = self.observation._generate_plot_messier()
-
-        self.assertEqual(returned_fig_light, mock_fig)
-        mock_pyplot.subplots.assert_called_once()
-        mock_fig.patch.set_facecolor.assert_called_with(light_style['FIGURE_FACE_COLOR'])
-        mock_ax.set_facecolor.assert_called_with(light_style['AXES_FACE_COLOR'])
-        mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", False)
-        mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=light_style['TEXT_COLOR'])
-
-        mock_ax.legend.assert_called_once()
-        mock_legend.get_frame().set_facecolor.assert_called_with(light_style['AXES_FACE_COLOR'])
-        mock_legend.get_frame().set_edgecolor.assert_called_with(light_style['AXIS_COLOR'])
-        # ... (add more assertions for light mode legend if necessary)
-
+                if not self.mock_messier_df.empty:
+                    mock_ax.legend.assert_called_once()
+                    mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                    mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+                    mock_legend.get_title().set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                    for text_mock in mock_legend.get_texts():
+                        text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
     @patch('apts.observations.svg.Drawing')
     @patch('apts.observations.get_dark_mode')
@@ -250,34 +227,31 @@ class TestObservationPlottingStyles(unittest.TestCase):
         mock_planets_df = pd.DataFrame(mock_planets_data)
         self.observation.get_visible_planets = MagicMock(return_value=mock_planets_df)
 
-        mock_dwg_instance = MagicMock()
-        mock_svg_drawing.return_value = mock_dwg_instance
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
 
-        # --- Test Dark Mode Enabled ---
-        mock_get_dark_mode.return_value = True
-        dark_style = get_plot_style(True)
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
 
-        self.observation.plot_visible_planets_svg()
+                # Reset svg.Drawing mock and prepare its return value for this subtest
+                mock_svg_drawing.reset_mock()
+                mock_dwg_instance = MagicMock()
+                mock_svg_drawing.return_value = mock_dwg_instance
 
-        mock_svg_drawing.assert_called_with(style={'background-color': dark_style['BACKGROUND_COLOR']})
-        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
-                                                 stroke=dark_style['AXIS_COLOR'], fill=dark_style['AXES_FACE_COLOR'], stroke_width="1")
-        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                               text_anchor="middle", fill=dark_style['TEXT_COLOR'])
+                self.observation.plot_visible_planets_svg(dark_mode_override=scenario_data["override"])
 
-        # --- Test Dark Mode Disabled ---
-        mock_get_dark_mode.return_value = False
-        light_style = get_plot_style(False)
-        mock_svg_drawing.reset_mock()
-        mock_dwg_instance.reset_mock()
-
-        self.observation.plot_visible_planets_svg()
-
-        mock_svg_drawing.assert_called_with(style={'background-color': light_style['BACKGROUND_COLOR']})
-        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
-                                                 stroke=light_style['AXIS_COLOR'], fill=light_style['AXES_FACE_COLOR'], stroke_width="1")
-        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                               text_anchor="middle", fill=light_style['TEXT_COLOR'])
+                mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
+                if not mock_planets_df.empty:
+                    mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
+                                                             stroke=expected_style['AXIS_COLOR'], fill=expected_style['AXES_FACE_COLOR'], stroke_width="1")
+                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                           text_anchor="middle", fill=expected_style['TEXT_COLOR'])
 
 
 if __name__ == '__main__':

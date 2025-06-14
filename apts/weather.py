@@ -6,6 +6,8 @@ import pandas as pd
 import requests
 import requests_cache
 
+from typing import Optional # Added Optional
+
 from .utils import Utils
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
@@ -36,9 +38,13 @@ class Weather:
         ) + timedelta(hours=min(hours, 48))
         return self.data[columns][self.data.time < time_horizon]
 
-    def plot_clouds(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["cloudCover"], hours)
         if data.empty:
             return None
@@ -71,12 +77,16 @@ class Weather:
             if legend.get_title():
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
-        Utils.annotate_plot(ax, "Cloud cover [%]", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode)
         return ax
 
-    def plot_precipitation(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_precipitation(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["precipIntensity", "precipProbability"], hours)
         if data.empty:
             return None
@@ -110,12 +120,16 @@ class Weather:
             if legend.get_title():
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
-        Utils.annotate_plot(ax, "Probability", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Probability", effective_dark_mode)
         return ax
 
-    def plot_precipitation_type_summary(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_precipitation_type_summary(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode) # Use effective_dark_mode
         data = self._filter_data(["precipType"], hours)
         if data.empty:
             return None
@@ -160,9 +174,13 @@ class Weather:
         # Wedge colors can be passed via `colors` kwarg in plot_kwargs if needed.
         return ax
 
-    def plot_clouds_summary(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_clouds_summary(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode) # Use effective_dark_mode
         data = self._filter_data(["summary"], hours)
         if data.empty:
             return None
@@ -200,9 +218,13 @@ class Weather:
 
         return ax
 
-    def plot_temperature(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_temperature(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         data = self._filter_data(
             ["temperature", "apparentTemperature", "dewPoint"], hours
         )
@@ -236,12 +258,16 @@ class Weather:
             if legend.get_title():
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
-        Utils.annotate_plot(ax, "Temperature [°C]", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode)
         return ax
 
-    def plot_wind(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_wind(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         max_wind_speed = self.data[["windSpeed"]].max().max()
         data = self._filter_data(["windSpeed"], hours)
         if data.empty:
@@ -281,12 +307,16 @@ class Weather:
             if legend.get_title():
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
-        Utils.annotate_plot(ax, "Wind speed [km/h]", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode)
         return ax
 
-    def plot_pressure_and_ozone(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_pressure_and_ozone(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["pressure", "ozone"], hours)
         if data.empty:
             return None
@@ -324,7 +354,7 @@ class Weather:
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
         # Utils.annotate_plot handles primary X and Y axes (labels, ticks, spines)
-        Utils.annotate_plot(ax, "Pressure [hPa]", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Pressure [hPa]", effective_dark_mode)
 
         # Style secondary Y axis (right axis for 'ozone')
         if hasattr(ax, 'right_ax'):
@@ -346,9 +376,13 @@ class Weather:
         )
         return data[(data.time > start) & (data.time < stop)]
 
-    def plot_visibility(self, hours=24, **args):
-        dark_mode_enabled = get_dark_mode()
-        style = get_plot_style(dark_mode_enabled)
+    def plot_visibility(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["visibility"], hours)
         data = data.query("visibility != 'none'")
         if data.empty:
@@ -381,7 +415,7 @@ class Weather:
             if legend.get_title():
                  legend.get_title().set_color(style['TEXT_COLOR'])
 
-        Utils.annotate_plot(ax, "Visibility [km]", dark_mode_enabled)
+        Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
         return ax
 
     def download_data(self):

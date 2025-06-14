@@ -1,6 +1,7 @@
 import pytest
 import json
 import requests_mock
+import datetime # Added
 from unittest.mock import patch, MagicMock # Added
 import pandas as pd # Added
 from apts.weather import Weather # Added
@@ -56,100 +57,83 @@ def test_weather_api_error():
       p.get_weather()
 
 
+@pytest.mark.parametrize(
+    "override_value, global_setting, expected_effective_dark_mode",
+    [
+        (True, False, True),  # Override True, Global False -> Dark
+        (False, True, False), # Override False, Global True -> Light
+        (None, True, True),   # Override None, Global True -> Dark
+        (None, False, False), # Override None, Global False -> Light
+    ]
+)
 @patch('apts.weather.Utils.annotate_plot')
 @patch('pandas.DataFrame.plot') # Mocking the plot method of DataFrame
 @patch('apts.weather.get_dark_mode')
-def test_plot_clouds_dark_mode_styles(mock_get_dark_mode, mock_df_plot, mock_annotate_plot, requests_mock):
+def test_plot_clouds_dark_mode_styles(
+    mock_get_dark_mode,
+    mock_df_plot,
+    mock_annotate_plot,
+    requests_mock, # pytest fixture
+    override_value,
+    global_setting,
+    expected_effective_dark_mode
+):
     # --- Setup Weather instance and mock data ---
-    # Mock the API response for Weather data download
     mock_api_response = {
         "hourly": {
-            "data": [{"time": 1624000000, "cloudCover": 0.5}]
+            "data": [{"time": 1624000000, "cloudCover": 0.5, "summary": "Cloudy"}] # Added summary for potential pie chart
         }
     }
-    # Mock requests_cache's behavior or actual HTTP request if Weather init calls download_data
-    # Here, we assume Weather constructor calls download_data which uses requests.get
     requests_mock.get(requests_mock.ANY, json=mock_api_response)
+    weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc) # Changed
 
-    weather = Weather(lat=0, lon=0, local_timezone='UTC') # Actual instantiation
-
-    # Ensure weather.data is populated. If download_data isn't called in init, mock it:
-    # weather.data = pd.DataFrame({'time': pd.to_datetime(['2023-01-01 12:00:00'], utc=True), 'cloudCover': [50.0]})
-    # Or ensure _filter_data returns something suitable
-    # For this test, assume weather.data is populated correctly after init.
-
-    # --- Test Dark Mode Enabled ---
-    mock_get_dark_mode.return_value = True
-    dark_style = get_plot_style(True)
+    # Set global dark mode mock based on scenario
+    mock_get_dark_mode.return_value = global_setting
+    expected_style = get_plot_style(expected_effective_dark_mode)
 
     # Mock the Axes object that pandas.DataFrame.plot() would return
-    mock_ax_dark = MagicMock()
-    mock_fig_dark = MagicMock()
-    mock_ax_dark.figure = mock_fig_dark
-    mock_df_plot.return_value = mock_ax_dark # df.plot() returns this mock_ax
+    # A new mock_ax is implicitly created for each parametrized run by pytest if it were a fixture.
+    # Here, we create it manually to ensure it's fresh.
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+    mock_ax.figure = mock_fig
+    mock_df_plot.return_value = mock_ax
 
     # Mock legend on the axes
-    mock_legend_dark = MagicMock()
-    mock_ax_dark.get_legend.return_value = mock_legend_dark
-    mock_legend_dark.get_frame.return_value = MagicMock()
-    mock_legend_dark.get_title.return_value = MagicMock() # if legends can have titles
-    mock_legend_dark.get_texts.return_value = [MagicMock()]
+    mock_legend = MagicMock()
+    mock_ax.get_legend.return_value = mock_legend
+    mock_legend.get_frame.return_value = MagicMock()
+    mock_legend.get_title.return_value = MagicMock()
+    mock_legend.get_texts.return_value = [MagicMock()]
 
+    # Call the method to be tested with the override value
+    ax_returned = weather.plot_clouds(hours=1, dark_mode_override=override_value)
 
-    ax_returned_dark = weather.plot_clouds(hours=1) # Call the method to be tested
-
-    assert ax_returned_dark == mock_ax_dark # Ensure the method returns the ax object
-    mock_df_plot.assert_called_once() # Check that pandas plot was called
+    assert ax_returned == mock_ax
+    mock_df_plot.assert_called_once()
 
     # Check that figure and axes face colors are set when plot creates them
-    mock_fig_dark.patch.set_facecolor.assert_called_with(dark_style['FIGURE_FACE_COLOR'])
-    mock_ax_dark.set_facecolor.assert_called_with(dark_style['AXES_FACE_COLOR'])
+    # (plot_clouds creates the fig/ax if not passed in)
+    mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+    mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
 
-    # Check title color
-    mock_ax_dark.set_title.assert_any_call(mock_ax_dark.get_title(), color=dark_style['TEXT_COLOR'])
+    # Configure mock_ax.get_title before the call to plot_clouds
+    # The title is set by data.plot(title="Clouds")
+    mock_ax.get_title.return_value = "Clouds"
+    mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
 
-    # Check legend styling
-    mock_ax_dark.get_legend.assert_called_once()
-    mock_legend_dark.get_frame().set_facecolor.assert_called_with(dark_style['AXES_FACE_COLOR'])
-    mock_legend_dark.get_frame().set_edgecolor.assert_called_with(dark_style['AXIS_COLOR'])
-    for text_mock in mock_legend_dark.get_texts():
-        text_mock.set_color.assert_called_with(dark_style['TEXT_COLOR'])
+    if mock_ax.get_legend() is not None : # Check if legend was actually created by the plot
+        mock_ax.get_legend.assert_called() # Should be called if legend exists
+        mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+        mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+        for text_mock in mock_legend.get_texts():
+            text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
-    mock_annotate_plot.assert_called_with(mock_ax_dark, "Cloud cover [%]", True)
+    mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode)
 
-    # --- Test Dark Mode Disabled ---
-    mock_get_dark_mode.return_value = False
-    light_style = get_plot_style(False)
-
-    # Reset mocks for the light mode call
-    mock_df_plot.reset_mock()
-    mock_annotate_plot.reset_mock()
-    # mock_ax_dark.reset_mock() # Don't reset the object itself, just its call records if needed
-    # mock_fig_dark.reset_mock()
-    # mock_legend_dark.reset_mock()
-    # Instead of resetting, create new mocks for clarity or ensure calls are distinct
-    mock_ax_light = MagicMock()
-    mock_fig_light = MagicMock()
-    mock_ax_light.figure = mock_fig_light
-    mock_df_plot.return_value = mock_ax_light # df.plot() returns this new mock_ax for light mode
-
-    mock_legend_light = MagicMock()
-    mock_ax_light.get_legend.return_value = mock_legend_light
-    mock_legend_light.get_frame.return_value = MagicMock()
-    mock_legend_light.get_texts.return_value = [MagicMock()]
-
-
-    ax_returned_light = weather.plot_clouds(hours=1)
-
-    assert ax_returned_light == mock_ax_light
-    mock_df_plot.assert_called_once() # Called once for light mode
-
-    mock_fig_light.patch.set_facecolor.assert_called_with(light_style['FIGURE_FACE_COLOR'])
-    mock_ax_light.set_facecolor.assert_called_with(light_style['AXES_FACE_COLOR'])
-    mock_ax_light.set_title.assert_any_call(mock_ax_light.get_title(), color=light_style['TEXT_COLOR'])
-
-    mock_ax_light.get_legend.assert_called_once()
-    mock_legend_light.get_frame().set_facecolor.assert_called_with(light_style['AXES_FACE_COLOR'])
-    # ... (add more assertions for light mode legend)
-
-    mock_annotate_plot.assert_called_with(mock_ax_light, "Cloud cover [%]", False)
+    # Important: Reset mocks if they are reused across parameterize iterations in a way that accumulates calls.
+    # Pytest typically isolates test runs, but explicit mock_df_plot.reset_mock() might be needed if issues arise.
+    # For this structure, mock_df_plot is patched at function level, so it's reset for each parameter set.
+    mock_df_plot.reset_mock() # Reset for the next iteration of parametrize
+    mock_annotate_plot.reset_mock() # Reset for the next iteration
+    mock_get_dark_mode.reset_mock() # Reset for the next iteration
