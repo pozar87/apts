@@ -6,7 +6,8 @@ from unittest.mock import patch, mock_open
 import pandas as pd
 from unittest.mock import MagicMock, call # Added MagicMock and call
 from apts.observations import Observation
-from apts.constants.graphconstants import get_plot_style, OpticalType # Added get_plot_style, OpticalType
+from apts.constants.graphconstants import get_plot_style, OpticalType, GraphConstants # Added GraphConstants
+from apts.constants.objecttablelabels import ObjectTableLabels # Added ObjectTableLabels
 from apts.utils import ureg # Added ureg for Quantity
 from tests import setup_observation
 from apts.conditions import Conditions # Import Conditions at the top level
@@ -174,6 +175,15 @@ class TestObservationPlottingStyles(unittest.TestCase):
         # Ensure DataFrame columns with pint Quantities are correctly typed if needed by the method
         # For _generate_plot_messier, it seems to handle .magnitude internally.
 
+        # Mock data for planet color tests
+        self.mock_planets_data_for_color_test = pd.DataFrame({
+            ObjectTableLabels.NAME: ['Mars', 'Jupiter', 'UnknownPlanet'],
+            ObjectTableLabels.TRANSIT: [pd.Timestamp('2023-01-01 22:00:00', tz='UTC')] * 3,
+            ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 3,
+            ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 3,
+            ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 3 # For SVG plot
+        })
+
     @patch('apts.observations.Utils.annotate_plot')
     @patch('apts.observations.pyplot')
     @patch('apts.observations.get_dark_mode')
@@ -242,14 +252,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
     @patch('apts.observations.svg.Drawing')
     @patch('apts.observations.get_dark_mode')
     def test_plot_visible_planets_svg_dark_mode_styles(self, mock_get_dark_mode, mock_svg_drawing):
-        # Mock get_visible_planets to return some dummy data
-        mock_planets_data = {
-            'Name': ['Jupiter'],
-            'Size': [40 * ureg.arcsec],
-            'Phase': [99.0 * ureg.percent]
-        }
-        mock_planets_df = pd.DataFrame(mock_planets_data)
-        self.observation.get_visible_planets = MagicMock(return_value=mock_planets_df)
+        # Use the more detailed mock_planets_data_for_color_test
+        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
 
         scenarios = [
             {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
@@ -270,21 +274,69 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
                 self.observation.plot_visible_planets_svg(dark_mode_override=scenario_data["override"])
 
+                fills_called = [call.kwargs['fill'] for call in mock_dwg_instance.circle.call_args_list]
+                self.assertEqual(mock_dwg_instance.circle.call_count, 3)
+
                 if scenario_data["expected_effective_dark_mode"]:
                     mock_svg_drawing.assert_called_with(style={'background-color': '#1C1C3A'})
-                    if not mock_planets_df.empty:
-                        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
-                                                                 stroke='#CCCCCC', fill='#2A004F', stroke_width="1")
-                        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                                               text_anchor="middle", fill='#FFFFFF')
+                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Mars'], fills_called)
+                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Jupiter'], fills_called)
+                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
+                    # Check one text call for color
+                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                           text_anchor="middle", fill='#FFFFFF')
                 else: # Light mode assertions
                     mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
-                    if not mock_planets_df.empty:
-                        mock_dwg_instance.circle.assert_any_call(center=(unittest.mock.ANY, unittest.mock.ANY), r=unittest.mock.ANY,
-                                                                 stroke=expected_style['AXIS_COLOR'], fill=expected_style['AXES_FACE_COLOR'], stroke_width="1")
-                        mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                                               text_anchor="middle", fill=expected_style['TEXT_COLOR'])
+                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Mars'], fills_called)
+                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Jupiter'], fills_called)
+                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
+                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
+                                                           text_anchor="middle", fill=expected_style['TEXT_COLOR'])
 
+    @patch('apts.observations.Utils.annotate_plot')
+    @patch('apts.observations.pyplot')
+    @patch('apts.observations.get_dark_mode')
+    def test_generate_plot_planets_specific_colors(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
+        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
+
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
+
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                effective_dark_mode = scenario_data["expected_effective_dark_mode"]
+
+                mock_pyplot.reset_mock()
+                mock_annotate_plot.reset_mock()
+                mock_ax = MagicMock()
+                mock_fig = MagicMock()
+                mock_ax.figure = mock_fig
+                mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+                self.observation._generate_plot_planets(dark_mode_override=scenario_data["override"])
+
+                mock_ax.scatter.assert_called()
+                self.assertEqual(mock_ax.scatter.call_count, 3)
+
+                colors_called = [call.kwargs['c'] for call in mock_ax.scatter.call_args_list]
+
+                if effective_dark_mode:
+                    expected_mars_color = GraphConstants.PLANET_COLORS_DARK['Mars']
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK['Jupiter']
+                    default_color = GraphConstants.DARK_COLORS[OpticalType.GENERIC]
+                else:
+                    expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT['Mars']
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT['Jupiter']
+                    default_color = GraphConstants.COLORS[OpticalType.GENERIC]
+
+                self.assertIn(expected_mars_color, colors_called)
+                self.assertIn(expected_jupiter_color, colors_called)
+                self.assertIn(default_color, colors_called) # For 'UnknownPlanet'
 
 if __name__ == '__main__':
     unittest.main()

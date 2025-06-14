@@ -15,7 +15,7 @@ from .objects.planets import Planets
 from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
-from apts.constants.graphconstants import get_plot_style, get_plot_colors, OpticalType # Added OpticalType
+from apts.constants.graphconstants import get_plot_style, get_plot_colors, OpticalType, get_planet_color # Added get_planet_color
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +117,7 @@ class Observation:
 
         style = get_plot_style(effective_dark_mode)
         # colors = get_plot_colors(effective_dark_mode) # Not strictly needed as style dict has most
+        default_fill_color = style['AXES_FACE_COLOR']
 
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing(style={'background-color': style['BACKGROUND_COLOR']})
@@ -151,7 +152,7 @@ class Observation:
                     r=radius,
                     stroke=style['AXIS_COLOR'],
                     stroke_width="1",
-                    fill=style['AXES_FACE_COLOR'],
+                    fill=get_planet_color(name, effective_dark_mode, default_fill_color),
                 )
             )
             dwg.add(dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle", fill=style['TEXT_COLOR']))
@@ -352,8 +353,7 @@ class Observation:
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
 
-        # Use a generic color for planets if available, or let matplotlib cycle
-        planet_scatter_color = plot_colors.get(OpticalType.GENERIC, None)
+        default_planet_color = plot_colors.get(OpticalType.GENERIC, '#888888')
 
         for _, planet in planets_df.iterrows():
             transit = planet[ObjectTableLabels.TRANSIT]
@@ -361,8 +361,11 @@ class Observation:
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
             marker_size = size * 0.5 + 8
+
+            specific_planet_color = get_planet_color(name, effective_dark_mode, default_planet_color)
+
             logger.debug(f"Plotting planet {name} at transit {transit} with altitude {altitude} and size {size}")
-            ax.scatter(transit, altitude, s=marker_size**2, marker='o', color=planet_scatter_color) # Apply color
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o', color=specific_planet_color) # Apply specific color
             ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points", color=style['TEXT_COLOR'])
 
         # Ensure xlim and ylim are set after plotting data if not already fixed

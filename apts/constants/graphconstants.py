@@ -59,6 +59,26 @@ class GraphConstants:
     "TICK_COLOR": "#333333"
   }
 
+  PLANET_COLORS_LIGHT = {
+      'Mercury': '#A9A9A9',  # Dark Gray
+      'Venus':   '#F0E68C',  # Pale Gold / Cream
+      'Mars':    '#C1440E',  # Rusty Red
+      'Jupiter': '#B08968',  # Tan / Light Brown
+      'Saturn':  '#CEB888',  # Pale Yellow / Gold
+      'Uranus':  '#7FC9E0',  # Light Sky Blue
+      'Neptune': '#3B71A0',  # Deep Blue
+  }
+
+  PLANET_COLORS_DARK = {
+      'Mercury': '#BEBEBE',  # LightGray (brighter than light mode)
+      'Venus':   '#FFFACD',  # LemonChiffon (brighter pale yellow)
+      'Mars':    '#E27B58',  # Lighter Rusty Red/Orange
+      'Jupiter': '#D8A976',  # Brighter Tan
+      'Saturn':  '#E3D6A8',  # Brighter Pale Gold
+      'Uranus':  '#A4D8E8',  # Brighter Light Blue
+      'Neptune': '#5B8FBF',  # Slightly lighter/more saturated Deep Blue
+  }
+
 def get_plot_colors(dark_mode_enabled: bool) -> dict:
   """
   Returns the appropriate color dictionary based on dark mode status.
@@ -76,3 +96,14 @@ def get_plot_style(dark_mode_enabled: bool) -> dict:
     return GraphConstants.DARK_MODE_STYLE
   else:
     return GraphConstants.LIGHT_MODE_STYLE
+
+def get_planet_color(planet_name: str, dark_mode_enabled: bool, default_color: str) -> str:
+    """
+    Retrieves the specific color for a planet based on the theme.
+    Falls back to default_color if the planet is not found.
+    """
+    if dark_mode_enabled:
+        colors_dict = GraphConstants.PLANET_COLORS_DARK
+    else:
+        colors_dict = GraphConstants.PLANET_COLORS_LIGHT
+    return colors_dict.get(planet_name, default_color)
