@@ -1,7 +1,7 @@
 import pytest
 import numpy as np # Added for np.log10
 import pandas as pd # Added for DataFrame operations
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY
 
 from apts import equipment # This is apts.equipment module
 from apts.equipment import Equipment # Import Equipment class directly
@@ -735,7 +735,7 @@ def test_plot_connection_graph_svg_override_dark(mock_plot_connection_graph, moc
 
     eq.plot_connection_graph_svg(dark_mode_override=True)
 
-    mock_cairo_surface.assert_called_once_with(MagicMock.ANY, 800, 600)
+    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get('dark_mode_override') is True
@@ -752,7 +752,7 @@ def test_plot_connection_graph_svg_override_light(mock_plot_connection_graph, mo
 
     eq.plot_connection_graph_svg(dark_mode_override=False)
 
-    mock_cairo_surface.assert_called_once_with(MagicMock.ANY, 800, 600)
+    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get('dark_mode_override') is False
@@ -769,7 +769,7 @@ def test_plot_connection_graph_svg_override_none(mock_plot_connection_graph, moc
 
     eq.plot_connection_graph_svg(dark_mode_override=None)
 
-    mock_cairo_surface.assert_called_once_with(MagicMock.ANY, 800, 600)
+    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get('dark_mode_override') is None
@@ -786,7 +786,7 @@ def test_plot_connection_graph_svg_no_override(mock_plot_connection_graph, mock_
 
     eq.plot_connection_graph_svg() # Call without dark_mode_override
 
-    mock_cairo_surface.assert_called_once_with(MagicMock.ANY, 800, 600)
+    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get('dark_mode_override') is None
