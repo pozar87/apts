@@ -1,5 +1,6 @@
 import pytest
 import json
+import re # Added
 import requests_mock
 import datetime # Added
 from unittest.mock import patch, MagicMock # Added
@@ -84,7 +85,7 @@ def test_plot_clouds_dark_mode_styles(
             "data": [{"time": 1624000000, "cloudCover": 0.5, "summary": "Cloudy"}] # Added summary for potential pie chart
         }
     }
-    requests_mock.get(requests_mock.ANY, json=mock_api_response)
+    requests_mock.get(re.compile(".*"), json=mock_api_response) # Changed
     weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc) # Changed
 
     # Set global dark mode mock based on scenario
@@ -130,38 +131,29 @@ def test_plot_clouds_dark_mode_styles(
     # (plot_clouds creates the fig/ax if not passed in)
     mock_ax.get_title.return_value = "Clouds" # Ensure get_title returns the expected string for title check
 
-    # Group 1: Figure and Axes Face Colors (Commented out)
-    # if expected_effective_dark_mode:
-    #     mock_fig_patch.set_facecolor.assert_called_with('#1C1C3A')
-    #     mock_ax.set_facecolor.assert_called_with('#2A004F')
-    # else:
-    #     mock_fig_patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
-    #     mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+    if expected_effective_dark_mode:
+        mock_fig_patch.set_facecolor.assert_called_with('#1C1C3A')
+        mock_ax.set_facecolor.assert_called_with('#2A004F')
+        mock_ax.set_title.assert_any_call("Clouds", color='#FFFFFF')
+        if mock_ax.get_legend() is not None and mock_legend_frame is not None:
+            mock_legend_frame.set_facecolor.assert_called_with('#2A004F')
+            mock_legend_frame.set_edgecolor.assert_called_with('#CCCCCC')
+            # mock_legend_title.set_color.assert_called_with('#FFFFFF')
+            mock_legend_text_item.set_color.assert_called_with('#FFFFFF')
+    else: # Light mode assertions
+        mock_fig_patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+        mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+        mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
+        if mock_ax.get_legend() is not None and mock_legend_frame is not None:
+            mock_legend_frame.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+            mock_legend_frame.set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
+            # mock_legend_title.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+            mock_legend_text_item.set_color.assert_called_with(expected_style['TEXT_COLOR'])
 
-    # Group 2: Title (Commented out)
-    # if expected_effective_dark_mode:
-    #     mock_ax.set_title.assert_any_call("Clouds", color='#FFFFFF')
-    # else:
-    #     mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
+    if mock_ax.get_legend() is not None:
+        mock_ax.get_legend.assert_called()
 
-    # Group 3: Legend Styling (Commented out)
-    # if mock_ax.get_legend() is not None:
-    #     mock_ax.get_legend.assert_called()
-    #     if expected_effective_dark_mode:
-    #         if mock_legend_frame: # Check if mock_legend_frame was created (it should be if get_legend returned something)
-    #             mock_legend_frame.set_facecolor.assert_called_with('#2A004F')
-    #             mock_legend_frame.set_edgecolor.assert_called_with('#CCCCCC')
-    #             # mock_legend_title.set_color.assert_called_with('#FFFFFF')
-    #             mock_legend_text_item.set_color.assert_called_with('#FFFFFF')
-    #     else: # Light mode assertions
-    #         if mock_legend_frame:
-    #             mock_legend_frame.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-    #             mock_legend_frame.set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
-    #             # mock_legend_title.set_color.assert_called_with(expected_style['TEXT_COLOR'])
-    #             mock_legend_text_item.set_color.assert_called_with(expected_style['TEXT_COLOR'])
-
-    # Group 4: Annotate Plot Call (Commented out)
-    # mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode)
+    mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode)
 
     # Important: Reset mocks if they are reused across parameterize iterations in a way that accumulates calls.
     # Pytest typically isolates test runs, but explicit mock_df_plot.reset_mock() might be needed if issues arise.
