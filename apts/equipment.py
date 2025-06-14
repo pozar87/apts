@@ -4,8 +4,11 @@ import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
+from typing import Optional
 
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
+from .config import get_dark_mode
+from .constants.graphconstants import get_plot_style
 from .opticalequipment import (
     OpticalEquipment,
     Telescope,
@@ -166,22 +169,28 @@ class Equipment:
 
         return result
 
-    def plot_zoom(self, **args):
+    def plot_zoom(self, dark_mode_override: Optional[bool] = None, **args):
         """
         Plot available magnification
         """
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
         plot = self._plot(
             EquipmentTableLabels.ZOOM,
             "Available zoom",
             "Used equipment",
             "Magnification",
+            dark_mode_enabled=effective_dark_mode,
             **args,
         )
         # Add marker for maximal useful zoom
+        style = get_plot_style(effective_dark_mode) # Get style for the annotations
         max_zoom = self.max_zoom()
-        plot.axhline(max_zoom, color="orange", linestyle="--", alpha=0.7)
+        plot.axhline(max_zoom, color=style['TEXT_COLOR'], linestyle="--", alpha=0.7)
         plot.annotate(
-            "Max useful zoom due to atmosphere", (-0.4, max_zoom + 2), alpha=0.7
+            "Max useful zoom due to atmosphere", (-0.4, max_zoom + 2), alpha=0.7, color=style['TEXT_COLOR']
         )
 
     def max_zoom(self):
@@ -190,24 +199,31 @@ class Equipment:
         """
         return 350
 
-    def plot_fov(self, **args):
+    def plot_fov(self, dark_mode_override: Optional[bool] = None, **args):
         """
         Plot available fields of view
         """
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
 
         def formatter(tick, pos):
             return Utils.decdeg2dms(tick, pretty=True)
 
         def add_line(description, position):
             position = Utils.dms2decdeg(position)
-            plot.axhline(position, color="orange", linestyle="--", alpha=0.7)
-            plot.annotate(description, (-0.4, position + 0.03), alpha=0.7)
+            plot.axhline(position, color=style['TEXT_COLOR'], linestyle="--", alpha=0.7)
+            plot.annotate(description, (-0.4, position + 0.03), alpha=0.7, color=style['TEXT_COLOR'])
 
         plot = self._plot(
             EquipmentTableLabels.FOV,
             "Available fields of view",
             "Used equipment",
             "Field if view [°]",
+            dark_mode_enabled=effective_dark_mode,
             **args,
         )
         plot.yaxis.set_major_formatter(plt.FuncFormatter(formatter))
@@ -224,17 +240,43 @@ class Equipment:
         title,
         x_label,
         y_label,
+        dark_mode_enabled: bool,
         autolayout=False,
         multiline_labels=True,
         **args,
     ):
+        style = get_plot_style(dark_mode_enabled)
         data = self._filter_and_merge(to_plot, multiline_labels)
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
-        ax = data.plot(kind="bar", title=title, stacked=True, **args)
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        ax.legend(loc="upper right")
+
+        # Pass title as None initially, then set it with color
+        ax = data.plot(kind="bar", title=None, stacked=True, **args)
+
+        fig = ax.figure # Get the figure object
+        fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+        ax.set_facecolor(style['AXES_FACE_COLOR'])
+
+        ax.set_title(title, color=style['TEXT_COLOR']) # Set title color
+        ax.set_xlabel(x_label, color=style['TEXT_COLOR'])
+        ax.set_ylabel(y_label, color=style['TEXT_COLOR'])
+
+        ax.tick_params(axis='x', colors=style['TICK_COLOR'])
+        ax.tick_params(axis='y', colors=style['TICK_COLOR'])
+
+        ax.spines['bottom'].set_color(style['AXIS_COLOR'])
+        ax.spines['top'].set_color(style['AXIS_COLOR'])
+        ax.spines['left'].set_color(style['AXIS_COLOR'])
+        ax.spines['right'].set_color(style['AXIS_COLOR'])
+
+        legend = ax.legend(loc="upper right")
+        if legend: # Check if legend exists
+            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
+            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
+            if legend.get_title(): # Check if legend has a title
+                legend.get_title().set_color(style['TEXT_COLOR'])
+            for text in legend.get_texts():
+                text.set_color(style['TEXT_COLOR'])
         return ax
 
     def _filter_and_merge(self, to_plot, multiline_labels):
