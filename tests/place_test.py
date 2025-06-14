@@ -291,7 +291,7 @@ class TestPlacePlotting(unittest.TestCase):
 
         # Mock moon_path to return predictable data
         mock_moon_path_data = pd.DataFrame({
-            'Time': [datetime.time(18,0), datetime.time(19,0), datetime.time(20,0)],
+            'Time': [datetime.time(hour=18, minute=0), datetime.time(hour=19, minute=0), datetime.time(hour=20, minute=0)],
             'Moon altitude': [10, 20, 30],
             'Azimuth': [90, 100, 110],
             'Local_time': ['18:00', '19:00', '20:00'],
