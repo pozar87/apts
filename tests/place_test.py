@@ -1,6 +1,7 @@
 import pytest
 from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
+import datetime as dt_module # Added alias
 
 import ephem
 import pytz
@@ -272,3 +273,91 @@ class TestPlace:
 # `datetime.timezone.utc` is used instead of `pytz.UTC` for constructing `DEFAULT_INIT_DATE_UTC` for consistency.
 # `place.local_timezone` will be a `pytz` timezone object.
 # `astimezone(timezone.utc)` is fine for converting.
+
+import unittest
+from unittest.mock import patch, MagicMock, ANY
+import pandas as pd
+# from apts.config import config # Not directly used if get_dark_mode is mocked
+from apts.constants.graphconstants import get_plot_style
+
+class TestPlacePlotting(unittest.TestCase):
+    def setUp(self):
+        self.place = setup_place()
+        # Ensure place.local_timezone is robust for tests
+        if not hasattr(self.place, 'local_timezone') or self.place.local_timezone is None:
+            self.place.local_timezone = dt_module.timezone.utc # Use aliased dt_module
+        elif isinstance(self.place.local_timezone, str):
+             # Simplified: if it's a string, default to UTC for test consistency
+             self.place.local_timezone = dt_module.timezone.utc # Use aliased dt_module
+
+
+        # Mock moon_path to return predictable data
+        mock_moon_path_data = pd.DataFrame({
+            'Time': [dt_module.time(hour=18, minute=0), dt_module.time(hour=19, minute=0), dt_module.time(hour=20, minute=0)], # Use aliased dt_module
+            'Moon altitude': [10, 20, 30],
+            'Azimuth': [90, 100, 110],
+            'Local_time': ['18:00', '19:00', '20:00'],
+            'Phase': [0.5, 0.5, 0.5],
+            'Lunation': [0.5, 0.5, 0.5]
+        })
+        self.place.moon_path = MagicMock(return_value=mock_moon_path_data)
+        self.place._moon_phase_letter = MagicMock(return_value='M')
+        self.place.moon_phase = MagicMock(return_value=50)
+
+    @patch('apts.place.get_dark_mode') # Corrected path for get_dark_mode used in Place
+    @patch('pandas.DataFrame.plot')
+    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place):
+        scenarios = [
+            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
+            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
+            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
+            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+        ]
+
+        for i, scenario_data in enumerate(scenarios):
+            with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_get_dark_mode_place.return_value = scenario_data["global_dark_mode"]
+                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
+                is_dark = scenario_data["expected_effective_dark_mode"]
+
+                mock_ax = MagicMock()
+                mock_fig = MagicMock()
+                mock_fig_patch = MagicMock()
+                mock_fig.patch = mock_fig_patch
+                mock_ax.figure = mock_fig
+
+                mock_line = MagicMock()
+                mock_ax.lines = [mock_line]
+
+                mock_df_plot.return_value = mock_ax
+
+                self.place.plot_moon_path(dark_mode_override=scenario_data["override"])
+
+                mock_df_plot.assert_called_once_with(x="Azimuth", y="Moon altitude", title="Moon altitude", style=".-")
+
+                mock_fig_patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+                mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
+                mock_line.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                mock_ax.set_xlabel.assert_called_with("Azimuth [°]", color=expected_style['TEXT_COLOR'])
+                mock_ax.set_ylabel.assert_called_with("Altitude [°]", color=expected_style['TEXT_COLOR'])
+                mock_ax.set_title.assert_called_with("Moon altitude", color=expected_style['TEXT_COLOR'])
+                mock_ax.tick_params.assert_any_call(axis='x', colors=expected_style['TICK_COLOR'])
+                mock_ax.tick_params.assert_any_call(axis='y', colors=expected_style['TICK_COLOR'])
+
+                for spine_pos in ['top', 'bottom', 'left', 'right']:
+                    mock_ax.spines[spine_pos].set_color.assert_called_with(expected_style['AXIS_COLOR'])
+
+                mock_ax.axvline.assert_any_call(ANY, color=expected_style['GRID_COLOR'], linestyle="--", linewidth=1)
+                mock_ax.text.assert_any_call(ANY, 1, ANY, weight="bold", horizontalalignment="center", color=expected_style['TEXT_COLOR']) # E/S/W labels
+                mock_ax.axhspan.assert_called_with(0, -50, color=expected_style['GRID_COLOR'], alpha=0.3)
+                mock_ax.text.assert_any_call(180, 10, 'M', fontproperties=Place.MOON_FONT, horizontalalignment="center", color=expected_style['TEXT_COLOR'])
+                mock_ax.text.assert_any_call(180, 5, "50%", color=expected_style['TEXT_COLOR'], alpha=0.7, horizontalalignment="center")
+                mock_ax.annotate.assert_any_call(ANY, (ANY, ANY), color=expected_style['TEXT_COLOR'])
+
+                # Reset mocks for next subtest
+                mock_df_plot.reset_mock()
+                mock_ax.reset_mock()
+                mock_fig.reset_mock()
+                mock_fig_patch.reset_mock()
+                mock_line.reset_mock()
+                mock_get_dark_mode_place.reset_mock() # Reset this as it's called in each loop
