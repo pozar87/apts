@@ -13,6 +13,8 @@ from .objects.messier import Messier
 from .objects.planets import Planets
 from .utils import Utils
 from .constants import ObjectTableLabels
+from apts.config import get_dark_mode
+from apts.constants.graphconstants import get_plot_style, get_plot_colors
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +109,12 @@ class Observation:
         )
 
     def plot_visible_planets_svg(self, **args):
+        dark_mode_enabled = get_dark_mode()
+        style = get_plot_style(dark_mode_enabled)
+        # colors = get_plot_colors(dark_mode_enabled) # Not strictly needed as style dict has most
+
         visible_planets = self.get_visible_planets(**args)
-        dwg = svg.Drawing()
+        dwg = svg.Drawing(style={'background-color': style['BACKGROUND_COLOR']})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
         max_size = visible_planets[["Size"]].max().iloc[0]
         max_size_val = max_size.magnitude if hasattr(max_size, 'magnitude') else max_size
@@ -138,14 +144,14 @@ class Observation:
                 dwg.circle(
                     center=(x, y),
                     r=radius,
-                    stroke="black",
+                    stroke=style['AXIS_COLOR'],
                     stroke_width="1",
-                    fill="#e4e4e4",
+                    fill=style['AXES_FACE_COLOR'],
                 )
             )
-            dwg.add(dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle"))
+            dwg.add(dwg.text(name, insert=(x, y + radius + 15), text_anchor="middle", fill=style['TEXT_COLOR']))
             dwg.add(
-                dwg.text(phase_str + "%", insert=(x, y - radius - 4), text_anchor="middle")
+                dwg.text(phase_str + "%", insert=(x, y - radius - 4), text_anchor="middle", fill=style['TEXT_COLOR'])
             )
         return dwg.tostring()
 
@@ -158,29 +164,37 @@ class Observation:
         return SVG(self.plot_visible_planets_svg())
 
     def _generate_plot_messier(self, **args):
+        dark_mode_enabled = get_dark_mode()
+        style = get_plot_style(dark_mode_enabled)
+        # plot_colors = get_plot_colors(dark_mode_enabled) # Messier uses specific type colors
+
         ax = args.pop('ax', None)
         fig = None
         if ax:
             fig = ax.figure
+        else:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+
+        fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+        ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         try:
             messier_df = self.get_visible_messier().copy()
 
             if len(messier_df) == 0:
-                if ax is None:
-                    fig, ax = pyplot.subplots(**args)
                 ax.set_xlim([
                     self.start - timedelta(minutes=15),
                     self.time_limit + timedelta(minutes=15),
                 ])
                 ax.set_ylim(0, 90)
-                self._mark_observation(ax)
-                self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
-                Utils.annotate_plot(ax, "Altitude [°]")
+                self._mark_observation(ax, dark_mode_enabled, style)
+                self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
+                Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+                ax.set_title("Messier Objects Altitude", color=style['TEXT_COLOR'])
                 logger.info("Generated empty Messier plot as no objects are visible.")
                 return fig
 
-            messier_type_colors = {
+            messier_type_colors = { # These are specific, might need dark mode alternatives later
                 "Galaxy": "blue", "Globular Cluster": "red", "Open Cluster": "green",
                 "Nebula": "purple", "Planetary Nebula": "orange",
                 "Supernova Remnant": "brown", "Other": "grey",
@@ -193,11 +207,6 @@ class Observation:
                         lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                     )
 
-            if ax is None:
-                fig, ax = pyplot.subplots(figsize=(18, 12), **args)
-            else:
-                fig = ax.figure
-
             for _, obj in messier_df.iterrows():
                 transit = obj[ObjectTableLabels.TRANSIT]
                 altitude = obj[ObjectTableLabels.ALTITUDE]
@@ -209,39 +218,45 @@ class Observation:
                 color = messier_type_colors.get(obj_type, messier_type_colors["Other"])
                 plotted_types[obj_type] = color
                 ax.scatter(transit, altitude, s=marker_size**2, marker='o', c=color)
-                ax.annotate(messier_id, (transit, altitude), xytext=(5, 5), textcoords="offset points")
+                ax.annotate(messier_id, (transit, altitude), xytext=(5, 5), textcoords="offset points", color=style['TEXT_COLOR'])
 
             ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
-            # Format the x-axis to display time in the local timezone
             date_format = mdates.DateFormatter('%H:%M:%S %Z', tz=self.place.local_timezone)
             ax.xaxis.set_major_formatter(date_format)
-            self._mark_observation(ax)
-            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
-            Utils.annotate_plot(ax, "Altitude [°]")
+            self._mark_observation(ax, dark_mode_enabled, style)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
+            Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+
             legend_handles = [
-                lines.Line2D([0], [0], marker='o', color='w', label=obj_type,
+                lines.Line2D([0], [0], marker='o', color='w', label=obj_type, # 'w' background for marker for visibility
                              markerfacecolor=color, markersize=10)
                 for obj_type, color in plotted_types.items()
             ]
-            ax.legend(handles=legend_handles, title="Object Types")
+            legend = ax.legend(handles=legend_handles, title="Object Types")
+            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
+            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
+            legend.get_title().set_color(style['TEXT_COLOR'])
+            for text in legend.get_texts():
+                text.set_color(style['TEXT_COLOR'])
+
+            ax.set_title("Messier Objects Altitude", color=style['TEXT_COLOR'])
             logger.info("Successfully generated Messier plot.")
             return fig
 
         except Exception as e:
             logger.error(f"Error generating Messier plot: {e}", exc_info=True)
-            if ax is None:
-                fig, ax = pyplot.subplots(**args)
-            else:
-                ax.clear()
-                fig = ax.figure
+            ax.clear() # Clear existing axes
+            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR']) # Ensure figure bg is set
+            ax.set_facecolor(style['AXES_FACE_COLOR']) # Ensure axes bg is set
 
+            error_text_color = '#FF6B6B' if dark_mode_enabled else 'red'
             ax.text(0.5, 0.5, 'Error generating Messier plot.\nSee logs for details.',
                     horizontalalignment='center', verticalalignment='center',
-                    fontsize=12, color='red', wrap=True, transform=ax.transAxes)
+                    fontsize=12, color=error_text_color, wrap=True, transform=ax.transAxes)
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_title("Messier Plot Error")
+            ax.set_title("Messier Plot Error", color=style['TEXT_COLOR'])
             return fig
 
     def _normalize_dates(self, start, stop):
@@ -273,14 +288,28 @@ class Observation:
         return self._generate_plot_messier(**args)
 
     def _generate_plot_planets(self, **args):
+        dark_mode_enabled = get_dark_mode()
+        style = get_plot_style(dark_mode_enabled)
+        plot_colors = get_plot_colors(dark_mode_enabled)
+
+        ax = args.pop('ax', None)
+        fig = None
+        if ax:
+            fig = ax.figure
+        else:
+            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
+
+        fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+        ax.set_facecolor(style['AXES_FACE_COLOR'])
+
         planets_df = self.get_visible_planets().copy()
         if len(planets_df) == 0:
-            fig, ax = pyplot.subplots()
             ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
             ax.set_ylim(0, 90)
-            self._mark_observation(ax)
-            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
-            Utils.annotate_plot(ax, "Altitude [°]")
+            self._mark_observation(ax, dark_mode_enabled, style)
+            self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
+            Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+            ax.set_title("Planets Altitude", color=style['TEXT_COLOR'])
             return fig
 
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
@@ -288,11 +317,10 @@ class Observation:
                 planets_df[col] = planets_df[col].apply(
                     lambda x: x.magnitude if hasattr(x, 'magnitude') else x
                 )
-        ax = args.pop('ax', None)
-        if ax is None:
-            fig, ax = pyplot.subplots(figsize=(18, 12), **args)
-        else:
-            fig = ax.figure
+
+        # Use a generic color for planets if available, or let matplotlib cycle
+        planet_scatter_color = plot_colors.get(ObjectTableLabels.GENERIC, None)
+
         for _, planet in planets_df.iterrows():
             transit = planet[ObjectTableLabels.TRANSIT]
             altitude = planet[ObjectTableLabels.ALTITUDE]
@@ -300,13 +328,26 @@ class Observation:
             name = planet[ObjectTableLabels.NAME]
             marker_size = size * 0.5 + 8
             logger.debug(f"Plotting planet {name} at transit {transit} with altitude {altitude} and size {size}")
-            ax.scatter(transit, altitude, s=marker_size**2, marker='o')
-            ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points")
-        #ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)])
-        #ax.set_ylim(0, 90)
-        self._mark_observation(ax)
-        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90)
-        Utils.annotate_plot(ax, "Altitude [°]")
+            ax.scatter(transit, altitude, s=marker_size**2, marker='o', color=planet_scatter_color) # Apply color
+            ax.annotate(name, (transit, altitude), xytext=(5, 5), textcoords="offset points", color=style['TEXT_COLOR'])
+
+        # Ensure xlim and ylim are set after plotting data if not already fixed
+        # ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)]) # This might be too restrictive if planets are outside this
+        # ax.set_ylim(0, 90) # Altitude is usually 0-90
+
+        self._mark_observation(ax, dark_mode_enabled, style)
+        self._mark_good_conditions(ax, self.conditions.min_object_altitude, 90, dark_mode_enabled, style)
+        Utils.annotate_plot(ax, "Altitude [°]", dark_mode_enabled)
+        ax.set_title("Planets Altitude", color=style['TEXT_COLOR'])
+
+        # Simple legend if needed (e.g. if colors vary by planet type, which they don't here)
+        # handles = [lines.Line2D([0], [0], marker='o', color='w', label='Planet', markerfacecolor=planet_scatter_color or 'blue', markersize=10)]
+        # legend = ax.legend(handles=handles, title="Celestial Objects")
+        # legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
+        # legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
+        # legend.get_title().set_color(style['TEXT_COLOR'])
+        # for text in legend.get_texts():
+        # text.set_color(style['TEXT_COLOR'])
         return fig
 
     def plot_planets(self, **args):
@@ -361,36 +402,50 @@ class Observation:
             }
             return str(template.substitute(data))
 
-    def _mark_observation(self, plot):
+    def _mark_observation(self, plot, dark_mode_enabled: bool, style: dict):
         if plot is None: return
-        plot.axvspan(self.start, self.stop, color="gray", alpha=0.2)
-        moon_start, moon_stop = self._normalize_dates(self.place.moonrise_time(), self.place.moonset_time())
-        plot.axvspan(moon_start, moon_stop, color="yellow", alpha=0.1)
-        plot.axvline(self.start, color="orange", linestyle="--")
-        plot.axvline(self.time_limit, color="orange", linestyle="--")
+        # Use a semi-transparent version of text color for spans, or a dedicated span color if available
+        span_bg_color = style.get('SPAN_BACKGROUND_COLOR', style['TEXT_COLOR'])
 
-    def _mark_good_conditions(self, plot, minimal, maximal):
+        plot.axvspan(self.start, self.stop, color=span_bg_color, alpha=0.1 if dark_mode_enabled else 0.2)
+        moon_start, moon_stop = self._normalize_dates(self.place.moonrise_time(), self.place.moonset_time())
+        # Moon span could be a different color, e.g. a light yellow or use span_bg_color
+        moon_span_color = style.get('MOON_SPAN_COLOR', '#FFFFE0' if dark_mode_enabled else 'yellow')
+        plot.axvspan(moon_start, moon_stop, color=moon_span_color, alpha=0.05 if dark_mode_enabled else 0.1)
+
+        plot.axvline(self.start, color=style['GRID_COLOR'], linestyle="--")
+        plot.axvline(self.time_limit, color=style['GRID_COLOR'], linestyle="--")
+
+    def _mark_good_conditions(self, plot, minimal, maximal, dark_mode_enabled: bool, style: dict):
         if plot is None: return
-        plot.axhspan(minimal, maximal, color="green", alpha=0.1)
+        # Use a semi-transparent version of a highlight color or grid color
+        good_condition_color = style.get('GOOD_CONDITION_HL_COLOR', style['GRID_COLOR'])
+        plot.axhspan(minimal, maximal, color=good_condition_color, alpha=0.1 if dark_mode_enabled else 0.1) # Alpha adjusted for visibility
 
     def _generate_plot_weather(self, **args):
+        dark_mode_enabled = get_dark_mode()
+        style = get_plot_style(dark_mode_enabled)
+
         logger.info(f"_generate_plot_weather called. self.place.weather type: {type(self.place.weather)}")
         if self.place.weather is None:
             logger.warning("_generate_plot_weather: self.place.weather is None. Cannot generate plots. Returning error plot.")
             fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
+            fig_err.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax_err.set_facecolor(style['AXES_FACE_COLOR'])
+            warning_color = '#FFCC00' if dark_mode_enabled else 'orange' # Light orange for dark mode
             ax_err.text(0.5, 0.5, 'Weather data not available for plotting.\n(self.place.weather was None)',
                         horizontalalignment='center', verticalalignment='center',
-                        fontsize=12, color='orange', wrap=True, transform=ax_err.transAxes)
+                        fontsize=12, color=warning_color, wrap=True, transform=ax_err.transAxes)
             ax_err.set_xticks([])
             ax_err.set_yticks([])
-            ax_err.set_title("Weather Plot Information")
+            ax_err.set_title("Weather Plot Information", color=style['TEXT_COLOR'])
             return fig_err
         try:
             axes_arg = args.pop('ax', None)
             fig = None
             axes = None
 
-            if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2):
+            if axes_arg is not None and isinstance(axes_arg, numpy.ndarray) and axes_arg.shape == (4, 2): # Assuming numpy is available
                 axes = axes_arg
                 fig = axes[0, 0].figure
                 logger.debug("Using provided axes for weather plot.")
@@ -398,59 +453,72 @@ class Observation:
                 fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
                 logger.debug("Created new figure and axes for weather plot.")
 
+            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            # Individual subplots face colors will be handled by their respective plot_... methods in weather.py (next subtask)
+            # For now, we set the overall figure background. Titles and labels within this function are not present.
+            # The _mark_observation and _mark_good_conditions calls below are on plots returned by weather.py methods.
+            # Those methods in weather.py will need to be dark-mode aware to correctly style their axes.
+
             logger.debug("Plotting clouds...")
-            plt_clouds = self.place.weather.plot_clouds(ax=axes[0, 0])
-            self._mark_observation(plt_clouds)
-            self._mark_good_conditions(plt_clouds, 0, self.conditions.max_clouds)
+            # The plot_clouds method itself will need to be dark_mode aware.
+            # For now, we pass dark_mode_enabled and style to _mark_observation/_mark_good_conditions
+            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0]) # This should return the axis
+            if plt_clouds_ax: self._mark_observation(plt_clouds_ax, dark_mode_enabled, style)
+            if plt_clouds_ax: self._mark_good_conditions(plt_clouds_ax, 0, self.conditions.max_clouds, dark_mode_enabled, style)
 
             logger.debug("Plotting clouds summary...")
-            self.place.weather.plot_clouds_summary(ax=axes[0, 1])
+            self.place.weather.plot_clouds_summary(ax=axes[0, 1]) # This also needs to be dark_mode aware
 
             logger.debug("Plotting precipitation...")
-            plt_precip = self.place.weather.plot_precipitation(ax=axes[1, 0])
-            self._mark_observation(plt_precip)
-            self._mark_good_conditions(plt_precip, 0, self.conditions.max_precipitation_probability)
+            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0])
+            if plt_precip_ax: self._mark_observation(plt_precip_ax, dark_mode_enabled, style)
+            if plt_precip_ax: self._mark_good_conditions(plt_precip_ax, 0, self.conditions.max_precipitation_probability, dark_mode_enabled, style)
 
             logger.debug("Plotting precipitation type summary...")
-            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1])
+            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1]) # Dark mode aware
 
             logger.debug("Plotting temperature...")
-            plt_temp = self.place.weather.plot_temperature(ax=axes[2, 0])
-            self._mark_observation(plt_temp)
-            self._mark_good_conditions(plt_temp, self.conditions.min_temperature, self.conditions.max_temperature)
+            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0])
+            if plt_temp_ax: self._mark_observation(plt_temp_ax, dark_mode_enabled, style)
+            if plt_temp_ax: self._mark_good_conditions(plt_temp_ax, self.conditions.min_temperature, self.conditions.max_temperature, dark_mode_enabled, style)
 
             logger.debug("Plotting wind...")
-            plt_wind = self.place.weather.plot_wind(ax=axes[2, 1])
-            self._mark_observation(plt_wind)
-            self._mark_good_conditions(plt_wind, 0, self.conditions.max_wind)
+            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1])
+            if plt_wind_ax: self._mark_observation(plt_wind_ax, dark_mode_enabled, style)
+            if plt_wind_ax: self._mark_good_conditions(plt_wind_ax, 0, self.conditions.max_wind, dark_mode_enabled, style)
 
             logger.debug("Plotting pressure and ozone...")
-            plt_pressure = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
-            self._mark_observation(plt_pressure)
+            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0])
+            if plt_pressure_ax: self._mark_observation(plt_pressure_ax, dark_mode_enabled, style)
 
             logger.debug("Plotting visibility...")
-            plt_visibility = self.place.weather.plot_visibility(ax=axes[3, 1])
-            self._mark_observation(plt_visibility)
+            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1])
+            if plt_visibility_ax: self._mark_observation(plt_visibility_ax, dark_mode_enabled, style)
 
             fig.tight_layout()
-            logger.info("Successfully generated Weather plot.")
+            logger.info("Successfully generated Weather plot (figure setup). Sub-plot styling depends on weather.py methods.")
             return fig
 
         except Exception as e:
             logger.error(f"Error generating Weather plot details: {e}", exc_info=True)
-            try:
-                if 'fig' in locals() and fig is not None:
-                    pyplot.close(fig)
-            except Exception as close_exc:
-                logger.error(f"Error closing figure during weather plot error handling: {close_exc}")
+            # Ensure fig is defined for closing
+            current_fig = locals().get('fig', None)
+            if current_fig is not None:
+                try:
+                    pyplot.close(current_fig)
+                except Exception as close_exc:
+                    logger.error(f"Error closing figure during weather plot error handling: {close_exc}")
 
             fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
+            fig_err.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax_err.set_facecolor(style['AXES_FACE_COLOR'])
+            error_color = '#FF6B6B' if dark_mode_enabled else 'red' # Light red for dark mode
             ax_err.text(0.5, 0.5, 'Error generating Weather plot details.\nSee logs for specifics.',
                         horizontalalignment='center', verticalalignment='center',
-                        fontsize=12, color='red', wrap=True, transform=ax_err.transAxes)
+                        fontsize=12, color=error_color, wrap=True, transform=ax_err.transAxes)
             ax_err.set_xticks([])
             ax_err.set_yticks([])
-            ax_err.set_title("Weather Plot Error")
+            ax_err.set_title("Weather Plot Error", color=style['TEXT_COLOR'])
             return fig_err
 
     def __str__(self) -> str:
