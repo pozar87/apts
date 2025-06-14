@@ -355,6 +355,7 @@ class Equipment:
             # are now set directly on graph.vs attributes.
             **args
         )
+  
 
     def plot_connection_graph_svg(self, dark_mode_override: Optional[bool] = None, **args):
         surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
