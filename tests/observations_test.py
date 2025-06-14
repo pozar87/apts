@@ -323,7 +323,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 mock_ax.scatter.assert_called()
                 self.assertEqual(mock_ax.scatter.call_count, 3)
 
-                colors_called = [call.kwargs['c'] for call in mock_ax.scatter.call_args_list]
+                colors_called = [call.kwargs['color'] for call in mock_ax.scatter.call_args_list] # Changed 'c' to 'color'
 
                 if effective_dark_mode:
                     expected_mars_color = GraphConstants.PLANET_COLORS_DARK['Mars']
