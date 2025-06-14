@@ -97,14 +97,28 @@ def test_plot_clouds_dark_mode_styles(
     mock_ax = MagicMock()
     mock_fig = MagicMock()
     mock_ax.figure = mock_fig
+
+    # Explicitly create the 'patch' attribute as a MagicMock on mock_fig
+    mock_fig_patch = MagicMock()
+    mock_fig.patch = mock_fig_patch
+
     mock_df_plot.return_value = mock_ax
 
     # Mock legend on the axes
     mock_legend = MagicMock()
-    mock_ax.get_legend.return_value = mock_legend
-    mock_legend.get_frame.return_value = MagicMock()
-    mock_legend.get_title.return_value = MagicMock()
-    mock_legend.get_texts.return_value = [MagicMock()]
+    mock_ax.get_legend.return_value = mock_legend # This makes the test always try to style legend
+
+    # Explicitly create the 'get_frame' return value as a MagicMock on mock_legend
+    mock_legend_frame = MagicMock()
+    mock_legend.get_frame.return_value = mock_legend_frame
+
+    # Explicitly create the 'get_title' return value on mock_legend (if legend title is styled)
+    mock_legend_title = MagicMock() # This itself is a mock, not a text string
+    mock_legend.get_title.return_value = mock_legend_title
+
+    # Configure get_texts to return a list of MagicMocks if it's not already robust
+    mock_legend_text_item = MagicMock()
+    mock_legend.get_texts.return_value = [mock_legend_text_item]
 
     # Call the method to be tested with the override value
     ax_returned = weather.plot_clouds(hours=1, dark_mode_override=override_value)
@@ -117,25 +131,25 @@ def test_plot_clouds_dark_mode_styles(
     mock_ax.get_title.return_value = "Clouds" # Ensure get_title returns the expected string for title check
 
     if expected_effective_dark_mode:
-        mock_fig.patch.set_facecolor.assert_called_with('#1C1C3A')
+        mock_fig_patch.set_facecolor.assert_called_with('#1C1C3A') # Use mock_fig_patch
         mock_ax.set_facecolor.assert_called_with('#2A004F')
         mock_ax.set_title.assert_any_call("Clouds", color='#FFFFFF')
-        if mock_ax.get_legend() is not None and mock_legend.get_frame() is not None: # Check if legend and its frame exist
-            mock_legend.get_frame().set_facecolor.assert_called_with('#2A004F')
-            mock_legend.get_frame().set_edgecolor.assert_called_with('#CCCCCC')
-            for text_mock in mock_legend.get_texts():
-                text_mock.set_color.assert_called_with('#FFFFFF')
+        if mock_ax.get_legend() is not None:
+            mock_legend_frame.set_facecolor.assert_called_with('#2A004F') # Use mock_legend_frame
+            mock_legend_frame.set_edgecolor.assert_called_with('#CCCCCC') # Use mock_legend_frame
+            # mock_legend_title.set_color.assert_called_with('#FFFFFF') # If legend title is styled
+            mock_legend_text_item.set_color.assert_called_with('#FFFFFF') # Use mock_legend_text_item
     else: # Light mode assertions
-        mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
+        mock_fig_patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR']) # Use mock_fig_patch
         mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
         mock_ax.set_title.assert_any_call("Clouds", color=expected_style['TEXT_COLOR'])
-        if mock_ax.get_legend() is not None and mock_legend.get_frame() is not None: # Check if legend and its frame exist
-            mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-            mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
-            for text_mock in mock_legend.get_texts():
-                text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+        if mock_ax.get_legend() is not None:
+            mock_legend_frame.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR']) # Use mock_legend_frame
+            mock_legend_frame.set_edgecolor.assert_called_with(expected_style['AXIS_COLOR']) # Use mock_legend_frame
+            # mock_legend_title.set_color.assert_called_with(expected_style['TEXT_COLOR']) # If legend title is styled
+            mock_legend_text_item.set_color.assert_called_with(expected_style['TEXT_COLOR']) # Use mock_legend_text_item
 
-    if mock_ax.get_legend() is not None: # This check should be outside the if/else for dark/light
+    if mock_ax.get_legend() is not None:
         mock_ax.get_legend.assert_called()
 
 

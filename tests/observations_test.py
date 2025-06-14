@@ -55,6 +55,11 @@ class TestObservationTemplate(unittest.TestCase):
             self.observation.start = pd.Timestamp('2023-01-01 18:00:00', tz='UTC')
         if self.observation.time_limit is None:
             self.observation.time_limit = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+        if self.observation.stop is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8) # Default 8 hour observation
+            else:
+                self.observation.stop = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
 
         self.default_template_content = """<!doctype html>
 <html>
@@ -140,6 +145,11 @@ class TestObservationPlottingStyles(unittest.TestCase):
              self.observation.start = pd.Timestamp('2023-01-01 18:00:00', tz='UTC')
         if self.observation.time_limit is None:
             self.observation.time_limit = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
+        if self.observation.stop is None:
+            if pd.api.types.is_datetime64_any_dtype(self.observation.start):
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
+            else:
+                self.observation.stop = pd.Timestamp('2023-01-02 02:00:00', tz='UTC')
 
         # Mock the get_visible_messier to return a non-empty DataFrame
         # to avoid early exit from _generate_plot_messier
