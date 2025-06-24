@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 import requests_cache
 
-from typing import Optional # Added Optional
+from typing import Optional  # Added Optional
 
 from .utils import Utils
 from apts.config import get_dark_mode
@@ -49,7 +49,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -58,31 +58,36 @@ class Weather:
 
         # Preserve original args for pandas plot
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", ylim=(0, 105), title="Clouds", ax=ax, **plot_kwargs)
+        plot_ax = data.plot(
+            x="time", ylim=(0, 105), title="Clouds", ax=ax, **plot_kwargs
+        )
 
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-            for text_obj in legend.get_texts(): # Changed variable name
-                text_obj.set_color(style['TEXT_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode)
         return ax
 
-    def plot_precipitation(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_precipitation(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
@@ -93,7 +98,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -102,45 +107,51 @@ class Weather:
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", title="Precipitation intensity and probability", ax=ax, **plot_kwargs
+            x="time",
+            title="Precipitation intensity and probability",
+            ax=ax,
+            **plot_kwargs,
         )
 
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-            for text_obj in legend.get_texts(): # Changed variable name
-                text_obj.set_color(style['TEXT_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Probability", effective_dark_mode)
         return ax
 
-    def plot_precipitation_type_summary(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_precipitation_type_summary(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
             effective_dark_mode = get_dark_mode()
 
-        style = get_plot_style(effective_dark_mode) # Use effective_dark_mode
+        style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
         data = self._filter_data(["precipType"], hours)
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
-        plot_kwargs = args.copy() # Preserve original args
+        plot_kwargs = args.copy()  # Preserve original args
 
         if ax:
             fig = ax.figure
@@ -156,42 +167,49 @@ class Weather:
         if not ax:
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             # For pie charts, explicitly set AXES_FACE_COLOR, as it might not have other elements like grids
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         # Style title and ylabel (pie charts often use ylabel for the 'label' arg)
         title_text = ax.get_title()
-        if not title_text and 'label' in plot_kwargs: # Pandas might use 'label' for title in pie
-             title_text = plot_kwargs['label']
-        if not title_text and hasattr(ax, 'get_label'): # Fallback if available
+        if (
+            not title_text and "label" in plot_kwargs
+        ):  # Pandas might use 'label' for title in pie
+            title_text = plot_kwargs["label"]
+        if not title_text and hasattr(ax, "get_label"):  # Fallback if available
             title_text = ax.get_label()
 
-        ax.set_title(title_text, color=style['TEXT_COLOR'])
-        ax.set_ylabel(ax.get_ylabel(), color=style['TEXT_COLOR']) # Y-label (usually the category name)
+        ax.set_title(title_text, color=style["TEXT_COLOR"])
+        ax.set_ylabel(
+            ax.get_ylabel(), color=style["TEXT_COLOR"]
+        )  # Y-label (usually the category name)
 
         # Style texts within the pie chart (percentages, labels)
         for text_obj in ax.texts:
-            text_obj.set_color(style['TEXT_COLOR'])
+            text_obj.set_color(style["TEXT_COLOR"])
 
         # Pie charts don't typically have legends in the same way line plots do.
         # Wedge colors can be passed via `colors` kwarg in plot_kwargs if needed.
         return ax
 
-    def plot_clouds_summary(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_clouds_summary(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
             effective_dark_mode = get_dark_mode()
 
-        style = get_plot_style(effective_dark_mode) # Use effective_dark_mode
+        style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
         data = self._filter_data(["summary"], hours)
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
         plot_kwargs = args.copy()
 
@@ -207,26 +225,29 @@ class Weather:
         if not ax:
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         title_text = ax.get_title()
-        if not title_text and 'label' in plot_kwargs:
-             title_text = plot_kwargs['label']
-        if not title_text and hasattr(ax, 'get_label'):
+        if not title_text and "label" in plot_kwargs:
+            title_text = plot_kwargs["label"]
+        if not title_text and hasattr(ax, "get_label"):
             title_text = ax.get_label()
 
-        ax.set_title(title_text, color=style['TEXT_COLOR'])
-        ax.set_ylabel(ax.get_ylabel(), color=style['TEXT_COLOR'])
+        ax.set_title(title_text, color=style["TEXT_COLOR"])
+        ax.set_ylabel(ax.get_ylabel(), color=style["TEXT_COLOR"])
 
         for text_obj in ax.texts:
-            text_obj.set_color(style['TEXT_COLOR'])
+            text_obj.set_color(style["TEXT_COLOR"])
 
         return ax
 
-    def plot_temperature(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_temperature(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
@@ -239,7 +260,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -249,24 +270,25 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(x="time", title="Temperatures", ax=ax, **plot_kwargs)
 
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-            for text_obj in legend.get_texts(): # Changed variable name
-                text_obj.set_color(style['TEXT_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode)
         return ax
@@ -283,7 +305,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -300,29 +322,32 @@ class Weather:
             **plot_kwargs,
         )
 
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-            for text_obj in legend.get_texts(): # Changed variable name
-                text_obj.set_color(style['TEXT_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode)
         return ax
 
-    def plot_pressure_and_ozone(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_pressure_and_ozone(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
@@ -333,7 +358,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
         plot_kwargs = args.copy()
 
@@ -345,40 +370,47 @@ class Weather:
             # ax.spines['left'].set_color(style['AXIS_COLOR']) # Example
 
         plot_ax = data.plot(
-            x="time", title="Pressure and Ozone", secondary_y=["ozone"], ax=ax, **plot_kwargs
+            x="time",
+            title="Pressure and Ozone",
+            secondary_y=["ozone"],
+            ax=ax,
+            **plot_kwargs,
         )
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         # Style primary legend
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
             for text_obj in legend.get_texts():
-                text_obj.set_color(style['TEXT_COLOR'])
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         # Utils.annotate_plot handles primary X and Y axes (labels, ticks, spines)
         Utils.annotate_plot(ax, "Pressure [hPa]", effective_dark_mode)
 
         # Style secondary Y axis (right axis for 'ozone')
-        if hasattr(ax, 'right_ax'):
+        if hasattr(ax, "right_ax"):
             ax_secondary = ax.right_ax
-            ax_secondary.set_ylabel(ax_secondary.get_ylabel(), color=style['TEXT_COLOR'])
-            ax_secondary.tick_params(axis='y', colors=style['TICK_COLOR'])
+            ax_secondary.set_ylabel(
+                ax_secondary.get_ylabel(), color=style["TEXT_COLOR"]
+            )
+            ax_secondary.tick_params(axis="y", colors=style["TICK_COLOR"])
             # Ensure the spine for the secondary y-axis is styled.
             # Other spines (top, bottom) are shared and should be styled by annotate_plot on primary ax.
             # The 'left' spine is for the primary y-axis.
-            ax_secondary.spines['right'].set_color(style['AXIS_COLOR'])
+            ax_secondary.spines["right"].set_color(style["AXIS_COLOR"])
             # If primary y-axis spine ('left') was not handled by annotate_plot for some reason:
             # ax.spines['left'].set_color(style['AXIS_COLOR'])
 
@@ -390,7 +422,9 @@ class Weather:
         )
         return data[(data.time > start) & (data.time < stop)]
 
-    def plot_visibility(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+    def plot_visibility(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
@@ -402,7 +436,7 @@ class Weather:
         if data.empty:
             return None
 
-        ax = args.pop('ax', None)
+        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -412,24 +446,25 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(x="time", title="Visibility", ax=ax, **plot_kwargs)
 
-        if not ax: # ax was created by data.plot()
+        if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
-        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         legend = ax.get_legend()
         if legend:
-            legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-            legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-            for text_obj in legend.get_texts(): # Changed variable name
-                text_obj.set_color(style['TEXT_COLOR'])
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
             if legend.get_title():
-                 legend.get_title().set_color(style['TEXT_COLOR'])
+                legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
         return ax
