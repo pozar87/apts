@@ -54,7 +54,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         # Preserve original args for pandas plot
         plot_kwargs = args.copy()
@@ -64,6 +64,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
@@ -96,7 +98,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
@@ -107,6 +109,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
@@ -140,7 +144,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR']) # Set facecolor for passed ax
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         # Pandas pie plot returns an Axes object.
         plot_ax = (
@@ -154,6 +158,8 @@ class Weather:
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
             # For pie charts, explicitly set AXES_FACE_COLOR, as it might not have other elements like grids
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         # Style title and ylabel (pie charts often use ylabel for the 'label' arg)
@@ -191,7 +197,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_ax = (
             data.groupby("summary")
@@ -202,6 +208,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         title_text = ax.get_title()
@@ -236,7 +244,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(x="time", title="Temperatures", ax=ax, **plot_kwargs)
@@ -245,6 +253,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
@@ -278,7 +288,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
@@ -294,6 +304,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
@@ -327,7 +339,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
             # For secondary_y plots, ensure the primary axis spines are also styled early if needed,
             # though annotate_plot should handle this for the primary axis.
             # ax.spines['left'].set_color(style['AXIS_COLOR']) # Example
@@ -339,6 +351,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])
@@ -393,7 +407,7 @@ class Weather:
 
         if ax:
             fig = ax.figure
-            ax.set_facecolor(style['AXES_FACE_COLOR'])
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(x="time", title="Visibility", ax=ax, **plot_kwargs)
@@ -402,6 +416,8 @@ class Weather:
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+            ax.set_facecolor(style['AXES_FACE_COLOR'])
+        else: # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style['AXES_FACE_COLOR'])
 
         ax.set_title(ax.get_title(), color=style['TEXT_COLOR'])

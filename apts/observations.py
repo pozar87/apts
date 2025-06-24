@@ -522,38 +522,38 @@ class Observation:
             logger.debug("Plotting clouds...")
             # The plot_clouds method itself will need to be dark_mode aware.
             # The plot_clouds method itself (and others from weather.py) will use their own dark_mode_override logic.
-            # The dark_mode_override is passed to them from the public plot_weather method.
-            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0], dark_mode_override=dark_mode_override)
+            # The effective_dark_mode is passed to them to ensure consistency.
+            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0], dark_mode_override=effective_dark_mode)
             if plt_clouds_ax: self._mark_observation(plt_clouds_ax, effective_dark_mode, style)
             if plt_clouds_ax: self._mark_good_conditions(plt_clouds_ax, 0, self.conditions.max_clouds, effective_dark_mode, style)
 
             logger.debug("Plotting clouds summary...")
-            self.place.weather.plot_clouds_summary(ax=axes[0, 1], dark_mode_override=dark_mode_override)
+            self.place.weather.plot_clouds_summary(ax=axes[0, 1], dark_mode_override=effective_dark_mode)
 
             logger.debug("Plotting precipitation...")
-            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0], dark_mode_override=dark_mode_override)
+            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0], dark_mode_override=effective_dark_mode)
             if plt_precip_ax: self._mark_observation(plt_precip_ax, effective_dark_mode, style)
             if plt_precip_ax: self._mark_good_conditions(plt_precip_ax, 0, self.conditions.max_precipitation_probability, effective_dark_mode, style)
 
             logger.debug("Plotting precipitation type summary...")
-            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1], dark_mode_override=dark_mode_override)
+            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1], dark_mode_override=effective_dark_mode)
 
             logger.debug("Plotting temperature...")
-            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0], dark_mode_override=dark_mode_override)
+            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0], dark_mode_override=effective_dark_mode)
             if plt_temp_ax: self._mark_observation(plt_temp_ax, effective_dark_mode, style)
             if plt_temp_ax: self._mark_good_conditions(plt_temp_ax, self.conditions.min_temperature, self.conditions.max_temperature, effective_dark_mode, style)
 
             logger.debug("Plotting wind...")
-            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1], dark_mode_override=dark_mode_override)
+            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1], dark_mode_override=effective_dark_mode)
             if plt_wind_ax: self._mark_observation(plt_wind_ax, effective_dark_mode, style)
             if plt_wind_ax: self._mark_good_conditions(plt_wind_ax, 0, self.conditions.max_wind, effective_dark_mode, style)
 
             logger.debug("Plotting pressure and ozone...")
-            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0], dark_mode_override=dark_mode_override)
+            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0], dark_mode_override=effective_dark_mode)
             if plt_pressure_ax: self._mark_observation(plt_pressure_ax, effective_dark_mode, style)
 
             logger.debug("Plotting visibility...")
-            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1], dark_mode_override=dark_mode_override)
+            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1], dark_mode_override=effective_dark_mode)
             if plt_visibility_ax: self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
 
             fig.tight_layout()
