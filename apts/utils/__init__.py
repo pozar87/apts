@@ -79,7 +79,9 @@ class Utils:
 
         plot.set_xlabel("Time", color=style['TEXT_COLOR'])
         plot.set_ylabel(y_label, color=style['TEXT_COLOR'])
-        plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
+        # The following line was found to cause incorrect date range scaling on the x-axis.
+        # Pandas/Matplotlib's default formatter handles timezone-aware dates correctly.
+        # plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
         plot.tick_params(axis='x', colors=style['TICK_COLOR'])
         plot.tick_params(axis='y', colors=style['TICK_COLOR'])
 

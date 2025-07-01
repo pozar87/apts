@@ -157,7 +157,9 @@ def test_plot_clouds_dark_mode_styles(
     if mock_ax.get_legend() is not None:
         mock_ax.get_legend.assert_called()
 
-    mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode)
+    # The weather instance in this test is initialized with datetime.timezone.utc
+    expected_timezone_for_annotate = datetime.timezone.utc
+    mock_annotate_plot.assert_called_with(mock_ax, "Cloud cover [%]", expected_effective_dark_mode, local_tz=expected_timezone_for_annotate)
 
     # Important: Reset mocks if they are reused across parameterize iterations in a way that accumulates calls.
     # Pytest typically isolates test runs, but explicit mock_df_plot.reset_mock() might be needed if issues arise.
