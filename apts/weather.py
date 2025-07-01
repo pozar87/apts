@@ -82,7 +82,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode, local_tz=self.local_timezone)
         return ax
 
     def plot_precipitation(
@@ -133,7 +133,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Probability", effective_dark_mode)
+        Utils.annotate_plot(ax, "Probability", effective_dark_mode, local_tz=self.local_timezone)
         return ax
 
     def plot_precipitation_type_summary(
@@ -290,7 +290,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode, local_tz=self.local_timezone)
         return ax
 
     def plot_wind(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
@@ -342,7 +342,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode, local_tz=self.local_timezone)
         return ax
 
     def plot_pressure_and_ozone(
@@ -398,7 +398,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         # Utils.annotate_plot handles primary X and Y axes (labels, ticks, spines)
-        Utils.annotate_plot(ax, "Pressure [hPa]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Pressure [hPa]", effective_dark_mode, local_tz=self.local_timezone)
 
         # Style secondary Y axis (right axis for 'ozone')
         if hasattr(ax, "right_ax"):
@@ -466,7 +466,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode, local_tz=self.local_timezone)
         return ax
 
     def download_data(self):

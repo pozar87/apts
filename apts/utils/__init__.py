@@ -74,12 +74,12 @@ class Utils:
     def date_format(date_time):
         return date_time.isoformat(timespec="seconds")
 
-    def annotate_plot(plot, y_label, dark_mode_enabled: bool):
+    def annotate_plot(plot, y_label, dark_mode_enabled: bool, local_tz=None):
         style = get_plot_style(dark_mode_enabled)
 
         plot.set_xlabel("Time", color=style['TEXT_COLOR'])
         plot.set_ylabel(y_label, color=style['TEXT_COLOR'])
-        plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M"))
+        plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
         plot.tick_params(axis='x', colors=style['TICK_COLOR'])
         plot.tick_params(axis='y', colors=style['TICK_COLOR'])
 
