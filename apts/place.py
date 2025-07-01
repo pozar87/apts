@@ -58,24 +58,22 @@ class Place(ephem.Observer):
 
     def _next_setting_time(self, obj, start):
         try:
-            return (
-                self.next_setting(obj, start=start)
-                .datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
-        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            ephem_result_utc = self.next_setting(obj, start=start)
+            dt_utc = ephem_result_utc.datetime()
+            dt_local = dt_utc.replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+            return dt_local
+        except (ephem.AlwaysUpError, ephem.NeverUpError) as e:
+            logger.warning(f"Exception {type(e).__name__} for {obj.name} setting with start_date {start}. Location: {self.name} ({self.lat_decimal}, {self.lon_decimal}). Returning None.")
             return None
 
     def _next_rising_time(self, obj, start):
         try:
-            return (
-                self.next_rising(obj, start=start)
-                .datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
-        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            ephem_result_utc = self.next_rising(obj, start=start)
+            dt_utc = ephem_result_utc.datetime()
+            dt_local = dt_utc.replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+            return dt_local
+        except (ephem.AlwaysUpError, ephem.NeverUpError) as e:
+            logger.warning(f"Exception {type(e).__name__} for {obj.name} rising with start_date {start}. Location: {self.name} ({self.lat_decimal}, {self.lon_decimal}). Returning None.")
             return None
 
     def sunset_time(self, target_date=None):

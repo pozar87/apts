@@ -74,14 +74,16 @@ class Utils:
     def date_format(date_time):
         return date_time.isoformat(timespec="seconds")
 
-    def annotate_plot(plot, y_label, dark_mode_enabled: bool):
+    def annotate_plot(plot, y_label, dark_mode_enabled: bool): # Removed local_tz
         style = get_plot_style(dark_mode_enabled)
 
         plot.set_xlabel("Time", color=style['TEXT_COLOR'])
         plot.set_ylabel(y_label, color=style['TEXT_COLOR'])
-        plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M"))
-        plot.tick_params(axis='x', colors=style['TICK_COLOR'])
-        plot.tick_params(axis='y', colors=style['TICK_COLOR'])
+        # The following line was found to cause incorrect date range scaling on the x-axis.
+        # Pandas/Matplotlib's default formatter handles timezone-aware dates correctly.
+        # plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
+        plot.tick_params(axis='x', which='both', colors=style['TICK_COLOR'], labelcolor=style['TEXT_COLOR'], bottom=True, top=False, labelbottom=True)
+        plot.tick_params(axis='y', colors=style['TICK_COLOR'], labelcolor=style['TEXT_COLOR']) # Also making y-axis labelcolor explicit
 
         plot.spines['bottom'].set_color(style['AXIS_COLOR'])
         plot.spines['top'].set_color(style['AXIS_COLOR'])
