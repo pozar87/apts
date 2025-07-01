@@ -58,41 +58,45 @@ class Place(ephem.Observer):
 
     def _next_setting_time(self, obj, start):
         try:
-            return (
-                self.next_setting(obj, start=start)
-                .datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
-        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            ephem_result_utc = self.next_setting(obj, start=start)
+            dt_utc = ephem_result_utc.datetime()
+            dt_local = dt_utc.replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+            return dt_local
+        except (ephem.AlwaysUpError, ephem.NeverUpError) as e:
+            logger.warning(f"Exception {type(e).__name__} for {obj.name} setting with start_date {start}. Location: {self.name} ({self.lat_decimal}, {self.lon_decimal}). Returning None.")
             return None
 
     def _next_rising_time(self, obj, start):
         try:
-            return (
-                self.next_rising(obj, start=start)
-                .datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
-        except (ephem.AlwaysUpError, ephem.NeverUpError):
+            ephem_result_utc = self.next_rising(obj, start=start)
+            dt_utc = ephem_result_utc.datetime()
+            dt_local = dt_utc.replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+            return dt_local
+        except (ephem.AlwaysUpError, ephem.NeverUpError) as e:
+            logger.warning(f"Exception {type(e).__name__} for {obj.name} rising with start_date {start}. Location: {self.name} ({self.lat_decimal}, {self.lon_decimal}). Returning None.")
             return None
 
     def sunset_time(self, target_date=None):
         if target_date:
-            dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
-            start_date = ephem.Date(dt_utc)
+            # Use the provided target_date at noon UTC
+            calc_base_dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
         else:
-            start_date = self.date
-        return self._next_setting_time(self.sun, start=start_date)
+            # Default to current date at noon UTC if no target_date
+            calc_base_dt_utc = datetime.datetime.now(datetime.timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
+
+        start_date_for_ephem = ephem.Date(calc_base_dt_utc)
+        return self._next_setting_time(self.sun, start=start_date_for_ephem)
 
     def sunrise_time(self, target_date=None):
         if target_date:
-            dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
-            start_date = ephem.Date(dt_utc)
+            # Use the provided target_date at noon UTC
+            calc_base_dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
         else:
-            start_date = self.date
-        return self._next_rising_time(self.sun, start=start_date)
+            # Default to current date at noon UTC if no target_date
+            calc_base_dt_utc = datetime.datetime.now(datetime.timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
+
+        start_date_for_ephem = ephem.Date(calc_base_dt_utc)
+        return self._next_rising_time(self.sun, start=start_date_for_ephem)
 
     def moonset_time(self):
         return self._next_setting_time(self.moon, start=self.date)
