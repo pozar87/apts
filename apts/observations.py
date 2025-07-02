@@ -815,3 +815,73 @@ class Observation:
         return (
             f"Observation at {self.place.name} from {self.start} to {self.time_limit}"
         )
+
+    def get_hourly_weather_analysis(self):
+        if self.place.weather is None:
+            logger.info(
+                "get_hourly_weather_analysis: self.place.weather is None, calling get_weather."
+            )
+            self.place.get_weather()
+            if self.place.weather is None: # Still None after trying to fetch
+                logger.warning("get_hourly_weather_analysis: Weather data unavailable after fetch attempt.")
+                return [] # Or raise an error, depending on desired behavior for critical failure
+
+        # Ensure start, stop, and time_limit are valid
+        if not all([self.start, self.stop, self.time_limit]):
+            logger.warning("get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined.")
+            return []
+
+        hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
+        # Filter data further by self.time_limit
+        # The time_limit is the exclusive end point for the observation window.
+        hourly_data = hourly_data[hourly_data.time < self.time_limit]
+
+        analysis_results = []
+
+        for index, row in hourly_data.iterrows():
+            current_time = row.time
+            is_good_hour = True
+            reasons = []
+
+            # Check cloud cover
+            if not (row.cloudCover < self.conditions.max_clouds):
+                is_good_hour = False
+                reasons.append(
+                    f"Cloud cover {row.cloudCover:.1f}% exceeds limit {self.conditions.max_clouds:.1f}%"
+                )
+
+            # Check precipitation probability
+            if not (
+                row.precipProbability < self.conditions.max_precipitation_probability
+            ):
+                is_good_hour = False
+                reasons.append(
+                    f"Precipitation probability {row.precipProbability:.1f}% exceeds limit {self.conditions.max_precipitation_probability:.1f}%"
+                )
+
+            # Check wind speed
+            if not (row.windSpeed < self.conditions.max_wind):
+                is_good_hour = False
+                reasons.append(
+                    f"Wind speed {row.windSpeed:.1f} km/h exceeds limit {self.conditions.max_wind:.1f} km/h"
+                )
+
+            # Check temperature (min)
+            if not (row.temperature > self.conditions.min_temperature):
+                is_good_hour = False
+                reasons.append(
+                    f"Temperature {row.temperature:.1f}°C below limit {self.conditions.min_temperature:.1f}°C"
+                )
+
+            # Check temperature (max)
+            if not (row.temperature < self.conditions.max_temperature):
+                is_good_hour = False
+                reasons.append(
+                    f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
+                )
+
+            analysis_results.append(
+                {"time": current_time, "is_good": is_good_hour, "reasons": reasons}
+            )
+
+        return analysis_results
