@@ -24,6 +24,7 @@ class Planets(Objects):
                 ephem.Saturn(),
                 ephem.Uranus(),
                 ephem.Neptune(),
+                ephem.Moon(),
             ],
             columns=[ObjectTableLabels.EPHEM],
         )
