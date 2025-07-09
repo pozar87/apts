@@ -880,8 +880,14 @@ class Observation:
                     f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
                 )
 
-            analysis_results.append(
-                {"time": current_time, "is_good": is_good_hour, "reasons": reasons}
-            )
+            analysis_results.append({
+                "time": current_time,
+                "is_good_hour": is_good_hour,
+                "reasons": reasons,
+                "temperature": row.temperature,
+                "clouds": row.cloudCover,
+                "precipitation": row.precipProbability,
+                "wind_speed": row.windSpeed,
+            })
 
         return analysis_results
