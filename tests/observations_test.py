@@ -615,6 +615,7 @@ class TestSunObservation(unittest.TestCase):
 
         equipment = MagicMock()
         conditions = MagicMock()
+        conditions.max_return = "02:00:00"
         target_date = datetime.date(2025, 2, 18)
 
         # Act
