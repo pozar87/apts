@@ -173,6 +173,102 @@ class Place(ephem.Observer):
             ],
         )
 
+    def sun_path(self):
+        self.date = datetime.date.today()
+        result = []
+        for i in range(26 * 4):  # compute position for every 15 minutes
+            self.sun.compute(self)
+            row = [
+                ephem.localtime(self.date).time(),
+                deg(self.sun.alt),
+                deg(self.sun.az),
+                self.date.datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(self.local_timezone)
+                .strftime("%H:%M"),
+            ]
+            result.append(row)
+            self.date += ephem.minute * 15
+        return pd.DataFrame(
+            result,
+            columns=[
+                "Time",
+                "Sun altitude",
+                "Azimuth",
+                "Local_time",
+            ],
+        )
+
+    def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+
+        def add_marker(ax, label, position, text_color, grid_color): # Pass ax and colors
+            ax.axvline(position, color=grid_color, linestyle="--", linewidth=1)
+            ax.text(position, 1, label, weight="bold", horizontalalignment="center", color=text_color)
+
+        data = self.sun_path()
+
+        passed_ax = args.pop('ax', None) # Renamed to avoid confusion
+
+        plot_kwargs = {
+            "x": "Azimuth",
+            "y": "Sun altitude",
+            "title": "Sun altitude", # This title is styled later by direct ax.set_title
+            "style": ".-",
+            **args  # Pass through any other user-supplied keyword arguments
+        }
+
+        if passed_ax is not None:
+            plot_kwargs['ax'] = passed_ax # Add 'ax' to kwargs only if it was provided
+            data.plot(**plot_kwargs) # Plot on the provided ax
+            ax = passed_ax # Use the axes that was passed in
+            fig = ax.figure # Get figure from provided ax
+        else:
+            ax = data.plot(**plot_kwargs) # Let pandas create a new ax and figure
+            fig = ax.figure # Get figure from newly created ax
+
+        fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
+        ax.set_facecolor(style['AXES_FACE_COLOR'])
+
+        if ax.lines: # Style the main moon path line
+            ax.lines[0].set_color(style['TEXT_COLOR'])
+
+        ax.set_xlabel("Azimuth [°]", color=style['TEXT_COLOR'])
+        ax.set_ylabel("Altitude [°]", color=style['TEXT_COLOR'])
+        ax.set_title("Sun altitude", color=style['TEXT_COLOR'])
+
+        ax.tick_params(axis='x', colors=style['TICK_COLOR'])
+        ax.tick_params(axis='y', colors=style['TICK_COLOR'])
+
+        for spine_pos in ['top', 'bottom', 'left', 'right']:
+            ax.spines[spine_pos].set_color(style['AXIS_COLOR'])
+
+        # Add cardinal direction
+        add_marker(ax, "E", 90, style['TEXT_COLOR'], style['GRID_COLOR'])
+        add_marker(ax, "S", 180, style['TEXT_COLOR'], style['GRID_COLOR'])
+        add_marker(ax, "W", 270, style['TEXT_COLOR'], style['GRID_COLOR'])
+        ax.set_xlim(45, 315)
+
+        # Plot horizon
+        ax.axhspan(0, -50, color=style['GRID_COLOR'], alpha=0.3)
+        ax.locator_params(nbins=20)
+        ax.set_ylim(bottom=-10, top=90)
+
+        # Plot time for altitudes
+        for obj_row in data.iloc[::6, :].values: # Renamed obj to obj_row to avoid conflict
+            if obj_row[1] > 0: # Altitude is at index 1
+                ax.annotate(
+                    obj_row[3], (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    color=style['TEXT_COLOR']
+                )
+
+        return ax
+
     def plot_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override

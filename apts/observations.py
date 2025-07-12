@@ -43,6 +43,7 @@ class Observation:
         self.place = place
         self.equipment = equipment
         self.conditions = conditions
+        self.sun_observation = sun_observation
 
         # Initialize core attributes that depend on date calculations
         self.effective_ephem_date = None
@@ -792,6 +793,9 @@ class Observation:
             plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1], dark_mode_override=effective_dark_mode)
             if plt_visibility_ax: self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
 
+            logger.debug("Plotting sun or moon path...")
+            self.plot_sun_and_moon_path(ax=axes[3, 1], dark_mode_override=effective_dark_mode)
+
             fig.tight_layout()
             logger.info(
                 "Successfully generated Weather plot (figure setup). Sub-plot styling uses dark_mode_override."
@@ -831,6 +835,12 @@ class Observation:
             ax_err.set_yticks([])
             ax_err.set_title("Weather Plot Error", color=style["TEXT_COLOR"])
             return fig_err
+
+    def plot_sun_and_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
+        if self.sun_observation:
+            return self.place.plot_sun_path(dark_mode_override, **args)
+        else:
+            return self.place.plot_moon_path(dark_mode_override, **args)
 
     def __str__(self) -> str:
         return (

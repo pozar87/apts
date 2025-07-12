@@ -165,3 +165,27 @@ def test_plot_clouds_dark_mode_styles(
     mock_df_plot.reset_mock() # Reset for the next iteration of parametrize
     mock_annotate_plot.reset_mock() # Reset for the next iteration
     mock_get_dark_mode.reset_mock() # Reset for the next iteration
+
+def test_get_critical_data_all_hours():
+    # --- Setup Weather instance and mock data ---
+    mock_api_response = {
+        "hourly": {
+            "data": [
+                {"time": 1624000000 + i * 3600, "cloudCover": 0.5, "precipProbability": 0.1, "windSpeed": 10, "temperature": 20}
+                for i in range(48)
+            ]
+        }
+    }
+    with requests_mock.Mocker() as m:
+        m.get(re.compile(".*"), json=mock_api_response)
+        weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
+
+    start_time = datetime.datetime.fromtimestamp(1624000000, tz=datetime.timezone.utc)
+    stop_time = start_time + datetime.timedelta(hours=36)
+
+    critical_data = weather.get_critical_data(start_time, stop_time)
+
+    assert not critical_data.empty
+    assert critical_data.time.min() > start_time
+    assert critical_data.time.max() < stop_time
+    assert len(critical_data) == 35
