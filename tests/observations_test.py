@@ -539,7 +539,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("below limit", results[0]['reasons'][0])
@@ -556,7 +556,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("exceeds limit", results[0]['reasons'][0])
@@ -573,7 +573,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Precipitation probability", results[0]['reasons'][0])
 
