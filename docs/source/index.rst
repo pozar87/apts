@@ -11,6 +11,7 @@ Welcome to apts's documentation!
    :caption: Contents:
 
    apts
+   events
 
 
 
