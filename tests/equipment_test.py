@@ -1,4 +1,3 @@
-import unittest
 import pytest
 import numpy as np # Added for np.log10
 import pandas as pd # Added for DataFrame operations

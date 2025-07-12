@@ -2,6 +2,7 @@ import os
 import unittest
 import tempfile
 import datetime # Added
+import ephem
 from unittest.mock import patch, mock_open
 import pandas as pd
 from unittest.mock import MagicMock, call # Added MagicMock and call
@@ -61,11 +62,9 @@ class TestObservationTemplate(unittest.TestCase):
   </body>
 </html>"""
     
-    @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
-    def test_to_html_default_template(self, mock_file, mock_download_data):
+    def test_to_html_default_template(self, mock_file):
         """Test that to_html uses the default template when no custom template is provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         html = self.observation.to_html()
         
         # Verify that open was called with the default template path
@@ -76,11 +75,9 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
         
-    @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
-    def test_to_html_custom_template(self, mock_file, mock_download_data):
+    def test_to_html_custom_template(self, mock_file):
         """Test that to_html uses a custom template when provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_template = "/path/to/custom/template.html"
         html = self.observation.to_html(custom_template=custom_template)
         
@@ -91,11 +88,9 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
     
-    @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
-    def test_to_html_custom_css(self, mock_file, mock_download_data):
+    def test_to_html_custom_css(self, mock_file):
         """Test that to_html injects custom CSS when provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_css = "h1 { color: blue; }"
         html = self.observation.to_html(css=custom_css)
         
@@ -103,10 +98,8 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(custom_css, html)
         self.assertIn("body{color:#555;}", html)
         
-    @patch('apts.weather.Weather.download_data')
-    def test_to_html_with_actual_template_file(self, mock_download_data):
+    def test_to_html_with_actual_template_file(self):
         """Test to_html with an actual temporary template file"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         # Create a temporary template file
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
             temp_file.write(self.default_template_content)
@@ -371,7 +364,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
-        self.obs.place.weather.download_data.return_value = {"hourly": {"data": []}}
 
 
     def _generate_weather_data(self, num_hours, conditions_met_flags):
@@ -608,6 +600,36 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
+
+class TestSunObservation(unittest.TestCase):
+    @patch('apts.observations.Messier')
+    @patch('apts.observations.Planets')
+    def test_sun_observation_window(self, mock_planets, mock_messier):
+        """Test that the observation window is set correctly for sun observations."""
+        # Arrange
+        place = MagicMock()
+        place.local_timezone = datetime.timezone.utc
+        place.sunrise_time.return_value = pd.Timestamp('2025-02-18 06:00:00', tz='UTC')
+        place.sunset_time.return_value = pd.Timestamp('2025-02-18 18:00:00', tz='UTC')
+        place.get_time_relative_to_event.return_value = (pd.Timestamp('2025-02-18 06:00:00', tz='UTC'), ephem.Date('2025/2/18 06:00:00'))
+
+        equipment = MagicMock()
+        conditions = MagicMock()
+        conditions.max_return = "02:00:00"
+        target_date = datetime.date(2025, 2, 18)
+
+        # Act
+        observation = Observation(
+            place=place,
+            equipment=equipment,
+            conditions=conditions,
+            target_date=target_date,
+            sun_observation=True,
+        )
+
+        # Assert
+        self.assertEqual(observation.start_time_for_observation_window, place.sunrise_time.return_value)
+        self.assertEqual(observation.stop_time_for_observation_window, place.sunset_time.return_value)
 
 if __name__ == '__main__':
     unittest.main()
