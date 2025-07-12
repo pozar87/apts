@@ -417,8 +417,9 @@ class Weather:
         return ax
 
     def get_critical_data(self, start, stop):
+        hours = int((stop - start).total_seconds() / 3600) + 1
         data = self._filter_data(
-            ["cloudCover", "precipProbability", "windSpeed", "temperature"], hours=24
+            ["cloudCover", "precipProbability", "windSpeed", "temperature"], hours=hours
         )
         return data[(data.time > start) & (data.time < stop)]
 
