@@ -1,6 +1,0 @@
-Collecting ephem
-  Using cached ephem-4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.1 kB)
-Downloading ephem-4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.8 MB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 37.0 MB/s eta 0:00:00
-Installing collected packages: ephem
-Successfully installed ephem-4.2

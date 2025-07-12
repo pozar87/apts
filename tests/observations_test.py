@@ -408,7 +408,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
-            self.assertTrue(results[i]['is_good'])
+            self.assertTrue(results[i]['is_good_hour'])
             self.assertEqual(len(results[i]['reasons']), 0)
             self.assertEqual(results[i]['time'], mock_weather_df['time'].iloc[i])
 
@@ -441,11 +441,11 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(len(results), num_hours)
-        self.assertTrue(results[0]['is_good'])
-        self.assertFalse(results[1]['is_good'])
+        self.assertTrue(results[0]['is_good_hour'])
+        self.assertFalse(results[1]['is_good_hour'])
         self.assertEqual(len(results[1]['reasons']), 1)
         self.assertIn("Cloud cover", results[1]['reasons'][0])
-        self.assertTrue(results[2]['is_good'])
+        self.assertTrue(results[2]['is_good_hour'])
 
     def test_get_hourly_weather_analysis_one_hour_multiple_reasons(self):
         """Test one hour bad due to multiple reasons."""
@@ -475,11 +475,11 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(len(results), num_hours)
-        self.assertFalse(results[0]['is_good'])
+        self.assertFalse(results[0]['is_good_hour'])
         self.assertEqual(len(results[0]['reasons']), 2)
         self.assertTrue(any("Cloud cover" in reason for reason in results[0]['reasons']))
         self.assertTrue(any("Wind speed" in reason for reason in results[0]['reasons']))
-        self.assertTrue(results[1]['is_good'])
+        self.assertTrue(results[1]['is_good_hour'])
 
     def test_get_hourly_weather_analysis_respects_time_limit(self):
         """Test that analysis stops at self.time_limit."""
@@ -495,7 +495,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertEqual(len(results), expected_processed_hours)
         for i in range(expected_processed_hours):
-            self.assertTrue(results[i]['is_good'])
+            self.assertTrue(results[i]['is_good_hour'])
 
     def test_get_hourly_weather_analysis_no_weather_data_initially(self):
         """Test when weather data needs to be fetched."""
@@ -516,7 +516,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.obs.place.get_weather.assert_called_once()
         self.assertEqual(len(results), num_hours)
-        self.assertTrue(results[0]['is_good'])
+        self.assertTrue(results[0]['is_good_hour'])
 
     def test_get_hourly_weather_analysis_bad_temperature_low(self):
         """Test bad weather due to low temperature."""
@@ -531,7 +531,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
-        self.assertFalse(results[0]['is_good'])
+        self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("below limit", results[0]['reasons'][0])
 
@@ -548,7 +548,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
-        self.assertFalse(results[0]['is_good'])
+        self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("exceeds limit", results[0]['reasons'][0])
 
@@ -565,7 +565,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
-        self.assertFalse(results[0]['is_good'])
+        self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Precipitation probability", results[0]['reasons'][0])
 
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
@@ -602,7 +602,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
 
 class TestSunObservation(unittest.TestCase):
-    def test_sun_observation_window(self):
+    @patch('apts.observations.Messier')
+    @patch('apts.observations.Planets')
+    def test_sun_observation_window(self, mock_planets, mock_messier):
         """Test that the observation window is set correctly for sun observations."""
         # Arrange
         place = MagicMock()
