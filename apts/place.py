@@ -98,20 +98,29 @@ class Place(ephem.Observer):
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date)
 
-    def get_time_relative_to_sunset(self, target_date, offset_minutes=0):
+    def get_time_relative_to_event(
+        self, target_date, offset_minutes=0, event="sunset"
+    ):
         # Get sunset time for the target_date
-        sunset_dt = self.sunset_time(target_date=target_date)
+        if event == "sunset":
+            event_dt = self.sunset_time(target_date=target_date)
+        else:
+            event_dt = self.sunrise_time(target_date=target_date)
 
         # If sunset doesn't occur (e.g., polar day/night)
-        if sunset_dt is None:
+        if event_dt is None:
             return (None, None)
 
         # Apply the offset
         # sunset_dt is already a timezone-aware local datetime object
-        local_datetime_obs_time = sunset_dt + datetime.timedelta(minutes=offset_minutes)
+        local_datetime_obs_time = event_dt + datetime.timedelta(
+            minutes=offset_minutes
+        )
 
         # Convert local observation time to UTC datetime
-        utc_datetime_obs_time = local_datetime_obs_time.astimezone(datetime.timezone.utc)
+        utc_datetime_obs_time = local_datetime_obs_time.astimezone(
+            datetime.timezone.utc
+        )
 
         # Convert UTC datetime to ephem.Date
         corresponding_ephem_date_obs_time = ephem.Date(utc_datetime_obs_time)

@@ -2,6 +2,7 @@ import os
 import unittest
 import tempfile
 import datetime # Added
+import ephem
 from unittest.mock import patch, mock_open
 import pandas as pd
 from unittest.mock import MagicMock, call # Added MagicMock and call
@@ -599,6 +600,33 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
+
+class TestSunObservation(unittest.TestCase):
+    def test_sun_observation_window(self):
+        """Test that the observation window is set correctly for sun observations."""
+        # Arrange
+        place = MagicMock()
+        place.local_timezone = datetime.timezone.utc
+        place.sunrise_time.return_value = pd.Timestamp('2025-02-18 06:00:00', tz='UTC')
+        place.sunset_time.return_value = pd.Timestamp('2025-02-18 18:00:00', tz='UTC')
+        place.get_time_relative_to_event.return_value = (pd.Timestamp('2025-02-18 06:00:00', tz='UTC'), ephem.Date('2025/2/18 06:00:00'))
+
+        equipment = MagicMock()
+        conditions = MagicMock()
+        target_date = datetime.date(2025, 2, 18)
+
+        # Act
+        observation = Observation(
+            place=place,
+            equipment=equipment,
+            conditions=conditions,
+            target_date=target_date,
+            sun_observation=True,
+        )
+
+        # Assert
+        self.assertEqual(observation.start_time_for_observation_window, place.sunrise_time.return_value)
+        self.assertEqual(observation.stop_time_for_observation_window, place.sunset_time.return_value)
 
 if __name__ == '__main__':
     unittest.main()

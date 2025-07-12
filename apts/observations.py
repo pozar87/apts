@@ -37,6 +37,7 @@ class Observation:
         conditions=Conditions(),
         target_date=None,
         offset_to_sunset_minutes=0,
+        sun_observation=False,
     ):
         self.place = place
         self.equipment = equipment
@@ -53,9 +54,10 @@ class Observation:
 
         if target_date:
             # New behavior: use target_date and offset
+            event = "sunrise" if sun_observation else "sunset"
             local_dt_obs_time, ephem_dt_obs_time = (
-                self.place.get_time_relative_to_sunset(
-                    target_date, offset_to_sunset_minutes
+                self.place.get_time_relative_to_event(
+                    target_date, offset_to_sunset_minutes, event=event
                 )
             )
 
@@ -69,17 +71,29 @@ class Observation:
             else:
                 self.effective_ephem_date = ephem_dt_obs_time
                 self.observation_local_time = local_dt_obs_time
-                self.start_time_for_observation_window = self.place.sunset_time(
-                    target_date=target_date
-                )
-                self.stop_time_for_observation_window = self.place.sunrise_time(
-                    target_date=target_date
-                )
+                if sun_observation:
+                    self.start_time_for_observation_window = self.place.sunrise_time(
+                        target_date=target_date
+                    )
+                    self.stop_time_for_observation_window = self.place.sunset_time(
+                        target_date=target_date
+                    )
+                else:
+                    self.start_time_for_observation_window = self.place.sunset_time(
+                        target_date=target_date
+                    )
+                    self.stop_time_for_observation_window = self.place.sunrise_time(
+                        target_date=target_date
+                    )
         else:
             # Legacy behavior: use place.date
             self.effective_ephem_date = self.place.date
-            self.start_time_for_observation_window = self.place.sunset_time()
-            self.stop_time_for_observation_window = self.place.sunrise_time()
+            if sun_observation:
+                self.start_time_for_observation_window = self.place.sunrise_time()
+                self.stop_time_for_observation_window = self.place.sunset_time()
+            else:
+                self.start_time_for_observation_window = self.place.sunset_time()
+                self.stop_time_for_observation_window = self.place.sunrise_time()
             # self.observation_local_time remains None for legacy mode
 
         # Normalize start and stop dates for the observation window
