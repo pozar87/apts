@@ -31,7 +31,7 @@ class Weather:
 
     def _filter_data(self, rows, hours):
         # Always add time column
-        columns = ["time"] + rows
+        columns = list(set(["time"] + rows))
         # Calculate time horizon base on number of hours (max is 48h as longer predictions are inacurate)
         time_horizon = datetime.utcnow().replace(
             tzinfo=self.local_timezone
@@ -419,7 +419,7 @@ class Weather:
     def get_critical_data(self, start, stop):
         hours = int((stop - start).total_seconds() / 3600) + 1
         data = self._filter_data(
-            ["cloudCover", "precipProbability", "windSpeed", "temperature"], hours=hours
+            ["time", "cloudCover", "precipProbability", "windSpeed", "temperature"], hours=hours
         )
         return data[(data.time > start) & (data.time < stop)]
 
