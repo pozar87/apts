@@ -157,7 +157,7 @@ class TestPlace:
         assert expected_sunset_dt is not None, "Prerequisite: sunset must occur for this test"
 
         for offset_mins in offsets:
-            local_obs_time, ephem_obs_date = p.get_time_relative_to_sunset(target_d, offset_minutes=offset_mins)
+            local_obs_time, ephem_obs_date = p.get_time_relative_to_event(target_d, offset_minutes=offset_mins)
 
             assert local_obs_time is not None
             assert isinstance(local_obs_time, datetime)
@@ -188,7 +188,7 @@ class TestPlace:
         p = north_pole_place
         target_d = date(2024, 6, 21) # Summer solstice, sun always up
 
-        local_obs_time, ephem_obs_date = p.get_time_relative_to_sunset(target_d, offset_minutes=30)
+        local_obs_time, ephem_obs_date = p.get_time_relative_to_event(target_d, offset_minutes=30)
 
         assert local_obs_time is None
         assert ephem_obs_date is None
