@@ -1,6 +1,6 @@
 import logging
 
-# import cairo as ca
+import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -356,11 +356,11 @@ class Equipment:
             **args
         )
 
-    # def plot_connection_graph_svg(self, dark_mode_override: Optional[bool] = None, **args):
-    #     surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
-    #     # Pass dark_mode_override to the plot_connection_graph call
-    #     plot = self.plot_connection_graph(target=surface, dark_mode_override=dark_mode_override, **args)
-    #     return plot._repr_svg_()[0]  # SVG string is first in tuple
+    def plot_connection_graph_svg(self, dark_mode_override: Optional[bool] = None, **args):
+        surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
+        # Pass dark_mode_override to the plot_connection_graph call
+        plot = self.plot_connection_graph(target=surface, dark_mode_override=dark_mode_override, **args)
+        return plot._repr_svg_()[0]  # SVG string is first in tuple
 
     def _connect(self):
         logger.debug("Connecting nodes")
