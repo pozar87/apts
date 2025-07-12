@@ -10,6 +10,7 @@ The `AstronomicalEvents` class is used to calculate a list of events for a given
 
 .. autoclass:: apts.events.AstronomicalEvents
    :members:
+   :exclude-members: calculate_conjunctions
 
 The `Observation` class provides a convenient way to access the event prediction functionality.
 
@@ -19,6 +20,8 @@ Usage
 -----
 
 The following script demonstrates how to use the `get_astronomical_events` method to get a list of events for a given location.
+
+.. automethod:: apts.events.AstronomicalEvents.calculate_conjunctions
 
 .. code-block:: python
 
