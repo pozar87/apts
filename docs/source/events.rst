@@ -23,6 +23,8 @@ The following script demonstrates how to use the `get_astronomical_events` metho
 
 .. automethod:: apts.events.AstronomicalEvents.calculate_conjunctions
 
+.. automethod:: apts.events.AstronomicalEvents.calculate_oppositions
+
 .. code-block:: python
 
     from apts.observations import Observation
