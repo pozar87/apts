@@ -21,6 +21,7 @@ from apts.constants.graphconstants import (
     OpticalType,
     get_planet_color,
 )  # Added get_planet_color
+from .events import AstronomicalEvents
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,12 @@ class Observation:
         return self.local_planets.get_visible(
             self.conditions, self.start, self.time_limit, **args
         )
+
+    def get_astronomical_events(self, days=365):
+        start_date = datetime.now()
+        end_date = start_date + timedelta(days=days)
+        events = AstronomicalEvents(self.place, start_date, end_date)
+        return events.get_events()
 
     def plot_visible_planets_svg(
         self, dark_mode_override: Optional[bool] = None, **args
