@@ -61,14 +61,14 @@ class TestObservationTemplate(unittest.TestCase):
     <p>$place_name</p>
   </body>
 </html>"""
-    
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_default_template(self, mock_file, mock_download_data):
         """Test that to_html uses the default template when no custom template is provided"""
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         html = self.observation.to_html()
-        
+
         # Verify that open was called with the default template path
         mock_file.assert_called_once()
         self.assertEqual(mock_file.call_args[0][0], Observation.NOTIFICATION_TEMPLATE)
@@ -495,7 +495,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # time_limit is 02:00, start is 18:00. So 18, 19, 20, 21, 22, 23, 00, 01 (8 hours)
         # Let's provide 10 hours of data, but only 8 should be processed.
         num_hours_data = 10
-        expected_processed_hours = 9
+        expected_processed_hours = 8
 
         mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
