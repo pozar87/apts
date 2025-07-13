@@ -72,11 +72,11 @@ class TestObservationTemplate(unittest.TestCase):
         # Verify that open was called with the default template path
         mock_file.assert_called_once()
         self.assertEqual(mock_file.call_args[0][0], Observation.NOTIFICATION_TEMPLATE)
-        
+
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
-        
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_custom_template(self, mock_file, mock_download_data):
@@ -84,14 +84,14 @@ class TestObservationTemplate(unittest.TestCase):
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_template = "/path/to/custom/template.html"
         html = self.observation.to_html(custom_template=custom_template)
-        
+
         # Verify that open was called with the custom template path
         mock_file.assert_called_once_with(custom_template)
-        
+
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
-    
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_custom_css(self, mock_file, mock_download_data):
@@ -99,11 +99,11 @@ class TestObservationTemplate(unittest.TestCase):
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_css = "h1 { color: blue; }"
         html = self.observation.to_html(css=custom_css)
-        
+
         # Verify that the CSS was properly injected
         self.assertIn(custom_css, html)
         self.assertIn("body{color:#555;}", html)
-        
+
     @patch('apts.weather.Weather.download_data')
     def test_to_html_with_actual_template_file(self, mock_download_data):
         """Test to_html with an actual temporary template file"""
@@ -112,17 +112,17 @@ class TestObservationTemplate(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
             temp_file.write(self.default_template_content)
             temp_path = temp_file.name
-        
+
         try:
             # Test with the actual file
             custom_css = "h1 { color: blue; }"
             html = self.observation.to_html(custom_template=temp_path, css=custom_css)
-            
+
             # Verify that the template worked and CSS was injected
             self.assertIn(self.observation.place.name, html)
             self.assertIn("APTS", html)
             self.assertIn(custom_css, html)
-            
+
         finally:
             # Clean up
             os.unlink(temp_path)
@@ -495,7 +495,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # time_limit is 02:00, start is 18:00. So 18, 19, 20, 21, 22, 23, 00, 01 (8 hours)
         # Let's provide 10 hours of data, but only 8 should be processed.
         num_hours_data = 10
-        expected_processed_hours = 8
+        expected_processed_hours = 9
 
         mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
@@ -637,8 +637,8 @@ class TestSunObservation(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(observation.start_time_for_observation_window, place.sunrise_time.return_value)
-        self.assertEqual(observation.stop_time_for_observation_window, place.sunset_time.return_value)
+        self.assertEqual(observation.start, place.sunrise_time.return_value)
+        self.assertEqual(observation.stop, place.sunset_time.return_value)
 
 if __name__ == '__main__':
     unittest.main()

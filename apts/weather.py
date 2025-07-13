@@ -29,14 +29,10 @@ class Weather:
         self.local_timezone = local_timezone
         self.data = self.download_data()
 
-    def _filter_data(self, rows, hours):
+    def _filter_data(self, rows):
         # Always add time column
         columns = list(set(["time"] + rows))
-        # Calculate time horizon base on number of hours (max is 48h as longer predictions are inacurate)
-        time_horizon = datetime.utcnow().replace(
-            tzinfo=self.local_timezone
-        ) + timedelta(hours=min(hours, 48))
-        return self.data[columns][self.data.time < time_horizon]
+        return self.data[columns]
 
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
@@ -45,7 +41,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["cloudCover"], hours)
+        data = self._filter_data(["cloudCover"])
         if data.empty:
             return None
 
@@ -94,7 +90,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["precipIntensity", "precipProbability"], hours)
+        data = self._filter_data(["precipIntensity", "precipProbability"])
         if data.empty:
             return None
 
@@ -145,7 +141,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
-        data = self._filter_data(["precipType"], hours)
+        data = self._filter_data(["precipType"])
         if data.empty:
             return None
 
@@ -205,7 +201,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
-        data = self._filter_data(["summary"], hours)
+        data = self._filter_data(["summary"])
         if data.empty:
             return None
 
@@ -255,7 +251,7 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(
-            ["temperature", "apparentTemperature", "dewPoint"], hours
+            ["temperature", "apparentTemperature", "dewPoint"]
         )
         if data.empty:
             return None
@@ -301,7 +297,7 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         max_wind_speed = self.data[["windSpeed"]].max().max()
-        data = self._filter_data(["windSpeed"], hours)
+        data = self._filter_data(["windSpeed"])
         if data.empty:
             return None
 
@@ -354,7 +350,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["pressure", "ozone"], hours)
+        data = self._filter_data(["pressure", "ozone"])
         if data.empty:
             return None
 
@@ -417,10 +413,7 @@ class Weather:
         return ax
 
     def get_critical_data(self, start, stop):
-        hours = int((stop - start).total_seconds() / 3600) + 1
-        data = self._filter_data(
-            ["time", "cloudCover", "precipProbability", "windSpeed", "temperature"], hours=hours
-        )
+        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature"])
         return data[(data.time >= start) & (data.time < stop)]
 
     def plot_visibility(
@@ -508,5 +501,4 @@ class Weather:
                 .dt.tz_localize("UTC")
                 .dt.tz_convert(self.local_timezone)
             )
-            logger.debug(f"[Weather.download_data] Downloaded data time range: {result.time.min()} to {result.time.max()}")
             return result

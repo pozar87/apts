@@ -47,8 +47,6 @@ class Observation:
 
         # Initialize core attributes that depend on date calculations
         self.effective_ephem_date = None
-        self.start_time_for_observation_window = None
-        self.stop_time_for_observation_window = None
         self.observation_local_time = None
         self.start = None
         self.stop = None
@@ -74,39 +72,39 @@ class Observation:
                 self.effective_ephem_date = ephem_dt_obs_time
                 self.observation_local_time = local_dt_obs_time
                 if sun_observation:
-                    self.start_time_for_observation_window = self.place.sunrise_time(
+                    self.start = self.place.sunrise_time(
                         target_date=target_date
                     )
-                    self.stop_time_for_observation_window = self.place.sunset_time(
+                    self.stop = self.place.sunset_time(
                         target_date=target_date
                     )
                 else:
-                    self.start_time_for_observation_window = self.place.sunset_time(
+                    self.start = self.place.sunset_time(
                         target_date=target_date
                     )
                     # For night observations, the stop time is sunrise of the *next* day
-                    self.stop_time_for_observation_window = self.place.sunrise_time(
+                    self.stop = self.place.sunrise_time(
                         target_date=target_date + timedelta(days=1)
                     )
         else:
             # Legacy behavior: use place.date
             self.effective_ephem_date = self.place.date
             if sun_observation:
-                self.start_time_for_observation_window = self.place.sunrise_time()
-                self.stop_time_for_observation_window = self.place.sunset_time()
+                self.start = self.place.sunrise_time()
+                self.stop = self.place.sunset_time()
             else:
-                self.start_time_for_observation_window = self.place.sunset_time()
-                self.stop_time_for_observation_window = self.place.sunrise_time()
+                self.start = self.place.sunset_time()
+                self.stop = self.place.sunrise_time()
             # self.observation_local_time remains None for legacy mode
 
         # Normalize start and stop dates for the observation window
         if (
-            self.start_time_for_observation_window is not None
-            and self.stop_time_for_observation_window is not None
+            self.start is not None
+            and self.stop is not None
         ):
             self.start, self.stop = self._normalize_dates(
-                self.start_time_for_observation_window,
-                self.stop_time_for_observation_window,
+                self.start,
+                self.stop,
             )
         # If not, self.start and self.stop remain None
 
@@ -511,7 +509,7 @@ class Observation:
             altitude = planet[ObjectTableLabels.ALTITUDE]
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
-            
+
             # Normalize size for plotting
             plot_size = numpy.log1p(size)
             marker_size = plot_size * 2 + 8
