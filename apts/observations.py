@@ -509,7 +509,11 @@ class Observation:
             altitude = planet[ObjectTableLabels.ALTITUDE]
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
-            marker_size = size * 0.5 + 8
+            
+            # Normalize size for plotting
+            plot_size = numpy.log1p(size)
+            marker_size = plot_size * 2 + 8
+
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
