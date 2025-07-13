@@ -11,9 +11,9 @@ from ..utils import ureg
 from apts.place import Place
 
 
-class Planets(Objects):
+class SolarObjects(Objects):
     def __init__(self, place):
-        super(Planets, self).__init__(place)
+        super(SolarObjects, self).__init__(place)
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [
@@ -25,6 +25,7 @@ class Planets(Objects):
                 ephem.Uranus(),
                 ephem.Neptune(),
                 ephem.Moon(),
+                ephem.Sun(),
             ],
             columns=[ObjectTableLabels.EPHEM],
         )

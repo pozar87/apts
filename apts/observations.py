@@ -11,7 +11,7 @@ from matplotlib import pyplot, lines
 
 from .conditions import Conditions
 from .objects.messier import Messier
-from .objects.planets import Planets
+from .objects.solar_objects import SolarObjects
 from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
@@ -109,11 +109,11 @@ class Observation:
             )
         # If not, self.start and self.stop remain None
 
-        # Instantiate Messier and Planets objects
+        # Instantiate Messier and SolarObjects objects
         self.local_messier = Messier(self.place)
-        self.local_planets = Planets(self.place)
+        self.local_planets = SolarObjects(self.place)
 
-        # Compute Messier and Planets data if an effective date was determined
+        # Compute Messier and SolarObjects data if an effective date was determined
         if self.effective_ephem_date is not None:
             self.local_messier.compute(calculation_date=self.effective_ephem_date)
             self.local_planets.compute(calculation_date=self.effective_ephem_date)
@@ -493,7 +493,7 @@ class Observation:
                 ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style
             )
             Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-            ax.set_title("Planets Altitude", color=style["TEXT_COLOR"])
+            ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
             return fig
 
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
@@ -542,7 +542,7 @@ class Observation:
             ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style
         )
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-        ax.set_title("Planets Altitude", color=style["TEXT_COLOR"])
+        ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
 
         # Simple legend if needed (e.g. if colors vary by planet type, which they don't here)
         # handles = [lines.Line2D([0], [0], marker='o', color='w', label='Planet', markerfacecolor=planet_scatter_color or 'blue', markersize=10)]

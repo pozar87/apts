@@ -612,7 +612,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
 class TestSunObservation(unittest.TestCase):
     @patch('apts.observations.Messier')
-    @patch('apts.observations.Planets')
+    @patch('apts.observations.SolarObjects')
     def test_sun_observation_window(self, mock_planets, mock_messier):
         """Test that the observation window is set correctly for sun observations."""
         # Arrange
