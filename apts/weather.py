@@ -485,13 +485,17 @@ class Weather:
                 "ozone",
             ]
             json_data = json.loads(data.text)
-            raw_data = [
-                [
-                    (item[column] if column in item.keys() else "none")
-                    for column in columns
+            try:
+                raw_data = [
+                    [
+                        (item[column] if column in item.keys() else "none")
+                        for column in columns
+                    ]
+                    for item in json_data["hourly"]["data"]
                 ]
-                for item in json_data["hourly"]["data"]
-            ]
+            except KeyError as e:
+                logger.error(f"KeyError in weather data: {e}. Full response: {json_data}")
+                return pd.DataFrame(columns=columns) # Return empty DataFrame with expected columns
             result = pd.DataFrame(raw_data, columns=columns)
             # Convert units
             result["precipProbability"] *= 100
