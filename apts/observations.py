@@ -642,7 +642,7 @@ class Observation:
                         + template_content[style_end_pos:]
                     )
             template = Template(template_content)
-            hourly_weather, timezone = self.get_hourly_weather_analysis()
+            hourly_weather = self.get_hourly_weather_analysis()
             data = {
                 "title": "APTS",
                 "start": Utils.format_date(self.start),
@@ -656,7 +656,7 @@ class Observation:
                 "lat": numpy.rad2deg(self.place.lat),
                 "lon": numpy.rad2deg(self.place.lon),
                 "hourly_weather": hourly_weather,
-                "timezone": timezone,
+                "timezone": self.place.local_timezone,
             }
             return str(template.substitute(data))
 
@@ -862,12 +862,12 @@ class Observation:
             self.place.get_weather()
             if self.place.weather is None: # Still None after trying to fetch
                 logger.warning("get_hourly_weather_analysis: Weather data unavailable after fetch attempt.")
-                return [] # Or raise an error, depending on desired behavior for critical failure
+                return [], self.place.local_timezone # Return empty list and timezone
 
         # Ensure start, stop, and time_limit are valid
         if not all([self.start, self.stop, self.time_limit]):
             logger.warning("get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined.")
-            return [], None
+            return [], self.place.local_timezone
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
         # Filter data further by self.time_limit

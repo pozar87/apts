@@ -413,7 +413,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = self._generate_weather_data(num_hours, [True] * num_hours)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
 
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
@@ -447,7 +449,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
 
         self.assertEqual(len(results), num_hours)
         self.assertTrue(results[0]['is_good_hour'])
@@ -481,7 +485,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
 
         self.assertEqual(len(results), num_hours)
         self.assertFalse(results[0]['is_good_hour'])
@@ -500,7 +506,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
 
         self.assertEqual(len(results), expected_processed_hours)
         for i in range(expected_processed_hours):
@@ -521,7 +529,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.obs.place.get_weather = MagicMock(side_effect=mock_get_weather)
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
 
         self.obs.place.get_weather.assert_called_once()
         self.assertEqual(len(results), num_hours)
@@ -539,7 +549,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("below limit", results[0]['reasons'][0])
@@ -556,7 +568,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("exceeds limit", results[0]['reasons'][0])
@@ -573,7 +587,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Precipitation probability", results[0]['reasons'][0])
 
@@ -582,7 +598,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
             columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature']
         )
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertEqual(len(results), 0)
 
     def test_get_hourly_weather_analysis_start_stop_time_limit_undefined(self):
@@ -591,21 +609,27 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # self.obs.stop = None # Keep stop and time_limit for this specific test
         # self.obs.time_limit = None
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore start and test with stop = None
         self.obs.start = pd.Timestamp('2024-01-01 18:00:00', tz=self.test_tz)
         self.obs.stop = None
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore stop and test with time_limit = None
         self.obs.stop = pd.Timestamp('2024-01-02 06:00:00', tz=self.test_tz)
         self.obs.time_limit = None
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results, returned_timezone = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(returned_timezone, self.test_tz)
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
