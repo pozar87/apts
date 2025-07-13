@@ -916,7 +916,7 @@ class Observation:
 
             analysis_results.append({
                 "time": current_time,
-                "is_good": is_good_hour,
+                "is_good_hour": is_good_hour,
                 "reasons": reasons,
                 "temperature": row.temperature,
                 "clouds": row.cloudCover,
