@@ -425,7 +425,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["visibility"], hours)
+        data = self._filter_data(["visibility"])
         data = data.query("visibility != 'none'")
         if data.empty:
             return None
