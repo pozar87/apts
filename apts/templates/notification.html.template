@@ -56,6 +56,9 @@
           <td>$stop</td>
         </tr>
         <tr>
+                <td><b>Timezone</b>: $timezone</td>
+            </tr>
+            <tr>
           <td>Number of visiable objects</td>
           <td>Planets $planets_count, Messier: $messier_count</td>
         </tr>
