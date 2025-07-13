@@ -186,6 +186,6 @@ def test_get_critical_data_all_hours():
     critical_data = weather.get_critical_data(start_time, stop_time)
 
     assert not critical_data.empty
-    assert critical_data.time.min() > start_time
-    assert critical_data.time.max() < stop_time
-    assert len(critical_data) == 35
+    assert critical_data.time.min() >= start_time
+    assert critical_data.time.max() <= stop_time
+    assert len(critical_data) == 36

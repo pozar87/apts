@@ -84,8 +84,9 @@ class Observation:
                     self.start_time_for_observation_window = self.place.sunset_time(
                         target_date=target_date
                     )
+                    # For night observations, the stop time is sunrise of the *next* day
                     self.stop_time_for_observation_window = self.place.sunrise_time(
-                        target_date=target_date
+                        target_date=target_date + timedelta(days=1)
                     )
         else:
             # Legacy behavior: use place.date
@@ -406,10 +407,11 @@ class Observation:
             return fig
 
     def _normalize_dates(self, start, stop):
-        now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
-        new_start = start if start < stop else now
-        new_stop = stop
-        return (new_start, new_stop)
+        # If the stop time is earlier than the start time, it means the observation
+        # spans across midnight, so we add one day to the stop time.
+        if stop < start:
+            stop += timedelta(days=1)
+        return (start, stop)
 
     def plot_weather(
         self, dark_mode_override: Optional[bool] = None, **args
@@ -873,6 +875,7 @@ class Observation:
         # Filter data further by self.time_limit
         # The time_limit is the exclusive end point for the observation window.
         hourly_data = hourly_data[hourly_data.time < self.time_limit]
+        logger.debug(f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}")
 
         analysis_results = []
 

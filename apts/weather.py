@@ -421,7 +421,7 @@ class Weather:
         data = self._filter_data(
             ["time", "cloudCover", "precipProbability", "windSpeed", "temperature"], hours=hours
         )
-        return data[(data.time > start) & (data.time < stop)]
+        return data[(data.time >= start) & (data.time < stop)]
 
     def plot_visibility(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
@@ -508,4 +508,5 @@ class Weather:
                 .dt.tz_localize("UTC")
                 .dt.tz_convert(self.local_timezone)
             )
+            logger.debug(f"[Weather.download_data] Downloaded data time range: {result.time.min()} to {result.time.max()}")
             return result
