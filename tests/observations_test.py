@@ -3,6 +3,7 @@ import unittest
 import tempfile
 import datetime # Added
 import ephem
+from datetime import timedelta
 from unittest.mock import patch, mock_open
 import pandas as pd
 from unittest.mock import MagicMock, call # Added MagicMock and call
@@ -61,22 +62,22 @@ class TestObservationTemplate(unittest.TestCase):
     <p>$place_name</p>
   </body>
 </html>"""
-    
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_default_template(self, mock_file, mock_download_data):
         """Test that to_html uses the default template when no custom template is provided"""
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         html = self.observation.to_html()
-        
+
         # Verify that open was called with the default template path
         mock_file.assert_called_once()
         self.assertEqual(mock_file.call_args[0][0], Observation.NOTIFICATION_TEMPLATE)
-        
+
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
-        
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_custom_template(self, mock_file, mock_download_data):
@@ -84,14 +85,14 @@ class TestObservationTemplate(unittest.TestCase):
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_template = "/path/to/custom/template.html"
         html = self.observation.to_html(custom_template=custom_template)
-        
+
         # Verify that open was called with the custom template path
         mock_file.assert_called_once_with(custom_template)
-        
+
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
-    
+
     @patch('apts.weather.Weather.download_data')
     @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
     def test_to_html_custom_css(self, mock_file, mock_download_data):
@@ -99,11 +100,11 @@ class TestObservationTemplate(unittest.TestCase):
         mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
         custom_css = "h1 { color: blue; }"
         html = self.observation.to_html(css=custom_css)
-        
+
         # Verify that the CSS was properly injected
         self.assertIn(custom_css, html)
         self.assertIn("body{color:#555;}", html)
-        
+
     @patch('apts.weather.Weather.download_data')
     def test_to_html_with_actual_template_file(self, mock_download_data):
         """Test to_html with an actual temporary template file"""
@@ -112,17 +113,17 @@ class TestObservationTemplate(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
             temp_file.write(self.default_template_content)
             temp_path = temp_file.name
-        
+
         try:
             # Test with the actual file
             custom_css = "h1 { color: blue; }"
             html = self.observation.to_html(custom_template=temp_path, css=custom_css)
-            
+
             # Verify that the template worked and CSS was injected
             self.assertIn(self.observation.place.name, html)
             self.assertIn("APTS", html)
             self.assertIn(custom_css, html)
-            
+
         finally:
             # Clean up
             os.unlink(temp_path)
@@ -356,11 +357,12 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
         # Using a fixed timezone for consistency in tests
         self.test_tz = datetime.timezone(datetime.timedelta(hours=-5), 'EST') # Example: EST
+        self.base_date = pd.Timestamp('2024-01-01', tz=self.test_tz)
 
         self.obs.place.local_timezone = self.test_tz
-        self.obs.start = pd.Timestamp('2024-01-01 18:00:00', tz=self.test_tz)
-        self.obs.stop = pd.Timestamp('2024-01-02 06:00:00', tz=self.test_tz) # Next day
-        self.obs.time_limit = pd.Timestamp('2024-01-02 02:00:00', tz=self.test_tz)
+        self.obs.start = self.base_date.replace(hour=18, minute=0, second=0, microsecond=0)
+        self.obs.stop = (self.base_date + timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0) # Next day
+        self.obs.time_limit = (self.base_date + timedelta(days=1)).replace(hour=2, minute=0, second=0, microsecond=0)
 
         # Mock conditions
         self.obs.conditions = Conditions() # Use default conditions or mock as needed
@@ -413,7 +415,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = self._generate_weather_data(num_hours, [True] * num_hours)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
 
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
@@ -447,7 +450,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
 
         self.assertEqual(len(results), num_hours)
         self.assertTrue(results[0]['is_good_hour'])
@@ -481,7 +485,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
 
         self.assertEqual(len(results), num_hours)
         self.assertFalse(results[0]['is_good_hour'])
@@ -495,16 +500,38 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # time_limit is 02:00, start is 18:00. So 18, 19, 20, 21, 22, 23, 00, 01 (8 hours)
         # Let's provide 10 hours of data, but only 8 should be processed.
         num_hours_data = 10
-        expected_processed_hours = 8
+        expected_processed_hours = 9
 
         mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
 
         self.assertEqual(len(results), expected_processed_hours)
         for i in range(expected_processed_hours):
             self.assertTrue(results[i]['is_good_hour'])
+
+    def test_get_hourly_weather_analysis_inclusive_time_limit(self):
+        """Test that analysis *includes* the hour at self.time_limit."""
+        # Setup: start at 18:00, time_limit at 20:00,
+        # so data for 18, 19, 20 should be included (3 hours)
+        self.obs.start = self.base_date.replace(hour=18, minute=0, second=0, microsecond=0)
+        self.obs.stop = self.base_date.replace(hour=21, minute=0, second=0, microsecond=0) # Beyond time_limit
+        self.obs.time_limit = self.base_date.replace(hour=20, minute=0, second=0, microsecond=0)
+
+        num_hours_data = 5 # Provide more data than needed (18, 19, 20, 21, 22)
+        mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+
+        results = self.obs.get_hourly_weather_analysis()
+
+        self.assertEqual(len(results), 3) # Expect 18:00, 19:00, 20:00
+
+        # Verify the times are correct
+        self.assertEqual(results[0]['time'].hour, 18)
+        self.assertEqual(results[1]['time'].hour, 19)
+        self.assertEqual(results[2]['time'].hour, 20)
 
     def test_get_hourly_weather_analysis_no_weather_data_initially(self):
         """Test when weather data needs to be fetched."""
@@ -521,7 +548,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.obs.place.get_weather = MagicMock(side_effect=mock_get_weather)
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
 
         self.obs.place.get_weather.assert_called_once()
         self.assertEqual(len(results), num_hours)
@@ -539,7 +567,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("below limit", results[0]['reasons'][0])
@@ -556,7 +585,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Temperature", results[0]['reasons'][0])
         self.assertIn("exceeds limit", results[0]['reasons'][0])
@@ -573,7 +603,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         }]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertFalse(results[0]['is_good_hour'])
         self.assertIn("Precipitation probability", results[0]['reasons'][0])
 
@@ -582,7 +613,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
             columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature']
         )
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertEqual(len(results), 0)
 
     def test_get_hourly_weather_analysis_start_stop_time_limit_undefined(self):
@@ -591,28 +623,32 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # self.obs.stop = None # Keep stop and time_limit for this specific test
         # self.obs.time_limit = None
 
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore start and test with stop = None
         self.obs.start = pd.Timestamp('2024-01-01 18:00:00', tz=self.test_tz)
         self.obs.stop = None
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
+
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore stop and test with time_limit = None
         self.obs.stop = pd.Timestamp('2024-01-02 06:00:00', tz=self.test_tz)
         self.obs.time_limit = None
-        results, _ = self.obs.get_hourly_weather_analysis()
+        results = self.obs.get_hourly_weather_analysis()
+
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
 
 class TestSunObservation(unittest.TestCase):
     @patch('apts.observations.Messier')
-    @patch('apts.observations.Planets')
+    @patch('apts.observations.SolarObjects')
     def test_sun_observation_window(self, mock_planets, mock_messier):
         """Test that the observation window is set correctly for sun observations."""
         # Arrange
@@ -637,8 +673,8 @@ class TestSunObservation(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(observation.start_time_for_observation_window, place.sunrise_time.return_value)
-        self.assertEqual(observation.stop_time_for_observation_window, place.sunset_time.return_value)
+        self.assertEqual(observation.start, place.sunrise_time.return_value)
+        self.assertEqual(observation.stop, place.sunset_time.return_value)
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,7 +11,7 @@ from matplotlib import pyplot, lines
 
 from .conditions import Conditions
 from .objects.messier import Messier
-from .objects.planets import Planets
+from .objects.solar_objects import SolarObjects
 from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
@@ -47,8 +47,6 @@ class Observation:
 
         # Initialize core attributes that depend on date calculations
         self.effective_ephem_date = None
-        self.start_time_for_observation_window = None
-        self.stop_time_for_observation_window = None
         self.observation_local_time = None
         self.start = None
         self.stop = None
@@ -74,46 +72,47 @@ class Observation:
                 self.effective_ephem_date = ephem_dt_obs_time
                 self.observation_local_time = local_dt_obs_time
                 if sun_observation:
-                    self.start_time_for_observation_window = self.place.sunrise_time(
+                    self.start = self.place.sunrise_time(
                         target_date=target_date
                     )
-                    self.stop_time_for_observation_window = self.place.sunset_time(
+                    self.stop = self.place.sunset_time(
                         target_date=target_date
                     )
                 else:
-                    self.start_time_for_observation_window = self.place.sunset_time(
+                    self.start = self.place.sunset_time(
                         target_date=target_date
                     )
-                    self.stop_time_for_observation_window = self.place.sunrise_time(
-                        target_date=target_date
+                    # For night observations, the stop time is sunrise of the *next* day
+                    self.stop = self.place.sunrise_time(
+                        target_date=target_date + timedelta(days=1)
                     )
         else:
             # Legacy behavior: use place.date
             self.effective_ephem_date = self.place.date
             if sun_observation:
-                self.start_time_for_observation_window = self.place.sunrise_time()
-                self.stop_time_for_observation_window = self.place.sunset_time()
+                self.start = self.place.sunrise_time()
+                self.stop = self.place.sunset_time()
             else:
-                self.start_time_for_observation_window = self.place.sunset_time()
-                self.stop_time_for_observation_window = self.place.sunrise_time()
+                self.start = self.place.sunset_time()
+                self.stop = self.place.sunrise_time()
             # self.observation_local_time remains None for legacy mode
 
         # Normalize start and stop dates for the observation window
         if (
-            self.start_time_for_observation_window is not None
-            and self.stop_time_for_observation_window is not None
+            self.start is not None
+            and self.stop is not None
         ):
             self.start, self.stop = self._normalize_dates(
-                self.start_time_for_observation_window,
-                self.stop_time_for_observation_window,
+                self.start,
+                self.stop,
             )
         # If not, self.start and self.stop remain None
 
-        # Instantiate Messier and Planets objects
+        # Instantiate Messier and SolarObjects objects
         self.local_messier = Messier(self.place)
-        self.local_planets = Planets(self.place)
+        self.local_planets = SolarObjects(self.place)
 
-        # Compute Messier and Planets data if an effective date was determined
+        # Compute Messier and SolarObjects data if an effective date was determined
         if self.effective_ephem_date is not None:
             self.local_messier.compute(calculation_date=self.effective_ephem_date)
             self.local_planets.compute(calculation_date=self.effective_ephem_date)
@@ -406,10 +405,11 @@ class Observation:
             return fig
 
     def _normalize_dates(self, start, stop):
-        now = datetime.now(timezone.utc).astimezone(self.place.local_timezone)
-        new_start = start if start < stop else now
-        new_stop = stop
-        return (new_start, new_stop)
+        # If the stop time is earlier than the start time, it means the observation
+        # spans across midnight, so we add one day to the stop time.
+        if stop < start:
+            stop += timedelta(days=1)
+        return (start, stop)
 
     def plot_weather(
         self, dark_mode_override: Optional[bool] = None, **args
@@ -493,7 +493,7 @@ class Observation:
                 ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style
             )
             Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-            ax.set_title("Planets Altitude", color=style["TEXT_COLOR"])
+            ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
             return fig
 
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
@@ -509,7 +509,11 @@ class Observation:
             altitude = planet[ObjectTableLabels.ALTITUDE]
             size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
-            marker_size = size * 0.5 + 8
+
+            # Normalize size for plotting
+            plot_size = numpy.log1p(size)
+            marker_size = plot_size * 2 + 8
+
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
@@ -542,7 +546,7 @@ class Observation:
             ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style
         )
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-        ax.set_title("Planets Altitude", color=style["TEXT_COLOR"])
+        ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
 
         # Simple legend if needed (e.g. if colors vary by planet type, which they don't here)
         # handles = [lines.Line2D([0], [0], marker='o', color='w', label='Planet', markerfacecolor=planet_scatter_color or 'blue', markersize=10)]
@@ -638,7 +642,7 @@ class Observation:
                         + template_content[style_end_pos:]
                     )
             template = Template(template_content)
-            hourly_weather, timezone = self.get_hourly_weather_analysis()
+            hourly_weather = self.get_hourly_weather_analysis()
             data = {
                 "title": "APTS",
                 "start": Utils.format_date(self.start),
@@ -652,7 +656,7 @@ class Observation:
                 "lat": numpy.rad2deg(self.place.lat),
                 "lon": numpy.rad2deg(self.place.lon),
                 "hourly_weather": hourly_weather,
-                "timezone": timezone,
+                "timezone": self.place.local_timezone,
             }
             return str(template.substitute(data))
 
@@ -858,17 +862,18 @@ class Observation:
             self.place.get_weather()
             if self.place.weather is None: # Still None after trying to fetch
                 logger.warning("get_hourly_weather_analysis: Weather data unavailable after fetch attempt.")
-                return [] # Or raise an error, depending on desired behavior for critical failure
+                return [] # Return empty list
 
         # Ensure start, stop, and time_limit are valid
         if not all([self.start, self.stop, self.time_limit]):
             logger.warning("get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined.")
-            return [], None
+            return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
         # Filter data further by self.time_limit
         # The time_limit is the exclusive end point for the observation window.
-        hourly_data = hourly_data[hourly_data.time < self.time_limit]
+        hourly_data = hourly_data[hourly_data.time <= self.time_limit]
+        logger.debug(f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}")
 
         analysis_results = []
 
@@ -924,4 +929,4 @@ class Observation:
                 "wind_speed": row.windSpeed,
             })
 
-        return analysis_results, self.place.local_timezone
+        return analysis_results
