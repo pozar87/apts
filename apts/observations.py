@@ -862,17 +862,17 @@ class Observation:
             self.place.get_weather()
             if self.place.weather is None: # Still None after trying to fetch
                 logger.warning("get_hourly_weather_analysis: Weather data unavailable after fetch attempt.")
-                return [], self.place.local_timezone # Return empty list and timezone
+                return [] # Return empty list
 
         # Ensure start, stop, and time_limit are valid
         if not all([self.start, self.stop, self.time_limit]):
             logger.warning("get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined.")
-            return [], self.place.local_timezone
+            return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
         # Filter data further by self.time_limit
         # The time_limit is the exclusive end point for the observation window.
-        hourly_data = hourly_data[hourly_data.time < self.time_limit]
+        hourly_data = hourly_data[hourly_data.time <= self.time_limit]
         logger.debug(f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}")
 
         analysis_results = []
@@ -929,4 +929,4 @@ class Observation:
                 "wind_speed": row.windSpeed,
             })
 
-        return analysis_results, self.place.local_timezone
+        return analysis_results
