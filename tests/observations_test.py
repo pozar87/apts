@@ -375,6 +375,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
         self.obs.place.weather.download_data.return_value = {"hourly": {"data": []}}
+        # Explicitly mock get_weather method on self.obs.place to ensure it's a mock object
+        self.obs.place.get_weather = MagicMock()
 
 
     def _generate_weather_data(self, num_hours, conditions_met_flags):
@@ -644,6 +646,57 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
+
+    def test_is_weather_good(self):
+        """Test the is_weather_good method."""
+        # Use the self.obs.place and self.obs.place.weather mocks set up in setUp.
+
+        # Test Case 1: All good weather
+        # Assign a fresh mock for place.weather to ensure clean state for this case
+        self.obs.place.weather = MagicMock()
+        num_hours_good = 5
+        mock_weather_df_good = self._generate_weather_data(num_hours_good, [True] * num_hours_good)
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_good
+        self.obs.conditions.min_weather_goodness = 50 # 50% good hours required
+        self.assertTrue(self.obs.is_weather_good())
+        self.obs.place.weather.get_critical_data.assert_called_once() # Verify it was called
+
+        # Test Case 2: Some bad weather, but overall good enough
+        self.obs.place.weather = MagicMock() # Assign a fresh mock for this case
+        num_hours_mixed = 4
+        # 3 good, 1 bad -> 75% good
+        mock_weather_df_mixed = self._generate_weather_data(num_hours_mixed, [True, True, True, False])
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_mixed
+        self.obs.conditions.min_weather_goodness = 70 # 70% good hours required
+        self.assertTrue(self.obs.is_weather_good())
+        self.obs.place.weather.get_critical_data.assert_called_once()
+
+        # Test Case 3: Too much bad weather, overall not good enough
+        self.obs.place.weather = MagicMock() # Assign a fresh mock for this case
+        num_hours_bad_overall = 4
+        # 1 good, 3 bad -> 25% good
+        mock_weather_df_bad_overall = self._generate_weather_data(num_hours_bad_overall, [True, False, False, False])
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_bad_overall
+        self.obs.conditions.min_weather_goodness = 50 # 50% good hours required
+        self.assertFalse(self.obs.is_weather_good())
+        self.obs.place.weather.get_critical_data.assert_called_once()
+
+        # Test Case 4: No weather data initially (self.obs.place.weather is None)
+        self.obs.place.weather = None # Simulate no weather data initially
+        self.obs.place.get_weather.reset_mock() # Reset mock to count calls for this specific case
+
+        # Mock get_weather to set weather data when called
+        mock_weather_fetched = MagicMock()
+        def mock_get_weather_side_effect():
+            self.obs.place.weather = mock_weather_fetched # Set the weather mock when get_weather is called
+            mock_weather_fetched.get_critical_data.return_value = self._generate_weather_data(1, [True])
+
+        self.obs.place.get_weather.side_effect = mock_get_weather_side_effect
+
+        # Call is_weather_good, it should trigger get_weather
+        self.assertTrue(self.obs.is_weather_good())
+        self.obs.place.get_weather.assert_called_once()
+        mock_weather_fetched.get_critical_data.assert_called_once() # Verify critical data was called after fetch
 
 
 class TestSunObservation(unittest.TestCase):
