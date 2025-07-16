@@ -76,16 +76,20 @@ class Place(ephem.Observer):
             logger.warning(f"Exception {type(e).__name__} for {obj.name} rising with start_date {start}. Location: {self.name} ({self.lat_decimal}, {self.lon_decimal}). Returning None.")
             return None
 
-    def sunset_time(self, target_date=None):
-        if target_date:
+    def sunset_time(self, target_date=None, start_search_from: Optional[ephem.Date] = None):
+        if start_search_from:
+            start_date = start_search_from
+        elif target_date:
             dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
             start_date = ephem.Date(dt_utc)
         else:
             start_date = self.date
         return self._next_setting_time(self.sun, start=start_date)
 
-    def sunrise_time(self, target_date=None):
-        if target_date:
+    def sunrise_time(self, target_date=None, start_search_from: Optional[ephem.Date] = None):
+        if start_search_from:
+            start_date = start_search_from
+        elif target_date:
             dt_utc = datetime.datetime.combine(target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc))
             start_date = ephem.Date(dt_utc)
         else:

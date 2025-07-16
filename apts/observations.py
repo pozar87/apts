@@ -39,6 +39,8 @@ class Observation:
         target_date=None,
         offset_to_sunset_minutes=0,
         sun_observation=False,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
     ):
         self.place = place
         self.equipment = equipment
@@ -52,7 +54,12 @@ class Observation:
         self.stop = None
         self.time_limit = None
 
-        if target_date:
+        if sun_observation and start_time and end_time:
+            self.start = start_time
+            self.stop = end_time
+            self.effective_ephem_date = start_time # Use start_time as effective date for calculations
+            self.observation_local_time = start_time # Use start_time as local observation time
+        elif target_date:
             # New behavior: use target_date and offset
             event = "sunrise" if sun_observation else "sunset"
             local_dt_obs_time, ephem_dt_obs_time = (
@@ -84,7 +91,7 @@ class Observation:
                     )
                     # For night observations, the stop time is sunrise of the *next* day
                     self.stop = self.place.sunrise_time(
-                        target_date=target_date + timedelta(days=1)
+                        start_search_from=self.start
                     )
         else:
             # Legacy behavior: use place.date
