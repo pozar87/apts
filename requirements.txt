@@ -1,6 +1,7 @@
 aenum>=2.0.6
 ephem>=3.7.6.0
 skyfield
+scipy
 matplotlib>=2.1.2
 numpy>=1.14.0
 pandas>=0.22.0
