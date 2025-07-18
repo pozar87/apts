@@ -2,6 +2,8 @@ import ephem
 import pandas as pd
 from datetime import datetime, timedelta
 from itertools import combinations
+from . import searches
+from .catalogs import Catalogs
 
 class AstronomicalEvents:
     def __init__(self, place, start_date, end_date):
@@ -16,6 +18,8 @@ class AstronomicalEvents:
         self.calculate_conjunctions()
         self.calculate_oppositions()
         self.calculate_meteor_showers()
+        self.calculate_highest_altitudes()
+        self.calculate_lunar_occultations()
         return pd.DataFrame(self.events)
 
     def calculate_moon_phases(self):
@@ -89,3 +93,12 @@ class AstronomicalEvents:
                 peak_date = datetime(year, dates['peak'][0], dates['peak'][1])
                 if self.start_date <= peak_date <= self.end_date:
                     self.events.append({'date': peak_date, 'event': f'{shower} Meteor Shower (Peak)'})
+
+    def calculate_highest_altitudes(self):
+        for planet in [ephem.Mercury(), ephem.Venus()]:
+            time, alt = searches.find_highest_altitude(self.place, planet, self.start_date, self.end_date)
+            if time:
+                self.events.append({'date': time, 'event': f'Highest altitude of {planet.name}'})
+
+    def calculate_lunar_occultations(self):
+        self.events.extend(searches.find_lunar_occultations(self.place, Catalogs.BRIGHT_STARS, self.start_date, self.end_date))
