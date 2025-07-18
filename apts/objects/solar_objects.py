@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from skyfield.api import load, Topos
+import ephem
 import numpy
 import pandas
 import pint
@@ -14,94 +14,108 @@ from apts.place import Place
 class SolarObjects(Objects):
     def __init__(self, place):
         super(SolarObjects, self).__init__(place)
-        self.ts = load.timescale()
-        self.eph = load('de421.bsp')
-        self.earth = self.eph['earth']
-        self.sun = self.eph['sun']
-        self.moon = self.eph['moon']
-        self.mercury = self.eph['mercury']
-        self.venus = self.eph['venus']
-        self.mars = self.eph['mars']
-        self.jupiter = self.eph['jupiter barycenter']
-        self.saturn = self.eph['saturn barycenter']
-        self.uranus = self.eph['uranus barycenter']
-        self.neptune = self.eph['neptune barycenter']
-
-        self.planets = [
-            self.mercury,
-            self.venus,
-            self.mars,
-            self.jupiter,
-            self.saturn,
-            self.uranus,
-            self.neptune,
-            self.moon,
-            self.sun,
-        ]
-
-        self.planet_names = [
-            'Mercury',
-            'Venus',
-            'Mars',
-            'Jupiter',
-            'Saturn',
-            'Uranus',
-            'Neptune',
-            'Moon',
-            'Sun',
-        ]
-
+        # Init object list with all planets
         self.objects = pandas.DataFrame(
-            {
-                ObjectTableLabels.NAME: self.planet_names,
-                ObjectTableLabels.EPHEM: self.planets,
-            }
+            [
+                ephem.Mercury(),
+                ephem.Venus(),
+                ephem.Mars(),
+                ephem.Jupiter(),
+                ephem.Saturn(),
+                ephem.Uranus(),
+                ephem.Neptune(),
+                ephem.Moon(),
+                ephem.Sun(),
+            ],
+            columns=[ObjectTableLabels.EPHEM],
         )
+        # Add name
+        self.objects[ObjectTableLabels.NAME] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: body.Ephem.name, axis=1)
+        # Set proper dtype for string columns
+        self.objects[ObjectTableLabels.NAME] = self.objects[
+            ObjectTableLabels.NAME
+        ].astype("string")
+        # Compute positions
         self.compute()
 
     def compute(self, calculation_date=None):
         if calculation_date:
-            t = self.ts.utc(calculation_date)
+            # Instantiate as Place object
+            temp_observer = Place(lat=self.place.lat_decimal,
+                                  lon=self.place.lon_decimal,
+                                  elevation=self.place.elevation,
+                                  name=self.place.name + "_temp") # Add name to avoid issues if Place requires it
+
+            # Copy relevant attributes
+            # lat, lon, elevation are set by Place constructor
+            # local_timezone is determined by Place constructor based on lon/lat
+            temp_observer.pressure = self.place.pressure
+            temp_observer.temp = self.place.temp
+            temp_observer.horizon = self.place.horizon
+
+            # Set the date
+            temp_observer.date = ephem.Date(calculation_date)
+
+            # Recompute sun and moon for the new date
+            temp_observer.sun = ephem.Sun()
+            temp_observer.sun.compute(temp_observer)
+            temp_observer.moon = ephem.Moon()
+            temp_observer.moon.compute(temp_observer)
+
+            observer_to_use = temp_observer
         else:
-            t = self.ts.now()
+            observer_to_use = self.place
 
-        observer = self.earth + Topos(latitude_degrees=self.place.lat_decimal,
-                                     longitude_degrees=self.place.lon_decimal,
-                                     elevation_m=self.place.elevation)
-
-        def compute_properties(planet):
-            astrometric = observer.at(t).observe(planet)
-            ra, dec, distance = astrometric.radec()
-            alt, az, _ = astrometric.altaz()
-
-            # Placeholder for magnitude, size, elongation, phase
-            # Skyfield does not directly provide these for all bodies in the same way as ephem.
-            # This would require more complex calculations or external data.
-            magnitude = 0
-            size = 0
-            elongation = 0
-            phase = 0
-
-            return pandas.Series({
-                ObjectTableLabels.RA: ra.hours * ureg.hour,
-                ObjectTableLabels.DEC: dec.degrees * ureg.degree,
-                ObjectTableLabels.DISTANCE: distance.au * ureg.AU,
-                ObjectTableLabels.ALTITUDE: alt.degrees * ureg.degree,
-                ObjectTableLabels.MAGNITUDE: magnitude * ureg.mag,
-                ObjectTableLabels.SIZE: size * ureg.arcsecond,
-                ObjectTableLabels.ELONGATION: elongation * ureg.degree,
-                ObjectTableLabels.PHASE: phase * ureg.dimensionless,
-                # Rising, setting, and transit times require a search over time,
-                # which is more involved than this compute function.
-                # These are placeholders.
-                ObjectTableLabels.RISING: t.utc_datetime(),
-                ObjectTableLabels.SETTING: t.utc_datetime(),
-                ObjectTableLabels.TRANSIT: t.utc_datetime(),
-            })
-
-        props = self.objects[ObjectTableLabels.EPHEM].apply(compute_properties)
-        self.objects = self.objects.join(props)
-
+        # Compute transit of planets at given place
+        self.objects[ObjectTableLabels.TRANSIT] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: self._compute_tranzit(body.Ephem, observer_to_use), axis=1)
+        # Compute rising of planets at given place
+        self.objects[ObjectTableLabels.RISING] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: self._compute_rising(body.Ephem, observer_to_use), axis=1)
+        # Compute transit of planets at given place
+        self.objects[ObjectTableLabels.SETTING] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: self._compute_setting(body.Ephem, observer_to_use), axis=1)
+        # Compute altitude of planets at transit (at given place)
+        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
+            [ObjectTableLabels.EPHEM, ObjectTableLabels.TRANSIT]
+        ].apply(
+            lambda body: self._altitude_at_transit(body.Ephem, body.Transit, observer_to_use), axis=1
+        )
+        # Calculate planets magnitude
+        self.objects[ObjectTableLabels.MAGNITUDE] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: body.Ephem.mag * ureg.mag, axis=1)
+        # Calculate planets RA
+        self.objects[ObjectTableLabels.RA] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(
+            lambda body: numpy.degrees(body.Ephem.ra) * 24 / 360 * ureg.hour, axis=1
+        )
+        # Calculate planets Dec
+        self.objects[ObjectTableLabels.DEC] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: numpy.degrees(body.Ephem.dec) * ureg.degree, axis=1)
+        # Calculate planets distance from Earth
+        self.objects[ObjectTableLabels.DISTANCE] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: body.Ephem.earth_distance * ureg.AU, axis=1)
+        # Calculate planets size
+        self.objects[ObjectTableLabels.SIZE] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: body.Ephem.size * ureg.arcsecond, axis=1)
+        # Calculate planets elongation
+        self.objects[ObjectTableLabels.ELONGATION] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: numpy.degrees(body.Ephem.elong) * ureg.degree, axis=1)
+        # Calculate planets phase
+        self.objects[ObjectTableLabels.PHASE] = self.objects[
+            [ObjectTableLabels.EPHEM]
+        ].apply(lambda body: body.Ephem.phase * ureg.dimensionless, axis=1)
 
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
