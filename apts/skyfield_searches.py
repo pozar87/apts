@@ -1,7 +1,49 @@
 from skyfield.api import load
-from skyfield import almanac
 import numpy as np
 import pandas as pd
+
+def find_extrema(f, t0, t1, num_points=5000):
+    """
+    Finds the extrema of a function f over the interval [t0, t1]
+    by finding the sign changes in its derivative.
+    Returns a list of tuples (time, value, is_max).
+    """
+    ts = load.timescale()
+    times = ts.linspace(t0, t1, num_points)
+
+    values = f(times)
+    deriv = np.gradient(values)
+
+    # Find sign changes in the derivative
+    sign_changes = np.where(np.diff(np.sign(deriv)))[0]
+
+    extrema = []
+    for i in sign_changes:
+        t_extremum = times[i]
+        v_extremum = values[i]
+        is_max = deriv[i] > 0 and deriv[i+1] < 0
+        extrema.append((t_extremum, v_extremum, is_max))
+
+    return extrema
+
+
+def find_highest_altitude(observer, planet, start_date, end_date):
+    ts = load.timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+
+    def altitude(t):
+        return observer.at(t).observe(planet).apparent().altaz()[0].degrees
+
+    extrema = find_extrema(altitude, t0, t1)
+    maxima = [e for e in extrema if e[2]]
+
+    if not maxima:
+        return None, 0
+
+    highest = max(maxima, key=lambda x: x[1])
+    return highest[0].utc_datetime(), highest[1]
+
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     ts = load.timescale()
@@ -14,14 +56,12 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
 
-    distance_to_sun.rough_period = 365.0 if 'barycenter' in planet_name else 27.0
-
-    t, y = almanac.find_extrema(t0, t1, distance_to_sun)
+    extrema = find_extrema(distance_to_sun, t0, t1)
 
     events = []
-    for ti, yi in zip(t, y):
-        event_type = 'Aphelion' if yi else 'Perihelion'
-        events.append({'date': ti.utc_datetime(), 'event': f'{planet_name.capitalize()} {event_type}'})
+    for t, v, is_max in extrema:
+        event_type = 'Aphelion' if is_max else 'Perihelion'
+        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} {event_type}'})
 
     return events
 
@@ -37,14 +77,12 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
 
-    distance_to_earth.rough_period = 27.0
-
-    t, y = almanac.find_extrema(t0, t1, distance_to_earth)
+    extrema = find_extrema(distance_to_earth, t0, t1)
 
     events = []
-    for ti, yi in zip(t, y):
-        event_type = 'Apogee' if yi else 'Perigee'
-        events.append({'date': ti.utc_datetime(), 'event': f'Moon {event_type}'})
+    for t, v, is_max in extrema:
+        event_type = 'Apogee' if is_max else 'Perigee'
+        events.append({'date': t.utc_datetime(), 'event': f'Moon {event_type}'})
 
     return events
 
@@ -60,50 +98,46 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
     def separation(t):
         return p1.at(t).separation_from(p2.at(t)).degrees
 
-    separation.rough_period = 180.0
-
-    t, y = almanac.find_minima(t0, t1, separation)
+    extrema = find_extrema(lambda t: -separation(t), t0, t1) # Find maxima of negative separation
 
     events = []
-    for ti, yi in zip(t, y):
-        if yi < 1.0:
-            events.append({'date': ti.utc_datetime(), 'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'})
+    for t, v, is_max in extrema:
+        if is_max and -v < 1.0:
+            events.append({'date': t.utc_datetime(), 'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'})
 
     return events
 
 def find_mercury_inferior_conjunctions(eph, start_date, end_date):
-    ts = load.timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
+    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
-    t, y = almanac.find_discrete(t0, t1, almanac.mercury_inferior_conjunctions(eph))
-
-    events = []
-    for ti in t:
-        events.append({'date': ti.utc_datetime(), 'event': 'Mercury Inferior Conjunction'})
-
-    return events
-
-
-def find_highest_altitude(observer, planet, start_date, end_date):
-    ts = load.timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-
-    def altitude(t):
-        return observer.at(t).observe(planet).apparent().altaz()[0].degrees
-
-    altitude.rough_period = 0.5
-
-    t, y = almanac.find_maxima(t0, t1, altitude)
-
-    if len(t) > 0:
-        max_alt = max(y)
-        max_alt_time = t[np.argmax(y)]
-        return max_alt_time.utc_datetime(), max_alt
-    else:
-        return None, 0
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
-    # This remains a complex problem.
-    return []
+    ts = load.timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    moon = eph['moon']
+
+    events = []
+
+    from skyfield.api import Star
+    for index, star_data in bright_stars.iterrows():
+        star_df = pd.DataFrame({
+            'ra_hours': [star_data['RA'].to('hour').magnitude],
+            'dec_degrees': [star_data['Dec'].to('degree').magnitude],
+            'ra_mas_per_year': [0],
+            'dec_mas_per_year': [0],
+            'parallax_mas': [0],
+            'radial_km_per_s': [0],
+            'epoch_year': [2000.0]
+        }, index=[0])
+        star = Star.from_dataframe(star_df)
+
+        times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
+        for t in times:
+            mpos = eph['earth'].at(t).observe(moon)
+            spos = eph['earth'].at(t).observe(star)
+
+            if mpos.separation_from(spos).degrees < 0.5:
+                events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_data["Name"]}'})
+
+    return events
