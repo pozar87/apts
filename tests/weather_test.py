@@ -10,7 +10,6 @@ from . import setup_place
 from requests_mock import ANY
 from apts.observations import Observation # Import Observation
 from apts.conditions import Conditions # Import Conditions
-import ephem # Import ephem
 import pytz # Import pytz
 
 def test_weather_successful_request(requests_mock):
@@ -181,7 +180,7 @@ def test_plot_weather_calls_sub_plots(requests_mock):
     mock_weather_instance = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
 
     # Use setup_place to get a real Place object, then mock its weather attribute and get_weather method
-    real_place = setup_place() # This creates a Place object with ephem.Observer capabilities
+    real_place = setup_place() # This creates a Place object
     real_place.weather = mock_weather_instance
     real_place.get_weather = MagicMock(return_value=None) # Mock the method
 
