@@ -1,79 +1,49 @@
-import ephem
 import pandas as pd
 from datetime import datetime, timedelta
 from itertools import combinations
 from . import searches
 from .catalogs import Catalogs
+from skyfield.api import load, Topos
 
 class AstronomicalEvents:
     def __init__(self, place, start_date, end_date):
         self.place = place
         self.start_date = start_date
         self.end_date = end_date
+        self.ts = load.timescale()
+        self.eph = load('de421.bsp')
+        self.observer = self.eph['earth'] + Topos(latitude_degrees=self.place.lat_decimal,
+                                                 longitude_degrees=self.place.lon_decimal,
+                                                 elevation_m=self.place.elevation)
         self.events = []
 
     def get_events(self):
         self.calculate_moon_phases()
-        self.calculate_eclipses()
         self.calculate_conjunctions()
-        self.calculate_oppositions()
         self.calculate_meteor_showers()
         self.calculate_highest_altitudes()
         self.calculate_lunar_occultations()
+        self.calculate_aphelion_perihelion()
+        self.calculate_moon_apogee_perigee()
+        self.calculate_mercury_inferior_conjunctions()
         return pd.DataFrame(self.events)
 
     def calculate_moon_phases(self):
-        d = ephem.Date(self.start_date)
-        end_date = ephem.Date(self.end_date)
-        while d < end_date:
-            d = ephem.next_new_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'New Moon'})
-            d = ephem.next_first_quarter_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'First Quarter Moon'})
-            d = ephem.next_full_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'Full Moon'})
-            d = ephem.next_last_quarter_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'Last Quarter Moon'})
+        t0 = self.ts.utc(self.start_date)
+        t1 = self.ts.utc(self.end_date)
 
-    def calculate_eclipses(self):
-        #This is a placeholder as the ephem library does not directly support eclipse calculations.
-        pass
+        # Skyfield's almanac for moon phases is reliable
+        from skyfield import almanac
+        t, y = almanac.find_discrete(t0, t1, almanac.moon_phases(self.eph))
+
+        phase_names = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter']
+        for ti, yi in zip(t, y):
+            self.events.append({'date': ti.utc_datetime(), 'event': phase_names[yi]})
 
     def calculate_conjunctions(self):
-        planets = [ephem.Mercury(), ephem.Venus(), ephem.Mars(), ephem.Jupiter(), ephem.Saturn(), ephem.Uranus(), ephem.Neptune()]
-        moon = ephem.Moon()
-
-        # Planet-Planet conjunctions
-        for p1, p2 in combinations(planets, 2):
-            d = ephem.Date(self.start_date)
-            end_date = ephem.Date(self.end_date)
-            while d < end_date:
-                d_next = d + 1
-                p1.compute(d)
-                p2.compute(d)
-
-                p1_next = p1.copy()
-                p2_next = p2.copy()
-
-                p1_next.compute(d_next)
-                p2_next.compute(d_next)
-
-                # Check for conjunction
-                if ephem.separation(p1, p2) < ephem.separation(p1_next, p2_next):
-                    # We are moving away from conjunction, so check if the closest approach was within this interval
-                    # This is a simplified approach, a more robust solution would involve root-finding or optimization
-                    if ephem.separation(p1, p2) < 1 * ephem.degree:
-                        self.events.append({'date': ephem.Date(d).datetime(), 'event': f'{p1.name} conjunct {p2.name}'})
-                d = d_next
-
-    def calculate_oppositions(self):
-        #This is a placeholder as the ephem library does not directly support opposition calculations.
-        pass
-
+        planets = ['mercury', 'venus', 'mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter']
+        for p1_name, p2_name in combinations(planets, 2):
+            self.events.extend(searches.find_conjunctions(self.eph, p1_name, p2_name, self.start_date, self.end_date))
 
     def calculate_meteor_showers(self):
         # Data from https://www.amsmeteors.org/meteor-showers/meteor-shower-calendar/
@@ -95,10 +65,21 @@ class AstronomicalEvents:
                     self.events.append({'date': peak_date, 'event': f'{shower} Meteor Shower (Peak)'})
 
     def calculate_highest_altitudes(self):
-        for planet in [ephem.Mercury(), ephem.Venus()]:
-            time, alt = searches.find_highest_altitude(self.place, planet, self.start_date, self.end_date)
+        for planet_name in ['mercury', 'venus']:
+            time, alt = searches.find_highest_altitude(self.observer, self.eph[planet_name], self.start_date, self.end_date)
             if time:
-                self.events.append({'date': time, 'event': f'Highest altitude of {planet.name}'})
+                self.events.append({'date': time, 'event': f'Highest altitude of {planet_name.capitalize()}'})
 
     def calculate_lunar_occultations(self):
-        self.events.extend(searches.find_lunar_occultations(self.place, Catalogs.BRIGHT_STARS, self.start_date, self.end_date))
+        self.events.extend(searches.find_lunar_occultations(self.observer, self.eph, Catalogs.BRIGHT_STARS, self.start_date, self.end_date))
+
+    def calculate_aphelion_perihelion(self):
+        planets = ['mercury', 'venus', 'mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter', 'moon']
+        for planet_name in planets:
+            self.events.extend(searches.find_aphelion_perihelion(self.eph, planet_name, self.start_date, self.end_date))
+
+    def calculate_moon_apogee_perigee(self):
+        self.events.extend(searches.find_moon_apogee_perigee(self.eph, self.start_date, self.end_date))
+
+    def calculate_mercury_inferior_conjunctions(self):
+        self.events.extend(searches.find_mercury_inferior_conjunctions(self.eph, self.start_date, self.end_date))
