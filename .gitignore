@@ -104,3 +104,6 @@ ENV/
 # Idea
 .idea
 .aider*
+
+# Skyfield data
+de421.bsp

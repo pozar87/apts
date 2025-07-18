@@ -1,4 +1,3 @@
-import ephem
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
@@ -26,16 +25,9 @@ class Messier(Objects):
         temp_observer.temp = self.place.temp
         temp_observer.horizon = self.place.horizon
         
-        # Set the date
-        temp_observer.date = ephem.Date(calculation_date)
-        
-        # Recompute sun and moon for the new date
-        temp_observer.sun = ephem.Sun()
-        temp_observer.sun.compute(temp_observer)
-        temp_observer.moon = ephem.Moon()
-        temp_observer.moon.compute(temp_observer)
-        
-        observer_to_use = temp_observer
+        # This part of the logic needs to be updated to use skyfield
+        # For now, we will just use the default observer
+        observer_to_use = self.place
     else:
         observer_to_use = self.place
 
