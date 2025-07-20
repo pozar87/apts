@@ -112,11 +112,11 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
     def separation(t):
         return p1.at(t).separation_from(p2.at(t)).degrees
 
-    extrema = find_extrema(lambda t: -separation(t), t0, t1) # Find maxima of negative separation
+    extrema = find_extrema(separation, t0, t1)
 
     events = []
     for t, v, is_max in extrema:
-        if is_max and -v < 1.0:
+        if not is_max and v < 5.0: # Look for minima with separation < 5 degrees
             events.append({'date': t.utc_datetime(), 'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'})
 
     return events

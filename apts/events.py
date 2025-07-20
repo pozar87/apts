@@ -1,7 +1,9 @@
 import ephem
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import combinations
+
+utc = timezone.utc
 from . import skyfield_searches
 from .catalogs import Catalogs
 from skyfield.api import load, Topos
@@ -89,7 +91,7 @@ class AstronomicalEvents:
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, dates in showers.items():
-                peak_date = datetime(year, dates['peak'][0], dates['peak'][1])
+                peak_date = datetime(year, dates['peak'][0], dates['peak'][1], tzinfo=utc)
                 if self.start_date <= peak_date <= self.end_date:
                     self.events.append({'date': peak_date, 'event': f'{shower} Meteor Shower (Peak)'})
 

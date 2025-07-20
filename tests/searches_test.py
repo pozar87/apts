@@ -11,7 +11,7 @@ class SearchesTest(unittest.TestCase):
         self.eph = load('de421.bsp')
         self.observer = self.eph['earth'] + Topos(latitude_degrees=52.2, longitude_degrees=21.0)
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
-        self.end_date = datetime(2023, 1, 31, tzinfo=utc) # shorter time for faster tests
+        self.end_date = datetime(2023, 12, 31, tzinfo=utc) # shorter time for faster tests
 
     def test_find_highest_altitude(self):
         time, alt = searches.find_highest_altitude(self.observer, self.eph['venus'], self.start_date, self.end_date)
