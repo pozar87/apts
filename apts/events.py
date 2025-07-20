@@ -25,11 +25,11 @@ class AstronomicalEvents:
         self.calculate_conjunctions_ephem()
         self.calculate_oppositions_ephem()
         self.calculate_meteor_showers()
-        self.calculate_highest_altitudes_skyfield()
-        self.calculate_lunar_occultations_skyfield()
-        self.calculate_aphelion_perihelion_skyfield()
-        self.calculate_moon_apogee_perigee_skyfield()
-        self.calculate_mercury_inferior_conjunctions_skyfield()
+        #self.calculate_highest_altitudes_skyfield()
+        #self.calculate_lunar_occultations_skyfield()
+        #self.calculate_aphelion_perihelion_skyfield()
+        #self.calculate_moon_apogee_perigee_skyfield()
+        #self.calculate_mercury_inferior_conjunctions_skyfield()
         return pd.DataFrame(self.events)
 
     def calculate_moon_phases_ephem(self):
