@@ -14,8 +14,8 @@ class Messier(Objects):
   def compute(self, calculation_date=None):
     if calculation_date:
         # Instantiate as Place object
-        temp_observer = Place(lat=self.place.lat_decimal, 
-                              lon=self.place.lon_decimal, 
+        temp_observer = Place(lat=self.place.lat_decimal,
+                              lon=self.place.lon_decimal,
                               elevation=self.place.elevation,
                               name=self.place.name + "_temp") # Add name to avoid issues if Place requires it
 
@@ -25,16 +25,16 @@ class Messier(Objects):
         temp_observer.pressure = self.place.pressure
         temp_observer.temp = self.place.temp
         temp_observer.horizon = self.place.horizon
-        
+
         # Set the date
         temp_observer.date = ephem.Date(calculation_date)
-        
+
         # Recompute sun and moon for the new date
         temp_observer.sun = ephem.Sun()
         temp_observer.sun.compute(temp_observer)
         temp_observer.moon = ephem.Moon()
         temp_observer.moon.compute(temp_observer)
-        
+
         observer_to_use = temp_observer
     else:
         observer_to_use = self.place
