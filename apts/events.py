@@ -7,6 +7,7 @@ utc = timezone.utc
 from . import skyfield_searches
 from .catalogs import Catalogs
 from skyfield.api import load, Topos
+from skyfield import almanac
 
 class AstronomicalEvents:
     def __init__(self, place, start_date, end_date):
@@ -21,7 +22,7 @@ class AstronomicalEvents:
         self.events = []
 
     def get_events(self):
-        self.calculate_moon_phases_ephem()
+        self.calculate_moon_phases_skyfield()
         self.calculate_conjunctions_ephem()
         self.calculate_oppositions_ephem()
         self.calculate_meteor_showers()
@@ -32,22 +33,13 @@ class AstronomicalEvents:
         self.calculate_mercury_inferior_conjunctions_skyfield()
         return pd.DataFrame(self.events)
 
-    def calculate_moon_phases_ephem(self):
-        d = ephem.Date(self.start_date)
-        end_date = ephem.Date(self.end_date)
-        while d < end_date:
-            d = ephem.next_new_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'New Moon'})
-            d = ephem.next_first_quarter_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'First Quarter Moon'})
-            d = ephem.next_full_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'Full Moon'})
-            d = ephem.next_last_quarter_moon(d)
-            if d > end_date: break
-            self.events.append({'date': d.datetime(), 'event': 'Last Quarter Moon'})
+    def calculate_moon_phases_skyfield(self):
+        t0 = self.ts.utc(self.start_date)
+        t1 = self.ts.utc(self.end_date)
+        which_phase = almanac.moon_phases(self.eph)
+        t, y = almanac.find_discrete(t0, t1, which_phase)
+        for ti, yi in zip(t, y):
+            self.events.append({'date': ti.utc_datetime(), 'event': almanac.MOON_PHASES[yi]})
 
     def calculate_conjunctions_ephem(self):
         planets = [ephem.Mercury(), ephem.Venus(), ephem.Mars(), ephem.Jupiter(), ephem.Saturn(), ephem.Uranus(), ephem.Neptune()]
