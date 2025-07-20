@@ -106,3 +106,36 @@ class AstronomicalEvents:
 
     def calculate_mercury_inferior_conjunctions_skyfield(self):
         self.events.extend(skyfield_searches.find_mercury_inferior_conjunctions(self.eph, self.start_date, self.end_date))
+
+    def calculate_moon_messier_conjunctions_skyfield(self):
+        messier_objects_to_check = [
+            'M1', 'M2', 'M3', 'M4', 'M5', 'M8', 'M9', 'M10', 'M11', 'M12', 'M14', 'M15', 'M16', 'M17', 'M18', 'M19',
+            'M20', 'M21', 'M22', 'M23', 'M24', 'M25', 'M26', 'M27', 'M28', 'M30', 'M35', 'M41', 'M42', 'M43', 'M44',
+            'M45', 'M46', 'M47', 'M48', 'M49', 'M50', 'M53', 'M54', 'M55', 'M58', 'M59', 'M60', 'M61', 'M62', 'M64',
+            'M65', 'M66', 'M67', 'M68', 'M71', 'M72', 'M73', 'M74', 'M75', 'M77', 'M78', 'M79', 'M80', 'M83', 'M84',
+            'M85', 'M86', 'M87', 'M88', 'M89', 'M90', 'M91', 'M93', 'M95', 'M96', 'M98', 'M99', 'M100', 'M104', 'M105',
+            'M107'
+        ]
+        
+        messier_df = Catalogs.MESSIER[Catalogs.MESSIER['Messier'].isin(messier_objects_to_check)]
+
+        for index, messier_data in messier_df.iterrows():
+            # Create a Star object for the Messier object
+            messier_star = Star.from_dataframe(pd.DataFrame({
+                'ra_hours': [messier_data['RA'].to('hour').magnitude],
+                'dec_degrees': [messier_data['Dec'].to('degree').magnitude],
+                'ra_mas_per_year': [0],
+                'dec_mas_per_year': [0],
+                'parallax_mas': [0],
+                'radial_km_per_s': [0],
+                'epoch_year': [2000.0]
+            }, index=[0]))
+
+            conjunctions = skyfield_searches.find_conjunctions_with_star(
+                self.eph, 'moon', messier_star, self.start_date, self.end_date, threshold_degrees=1.0
+            )
+            for conj in conjunctions:
+                self.events.append({
+                    'date': conj['date'],
+                    'event': f'Moon conjunct {messier_data["Messier"]} (sep: {conj["separation_degrees"]:.2f} deg)'
+                })
