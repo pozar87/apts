@@ -14,8 +14,17 @@ class EventsTest(unittest.TestCase):
 
     def test_moon_phases(self):
         events_df = self.events.get_events()
-        self.assertIn('New Moon', events_df['event'].values)
-        self.assertIn('Full Moon', events_df['event'].values)
+
+        # New Moons within January 1, 2023, to March 15, 2023:
+        #  - January 21, 2023
+        #  - February 20, 2023
+        self.assertEqual(sum(events_df['event'] == 'New Moon'), 2)
+
+        # Full Moons within January 1, 2023, to March 15, 2023:
+        #  - January 6, 2023
+        #  - February 5, 2023
+        #  - March 7, 2023
+        self.assertEqual(sum(events_df['event'] == 'Full Moon'), 3)
 
     def test_eclipses(self):
         events_df = self.events.get_events()
