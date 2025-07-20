@@ -117,10 +117,20 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     t1 = ts.utc(end_date)
     moon = eph['moon']
 
+    target_stars = [
+        "Sirius", "Arcturus", "Rigel", "Procyon", "Betelgeuse", "Altair",
+        "Aldebaran", "Antares", "Spica", "Pollux", "Fomalhaut", "Regulus",
+        "Adhara", "Bellatrix", "El Nath", "Alnilam", "Alnitak", "Wezen",
+        "Alhena", "Mirzam", "Alphard", "Hamal", "Beta Tauri"
+    ]
+
     events = []
 
     from skyfield.api import Star
-    for index, star_data in bright_stars.iterrows():
+    stars_to_check = bright_stars[bright_stars['Name'].str.strip().isin(target_stars)]
+
+    star_objects = []
+    for index, star_data in stars_to_check.iterrows():
         star_df = pd.DataFrame({
             'ra_hours': [star_data['RA'].to('hour').magnitude],
             'dec_degrees': [star_data['Dec'].to('degree').magnitude],
@@ -130,14 +140,16 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
             'radial_km_per_s': [0],
             'epoch_year': [2000.0]
         }, index=[0])
-        star = Star.from_dataframe(star_df)
+        star_objects.append((star_data['Name'], Star.from_dataframe(star_df)))
 
-        times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
-        for t in times:
-            mpos = eph['earth'].at(t).observe(moon)
+    times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
+
+    for t in times:
+        mpos = eph['earth'].at(t).observe(moon)
+        for star_name, star in star_objects:
             spos = eph['earth'].at(t).observe(star)
 
             if mpos.separation_from(spos).degrees < 0.5:
-                events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_data["Name"]}'})
+                events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_name}'})
 
     return events
