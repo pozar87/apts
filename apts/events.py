@@ -1,4 +1,3 @@
-import ephem
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
@@ -23,8 +22,8 @@ class AstronomicalEvents:
 
     def get_events(self):
         self.calculate_moon_phases_skyfield()
-        self.calculate_conjunctions_ephem()
-        self.calculate_oppositions_ephem()
+        self.calculate_conjunctions_skyfield()
+        self.calculate_oppositions_skyfield()
         self.calculate_meteor_showers()
         self.calculate_highest_altitudes_skyfield()
         self.calculate_lunar_occultations_skyfield()
@@ -41,33 +40,22 @@ class AstronomicalEvents:
         for ti, yi in zip(t, y):
             self.events.append({'date': ti.utc_datetime(), 'event': almanac.MOON_PHASES[yi]})
 
-    def calculate_conjunctions_ephem(self):
-        planets = [ephem.Mercury(), ephem.Venus(), ephem.Mars(), ephem.Jupiter(), ephem.Saturn(), ephem.Uranus(), ephem.Neptune()]
-        moon = ephem.Moon()
+    def calculate_conjunctions_skyfield(self):
+        planets = ['mercury', 'venus', 'mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter']
+        moon = 'moon'
 
         # Planet-Planet conjunctions
         for p1, p2 in combinations(planets, 2):
-            d = ephem.Date(self.start_date)
-            end_date = ephem.Date(self.end_date)
-            while d < end_date:
-                d_next = d + 1
-                p1.compute(d)
-                p2.compute(d)
+            self.events.extend(skyfield_searches.find_conjunctions(self.eph, p1, p2, self.start_date, self.end_date))
 
-                p1_next = p1.copy()
-                p2_next = p2.copy()
+        # Planet-Moon conjunctions
+        for p in planets:
+            self.events.extend(skyfield_searches.find_conjunctions(self.eph, p, moon, self.start_date, self.end_date))
 
-                p1_next.compute(d_next)
-                p2_next.compute(d_next)
-
-                if ephem.separation(p1, p2) < ephem.separation(p1_next, p2_next):
-                    if ephem.separation(p1, p2) < 1 * ephem.degree:
-                        self.events.append({'date': ephem.Date(d).datetime(), 'event': f'{p1.name} conjunct {p2.name}'})
-                d = d_next
-
-    def calculate_oppositions_ephem(self):
-        #This is a placeholder as the ephem library does not directly support opposition calculations.
-        pass
+    def calculate_oppositions_skyfield(self):
+        planets = ['mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter']
+        for p in planets:
+            self.events.extend(skyfield_searches.find_oppositions(self.eph, p, self.start_date, self.end_date))
 
     def calculate_meteor_showers(self):
         showers = {
