@@ -107,6 +107,30 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 
     return events
 
+
+def find_oppositions(eph, planet_name, start_date, end_date):
+    ts = load.timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+
+    planet = eph[planet_name]
+    sun = eph['sun']
+    earth = eph['earth']
+
+    def ecliptic_longitude_difference(t):
+        planet_lon = earth.at(t).observe(planet).ecliptic_latlon()[1].degrees
+        sun_lon = earth.at(t).observe(sun).ecliptic_latlon()[1].degrees
+        return abs(planet_lon - sun_lon)
+
+    extrema = find_extrema(lambda t: -abs(ecliptic_longitude_difference(t) - 180), t0, t1)
+
+    events = []
+    for t, v, is_max in extrema:
+        if is_max:
+            events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} at opposition'})
+
+    return events
+
 def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
