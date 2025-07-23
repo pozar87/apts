@@ -110,6 +110,28 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
+def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
+    ts = load.timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+
+    body1 = eph[body1_name]
+
+    def separation(t):
+        pos1 = eph['earth'].at(t).observe(body1)
+        pos_star = eph['earth'].at(t).observe(star_object)
+        return pos1.separation_from(pos_star).degrees
+
+    # We are looking for minima of separation, so we find maxima of negative separation
+    extrema = find_extrema(lambda t: -separation(t), t0, t1)
+
+    events = []
+    for t, v, is_max in extrema:
+        # If it's a maximum of negative separation, it's a minimum of positive separation
+        if is_max and -v < threshold_degrees:
+            events.append({'date': t.utc_datetime(), 'separation_degrees': -v})
+
+    return events
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     ts = load.timescale()
