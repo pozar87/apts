@@ -8,6 +8,7 @@ import numpy  # Retained for potential use by other functions if Observation.to_
 from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot, lines
+from skyfield.api import utc
 
 from .conditions import Conditions
 from .objects.messier import Messier
@@ -155,7 +156,7 @@ class Observation:
         )
 
     def get_astronomical_events(self, days=365):
-        start_date = datetime.now()
+        start_date = datetime.now(utc)
         end_date = start_date + timedelta(days=days)
         events = AstronomicalEvents(self.place, start_date, end_date)
         return events.get_events()
