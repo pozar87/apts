@@ -1,8 +1,8 @@
-import ephem
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
 from apts.place import Place
+import numpy
 
 
 class Messier(Objects):
@@ -12,29 +12,17 @@ class Messier(Objects):
     self.compute()
 
   def compute(self, calculation_date=None):
-    if calculation_date:
+    if calculation_date is not None:
+        # It's a Skyfield Time object. If it's an array, use the first element.
+        if hasattr(calculation_date, 'shape') and calculation_date.shape:
+            calculation_date = calculation_date[0]
+
         # Instantiate as Place object
         temp_observer = Place(lat=self.place.lat_decimal,
                               lon=self.place.lon_decimal,
                               elevation=self.place.elevation,
-                              name=self.place.name + "_temp") # Add name to avoid issues if Place requires it
-
-        # Copy relevant attributes
-        # lat, lon, elevation are set by Place constructor
-        # local_timezone is determined by Place constructor based on lon/lat
-        temp_observer.pressure = self.place.pressure
-        temp_observer.temp = self.place.temp
-        temp_observer.horizon = self.place.horizon
-
-        # Set the date
-        temp_observer.date = ephem.Date(calculation_date)
-
-        # Recompute sun and moon for the new date
-        temp_observer.sun = ephem.Sun()
-        temp_observer.sun.compute(temp_observer)
-        temp_observer.moon = ephem.Moon()
-        temp_observer.moon.compute(temp_observer)
-
+                              name=self.place.name + "_temp",
+                              date=calculation_date) # Add name to avoid issues if Place requires it
         observer_to_use = temp_observer
     else:
         observer_to_use = self.place

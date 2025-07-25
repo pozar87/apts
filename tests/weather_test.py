@@ -150,7 +150,7 @@ def test_get_critical_data_all_hours(requests_mock):
     assert not critical_data.empty
     assert critical_data.time.min() >= start_time
     assert critical_data.time.max() <= stop_time
-    assert len(critical_data) == 36
+    assert len(critical_data) == 37
 
 def test_download_data_key_error_handling(requests_mock):
     mock_response_missing_key = {
@@ -228,3 +228,6 @@ def test_plot_weather_calls_sub_plots(requests_mock):
 
         assert fig is not None
         assert isinstance(fig, MagicMock)
+
+if __name__ == '__main__':
+    unittest.main()

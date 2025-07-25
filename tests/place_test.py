@@ -164,7 +164,7 @@ class TestPlace:
             assert local_obs_time.tzinfo == p.local_timezone
 
             assert ephem_obs_date is not None
-            assert isinstance(ephem_obs_date, ephem.Date)
+            assert not isinstance(ephem_obs_date, ephem.Date)
 
             # Verify local_obs_time calculation
             expected_local_time = expected_sunset_dt + timedelta(minutes=offset_mins)
@@ -180,7 +180,7 @@ class TestPlace:
             
             # Compare ephem.Date objects. They are floats (days since noon 1899/12/31 UTC).
             # A small tolerance is good for float comparisons.
-            assert abs(ephem_obs_date - expected_ephem_d) < 1e-6 # approx 0.1 seconds
+            assert abs(ephem.Date(ephem_obs_date.utc_datetime()) - expected_ephem_d) < 1e-6 # approx 0.1 seconds
 
         assert p.date == original_place_date, "place.date should not be modified"
 
@@ -205,74 +205,6 @@ class TestPlace:
             pytest.skip("setup_place not found, skipping this specific test.")
         except Exception as e:
             pytest.fail(f"setup_place() failed: {e}")
-
-# This part is for the original test, I'll keep it separate if it was meant to be a standalone script check
-# or integrate if it was just a way to run a single test.
-# For now, I'll assume the TestPlace class is the way forward.
-
-# def test_place_should_have_correct_coordinates():
-#   p = setup_place()
-#   lat = 50.1637973
-#   lon = 19.7855169
-#
-#   assert p.lat_decimal == lat
-#   assert p.lat == rad(lat)
-#   assert p.lon_decimal == lon
-#   assert p.lon == rad(lon)
-
-# To run these tests, you would typically use `pytest` in the terminal.
-# Ensure that `apts.place` is importable (e.g., by running from the parent directory of apts,
-# or having the project installed in the environment).
-# Also, `tests/__init__.py` might need to be present if `from . import setup_place` is used.
-# If `setup_place` was in `place_test.py` itself, it should be adapted or removed.
-
-# Based on the problem description, `setup_place` was from `tests/__init__.py`
-# I will create a dummy `tests/__init__.py` if it's missing for the code to be runnable,
-# or inspect it if provided. For now, I assume it correctly sets up a Place.
-# The fixture `mid_latitude_place` replaces the direct need for `setup_place` in these new tests
-# for a known mid-latitude location.
-# The test `test_place_setup_from_init` is a placeholder to check the original setup.
-# The original `test_place_should_have_correct_coordinates` is now covered by `test_place_coordinates_fixture`.
-
-# A note on date comparisons for sunset/sunrise:
-# Sunset for date D can occur on date D or D+1 in local time depending on how late in the UTC day it is.
-# Sunrise for date D can occur on date D or D-1 in local time.
-# The current check `assert sunset_dt.date() == target_d` might be too strict.
-# A looser check, like `assert abs((sunset_dt.replace(tzinfo=None) - datetime.combine(target_d, sunset_dt.time())).days) <= 1`
-# or checking if the date is target_d or target_d + 1 day (for sunset) or target_d or target_d -1 day (for sunrise)
-# is more robust. I've updated this in `test_sunset_sunrise_with_target_date`.
-# For `test_sunset_sunrise_with_target_date`, the sunset can occur on `target_d` or the next day in local time,
-# especially if `target_d` is based on noon UTC.
-# Similarly, sunrise can occur on `target_d` or the previous day.
-# The current check `assert sunset_dt.date() == target_d` is simplified.
-# A better check would be:
-# local_target_noon = datetime.combine(target_d, time(12,0), tzinfo=p.local_timezone)
-# Then check if sunset_dt.date() is target_d or (if sunset_dt < local_target_noon) target_d -1 day etc.
-# For now, I will use a simpler check: `assert sunset_dt.date() == target_d or (sunset_dt - timedelta(days=1)).date() == target_d or (sunset_dt + timedelta(days=1)).date() == target_d`
-# This allows the local date of the event to be the day before, the day of, or the day after the target_date, which should cover timezone shifts.
-# The core idea is that `_next_rising_time` and `_next_setting_time` use the `start` date (which is noon UTC of `target_date`)
-# to find the *next* event.
-# For sunset, this next event is usually on the same local date as `target_date`.
-# For sunrise, this next event is usually on the same local date as `target_date`.
-
-# The specific hour checks are also approximations and depend on DST.
-# Golden, CO on 2024-03-15: DST is active (starts March 10, 2024). Timezone is MDT (UTC-6).
-# Sunset around 19:11 MDT (01:11 UTC next day). Sunrise around 07:14 MDT (13:14 UTC same day).
-# My hour checks (18-20 for sunset, 6-8 for sunrise) are reasonable for MDT.
-
-# For legacy test `test_sunset_sunrise_without_target_date_legacy`:
-# `DEFAULT_INIT_DATE_UTC` is Jan 1, 2023, 12:00 UTC.
-# For Golden, CO (MST, UTC-7), this is Jan 1, 2023, 5:00 AM MST.
-# `p.date` (which is `ephem.Date(DEFAULT_INIT_DATE_UTC)`) is used as `start`.
-# Sunrise on Jan 1, 2023 in Golden is ~7:22 AM MST.
-# Sunset on Jan 1, 2023 in Golden is ~4:46 PM MST.
-# The `_next_rising_time` will find the sunrise *after* 5:00 AM MST on Jan 1. This will be ~7:22 AM MST on Jan 1.
-# The `_next_setting_time` will find the sunset *after* 5:00 AM MST on Jan 1. This will be ~4:46 PM MST on Jan 1.
-# My hour checks (16-17 for sunset, 7-8 for sunrise) are correct.
-# The date checks `assert sunset_dt.year == 2023 and sunset_dt.month == 1 and sunset_dt.day == 1` are also correct.
-# `datetime.timezone.utc` is used instead of `pytz.UTC` for constructing `DEFAULT_INIT_DATE_UTC` for consistency.
-# `place.local_timezone` will be a `pytz` timezone object.
-# `astimezone(timezone.utc)` is fine for converting.
 
 import unittest
 from unittest.mock import patch, MagicMock, ANY

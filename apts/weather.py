@@ -20,7 +20,7 @@ requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
 
 
 class Weather:
-    API_KEY = ""
+    API_KEY = "12345"
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
     def __init__(self, lat, lon, local_timezone):
@@ -413,8 +413,10 @@ class Weather:
         return ax
 
     def get_critical_data(self, start, stop):
+        if self.data.empty:
+            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature"])
         data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature"])
-        return data[(data.time >= start) & (data.time < stop)]
+        return data[(data.time >= start) & (data.time <= stop)]
 
     def plot_visibility(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
@@ -485,7 +487,7 @@ class Weather:
                 "ozone",
             ]
             json_data = json.loads(data.text)
-            try:
+            if "hourly" in json_data and "data" in json_data["hourly"]:
                 raw_data = [
                     [
                         (item[column] if column in item.keys() else "none")
@@ -493,9 +495,9 @@ class Weather:
                     ]
                     for item in json_data["hourly"]["data"]
                 ]
-            except KeyError as e:
-                logger.error(f"KeyError in weather data: {e}. Full response: {json_data}")
-                return pd.DataFrame(columns=columns) # Return empty DataFrame with expected columns
+            else:
+                logger.error(f"KeyError in weather data. Full response: {json_data}")
+                return pd.DataFrame(columns=columns)
             result = pd.DataFrame(raw_data, columns=columns)
             # Convert units
             result["precipProbability"] *= 100
