@@ -21,18 +21,18 @@ class AstronomicalEvents:
         self.events = []
 
     def get_events(self):
-        self.calculate_moon_phases_skyfield()
-        self.calculate_conjunctions_skyfield()
-        self.calculate_oppositions_skyfield()
+        self.calculate_moon_phases()
+        self.calculate_conjunctions()
+        self.calculate_oppositions()
         self.calculate_meteor_showers()
-        self.calculate_highest_altitudes_skyfield()
-        self.calculate_lunar_occultations_skyfield()
-        self.calculate_aphelion_perihelion_skyfield()
-        self.calculate_moon_apogee_perigee_skyfield()
-        self.calculate_mercury_inferior_conjunctions_skyfield()
-        return pd.DataFrame(self.events)
+        self.calculate_highest_altitudes()
+        self.calculate_lunar_occultations()
+        self.calculate_aphelion_perihelion()
+        self.calculate_moon_apogee_perigee()
+        self.calculate_mercury_inferior_conjunctions()
+        return pd.DataFrame(self.events).sort_values(by='date')
 
-    def calculate_moon_phases_skyfield(self):
+    def calculate_moon_phases(self):
         t0 = self.ts.utc(self.start_date)
         t1 = self.ts.utc(self.end_date)
         which_phase = almanac.moon_phases(self.eph)
@@ -40,7 +40,7 @@ class AstronomicalEvents:
         for ti, yi in zip(t, y):
             self.events.append({'date': ti.utc_datetime(), 'event': almanac.MOON_PHASES[yi]})
 
-    def calculate_conjunctions_skyfield(self):
+    def calculate_conjunctions(self):
         planets = ['mercury', 'venus', 'mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter']
         moon = 'moon'
 
@@ -52,7 +52,7 @@ class AstronomicalEvents:
         for p in planets:
             self.events.extend(skyfield_searches.find_conjunctions(self.eph, p, moon, self.start_date, self.end_date))
 
-    def calculate_oppositions_skyfield(self):
+    def calculate_oppositions(self):
         planets = ['mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter']
         for p in planets:
             self.events.extend(skyfield_searches.find_oppositions(self.eph, p, self.start_date, self.end_date))
@@ -75,22 +75,22 @@ class AstronomicalEvents:
                 if self.start_date <= peak_date <= self.end_date:
                     self.events.append({'date': peak_date, 'event': f'{shower} Meteor Shower (Peak)'})
 
-    def calculate_highest_altitudes_skyfield(self):
+    def calculate_highest_altitudes(self):
         for planet_name in ['mercury', 'venus']:
             time, alt = skyfield_searches.find_highest_altitude(self.observer, self.eph[planet_name], self.start_date, self.end_date)
             if time:
                 self.events.append({'date': time, 'event': f'Highest altitude of {planet_name.capitalize()}'})
 
-    def calculate_lunar_occultations_skyfield(self):
+    def calculate_lunar_occultations(self):
         self.events.extend(skyfield_searches.find_lunar_occultations(self.observer, self.eph, Catalogs.BRIGHT_STARS, self.start_date, self.end_date))
 
-    def calculate_aphelion_perihelion_skyfield(self):
+    def calculate_aphelion_perihelion(self):
         planets = ['mercury', 'venus', 'mars', 'jupiter barycenter', 'saturn barycenter', 'uranus barycenter', 'neptune barycenter', 'moon']
         for planet_name in planets:
             self.events.extend(skyfield_searches.find_aphelion_perihelion(self.eph, planet_name, self.start_date, self.end_date))
 
-    def calculate_moon_apogee_perigee_skyfield(self):
+    def calculate_moon_apogee_perigee(self):
         self.events.extend(skyfield_searches.find_moon_apogee_perigee(self.eph, self.start_date, self.end_date))
 
-    def calculate_mercury_inferior_conjunctions_skyfield(self):
+    def calculate_mercury_inferior_conjunctions(self):
         self.events.extend(skyfield_searches.find_mercury_inferior_conjunctions(self.eph, self.start_date, self.end_date))
