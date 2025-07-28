@@ -46,6 +46,7 @@ class AstronomicalEvents:
                 {
                     "date": ti.utc_datetime().astimezone(utc),
                     "event": almanac.MOON_PHASES[yi],
+                    "type": "Moon Phase",
                 }
             )
 
@@ -63,19 +64,21 @@ class AstronomicalEvents:
 
         # Planet-Planet conjunctions
         for p1, p2 in combinations(planets, 2):
-            self.events.extend(
-                skyfield_searches.find_conjunctions(
-                    self.eph, p1, p2, self.start_date, self.end_date
-                )
+            events = skyfield_searches.find_conjunctions(
+                self.eph, p1, p2, self.start_date, self.end_date
             )
+            for event in events:
+                event["type"] = "Conjunction"
+            self.events.extend(events)
 
         # Planet-Moon conjunctions
         for p in planets:
-            self.events.extend(
-                skyfield_searches.find_conjunctions(
-                    self.eph, p, moon, self.start_date, self.end_date
-                )
+            events = skyfield_searches.find_conjunctions(
+                self.eph, p, moon, self.start_date, self.end_date
             )
+            for event in events:
+                event["type"] = "Conjunction"
+            self.events.extend(events)
 
     def calculate_oppositions(self):
         planets = [
@@ -86,11 +89,12 @@ class AstronomicalEvents:
             "neptune barycenter",
         ]
         for p in planets:
-            self.events.extend(
-                skyfield_searches.find_oppositions(
-                    self.eph, p, self.start_date, self.end_date
-                )
+            events = skyfield_searches.find_oppositions(
+                self.eph, p, self.start_date, self.end_date
             )
+            for event in events:
+                event["type"] = "Opposition"
+            self.events.extend(events)
 
     def calculate_meteor_showers(self):
         showers = {
@@ -114,6 +118,7 @@ class AstronomicalEvents:
                         {
                             "date": peak_date.astimezone(utc),
                             "event": f"{shower} Meteor Shower (Peak)",
+                            "type": "Meteor Shower",
                         }
                     )
 
@@ -127,19 +132,21 @@ class AstronomicalEvents:
                     {
                         "date": time.astimezone(utc),
                         "event": f"Highest altitude of {planet_name.capitalize()}",
+                        "type": "Planet Altitude",
                     }
                 )
 
     def calculate_lunar_occultations(self):
-        self.events.extend(
-            skyfield_searches.find_lunar_occultations(
-                self.observer,
-                self.eph,
-                Catalogs.BRIGHT_STARS,
-                self.start_date,
-                self.end_date,
-            )
+        events = skyfield_searches.find_lunar_occultations(
+            self.observer,
+            self.eph,
+            Catalogs.BRIGHT_STARS,
+            self.start_date,
+            self.end_date,
         )
+        for event in events:
+            event["type"] = "Lunar Occultation"
+        self.events.extend(events)
 
     def calculate_aphelion_perihelion(self):
         planets = [
@@ -158,21 +165,24 @@ class AstronomicalEvents:
             )
             for event_dict in events_from_search:
                 event_dict["date"] = event_dict["date"].astimezone(utc)
+                event_dict["type"] = "Aphelion/Perihelion"
                 self.events.append(event_dict)
 
     def calculate_moon_apogee_perigee(self):
-        self.events.extend(
-            skyfield_searches.find_moon_apogee_perigee(
-                self.eph, self.start_date, self.end_date
-            )
+        events = skyfield_searches.find_moon_apogee_perigee(
+            self.eph, self.start_date, self.end_date
         )
+        for event in events:
+            event["type"] = "Moon Apogee/Perigee"
+        self.events.extend(events)
 
     def calculate_mercury_inferior_conjunctions(self):
-        self.events.extend(
-            skyfield_searches.find_mercury_inferior_conjunctions(
-                self.eph, self.start_date, self.end_date
-            )
+        events = skyfield_searches.find_mercury_inferior_conjunctions(
+            self.eph, self.start_date, self.end_date
         )
+        for event in events:
+            event["type"] = "Inferior Conjunction"
+        self.events.extend(events)
 
     def calculate_moon_messier_conjunctions(self):
         messier_objects_to_check = [
@@ -288,5 +298,6 @@ class AstronomicalEvents:
                     {
                         "date": conj["date"].astimezone(utc),
                         "event": f"Moon conjunct {messier_data['Messier']} (sep: {conj['separation_degrees']:.2f} deg)",
+                        "type": "Moon-Messier Conjunction",
                     }
                 )
