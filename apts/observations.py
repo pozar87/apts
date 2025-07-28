@@ -155,9 +155,21 @@ class Observation:
             self.conditions, self.start, self.time_limit, **args
         )
 
-    def get_astronomical_events(self, days=365):
-        start_date = datetime.now(utc)
-        end_date = start_date + timedelta(days=days)
+    def get_astronomical_events(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ):
+        if start_date is None:
+            start_date = self.start
+        if end_date is None:
+            end_date = self.stop
+
+        if start_date is None:
+            start_date = datetime.now(utc)
+        if end_date is None:
+            end_date = start_date + timedelta(days=365)
+
         events = AstronomicalEvents(self.place, start_date, end_date)
         return events.get_events()
 
