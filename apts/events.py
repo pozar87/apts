@@ -208,7 +208,6 @@ class AstronomicalEvents:
         ]
 
         for index, messier_data in messier_df.iterrows():
-            # Create a Star object for the Messier object
             messier_star = Star.from_dataframe(
                 pd.DataFrame(
                     {

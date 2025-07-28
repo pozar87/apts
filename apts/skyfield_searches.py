@@ -11,7 +11,15 @@ def find_extrema(f, t0, t1, num_points=5000):
     ts = load.timescale()
     times = ts.linspace(t0, t1, num_points)
 
-    values = f(times)
+    values = np.array([f(t) for t in times])
+    values = np.squeeze(values)
+
+    if values.ndim == 0:
+        return []
+
+    if values.shape[0] < 2:
+        return []
+
     deriv = np.gradient(values)
 
     # Find sign changes in the derivative
@@ -143,6 +151,8 @@ def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_da
 
     def separation(t):
         pos1 = eph['earth'].at(t).observe(body1)
+        if hasattr(t, 'shape') and t.shape:
+            star_object.epoch = t.tt
         pos_star = eph['earth'].at(t).observe(star_object)
         return pos1.separation_from(pos_star).degrees
 
