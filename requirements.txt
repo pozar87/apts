@@ -1,5 +1,4 @@
 aenum>=2.0.6
-ephem>=3.7.6.0
 skyfield
 scipy
 matplotlib>=2.1.2

@@ -60,21 +60,25 @@ class SolarObjects(Objects):
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.TRANSIT] = self.objects[
             [ObjectTableLabels.OBJECT]
-        ].apply(lambda body: self._compute_tranzit(body.Ephem, observer_to_use), axis=1)
+        ].apply(
+            lambda body: self._compute_tranzit(body.Object, observer_to_use), axis=1
+        )
         # Compute rising of planets at given place
         self.objects[ObjectTableLabels.RISING] = self.objects[
             [ObjectTableLabels.OBJECT]
-        ].apply(lambda body: self._compute_rising(body.Ephem, observer_to_use), axis=1)
+        ].apply(lambda body: self._compute_rising(body.Object, observer_to_use), axis=1)
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.SETTING] = self.objects[
             [ObjectTableLabels.OBJECT]
-        ].apply(lambda body: self._compute_setting(body.Ephem, observer_to_use), axis=1)
+        ].apply(
+            lambda body: self._compute_setting(body.Object, observer_to_use), axis=1
+        )
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.OBJECT, ObjectTableLabels.TRANSIT]
         ].apply(
             lambda body: self._altitude_at_transit(
-                body.Ephem, body.Transit, observer_to_use
+                body.Object, body.Transit, observer_to_use
             ),
             axis=1,
         )
@@ -84,7 +88,7 @@ class SolarObjects(Objects):
         self.objects[ObjectTableLabels.MAGNITUDE] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: almanac.oppositions_conjunctions(self.eph, body.Ephem)(t)
+            lambda body: almanac.oppositions_conjunctions(self.eph, body.Object)(t)
             if body.name != "Sun" and body.name != "Moon"
             else 0,
             axis=1,
@@ -93,14 +97,17 @@ class SolarObjects(Objects):
         self.objects[ObjectTableLabels.RA] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.at(t).observe(self.place.observer).radec()[0].hours,
+            lambda body: body.Object.at(t)
+            .observe(self.place.observer)
+            .radec()[0]
+            .hours,
             axis=1,
         )
         # Calculate planets Dec
         self.objects[ObjectTableLabels.DEC] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.at(t)
+            lambda body: body.Object.at(t)
             .observe(self.place.observer)
             .radec()[1]
             .degrees,
@@ -110,21 +117,21 @@ class SolarObjects(Objects):
         self.objects[ObjectTableLabels.DISTANCE] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.at(t).observe(self.place.observer).distance().au,
+            lambda body: body.Object.at(t).observe(self.place.observer).distance().au,
             axis=1,
         )
         # Calculate planets size
         self.objects[ObjectTableLabels.SIZE] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.radius.km if hasattr(body.Ephem, "radius") else 0,
+            lambda body: body.Object.radius.km if hasattr(body.Object, "radius") else 0,
             axis=1,
         )
         # Calculate planets elongation
         self.objects[ObjectTableLabels.ELONGATION] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.at(t)
+            lambda body: body.Object.at(t)
             .observe(self.place.observer)
             .separation_from(self.place.sun.at(t))
             .degrees,
@@ -134,7 +141,7 @@ class SolarObjects(Objects):
         self.objects[ObjectTableLabels.PHASE] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: body.Ephem.at(t)
+            lambda body: body.Object.at(t)
             .observe(self.place.observer)
             .phase_angle(self.place.sun)
             .degrees,

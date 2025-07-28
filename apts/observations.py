@@ -49,7 +49,7 @@ class Observation:
         self.sun_observation = sun_observation
 
         # Initialize core attributes that depend on date calculations
-        self.effective_ephem_date = None
+        self.effective_date = None
         self.observation_local_time = None
         self.start = None
         self.stop = None
@@ -58,8 +58,12 @@ class Observation:
         if sun_observation and start_time and end_time:
             self.start = start_time
             self.stop = end_time
-            self.effective_ephem_date = start_time # Use start_time as effective date for calculations
-            self.observation_local_time = start_time # Use start_time as local observation time
+            self.effective_date = (
+                start_time  # Use start_time as effective date for calculations
+            )
+            self.observation_local_time = (
+                start_time  # Use start_time as local observation time
+            )
         elif target_date:
             # New behavior: use target_date and offset
             event = "sunrise" if sun_observation else "sunset"
@@ -77,26 +81,18 @@ class Observation:
                 )
                 # Attributes remain None, subsequent operations should handle this
             else:
-                self.effective_ephem_date = ephem_dt_obs_time
+                self.effective_date = ephem_dt_obs_time
                 self.observation_local_time = local_dt_obs_time
                 if sun_observation:
-                    self.start = self.place.sunrise_time(
-                        target_date=target_date
-                    )
-                    self.stop = self.place.sunset_time(
-                        target_date=target_date
-                    )
+                    self.start = self.place.sunrise_time(target_date=target_date)
+                    self.stop = self.place.sunset_time(target_date=target_date)
                 else:
-                    self.start = self.place.sunset_time(
-                        target_date=target_date
-                    )
+                    self.start = self.place.sunset_time(target_date=target_date)
                     # For night observations, the stop time is sunrise of the *next* day
-                    self.stop = self.place.sunrise_time(
-                        start_search_from=self.start
-                    )
+                    self.stop = self.place.sunrise_time(start_search_from=self.start)
         else:
             # Legacy behavior: use place.date
-            self.effective_ephem_date = self.place.date
+            self.effective_date = self.place.date
             if sun_observation:
                 self.start = self.place.sunrise_time()
                 self.stop = self.place.sunset_time()
@@ -106,10 +102,7 @@ class Observation:
             # self.observation_local_time remains None for legacy mode
 
         # Normalize start and stop dates for the observation window
-        if (
-            self.start is not None
-            and self.stop is not None
-        ):
+        if self.start is not None and self.stop is not None:
             self.start, self.stop = self._normalize_dates(
                 self.start,
                 self.stop,
@@ -121,9 +114,9 @@ class Observation:
         self.local_planets = SolarObjects(self.place)
 
         # Compute Messier and SolarObjects data if an effective date was determined
-        if self.effective_ephem_date is not None:
-            self.local_messier.compute(calculation_date=self.effective_ephem_date)
-            self.local_planets.compute(calculation_date=self.effective_ephem_date)
+        if self.effective_date is not None:
+            self.local_messier.compute(calculation_date=self.effective_date)
+            self.local_planets.compute(calculation_date=self.effective_date)
         # Else: Objects are instantiated but not computed with a specific date.
         # Their get_visible methods should handle self.start being None.
 
@@ -534,7 +527,6 @@ class Observation:
             plot_size = numpy.log1p(size)
             marker_size = plot_size * 2 + 8
 
-
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
             )
@@ -787,38 +779,84 @@ class Observation:
             # The plot_clouds method itself will need to be dark_mode aware.
             # The plot_clouds method itself (and others from weather.py) will use their own dark_mode_override logic.
             # The effective_dark_mode is passed to them to ensure consistency.
-            plt_clouds_ax = self.place.weather.plot_clouds(ax=axes[0, 0], dark_mode_override=effective_dark_mode)
-            if plt_clouds_ax: self._mark_observation(plt_clouds_ax, effective_dark_mode, style)
-            if plt_clouds_ax: self._mark_good_conditions(plt_clouds_ax, 0, self.conditions.max_clouds, effective_dark_mode, style)
+            plt_clouds_ax = self.place.weather.plot_clouds(
+                ax=axes[0, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_clouds_ax:
+                self._mark_observation(plt_clouds_ax, effective_dark_mode, style)
+            if plt_clouds_ax:
+                self._mark_good_conditions(
+                    plt_clouds_ax,
+                    0,
+                    self.conditions.max_clouds,
+                    effective_dark_mode,
+                    style,
+                )
 
             logger.debug("Plotting clouds summary...")
-            self.place.weather.plot_clouds_summary(ax=axes[0, 1], dark_mode_override=effective_dark_mode)
+            self.place.weather.plot_clouds_summary(
+                ax=axes[0, 1], dark_mode_override=effective_dark_mode
+            )
 
             logger.debug("Plotting precipitation...")
-            plt_precip_ax = self.place.weather.plot_precipitation(ax=axes[1, 0], dark_mode_override=effective_dark_mode)
-            if plt_precip_ax: self._mark_observation(plt_precip_ax, effective_dark_mode, style)
-            if plt_precip_ax: self._mark_good_conditions(plt_precip_ax, 0, self.conditions.max_precipitation_probability, effective_dark_mode, style)
+            plt_precip_ax = self.place.weather.plot_precipitation(
+                ax=axes[1, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_precip_ax:
+                self._mark_observation(plt_precip_ax, effective_dark_mode, style)
+            if plt_precip_ax:
+                self._mark_good_conditions(
+                    plt_precip_ax,
+                    0,
+                    self.conditions.max_precipitation_probability,
+                    effective_dark_mode,
+                    style,
+                )
 
             logger.debug("Plotting precipitation type summary...")
-            self.place.weather.plot_precipitation_type_summary(ax=axes[1, 1], dark_mode_override=effective_dark_mode)
+            self.place.weather.plot_precipitation_type_summary(
+                ax=axes[1, 1], dark_mode_override=effective_dark_mode
+            )
 
             logger.debug("Plotting temperature...")
-            plt_temp_ax = self.place.weather.plot_temperature(ax=axes[2, 0], dark_mode_override=effective_dark_mode)
-            if plt_temp_ax: self._mark_observation(plt_temp_ax, effective_dark_mode, style)
-            if plt_temp_ax: self._mark_good_conditions(plt_temp_ax, self.conditions.min_temperature, self.conditions.max_temperature, effective_dark_mode, style)
+            plt_temp_ax = self.place.weather.plot_temperature(
+                ax=axes[2, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_temp_ax:
+                self._mark_observation(plt_temp_ax, effective_dark_mode, style)
+            if plt_temp_ax:
+                self._mark_good_conditions(
+                    plt_temp_ax,
+                    self.conditions.min_temperature,
+                    self.conditions.max_temperature,
+                    effective_dark_mode,
+                    style,
+                )
 
             logger.debug("Plotting wind...")
-            plt_wind_ax = self.place.weather.plot_wind(ax=axes[2, 1], dark_mode_override=effective_dark_mode)
-            if plt_wind_ax: self._mark_observation(plt_wind_ax, effective_dark_mode, style)
-            if plt_wind_ax: self._mark_good_conditions(plt_wind_ax, 0, self.conditions.max_wind, effective_dark_mode, style)
+            plt_wind_ax = self.place.weather.plot_wind(
+                ax=axes[2, 1], dark_mode_override=effective_dark_mode
+            )
+            if plt_wind_ax:
+                self._mark_observation(plt_wind_ax, effective_dark_mode, style)
+            if plt_wind_ax:
+                self._mark_good_conditions(
+                    plt_wind_ax, 0, self.conditions.max_wind, effective_dark_mode, style
+                )
 
             logger.debug("Plotting pressure and ozone...")
-            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(ax=axes[3, 0], dark_mode_override=effective_dark_mode)
-            if plt_pressure_ax: self._mark_observation(plt_pressure_ax, effective_dark_mode, style)
+            plt_pressure_ax = self.place.weather.plot_pressure_and_ozone(
+                ax=axes[3, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_pressure_ax:
+                self._mark_observation(plt_pressure_ax, effective_dark_mode, style)
 
             logger.debug("Plotting visibility...")
-            plt_visibility_ax = self.place.weather.plot_visibility(ax=axes[3, 1], dark_mode_override=effective_dark_mode)
-            if plt_visibility_ax: self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
+            plt_visibility_ax = self.place.weather.plot_visibility(
+                ax=axes[3, 1], dark_mode_override=effective_dark_mode
+            )
+            if plt_visibility_ax:
+                self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
 
             fig.tight_layout()
             logger.info(
@@ -877,20 +915,26 @@ class Observation:
                 "get_hourly_weather_analysis: self.place.weather is None, calling get_weather."
             )
             self.place.get_weather()
-            if self.place.weather is None: # Still None after trying to fetch
-                logger.warning("get_hourly_weather_analysis: Weather data unavailable after fetch attempt.")
-                return [] # Return empty list
+            if self.place.weather is None:  # Still None after trying to fetch
+                logger.warning(
+                    "get_hourly_weather_analysis: Weather data unavailable after fetch attempt."
+                )
+                return []  # Return empty list
 
         # Ensure start, stop, and time_limit are valid
         if not all([self.start, self.stop, self.time_limit]):
-            logger.warning("get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined.")
+            logger.warning(
+                "get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined."
+            )
             return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
         # Filter data further by self.time_limit
         # The time_limit is the exclusive end point for the observation window.
         hourly_data = hourly_data[hourly_data.time <= self.time_limit]
-        logger.debug(f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}")
+        logger.debug(
+            f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}"
+        )
 
         analysis_results = []
 
@@ -936,14 +980,16 @@ class Observation:
                     f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
                 )
 
-            analysis_results.append({
-                "time": current_time,
-                "is_good_hour": is_good_hour,
-                "reasons": reasons,
-                "temperature": row.temperature,
-                "clouds": row.cloudCover,
-                "precipitation": row.precipProbability,
-                "wind_speed": row.windSpeed,
-            })
+            analysis_results.append(
+                {
+                    "time": current_time,
+                    "is_good_hour": is_good_hour,
+                    "reasons": reasons,
+                    "temperature": row.temperature,
+                    "clouds": row.cloudCover,
+                    "precipitation": row.precipProbability,
+                    "wind_speed": row.windSpeed,
+                }
+            )
 
         return analysis_results

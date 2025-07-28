@@ -24,7 +24,7 @@ class AstronomicalEvents:
         self.events = []
 
     def get_events(self):
-        # self.calculate_moon_phases()
+        self.calculate_moon_phases()
         # self.calculate_conjunctions()
         # self.calculate_oppositions()
         # self.calculate_meteor_showers()
