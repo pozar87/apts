@@ -25,15 +25,15 @@ class AstronomicalEvents:
 
     def get_events(self):
         self.calculate_moon_phases()
-        # self.calculate_conjunctions()
-        # self.calculate_oppositions()
-        # self.calculate_meteor_showers()
-        # self.calculate_highest_altitudes()
-        # self.calculate_lunar_occultations()
-        # self.calculate_aphelion_perihelion()
-        # self.calculate_moon_apogee_perigee()
-        # self.calculate_mercury_inferior_conjunctions()
-        # self.calculate_moon_messier_conjunctions()
+        self.calculate_conjunctions()
+        self.calculate_oppositions()
+        self.calculate_meteor_showers()
+        self.calculate_highest_altitudes()
+        self.calculate_lunar_occultations()
+        self.calculate_aphelion_perihelion()
+        self.calculate_moon_apogee_perigee()
+        self.calculate_mercury_inferior_conjunctions()
+        self.calculate_moon_messier_conjunctions()
         return pd.DataFrame(self.events).sort_values(by="date")
 
     def calculate_moon_phases(self):
