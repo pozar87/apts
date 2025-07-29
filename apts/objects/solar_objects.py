@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import numpy
 import pandas
+import ephem
 import pint
 
 from .objects import Objects
@@ -85,14 +86,48 @@ class SolarObjects(Objects):
 
         t = observer_to_use.date
         # Calculate planets magnitude
+        # Define a mapping from Skyfield object names to Pyephem object constructors
+        # This map is local to the compute method as it's only used here.
+        ephem_object_map = {
+            "Mercury": ephem.Mercury,
+            "Venus": ephem.Venus,
+            "Mars": ephem.Mars,
+            "Jupiter barycenter": ephem.Jupiter,  # Pyephem's Jupiter refers to the planet itself
+            "Saturn barycenter": ephem.Saturn,
+            "Uranus barycenter": ephem.Uranus,
+            "Neptune barycenter": ephem.Neptune,
+            "Moon": ephem.Moon,
+            "Sun": ephem.Sun,
+        }
+
+        # Create an ephem observer for the current place and time, once for efficiency
+        ephem_observer = ephem.Observer()
+        # pyephem expects latitude/longitude as strings or floats in degrees
+        ephem_observer.lat = str(observer_to_use.lat_decimal)
+        ephem_observer.lon = str(observer_to_use.lon_decimal)
+        # pyephem expects elevation in meters
+        ephem_observer.elevation = observer_to_use.elevation
+        # pyephem expects a datetime object or ephem.Date
+        ephem_observer.date = t.utc_datetime()
+
+        # Helper function to calculate magnitude using pyephem
+        # This function is defined locally to enclose ephem_observer and ephem_object_map
+        def get_ephem_magnitude(row):
+            object_name = row[ObjectTableLabels.NAME]
+
+            ephem_obj_constructor = ephem_object_map.get(object_name)
+            if ephem_obj_constructor:
+                ephem_obj = ephem_obj_constructor()
+                ephem_obj.compute(ephem_observer)
+                return ephem_obj.mag
+
+            # This case should ideally not be reached if the initial object list is complete
+            # and mapped correctly. Returning numpy.nan for unhandled objects.
+            return numpy.nan
+
         self.objects[ObjectTableLabels.MAGNITUDE] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: almanac.oppositions_conjunctions(self.eph, body.Object)(t)
-            if body.name != "Sun" and body.name != "Moon"
-            else 0,
-            axis=1,
-        )
+            [ObjectTableLabels.NAME]  # We only need the object name for pyephem lookup
+        ].apply(get_ephem_magnitude, axis=1)
         # Calculate planets RA
         self.objects[ObjectTableLabels.RA] = self.objects[
             [ObjectTableLabels.OBJECT]

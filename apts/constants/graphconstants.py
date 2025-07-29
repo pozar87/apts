@@ -64,9 +64,10 @@ class GraphConstants:
         "Venus": "#F0E68C",  # Pale Gold / Cream
         "Mars": "#C1440E",  # Rusty Red
         "Jupiter": "#B08968",  # Tan / Light Brown
-        "Saturn": "#CEB888",  # Pale Yellow / Gold
-        "Uranus": "#7FC9E0",  # Light Sky Blue
-        "Neptune": "#3B71A0",  # Deep Blue
+        "Jupiter barycenter": "#B08968",  # Tan / Light Brown
+        "Saturn barycenter": "#CEB888",  # Pale Yellow / Gold
+        "Uranus barycenter": "#7FC9E0",  # Light Sky Blue
+        "Neptune barycenter": "#3B71A0",  # Deep Blue
     }
 
     PLANET_COLORS_DARK = {
