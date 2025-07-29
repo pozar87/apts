@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 utc = timezone.utc
 from . import skyfield_searches
@@ -38,8 +38,10 @@ class AstronomicalEvents:
                 executor.submit(self.calculate_mercury_inferior_conjunctions),
                 executor.submit(self.calculate_moon_messier_conjunctions),
             ]
-            for future in futures:
+            for future in as_completed(futures):
                 self.events.extend(future.result())
+        if not self.events:
+            return pd.DataFrame(self.events)
         return pd.DataFrame(self.events).sort_values(by="date")
 
     def calculate_moon_phases(self):
@@ -71,23 +73,39 @@ class AstronomicalEvents:
         ]
         moon = "moon"
 
-        # Planet-Planet conjunctions
-        for p1, p2 in combinations(planets, 2):
-            found_events = skyfield_searches.find_conjunctions(
-                self.eph, p1, p2, self.start_date, self.end_date
-            )
-            for event in found_events:
-                event["type"] = "Conjunction"
-            events.extend(found_events)
+        with ThreadPoolExecutor() as executor:
+            # Planet-Planet conjunctions
+            futures = []
+            for p1, p2 in combinations(planets, 2):
+                futures.append(
+                    executor.submit(
+                        skyfield_searches.find_conjunctions,
+                        self.eph,
+                        p1,
+                        p2,
+                        self.start_date,
+                        self.end_date,
+                    )
+                )
 
-        # Planet-Moon conjunctions
-        for p in planets:
-            found_events = skyfield_searches.find_conjunctions(
-                self.eph, p, moon, self.start_date, self.end_date
-            )
-            for event in found_events:
-                event["type"] = "Conjunction"
-            events.extend(found_events)
+            # Planet-Moon conjunctions
+            for p in planets:
+                futures.append(
+                    executor.submit(
+                        skyfield_searches.find_conjunctions,
+                        self.eph,
+                        p,
+                        moon,
+                        self.start_date,
+                        self.end_date,
+                    )
+                )
+
+            for future in as_completed(futures):
+                found_events = future.result()
+                for event in found_events:
+                    event["type"] = "Conjunction"
+                events.extend(found_events)
         return events
 
     def calculate_oppositions(self):
@@ -99,13 +117,22 @@ class AstronomicalEvents:
             "uranus barycenter",
             "neptune barycenter",
         ]
-        for p in planets:
-            found_events = skyfield_searches.find_oppositions(
-                self.eph, p, self.start_date, self.end_date
-            )
-            for event in found_events:
-                event["type"] = "Opposition"
-            events.extend(found_events)
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    skyfield_searches.find_oppositions,
+                    self.eph,
+                    p,
+                    self.start_date,
+                    self.end_date,
+                )
+                for p in planets
+            ]
+            for future in as_completed(futures):
+                found_events = future.result()
+                for event in found_events:
+                    event["type"] = "Opposition"
+                events.extend(found_events)
         return events
 
     def calculate_meteor_showers(self):
@@ -159,18 +186,28 @@ class AstronomicalEvents:
 
     def calculate_highest_altitudes(self):
         events = []
-        for planet_name in ["mercury", "venus"]:
-            time, alt = skyfield_searches.find_highest_altitude(
-                self.observer, self.eph[planet_name], self.start_date, self.end_date
-            )
-            if time:
-                events.append(
-                    {
-                        "date": time.astimezone(utc),
-                        "event": f"Highest altitude of {planet_name.capitalize()}",
-                        "type": "Planet Altitude",
-                    }
-                )
+        with ThreadPoolExecutor() as executor:
+            futures = {
+                executor.submit(
+                    skyfield_searches.find_highest_altitude,
+                    self.observer,
+                    self.eph[planet_name],
+                    self.start_date,
+                    self.end_date,
+                ): planet_name
+                for planet_name in ["mercury", "venus"]
+            }
+            for future in as_completed(futures):
+                planet_name = futures[future]
+                time, alt = future.result()
+                if time:
+                    events.append(
+                        {
+                            "date": time.astimezone(utc),
+                            "event": f"Highest altitude of {planet_name.capitalize()}",
+                            "type": "Planet Altitude",
+                        }
+                    )
         return events
 
     def calculate_lunar_occultations(self):
@@ -197,14 +234,23 @@ class AstronomicalEvents:
             "neptune barycenter",
             "moon",
         ]
-        for planet_name in planets:
-            events_from_search = skyfield_searches.find_aphelion_perihelion(
-                self.eph, planet_name, self.start_date, self.end_date
-            )
-            for event_dict in events_from_search:
-                event_dict["date"] = event_dict["date"].astimezone(utc)
-                event_dict["type"] = "Aphelion/Perihelion"
-                events.append(event_dict)
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    skyfield_searches.find_aphelion_perihelion,
+                    self.eph,
+                    planet_name,
+                    self.start_date,
+                    self.end_date,
+                )
+                for planet_name in planets
+            ]
+            for future in as_completed(futures):
+                events_from_search = future.result()
+                for event_dict in events_from_search:
+                    event_dict["date"] = event_dict["date"].astimezone(utc)
+                    event_dict["type"] = "Aphelion/Perihelion"
+                    events.append(event_dict)
         return events
 
     def calculate_moon_apogee_perigee(self):
@@ -221,6 +267,41 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Inferior Conjunction"
+        return events
+
+    def _calculate_one_moon_messier_conjunction(self, messier_data):
+        messier_star = Star.from_dataframe(
+            pd.DataFrame(
+                {
+                    "ra_hours": [messier_data["RA"].to("hour").magnitude],
+                    "dec_degrees": [messier_data["Dec"].to("degree").magnitude],
+                    "ra_mas_per_year": [0],
+                    "dec_mas_per_year": [0],
+                    "parallax_mas": [0],
+                    "radial_km_per_s": [0],
+                    "epoch_year": [2000.0],
+                },
+                index=[0],
+            )
+        )
+
+        conjunctions = skyfield_searches.find_conjunctions_with_star(
+            self.eph,
+            "moon",
+            messier_star,
+            self.start_date,
+            self.end_date,
+            threshold_degrees=1.0,
+        )
+        events = []
+        for conj in conjunctions:
+            events.append(
+                {
+                    "date": conj["date"].astimezone(utc),
+                    "event": f"Moon conjunct {messier_data['Messier']} (sep: {conj['separation_degrees']:.2f} deg)",
+                    "type": "Moon-Messier Conjunction",
+                }
+            )
         return events
 
     def calculate_moon_messier_conjunctions(self):
@@ -309,36 +390,12 @@ class AstronomicalEvents:
             Catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
         ]
 
-        for index, messier_data in messier_df.iterrows():
-            messier_star = Star.from_dataframe(
-                pd.DataFrame(
-                    {
-                        "ra_hours": [messier_data["RA"].to("hour").magnitude],
-                        "dec_degrees": [messier_data["Dec"].to("degree").magnitude],
-                        "ra_mas_per_year": [0],
-                        "dec_mas_per_year": [0],
-                        "parallax_mas": [0],
-                        "radial_km_per_s": [0],
-                        "epoch_year": [2000.0],
-                    },
-                    index=[0],
-                )
-            )
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self._calculate_one_moon_messier_conjunction, row)
+                for _, row in messier_df.iterrows()
+            ]
+            for future in as_completed(futures):
+                events.extend(future.result())
 
-            conjunctions = skyfield_searches.find_conjunctions_with_star(
-                self.eph,
-                "moon",
-                messier_star,
-                self.start_date,
-                self.end_date,
-                threshold_degrees=1.0,
-            )
-            for conj in conjunctions:
-                events.append(
-                    {
-                        "date": conj["date"].astimezone(utc),
-                        "event": f"Moon conjunct {messier_data['Messier']} (sep: {conj['separation_degrees']:.2f} deg)",
-                        "type": "Moon-Messier Conjunction",
-                    }
-                )
         return events
