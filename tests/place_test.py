@@ -2,6 +2,7 @@ import pytest
 from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
 import datetime as dt_module  # Added alias
+from skyfield.timelib import Time
 
 
 from apts.place import Place
@@ -206,7 +207,7 @@ class TestPlace:
             assert local_obs_time.tzinfo == p.local_timezone
 
             assert obs_date is not None
-            assert isinstance(obs_date, datetime)
+            assert isinstance(obs_date, Time)
 
             # Verify local_obs_time calculation
             expected_local_time = expected_sunset_dt + timedelta(minutes=offset_mins)
