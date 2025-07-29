@@ -13,7 +13,7 @@ from skyfield import almanac
 
 
 class SolarObjects(Objects):
-    def __init__(self, place):
+    def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
         self.eph = load("de421.bsp")
         # Init object list with all planets
@@ -40,7 +40,7 @@ class SolarObjects(Objects):
             ObjectTableLabels.NAME
         ].astype("string")
         # Compute positions
-        self.compute()
+        self.compute(calculation_date)
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:

@@ -108,15 +108,10 @@ class Observation:
         # If not, self.start and self.stop remain None
 
         # Instantiate Messier and SolarObjects objects
-        self.local_messier = Messier(self.place)
-        self.local_planets = SolarObjects(self.place)
-
-        # Compute Messier and SolarObjects data if an effective date was determined
-        if self.effective_date is not None:
-            self.local_messier.compute(calculation_date=self.effective_date)
-            self.local_planets.compute(calculation_date=self.effective_date)
-        # Else: Objects are instantiated but not computed with a specific date.
-        # Their get_visible methods should handle self.start being None.
+        self.local_messier = Messier(self.place, calculation_date=self.effective_date)
+        self.local_planets = SolarObjects(
+            self.place, calculation_date=self.effective_date
+        )
 
         # Compute time limit for observation
         if self.start is not None:
