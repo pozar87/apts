@@ -19,15 +19,15 @@ class SolarObjects(Objects):
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [
-                "MERCURY",
-                "VENUS",
-                "MARS",
-                "JUPITER BARYCENTER",
-                "SATURN BARYCENTER",
-                "URANUS BARYCENTER",
-                "NEPTUNE BARYCENTER",
-                "MOON",
-                "SUN",
+                "Mercury",
+                "Venus",
+                "Mars",
+                "Jupiter barycenter",
+                "Saturn barycenter",
+                "Uranus barycenter",
+                "Neptune barycenter",
+                "Moon",
+                "Sun",
             ],
             columns=[ObjectTableLabels.NAME],
         )

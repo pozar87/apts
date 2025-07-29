@@ -73,10 +73,10 @@ class GraphConstants:
         "Mercury": "#BEBEBE",  # LightGray (brighter than light mode)
         "Venus": "#FFFACD",  # LemonChiffon (brighter pale yellow)
         "Mars": "#E27B58",  # Lighter Rusty Red/Orange
-        "Jupiter": "#D8A976",  # Brighter Tan
-        "Saturn": "#E3D6A8",  # Brighter Pale Gold
-        "Uranus": "#A4D8E8",  # Brighter Light Blue
-        "Neptune": "#5B8FBF",  # Slightly lighter/more saturated Deep Blue
+        "Jupiter barycenter": "#D8A976",  # Brighter Tan
+        "Saturn barycenter": "#E3D6A8",  # Brighter Pale Gold
+        "Uranus barycenter": "#A4D8E8",  # Brighter Light Blue
+        "Neptune barycenter": "#5B8FBF",  # Slightly lighter/more saturated Deep Blue
     }
 
 

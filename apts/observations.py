@@ -542,10 +542,6 @@ class Observation:
                 color=style["TEXT_COLOR"],
             )
 
-        # Ensure xlim and ylim are set after plotting data if not already fixed
-        # ax.set_xlim([self.start - timedelta(minutes=15), self.time_limit + timedelta(minutes=15)]) # This might be too restrictive if planets are outside this
-        # ax.set_ylim(0, 90) # Altitude is usually 0-90
-
         self._mark_observation(ax, effective_dark_mode, style)
         self._mark_good_conditions(
             ax, self.conditions.min_object_altitude, 90, effective_dark_mode, style
@@ -553,14 +549,6 @@ class Observation:
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
         ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
 
-        # Simple legend if needed (e.g. if colors vary by planet type, which they don't here)
-        # handles = [lines.Line2D([0], [0], marker='o', color='w', label='Planet', markerfacecolor=planet_scatter_color or 'blue', markersize=10)]
-        # legend = ax.legend(handles=handles, title="Celestial Objects")
-        # legend.get_frame().set_facecolor(style['AXES_FACE_COLOR'])
-        # legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
-        # legend.get_title().set_color(style['TEXT_COLOR'])
-        # for text in legend.get_texts():
-        # text.set_color(style['TEXT_COLOR'])
         return fig
 
     def plot_planets(self, dark_mode_override: Optional[bool] = None, **args):
