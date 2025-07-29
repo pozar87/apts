@@ -3,8 +3,6 @@ from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
 import datetime as dt_module  # Added alias
 
-import ephem
-import pytz
 
 from apts.place import Place
 
@@ -199,7 +197,7 @@ class TestPlace:
         )
 
         for offset_mins in offsets:
-            local_obs_time, ephem_obs_date = p.get_time_relative_to_event(
+            local_obs_time, obs_date = p.get_time_relative_to_event(
                 target_d, offset_minutes=offset_mins
             )
 
@@ -207,26 +205,12 @@ class TestPlace:
             assert isinstance(local_obs_time, datetime)
             assert local_obs_time.tzinfo == p.local_timezone
 
-            assert ephem_obs_date is not None
-            assert not isinstance(ephem_obs_date, ephem.Date)
+            assert obs_date is not None
+            assert isinstance(obs_date, datetime)
 
             # Verify local_obs_time calculation
             expected_local_time = expected_sunset_dt + timedelta(minutes=offset_mins)
             assert local_obs_time == expected_local_time
-
-            # Verify ephem_obs_date (is UTC)
-            # Convert expected local time to UTC, then to ephem.Date
-            expected_utc_time = expected_local_time.astimezone(timezone.utc)
-            # ephem.Date can take a datetime object (assumed UTC if naive, or converted if aware)
-            # Let's ensure it's UTC and naive for ephem.Date constructor for clarity, or use an aware one.
-            # The current implementation of Place converts to UTC datetime before ephem.Date()
-            expected_ephem_d = ephem.Date(expected_utc_time)
-
-            # Compare ephem.Date objects. They are floats (days since noon 1899/12/31 UTC).
-            # A small tolerance is good for float comparisons.
-            assert (
-                abs(ephem.Date(ephem_obs_date.utc_datetime()) - expected_ephem_d) < 1e-6
-            )  # approx 0.1 seconds
 
         assert p.date == original_place_date, "place.date should not be modified"
 
@@ -234,12 +218,12 @@ class TestPlace:
         p = north_pole_place
         target_d = date(2024, 6, 21)  # Summer solstice, sun always up
 
-        local_obs_time, ephem_obs_date = p.get_time_relative_to_event(
+        local_obs_time, utc_obs_date = p.get_time_relative_to_event(
             target_d, offset_minutes=30
         )
 
         assert local_obs_time is None
-        assert ephem_obs_date is None
+        assert utc_obs_date is None
 
     def test_place_setup_from_init(self):
         """Test the original setup_place function if it's still relevant"""
@@ -334,7 +318,6 @@ class TestPlacePlotting(unittest.TestCase):
                     scenario_data["expected_effective_dark_mode"]
                 )
                 is_dark = scenario_data["expected_effective_dark_mode"]
-
                 mock_ax = MagicMock()
                 mock_fig = MagicMock()
                 mock_fig_patch = MagicMock()
