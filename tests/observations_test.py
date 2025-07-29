@@ -475,7 +475,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_DARK["Mars"], fills_called
                     )
                     self.assertIn(
-                        GraphConstants.PLANET_COLORS_DARK["Jupiter"], fills_called
+                        GraphConstants.PLANET_COLORS_DARK["Jupiter barycenter"],
+                        fills_called,
                     )
                     self.assertIn(
                         expected_style["AXES_FACE_COLOR"], fills_called
@@ -495,7 +496,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_LIGHT["Mars"], fills_called
                     )
                     self.assertIn(
-                        GraphConstants.PLANET_COLORS_LIGHT["Jupiter"], fills_called
+                        GraphConstants.PLANET_COLORS_LIGHT["Jupiter barycenter"],
+                        fills_called,
                     )
                     self.assertIn(
                         expected_style["AXES_FACE_COLOR"], fills_called
@@ -570,13 +572,13 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 if effective_dark_mode:
                     expected_mars_color = GraphConstants.PLANET_COLORS_DARK["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK[
-                        "Jupiter"
+                        "Jupiter barycenter"
                     ]
                     default_color = GraphConstants.DARK_COLORS[OpticalType.GENERIC]
                 else:
                     expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT[
-                        "Jupiter"
+                        "Jupiter barycenter"
                     ]
                     default_color = GraphConstants.COLORS[OpticalType.GENERIC]
 
