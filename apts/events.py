@@ -123,14 +123,35 @@ class AstronomicalEvents:
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, dates in showers.items():
+                start_date = datetime(
+                    year, dates["start"][0], dates["start"][1], tzinfo=utc
+                )
                 peak_date = datetime(
                     year, dates["peak"][0], dates["peak"][1], tzinfo=utc
                 )
+                end_date = datetime(year, dates["end"][0], dates["end"][1], tzinfo=utc)
+
+                if self.start_date <= start_date <= self.end_date:
+                    events.append(
+                        {
+                            "date": start_date.astimezone(utc),
+                            "event": f"{shower} Meteor Shower (Start)",
+                            "type": "Meteor Shower",
+                        }
+                    )
                 if self.start_date <= peak_date <= self.end_date:
                     events.append(
                         {
                             "date": peak_date.astimezone(utc),
                             "event": f"{shower} Meteor Shower (Peak)",
+                            "type": "Meteor Shower",
+                        }
+                    )
+                if self.start_date <= end_date <= self.end_date:
+                    events.append(
+                        {
+                            "date": end_date.astimezone(utc),
+                            "event": f"{shower} Meteor Shower (End)",
                             "type": "Meteor Shower",
                         }
                     )
