@@ -67,13 +67,11 @@ class Observation:
         elif target_date:
             # New behavior: use target_date and offset
             event = "sunrise" if sun_observation else "sunset"
-            local_dt_obs_time, ephem_dt_obs_time = (
-                self.place.get_time_relative_to_event(
-                    target_date, offset_to_sunset_minutes, event=event
-                )
+            local_dt_obs_time, dt_obs_time = self.place.get_time_relative_to_event(
+                target_date, offset_to_sunset_minutes, event=event
             )
 
-            if ephem_dt_obs_time is None:
+            if dt_obs_time is None:
                 logger.warning(
                     f"Could not determine observation time for {self.place.name} "
                     f"on {target_date} with offset {offset_to_sunset_minutes} mins. "
@@ -81,7 +79,7 @@ class Observation:
                 )
                 # Attributes remain None, subsequent operations should handle this
             else:
-                self.effective_date = ephem_dt_obs_time
+                self.effective_date = dt_obs_time
                 self.observation_local_time = local_dt_obs_time
                 if sun_observation:
                     self.start = self.place.sunrise_time(target_date=target_date)

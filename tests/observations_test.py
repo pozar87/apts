@@ -1,54 +1,80 @@
 import os
 import unittest
 import tempfile
-import datetime # Added
-import ephem
+import datetime  # Added
 from datetime import timedelta
 from unittest.mock import patch, mock_open
 import pandas as pd
-from unittest.mock import MagicMock, call # Added MagicMock and call
+from unittest.mock import MagicMock, call  # Added MagicMock and call
 from apts.observations import Observation
-from apts.constants.graphconstants import get_plot_style, OpticalType, GraphConstants # Added GraphConstants
-from apts.constants.objecttablelabels import ObjectTableLabels # Added ObjectTableLabels
-from apts.utils import ureg # Added ureg for Quantity
+from apts.constants.graphconstants import (
+    get_plot_style,
+    OpticalType,
+    GraphConstants,
+)  # Added GraphConstants
+from apts.constants.objecttablelabels import (
+    ObjectTableLabels,
+)  # Added ObjectTableLabels
+from apts.utils import ureg  # Added ureg for Quantity
 from tests import setup_observation
-from apts.conditions import Conditions # Import Conditions at the top level
+from apts.conditions import Conditions  # Import Conditions at the top level
 
 
 # MockPlace and MockEquipment classes are removed
+
 
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
 
         # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
-        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+        if (
+            not hasattr(self.observation.place, "local_timezone")
+            or self.observation.place.local_timezone is None
+        ):
             obs_local_tz = datetime.timezone.utc
         elif isinstance(self.observation.place.local_timezone, str):
-            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+            obs_local_tz = (
+                datetime.timezone.utc
+                if self.observation.place.local_timezone.upper() == "UTC"
+                else self.observation.place.local_timezone
+            )
         else:
             obs_local_tz = self.observation.place.local_timezone
 
         if self.observation.start is None:
-            self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+            self.observation.start = pd.Timestamp(
+                "2025/02/18 18:00:00", tz=obs_local_tz
+            )
 
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
             else:
-                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+                self.observation.stop = pd.Timestamp(
+                    "2025/02/19 02:00:00", tz=obs_local_tz
+                )
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                max_return_values = [
+                    int(value)
+                    for value in self.observation.conditions.max_return.split(":")
+                ]
                 time_limit_dt = self.observation.start.replace(
-                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                    hour=max_return_values[0],
+                    minute=max_return_values[1],
+                    second=max_return_values[2],
                 )
                 self.observation.time_limit = (
-                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                    time_limit_dt
+                    if time_limit_dt > self.observation.start
+                    else time_limit_dt + pd.Timedelta(days=1)
                 )
             else:
-                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+                self.observation.time_limit = pd.Timestamp(
+                    "2025/02/19 02:00:00", tz=obs_local_tz
+                )
 
         self.default_template_content = """<!doctype html>
 <html>
@@ -63,11 +89,23 @@ class TestObservationTemplate(unittest.TestCase):
   </body>
 </html>"""
 
-    @patch('apts.weather.Weather.download_data')
-    @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
+    @patch("apts.weather.Weather.download_data")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
+    )
     def test_to_html_default_template(self, mock_file, mock_download_data):
         """Test that to_html uses the default template when no custom template is provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
+        mock_download_data.return_value = pd.DataFrame(
+            columns=[
+                "time",
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+            ]
+        )
         html = self.observation.to_html()
 
         # Verify that open was called with the default template path
@@ -78,11 +116,23 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
 
-    @patch('apts.weather.Weather.download_data')
-    @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
+    @patch("apts.weather.Weather.download_data")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
+    )
     def test_to_html_custom_template(self, mock_file, mock_download_data):
         """Test that to_html uses a custom template when provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
+        mock_download_data.return_value = pd.DataFrame(
+            columns=[
+                "time",
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+            ]
+        )
         custom_template = "/path/to/custom/template.html"
         html = self.observation.to_html(custom_template=custom_template)
 
@@ -93,11 +143,23 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
 
-    @patch('apts.weather.Weather.download_data')
-    @patch('builtins.open', new_callable=mock_open, read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>")
+    @patch("apts.weather.Weather.download_data")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
+    )
     def test_to_html_custom_css(self, mock_file, mock_download_data):
         """Test that to_html injects custom CSS when provided"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
+        mock_download_data.return_value = pd.DataFrame(
+            columns=[
+                "time",
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+            ]
+        )
         custom_css = "h1 { color: blue; }"
         html = self.observation.to_html(css=custom_css)
 
@@ -105,12 +167,20 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(custom_css, html)
         self.assertIn("body{color:#555;}", html)
 
-    @patch('apts.weather.Weather.download_data')
+    @patch("apts.weather.Weather.download_data")
     def test_to_html_with_actual_template_file(self, mock_download_data):
         """Test to_html with an actual temporary template file"""
-        mock_download_data.return_value = pd.DataFrame(columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature'])
+        mock_download_data.return_value = pd.DataFrame(
+            columns=[
+                "time",
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+            ]
+        )
         # Create a temporary template file
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
             temp_file.write(self.default_template_content)
             temp_path = temp_file.name
 
@@ -136,82 +206,133 @@ class TestObservationPlottingStyles(unittest.TestCase):
         self.observation.conditions.min_object_altitude = 10 * ureg.deg
 
         # Ensure place.local_timezone is tz-aware
-        if not hasattr(self.observation.place, 'local_timezone') or self.observation.place.local_timezone is None:
+        if (
+            not hasattr(self.observation.place, "local_timezone")
+            or self.observation.place.local_timezone is None
+        ):
             obs_local_tz = datetime.timezone.utc
         elif isinstance(self.observation.place.local_timezone, str):
-            obs_local_tz = datetime.timezone.utc if self.observation.place.local_timezone.upper() == 'UTC' else self.observation.place.local_timezone
+            obs_local_tz = (
+                datetime.timezone.utc
+                if self.observation.place.local_timezone.upper() == "UTC"
+                else self.observation.place.local_timezone
+            )
         else:
             obs_local_tz = self.observation.place.local_timezone
 
         if self.observation.start is None:
-             self.observation.start = pd.Timestamp('2025/02/18 18:00:00', tz=obs_local_tz)
+            self.observation.start = pd.Timestamp(
+                "2025/02/18 18:00:00", tz=obs_local_tz
+            )
 
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
             else:
-                self.observation.stop = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+                self.observation.stop = pd.Timestamp(
+                    "2025/02/19 02:00:00", tz=obs_local_tz
+                )
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                max_return_values = [int(value) for value in self.observation.conditions.max_return.split(":")]
+                max_return_values = [
+                    int(value)
+                    for value in self.observation.conditions.max_return.split(":")
+                ]
                 time_limit_dt = self.observation.start.replace(
-                    hour=max_return_values[0], minute=max_return_values[1], second=max_return_values[2]
+                    hour=max_return_values[0],
+                    minute=max_return_values[1],
+                    second=max_return_values[2],
                 )
                 self.observation.time_limit = (
-                    time_limit_dt if time_limit_dt > self.observation.start else time_limit_dt + pd.Timedelta(days=1)
+                    time_limit_dt
+                    if time_limit_dt > self.observation.start
+                    else time_limit_dt + pd.Timedelta(days=1)
                 )
             else:
-                self.observation.time_limit = pd.Timestamp('2025/02/19 02:00:00', tz=obs_local_tz)
+                self.observation.time_limit = pd.Timestamp(
+                    "2025/02/19 02:00:00", tz=obs_local_tz
+                )
 
         # Mock the get_visible_messier to return a non-empty DataFrame
         # to avoid early exit from _generate_plot_messier
         mock_messier_data = {
-            'Messier': ['M1'],
-            'Type': ['Nebula'],
-            'RA': ['05h 34m 31.94s'],
-            'Dec': ['+22° 00′ 52.2″'],
-            'Magnitude': [8.4 * ureg.mag],
-            'Constellation': ['Tau'],
-            'Size': [ureg.arcmin * 6], # Using Quantity for size
-            'Distance': [6.523 * 1000 * ureg.light_year],
-            'Altitude': [45 * ureg.deg], # Using Quantity
-            'Azimuth': [180 * ureg.deg], # Using Quantity
-            'Transit': [pd.Timestamp('2023-01-01 22:00:00', tz='UTC')],
-            'Width': [6.0 * ureg.arcmin], # Using Quantity
-            'Height': [4.0 * ureg.arcmin] # Using Quantity
+            "Messier": ["M1"],
+            "Type": ["Nebula"],
+            "RA": ["05h 34m 31.94s"],
+            "Dec": ["+22° 00′ 52.2″"],
+            "Magnitude": [8.4 * ureg.mag],
+            "Constellation": ["Tau"],
+            "Size": [ureg.arcmin * 6],  # Using Quantity for size
+            "Distance": [6.523 * 1000 * ureg.light_year],
+            "Altitude": [45 * ureg.deg],  # Using Quantity
+            "Azimuth": [180 * ureg.deg],  # Using Quantity
+            "Transit": [pd.Timestamp("2023-01-01 22:00:00", tz="UTC")],
+            "Width": [6.0 * ureg.arcmin],  # Using Quantity
+            "Height": [4.0 * ureg.arcmin],  # Using Quantity
         }
         self.mock_messier_df = pd.DataFrame(mock_messier_data)
         # Ensure DataFrame columns with pint Quantities are correctly typed if needed by the method
         # For _generate_plot_messier, it seems to handle .magnitude internally.
 
         # Mock data for planet color tests
-        self.mock_planets_data_for_color_test = pd.DataFrame({
-            ObjectTableLabels.NAME: ['Mars', 'Jupiter', 'UnknownPlanet'],
-            ObjectTableLabels.TRANSIT: [pd.Timestamp('2023-01-01 22:00:00', tz='UTC')] * 3,
-            ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 3,
-            ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 3,
-            ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 3 # For SVG plot
-        })
+        self.mock_planets_data_for_color_test = pd.DataFrame(
+            {
+                ObjectTableLabels.NAME: ["Mars", "Jupiter", "UnknownPlanet"],
+                ObjectTableLabels.TRANSIT: [
+                    pd.Timestamp("2023-01-01 22:00:00", tz="UTC")
+                ]
+                * 3,
+                ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 3,
+                ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 3,
+                ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 3,  # For SVG plot
+            }
+        )
 
-    @patch('apts.observations.Utils.annotate_plot')
-    @patch('apts.observations.pyplot')
-    @patch('apts.observations.get_dark_mode')
-    def test_generate_plot_messier_dark_mode_styles(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
+    @patch("apts.observations.Utils.annotate_plot")
+    @patch("apts.observations.pyplot")
+    @patch("apts.observations.get_dark_mode")
+    def test_generate_plot_messier_dark_mode_styles(
+        self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
+    ):
         scenarios = [
-            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
-            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
-            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
-            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+            {
+                "override": True,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": True,
+                "desc": "Override True",
+            },
+            {
+                "override": False,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": False,
+                "desc": "Override False",
+            },
+            {
+                "override": None,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": True,
+                "desc": "Override None, Global True",
+            },
+            {
+                "override": None,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": False,
+                "desc": "Override None, Global False",
+            },
         ]
 
         # Mock get_visible_messier to control its output (already in setUp)
-        self.observation.get_visible_messier = MagicMock(return_value=self.mock_messier_df)
+        self.observation.get_visible_messier = MagicMock(
+            return_value=self.mock_messier_df
+        )
 
         for i, scenario_data in enumerate(scenarios):
             with self.subTest(msg=scenario_data["desc"], i=i):
                 mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
-                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
+                expected_style = get_plot_style(
+                    scenario_data["expected_effective_dark_mode"]
+                )
 
                 # Reset mocks that accumulate calls for each subtest
                 mock_pyplot.reset_mock()
@@ -228,92 +349,199 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 mock_ax.legend.return_value = mock_legend
                 mock_legend.get_frame.return_value = MagicMock()
                 mock_legend.get_title.return_value = MagicMock()
-                mock_legend.get_texts.return_value = [MagicMock()] # Assume at least one text item for simplicity
+                mock_legend.get_texts.return_value = [
+                    MagicMock()
+                ]  # Assume at least one text item for simplicity
 
-                returned_fig = self.observation._generate_plot_messier(dark_mode_override=scenario_data["override"])
+                returned_fig = self.observation._generate_plot_messier(
+                    dark_mode_override=scenario_data["override"]
+                )
 
                 self.assertEqual(returned_fig, mock_fig)
                 mock_pyplot.subplots.assert_called_once()
                 if scenario_data["expected_effective_dark_mode"]:
-                    mock_fig.patch.set_facecolor.assert_called_with('#1C1C3A')
-                    mock_ax.set_facecolor.assert_called_with('#2A004F')
-                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color='#FFFFFF')
+                    mock_fig.patch.set_facecolor.assert_called_with("#1C1C3A")
+                    mock_ax.set_facecolor.assert_called_with("#2A004F")
+                    mock_ax.set_title.assert_any_call(
+                        "Messier Objects Altitude", color="#FFFFFF"
+                    )
                     if not self.mock_messier_df.empty:
-                        mock_legend.get_frame().set_facecolor.assert_called_with('#2A004F')
-                        mock_legend.get_frame().set_edgecolor.assert_called_with('#CCCCCC')
-                        mock_legend.get_title().set_color.assert_called_with('#FFFFFF')
+                        mock_legend.get_frame().set_facecolor.assert_called_with(
+                            "#2A004F"
+                        )
+                        mock_legend.get_frame().set_edgecolor.assert_called_with(
+                            "#CCCCCC"
+                        )
+                        mock_legend.get_title().set_color.assert_called_with("#FFFFFF")
                         for text_mock in mock_legend.get_texts():
-                            text_mock.set_color.assert_called_with('#FFFFFF')
-                else: # Light mode assertions remain using expected_style from get_plot_style(False)
-                    mock_fig.patch.set_facecolor.assert_called_with(expected_style['FIGURE_FACE_COLOR'])
-                    mock_ax.set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-                    mock_ax.set_title.assert_any_call("Messier Objects Altitude", color=expected_style['TEXT_COLOR'])
+                            text_mock.set_color.assert_called_with("#FFFFFF")
+                else:  # Light mode assertions remain using expected_style from get_plot_style(False)
+                    mock_fig.patch.set_facecolor.assert_called_with(
+                        expected_style["FIGURE_FACE_COLOR"]
+                    )
+                    mock_ax.set_facecolor.assert_called_with(
+                        expected_style["AXES_FACE_COLOR"]
+                    )
+                    mock_ax.set_title.assert_any_call(
+                        "Messier Objects Altitude", color=expected_style["TEXT_COLOR"]
+                    )
                     if not self.mock_messier_df.empty:
-                        mock_legend.get_frame().set_facecolor.assert_called_with(expected_style['AXES_FACE_COLOR'])
-                        mock_legend.get_frame().set_edgecolor.assert_called_with(expected_style['AXIS_COLOR'])
-                        mock_legend.get_title().set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                        mock_legend.get_frame().set_facecolor.assert_called_with(
+                            expected_style["AXES_FACE_COLOR"]
+                        )
+                        mock_legend.get_frame().set_edgecolor.assert_called_with(
+                            expected_style["AXIS_COLOR"]
+                        )
+                        mock_legend.get_title().set_color.assert_called_with(
+                            expected_style["TEXT_COLOR"]
+                        )
                         for text_mock in mock_legend.get_texts():
-                            text_mock.set_color.assert_called_with(expected_style['TEXT_COLOR'])
+                            text_mock.set_color.assert_called_with(
+                                expected_style["TEXT_COLOR"]
+                            )
 
-                mock_annotate_plot.assert_called_with(mock_ax, "Altitude [°]", scenario_data["expected_effective_dark_mode"])
+                mock_annotate_plot.assert_called_with(
+                    mock_ax,
+                    "Altitude [°]",
+                    scenario_data["expected_effective_dark_mode"],
+                )
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()
 
-    @patch('apts.observations.svg.Drawing')
-    @patch('apts.observations.get_dark_mode')
-    def test_plot_visible_planets_svg_dark_mode_styles(self, mock_get_dark_mode, mock_svg_drawing):
+    @patch("apts.observations.svg.Drawing")
+    @patch("apts.observations.get_dark_mode")
+    def test_plot_visible_planets_svg_dark_mode_styles(
+        self, mock_get_dark_mode, mock_svg_drawing
+    ):
         # Use the more detailed mock_planets_data_for_color_test
-        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
+        self.observation.get_visible_planets = MagicMock(
+            return_value=self.mock_planets_data_for_color_test
+        )
 
         scenarios = [
-            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
-            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
-            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
-            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+            {
+                "override": True,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": True,
+                "desc": "Override True",
+            },
+            {
+                "override": False,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": False,
+                "desc": "Override False",
+            },
+            {
+                "override": None,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": True,
+                "desc": "Override None, Global True",
+            },
+            {
+                "override": None,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": False,
+                "desc": "Override None, Global False",
+            },
         ]
 
         for i, scenario_data in enumerate(scenarios):
             with self.subTest(msg=scenario_data["desc"], i=i):
                 mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
-                expected_style = get_plot_style(scenario_data["expected_effective_dark_mode"])
+                expected_style = get_plot_style(
+                    scenario_data["expected_effective_dark_mode"]
+                )
 
                 # Reset svg.Drawing mock and prepare its return value for this subtest
                 mock_svg_drawing.reset_mock()
                 mock_dwg_instance = MagicMock()
                 mock_svg_drawing.return_value = mock_dwg_instance
 
-                self.observation.plot_visible_planets_svg(dark_mode_override=scenario_data["override"])
+                self.observation.plot_visible_planets_svg(
+                    dark_mode_override=scenario_data["override"]
+                )
 
-                fills_called = [call.kwargs['fill'] for call in mock_dwg_instance.circle.call_args_list]
+                fills_called = [
+                    call.kwargs["fill"]
+                    for call in mock_dwg_instance.circle.call_args_list
+                ]
                 self.assertEqual(mock_dwg_instance.circle.call_count, 3)
 
                 if scenario_data["expected_effective_dark_mode"]:
-                    mock_svg_drawing.assert_called_with(style={'background-color': '#1C1C3A'})
-                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Mars'], fills_called)
-                    self.assertIn(GraphConstants.PLANET_COLORS_DARK['Jupiter'], fills_called)
-                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
+                    mock_svg_drawing.assert_called_with(
+                        style={"background-color": "#1C1C3A"}
+                    )
+                    self.assertIn(
+                        GraphConstants.PLANET_COLORS_DARK["Mars"], fills_called
+                    )
+                    self.assertIn(
+                        GraphConstants.PLANET_COLORS_DARK["Jupiter"], fills_called
+                    )
+                    self.assertIn(
+                        expected_style["AXES_FACE_COLOR"], fills_called
+                    )  # Default for UnknownPlanet
                     # Check one text call for color
-                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                                           text_anchor="middle", fill='#FFFFFF')
-                else: # Light mode assertions
-                    mock_svg_drawing.assert_called_with(style={'background-color': expected_style['BACKGROUND_COLOR']})
-                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Mars'], fills_called)
-                    self.assertIn(GraphConstants.PLANET_COLORS_LIGHT['Jupiter'], fills_called)
-                    self.assertIn(expected_style['AXES_FACE_COLOR'], fills_called) # Default for UnknownPlanet
-                    mock_dwg_instance.text.assert_any_call(unittest.mock.ANY, insert=(unittest.mock.ANY, unittest.mock.ANY),
-                                                           text_anchor="middle", fill=expected_style['TEXT_COLOR'])
+                    mock_dwg_instance.text.assert_any_call(
+                        unittest.mock.ANY,
+                        insert=(unittest.mock.ANY, unittest.mock.ANY),
+                        text_anchor="middle",
+                        fill="#FFFFFF",
+                    )
+                else:  # Light mode assertions
+                    mock_svg_drawing.assert_called_with(
+                        style={"background-color": expected_style["BACKGROUND_COLOR"]}
+                    )
+                    self.assertIn(
+                        GraphConstants.PLANET_COLORS_LIGHT["Mars"], fills_called
+                    )
+                    self.assertIn(
+                        GraphConstants.PLANET_COLORS_LIGHT["Jupiter"], fills_called
+                    )
+                    self.assertIn(
+                        expected_style["AXES_FACE_COLOR"], fills_called
+                    )  # Default for UnknownPlanet
+                    mock_dwg_instance.text.assert_any_call(
+                        unittest.mock.ANY,
+                        insert=(unittest.mock.ANY, unittest.mock.ANY),
+                        text_anchor="middle",
+                        fill=expected_style["TEXT_COLOR"],
+                    )
 
-    @patch('apts.observations.Utils.annotate_plot')
-    @patch('apts.observations.pyplot')
-    @patch('apts.observations.get_dark_mode')
-    def test_generate_plot_planets_specific_colors(self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot):
-        self.observation.get_visible_planets = MagicMock(return_value=self.mock_planets_data_for_color_test)
+    @patch("apts.observations.Utils.annotate_plot")
+    @patch("apts.observations.pyplot")
+    @patch("apts.observations.get_dark_mode")
+    def test_generate_plot_planets_specific_colors(
+        self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
+    ):
+        self.observation.get_visible_planets = MagicMock(
+            return_value=self.mock_planets_data_for_color_test
+        )
 
         scenarios = [
-            {"override": True, "global_dark_mode": False, "expected_effective_dark_mode": True, "desc": "Override True"},
-            {"override": False, "global_dark_mode": True, "expected_effective_dark_mode": False, "desc": "Override False"},
-            {"override": None, "global_dark_mode": True,  "expected_effective_dark_mode": True, "desc": "Override None, Global True"},
-            {"override": None, "global_dark_mode": False, "expected_effective_dark_mode": False, "desc": "Override None, Global False"},
+            {
+                "override": True,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": True,
+                "desc": "Override True",
+            },
+            {
+                "override": False,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": False,
+                "desc": "Override False",
+            },
+            {
+                "override": None,
+                "global_dark_mode": True,
+                "expected_effective_dark_mode": True,
+                "desc": "Override None, Global True",
+            },
+            {
+                "override": None,
+                "global_dark_mode": False,
+                "expected_effective_dark_mode": False,
+                "desc": "Override None, Global False",
+            },
         ]
 
         for i, scenario_data in enumerate(scenarios):
@@ -328,25 +556,33 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 mock_ax.figure = mock_fig
                 mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
-                self.observation._generate_plot_planets(dark_mode_override=scenario_data["override"])
+                self.observation._generate_plot_planets(
+                    dark_mode_override=scenario_data["override"]
+                )
 
                 mock_ax.scatter.assert_called()
                 self.assertEqual(mock_ax.scatter.call_count, 3)
 
-                colors_called = [call.kwargs['color'] for call in mock_ax.scatter.call_args_list] # Changed 'c' to 'color'
+                colors_called = [
+                    call.kwargs["color"] for call in mock_ax.scatter.call_args_list
+                ]  # Changed 'c' to 'color'
 
                 if effective_dark_mode:
-                    expected_mars_color = GraphConstants.PLANET_COLORS_DARK['Mars']
-                    expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK['Jupiter']
+                    expected_mars_color = GraphConstants.PLANET_COLORS_DARK["Mars"]
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK[
+                        "Jupiter"
+                    ]
                     default_color = GraphConstants.DARK_COLORS[OpticalType.GENERIC]
                 else:
-                    expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT['Mars']
-                    expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT['Jupiter']
+                    expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT["Mars"]
+                    expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT[
+                        "Jupiter"
+                    ]
                     default_color = GraphConstants.COLORS[OpticalType.GENERIC]
 
                 self.assertIn(expected_mars_color, colors_called)
                 self.assertIn(expected_jupiter_color, colors_called)
-                self.assertIn(default_color, colors_called) # For 'UnknownPlanet'
+                self.assertIn(default_color, colors_called)  # For 'UnknownPlanet'
 
 
 class TestObservationWeatherAnalysis(unittest.TestCase):
@@ -356,16 +592,24 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
         # Using a fixed timezone for consistency in tests
-        self.test_tz = datetime.timezone(datetime.timedelta(hours=-5), 'EST') # Example: EST
-        self.base_date = pd.Timestamp('2024-01-01', tz=self.test_tz)
+        self.test_tz = datetime.timezone(
+            datetime.timedelta(hours=-5), "EST"
+        )  # Example: EST
+        self.base_date = pd.Timestamp("2024-01-01", tz=self.test_tz)
 
         self.obs.place.local_timezone = self.test_tz
-        self.obs.start = self.base_date.replace(hour=18, minute=0, second=0, microsecond=0)
-        self.obs.stop = (self.base_date + timedelta(days=1)).replace(hour=6, minute=0, second=0, microsecond=0) # Next day
-        self.obs.time_limit = (self.base_date + timedelta(days=1)).replace(hour=2, minute=0, second=0, microsecond=0)
+        self.obs.start = self.base_date.replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        self.obs.stop = (self.base_date + timedelta(days=1)).replace(
+            hour=6, minute=0, second=0, microsecond=0
+        )  # Next day
+        self.obs.time_limit = (self.base_date + timedelta(days=1)).replace(
+            hour=2, minute=0, second=0, microsecond=0
+        )
 
         # Mock conditions
-        self.obs.conditions = Conditions() # Use default conditions or mock as needed
+        self.obs.conditions = Conditions()  # Use default conditions or mock as needed
         self.obs.conditions.max_clouds = 20.0
         self.obs.conditions.max_precipitation_probability = 10.0
         self.obs.conditions.max_wind = 15.0
@@ -378,7 +622,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Explicitly mock get_weather method on self.obs.place to ensure it's a mock object
         self.obs.place.get_weather = MagicMock()
 
-
     def _generate_weather_data(self, num_hours, conditions_met_flags):
         """
         Helper to generate mock weather data DataFrame.
@@ -389,26 +632,35 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         base_time = self.obs.start
         for i in range(num_hours):
             hour_time = base_time + datetime.timedelta(hours=i)
-            if hour_time > self.obs.time_limit : # Ensure we don't generate data beyond time_limit
+            if (
+                hour_time > self.obs.time_limit
+            ):  # Ensure we don't generate data beyond time_limit
                 break
 
             # Good weather by default
             cloud = self.obs.conditions.max_clouds - 1
-            precip = self.obs.conditions.max_precipitation_probability -1
-            wind = self.obs.conditions.max_wind -1
-            temp = (self.obs.conditions.min_temperature + self.obs.conditions.max_temperature) / 2
+            precip = self.obs.conditions.max_precipitation_probability - 1
+            wind = self.obs.conditions.max_wind - 1
+            temp = (
+                self.obs.conditions.min_temperature
+                + self.obs.conditions.max_temperature
+            ) / 2
 
-            if i < len(conditions_met_flags) and not conditions_met_flags[i]: # If flag is False, make weather bad
+            if (
+                i < len(conditions_met_flags) and not conditions_met_flags[i]
+            ):  # If flag is False, make weather bad
                 # Example: make cloud cover too high. More sophisticated logic can be added.
                 cloud = self.obs.conditions.max_clouds + 10
 
-            data.append({
-                'time': hour_time,
-                'cloudCover': cloud,
-                'precipProbability': precip,
-                'windSpeed': wind,
-                'temperature': temp
-            })
+            data.append(
+                {
+                    "time": hour_time,
+                    "cloudCover": cloud,
+                    "precipProbability": precip,
+                    "windSpeed": wind,
+                    "temperature": temp,
+                }
+            )
         return pd.DataFrame(data)
 
     def test_get_hourly_weather_analysis_all_good(self):
@@ -419,12 +671,11 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         results = self.obs.get_hourly_weather_analysis()
 
-
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
-            self.assertTrue(results[i]['is_good_hour'])
-            self.assertEqual(len(results[i]['reasons']), 0)
-            self.assertEqual(results[i]['time'], mock_weather_df['time'].iloc[i])
+            self.assertTrue(results[i]["is_good_hour"])
+            self.assertEqual(len(results[i]["reasons"]), 0)
+            self.assertEqual(results[i]["time"], mock_weather_df["time"].iloc[i])
 
     def test_get_hourly_weather_analysis_one_hour_bad_clouds(self):
         """Test one hour bad due to high cloud cover."""
@@ -440,27 +691,34 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             cloud = self.obs.conditions.max_clouds - 1
             precip = self.obs.conditions.max_precipitation_probability - 1
             wind = self.obs.conditions.max_wind - 1
-            temp = (self.obs.conditions.min_temperature + self.obs.conditions.max_temperature) / 2
+            temp = (
+                self.obs.conditions.min_temperature
+                + self.obs.conditions.max_temperature
+            ) / 2
 
-            if i == 1: # Second hour
-                cloud = self.obs.conditions.max_clouds + 5 # Exceeds limit
+            if i == 1:  # Second hour
+                cloud = self.obs.conditions.max_clouds + 5  # Exceeds limit
 
-            data_rows.append({
-                'time': hour_time, 'cloudCover': cloud, 'precipProbability': precip,
-                'windSpeed': wind, 'temperature': temp
-            })
+            data_rows.append(
+                {
+                    "time": hour_time,
+                    "cloudCover": cloud,
+                    "precipProbability": precip,
+                    "windSpeed": wind,
+                    "temperature": temp,
+                }
+            )
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
-
         self.assertEqual(len(results), num_hours)
-        self.assertTrue(results[0]['is_good_hour'])
-        self.assertFalse(results[1]['is_good_hour'])
-        self.assertEqual(len(results[1]['reasons']), 1)
-        self.assertIn("Cloud cover", results[1]['reasons'][0])
-        self.assertTrue(results[2]['is_good_hour'])
+        self.assertTrue(results[0]["is_good_hour"])
+        self.assertFalse(results[1]["is_good_hour"])
+        self.assertEqual(len(results[1]["reasons"]), 1)
+        self.assertIn("Cloud cover", results[1]["reasons"][0])
+        self.assertTrue(results[2]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_one_hour_multiple_reasons(self):
         """Test one hour bad due to multiple reasons."""
@@ -469,33 +727,48 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         data_rows = []
         base_time = self.obs.start
         # Hour 0: Bad
-        data_rows.append({
-            'time': base_time,
-            'cloudCover': self.obs.conditions.max_clouds + 5, # Bad
-            'precipProbability': self.obs.conditions.max_precipitation_probability - 1, # Good
-            'windSpeed': self.obs.conditions.max_wind + 5, # Bad
-            'temperature': (self.obs.conditions.min_temperature + self.obs.conditions.max_temperature) / 2 # Good
-        })
+        data_rows.append(
+            {
+                "time": base_time,
+                "cloudCover": self.obs.conditions.max_clouds + 5,  # Bad
+                "precipProbability": self.obs.conditions.max_precipitation_probability
+                - 1,  # Good
+                "windSpeed": self.obs.conditions.max_wind + 5,  # Bad
+                "temperature": (
+                    self.obs.conditions.min_temperature
+                    + self.obs.conditions.max_temperature
+                )
+                / 2,  # Good
+            }
+        )
         # Hour 1: Good
-        data_rows.append({
-            'time': base_time + datetime.timedelta(hours=1),
-            'cloudCover': self.obs.conditions.max_clouds - 1,
-            'precipProbability': self.obs.conditions.max_precipitation_probability - 1,
-            'windSpeed': self.obs.conditions.max_wind - 1,
-            'temperature': (self.obs.conditions.min_temperature + self.obs.conditions.max_temperature) / 2
-        })
+        data_rows.append(
+            {
+                "time": base_time + datetime.timedelta(hours=1),
+                "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipProbability": self.obs.conditions.max_precipitation_probability
+                - 1,
+                "windSpeed": self.obs.conditions.max_wind - 1,
+                "temperature": (
+                    self.obs.conditions.min_temperature
+                    + self.obs.conditions.max_temperature
+                )
+                / 2,
+            }
+        )
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
-
         self.assertEqual(len(results), num_hours)
-        self.assertFalse(results[0]['is_good_hour'])
-        self.assertEqual(len(results[0]['reasons']), 2)
-        self.assertTrue(any("Cloud cover" in reason for reason in results[0]['reasons']))
-        self.assertTrue(any("Wind speed" in reason for reason in results[0]['reasons']))
-        self.assertTrue(results[1]['is_good_hour'])
+        self.assertFalse(results[0]["is_good_hour"])
+        self.assertEqual(len(results[0]["reasons"]), 2)
+        self.assertTrue(
+            any("Cloud cover" in reason for reason in results[0]["reasons"])
+        )
+        self.assertTrue(any("Wind speed" in reason for reason in results[0]["reasons"]))
+        self.assertTrue(results[1]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_respects_time_limit(self):
         """Test that analysis stops at self.time_limit."""
@@ -504,40 +777,49 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         num_hours_data = 10
         expected_processed_hours = 9
 
-        mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
+        mock_weather_df = self._generate_weather_data(
+            num_hours_data, [True] * num_hours_data
+        )
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
-
         self.assertEqual(len(results), expected_processed_hours)
         for i in range(expected_processed_hours):
-            self.assertTrue(results[i]['is_good_hour'])
+            self.assertTrue(results[i]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_inclusive_time_limit(self):
         """Test that analysis *includes* the hour at self.time_limit."""
         # Setup: start at 18:00, time_limit at 20:00,
         # so data for 18, 19, 20 should be included (3 hours)
-        self.obs.start = self.base_date.replace(hour=18, minute=0, second=0, microsecond=0)
-        self.obs.stop = self.base_date.replace(hour=21, minute=0, second=0, microsecond=0) # Beyond time_limit
-        self.obs.time_limit = self.base_date.replace(hour=20, minute=0, second=0, microsecond=0)
+        self.obs.start = self.base_date.replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        self.obs.stop = self.base_date.replace(
+            hour=21, minute=0, second=0, microsecond=0
+        )  # Beyond time_limit
+        self.obs.time_limit = self.base_date.replace(
+            hour=20, minute=0, second=0, microsecond=0
+        )
 
-        num_hours_data = 5 # Provide more data than needed (18, 19, 20, 21, 22)
-        mock_weather_df = self._generate_weather_data(num_hours_data, [True] * num_hours_data)
+        num_hours_data = 5  # Provide more data than needed (18, 19, 20, 21, 22)
+        mock_weather_df = self._generate_weather_data(
+            num_hours_data, [True] * num_hours_data
+        )
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
-        self.assertEqual(len(results), 3) # Expect 18:00, 19:00, 20:00
+        self.assertEqual(len(results), 3)  # Expect 18:00, 19:00, 20:00
 
         # Verify the times are correct
-        self.assertEqual(results[0]['time'].hour, 18)
-        self.assertEqual(results[1]['time'].hour, 19)
-        self.assertEqual(results[2]['time'].hour, 20)
+        self.assertEqual(results[0]["time"].hour, 18)
+        self.assertEqual(results[1]["time"].hour, 19)
+        self.assertEqual(results[2]["time"].hour, 20)
 
     def test_get_hourly_weather_analysis_no_weather_data_initially(self):
         """Test when weather data needs to be fetched."""
-        self.obs.place.weather = None # Simulate no weather data initially
+        self.obs.place.weather = None  # Simulate no weather data initially
 
         mock_weather_instance = MagicMock()
         num_hours = 2
@@ -552,68 +834,86 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         results = self.obs.get_hourly_weather_analysis()
 
-
         self.obs.place.get_weather.assert_called_once()
         self.assertEqual(len(results), num_hours)
-        self.assertTrue(results[0]['is_good_hour'])
+        self.assertTrue(results[0]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_bad_temperature_low(self):
         """Test bad weather due to low temperature."""
         num_hours = 1
-        data_rows = [{
-            'time': self.obs.start,
-            'cloudCover': self.obs.conditions.max_clouds - 1,
-            'precipProbability': self.obs.conditions.max_precipitation_probability - 1,
-            'windSpeed': self.obs.conditions.max_wind - 1,
-            'temperature': self.obs.conditions.min_temperature - 5 # Too cold
-        }]
+        data_rows = [
+            {
+                "time": self.obs.start,
+                "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipProbability": self.obs.conditions.max_precipitation_probability
+                - 1,
+                "windSpeed": self.obs.conditions.max_wind - 1,
+                "temperature": self.obs.conditions.min_temperature - 5,  # Too cold
+            }
+        ]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
-        self.assertFalse(results[0]['is_good_hour'])
-        self.assertIn("Temperature", results[0]['reasons'][0])
-        self.assertIn("below limit", results[0]['reasons'][0])
+        self.assertFalse(results[0]["is_good_hour"])
+        self.assertIn("Temperature", results[0]["reasons"][0])
+        self.assertIn("below limit", results[0]["reasons"][0])
 
     def test_get_hourly_weather_analysis_bad_temperature_high(self):
         """Test bad weather due to high temperature."""
         num_hours = 1
-        data_rows = [{
-            'time': self.obs.start,
-            'cloudCover': self.obs.conditions.max_clouds - 1,
-            'precipProbability': self.obs.conditions.max_precipitation_probability - 1,
-            'windSpeed': self.obs.conditions.max_wind - 1,
-            'temperature': self.obs.conditions.max_temperature + 5 # Too hot
-        }]
+        data_rows = [
+            {
+                "time": self.obs.start,
+                "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipProbability": self.obs.conditions.max_precipitation_probability
+                - 1,
+                "windSpeed": self.obs.conditions.max_wind - 1,
+                "temperature": self.obs.conditions.max_temperature + 5,  # Too hot
+            }
+        ]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
-        self.assertFalse(results[0]['is_good_hour'])
-        self.assertIn("Temperature", results[0]['reasons'][0])
-        self.assertIn("exceeds limit", results[0]['reasons'][0])
+        self.assertFalse(results[0]["is_good_hour"])
+        self.assertIn("Temperature", results[0]["reasons"][0])
+        self.assertIn("exceeds limit", results[0]["reasons"][0])
 
     def test_get_hourly_weather_analysis_bad_precipitation(self):
         """Test bad weather due to high precipitation probability."""
         num_hours = 1
-        data_rows = [{
-            'time': self.obs.start,
-            'cloudCover': self.obs.conditions.max_clouds - 1,
-            'precipProbability': self.obs.conditions.max_precipitation_probability + 5, # Too high
-            'windSpeed': self.obs.conditions.max_wind - 1,
-            'temperature': (self.obs.conditions.min_temperature + self.obs.conditions.max_temperature) / 2
-        }]
+        data_rows = [
+            {
+                "time": self.obs.start,
+                "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipProbability": self.obs.conditions.max_precipitation_probability
+                + 5,  # Too high
+                "windSpeed": self.obs.conditions.max_wind - 1,
+                "temperature": (
+                    self.obs.conditions.min_temperature
+                    + self.obs.conditions.max_temperature
+                )
+                / 2,
+            }
+        ]
         mock_weather_df = pd.DataFrame(data_rows)
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
-        self.assertFalse(results[0]['is_good_hour'])
-        self.assertIn("Precipitation probability", results[0]['reasons'][0])
+        self.assertFalse(results[0]["is_good_hour"])
+        self.assertIn("Precipitation probability", results[0]["reasons"][0])
 
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
         """Test when get_critical_data returns an empty DataFrame."""
         self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
-            columns=['time', 'cloudCover', 'precipProbability', 'windSpeed', 'temperature']
+            columns=[
+                "time",
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+            ]
         )
         results = self.obs.get_hourly_weather_analysis()
 
@@ -631,16 +931,15 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore start and test with stop = None
-        self.obs.start = pd.Timestamp('2024-01-01 18:00:00', tz=self.test_tz)
+        self.obs.start = pd.Timestamp("2024-01-01 18:00:00", tz=self.test_tz)
         self.obs.stop = None
         results = self.obs.get_hourly_weather_analysis()
-
 
         self.assertEqual(results, [])
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore stop and test with time_limit = None
-        self.obs.stop = pd.Timestamp('2024-01-02 06:00:00', tz=self.test_tz)
+        self.obs.stop = pd.Timestamp("2024-01-02 06:00:00", tz=self.test_tz)
         self.obs.time_limit = None
         results = self.obs.get_hourly_weather_analysis()
 
@@ -655,61 +954,76 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Assign a fresh mock for place.weather to ensure clean state for this case
         self.obs.place.weather = MagicMock()
         num_hours_good = 5
-        mock_weather_df_good = self._generate_weather_data(num_hours_good, [True] * num_hours_good)
+        mock_weather_df_good = self._generate_weather_data(
+            num_hours_good, [True] * num_hours_good
+        )
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df_good
-        self.obs.conditions.min_weather_goodness = 50 # 50% good hours required
+        self.obs.conditions.min_weather_goodness = 50  # 50% good hours required
         self.assertTrue(self.obs.is_weather_good())
-        self.obs.place.weather.get_critical_data.assert_called_once() # Verify it was called
+        self.obs.place.weather.get_critical_data.assert_called_once()  # Verify it was called
 
         # Test Case 2: Some bad weather, but overall good enough
-        self.obs.place.weather = MagicMock() # Assign a fresh mock for this case
+        self.obs.place.weather = MagicMock()  # Assign a fresh mock for this case
         num_hours_mixed = 4
         # 3 good, 1 bad -> 75% good
-        mock_weather_df_mixed = self._generate_weather_data(num_hours_mixed, [True, True, True, False])
+        mock_weather_df_mixed = self._generate_weather_data(
+            num_hours_mixed, [True, True, True, False]
+        )
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df_mixed
-        self.obs.conditions.min_weather_goodness = 70 # 70% good hours required
+        self.obs.conditions.min_weather_goodness = 70  # 70% good hours required
         self.assertTrue(self.obs.is_weather_good())
         self.obs.place.weather.get_critical_data.assert_called_once()
 
         # Test Case 3: Too much bad weather, overall not good enough
-        self.obs.place.weather = MagicMock() # Assign a fresh mock for this case
+        self.obs.place.weather = MagicMock()  # Assign a fresh mock for this case
         num_hours_bad_overall = 4
         # 1 good, 3 bad -> 25% good
-        mock_weather_df_bad_overall = self._generate_weather_data(num_hours_bad_overall, [True, False, False, False])
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_bad_overall
-        self.obs.conditions.min_weather_goodness = 50 # 50% good hours required
+        mock_weather_df_bad_overall = self._generate_weather_data(
+            num_hours_bad_overall, [True, False, False, False]
+        )
+        self.obs.place.weather.get_critical_data.return_value = (
+            mock_weather_df_bad_overall
+        )
+        self.obs.conditions.min_weather_goodness = 50  # 50% good hours required
         self.assertFalse(self.obs.is_weather_good())
         self.obs.place.weather.get_critical_data.assert_called_once()
 
         # Test Case 4: No weather data initially (self.obs.place.weather is None)
-        self.obs.place.weather = None # Simulate no weather data initially
-        self.obs.place.get_weather.reset_mock() # Reset mock to count calls for this specific case
+        self.obs.place.weather = None  # Simulate no weather data initially
+        self.obs.place.get_weather.reset_mock()  # Reset mock to count calls for this specific case
 
         # Mock get_weather to set weather data when called
         mock_weather_fetched = MagicMock()
+
         def mock_get_weather_side_effect():
-            self.obs.place.weather = mock_weather_fetched # Set the weather mock when get_weather is called
-            mock_weather_fetched.get_critical_data.return_value = self._generate_weather_data(1, [True])
+            self.obs.place.weather = (
+                mock_weather_fetched  # Set the weather mock when get_weather is called
+            )
+            mock_weather_fetched.get_critical_data.return_value = (
+                self._generate_weather_data(1, [True])
+            )
 
         self.obs.place.get_weather.side_effect = mock_get_weather_side_effect
 
         # Call is_weather_good, it should trigger get_weather
         self.assertTrue(self.obs.is_weather_good())
         self.obs.place.get_weather.assert_called_once()
-        mock_weather_fetched.get_critical_data.assert_called_once() # Verify critical data was called after fetch
+        mock_weather_fetched.get_critical_data.assert_called_once()  # Verify critical data was called after fetch
 
 
 class TestSunObservation(unittest.TestCase):
-    @patch('apts.observations.Messier')
-    @patch('apts.observations.SolarObjects')
+    @patch("apts.observations.Messier")
+    @patch("apts.observations.SolarObjects")
     def test_sun_observation_window(self, mock_planets, mock_messier):
         """Test that the observation window is set correctly for sun observations."""
         # Arrange
         place = MagicMock()
         place.local_timezone = datetime.timezone.utc
-        place.sunrise_time.return_value = pd.Timestamp('2025-02-18 06:00:00', tz='UTC')
-        place.sunset_time.return_value = pd.Timestamp('2025-02-18 18:00:00', tz='UTC')
-        place.get_time_relative_to_event.return_value = (pd.Timestamp('2025-02-18 06:00:00', tz='UTC'), ephem.Date('2025/2/18 06:00:00'))
+        place.sunrise_time.return_value = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
+        place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
+
+        ts = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
+        place.get_time_relative_to_event.return_value = (ts, ts.to_pydatetime())
 
         equipment = MagicMock()
         conditions = MagicMock()
@@ -729,5 +1043,6 @@ class TestSunObservation(unittest.TestCase):
         self.assertEqual(observation.start, place.sunrise_time.return_value)
         self.assertEqual(observation.stop, place.sunset_time.return_value)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

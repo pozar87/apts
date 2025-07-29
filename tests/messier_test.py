@@ -118,7 +118,6 @@ def test_planets_recomputation_with_date():
         # Assert that the new transit time is approximately 24 hours after the original
         # Mars' transit shifts by about 24 hours and ~39 minutes per solar day.
         # We'll check if it's within a reasonable window (e.g., 23 to 25 hours to be safe, or more precisely for Mars)
-        # For a more precise check: ephem.Mars().transit_time for two consecutive days.
         # For simplicity, we'll check if it's roughly one day later.
         expected_new_transit_time = original_transit_time_mars + datetime.timedelta(
             days=1
