@@ -112,22 +112,24 @@ class SolarObjects(Objects):
 
         # Helper function to calculate magnitude using pyephem
         # This function is defined locally to enclose ephem_observer and ephem_object_map
-        def get_ephem_magnitude(row):
+        def get_ephem_properties(row):
             object_name = row[ObjectTableLabels.NAME]
-
             ephem_obj_constructor = ephem_object_map.get(object_name)
             if ephem_obj_constructor:
                 ephem_obj = ephem_obj_constructor()
                 ephem_obj.compute(ephem_observer)
-                return ephem_obj.mag
-
+                return pandas.Series([ephem_obj.mag, ephem_obj.size, ephem_obj.phase])
             # This case should ideally not be reached if the initial object list is complete
             # and mapped correctly. Returning numpy.nan for unhandled objects.
-            return numpy.nan
+            return pandas.Series([numpy.nan, numpy.nan, numpy.nan])
 
-        self.objects[ObjectTableLabels.MAGNITUDE] = self.objects[
-            [ObjectTableLabels.NAME]  # We only need the object name for pyephem lookup
-        ].apply(get_ephem_magnitude, axis=1)
+        self.objects[
+            [
+                ObjectTableLabels.MAGNITUDE,
+                ObjectTableLabels.SIZE,
+                ObjectTableLabels.PHASE,
+            ]
+        ] = self.objects.apply(get_ephem_properties, axis=1)
         # Calculate planets RA
         self.objects[ObjectTableLabels.RA] = self.objects[
             [ObjectTableLabels.OBJECT]
@@ -155,13 +157,6 @@ class SolarObjects(Objects):
             lambda body: body.Object.at(t).observe(self.place.observer).distance().au,
             axis=1,
         )
-        # Calculate planets size
-        self.objects[ObjectTableLabels.SIZE] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.radius.km if hasattr(body.Object, "radius") else 0,
-            axis=1,
-        )
         # Calculate planets elongation
         self.objects[ObjectTableLabels.ELONGATION] = self.objects[
             [ObjectTableLabels.OBJECT]
@@ -169,16 +164,6 @@ class SolarObjects(Objects):
             lambda body: body.Object.at(t)
             .observe(self.place.observer)
             .separation_from(self.place.sun.at(t))
-            .degrees,
-            axis=1,
-        )
-        # Calculate planets phase
-        self.objects[ObjectTableLabels.PHASE] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.at(t)
-            .observe(self.place.observer)
-            .phase_angle(self.place.sun)
             .degrees,
             axis=1,
         )
