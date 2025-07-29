@@ -164,8 +164,9 @@ class Place:
         result = []
         for t in times:
             alt, az, _ = self.observer.at(t).observe(self.moon).apparent().altaz()
-            phase = almanac.moon_phase(self.eph, t) * 100
-            lunation = almanac.moon_phase(self.eph, t)
+            moon_phase_angle = almanac.moon_phase(self.eph, t)
+            phase = (moon_phase_angle.degrees / 360.0) * 100
+            lunation = moon_phase_angle.degrees / 360.0
             row = [
                 t.utc_datetime().time(),
                 alt.degrees,
