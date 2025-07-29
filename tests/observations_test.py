@@ -278,7 +278,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         # Mock data for planet color tests
         self.mock_planets_data_for_color_test = pd.DataFrame(
             {
-                ObjectTableLabels.NAME: ["Mars", "Jupiter", "UnknownPlanet"],
+                ObjectTableLabels.NAME: ["Mars", "Jupiter barycenter", "UnknownPlanet"],
                 ObjectTableLabels.TRANSIT: [
                     pd.Timestamp("2023-01-01 22:00:00", tz="UTC")
                 ]
