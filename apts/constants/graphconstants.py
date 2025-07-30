@@ -64,19 +64,20 @@ class GraphConstants:
         "Venus": "#F0E68C",  # Pale Gold / Cream
         "Mars": "#C1440E",  # Rusty Red
         "Jupiter": "#B08968",  # Tan / Light Brown
-        "Saturn": "#CEB888",  # Pale Yellow / Gold
-        "Uranus": "#7FC9E0",  # Light Sky Blue
-        "Neptune": "#3B71A0",  # Deep Blue
+        "Jupiter barycenter": "#B08968",  # Tan / Light Brown
+        "Saturn barycenter": "#CEB888",  # Pale Yellow / Gold
+        "Uranus barycenter": "#7FC9E0",  # Light Sky Blue
+        "Neptune barycenter": "#3B71A0",  # Deep Blue
     }
 
     PLANET_COLORS_DARK = {
         "Mercury": "#BEBEBE",  # LightGray (brighter than light mode)
         "Venus": "#FFFACD",  # LemonChiffon (brighter pale yellow)
         "Mars": "#E27B58",  # Lighter Rusty Red/Orange
-        "Jupiter": "#D8A976",  # Brighter Tan
-        "Saturn": "#E3D6A8",  # Brighter Pale Gold
-        "Uranus": "#A4D8E8",  # Brighter Light Blue
-        "Neptune": "#5B8FBF",  # Slightly lighter/more saturated Deep Blue
+        "Jupiter barycenter": "#D8A976",  # Brighter Tan
+        "Saturn barycenter": "#E3D6A8",  # Brighter Pale Gold
+        "Uranus barycenter": "#A4D8E8",  # Brighter Light Blue
+        "Neptune barycenter": "#5B8FBF",  # Slightly lighter/more saturated Deep Blue
     }
 
 

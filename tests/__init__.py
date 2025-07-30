@@ -1,5 +1,5 @@
 from apts import equipment, observations, place
-import ephem
+import datetime
 
 def setup_equipment():
   # Setup basic equipment
@@ -14,7 +14,7 @@ def setup_place():
       name='Zelków',
       lat=50.1637973,
       lon=19.7855169,
-      date = ephem.Date('2025/02/18 12:00:00'))
+      date = datetime.datetime(2025, 2, 18, 12, 0, 0, tzinfo=datetime.timezone.utc))
   return p
 
 
