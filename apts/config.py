@@ -45,3 +45,16 @@ def get_dark_mode() -> bool:
             "Defaulting to False."
         )
         return False
+
+def get_event_settings() -> dict:
+    """
+    Reads the event settings from the [events] section.
+
+    Returns:
+        dict: A dictionary of event types and their enabled/disabled status.
+    """
+    event_settings = {}
+    if config.has_section('events'):
+        for option in config.options('events'):
+            event_settings[option] = config.getboolean('events', option)
+    return event_settings
