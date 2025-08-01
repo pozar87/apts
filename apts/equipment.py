@@ -35,6 +35,7 @@ class Equipment:
         self.add_vertex(GraphConstants.SPACE_ID)
         self.add_vertex(GraphConstants.EYE_ID)
         self.add_vertex(GraphConstants.IMAGE_ID)
+        self._connected = False
 
     def _get_paths(self, output_id):
         # Connect all outputs with inputs
@@ -154,8 +155,8 @@ class Equipment:
             return result_data
 
         result = pd.DataFrame(columns=columns)
-        result = append(result, self._get_paths(GraphConstants.EYE_ID))
-        result = append(result, self._get_paths(GraphConstants.IMAGE_ID))
+        all_paths = self._get_paths(GraphConstants.EYE_ID) + self._get_paths(GraphConstants.IMAGE_ID)
+        result = append(result, all_paths)
 
         # Add ID column as first
         if not result.empty:  # Only add ID if DataFrame is not empty
@@ -363,6 +364,8 @@ class Equipment:
         return plot._repr_svg_()[0]  # SVG string is first in tuple
 
     def _connect(self):
+        if self._connected:
+            return
         logger.debug("Connecting nodes")
         for out_node in self.connection_garph.vs.select(node_type=OpticalType.OUTPUT):
             # Get output type
@@ -376,6 +379,7 @@ class Equipment:
                 if out_id != in_id:
                     self.add_edge(out_node, in_node)
         logger.debug(self.connection_garph)
+        self._connected = True
 
     def add_vertex(
         self,
