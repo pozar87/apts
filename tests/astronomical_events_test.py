@@ -18,9 +18,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         self.end_date = datetime(2024, 1, 31, tzinfo=timezone.utc)
 
     @patch("apts.events.as_completed")
-    @patch("apts.events.ThreadPoolExecutor")
     @patch("apts.events.get_event_settings")
-    def test_get_events_parallelization(self, mock_get_event_settings, mock_executor, mock_as_completed):
+    def test_get_events_parallelization(self, mock_get_event_settings, mock_as_completed):
         # Configure mock_get_event_settings to return all events enabled
         mock_get_event_settings.return_value = {
             "moon_phases": True,
@@ -39,7 +38,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         events_instance = AstronomicalEvents(self.place, self.start_date, self.end_date)
 
         # Mock the executor instance that the 'with' statement will use
-        mock_executor_instance = mock_executor.return_value.__enter__.return_value
+        events_instance.executor = MagicMock()
+        mock_executor_instance = events_instance.executor
     
         # Create a list of mock futures
         mock_futures = [MagicMock() for _ in range(10)]
