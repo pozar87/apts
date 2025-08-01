@@ -127,42 +127,22 @@ class SolarObjects(Objects):
                 ObjectTableLabels.PHASE,
             ]
         ] = self.objects.apply(get_ephem_properties, axis=1)
-        # Calculate planets RA
-        self.objects[ObjectTableLabels.RA] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.at(t)
-            .observe(self.place.observer)
-            .radec()[0]
-            .hours,
-            axis=1,
+        # Calculate planets RA, Dec, Distance, and Elongation
+        positions = self.objects[ObjectTableLabels.OBJECT].apply(
+            lambda obj: self.place.observer.at(t).observe(obj)
         )
-        # Calculate planets Dec
-        self.objects[ObjectTableLabels.DEC] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.at(t)
-            .observe(self.place.observer)
-            .radec()[1]
-            .degrees,
-            axis=1,
+
+        self.objects[ObjectTableLabels.RA] = positions.apply(
+            lambda pos: pos.radec()[0].hours
         )
-        # Calculate planets distance from Earth
-        self.objects[ObjectTableLabels.DISTANCE] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.at(t).observe(self.place.observer).distance().au,
-            axis=1,
+        self.objects[ObjectTableLabels.DEC] = positions.apply(
+            lambda pos: pos.radec()[1].degrees
         )
-        # Calculate planets elongation
-        self.objects[ObjectTableLabels.ELONGATION] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: body.Object.at(t)
-            .observe(self.place.observer)
-            .separation_from(self.place.sun.at(t))
-            .degrees,
-            axis=1,
+        self.objects[ObjectTableLabels.DISTANCE] = positions.apply(
+            lambda pos: pos.distance().au
+        )
+        self.objects[ObjectTableLabels.ELONGATION] = positions.apply(
+            lambda pos: pos.separation_from(self.place.sun.at(t)).degrees
         )
 
     def get_visible(

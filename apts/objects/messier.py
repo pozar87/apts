@@ -29,21 +29,19 @@ class Messier(Objects):
         else:
             observer_to_use = self.place
 
+        # Prepare fixed bodies once
+        fixed_bodies = self.objects.apply(lambda body: Objects.fixed_body(body.RA, body.Dec), axis=1)
+
         # Compute transit of messier objects at given place
-        self.objects[ObjectTableLabels.TRANSIT] = self.objects[
-            [ObjectTableLabels.RA, ObjectTableLabels.DEC]
-        ].apply(
-            lambda body: self._compute_tranzit(
-                Objects.fixed_body(body.RA, body.Dec), observer_to_use
-            ),
-            axis=1,
+        self.objects[ObjectTableLabels.TRANSIT] = fixed_bodies.apply(
+            lambda body: self._compute_tranzit(body, observer_to_use)
         )
         # Compute altitude of messier objects at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
-            [ObjectTableLabels.RA, ObjectTableLabels.DEC, ObjectTableLabels.TRANSIT]
+            [ObjectTableLabels.TRANSIT]
         ].apply(
-            lambda body: self._altitude_at_transit(
-                Objects.fixed_body(body.RA, body.Dec), body.Transit, observer_to_use
+            lambda row: self._altitude_at_transit(
+                fixed_bodies.loc[row.name], row.Transit, observer_to_use
             ),
             axis=1,
         )
