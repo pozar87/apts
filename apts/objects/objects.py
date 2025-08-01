@@ -64,35 +64,27 @@ class Objects:
             )
         return None
 
-    def _compute_setting(self, body, observer):
-        # Return setting time in local time
+    def _compute_rising_and_setting(self, body, observer):
+        # Return rising and setting time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
         f = almanac.risings_and_settings(self.place.eph, body, self.place.location)
         t, y = find_discrete(t0, t1, f)
-        for ti, yi in zip(t, y):
-            if yi == 0:
-                return (
-                    ti.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(observer.local_timezone)
-                )
-        return None
 
-    def _compute_rising(self, body, observer):
-        # Return rising time in local time
-        t0 = self.ts.utc(observer.date.utc_datetime())
-        t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
-        f = almanac.risings_and_settings(self.place.eph, body, self.place.location)
-        t, y = find_discrete(t0, t1, f)
+        rising_time = None
+        setting_time = None
+
         for ti, yi in zip(t, y):
-            if yi == 1:
-                return (
-                    ti.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(observer.local_timezone)
-                )
-        return None
+            local_time = (
+                ti.utc_datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(observer.local_timezone)
+            )
+            if yi == 1:  # Rising
+                rising_time = local_time
+            elif yi == 0:  # Setting
+                setting_time = local_time
+        return rising_time, setting_time
 
     def _altitude_at_transit(self, body, transit, observer):
         # Calculate objects altitude at transit time

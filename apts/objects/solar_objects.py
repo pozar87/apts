@@ -64,16 +64,13 @@ class SolarObjects(Objects):
         ].apply(
             lambda body: self._compute_tranzit(body.Object, observer_to_use), axis=1
         )
-        # Compute rising of planets at given place
-        self.objects[ObjectTableLabels.RISING] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(lambda body: self._compute_rising(body.Object, observer_to_use), axis=1)
-        # Compute transit of planets at given place
-        self.objects[ObjectTableLabels.SETTING] = self.objects[
+        # Compute rising and setting of planets at given place
+        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects[
             [ObjectTableLabels.OBJECT]
         ].apply(
-            lambda body: self._compute_setting(body.Object, observer_to_use), axis=1
-        )
+            lambda body: self._compute_rising_and_setting(body.Object, observer_to_use),
+            axis=1,
+        ).apply(pandas.Series)
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.OBJECT, ObjectTableLabels.TRANSIT]
