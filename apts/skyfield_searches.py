@@ -11,7 +11,8 @@ def find_extrema(f, t0, t1, num_points=5000):
     ts = load.timescale()
     times = ts.linspace(t0, t1, num_points)
 
-    values = f(times)
+    values = np.array([f(t) for t in times])
+    values = np.squeeze(values)
 
     if values.ndim == 0:
         return []
