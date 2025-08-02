@@ -12,8 +12,9 @@ logger = logging.getLogger(__name__)
 utc = timezone.utc
 from . import skyfield_searches
 from .catalogs import Catalogs
-from skyfield.api import load, Topos, Star
+from skyfield.api import Topos, Star
 from skyfield import almanac
+from .cache import get_timescale, get_ephemeris
 
 
 class AstronomicalEvents:
@@ -21,8 +22,8 @@ class AstronomicalEvents:
         self.place = place
         self.start_date = start_date.astimezone(utc)  # Ensure start_date is UTC
         self.end_date = end_date.astimezone(utc)  # Ensure end_date is UTC
-        self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.ts = get_timescale()
+        self.eph = get_ephemeris()
         self.observer = self.eph["earth"] + Topos(
             latitude_degrees=self.place.lat_decimal,
             longitude_degrees=self.place.lon_decimal,
