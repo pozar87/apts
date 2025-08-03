@@ -13,12 +13,12 @@ from skyfield.api import load
 from skyfield import almanac
 
 
-from .. import eph
+from ..cache import get_ephemeris
 
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        self.eph = eph
+        self.eph = get_ephemeris()
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [

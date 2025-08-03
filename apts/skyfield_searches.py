@@ -2,7 +2,7 @@ from skyfield.api import load
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
-from . import ts
+from .cache import get_timescale
 
 def find_extrema(f, t0, t1, num_points=1000):
     """
@@ -10,6 +10,7 @@ def find_extrema(f, t0, t1, num_points=1000):
     by finding the sign changes in its derivative.
     Returns a list of tuples (time, value, is_max).
     """
+    ts = get_timescale()
     times = ts.linspace(t0, t1, num_points)
     values = np.array([f(t) for t in times])
     values = np.squeeze(values)
