@@ -408,7 +408,7 @@ class AstronomicalEvents:
                 # A better approach would be to pass the messier_data or its identifier with the future.
                 events.append(
                     {
-                        "date": conj["date"].astimezone(utc),
+                        "date": conj["date"].to_pydatetime().astimezone(utc),
                         "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
                         "type": "Moon-Messier Conjunction",
                     }
