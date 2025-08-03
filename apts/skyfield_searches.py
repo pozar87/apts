@@ -39,6 +39,7 @@ def find_extrema(f, t0, t1, num_points=1000):
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -56,6 +57,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -76,6 +78,7 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
 
 
 def find_moon_apogee_perigee(eph, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -96,6 +99,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
 
 def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -116,6 +120,7 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 
 
 def find_oppositions(eph, planet_name, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -141,6 +146,7 @@ def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
 def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -165,6 +171,7 @@ def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_da
     return events
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = eph['moon']
@@ -194,6 +201,7 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
         }, index=[0])
         star_objects.append((star_data['Name'], Star.from_dataframe(star_df)))
 
+    ts = get_timescale()
     times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
 
     for t in times:
