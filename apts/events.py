@@ -386,48 +386,40 @@ class AstronomicalEvents:
                 )
             )
 
-        executor = self.executor
-        futures = [
-            executor.submit(
-                skyfield_searches.find_conjunctions_with_star,
-                self.eph,
-                "moon",
-                messier_stars[row["Messier"]],
-                self.start_date,
-                self.end_date,
-                threshold_degrees=1.0,
-            )
-            for _, row in messier_df.iterrows()
-        ]
-
-        for future in as_completed(futures):
-            conjunctions = future.result()
-            for conj in conjunctions:
-                # Find the original Messier object data based on the star object used in the conjunction
-                # This requires a reverse lookup or passing more info in the future result
-                # For now, we'll just use a generic name or re-calculate if needed.
-                # A better approach would be to pass the messier_data or its identifier with the future.
-                # Find the original Messier object data based on the star object used in the conjunction
-                # This requires a reverse lookup or passing more info in the future result
-                # For now, we'll just use a generic name or re-calculate if needed.
-                # A better approach would be to pass the messier_data or its identifier with the future.
-                if isinstance(conj['date'], (list, tuple, np.ndarray)):
-                    for t in conj['date']:
-                        events.append(
+        def find_all_conjunctions(messier_stars):
+            all_events = []
+            for messier_name, messier_star in messier_stars.items():
+                conjunctions = skyfield_searches.find_conjunctions_with_star(
+                    self.eph,
+                    "moon",
+                    messier_star,
+                    self.start_date,
+                    self.end_date,
+                    threshold_degrees=1.0,
+                )
+                for conj in conjunctions:
+                    if isinstance(conj['date'], (list, tuple, np.ndarray)):
+                        for t in conj['date']:
+                            all_events.append(
+                                {
+                                    "date": t.utc_datetime().astimezone(utc),
+                                    "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
+                                    "type": "Moon-Messier Conjunction",
+                                }
+                            )
+                    else:
+                        all_events.append(
                             {
-                                "date": t.utc_datetime().astimezone(utc),
-                                "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
+                                "date": conj["date"].utc_datetime().astimezone(utc),
+                                "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
                                 "type": "Moon-Messier Conjunction",
                             }
                         )
-                else:
-                    events.append(
-                        {
-                            "date": conj["date"].utc_datetime().astimezone(utc),
-                            "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
-                            "type": "Moon-Messier Conjunction",
-                        }
-                    )
+            return all_events
+
+        executor = self.executor
+        future = executor.submit(find_all_conjunctions, messier_stars)
+        events.extend(future.result())
 
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
