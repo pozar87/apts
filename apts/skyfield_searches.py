@@ -139,7 +139,7 @@ def find_oppositions(eph, planet_name, start_date, end_date):
 def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
-def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_.date, threshold_degrees=1.0):
+def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
