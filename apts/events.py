@@ -386,9 +386,9 @@ class AstronomicalEvents:
                 )
             )
 
-        def find_all_conjunctions(messier_stars):
+        def find_all_conjunctions(messier_stars_subset):
             all_events = []
-            for messier_name, messier_star in messier_stars.items():
+            for messier_name, messier_star in messier_stars_subset.items():
                 conjunctions = skyfield_searches.find_conjunctions_with_star(
                     self.eph,
                     "moon",
@@ -418,8 +418,13 @@ class AstronomicalEvents:
             return all_events
 
         executor = self.executor
-        future = executor.submit(find_all_conjunctions, messier_stars)
-        events.extend(future.result())
+        # Split messier_stars into chunks for parallel processing
+        chunk_size = 10
+        messier_star_chunks = [dict(list(messier_stars.items())[i:i + chunk_size]) for i in range(0, len(messier_stars), chunk_size)]
+        futures = [executor.submit(find_all_conjunctions, chunk) for chunk in messier_star_chunks]
+
+        for future in as_completed(futures):
+            events.extend(future.result())
 
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
