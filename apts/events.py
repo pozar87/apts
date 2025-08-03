@@ -397,13 +397,13 @@ class AstronomicalEvents:
                     self.end_date,
                     threshold_degrees=1.0,
                 )
-                for conj in conjunctions:
+                for i, conj in enumerate(conjunctions):
                     if isinstance(conj['date'], (list, tuple, np.ndarray)):
-                        for t in conj['date']:
+                        for j, t in enumerate(conj['date']):
                             all_events.append(
                                 {
                                     "date": t.astimezone(utc),
-                                    "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
+                                    "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees'][j]:.2f} deg)",
                                     "type": "Moon-Messier Conjunction",
                                 }
                             )
@@ -411,7 +411,7 @@ class AstronomicalEvents:
                         all_events.append(
                             {
                                 "date": conj["date"].utc_datetime().astimezone(utc),
-                            "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
+                                "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
                                 "type": "Moon-Messier Conjunction",
                             }
                         )
