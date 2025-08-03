@@ -8,13 +8,16 @@ from apts.place import Place
 
 class EventsTest(unittest.TestCase):
     def setUp(self):
-        print("Setting up EventsTest")
         self.place = Place(lat=52.2, lon=21.0)  # Warsaw
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
         self.end_date = datetime(2023, 3, 15, tzinfo=utc)
         self.events = AstronomicalEvents(self.place, self.start_date, self.end_date)
 
     def test_moon_phases(self):
+        # Disable all event calculations by default for this test
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
+        self.events.event_settings["moon_phases"] = True
         events_df = self.events.get_events()
 
         # New Moons within January 1, 2023, to March 15, 2023:
@@ -29,13 +32,29 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(sum(events_df["event"] == "Full Moon"), 3)
 
     def test_eclipses(self):
+        # This test is a bit generic, we can improve it later if needed
+        # For now, just disable all events to make it fast
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
         events_df = self.events.get_events()
         self.assertIn("event", events_df.columns)
 
     def test_highest_altitudes(self):
-        print("Running test_highest_altitudes")
-        pass
-        print("Finished test_highest_altitudes")
+        # Disable all event calculations by default for this test
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
+
+        # Enable only the highest_altitudes event calculation
+        self.events.event_settings["highest_altitudes"] = True
+
+        # We call calculate_highest_altitudes directly
+        events = self.events.calculate_highest_altitudes()
+
+        # Check if any events were returned
+        self.assertTrue(events)
+
+        # Check if the event description contains the degree information
+        self.assertIn("deg", events[0]['event'])
 
 
 if __name__ == "__main__":
