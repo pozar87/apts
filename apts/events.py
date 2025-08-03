@@ -14,7 +14,7 @@ from . import skyfield_searches
 from .catalogs import Catalogs
 from skyfield.api import Topos, Star
 from skyfield import almanac
-from .cache import get_timescale, get_ephemeris
+from . import eph, ts
 
 
 class AstronomicalEvents:
@@ -22,8 +22,8 @@ class AstronomicalEvents:
         self.place = place
         self.start_date = start_date.astimezone(utc)  # Ensure start_date is UTC
         self.end_date = end_date.astimezone(utc)  # Ensure end_date is UTC
-        self.ts = get_timescale()
-        self.eph = get_ephemeris()
+        self.ts = ts
+        self.eph = eph
         self.observer = self.eph["earth"] + Topos(
             latitude_degrees=self.place.lat_decimal,
             longitude_degrees=self.place.lon_decimal,
@@ -406,13 +406,23 @@ class AstronomicalEvents:
                 # This requires a reverse lookup or passing more info in the future result
                 # For now, we'll just use a generic name or re-calculate if needed.
                 # A better approach would be to pass the messier_data or its identifier with the future.
-                events.append(
-                    {
-                        "date": conj["date"].utc_datetime().astimezone(utc),
-                        "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
-                        "type": "Moon-Messier Conjunction",
-                    }
-                )
+                if hasattr(conj["date"], '__iter__'):
+                    for d in conj["date"]:
+                        events.append(
+                            {
+                                "date": d.utc_datetime().astimezone(utc),
+                                "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
+                                "type": "Moon-Messier Conjunction",
+                            }
+                        )
+                else:
+                    events.append(
+                        {
+                            "date": conj["date"].utc_datetime().astimezone(utc),
+                            "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
+                            "type": "Moon-Messier Conjunction",
+                        }
+                    )
 
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"

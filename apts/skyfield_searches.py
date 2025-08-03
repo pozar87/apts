@@ -2,7 +2,7 @@ from skyfield.api import load
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
-from .cache import get_timescale
+from . import ts
 
 def find_extrema(f, t0, t1, num_points=1000):
     """
@@ -10,7 +10,6 @@ def find_extrema(f, t0, t1, num_points=1000):
     by finding the sign changes in its derivative.
     Returns a list of tuples (time, value, is_max).
     """
-    ts = get_timescale()
     times = ts.linspace(t0, t1, num_points)
     values = np.array([f(t) for t in times])
     values = np.squeeze(values)
@@ -39,7 +38,6 @@ def find_extrema(f, t0, t1, num_points=1000):
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -57,7 +55,6 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -78,7 +75,6 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
 
 
 def find_moon_apogee_perigee(eph, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -99,7 +95,6 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
 
 def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -120,7 +115,6 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 
 
 def find_oppositions(eph, planet_name, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -145,8 +139,7 @@ def find_oppositions(eph, planet_name, start_date, end_date):
 def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
-def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
-    ts = load.timescale()
+def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_.date, threshold_degrees=1.0):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -171,7 +164,6 @@ def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_da
     return events
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
-    ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = eph['moon']

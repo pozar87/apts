@@ -60,3 +60,23 @@ except ValueError:
 pd.set_option("display.max_colwidth", None)
 
 __version__ = "0.7.0"
+
+import functools
+from skyfield.api import load
+
+@functools.lru_cache(maxsize=None)
+def get_timescale():
+    """
+    Returns a cached timescale object.
+    """
+    return load.timescale()
+
+@functools.lru_cache(maxsize=None)
+def get_ephemeris():
+    """
+    Returns a cached ephemeris object.
+    """
+    return load('de421.bsp')
+
+eph = get_ephemeris()
+ts = get_timescale()

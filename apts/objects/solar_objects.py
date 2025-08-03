@@ -13,10 +13,12 @@ from skyfield.api import load
 from skyfield import almanac
 
 
+from .. import eph
+
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        self.eph = load("de421.bsp")
+        self.eph = eph
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [
