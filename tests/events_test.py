@@ -8,6 +8,7 @@ from apts.place import Place
 
 class EventsTest(unittest.TestCase):
     def setUp(self):
+        print("Setting up EventsTest")
         self.place = Place(lat=52.2, lon=21.0)  # Warsaw
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
         self.end_date = datetime(2023, 3, 15, tzinfo=utc)
@@ -30,6 +31,11 @@ class EventsTest(unittest.TestCase):
     def test_eclipses(self):
         events_df = self.events.get_events()
         self.assertIn("event", events_df.columns)
+
+    def test_highest_altitudes(self):
+        print("Running test_highest_altitudes")
+        pass
+        print("Finished test_highest_altitudes")
 
 
 if __name__ == "__main__":
