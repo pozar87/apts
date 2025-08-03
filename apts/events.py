@@ -402,7 +402,7 @@ class AstronomicalEvents:
                         for t in conj['date']:
                             all_events.append(
                                 {
-                                    "date": t.utc_datetime().astimezone(utc),
+                                    "date": t.astimezone(utc),
                                     "event": f"Moon conjunct {messier_name} (sep: {conj['separation_degrees']:.2f} deg)",
                                     "type": "Moon-Messier Conjunction",
                                 }
