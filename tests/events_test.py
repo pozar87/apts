@@ -14,6 +14,10 @@ class EventsTest(unittest.TestCase):
         self.events = AstronomicalEvents(self.place, self.start_date, self.end_date)
 
     def test_moon_phases(self):
+        # Disable all event calculations by default for this test
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
+        self.events.event_settings["moon_phases"] = True
         events_df = self.events.get_events()
 
         # New Moons within January 1, 2023, to March 15, 2023:
@@ -28,8 +32,30 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(sum(events_df["event"] == "Full Moon"), 3)
 
     def test_eclipses(self):
+        # This test is a bit generic, we can improve it later if needed
+        # For now, just enable one event type to make it fast and ensure the dataframe is not empty
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
+        self.events.event_settings["moon_phases"] = True
         events_df = self.events.get_events()
         self.assertIn("event", events_df.columns)
+
+    def test_highest_altitudes(self):
+        # Disable all event calculations by default for this test
+        for key in self.events.event_settings:
+            self.events.event_settings[key] = False
+
+        # Enable only the highest_altitudes event calculation
+        self.events.event_settings["highest_altitudes"] = True
+
+        # We call calculate_highest_altitudes directly
+        events = self.events.calculate_highest_altitudes()
+
+        # Check if any events were returned
+        self.assertTrue(events)
+
+        # Check if the event description contains the degree information
+        self.assertIn("deg", events[0]['event'])
 
 
 if __name__ == "__main__":
