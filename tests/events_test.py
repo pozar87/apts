@@ -33,9 +33,10 @@ class EventsTest(unittest.TestCase):
 
     def test_eclipses(self):
         # This test is a bit generic, we can improve it later if needed
-        # For now, just disable all events to make it fast
+        # For now, just enable one event type to make it fast and ensure the dataframe is not empty
         for key in self.events.event_settings:
             self.events.event_settings[key] = False
+        self.events.event_settings["moon_phases"] = True
         events_df = self.events.get_events()
         self.assertIn("event", events_df.columns)
 
