@@ -1,16 +1,17 @@
 from skyfield.api import load
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize_scalar
+from .cache import get_timescale
 
-def find_extrema(f, t0, t1, num_points=5000):
+def find_extrema(f, t0, t1, num_points=1000):
     """
     Finds the extrema of a function f over the interval [t0, t1]
     by finding the sign changes in its derivative.
     Returns a list of tuples (time, value, is_max).
     """
-    ts = load.timescale()
+    ts = get_timescale()
     times = ts.linspace(t0, t1, num_points)
-
     values = np.array([f(t) for t in times])
     values = np.squeeze(values)
 
@@ -19,24 +20,26 @@ def find_extrema(f, t0, t1, num_points=5000):
 
     if values.shape[0] < 2:
         return []
-
     deriv = np.gradient(values)
-
-    # Find sign changes in the derivative
     sign_changes = np.where(np.diff(np.sign(deriv)))[0]
 
     extrema = []
     for i in sign_changes:
-        t_extremum = times[i]
-        v_extremum = values[i]
         is_max = deriv[i] > 0 and deriv[i+1] < 0
-        extrema.append((t_extremum, v_extremum, is_max))
+        if is_max:
+            res = minimize_scalar(lambda t: -f(ts.tt_jd(t)), bracket=(times[i].tt, times[i+1].tt))
+            t_max = ts.tt_jd(res.x)
+            extrema.append((t_max, -res.fun, True))
+        else:
+            res = minimize_scalar(lambda t: f(ts.tt_jd(t)), bracket=(times[i].tt, times[i+1].tt))
+            t_min = ts.tt_jd(res.x)
+            extrema.append((t_min, res.fun, False))
 
     return extrema
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -54,7 +57,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -75,7 +78,7 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
 
 
 def find_moon_apogee_perigee(eph, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -96,7 +99,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
 
 def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -117,7 +120,7 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 
 
 def find_oppositions(eph, planet_name, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -143,7 +146,7 @@ def find_mercury_inferior_conjunctions(eph, start_date, end_date):
     return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
 
 def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -168,7 +171,7 @@ def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_da
     return events
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
-    ts = load.timescale()
+    ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = eph['moon']
@@ -198,6 +201,7 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
         }, index=[0])
         star_objects.append((star_data['Name'], Star.from_dataframe(star_df)))
 
+    ts = get_timescale()
     times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
 
     for t in times:

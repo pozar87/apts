@@ -13,10 +13,12 @@ from skyfield.api import load
 from skyfield import almanac
 
 
+from ..cache import get_ephemeris
+
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        self.eph = load("de421.bsp")
+        self.eph = get_ephemeris()
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [
@@ -128,21 +130,30 @@ class SolarObjects(Objects):
             ]
         ] = self.objects.apply(get_ephem_properties, axis=1)
         # Calculate planets RA, Dec, Distance, and Elongation
-        positions = self.objects[ObjectTableLabels.OBJECT].apply(
-            lambda obj: self.place.observer.at(t).observe(obj)
-        )
-
-        self.objects[ObjectTableLabels.RA] = positions.apply(
-            lambda pos: pos.radec()[0].hours
-        )
-        self.objects[ObjectTableLabels.DEC] = positions.apply(
-            lambda pos: pos.radec()[1].degrees
-        )
-        self.objects[ObjectTableLabels.DISTANCE] = positions.apply(
-            lambda pos: pos.distance().au
-        )
-        self.objects[ObjectTableLabels.ELONGATION] = positions.apply(
-            lambda pos: pos.separation_from(self.place.sun.at(t)).degrees
+        self.objects[
+            [
+                ObjectTableLabels.RA,
+                ObjectTableLabels.DEC,
+                ObjectTableLabels.DISTANCE,
+                ObjectTableLabels.ELONGATION,
+            ]
+        ] = self.objects.apply(
+            lambda row: pandas.Series(
+                (
+                    pos := self.place.observer.at(t).observe(
+                        row[ObjectTableLabels.OBJECT]
+                    )
+                )
+                and {
+                    ObjectTableLabels.RA: pos.radec()[0].hours,
+                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
+                    ObjectTableLabels.DISTANCE: pos.distance().au,
+                    ObjectTableLabels.ELONGATION: pos.separation_from(
+                        self.place.sun.at(t)
+                    ).degrees,
+                }
+            ),
+            axis=1,
         )
 
     def get_visible(
