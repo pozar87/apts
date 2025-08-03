@@ -406,11 +406,15 @@ class AstronomicalEvents:
                 # This requires a reverse lookup or passing more info in the future result
                 # For now, we'll just use a generic name or re-calculate if needed.
                 # A better approach would be to pass the messier_data or its identifier with the future.
-                if hasattr(conj["date"], '__iter__'):
-                    for d in conj["date"]:
+                # Find the original Messier object data based on the star object used in the conjunction
+                # This requires a reverse lookup or passing more info in the future result
+                # For now, we'll just use a generic name or re-calculate if needed.
+                # A better approach would be to pass the messier_data or its identifier with the future.
+                if isinstance(conj['date'], (list, tuple, np.ndarray)):
+                    for t in conj['date']:
                         events.append(
                             {
-                                "date": d.utc_datetime().astimezone(utc),
+                                "date": t.utc_datetime().astimezone(utc),
                                 "event": f"Moon conjunct (sep: {conj['separation_degrees']:.2f} deg)", # Generic name
                                 "type": "Moon-Messier Conjunction",
                             }
