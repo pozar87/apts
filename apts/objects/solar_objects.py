@@ -188,3 +188,23 @@ class SolarObjects(Objects):
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
         return visible
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # self.objects contains a column with skyfield objects, which are not picklable.
+        # We can serialize the dataframe without this column.
+        if ObjectTableLabels.OBJECT in state["objects"]:
+            state["objects"] = state["objects"].drop(columns=[ObjectTableLabels.OBJECT])
+        # Remove the ephemeris object which may contain an open file handle
+        if 'eph' in state:
+            del state['eph']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.eph = get_ephemeris()
+        # Re-create the 'Object' column from the 'Name' column.
+        if ObjectTableLabels.OBJECT not in self.objects.columns:
+            self.objects[ObjectTableLabels.OBJECT] = self.objects[
+                [ObjectTableLabels.NAME]
+            ].apply(lambda body: self.eph[body.Name], axis=1)

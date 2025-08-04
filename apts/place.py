@@ -294,6 +294,31 @@ class Place:
 
         return ax
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        del state["ts"]
+        del state["eph"]
+        del state["location"]
+        del state["observer"]
+        del state["sun"]
+        del state["moon"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Re-create the unpicklable entries.
+        self.ts = load.timescale()
+        self.eph = load("de421.bsp")
+        self.location = Topos(
+            latitude_degrees=self.lat_decimal,
+            longitude_degrees=self.lon_decimal,
+            elevation_m=self.elevation,
+        )
+        self.observer = self.eph["earth"] + self.location
+        self.sun = self.eph["sun"]
+        self.moon = self.eph["moon"]
+
     def plot_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
