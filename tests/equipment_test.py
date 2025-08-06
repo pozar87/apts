@@ -11,7 +11,8 @@ from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels
 from apts.constants.graphconstants import OpticalType, get_plot_style, get_plot_colors # Added get_plot_colors
 from apts.config import get_dark_mode
 from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece # Added Telescope, Camera, Eyepiece
-from apts.utils import ureg, ConnectionType # Added ureg, ConnectionType
+from apts.units import ureg
+from apts.utils import ConnectionType
 from . import setup_equipment
 
 

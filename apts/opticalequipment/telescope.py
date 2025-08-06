@@ -1,7 +1,8 @@
 import numpy
 
 from .abstract import OpticalEquipment
-from ..utils import ConnectionType, ureg
+from ..units import ureg
+from ..utils import ConnectionType
 from ..constants import GraphConstants
 
 

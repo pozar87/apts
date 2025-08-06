@@ -15,7 +15,7 @@ from apts.constants.graphconstants import (
 from apts.constants.objecttablelabels import (
     ObjectTableLabels,
 )  # Added ObjectTableLabels
-from apts.utils import ureg  # Added ureg for Quantity
+from apts.units import ureg
 from tests import setup_observation
 from apts.conditions import Conditions  # Import Conditions at the top level
 

@@ -1,5 +1,5 @@
 from ..constants import OpticalType, GraphConstants
-from ..utils import ureg
+from ..units import ureg
 from .abstract import OpticalEquipment
 
 class Binoculars(OpticalEquipment):

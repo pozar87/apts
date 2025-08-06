@@ -7,7 +7,7 @@ import pint
 
 from .objects import Objects
 from ..constants import ObjectTableLabels
-from ..utils import ureg
+from ..units import ureg
 from apts.place import Place
 from skyfield.api import load
 from skyfield import almanac

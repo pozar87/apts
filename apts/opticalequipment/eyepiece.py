@@ -1,7 +1,8 @@
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants
 
-from ..utils import ureg, ConnectionType
+from ..units import ureg
+from ..utils import ConnectionType
 
 class Eyepiece(OutputOpticalEqipment):
   """
