@@ -2,18 +2,10 @@ import io
 from aenum import Enum, auto
 
 import matplotlib.dates as mdates
-from pint import UnitRegistry
 from matplotlib import pyplot
 
 from apts.constants.graphconstants import get_plot_style
-
-# Unit registry
-ureg = UnitRegistry()
-# Define astronomical units that might not be in Pint by default
-ureg.define("mag = [] = magnitude")  # Astronomical magnitude
-ureg.define("hour = 60 * minute = h = hr")  # Hour for Right Ascension
-ureg.define("AU = 149597870700 * meter = au")  # Astronomical Unit
-ureg.define("arcsecond = degree / 3600 = arcsec")  # Arc second
+from apts.units import ureg
 
 
 class ConnectionType(Enum):

@@ -2,7 +2,8 @@ import uuid
 import numpy as np # For np.nan
 
 from ..constants import OpticalType
-from ..utils import ConnectionType, ureg
+from ..units import ureg
+from ..utils import ConnectionType
 
 
 class OpticalEquipment:

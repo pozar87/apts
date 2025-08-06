@@ -4,7 +4,8 @@ import numpy
 
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants
-from ..utils import ConnectionType, ureg
+from ..units import ureg
+from ..utils import ConnectionType
 
 
 class Camera(OutputOpticalEqipment):

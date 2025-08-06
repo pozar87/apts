@@ -1,6 +1,6 @@
 import pandas as pd
 from importlib import resources
-from .utils import ureg
+from .units import ureg
 
 
 class Catalogs:

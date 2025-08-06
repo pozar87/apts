@@ -7,7 +7,7 @@ from apts.observations import Observation
 from apts.opticalequipment import Telescope, Eyepiece
 import unittest
 import pint
-from apts.utils import ureg
+from apts.units import ureg
 
 
 class CacheTest(unittest.TestCase):

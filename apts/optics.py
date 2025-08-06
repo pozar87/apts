@@ -1,7 +1,7 @@
 import functools
 import operator
 from .opticalequipment.binoculars import Binoculars
-from .utils import ureg
+from .units import ureg
 
 
 class OpticsUtils:
