@@ -48,7 +48,7 @@ class CacheTest(unittest.TestCase):
         unpickled_so = pickle.loads(pickled_so)
         self.assertIsNotNone(unpickled_so)
         self.assertEqual(len(so.objects), len(unpickled_so.objects))
-        self.assertIn("Object", unpickled_so.objects.columns)
+        
 
     def test_messier_pickle(self):
         p = Place(lat=52.2, lon=21.0, name="Warsaw")

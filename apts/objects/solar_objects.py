@@ -18,7 +18,6 @@ from ..cache import get_ephemeris
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        self.eph = get_ephemeris()
         # Init object list with all planets
         self.objects = pandas.DataFrame(
             [
@@ -34,16 +33,17 @@ class SolarObjects(Objects):
             ],
             columns=[ObjectTableLabels.NAME],
         )
-        # Add name
-        self.objects[ObjectTableLabels.OBJECT] = self.objects[
-            [ObjectTableLabels.NAME]
-        ].apply(lambda body: self.eph[body.Name], axis=1)
+
         # Set proper dtype for string columns
         self.objects[ObjectTableLabels.NAME] = self.objects[
             ObjectTableLabels.NAME
         ].astype("string")
         # Compute positions
         self.compute(calculation_date)
+
+    def get_skyfield_object(self, solar_object):
+        eph = get_ephemeris()
+        return eph[solar_object.Name]
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:
@@ -61,24 +61,20 @@ class SolarObjects(Objects):
             observer_to_use = self.place
 
         # Compute transit of planets at given place
-        self.objects[ObjectTableLabels.TRANSIT] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: self._compute_tranzit(body.Object, observer_to_use), axis=1
+        self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
+            lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use), axis=1
         )
         # Compute rising and setting of planets at given place
-        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects[
-            [ObjectTableLabels.OBJECT]
-        ].apply(
-            lambda body: self._compute_rising_and_setting(body.Object, observer_to_use),
+        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects.apply(
+            lambda body: self._compute_rising_and_setting(self.get_skyfield_object(body), observer_to_use),
             axis=1,
         ).apply(pandas.Series)
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
-            [ObjectTableLabels.OBJECT, ObjectTableLabels.TRANSIT]
+            [ObjectTableLabels.TRANSIT]
         ].apply(
-            lambda body: self._altitude_at_transit(
-                body.Object, body.Transit, observer_to_use
+            lambda row: self._altitude_at_transit(
+                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
             ),
             axis=1,
         )
@@ -141,7 +137,7 @@ class SolarObjects(Objects):
             lambda row: pandas.Series(
                 (
                     pos := self.place.observer.at(t).observe(
-                        row[ObjectTableLabels.OBJECT]
+                        self.get_skyfield_object(row)
                     )
                 )
                 and {
@@ -189,22 +185,5 @@ class SolarObjects(Objects):
         visible = visible.sort_values(by=sort_by, ascending=True)
         return visible
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # self.objects contains a column with skyfield objects, which are not picklable.
-        # We can serialize the dataframe without this column.
-        if ObjectTableLabels.OBJECT in state["objects"]:
-            state["objects"] = state["objects"].drop(columns=[ObjectTableLabels.OBJECT])
-        # Remove the ephemeris object which may contain an open file handle
-        if 'eph' in state:
-            del state['eph']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.eph = get_ephemeris()
-        # Re-create the 'Object' column from the 'Name' column.
-        if ObjectTableLabels.OBJECT not in self.objects.columns:
-            self.objects[ObjectTableLabels.OBJECT] = self.objects[
-                [ObjectTableLabels.NAME]
-            ].apply(lambda body: self.eph[body.Name], axis=1)
+    
+        

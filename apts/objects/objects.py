@@ -49,11 +49,11 @@ class Objects:
         # Create body at given coordinates
         return Star(ra_hours=RA, dec_degrees=Dec)
 
-    def _compute_tranzit(self, body, observer):
+    def _compute_tranzit(self, skyfield_object, observer):
         # Return transit time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
-        f = almanac.meridian_transits(self.place.eph, body, self.place.location)
+        f = almanac.meridian_transits(self.place.eph, skyfield_object, self.place.location)
         t, y = almanac.find_discrete(t0, t1, f)
         if len(t) > 0:
             return (
@@ -64,11 +64,11 @@ class Objects:
             )
         return None
 
-    def _compute_rising_and_setting(self, body, observer):
+    def _compute_rising_and_setting(self, skyfield_object, observer):
         # Return rising and setting time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
-        f = almanac.risings_and_settings(self.place.eph, body, self.place.location)
+        f = almanac.risings_and_settings(self.place.eph, skyfield_object, self.place.location)
         t, y = find_discrete(t0, t1, f)
 
         rising_time = None
@@ -86,10 +86,10 @@ class Objects:
                 setting_time = local_time
         return rising_time, setting_time
 
-    def _altitude_at_transit(self, body, transit, observer):
+    def _altitude_at_transit(self, skyfield_object, transit, observer):
         # Calculate objects altitude at transit time
         if transit is None:
             return 0
         t = self.ts.utc(transit)
-        alt, _, _ = self.place.observer.at(t).observe(body).apparent().altaz()
+        alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
         return alt.degrees
