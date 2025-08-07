@@ -4,7 +4,7 @@ import numpy
 
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants
-from ..units import ureg
+from ..units import get_unit_registry
 from ..utils import ConnectionType
 
 
@@ -17,8 +17,8 @@ class Camera(OutputOpticalEqipment):
                connection_type=ConnectionType.T2):
     super(Camera, self).__init__(0, vendor)
     self.connection_type = connection_type
-    self.sensor_width = sensor_width * ureg.mm
-    self.sensor_height = sensor_height * ureg.mm
+    self.sensor_width = sensor_width * get_unit_registry().mm
+    self.sensor_height = sensor_height * get_unit_registry().mm
     self.width = width
     self.height = height
 
@@ -29,7 +29,7 @@ class Camera(OutputOpticalEqipment):
     return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)
 
   def field_of_view(self, telescop, zoom, barlow_magnification):
-    return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * ureg.deg
+    return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * get_unit_registry().deg
 
   def output_type(self):
     return GraphConstants.IMAGE_ID

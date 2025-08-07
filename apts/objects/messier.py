@@ -9,7 +9,7 @@ from skyfield.api import Star
 class Messier(Objects):
     def __init__(self, place, calculation_date=None):
         super(Messier, self).__init__(place)
-        self.objects = Catalogs.MESSIER.copy()
+        self.objects = Catalogs().MESSIER.copy()
         self.compute(calculation_date)
 
     def compute(self, calculation_date=None):

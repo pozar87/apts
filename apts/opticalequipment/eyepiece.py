@@ -1,7 +1,7 @@
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants
 
-from ..units import ureg
+from ..units import get_unit_registry
 from ..utils import ConnectionType
 
 class Eyepiece(OutputOpticalEqipment):
@@ -12,7 +12,7 @@ class Eyepiece(OutputOpticalEqipment):
   def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25):
     super(Eyepiece, self).__init__(focal_length, vendor)
     self._connection_type = connection_type
-    self._field_of_view = field_of_view * ureg.deg
+    self._field_of_view = field_of_view * get_unit_registry().deg
 
   def _zoom_divider(self):
     return self.focal_length

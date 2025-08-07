@@ -2,7 +2,7 @@ import uuid
 import numpy as np # For np.nan
 
 from ..constants import OpticalType
-from ..units import ureg
+from ..units import get_unit_registry
 from ..utils import ConnectionType
 
 
@@ -19,7 +19,7 @@ class OpticalEquipment:
     self._id = str(uuid.uuid4())
     self._type = OpticalType.OPTICAL
 
-    self.focal_length = focal_length * ureg.mm
+    self.focal_length = focal_length * get_unit_registry().mm
     self.vendor = vendor
 
   def get_name(self):
@@ -77,6 +77,7 @@ class OutputOpticalEqipment(OpticalEquipment):
     return True # Default for eyepieces etc.
 
   def exit_pupil(self, telescop, zoom):
+      ureg = get_unit_registry()
       # Default unit for exit pupil if telescope aperture is problematic
       default_mm_unit = ureg.mm
 
@@ -112,6 +113,7 @@ class OutputOpticalEqipment(OpticalEquipment):
           return np.nan * aperture_units
 
   def brightness(self, telescop, zoom):
+    ureg = get_unit_registry()
     if not self.is_visual_output():
         return np.nan * ureg.dimensionless
 
