@@ -1,7 +1,7 @@
 import functools
 import operator
 from .opticalequipment.binoculars import Binoculars
-from .units import ureg
+from .units import get_unit_registry
 
 
 class OpticsUtils:
@@ -31,7 +31,7 @@ class OpticsUtils:
   @staticmethod
   def compute_zoom(telescope, barlows, output):
     if isinstance(telescope, Binoculars):
-        return telescope.magnification * ureg.dimensionless
+        return telescope.magnification * get_unit_registry().dimensionless
 
     # Original logic
     magnification = OpticsUtils.barlows_multiplications(barlows)
@@ -92,7 +92,7 @@ class OpticalPath:
         # self.telescope.brightness() returns a float like 75.0 (for 75%)
         # OutputOpticalEquipment.brightness returns a value like <Quantity(75.0, 'dimensionless')>
         # To be consistent so that .magnitude can be called later:
-        return self.telescope.brightness() * ureg.dimensionless
+        return self.telescope.brightness() * get_unit_registry().dimensionless
     # This already returns a pint Quantity from OutputOpticalEquipment's method
     return self.output.brightness(self.telescope, self.zoom())
 
@@ -107,12 +107,12 @@ class OpticalPath:
       if hasattr(self.telescope, 'aperture'):
           zoom_value = self.zoom()
           if zoom_value.magnitude == 0: # Avoid division by zero
-              return 0 * ureg.mm
+              return 0 * get_unit_registry().mm
           return self.telescope.aperture / zoom_value
 
       # If it's not Binoculars and telescope has no aperture (should not happen for Telescopes)
       # return a zero quantity to avoid crashes, though this indicates a data problem.
-      return 0 * ureg.mm
+      return 0 * get_unit_registry().mm
 
   def elements(self):
     """

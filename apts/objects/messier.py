@@ -3,12 +3,13 @@ from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
 from apts.place import Place
 import numpy
+from skyfield.api import Star
 
 
 class Messier(Objects):
     def __init__(self, place, calculation_date=None):
         super(Messier, self).__init__(place)
-        self.objects = Catalogs.MESSIER.copy()
+        self.objects = Catalogs().MESSIER.copy()
         self.compute(calculation_date)
 
     def compute(self, calculation_date=None):
@@ -29,19 +30,22 @@ class Messier(Objects):
         else:
             observer_to_use = self.place
 
-        # Prepare fixed bodies once
-        fixed_bodies = self.objects.apply(lambda body: Objects.fixed_body(body.RA, body.Dec), axis=1)
+        
 
         # Compute transit of messier objects at given place
-        self.objects[ObjectTableLabels.TRANSIT] = fixed_bodies.apply(
-            lambda body: self._compute_tranzit(body, observer_to_use)
+        self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
+            lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use),
+            axis=1
         )
         # Compute altitude of messier objects at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.TRANSIT]
         ].apply(
             lambda row: self._altitude_at_transit(
-                fixed_bodies.loc[row.name], row.Transit, observer_to_use
+                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
             ),
             axis=1,
         )
+
+    def get_skyfield_object(self, messier_object):
+        return Star(ra_hours=messier_object.RA, dec_degrees=messier_object.Dec)

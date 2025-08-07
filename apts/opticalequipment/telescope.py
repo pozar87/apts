@@ -1,7 +1,7 @@
 import numpy
 
 from .abstract import OpticalEquipment
-from ..units import ureg
+from ..units import get_unit_registry
 from ..utils import ConnectionType
 from ..constants import GraphConstants
 
@@ -14,7 +14,7 @@ class Telescope(OpticalEquipment):
   def __init__(self, aperture, focal_length, vendor="unknown telescope", connection_type=ConnectionType.F_1_25,
                t2_output=False):
     super(Telescope, self).__init__(focal_length, vendor)
-    self.aperture = aperture * ureg.mm
+    self.aperture = aperture * get_unit_registry().mm
     self.connection_type = connection_type
     self.t2_output = t2_output
 
@@ -27,7 +27,7 @@ class Telescope(OpticalEquipment):
     https://en.wikipedia.org/wiki/Dawes%27_limit
     :return: limit in arcsecond
     """
-    return round((11.6 / self.aperture.to('cm')).magnitude, 3) * ureg.arcsecond
+    return round((11.6 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
   def rayleigh_limit(self):
     """
@@ -35,7 +35,7 @@ class Telescope(OpticalEquipment):
     https://en.wikipedia.org/wiki/Angular_resolution
     :return: limit in arcsecond
     """
-    return round((13.8 / self.aperture.to('cm')).magnitude, 3) * ureg.arcsecond
+    return round((13.8 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
   def limiting_magnitude(self):
     """
@@ -50,7 +50,7 @@ class Telescope(OpticalEquipment):
     :param other_aperture: aperture in mm
     :return: ratio between telescope and other aperture
     """
-    other_aperture *= ureg.mm
+    other_aperture *= get_unit_registry().mm
     return self.aperture ** 2 / other_aperture ** 2
 
   def min_useful_zoom(self):

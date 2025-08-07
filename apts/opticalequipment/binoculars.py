@@ -1,5 +1,5 @@
 from ..constants import OpticalType, GraphConstants
-from ..units import ureg
+from ..units import get_unit_registry
 from .abstract import OpticalEquipment
 
 class Binoculars(OpticalEquipment):
@@ -14,8 +14,8 @@ class Binoculars(OpticalEquipment):
         super().__init__(focal_length=focal_length, vendor=vendor)
 
         self.magnification = magnification
-        self.objective_diameter = objective_diameter * ureg.mm
-        self.apparent_fov_deg = apparent_fov_deg * ureg.deg
+        self.objective_diameter = objective_diameter * get_unit_registry().mm
+        self.apparent_fov_deg = apparent_fov_deg * get_unit_registry().deg
         self._type = OpticalType.BINOCULARS
 
     def get_name(self):
@@ -37,14 +37,14 @@ class Binoculars(OpticalEquipment):
         Calculate the maximum resolving power using the Dawes' Limit formula.
         :return: limit in arcsecond
         """
-        return round((11.6 / self.objective_diameter.to('cm')).magnitude, 3) * ureg.arcsecond
+        return round((11.6 / self.objective_diameter.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
     def rayleigh_limit(self):
         """
         Calculate the maximum resolving power using the Rayleigh Limit formula.
         :return: limit in arcsecond
         """
-        return round((13.8 / self.objective_diameter.to('cm')).magnitude, 3) * ureg.arcsecond
+        return round((13.8 / self.objective_diameter.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
         """
