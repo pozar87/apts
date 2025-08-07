@@ -1,3 +1,4 @@
+import logging
 from importlib import resources
 import pandas as pd
 
@@ -7,12 +8,12 @@ from .units import get_unit_registry
 _messier_df = None
 _bright_stars_df = None
 
+logger = logging.getLogger(__name__)
+
 
 def _load_messier_with_units():
     # Load Messier catalogue data
-    messier_df = pd.read_csv(
-        str(resources.files("apts").joinpath("data/messier.csv"))
-    )
+    messier_df = pd.read_csv(str(resources.files("apts").joinpath("data/messier.csv")))
 
     # Set proper dtypes for string columns
     string_columns = ["Messier", "NGC", "Name", "Type", "Constellation"]
@@ -21,9 +22,7 @@ def _load_messier_with_units():
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    messier_df["Distance"] = messier_df["Distance"].apply(
-        lambda x: x * ureg.light_year
-    )
+    messier_df["Distance"] = messier_df["Distance"].apply(lambda x: x * ureg.light_year)
     messier_df["RA"] = messier_df["RA"].apply(lambda x: x * ureg.hour)
     messier_df["Dec"] = messier_df["Dec"].apply(lambda x: x * ureg.degree)
     messier_df["Width"] = messier_df["Width"].apply(lambda x: x * ureg.arcminute)
@@ -72,8 +71,8 @@ class Catalogs:
 
 
 def initialize_catalogs():
+    logger.info("Initializing catalogs...")
     # This function will trigger the loading of data with units
     # when it's explicitly called.
     _ = Catalogs().MESSIER
     _ = Catalogs().BRIGHT_STARS
-
