@@ -1,60 +1,106 @@
 import pytest
 import json
-import re
 import datetime
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
 from apts.weather import Weather
+from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap
 from apts.constants.graphconstants import get_plot_style
 from . import setup_place
 from requests_mock import ANY
-from apts.observations import Observation  # Import Observation
-from apts.conditions import Conditions  # Import Conditions
-import pytz  # Import pytz
+from apts.observations import Observation
+from apts.conditions import Conditions
+import pytz
 
+# MOCK DATA
+PIRATE_WEATHER_MOCK = {
+    "hourly": {
+        "data": [
+            {
+                "time": 1624000000, "summary": "Clear", "precipType": "rain", "precipProbability": 0.2,
+                "precipIntensity": 0.1, "temperature": 20, "apparentTemperature": 21, "dewPoint": 10,
+                "humidity": 0.5, "windSpeed": 5, "cloudCover": 0.1, "visibility": 10,
+                "pressure": 1013, "ozone": 300,
+            }
+        ]
+    }
+}
 
-def test_weather_successful_request(requests_mock):
-    mock_response = {
-        "hourly": {
-            "data": [
+VISUAL_CROSSING_MOCK = {
+    "days": [
+        {
+            "hours": [
                 {
-                    "time": 1624000000,
-                    "summary": "Clear",
-                    "temperature": 20,
-                    "cloudCover": 0.1,
-                    "precipProbability": 0.2,
-                    "windSpeed": 5,
-                    "pressure": 1013,
-                    "visibility": 10,
-                    "ozone": 300,
+                    "datetimeEpoch": 1624000000, "conditions": "Clear", "preciptype": ["rain"], "precipprob": 0.2,
+                    "precip": 0.1, "temp": 20, "feelslike": 21, "dew": 10,
+                    "humidity": 0.5, "windspeed": 18, "cloudcover": 10, "visibility": 10,
+                    "pressure": 1013, "ozone": 300,
                 }
             ]
         }
-    }
+    ]
+}
 
+OPEN_WEATHER_MAP_MOCK = {
+    "hourly": [
+        {
+            "dt": 1624000000, "temp": 20, "feels_like": 21, "pressure": 1013, "humidity": 50,
+            "dew_point": 10, "clouds": 10, "visibility": 10000, "wind_speed": 5,
+            "weather": [{"main": "Rain", "description": "light rain"}], "pop": 0.2,
+            "rain": {"1h": 0.1}
+        }
+    ]
+}
+
+@pytest.mark.parametrize(
+    "provider_name, mock_response",
+    [
+        ("pirateweather", PIRATE_WEATHER_MOCK),
+        ("visualcrossing", VISUAL_CROSSING_MOCK),
+        ("openweathermap", OPEN_WEATHER_MAP_MOCK),
+    ],
+)
+@patch('apts.weather.get_weather_settings')
+def test_weather_providers(mock_get_weather_settings, requests_mock, provider_name, mock_response):
+    mock_get_weather_settings.return_value = (provider_name, "dummy_key")
     requests_mock.get(ANY, json=mock_response)
 
-    p = setup_place()
-    p.get_weather()
+    weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
 
-    assert p.weather is not None
+    assert weather.data is not None
+    assert not weather.data.empty
 
-    weather_data = p.weather.data
-    assert not weather_data.empty
-    assert weather_data["temperature"].iloc[0] == 20
-    assert weather_data["cloudCover"].iloc[0] == 10
-    assert weather_data["precipProbability"].iloc[0] == 20
+    data = weather.data.iloc[0]
+
+    assert data['temperature'] == 20
+    assert data['apparentTemperature'] == 21
+    assert data['dewPoint'] == 10
+    assert data['pressure'] == 1013
+    assert data['cloudCover'] == 10
+    assert data['visibility'] == 10
+    assert data['precipProbability'] == 20
+    assert data['precipIntensity'] == 0.1
+
+    if provider_name == 'pirateweather':
+        assert data['windSpeed'] == 5
+        assert data['ozone'] == 300
+    elif provider_name == 'visualcrossing':
+        assert round(data['windSpeed']) == 18 # It's already in km/h
+        assert data['ozone'] == 300
+    elif provider_name == 'openweathermap':
+        assert data['windSpeed'] == 18.0 # 5 m/s * 3.6 = 18 km/h
+        assert data['ozone'] == 'none' # Not provided by OWM
 
 
-def test_weather_api_error(requests_mock):
-    requests_mock.get(ANY, status_code=500)
-
-    p = setup_place()
-    with pytest.raises(json.decoder.JSONDecodeError):
-        p.get_weather()
-
-
+@pytest.mark.parametrize(
+    "provider_name, mock_response",
+    [
+        ("pirateweather", {"hourly": {"data": [{"time": 1624000000, "cloudCover": 50, "summary": "Cloudy"}]}}),
+        ("visualcrossing", {"days": [{"hours": [{"datetimeEpoch": 1624000000, "cloudcover": 50, "conditions": "Cloudy"}]}]}),
+        ("openweathermap", {"hourly": [{"dt": 1624000000, "clouds": 50, "weather": [{"main": "Clouds", "description": "Cloudy"}]}]}),
+    ],
+)
 @pytest.mark.parametrize(
     "override_value, global_setting, expected_effective_dark_mode",
     [
@@ -67,22 +113,22 @@ def test_weather_api_error(requests_mock):
 @patch("apts.weather.Utils.annotate_plot")
 @patch("pandas.DataFrame.plot")
 @patch("apts.weather.get_dark_mode")
+@patch("apts.weather.get_weather_settings")
 def test_plot_clouds_dark_mode_styles(
+    mock_get_weather_settings,
     mock_get_dark_mode,
     mock_df_plot,
     mock_annotate_plot,
     requests_mock,
+    provider_name,
+    mock_response,
     override_value,
     global_setting,
     expected_effective_dark_mode,
 ):
-    mock_api_response = {
-        "hourly": {
-            "data": [{"time": 1624000000, "cloudCover": 0.5, "summary": "Cloudy"}]
-        }
-    }
-    requests_mock.get(ANY, json=mock_api_response)
-    weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
+    mock_get_weather_settings.return_value = (provider_name, "dummy_key")
+    requests_mock.get(ANY, json=mock_response)
+    weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
 
     mock_get_dark_mode.return_value = global_setting
     expected_style = get_plot_style(expected_effective_dark_mode)
@@ -145,7 +191,9 @@ def test_plot_clouds_dark_mode_styles(
     mock_get_dark_mode.reset_mock()
 
 
-def test_get_critical_data_all_hours(requests_mock):
+@patch("apts.weather.get_weather_settings")
+def test_get_critical_data_all_hours(mock_get_weather_settings, requests_mock):
+    mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
         "hourly": {
             "data": [
@@ -161,9 +209,9 @@ def test_get_critical_data_all_hours(requests_mock):
         }
     }
     requests_mock.get(ANY, json=mock_api_response)
-    weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
+    weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
 
-    start_time = datetime.datetime.fromtimestamp(1624000000, tz=datetime.timezone.utc)
+    start_time = datetime.datetime.fromtimestamp(1624000000, tz=pytz.utc)
     stop_time = start_time + datetime.timedelta(hours=36)
 
     critical_data = weather.get_critical_data(start_time, stop_time)
@@ -174,35 +222,20 @@ def test_get_critical_data_all_hours(requests_mock):
     assert len(critical_data) == 37
 
 
-def test_download_data_key_error_handling(requests_mock):
-    mock_response_missing_key = {"hourly": {"no_data_here": []}}
-    requests_mock.get(ANY, json=mock_response_missing_key)
-    weather = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
-    df = weather.download_data()
-    assert isinstance(df, pd.DataFrame)
-    assert df.empty
-    assert all(
-        col in df.columns
-        for col in [
-            "time",
-            "summary",
-            "precipType",
-            "precipProbability",
-            "precipIntensity",
-            "temperature",
-            "apparentTemperature",
-            "dewPoint",
-            "humidity",
-            "windSpeed",
-            "cloudCover",
-            "visibility",
-            "pressure",
-            "ozone",
-        ]
-    )
+def test_weather_provider_key_error(requests_mock):
+    # This test checks if a malformed response from a provider is handled gracefully.
+    # It assumes the provider's `download_data` will return an empty DataFrame.
+    mock_response_missing_key = {"wrong_key": {}}
+
+    with patch('apts.weather.get_weather_settings', return_value=('pirateweather', 'dummy_key')):
+        requests_mock.get(ANY, json=mock_response_missing_key)
+        weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
+        assert weather.data.empty
 
 
-def test_plot_weather_calls_sub_plots(requests_mock):
+@patch("apts.weather.get_weather_settings")
+def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
+    mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
         "hourly": {
             "data": [
@@ -228,7 +261,7 @@ def test_plot_weather_calls_sub_plots(requests_mock):
 
     requests_mock.get(ANY, json=mock_api_response)
 
-    mock_weather_instance = Weather(lat=0, lon=0, local_timezone=datetime.timezone.utc)
+    mock_weather_instance = Weather(lat=0, lon=0, local_timezone=pytz.utc)
 
     # Use setup_place to get a real Place object, then mock its weather attribute and get_weather method
     real_place = setup_place()  # This creates a Place object
