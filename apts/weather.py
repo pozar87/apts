@@ -1,18 +1,15 @@
-import json
 import logging
 from datetime import datetime, timedelta
 
 import pandas as pd
-import requests
 import requests_cache
 
-from typing import Optional  # Added Optional
+from typing import Optional
 
 from .utils import Utils
-from apts.config import get_dark_mode
+from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
-# pyplot may be needed if we need to create figures explicitly, but pandas plot often handles it.
-# from matplotlib import pyplot
+from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +17,24 @@ requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
 
 
 class Weather:
-    API_KEY = "12345"
-    API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
     def __init__(self, lat, lon, local_timezone):
         self.lat = lat
         self.lon = lon
         self.local_timezone = local_timezone
-        self.data = self.download_data()
+
+        provider_name, api_key = get_weather_settings()
+
+        if provider_name == 'pirateweather':
+            provider = PirateWeather(api_key, lat, lon, local_timezone)
+        elif provider_name == 'visualcrossing':
+            provider = VisualCrossing(api_key, lat, lon, local_timezone)
+        elif provider_name == 'openweathermap':
+            provider = OpenWeatherMap(api_key, lat, lon, local_timezone)
+        else:
+            raise ValueError(f"Unknown weather provider: {provider_name}")
+
+        self.data = provider.download_data()
 
     def _filter_data(self, rows):
         # Always add time column
@@ -464,47 +471,3 @@ class Weather:
 
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
         return ax
-
-    def download_data(self):
-        url = Weather.API_URL.format(apikey=Weather.API_KEY, lat=self.lat, lon=self.lon)
-        logger.debug("Download weather from: {}".format(url))
-        with requests.get(url) as data:
-            logger.debug(f"Data {data}")
-            columns = [
-                "time",
-                "summary",
-                "precipType",
-                "precipProbability",
-                "precipIntensity",
-                "temperature",
-                "apparentTemperature",
-                "dewPoint",
-                "humidity",
-                "windSpeed",
-                "cloudCover",
-                "visibility",
-                "pressure",
-                "ozone",
-            ]
-            json_data = json.loads(data.text)
-            if "hourly" in json_data and "data" in json_data["hourly"]:
-                raw_data = [
-                    [
-                        (item[column] if column in item.keys() else "none")
-                        for column in columns
-                    ]
-                    for item in json_data["hourly"]["data"]
-                ]
-            else:
-                logger.error(f"KeyError in weather data. Full response: {json_data}")
-                return pd.DataFrame(columns=columns)
-            result = pd.DataFrame(raw_data, columns=columns)
-            # Convert units
-            result["precipProbability"] *= 100
-            result["cloudCover"] *= 100
-            result.time = (
-                result.time.astype("datetime64[s]")
-                .dt.tz_localize("UTC")
-                .dt.tz_convert(self.local_timezone)
-            )
-            return result
