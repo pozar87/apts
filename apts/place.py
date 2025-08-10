@@ -98,9 +98,11 @@ class Place:
         if start_search_from:
             start_date = start_search_from
         elif target_date:
-            start_date = datetime.datetime.combine(
-                target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc)
-            )
+            # Create datetime at the beginning of the day in the local timezone, then convert to UTC
+            local_start_of_day = datetime.datetime.combine(
+                target_date, datetime.time.min
+            ).replace(tzinfo=self.local_timezone)
+            start_date = local_start_of_day.astimezone(datetime.timezone.utc)
         else:
             start_date = self.date.utc_datetime()
         return self._next_setting_time(self.sun, start=start_date)
@@ -111,9 +113,11 @@ class Place:
         if start_search_from:
             start_date = start_search_from
         elif target_date:
-            start_date = datetime.datetime.combine(
-                target_date, datetime.time(12, 0, 0, tzinfo=datetime.timezone.utc)
-            )
+            # Create datetime at the beginning of the day in the local timezone, then convert to UTC
+            local_start_of_day = datetime.datetime.combine(
+                target_date, datetime.time.min
+            ).replace(tzinfo=self.local_timezone)
+            start_date = local_start_of_day.astimezone(datetime.timezone.utc)
         else:
             start_date = self.date.utc_datetime()
         return self._next_rising_time(self.sun, start=start_date)
