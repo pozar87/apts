@@ -98,7 +98,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     return events
 
 
-def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
+def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -109,12 +109,20 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
     def separation(t):
         return p1.at(t).separation_from(p2.at(t)).degrees
 
-    extrema = find_extrema(lambda t: -separation(t), t0, t1) # Find maxima of negative separation
+    # We are looking for minima of separation, so we find maxima of negative separation
+    extrema = find_extrema(lambda t: -separation(t), t0, t1)
 
     events = []
     for t, v, is_max in extrema:
-        if is_max and -v < 1.0:
-            events.append({'date': t.utc_datetime(), 'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'})
+        # If it's a maximum of negative separation, it's a minimum of positive separation
+        if is_max:
+            separation_val = -v
+            if threshold_degrees is None or separation_val < threshold_degrees:
+                events.append({
+                    'date': t.utc_datetime(),
+                    'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
+                    'separation_degrees': separation_val
+                })
 
     return events
 
@@ -142,8 +150,8 @@ def find_oppositions(eph, planet_name, start_date, end_date):
 
     return events
 
-def find_mercury_inferior_conjunctions(eph, start_date, end_date):
-    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
+def find_mercury_inferior_conjunctions(eph, start_date, end_date, threshold_degrees=1.0):
+    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
 
 def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
     ts = get_timescale()
