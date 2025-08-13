@@ -33,6 +33,7 @@ class AstronomicalEvents:
         self.events = []
         self.event_settings = get_event_settings()
         self.executor = ThreadPoolExecutor()
+        self.catalogs = Catalogs()
 
     def shutdown(self):
         self.executor.shutdown(wait=True)
@@ -251,7 +252,7 @@ class AstronomicalEvents:
         events = skyfield_searches.find_lunar_occultations(
             self.observer,
             self.eph,
-            Catalogs.BRIGHT_STARS,
+            self.catalogs.BRIGHT_STARS,
             self.start_date,
             self.end_date,
         )
@@ -364,8 +365,8 @@ class AstronomicalEvents:
             "M96", "M98", "M99", "M100", "M104", "M105", "M107",
         ]
 
-        messier_df = Catalogs.MESSIER[
-            Catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
+        messier_df = self.catalogs.MESSIER[
+            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
         ]
 
         # Pre-create Star objects outside the loop
