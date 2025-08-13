@@ -58,9 +58,52 @@ class SkyfieldSearchesTest(unittest.TestCase):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 3, 31, tzinfo=utc)
         events = skyfield_searches.find_conjunctions(
-            self.eph, "venus", "jupiter barycenter", start_date, end_date
+            self.eph, "venus", "jupiter barycenter", start_date, end_date, threshold_degrees=1.0
         )
         self.assertIsInstance(events, list)
+        if events:
+            self.assertIn('separation_degrees', events[0])
+            self.assertLess(events[0]['separation_degrees'], 1.0)
+
+    def test_find_conjunctions_with_threshold(self):
+        start_date = datetime(2023, 1, 1, tzinfo=utc)
+        end_date = datetime(2023, 12, 31, tzinfo=utc)
+
+        # First, find all conjunctions without a threshold.
+        all_events = skyfield_searches.find_conjunctions(
+            self.eph, "venus", "saturn barycenter", start_date, end_date
+        )
+        self.assertGreater(len(all_events), 0, "Should find at least one conjunction in 2023")
+
+        # Now, use the separation of the first event to test the thresholding.
+        separation = all_events[0]['separation_degrees']
+
+        # Test with a threshold slightly smaller than the actual separation.
+        tighter_events = skyfield_searches.find_conjunctions(
+            self.eph, "venus", "saturn barycenter", start_date, end_date, threshold_degrees=separation - 0.1
+        )
+        # It's possible other conjunctions are found, so we check that the original event is not present
+        found = False
+        for event in tighter_events:
+            if event['date'] == all_events[0]['date']:
+                found = True
+                break
+        self.assertFalse(found)
+
+        # Test with a threshold slightly larger than the actual separation.
+        wider_events = skyfield_searches.find_conjunctions(
+            self.eph, "venus", "saturn barycenter", start_date, end_date, threshold_degrees=separation + 0.1
+        )
+        self.assertIn(all_events[0], wider_events)
+
+    def test_find_conjunctions_no_threshold(self):
+        start_date = datetime(2023, 1, 1, tzinfo=utc)
+        end_date = datetime(2023, 3, 31, tzinfo=utc)
+        events = skyfield_searches.find_conjunctions(
+            self.eph, "venus", "jupiter barycenter", start_date, end_date
+        )
+        self.assertGreater(len(events), 0)
+        self.assertIn('separation_degrees', events[0])
 
 
 if __name__ == "__main__":

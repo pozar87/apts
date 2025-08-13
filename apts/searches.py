@@ -101,7 +101,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     return events
 
 
-def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
+def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
     ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -116,13 +116,19 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date):
 
     events = []
     for t, v, is_max in extrema:
-        if not is_max and v < 5.0: # Look for minima with separation < 5 degrees
-            events.append({'date': t.utc_datetime(), 'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'})
+        if not is_max:
+            separation_val = v
+            if threshold_degrees is None or separation_val < threshold_degrees:
+                events.append({
+                    'date': t.utc_datetime(),
+                    'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
+                    'separation_degrees': separation_val
+                })
 
     return events
 
-def find_mercury_inferior_conjunctions(eph, start_date, end_date):
-    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date)
+def find_mercury_inferior_conjunctions(eph, start_date, end_date, threshold_degrees=5.0):
+    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
 
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
