@@ -1,8 +1,12 @@
+from datetime import datetime, timedelta
+from typing import List, Optional
+
+from skyfield.api import utc
+
+from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
-from apts.equipment import Equipment
-from datetime import datetime, timedelta
-from skyfield.api import utc
+from apts.constants.event_types import EventType
 
 
 def get_events(
@@ -11,6 +15,7 @@ def get_events(
     start_date: datetime,
     end_date: datetime,
     elevation: int = 300,
+    events_to_calculate: Optional[List[EventType]] = None,
 ):
     place = Place(lat=lat, lon=lon, elevation=elevation)
     equipment = Equipment()  # Dummy equipment
@@ -20,7 +25,9 @@ def get_events(
     end_date_utc = end_date.astimezone(utc)
     # Calculate days from start_date_utc and end_date_utc
     events = observation.get_astronomical_events(
-        start_date=start_date_utc, end_date=end_date_utc
+        start_date=start_date_utc,
+        end_date=end_date_utc,
+        events_to_calculate=events_to_calculate,
     )
     return events
 

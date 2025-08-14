@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from string import Template
-from typing import Optional  # Added Optional
+from typing import Optional, List  # Added Optional
 
 import matplotlib.dates as mdates
 import numpy  # Retained for potential use by other functions if Observation.to_html is modified
@@ -23,6 +23,7 @@ from apts.constants.graphconstants import (
     get_planet_color,
 )  # Added get_planet_color
 from .events import AstronomicalEvents
+from .constants.event_types import EventType
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +146,7 @@ class Observation:
         self,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
+        events_to_calculate: Optional[List[EventType]] = None,
     ):
         if start_date is None:
             start_date = self.start
@@ -156,7 +158,9 @@ class Observation:
         if end_date is None:
             end_date = start_date + timedelta(days=365)
 
-        events = AstronomicalEvents(self.place, start_date, end_date)
+        events = AstronomicalEvents(
+            self.place, start_date, end_date, events_to_calculate=events_to_calculate
+        )
         return events.get_events()
 
     def plot_visible_planets_svg(

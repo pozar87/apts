@@ -12,8 +12,9 @@ from .observations import Observation
 from .place import Place
 from .utils import Utils
 from .weather import Weather
+from .constants.event_types import EventType
 
-__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils"]
+__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType"]
 
 logger = logging.getLogger(__name__)
 

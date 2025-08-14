@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 from apts.events import AstronomicalEvents
+from apts.constants.event_types import EventType
 
 utc = timezone.utc
 from apts.place import Place
@@ -56,6 +57,23 @@ class EventsTest(unittest.TestCase):
 
         # Check if the event description contains the degree information
         self.assertIn("deg", events[0]['event'])
+
+
+    def test_events_with_enum(self):
+        # Calculate only moon phases using the new enum parameter
+        events = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+            events_to_calculate=[EventType.MOON_PHASES],
+        )
+        events_df = events.get_events()
+
+        # Check that only moon phase events were calculated
+        self.assertTrue(all(events_df["type"] == "Moon Phase"))
+
+        # Check for a known moon phase event
+        self.assertEqual(sum(events_df["event"] == "New Moon"), 2)
 
 
 if __name__ == "__main__":
