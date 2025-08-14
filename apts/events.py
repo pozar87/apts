@@ -5,7 +5,9 @@ from itertools import combinations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import time
+from typing import List, Optional
 from .config import get_event_settings
+from .constants.event_types import EventType
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,13 @@ from .cache import get_ephemeris, get_timescale
 
 
 class AstronomicalEvents:
-    def __init__(self, place, start_date, end_date):
+    def __init__(
+        self,
+        place,
+        start_date,
+        end_date,
+        events_to_calculate: Optional[List[EventType]] = None,
+    ):
         self.place = place
         self.start_date = start_date.astimezone(utc)  # Ensure start_date is UTC
         self.end_date = end_date.astimezone(utc)  # Ensure end_date is UTC
@@ -31,7 +39,16 @@ class AstronomicalEvents:
             elevation_m=self.place.elevation,
         )
         self.events = []
-        self.event_settings = get_event_settings()
+        if events_to_calculate is not None:
+            # If a list of events is provided, use it to build the settings
+            events_to_calculate_str = [str(e) for e in events_to_calculate]
+            self.event_settings = {
+                event.value: (event.value in events_to_calculate_str)
+                for event in EventType
+            }
+        else:
+            # Otherwise, load from config as before
+            self.event_settings = get_event_settings()
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 

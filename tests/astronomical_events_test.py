@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
 from apts.events import AstronomicalEvents
 from apts.place import Place
+from apts.constants.event_types import EventType
 
 
 class TestAstronomicalEvents(unittest.TestCase):
@@ -59,6 +60,34 @@ class TestAstronomicalEvents(unittest.TestCase):
         # Check that as_completed was called with the futures list
         mock_as_completed.assert_called_once()
         self.assertEqual(len(mock_as_completed.call_args[0][0]), 10)
+
+
+    @patch("apts.events.as_completed")
+    def test_get_events_with_enum_selection(self, mock_as_completed):
+        # Instantiate AstronomicalEvents with a selection of events
+        events_instance = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+            events_to_calculate=[EventType.CONJUNCTIONS, EventType.OPPOSITIONS],
+        )
+
+        events_instance.executor = MagicMock()
+        mock_executor_instance = events_instance.executor
+
+        mock_futures = [MagicMock(), MagicMock()]
+        for future in mock_futures:
+            future.result.return_value = []
+
+        mock_executor_instance.submit.side_effect = mock_futures
+        mock_as_completed.return_value = mock_futures
+
+        events_instance.get_events()
+
+        # Check that submit was called only for the selected events
+        self.assertEqual(mock_executor_instance.submit.call_count, 2)
+        mock_as_completed.assert_called_once()
+        self.assertEqual(len(mock_as_completed.call_args[0][0]), 2)
 
 
 if __name__ == "__main__":
