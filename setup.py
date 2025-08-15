@@ -2,14 +2,20 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import setup
+import re
+import os
 
-import apts
+
+def get_version():
+    with open(os.path.join(os.path.dirname(__file__), "apts", "__init__.py")) as f:
+        return re.search(r"__version__ = [\'\"]([^\'\"]+)[\'\"]", f.read()).group(1)
+
 
 # long_description = read('README.txt', 'CHANGES.txt')
 
 setup(
     name="apts",
-    version=apts.__version__,
+    version=get_version(),
     url="http://github.com/pozar87/apts/",
     license="Apache Software License",
     author="Lukasz Pozarlik",

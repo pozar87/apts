@@ -172,6 +172,9 @@ class SolarObjects(Objects):
                 )
             )
             &
+            # Filter objects by they min altitude at transit
+            (visible.Altitude > conditions.min_object_altitude)
+            &
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (

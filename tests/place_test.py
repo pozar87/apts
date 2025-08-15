@@ -239,6 +239,26 @@ class TestPlace:
         except Exception as e:
             pytest.fail(f"setup_place() failed: {e}")
 
+    def test_sun_and_moon_path_data(self, mid_latitude_place):
+        """Test that sun_path and moon_path return valid DataFrames."""
+        p = mid_latitude_place
+
+        sun_df = p.sun_path()
+        assert isinstance(sun_df, pd.DataFrame)
+        assert not sun_df.empty
+        assert "Sun altitude" in sun_df.columns
+        assert "Azimuth" in sun_df.columns
+        assert "Local_time" in sun_df.columns
+
+        moon_df = p.moon_path()
+        assert isinstance(moon_df, pd.DataFrame)
+        assert not moon_df.empty
+        assert "Moon altitude" in moon_df.columns
+        assert "Azimuth" in moon_df.columns
+        assert "Local_time" in moon_df.columns
+        assert "Phase" in moon_df.columns
+        assert "Lunation" in moon_df.columns
+
 
 import unittest
 from unittest.mock import patch, MagicMock, ANY
