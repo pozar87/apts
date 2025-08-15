@@ -168,18 +168,16 @@ class Place:
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
 
-        data = []
-        for i, t in enumerate(times):
-            data.append({
-                "Time": t,
-                "Altitude": alt.degrees[i],
-                "Azimuth": az.degrees[i],
-                "Local_time": t.astimezone(self.local_timezone).strftime("%H:%M")
-            })
-        return pd.DataFrame(data)
+        df = pd.DataFrame({
+            "Time": times,
+            "Altitude": alt.degrees,
+            "Azimuth": az.degrees,
+        })
+        df["Local_time"] = df["Time"].apply(lambda t: t.astimezone(self.local_timezone).strftime("%H:%M"))
+        return df
 
     def moon_path(self):
-        start_time = datetime.datetime.combine(self.date.utc_datetime().date(), datetime.time.min)
+        start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altitude_curve(self.moon, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Moon altitude"})
@@ -197,7 +195,7 @@ class Place:
         return df
 
     def sun_path(self):
-        start_time = datetime.datetime.combine(self.date.utc_datetime().date(), datetime.time.min)
+        start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altitude_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
