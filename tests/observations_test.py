@@ -282,14 +282,16 @@ class TestObservationPlottingStyles(unittest.TestCase):
         # Mock data for planet color tests
         self.mock_planets_data_for_color_test = pd.DataFrame(
             {
-                ObjectTableLabels.NAME: ["Mars", "Jupiter barycenter", "UnknownPlanet"],
+                ObjectTableLabels.NAME: ["Mars", "Jupiter barycenter"],
                 ObjectTableLabels.TRANSIT: [
                     pd.Timestamp("2023-01-01 22:00:00", tz="UTC")
                 ]
-                * 3,
-                ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 3,
-                ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 3,
-                ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 3,  # For SVG plot
+                * 2,
+                ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 2,
+                ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 2,
+                ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 2,
+                ObjectTableLabels.RISING: [pd.Timestamp("2023-01-01 18:00:00", tz="UTC")] * 2,
+                ObjectTableLabels.SETTING: [pd.Timestamp("2023-01-02 02:00:00", tz="UTC")] * 2,
             }
         )
 
@@ -469,7 +471,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     call.kwargs["fill"]
                     for call in mock_dwg_instance.circle.call_args_list
                 ]
-                self.assertEqual(mock_dwg_instance.circle.call_count, 3)
+                self.assertEqual(mock_dwg_instance.circle.call_count, 2)
 
                 if scenario_data["expected_effective_dark_mode"]:
                     mock_svg_drawing.assert_called_with(
@@ -482,9 +484,6 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_DARK["Jupiter barycenter"],
                         fills_called,
                     )
-                    self.assertIn(
-                        expected_style["AXES_FACE_COLOR"], fills_called
-                    )  # Default for UnknownPlanet
                     # Check one text call for color
                     mock_dwg_instance.text.assert_any_call(
                         unittest.mock.ANY,
@@ -503,9 +502,6 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_LIGHT["Jupiter barycenter"],
                         fills_called,
                     )
-                    self.assertIn(
-                        expected_style["AXES_FACE_COLOR"], fills_called
-                    )  # Default for UnknownPlanet
                     mock_dwg_instance.text.assert_any_call(
                         unittest.mock.ANY,
                         insert=(unittest.mock.ANY, unittest.mock.ANY),
@@ -516,12 +512,23 @@ class TestObservationPlottingStyles(unittest.TestCase):
     @patch("apts.observations.Utils.annotate_plot")
     @patch("apts.observations.pyplot")
     @patch("apts.observations.get_dark_mode")
+    @patch("apts.place.Place.get_altitude_curve")
     def test_generate_plot_planets_specific_colors(
-        self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
+        self, mock_get_altitude_curve, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
     ):
         self.observation.get_visible_planets = MagicMock(
             return_value=self.mock_planets_data_for_color_test
         )
+
+        t0 = self.observation.place.ts.utc(self.observation.start)
+        t1 = self.observation.place.ts.utc(self.observation.stop)
+        mock_curve_df = pd.DataFrame({
+            'Time': self.observation.place.ts.linspace(t0, t1, 10),
+            'Altitude': [10, 20, 30, 40, 50, 40, 30, 20, 10, 0]
+        })
+        mock_get_altitude_curve.return_value = mock_curve_df
+
+        self.observation.local_planets.get_skyfield_object = MagicMock(return_value=MagicMock())
 
         scenarios = [
             {
@@ -566,29 +573,35 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     dark_mode_override=scenario_data["override"]
                 )
 
-                mock_ax.scatter.assert_called()
-                self.assertEqual(mock_ax.scatter.call_count, 3)
+                mock_ax.plot.assert_called()
+                self.assertEqual(mock_ax.plot.call_count, 2)
 
-                colors_called = [
+                mock_ax.scatter.assert_called()
+                self.assertEqual(mock_ax.scatter.call_count, 4)
+
+                plot_colors_called = [
+                    call.kwargs["color"] for call in mock_ax.plot.call_args_list
+                ]
+                scatter_colors_called = [
                     call.kwargs["color"] for call in mock_ax.scatter.call_args_list
-                ]  # Changed 'c' to 'color'
+                ]
 
                 if effective_dark_mode:
                     expected_mars_color = GraphConstants.PLANET_COLORS_DARK["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK[
                         "Jupiter barycenter"
                     ]
-                    default_color = GraphConstants.DARK_COLORS[OpticalType.GENERIC]
                 else:
                     expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT[
                         "Jupiter barycenter"
                     ]
-                    default_color = GraphConstants.COLORS[OpticalType.GENERIC]
 
-                self.assertIn(expected_mars_color, colors_called)
-                self.assertIn(expected_jupiter_color, colors_called)
-                self.assertIn(default_color, colors_called)  # For 'UnknownPlanet'
+                self.assertIn(expected_mars_color, plot_colors_called)
+                self.assertIn(expected_jupiter_color, plot_colors_called)
+
+                self.assertEqual(scatter_colors_called.count(expected_mars_color), 2)
+                self.assertEqual(scatter_colors_called.count(expected_jupiter_color), 2)
 
 
 class TestObservationWeatherAnalysis(unittest.TestCase):

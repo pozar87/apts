@@ -506,45 +506,49 @@ class Observation:
             ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
             return fig
 
-        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.SIZE]:
-            if hasattr(planets_df[col].iloc[0], "magnitude"):
-                planets_df[col] = planets_df[col].apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
-                )
-
         default_planet_color = plot_colors.get(OpticalType.GENERIC, "#888888")
 
         for _, planet in planets_df.iterrows():
-            transit = planet[ObjectTableLabels.TRANSIT]
-            altitude = planet[ObjectTableLabels.ALTITUDE]
-            size = planet[ObjectTableLabels.SIZE]
             name = planet[ObjectTableLabels.NAME]
+            skyfield_object = self.local_planets.get_skyfield_object(planet)
 
-            # Normalize size for plotting
-            plot_size = numpy.log1p(size)
-            marker_size = plot_size * 2 + 8
+            curve_df = self.place.get_altitude_curve(skyfield_object, self.start, self.stop)
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
             )
 
-            logger.debug(
-                f"Plotting planet {name} at transit {transit} with altitude {altitude} and size {size}"
-            )
-            ax.scatter(
-                transit,
-                altitude,
-                s=marker_size**2,
-                marker="o",
+            # Plot altitude curve
+            ax.plot(
+                curve_df["Time"].apply(lambda t: t.utc_datetime()),
+                curve_df["Altitude"],
                 color=specific_planet_color,
-            )  # Apply specific color
+                label=name
+            )
+
+            # Mark rise and set times
+            if planet[ObjectTableLabels.RISING] is not None:
+                ax.scatter(planet[ObjectTableLabels.RISING], 0, marker='^', color=specific_planet_color, s=100)
+            if planet[ObjectTableLabels.SETTING] is not None:
+                ax.scatter(planet[ObjectTableLabels.SETTING], 0, marker='v', color=specific_planet_color, s=100)
+
+            # Annotate planet name
+            # Find a good position for the annotation, e.g., at the peak of the curve
+            peak_idx = curve_df["Altitude"].idxmax()
+            peak_time = curve_df["Time"][peak_idx].utc_datetime()
+            peak_alt = curve_df["Altitude"][peak_idx]
             ax.annotate(
                 name,
-                (transit, altitude),
+                (peak_time, peak_alt),
                 xytext=(5, 5),
                 textcoords="offset points",
                 color=style["TEXT_COLOR"],
             )
+
+        ax.set_xlim([self.start, self.stop])
+        ax.set_ylim(0, 90)
+        date_format = mdates.DateFormatter("%H:%M", tz=self.place.local_timezone)
+        ax.xaxis.set_major_formatter(date_format)
 
         self._mark_observation(ax, effective_dark_mode, style)
         self._mark_good_conditions(
@@ -552,6 +556,7 @@ class Observation:
         )
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
         ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
+        ax.legend()
 
         return fig
 

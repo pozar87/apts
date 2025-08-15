@@ -161,60 +161,48 @@ class Place:
     def moon_phase(self):
         return int(self.moon_path()["Phase"][48])
 
+    def get_altitude_curve(self, skyfield_object, start_time, end_time, num_points=100):
+        t0 = self.ts.utc(start_time)
+        t1 = self.ts.utc(end_time)
+        times = self.ts.linspace(t0, t1, num_points)
+
+        alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
+
+        data = []
+        for i, t in enumerate(times):
+            data.append({
+                "Time": t,
+                "Altitude": alt.degrees[i],
+                "Azimuth": az.degrees[i],
+                "Local_time": t.astimezone(self.local_timezone).strftime("%H:%M")
+            })
+        return pd.DataFrame(data)
+
     def moon_path(self):
-        t0 = self.ts.utc(datetime.date.today())
-        t1 = self.ts.utc(datetime.date.today() + datetime.timedelta(days=1))
-        times = self.ts.linspace(t0, t1, 26 * 4)
-        result = []
-        for t in times:
-            alt, az, _ = self.observer.at(t).observe(self.moon).apparent().altaz()
+        start_time = datetime.datetime.combine(self.date.utc_datetime().date(), datetime.time.min)
+        end_time = start_time + datetime.timedelta(days=1)
+        df = self.get_altitude_curve(self.moon, start_time, end_time, num_points=26 * 4)
+        df = df.rename(columns={"Altitude": "Moon altitude"})
+
+        phases = []
+        lunations = []
+        for t in df['Time']:
             moon_phase_angle = almanac.moon_phase(self.eph, t)
-            phase = (moon_phase_angle.degrees / 360.0) * 100
-            lunation = moon_phase_angle.degrees / 360.0
-            row = [
-                t.utc_datetime().time(),
-                alt.degrees,
-                az.degrees,
-                t.astimezone(self.local_timezone).strftime("%H:%M"),
-                phase,
-                lunation,
-            ]
-            result.append(row)
-        return pd.DataFrame(
-            result,
-            columns=[
-                "Time",
-                "Moon altitude",
-                "Azimuth",
-                "Local_time",
-                "Phase",
-                "Lunation",
-            ],
-        )
+            phases.append((moon_phase_angle.degrees / 360.0) * 100)
+            lunations.append(moon_phase_angle.degrees / 360.0)
+
+        df["Phase"] = phases
+        df["Lunation"] = lunations
+        df["Time"] = df["Time"].apply(lambda x: x.utc_datetime().time())
+        return df
 
     def sun_path(self):
-        t0 = self.ts.utc(datetime.date.today())
-        t1 = self.ts.utc(datetime.date.today() + datetime.timedelta(days=1))
-        times = self.ts.linspace(t0, t1, 26 * 4)
-        result = []
-        for t in times:
-            alt, az, _ = self.observer.at(t).observe(self.sun).apparent().altaz()
-            row = [
-                t.utc_datetime().time(),
-                alt.degrees,
-                az.degrees,
-                t.astimezone(self.local_timezone).strftime("%H:%M"),
-            ]
-            result.append(row)
-        return pd.DataFrame(
-            result,
-            columns=[
-                "Time",
-                "Sun altitude",
-                "Azimuth",
-                "Local_time",
-            ],
-        )
+        start_time = datetime.datetime.combine(self.date.utc_datetime().date(), datetime.time.min)
+        end_time = start_time + datetime.timedelta(days=1)
+        df = self.get_altitude_curve(self.sun, start_time, end_time, num_points=26 * 4)
+        df = df.rename(columns={"Altitude": "Sun altitude"})
+        df["Time"] = df["Time"].apply(lambda x: x.utc_datetime().time())
+        return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
