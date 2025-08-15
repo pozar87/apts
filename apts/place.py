@@ -168,12 +168,14 @@ class Place:
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
 
+        time_list = [times[i] for i in range(len(times))]
+
         df = pd.DataFrame({
-            "Time": times,
+            "Time": time_list,
             "Altitude": alt.degrees,
             "Azimuth": az.degrees,
         })
-        df["Local_time"] = df["Time"].apply(lambda t: t.astimezone(self.local_timezone).strftime("%H:%M"))
+        df["Local_time"] = [t.astimezone(self.local_timezone).strftime("%H:%M") for t in df["Time"]]
         return df
 
     def moon_path(self):
@@ -191,7 +193,7 @@ class Place:
 
         df["Phase"] = phases
         df["Lunation"] = lunations
-        df["Time"] = df["Time"].apply(lambda x: x.utc_datetime().time())
+        df["Time"] = [x.utc_datetime().time() for x in df["Time"]]
         return df
 
     def sun_path(self):
@@ -199,7 +201,7 @@ class Place:
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altitude_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
-        df["Time"] = df["Time"].apply(lambda x: x.utc_datetime().time())
+        df["Time"] = [x.utc_datetime().time() for x in df["Time"]]
         return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
