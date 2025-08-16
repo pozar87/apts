@@ -117,6 +117,18 @@ class Notify:
                 "observations.plot_weather() returned None or an invalid plot object, not attaching weather plot."
             )
 
+        # Add planets image (inline)
+        logger.info("Generating Solar Objects plot for email...")
+        planets_plot_fig = observations.plot_planets()  # Call public method
+        if planets_plot_fig:
+            self.attach_image(
+                msg_related, planets_plot_fig, filename="planets_plot.png"
+            )
+        else:
+            logger.warning(
+                "observations.plot_planets() returned None or an invalid plot object, not attaching planets plot."
+            )
+
         # Add messier image (inline)
         logger.info("Generating messier plot for email...")
         messier_plot_fig = observations.plot_messier()  # Call public method
@@ -133,7 +145,6 @@ class Notify:
         msg_root.attach(msg_related)
 
         return self._send_email(msg_root)  # Use the internal helper
-
 
     @staticmethod
     def attach_image(message, plot, filename="image.png"):
@@ -165,7 +176,7 @@ class Notify:
                 )
                 return
 
-            image = MIMEImage(img_data, _subtype="png") # Added _subtype
+            image = MIMEImage(img_data, _subtype="png")  # Added _subtype
             image.add_header("Content-ID", f"<{filename}>")
             image.add_header("Content-Disposition", "inline", filename=filename)
             message.attach(image)
