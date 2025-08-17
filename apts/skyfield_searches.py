@@ -98,7 +98,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     return events
 
 
-def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
+def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -107,7 +107,7 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_deg
     p2 = eph[p2_name]
 
     def separation(t):
-        return p1.at(t).separation_from(p2.at(t)).degrees
+        return observer.at(t).observe(p1).separation_from(observer.at(t).observe(p2)).degrees
 
     # We are looking for minima of separation, so we find maxima of negative separation
     extrema = find_extrema(lambda t: -separation(t), t0, t1)
@@ -127,18 +127,17 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_deg
     return events
 
 
-def find_oppositions(eph, planet_name, start_date, end_date):
+def find_oppositions(observer, eph, planet_name, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
     planet = eph[planet_name]
     sun = eph['sun']
-    earth = eph['earth']
 
     def ecliptic_longitude_difference(t):
-        planet_lon = earth.at(t).observe(planet).ecliptic_latlon()[1].degrees
-        sun_lon = earth.at(t).observe(sun).ecliptic_latlon()[1].degrees
+        planet_lon = observer.at(t).observe(planet).ecliptic_latlon()[1].degrees
+        sun_lon = observer.at(t).observe(sun).ecliptic_latlon()[1].degrees
         return abs(planet_lon - sun_lon)
 
     extrema = find_extrema(lambda t: -abs(ecliptic_longitude_difference(t) - 180), t0, t1)
@@ -150,10 +149,10 @@ def find_oppositions(eph, planet_name, start_date, end_date):
 
     return events
 
-def find_mercury_inferior_conjunctions(eph, start_date, end_date, threshold_degrees=1.0):
-    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
+def find_mercury_inferior_conjunctions(observer, eph, start_date, end_date, threshold_degrees=1.0):
+    return find_conjunctions(observer, eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
 
-def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
+def find_conjunctions_with_star(observer, eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -161,10 +160,10 @@ def find_conjunctions_with_star(eph, body1_name, star_object, start_date, end_da
     body1 = eph[body1_name]
 
     def separation(t):
-        pos1 = eph['earth'].at(t).observe(body1)
+        pos1 = observer.at(t).observe(body1)
         if hasattr(t, 'shape') and t.shape:
             star_object.epoch = t.tt
-        pos_star = eph['earth'].at(t).observe(star_object)
+        pos_star = observer.at(t).observe(star_object)
         return pos1.separation_from(pos_star).degrees
 
     # We are looking for minima of separation, so we find maxima of negative separation
