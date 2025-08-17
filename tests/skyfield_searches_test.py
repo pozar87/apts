@@ -3,6 +3,7 @@ from datetime import datetime
 from skyfield.api import load, Topos, utc
 from apts import skyfield_searches
 from apts.catalogs import Catalogs
+from skyfield.api import Star
 import pandas as pd
 
 
@@ -117,6 +118,35 @@ class SkyfieldSearchesTest(unittest.TestCase):
         )
         self.assertGreater(len(events), 0)
         self.assertIn('separation_degrees', events[0])
+
+    def test_find_venus_mercury_conjunction_2021(self):
+        start_date = datetime(2021, 5, 28, tzinfo=utc)
+        end_date = datetime(2021, 5, 30, tzinfo=utc)
+        events = skyfield_searches.find_conjunctions(
+            self.observer, self.eph, "venus", "mercury", start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        # Check that the date is May 29, 2021
+        self.assertEqual(event['date'].day, 29)
+        self.assertAlmostEqual(event['separation_degrees'], 0.4, delta=0.1)
+
+    def test_find_moon_m45_conjunction_2025(self):
+        start_date = datetime(2025, 8, 15, tzinfo=utc)
+        end_date = datetime(2025, 8, 17, tzinfo=utc)
+        m45_data = Catalogs().MESSIER[Catalogs().MESSIER['Messier'] == 'M45'].iloc[0]
+        m45 = Star(ra_hours=m45_data['RA'].to('hour').magnitude,
+                   dec_degrees=m45_data['Dec'].to('degree').magnitude)
+        events = skyfield_searches.find_conjunctions_with_star(
+            self.observer, self.eph, "moon", m45, start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        # Check that the date is August 16, 2025
+        self.assertEqual(event['date'].day, 16)
+        self.assertAlmostEqual(event['separation_degrees'], 0.5, delta=0.2)
 
 
 if __name__ == "__main__":
