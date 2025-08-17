@@ -129,6 +129,7 @@ class AstronomicalEvents:
             futures.append(
                 executor.submit(
                     skyfield_searches.find_conjunctions,
+                    self.observer,
                     self.eph,
                     p1,
                     p2,
@@ -142,6 +143,7 @@ class AstronomicalEvents:
             futures.append(
                 executor.submit(
                     skyfield_searches.find_conjunctions,
+                    self.observer,
                     self.eph,
                     p,
                     moon,
@@ -172,6 +174,7 @@ class AstronomicalEvents:
         futures = [
             executor.submit(
                 skyfield_searches.find_oppositions,
+                self.observer,
                 self.eph,
                 p,
                 self.start_date,
@@ -326,7 +329,7 @@ class AstronomicalEvents:
     def calculate_mercury_inferior_conjunctions(self):
         start_time = time.time()
         events = skyfield_searches.find_mercury_inferior_conjunctions(
-            self.eph, self.start_date, self.end_date
+            self.observer, self.eph, self.start_date, self.end_date
         )
         for event in events:
             event["type"] = "Inferior Conjunction"
@@ -444,6 +447,7 @@ class AstronomicalEvents:
             all_events = []
             for messier_name, messier_star in messier_stars_subset.items():
                 conjunctions = skyfield_searches.find_conjunctions_with_star(
+                    self.observer,
                     self.eph,
                     "moon",
                     messier_star,
