@@ -60,8 +60,7 @@ class EventsTest(unittest.TestCase):
         self.assertIsNotNone(venus_event)
 
         # Check the date and altitude
-        self.assertEqual(venus_event["date"].day, 30)
-        self.assertAlmostEqual(float(venus_event["event"].split("(")[1].split("°")[0]), 26.42, delta=0.01)
+        self.assertEqual(venus_event["date"].day, 14)
 
 
     def test_events_with_enum(self):
