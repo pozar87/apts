@@ -1,10 +1,41 @@
 from skyfield.api import load
-from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
 from .cache import get_timescale
 
+def find_extrema(f, t0, t1, num_points=1000):
+    """
+    Finds the extrema of a function f over the interval [t0, t1]
+    by finding the sign changes in its derivative.
+    Returns a list of tuples (time, value, is_max).
+    """
+    ts = get_timescale()
+    times = ts.linspace(t0, t1, num_points)
+    values = np.array([f(t) for t in times])
+    values = np.squeeze(values)
+
+    if values.ndim == 0:
+        return []
+
+    if values.shape[0] < 2:
+        return []
+    deriv = np.gradient(values)
+    sign_changes = np.where(np.diff(np.sign(deriv)))[0]
+
+    extrema = []
+    for i in sign_changes:
+        is_max = deriv[i] > 0 and deriv[i+1] < 0
+        if is_max:
+            res = minimize_scalar(lambda t: -f(ts.tt_jd(t)), bracket=(times[i].tt, times[i+1].tt))
+            t_max = ts.tt_jd(res.x)
+            extrema.append((t_max, -res.fun, True))
+        else:
+            res = minimize_scalar(lambda t: f(ts.tt_jd(t)), bracket=(times[i].tt, times[i+1].tt))
+            t_min = ts.tt_jd(res.x)
+            extrema.append((t_min, res.fun, False))
+
+    return extrema
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
@@ -15,16 +46,14 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     def altitude(t):
         return observer.at(t).observe(planet).apparent().altaz()[0].degrees
 
-    altitude.rough_period = 1.0
-    times, altitudes = find_maxima(t0, t1, altitude)
+    extrema = find_extrema(altitude, t0, t1)
+    maxima = [e for e in extrema if e[2]]
 
-    if len(times) == 0:
+    if not maxima:
         return None, 0
 
-    # find the index of the highest altitude
-    max_altitude_index = np.argmax(altitudes)
-
-    return times[max_altitude_index].utc_datetime(), altitudes[max_altitude_index]
+    highest = max(maxima, key=lambda x: x[1])
+    return highest[0].utc_datetime(), highest[1]
 
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
@@ -38,16 +67,12 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
 
-    distance_to_sun.rough_period = 365.25
-
-    max_times, _ = find_maxima(t0, t1, distance_to_sun)
-    min_times, _ = find_minima(t0, t1, distance_to_sun)
+    extrema = find_extrema(distance_to_sun, t0, t1)
 
     events = []
-    for t in max_times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} Aphelion'})
-    for t in min_times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} Perihelion'})
+    for t, v, is_max in extrema:
+        event_type = 'Aphelion' if is_max else 'Perihelion'
+        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} {event_type}'})
 
     return events
 
@@ -63,16 +88,12 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
 
-    distance_to_earth.rough_period = 27.3
-
-    max_times, _ = find_maxima(t0, t1, distance_to_earth)
-    min_times, _ = find_minima(t0, t1, distance_to_earth)
+    extrema = find_extrema(distance_to_earth, t0, t1)
 
     events = []
-    for t in max_times:
-        events.append({'date': t.utc_datetime(), 'event': 'Moon Apogee'})
-    for t in min_times:
-        events.append({'date': t.utc_datetime(), 'event': 'Moon Perigee'})
+    for t, v, is_max in extrema:
+        event_type = 'Apogee' if is_max else 'Perigee'
+        events.append({'date': t.utc_datetime(), 'event': f'Moon {event_type}'})
 
     return events
 
@@ -88,18 +109,20 @@ def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, thr
     def separation(t):
         return observer.at(t).observe(p1).separation_from(observer.at(t).observe(p2)).degrees
 
-    separation.rough_period = 1.0
-
-    times, separations = find_minima(t0, t1, separation)
+    # We are looking for minima of separation, so we find maxima of negative separation
+    extrema = find_extrema(lambda t: -separation(t), t0, t1)
 
     events = []
-    for t, s in zip(times, separations):
-        if threshold_degrees is None or s < threshold_degrees:
-            events.append({
-                'date': t.utc_datetime(),
-                'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
-                'separation_degrees': s
-            })
+    for t, v, is_max in extrema:
+        # If it's a maximum of negative separation, it's a minimum of positive separation
+        if is_max:
+            separation_val = -v
+            if threshold_degrees is None or separation_val < threshold_degrees:
+                events.append({
+                    'date': t.utc_datetime(),
+                    'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
+                    'separation_degrees': separation_val
+                })
 
     return events
 
@@ -117,13 +140,12 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
         sun_lon = observer.at(t).observe(sun).ecliptic_latlon()[1].degrees
         return abs(planet_lon - sun_lon)
 
-    ecliptic_longitude_difference.rough_period = 365.25
-
-    times, _ = find_minima(t0, t1, lambda t: abs(ecliptic_longitude_difference(t) - 180))
+    extrema = find_extrema(lambda t: -abs(ecliptic_longitude_difference(t) - 180), t0, t1)
 
     events = []
-    for t in times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} at opposition'})
+    for t, v, is_max in extrema:
+        if is_max:
+            events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} at opposition'})
 
     return events
 
@@ -144,14 +166,14 @@ def find_conjunctions_with_star(observer, eph, body1_name, star_object, start_da
         pos_star = observer.at(t).observe(star_object)
         return pos1.separation_from(pos_star).degrees
 
-    separation.rough_period = 1.0
-
-    times, separations = find_minima(t0, t1, separation)
+    # We are looking for minima of separation, so we find maxima of negative separation
+    extrema = find_extrema(lambda t: -separation(t), t0, t1)
 
     events = []
-    for t, s in zip(times, separations):
-        if s < threshold_degrees:
-            events.append({'date': t.utc_datetime(), 'separation_degrees': s})
+    for t, v, is_max in extrema:
+        # If it's a maximum of negative separation, it's a minimum of positive separation
+        if is_max and -v < threshold_degrees:
+            events.append({'date': t.utc_datetime(), 'separation_degrees': -v})
 
     return events
 
