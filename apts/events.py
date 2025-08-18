@@ -262,7 +262,7 @@ class AstronomicalEvents:
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": f"Highest altitude of {planet_name.capitalize()} ({alt:.2f} deg)",
+                        "event": f"Highest altitude of {planet_name.capitalize()} ({alt:.2f}°)",
                         "type": "Planet Altitude",
                     }
                 )

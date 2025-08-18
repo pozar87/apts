@@ -1,4 +1,5 @@
 from skyfield.api import load
+from skyfield.searchlib import find_maxima
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
@@ -46,14 +47,16 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     def altitude(t):
         return observer.at(t).observe(planet).apparent().altaz()[0].degrees
 
-    extrema = find_extrema(altitude, t0, t1)
-    maxima = [e for e in extrema if e[2]]
+    altitude.rough_period = 1.0
+    times, altitudes = find_maxima(t0, t1, altitude)
 
-    if not maxima:
+    if len(times) == 0:
         return None, 0
 
-    highest = max(maxima, key=lambda x: x[1])
-    return highest[0].utc_datetime(), highest[1]
+    # find the index of the highest altitude
+    max_altitude_index = np.argmax(altitudes)
+
+    return times[max_altitude_index].utc_datetime(), altitudes[max_altitude_index]
 
 
 def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
