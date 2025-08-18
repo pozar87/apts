@@ -84,5 +84,35 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(sum(events_df["event"] == "New Moon"), 2)
 
 
+    def test_jupiter_saturn_conjunction(self):
+        # Set a date range around the Great Conjunction of 2020
+        start_date = datetime(2020, 12, 20, tzinfo=utc)
+        end_date = datetime(2020, 12, 22, tzinfo=utc)
+        events = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.CONJUNCTIONS],
+        )
+        events_df = events.get_events()
+
+        # Check that at least one conjunction event was found
+        self.assertGreater(len(events_df), 0)
+
+        # Find the Jupiter-Saturn conjunction event
+        jupiter_saturn_event = events_df[
+            (events_df["event"] == "Jupiter conjunct Saturn")
+        ]
+
+        # Check that the event was found
+        self.assertEqual(len(jupiter_saturn_event), 1)
+
+        # Check the date of the event
+        event_date = jupiter_saturn_event.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2020)
+        self.assertEqual(event_date.month, 12)
+        self.assertEqual(event_date.day, 21)
+
+
 if __name__ == "__main__":
     unittest.main()

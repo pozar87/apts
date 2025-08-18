@@ -77,7 +77,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     return events
 
 
-def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
+def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None, event_name=None):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -92,12 +92,15 @@ def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, thr
 
     times, separations = find_minima(t0, t1, separation)
 
+    if event_name is None:
+        event_name = f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'
+
     events = []
     for t, s in zip(times, separations):
         if threshold_degrees is None or s < threshold_degrees:
             events.append({
                 'date': t.utc_datetime(),
-                'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
+                'event': event_name,
                 'separation_degrees': s
             })
 
@@ -115,11 +118,14 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
     def ecliptic_longitude_difference(t):
         planet_lon = observer.at(t).observe(planet).ecliptic_latlon()[1].degrees
         sun_lon = observer.at(t).observe(sun).ecliptic_latlon()[1].degrees
-        return abs(planet_lon - sun_lon)
+        diff = sun_lon - planet_lon
+        return (diff + 180) % 360 - 180
 
     ecliptic_longitude_difference.rough_period = 365.25
 
-    times, _ = find_minima(t0, t1, lambda t: abs(ecliptic_longitude_difference(t) - 180))
+    times, _ = find_minima(
+        t0, t1, lambda t: abs(abs(ecliptic_longitude_difference(t)) - 180)
+    )
 
     events = []
     for t in times:
@@ -130,7 +136,16 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
 def find_mercury_inferior_conjunctions(observer, eph, start_date, end_date, threshold_degrees=1.0):
     return find_conjunctions(observer, eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
 
-def find_conjunctions_with_star(observer, eph, body1_name, star_object, start_date, end_date, threshold_degrees=1.0):
+def find_conjunctions_with_star(
+    observer,
+    eph,
+    body1_name,
+    star_object,
+    start_date,
+    end_date,
+    threshold_degrees=1.0,
+    event_name=None,
+):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -139,8 +154,6 @@ def find_conjunctions_with_star(observer, eph, body1_name, star_object, start_da
 
     def separation(t):
         pos1 = observer.at(t).observe(body1)
-        if hasattr(t, 'shape') and t.shape:
-            star_object.epoch = t.tt
         pos_star = observer.at(t).observe(star_object)
         return pos1.separation_from(pos_star).degrees
 
@@ -148,10 +161,19 @@ def find_conjunctions_with_star(observer, eph, body1_name, star_object, start_da
 
     times, separations = find_minima(t0, t1, separation)
 
+    if event_name is None:
+        event_name = f"{body1_name.capitalize()} conjunct star"
+
     events = []
     for t, s in zip(times, separations):
         if s < threshold_degrees:
-            events.append({'date': t.utc_datetime(), 'separation_degrees': s})
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": event_name,
+                    "separation_degrees": s,
+                }
+            )
 
     return events
 
