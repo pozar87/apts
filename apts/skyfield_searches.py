@@ -15,7 +15,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     def altitude(t):
         return observer.at(t).observe(planet).apparent().altaz()[0].degrees
 
-    altitude.rough_period = 1.0
+    altitude.step_days = 0.1
     times, altitudes = find_maxima(t0, t1, altitude)
 
     if len(times) == 0:
@@ -38,7 +38,7 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
 
-    distance_to_sun.rough_period = 365.25
+    distance_to_sun.step_days = 180
 
     max_times, _ = find_maxima(t0, t1, distance_to_sun)
     min_times, _ = find_minima(t0, t1, distance_to_sun)
@@ -63,7 +63,7 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
 
-    distance_to_earth.rough_period = 27.3
+    distance_to_earth.step_days = 13
 
     max_times, _ = find_maxima(t0, t1, distance_to_earth)
     min_times, _ = find_minima(t0, t1, distance_to_earth)
@@ -88,7 +88,7 @@ def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, thr
     def separation(t):
         return observer.at(t).observe(p1).separation_from(observer.at(t).observe(p2)).degrees
 
-    separation.rough_period = 1.0
+    separation.step_days = 1.0
 
     times, separations = find_minima(t0, t1, separation)
 
@@ -121,11 +121,12 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
         diff = sun_lon - planet_lon
         return (diff + 180) % 360 - 180
 
-    ecliptic_longitude_difference.rough_period = 365.25
+    def opposition_angle_difference(t):
+        return abs(abs(ecliptic_longitude_difference(t)) - 180)
 
-    times, _ = find_minima(
-        t0, t1, lambda t: abs(abs(ecliptic_longitude_difference(t)) - 180)
-    )
+    opposition_angle_difference.step_days = 180
+
+    times, _ = find_minima(t0, t1, opposition_angle_difference)
 
     events = []
     for t in times:
@@ -153,11 +154,21 @@ def find_conjunctions_with_star(
     body1 = eph[body1_name]
 
     def separation(t):
+        if t.shape:
+            return np.array(
+                [
+                    observer.at(ti)
+                    .observe(body1)
+                    .separation_from(observer.at(ti).observe(star_object))
+                    .degrees
+                    for ti in t
+                ]
+            )
         pos1 = observer.at(t).observe(body1)
         pos_star = observer.at(t).observe(star_object)
         return pos1.separation_from(pos_star).degrees
 
-    separation.rough_period = 1.0
+    separation.step_days = 1.0
 
     times, separations = find_minima(t0, t1, separation)
 
