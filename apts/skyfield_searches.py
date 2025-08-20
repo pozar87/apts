@@ -150,39 +150,29 @@ def find_conjunctions_with_star(
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-
     body1 = eph[body1_name]
 
-    def separation(t):
-        if t.shape:
-            return np.array(
-                [
-                    observer.at(ti)
-                    .observe(body1)
-                    .separation_from(observer.at(ti).observe(star_object))
-                    .degrees
-                    for ti in t
-                ]
-            )
-        pos1 = observer.at(t).observe(body1)
-        pos_star = observer.at(t).observe(star_object)
-        return pos1.separation_from(pos_star).degrees
-
-    separation.step_days = 1.0
-
-    times, separations = find_minima(t0, t1, separation)
-
-    if event_name is None:
-        event_name = f"{body1_name.capitalize()} conjunct star"
+    times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
 
     events = []
-    for t, s in zip(times, separations):
-        if s < threshold_degrees:
+
+    separations = []
+    for t in times:
+        pos1 = observer.at(t).observe(body1)
+        pos_star = observer.at(t).observe(star_object)
+        separations.append(float(pos1.separation_from(pos_star).degrees))
+
+    for i in range(1, len(separations) - 1):
+        if (
+            separations[i] < separations[i - 1]
+            and separations[i] < separations[i + 1]
+            and separations[i] < threshold_degrees
+        ):
             events.append(
                 {
-                    "date": t.utc_datetime(),
+                    "date": times[i].utc_datetime(),
                     "event": event_name,
-                    "separation_degrees": s,
+                    "separation_degrees": separations[i],
                 }
             )
 

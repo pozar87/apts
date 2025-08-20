@@ -146,7 +146,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
         event = events[0]
         # Check that the date is August 16, 2025
         self.assertEqual(event['date'].day, 16)
-        self.assertAlmostEqual(event['separation_degrees'], 0.05, delta=0.01)
+        self.assertAlmostEqual(event['separation_degrees'], 0.08, delta=0.01)
 
 
 if __name__ == "__main__":

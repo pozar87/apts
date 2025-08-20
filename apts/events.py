@@ -459,7 +459,7 @@ class AstronomicalEvents:
                     messier_star,
                     self.start_date,
                     self.end_date,
-                    threshold_degrees=1.0,
+                    threshold_degrees=4.0,
                     event_name=event_name,
                 )
                 for conj in conjunctions:
