@@ -111,21 +111,23 @@ class AstronomicalEvents:
     def calculate_conjunctions(self):
         start_time = time.time()
         events = []
-        planets = [
-            "mercury",
-            "venus",
-            "mars",
-            "jupiter barycenter",
-            "saturn barycenter",
-            "uranus barycenter",
-            "neptune barycenter",
-        ]
+        planets = {
+            "mercury": "Mercury",
+            "venus": "Venus",
+            "mars": "Mars",
+            "jupiter barycenter": "Jupiter",
+            "saturn barycenter": "Saturn",
+            "uranus barycenter": "Uranus",
+            "neptune barycenter": "Neptune",
+        }
         moon = "moon"
+        moon_display_name = "Moon"
 
         executor = self.executor
         # Planet-Planet conjunctions
         futures = []
-        for p1, p2 in combinations(planets, 2):
+        for (p1, p1_name), (p2, p2_name) in combinations(planets.items(), 2):
+            event_name = f"{p1_name} conjunct {p2_name}"
             futures.append(
                 executor.submit(
                     skyfield_searches.find_conjunctions,
@@ -135,11 +137,13 @@ class AstronomicalEvents:
                     p2,
                     self.start_date,
                     self.end_date,
+                    event_name=event_name,
                 )
             )
 
         # Planet-Moon conjunctions
-        for p in planets:
+        for p, p_name in planets.items():
+            event_name = f"{p_name} conjunct {moon_display_name}"
             futures.append(
                 executor.submit(
                     skyfield_searches.find_conjunctions,
@@ -149,6 +153,7 @@ class AstronomicalEvents:
                     moon,
                     self.start_date,
                     self.end_date,
+                    event_name=event_name,
                 )
             )
 
@@ -262,7 +267,7 @@ class AstronomicalEvents:
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": f"Highest altitude of {planet_name.capitalize()} ({alt:.2f} deg)",
+                        "event": f"Highest altitude of {planet_name.capitalize()} ({alt:.2f}°)",
                         "type": "Planet Altitude",
                     }
                 )
@@ -446,6 +451,7 @@ class AstronomicalEvents:
         def find_all_conjunctions(messier_stars_subset):
             all_events = []
             for messier_name, messier_star in messier_stars_subset.items():
+                event_name = f"Moon conjunct {messier_name}"
                 conjunctions = skyfield_searches.find_conjunctions_with_star(
                     self.observer,
                     self.eph,
@@ -453,26 +459,17 @@ class AstronomicalEvents:
                     messier_star,
                     self.start_date,
                     self.end_date,
-                    threshold_degrees=1.0,
+                    threshold_degrees=4.0,
+                    event_name=event_name,
                 )
-                for i, conj in enumerate(conjunctions):
-                    if isinstance(conj["date"], (list, tuple, np.ndarray)):
-                        for j, t in enumerate(conj["date"]):
-                            all_events.append(
-                                {
-                                    "date": t.astimezone(utc),
-                                    "event": f"Moon conjunct {messier_name} (Separation: {conj['separation_degrees'][j]:.2f}°)",
-                                    "type": "Moon-Messier Conjunction",
-                                }
-                            )
-                    else:
-                        all_events.append(
-                            {
-                                "date": conj["date"].utc_datetime().astimezone(utc),
-                                "event": f"Moon conjunct {messier_name} (Separation: {conj['separation_degrees']:.2f}°)",
-                                "type": "Moon-Messier Conjunction",
-                            }
-                        )
+                for conj in conjunctions:
+                    all_events.append(
+                        {
+                            "date": conj["date"].astimezone(utc),
+                            "event": f"{conj['event']} (Separation: {conj['separation_degrees']:.2f}°)",
+                            "type": "Moon-Messier Conjunction",
+                        }
+                    )
             return all_events
 
         executor = self.executor
