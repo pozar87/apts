@@ -60,24 +60,23 @@ class GraphConstants:
     }
 
     PLANET_COLORS_LIGHT = {
-        "Mercury": "#A9A9A9",  # Dark Gray
-        "Venus": "#F0E68C",  # Pale Gold / Cream
-        "Mars": "#C1440E",  # Rusty Red
-        "Jupiter": "#B08968",  # Tan / Light Brown
-        "Jupiter barycenter": "#B08968",  # Tan / Light Brown
-        "Saturn barycenter": "#CEB888",  # Pale Yellow / Gold
-        "Uranus barycenter": "#7FC9E0",  # Light Sky Blue
-        "Neptune barycenter": "#3B71A0",  # Deep Blue
+        "Mercury": "#A9A9A9",
+        "Venus": "#F0E68C",
+        "Mars": "#C1440E",
+        "Jupiter": "#B08968",
+        "Saturn": "#CEB888",
+        "Uranus": "#7FC9E0",
+        "Neptune": "#3B71A0",
     }
 
     PLANET_COLORS_DARK = {
-        "Mercury": "#BEBEBE",  # LightGray (brighter than light mode)
-        "Venus": "#FFFACD",  # LemonChiffon (brighter pale yellow)
-        "Mars": "#E27B58",  # Lighter Rusty Red/Orange
-        "Jupiter barycenter": "#D8A976",  # Brighter Tan
-        "Saturn barycenter": "#E3D6A8",  # Brighter Pale Gold
-        "Uranus barycenter": "#A4D8E8",  # Brighter Light Blue
-        "Neptune barycenter": "#5B8FBF",  # Slightly lighter/more saturated Deep Blue
+        "Mercury": "#BEBEBE",
+        "Venus": "#FFFACD",
+        "Mars": "#E27B58",
+        "Jupiter": "#D8A976",
+        "Saturn": "#E3D6A8",
+        "Uranus": "#A4D8E8",
+        "Neptune": "#5B8FBF",
     }
 
 

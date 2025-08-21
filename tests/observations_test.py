@@ -282,7 +282,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
         # Mock data for planet color tests
         self.mock_planets_data_for_color_test = pd.DataFrame(
             {
-                ObjectTableLabels.NAME: ["Mars", "Jupiter barycenter"],
+                ObjectTableLabels.NAME: ["Mars", "Jupiter"],
+                "TechnicalName": ["mars", "jupiter barycenter"],
                 ObjectTableLabels.TRANSIT: [
                     pd.Timestamp("2023-01-01 22:00:00", tz="UTC")
                 ]
@@ -290,8 +291,14 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 ObjectTableLabels.ALTITUDE: [45 * ureg.deg] * 2,
                 ObjectTableLabels.SIZE: [10 * ureg.arcsec] * 2,
                 ObjectTableLabels.PHASE: [90.0 * ureg.percent] * 2,
-                ObjectTableLabels.RISING: [pd.Timestamp("2023-01-01 18:00:00", tz="UTC")] * 2,
-                ObjectTableLabels.SETTING: [pd.Timestamp("2023-01-02 02:00:00", tz="UTC")] * 2,
+                ObjectTableLabels.RISING: [
+                    pd.Timestamp("2023-01-01 18:00:00", tz="UTC")
+                ]
+                * 2,
+                ObjectTableLabels.SETTING: [
+                    pd.Timestamp("2023-01-02 02:00:00", tz="UTC")
+                ]
+                * 2,
             }
         )
 
@@ -481,7 +488,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_DARK["Mars"], fills_called
                     )
                     self.assertIn(
-                        GraphConstants.PLANET_COLORS_DARK["Jupiter barycenter"],
+                        GraphConstants.PLANET_COLORS_DARK["Jupiter"],
                         fills_called,
                     )
                     # Check one text call for color
@@ -499,7 +506,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         GraphConstants.PLANET_COLORS_LIGHT["Mars"], fills_called
                     )
                     self.assertIn(
-                        GraphConstants.PLANET_COLORS_LIGHT["Jupiter barycenter"],
+                        GraphConstants.PLANET_COLORS_LIGHT["Jupiter"],
                         fills_called,
                     )
                     mock_dwg_instance.text.assert_any_call(
@@ -589,12 +596,12 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 if effective_dark_mode:
                     expected_mars_color = GraphConstants.PLANET_COLORS_DARK["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_DARK[
-                        "Jupiter barycenter"
+                        "Jupiter"
                     ]
                 else:
                     expected_mars_color = GraphConstants.PLANET_COLORS_LIGHT["Mars"]
                     expected_jupiter_color = GraphConstants.PLANET_COLORS_LIGHT[
-                        "Jupiter barycenter"
+                        "Jupiter"
                     ]
 
                 self.assertIn(expected_mars_color, plot_colors_called)

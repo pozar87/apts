@@ -35,7 +35,8 @@ class SolarObjects(Objects):
 
     def get_skyfield_object(self, solar_object):
         eph = get_ephemeris()
-        return eph[solar_object.Name]
+        name_to_use = solar_object.get("TechnicalName", solar_object.Name)
+        return eph[name_to_use]
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:
@@ -147,7 +148,7 @@ class SolarObjects(Objects):
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
     ):
-        visible = self.objects
+        visible = self.objects.copy()
         # Add ID collumn
         visible["ID"] = visible.index
         visible = visible[
@@ -178,6 +179,13 @@ class SolarObjects(Objects):
         ]
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
+
+        if not visible.empty:
+            visible["TechnicalName"] = visible["Name"]
+            visible["Name"] = visible["TechnicalName"].apply(
+                planetary.get_simple_name
+            ).astype("string")
+
         return visible
 
     
