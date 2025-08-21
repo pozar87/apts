@@ -13,7 +13,7 @@ from skyfield.api import utc
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.solar_objects import SolarObjects
-from .utils import Utils
+from .utils import Utils, planetary
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
@@ -176,6 +176,13 @@ class Observation:
         default_fill_color = style["AXES_FACE_COLOR"]
 
         visible_planets = self.get_visible_planets(**args)
+        if not visible_planets.empty:
+            visible_planets["SimpleName"] = visible_planets["Name"].apply(
+                planetary.get_simple_name
+            )
+        else:
+            visible_planets["SimpleName"] = []
+
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
         max_size = visible_planets[["Size"]].max().iloc[0]
@@ -188,8 +195,9 @@ class Observation:
         # Set delta to constant value
         minimal_delta = 52
         last_radius = None
-        for planet in visible_planets[["Name", "Size", "Phase"]].values:
+        for planet in visible_planets[["Name", "Size", "Phase", "SimpleName"]].values:
             name = planet[0]
+            simple_name = planet[3]
             # Handle radius as pint.Quantity
             radius_with_units = planet[1]
             radius = (
@@ -225,7 +233,7 @@ class Observation:
             )
             dwg.add(
                 dwg.text(
-                    name,
+                    simple_name,
                     insert=(x, y + radius + 15),
                     text_anchor="middle",
                     fill=style["TEXT_COLOR"],
@@ -490,6 +498,13 @@ class Observation:
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         planets_df = self.get_visible_planets().copy()
+        if not planets_df.empty:
+            planets_df["SimpleName"] = planets_df["Name"].apply(
+                planetary.get_simple_name
+            )
+        else:
+            planets_df["SimpleName"] = []
+
         if len(planets_df) == 0:
             ax.set_xlim(
                 [
@@ -510,6 +525,7 @@ class Observation:
 
         for _, planet in planets_df.iterrows():
             name = planet[ObjectTableLabels.NAME]
+            simple_name = planet["SimpleName"]
             skyfield_object = self.local_planets.get_skyfield_object(planet)
 
             curve_df = self.place.get_altitude_curve(skyfield_object, self.start, self.stop)
@@ -523,7 +539,7 @@ class Observation:
                 curve_df["Time"].apply(lambda t: t.utc_datetime()),
                 curve_df["Altitude"],
                 color=specific_planet_color,
-                label=name
+                label=simple_name
             )
 
             # Mark rise and set times
@@ -538,7 +554,7 @@ class Observation:
             peak_time = curve_df["Time"][peak_idx].utc_datetime()
             peak_alt = curve_df["Altitude"][peak_idx]
             ax.annotate(
-                name,
+                simple_name,
                 (peak_time, peak_alt),
                 xytext=(5, 5),
                 textcoords="offset points",
@@ -645,13 +661,19 @@ class Observation:
                     )
             template = Template(template_content)
             hourly_weather = self.get_hourly_weather_analysis()
+            visible_planets_df = self.get_visible_planets()
+            if not visible_planets_df.empty:
+                visible_planets_df["Name"] = visible_planets_df["Name"].apply(
+                    planetary.get_simple_name
+                )
+
             data = {
                 "title": "APTS",
                 "start": Utils.format_date(self.start),
                 "stop": Utils.format_date(self.stop),
-                "planets_count": len(self.get_visible_planets()),
+                "planets_count": len(visible_planets_df),
                 "messier_count": len(self.get_visible_messier()),
-                "planets_table": self.get_visible_planets().to_html(),
+                "planets_table": visible_planets_df.to_html(),
                 "messier_table": self.get_visible_messier().to_html(),
                 "equipment_table": self.equipment.data().to_html(),
                 "place_name": self.place.name,

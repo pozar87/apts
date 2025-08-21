@@ -45,10 +45,13 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
 
     events = []
     for t in max_times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} Aphelion'})
+        events.append(
+            {"date": t.utc_datetime(), "event_type": "Aphelion", "planet": planet_name}
+        )
     for t in min_times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} Perihelion'})
-
+        events.append(
+            {"date": t.utc_datetime(), "event_type": "Perihelion", "planet": planet_name}
+        )
     return events
 
 
@@ -130,7 +133,7 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
 
     events = []
     for t in times:
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} at opposition'})
+        events.append({"date": t.utc_datetime(), "planet": planet_name})
 
     return events
 
