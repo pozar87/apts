@@ -8,6 +8,7 @@ import pint
 from .objects import Objects
 from ..constants import ObjectTableLabels
 from ..units import ureg
+from ..utils import planetary
 from apts.place import Place
 from skyfield.api import load
 from skyfield import almanac
@@ -15,22 +16,13 @@ from skyfield import almanac
 
 from ..cache import get_ephemeris
 
+
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
         # Init object list with all planets
         self.objects = pandas.DataFrame(
-            [
-                "Mercury",
-                "Venus",
-                "Mars",
-                "Jupiter barycenter",
-                "Saturn barycenter",
-                "Uranus barycenter",
-                "Neptune barycenter",
-                "Moon",
-                "Sun",
-            ],
+            planetary.TECHNICAL_NAMES,
             columns=[ObjectTableLabels.NAME],
         )
 
@@ -43,7 +35,8 @@ class SolarObjects(Objects):
 
     def get_skyfield_object(self, solar_object):
         eph = get_ephemeris()
-        return eph[solar_object.Name]
+        name_to_use = solar_object.get("TechnicalName", solar_object.Name)
+        return eph[name_to_use]
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:
@@ -84,15 +77,15 @@ class SolarObjects(Objects):
         # Define a mapping from Skyfield object names to Pyephem object constructors
         # This map is local to the compute method as it's only used here.
         ephem_object_map = {
-            "Mercury": ephem.Mercury,
-            "Venus": ephem.Venus,
-            "Mars": ephem.Mars,
-            "Jupiter barycenter": ephem.Jupiter,  # Pyephem's Jupiter refers to the planet itself
-            "Saturn barycenter": ephem.Saturn,
-            "Uranus barycenter": ephem.Uranus,
-            "Neptune barycenter": ephem.Neptune,
-            "Moon": ephem.Moon,
-            "Sun": ephem.Sun,
+            "mercury": ephem.Mercury,
+            "venus": ephem.Venus,
+            "mars": ephem.Mars,
+            "jupiter barycenter": ephem.Jupiter,
+            "saturn barycenter": ephem.Saturn,
+            "uranus barycenter": ephem.Uranus,
+            "neptune barycenter": ephem.Neptune,
+            "moon": ephem.Moon,
+            "sun": ephem.Sun,
         }
 
         # Create an ephem observer for the current place and time, once for efficiency
@@ -155,7 +148,7 @@ class SolarObjects(Objects):
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
     ):
-        visible = self.objects
+        visible = self.objects.copy()
         # Add ID collumn
         visible["ID"] = visible.index
         visible = visible[
@@ -186,6 +179,13 @@ class SolarObjects(Objects):
         ]
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
+
+        if not visible.empty:
+            visible["TechnicalName"] = visible["Name"]
+            visible["Name"] = visible["TechnicalName"].apply(
+                planetary.get_simple_name
+            ).astype("string")
+
         return visible
 
     

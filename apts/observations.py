@@ -13,7 +13,7 @@ from skyfield.api import utc
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.solar_objects import SolarObjects
-from .utils import Utils
+from .utils import Utils, planetary
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
@@ -178,7 +178,11 @@ class Observation:
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
-        max_size = visible_planets[["Size"]].max().iloc[0]
+        max_size = (
+            visible_planets[["Size"]].max().iloc[0]
+            if not visible_planets.empty
+            else 0
+        )
         max_size_val = (
             max_size.magnitude if hasattr(max_size, "magnitude") else max_size
         )
@@ -188,7 +192,9 @@ class Observation:
         # Set delta to constant value
         minimal_delta = 52
         last_radius = None
-        for planet in visible_planets[["Name", "Size", "Phase"]].values:
+        for planet in visible_planets[
+            ["Name", "Size", "Phase", "TechnicalName"]
+        ].values:
             name = planet[0]
             # Handle radius as pint.Quantity
             radius_with_units = planet[1]
@@ -645,13 +651,15 @@ class Observation:
                     )
             template = Template(template_content)
             hourly_weather = self.get_hourly_weather_analysis()
+            visible_planets_df = self.get_visible_planets()
+
             data = {
                 "title": "APTS",
                 "start": Utils.format_date(self.start),
                 "stop": Utils.format_date(self.stop),
-                "planets_count": len(self.get_visible_planets()),
+                "planets_count": len(visible_planets_df),
                 "messier_count": len(self.get_visible_messier()),
-                "planets_table": self.get_visible_planets().to_html(),
+                "planets_table": visible_planets_df.drop(columns=["TechnicalName"]).to_html() if "TechnicalName" in visible_planets_df.columns else visible_planets_df.to_html(),
                 "messier_table": self.get_visible_messier().to_html(),
                 "equipment_table": self.equipment.data().to_html(),
                 "place_name": self.place.name,

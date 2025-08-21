@@ -29,7 +29,7 @@ class TestSolarObjects(unittest.TestCase):
     def test_moon_properties(self):
         """Test the calculated properties for the Moon."""
         moon_data = self.solar_objects.objects[
-            self.solar_objects.objects[ObjectTableLabels.NAME] == "Moon"
+            self.solar_objects.objects[ObjectTableLabels.NAME] == "moon"
         ].iloc[0]
 
         # Plausibility checks for the Moon on the given date
@@ -43,7 +43,7 @@ class TestSolarObjects(unittest.TestCase):
     def test_mars_properties(self):
         """Test the calculated properties for Mars."""
         mars_data = self.solar_objects.objects[
-            self.solar_objects.objects[ObjectTableLabels.NAME] == "Mars"
+            self.solar_objects.objects[ObjectTableLabels.NAME] == "mars"
         ].iloc[0]
 
         # Plausibility checks for Mars

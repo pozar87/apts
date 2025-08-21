@@ -8,6 +8,7 @@ import time
 from typing import List, Optional
 from .config import get_event_settings
 from .constants.event_types import EventType
+from .utils import planetary
 
 logger = logging.getLogger(__name__)
 
@@ -111,15 +112,7 @@ class AstronomicalEvents:
     def calculate_conjunctions(self):
         start_time = time.time()
         events = []
-        planets = {
-            "mercury": "Mercury",
-            "venus": "Venus",
-            "mars": "Mars",
-            "jupiter barycenter": "Jupiter",
-            "saturn barycenter": "Saturn",
-            "uranus barycenter": "Uranus",
-            "neptune barycenter": "Neptune",
-        }
+        planets = planetary.CONJUNCTION_PLANETS
         moon = "moon"
         moon_display_name = "Moon"
 
@@ -168,13 +161,7 @@ class AstronomicalEvents:
     def calculate_oppositions(self):
         start_time = time.time()
         events = []
-        planets = [
-            "mars",
-            "jupiter barycenter",
-            "saturn barycenter",
-            "uranus barycenter",
-            "neptune barycenter",
-        ]
+        planets = planetary.OPPOSITION_PLANETS
         executor = self.executor
         futures = [
             executor.submit(
@@ -191,6 +178,9 @@ class AstronomicalEvents:
             found_events = future.result()
             for event in found_events:
                 event["type"] = "Opposition"
+                simple_name = planetary.get_simple_name(event["planet"])
+                event["event"] = f"{simple_name} at opposition"
+                del event["planet"]
             events.extend(found_events)
         logger.debug(f"--- calculate_oppositions: {time.time() - start_time}s")
         return events
@@ -264,10 +254,11 @@ class AstronomicalEvents:
             planet_name = futures[future]
             t, alt = future.result()
             if t:
+                simple_name = planetary.get_simple_name(planet_name)
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": f"Highest altitude of {planet_name.capitalize()} ({alt:.2f}°)",
+                        "event": f"Highest altitude of {simple_name} ({alt:.2f}°)",
                         "type": "Planet Altitude",
                     }
                 )
@@ -291,16 +282,7 @@ class AstronomicalEvents:
     def calculate_aphelion_perihelion(self):
         start_time = time.time()
         events = []
-        planets = [
-            "mercury",
-            "venus",
-            "mars",
-            "jupiter barycenter",
-            "saturn barycenter",
-            "uranus barycenter",
-            "neptune barycenter",
-            "moon",
-        ]
+        planets = planetary.APHELION_PERIHELION_PLANETS
         executor = self.executor
         futures = [
             executor.submit(
@@ -315,6 +297,12 @@ class AstronomicalEvents:
         for future in as_completed(futures):
             events_from_search = future.result()
             for event_dict in events_from_search:
+                simple_name = planetary.get_simple_name(event_dict["planet"])
+                event_dict[
+                    "event"
+                ] = f"{simple_name} {event_dict['event_type']}"
+                del event_dict["planet"]
+                del event_dict["event_type"]
                 event_dict["date"] = event_dict["date"].astimezone(utc)
                 event_dict["type"] = "Aphelion/Perihelion"
                 events.append(event_dict)
