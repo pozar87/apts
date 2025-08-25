@@ -38,9 +38,9 @@ class GraphConstants:
         "AXIS_COLOR": "#CCCCCC",  # Light Gray
         "TICK_COLOR": "#CCCCCC",  # Light Gray
         "GRID_COLOR": "#404040",  # Subtle Dark Gray
-        "SPAN_BACKGROUND_COLOR": "#FFFFFF",  # White (for low alpha spans)
+        "SPAN_BACKGROUND_COLOR": "#2A2A4A",  # Dark blueish gray
         "GOOD_CONDITION_HL_COLOR": "#007447",  # Vibrant Green (for low alpha highlights)
-        "MOON_SPAN_COLOR": "#5A1A75",  # Bright Purple (for low alpha moon spans)
+        "MOON_SPAN_COLOR": "#FFFFE0",  # Light Yellow
         "ERROR_TEXT_COLOR": "#FF6B6B",  # Light red
         "WARNING_TEXT_COLOR": "#FFCC00",  # Light orange
         # AXES_EDGE_COLOR is often the same as AXIS_COLOR or TEXT_COLOR depending on theme.
