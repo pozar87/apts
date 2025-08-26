@@ -382,15 +382,15 @@ class Place:
 
         # Plot Moon marker
         if effective_dark_mode:
-            # In dark mode, we draw a full moon in a light color,
-            # then draw the phase on top in the background color to create the shadow.
-            ax.text(
+            # In dark mode, we draw a solid light-colored circle first,
+            # then draw the shadow part of the moon on top of it.
+            ax.plot(
                 180,
                 10,
-                "N",  # Full moon character
-                fontproperties=Place.MOON_FONT,
-                horizontalalignment="center",
+                marker="o",
+                markersize=45,
                 color=style["TEXT_COLOR"],
+                linestyle="None",
             )
             ax.text(
                 180,
@@ -398,6 +398,7 @@ class Place:
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
+                verticalalignment="center",
                 color=style["AXES_FACE_COLOR"],
             )
         else:
@@ -408,6 +409,7 @@ class Place:
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
+                verticalalignment="center",
                 color=style["TEXT_COLOR"],
             )
         ax.text(
