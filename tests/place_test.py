@@ -398,14 +398,34 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_ax.axhspan.assert_called_with(
                     0, -50, color=expected_style["GRID_COLOR"], alpha=0.3
                 )
-                mock_ax.text.assert_any_call(
-                    180,
-                    10,
-                    "M",
-                    fontproperties=Place.MOON_FONT,
-                    horizontalalignment="center",
-                    color=expected_style["TEXT_COLOR"],
-                )
+                if is_dark:
+                    mock_ax.plot.assert_any_call(
+                        180,
+                        10,
+                        marker="o",
+                        markersize=45,
+                        color=expected_style["TEXT_COLOR"],
+                        linestyle="None",
+                    )
+                    mock_ax.text.assert_any_call(
+                        180,
+                        10,
+                        "M",
+                        fontproperties=Place.MOON_FONT,
+                        horizontalalignment="center",
+                        verticalalignment="center",
+                        color=expected_style["AXES_FACE_COLOR"],
+                    )
+                else:
+                    mock_ax.text.assert_any_call(
+                        180,
+                        10,
+                        "M",
+                        fontproperties=Place.MOON_FONT,
+                        horizontalalignment="center",
+                        verticalalignment="center",
+                        color=expected_style["TEXT_COLOR"],
+                    )
                 mock_ax.text.assert_any_call(
                     180,
                     5,
