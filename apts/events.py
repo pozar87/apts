@@ -100,7 +100,9 @@ class AstronomicalEvents:
     def calculate_space_launches(self):
         start_time = time.time()
         events = []
-        url = f"https://ll.thespacedevs.com/2.2.0/launch/upcoming/?window_start__gte={self.start_date.isoformat()}&window_end__lte={self.end_date.isoformat()}"
+        start_date_str = self.start_date.strftime("%Y-%m-%d")
+        end_date_str = self.end_date.strftime("%Y-%m-%d")
+        url = f"https://ll.thespacedevs.com/2.2.0/launch/upcoming/?window_start__gte={start_date_str}&window_end__lte={end_date_str}"
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -121,7 +123,9 @@ class AstronomicalEvents:
     def calculate_space_events(self):
         start_time = time.time()
         events = []
-        url = f"https://ll.thespacedevs.com/2.2.0/event/upcoming/?date__gte={self.start_date.isoformat()}&date__lte={self.end_date.isoformat()}"
+        start_date_str = self.start_date.strftime("%Y-%m-%d")
+        end_date_str = self.end_date.strftime("%Y-%m-%d")
+        url = f"https://ll.thespacedevs.com/2.2.0/event/upcoming/?date__gte={start_date_str}&date__lte={end_date_str}"
         try:
             response = requests.get(url)
             response.raise_for_status()
