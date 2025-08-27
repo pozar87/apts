@@ -9,7 +9,7 @@ from typing import Optional
 from .utils import Utils
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
-from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap
+from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap, Meteoblue
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ class Weather:
             provider = VisualCrossing(api_key, lat, lon, local_timezone)
         elif provider_name == 'openweathermap':
             provider = OpenWeatherMap(api_key, lat, lon, local_timezone)
+        elif provider_name == 'meteoblue':
+            provider = Meteoblue(api_key, lat, lon, local_timezone)
         else:
             raise ValueError(f"Unknown weather provider: {provider_name}")
 
