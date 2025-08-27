@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
 from apts.weather import Weather
-from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap
+from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap, Meteoblue
 from apts.constants.graphconstants import get_plot_style
 from . import setup_place
 from requests_mock import ANY
@@ -53,12 +53,33 @@ OPEN_WEATHER_MAP_MOCK = {
     ]
 }
 
+METEOBLUE_MOCK = {
+    "data_1h": {
+        "time": ["2022-08-26 12:00"],
+        "pictocode": [3],
+        "snowfraction": [0],
+        "precipitation_probability": [20],
+        "precipitation": [0.1],
+        "temperature": [20],
+        "felttemperature": [21],
+        "dewpointtemperature": [10],
+        "relativehumidity": [50],
+        "windspeed": [5],
+        "totalcloudcover": [10],
+        "visibility": [10000],
+        "sealevelpressure": [1013],
+        "ozone_concentration": [300]
+    }
+}
+
+
 @pytest.mark.parametrize(
     "provider_name, mock_response",
     [
         ("pirateweather", PIRATE_WEATHER_MOCK),
         ("visualcrossing", VISUAL_CROSSING_MOCK),
         ("openweathermap", OPEN_WEATHER_MAP_MOCK),
+        ("meteoblue", METEOBLUE_MOCK),
     ],
 )
 @patch('apts.weather.get_weather_settings')
@@ -91,6 +112,9 @@ def test_weather_providers(mock_get_weather_settings, requests_mock, provider_na
     elif provider_name == 'openweathermap':
         assert data['windSpeed'] == 18.0 # 5 m/s * 3.6 = 18 km/h
         assert data['ozone'] == 'none' # Not provided by OWM
+    elif provider_name == 'meteoblue':
+        assert data['windSpeed'] == 5
+        assert data['ozone'] == 300
 
 
 @pytest.mark.parametrize(

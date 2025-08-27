@@ -125,6 +125,62 @@ class VisualCrossing(WeatherProvider):
             return df[required_columns]
 
 
+class Meteoblue(WeatherProvider):
+    API_URL = "https://my.meteoblue.com/packages/basic-1h_agro-1h_clouds-1h_airquality-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
+
+    def download_data(self):
+        url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
+        logger.debug("Download weather from: {}".format(url))
+        with requests.get(url) as data:
+            logger.debug(f"Data {data}")
+            json_data = json.loads(data.text)
+
+            if "data_1h" not in json_data:
+                logger.error(f"KeyError 'data_1h' in weather data. Full response: {json_data}")
+                return pd.DataFrame()
+
+            df = pd.DataFrame(json_data['data_1h'])
+
+            # Rename columns to match the standard format
+            rename_map = {
+                'time': 'time',
+                'pictocode': 'summary',
+                'snowfraction': 'precipType',
+                'precipitation_probability': 'precipProbability',
+                'precipitation': 'precipIntensity',
+                'temperature': 'temperature',
+                'felttemperature': 'apparentTemperature',
+                'dewpointtemperature': 'dewPoint',
+                'relativehumidity': 'humidity',
+                'windspeed': 'windSpeed',
+                'totalcloudcover': 'cloudCover',
+                'visibility': 'visibility',
+                'sealevelpressure': 'pressure',
+                'ozone_concentration': 'ozone'
+            }
+            df.rename(columns=rename_map, inplace=True)
+
+            # Convert units and types
+            df['time'] = pd.to_datetime(df['time']).dt.tz_localize('UTC').dt.tz_convert(self.local_timezone)
+            if 'precipType' in df.columns:
+                df['precipType'] = df['precipType'].apply(lambda x: 'snow' if x > 0 else 'rain')
+
+            if 'visibility' in df.columns:
+                df['visibility'] /= 1000
+
+            # Ensure all required columns are present
+            required_columns = [
+                "time", "summary", "precipType", "precipProbability", "precipIntensity",
+                "temperature", "apparentTemperature", "dewPoint", "humidity",
+                "windSpeed", "cloudCover", "visibility", "pressure", "ozone"
+            ]
+            for col in required_columns:
+                if col not in df.columns:
+                    df[col] = 'none'
+
+            return df[required_columns]
+
+
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
