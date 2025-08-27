@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import time
 from typing import List, Optional
+import requests
+from dateutil.parser import parse as parse_date
 from .config import get_event_settings
 from .constants.event_types import EventType
 from .utils import planetary
@@ -82,6 +84,10 @@ class AstronomicalEvents:
             )
         if self.event_settings.get("moon_messier_conjunctions", False):
             futures.append(executor.submit(self.calculate_moon_messier_conjunctions))
+        if self.event_settings.get("space_launches", False):
+            futures.append(executor.submit(self.calculate_space_launches))
+        if self.event_settings.get("space_events", False):
+            futures.append(executor.submit(self.calculate_space_events))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -90,6 +96,48 @@ class AstronomicalEvents:
         df = pd.DataFrame(self.events).sort_values(by="date")
         logger.debug(f"--- get_events: {time.time() - start_time}s")
         return df
+
+    def calculate_space_launches(self):
+        start_time = time.time()
+        events = []
+        url = f"https://ll.thespacedevs.com/2.2.0/launch/upcoming/?window_start__gte={self.start_date.isoformat()}&window_end__lte={self.end_date.isoformat()}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            for launch in data.get("results", []):
+                events.append(
+                    {
+                        "date": parse_date(launch["window_start"]).astimezone(utc),
+                        "event": launch["name"],
+                        "type": "Space Launch",
+                    }
+                )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching space launches: {e}")
+        logger.debug(f"--- calculate_space_launches: {time.time() - start_time}s")
+        return events
+
+    def calculate_space_events(self):
+        start_time = time.time()
+        events = []
+        url = f"https://ll.thespacedevs.com/2.2.0/event/upcoming/?date__gte={self.start_date.isoformat()}&date__lte={self.end_date.isoformat()}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            for event in data.get("results", []):
+                events.append(
+                    {
+                        "date": parse_date(event["date"]).astimezone(utc),
+                        "event": event["name"],
+                        "type": "Space Event",
+                    }
+                )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching space events: {e}")
+        logger.debug(f"--- calculate_space_events: {time.time() - start_time}s")
+        return events
 
     def calculate_moon_phases(self):
         start_time = time.time()

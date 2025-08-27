@@ -16,6 +16,8 @@ class EventType(str, Enum):
     MOON_APOGEE_PERIGEE = "moon_apogee_perigee"
     MERCURY_INFERIOR_CONJUNCTIONS = "mercury_inferior_conjunctions"
     MOON_MESSIER_CONJUNCTIONS = "moon_messier_conjunctions"
+    SPACE_LAUNCHES = "space_launches"
+    SPACE_EVENTS = "space_events"
 
     def __str__(self):
         return self.value
