@@ -92,7 +92,12 @@ class Notify:
 
         # Fallback plain text message
         if plain_text_fallback is None:
-            plain_text_fallback = "This is a fallback message. Please enable HTML to see the full content."
+            num_planets = len(observations.get_visible_planets())
+            num_messier = len(observations.get_visible_messier())
+            plain_text_fallback = (
+                f"Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
+                "Enable HTML to see the full content."
+            )
         text_part = MIMEText(plain_text_fallback, "plain")
         msg_root.attach(text_part)
 
