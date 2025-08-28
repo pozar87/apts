@@ -136,6 +136,20 @@ class Observation:
             )
         # If self.start is None, self.time_limit remains None.
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # The 'eph' attribute is a skyfield object that holds an open file handle
+        # and cannot be pickled. We remove it from the state before pickling.
+        if 'eph' in state:
+            del state['eph']
+        return state
+
+    def __setstate__(self, state):
+        # Restore instance attributes from the pickled state.
+        self.__dict__.update(state)
+        # Re-initialize the 'eph' attribute that was removed during pickling.
+        self.eph = get_ephemeris()
+
     def get_visible_messier(self, **args):
         return self.local_messier.get_visible(
             self.conditions, self.start, self.time_limit, **args
