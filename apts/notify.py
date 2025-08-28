@@ -82,7 +82,7 @@ class Notify:
 
         return self._send_email(msg_root)  # Use the internal helper
 
-    def send(self, observations, custom_template=None, css=None):
+    def send(self, observations, custom_template=None, css=None, plain_text_fallback=None):
         """Sends a complex email notification with observation details and plots."""
         # Overall message container: multipart/alternative for text and HTML versions
         msg_root = MIMEMultipart("alternative")
@@ -91,9 +91,8 @@ class Notify:
         msg_root["To"] = self.recipient_email
 
         # Fallback plain text message
-        plain_text_fallback = (
-            "This is a fallback message. Please enable HTML to see the full content."
-        )
+        if plain_text_fallback is None:
+            plain_text_fallback = "This is a fallback message. Please enable HTML to see the full content."
         text_part = MIMEText(plain_text_fallback, "plain")
         msg_root.attach(text_part)
 
