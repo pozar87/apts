@@ -68,7 +68,8 @@ METEOBLUE_MOCK = {
         "totalcloudcover": [10],
         "visibility": [10000],
         "sealevelpressure": [1013],
-        "ozone_concentration": [300]
+        "ozone_concentration": [300],
+        "seeing": [2]
     }
 }
 
@@ -115,6 +116,7 @@ def test_weather_providers(mock_get_weather_settings, requests_mock, provider_na
     elif provider_name == 'meteoblue':
         assert data['windSpeed'] == 5
         assert data['ozone'] == 300
+        assert data['seeing'] == 2
 
 
 @pytest.mark.parametrize(
@@ -324,9 +326,10 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             mock_weather_instance, "plot_pressure_and_ozone"
         ) as mock_plot_pressure_and_ozone,
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
+        patch.object(mock_weather_instance, "plot_seeing") as mock_plot_seeing,
         patch(
             "apts.observations.pyplot.subplots",
-            return_value=(MagicMock(), MagicMock(shape=(4, 2))),
+            return_value=(MagicMock(), MagicMock(shape=(5, 2))),
         ) as mock_subplots,
         patch(
             "apts.observations.Observation._mark_observation"
@@ -340,7 +343,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
     ):
         fig = obs.plot_weather()
 
-        mock_subplots.assert_called_once_with(nrows=4, ncols=2, figsize=(13, 18))
+        mock_subplots.assert_called_once_with(nrows=5, ncols=2, figsize=(13, 22))
 
         mock_plot_clouds.assert_called_once()
         mock_plot_clouds_summary.assert_called_once()
@@ -350,12 +353,109 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         mock_plot_wind.assert_called_once()
         mock_plot_pressure_and_ozone.assert_called_once()
         mock_plot_visibility.assert_called_once()
+        mock_plot_seeing.assert_called_once()
 
         assert mock_mark_observation.call_count >= 1
         assert mock_mark_good_conditions.call_count >= 1
 
         assert fig is not None
         assert isinstance(fig, MagicMock)
+
+
+@pytest.mark.parametrize(
+    "provider_name, mock_response",
+    [
+        ("meteoblue", {"data_1h": {"time": ["2022-08-26 12:00"], "seeing": [2]}}),
+    ],
+)
+@pytest.mark.parametrize(
+    "override_value, global_setting, expected_effective_dark_mode",
+    [
+        (True, False, True),
+        (False, True, False),
+        (None, True, True),
+        (None, False, False),
+    ],
+)
+@patch("apts.weather.Utils.annotate_plot")
+@patch("pandas.DataFrame.plot")
+@patch("apts.weather.get_dark_mode")
+@patch("apts.weather.get_weather_settings")
+def test_plot_seeing_dark_mode_styles(
+    mock_get_weather_settings,
+    mock_get_dark_mode,
+    mock_df_plot,
+    mock_annotate_plot,
+    requests_mock,
+    provider_name,
+    mock_response,
+    override_value,
+    global_setting,
+    expected_effective_dark_mode,
+):
+    mock_get_weather_settings.return_value = (provider_name, "dummy_key")
+    requests_mock.get(ANY, json=mock_response)
+    weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
+
+    mock_get_dark_mode.return_value = global_setting
+    expected_style = get_plot_style(expected_effective_dark_mode)
+
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+    mock_ax.figure = mock_fig
+    mock_fig_patch = MagicMock()
+    mock_fig.patch = mock_fig_patch
+    mock_df_plot.return_value = mock_ax
+    mock_legend = MagicMock()
+    mock_ax.get_legend.return_value = mock_legend
+    mock_legend_frame = MagicMock()
+    mock_legend.get_frame.return_value = mock_legend_frame
+    mock_legend_title = MagicMock()
+    mock_legend.get_title.return_value = mock_legend_title
+    mock_legend_text_item = MagicMock()
+    mock_legend.get_texts.return_value = [mock_legend_text_item]
+    mock_ax.get_title.return_value = "Seeing"
+
+    ax_returned = weather.plot_seeing(hours=1, dark_mode_override=override_value)
+
+    assert ax_returned == mock_ax
+    mock_df_plot.assert_called_once()
+
+    if expected_effective_dark_mode:
+        mock_fig_patch.set_facecolor.assert_called_with("#1C1C3A")
+        mock_ax.set_facecolor.assert_called_with("#2A004F")
+        mock_ax.set_title.assert_any_call("Seeing", color="#FFFFFF")
+        if mock_ax.get_legend() is not None and mock_legend_frame is not None:
+            mock_legend_frame.set_facecolor.assert_called_with("#2A004F")
+            mock_legend_frame.set_edgecolor.assert_called_with("#CCCCCC")
+            mock_legend_text_item.set_color.assert_called_with("#FFFFFF")
+    else:
+        mock_fig_patch.set_facecolor.assert_called_with(
+            expected_style["FIGURE_FACE_COLOR"]
+        )
+        mock_ax.set_facecolor.assert_called_with(expected_style["AXES_FACE_COLOR"])
+        mock_ax.set_title.assert_any_call("Seeing", color=expected_style["TEXT_COLOR"])
+        if mock_ax.get_legend() is not None and mock_legend_frame is not None:
+            mock_legend_frame.set_facecolor.assert_called_with(
+                expected_style["AXES_FACE_COLOR"]
+            )
+            mock_legend_frame.set_edgecolor.assert_called_with(
+                expected_style["AXIS_COLOR"]
+            )
+            mock_legend_text_item.set_color.assert_called_with(
+                expected_style["TEXT_COLOR"]
+            )
+
+    if mock_ax.get_legend() is not None:
+        mock_ax.get_legend.assert_called()
+
+    mock_annotate_plot.assert_called_with(
+        mock_ax, "Seeing [arcsec]", expected_effective_dark_mode
+    )
+
+    mock_df_plot.reset_mock()
+    mock_annotate_plot.reset_mock()
+    mock_get_dark_mode.reset_mock()
 
 
 if __name__ == "__main__":

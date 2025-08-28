@@ -43,6 +43,7 @@ class PirateWeather(WeatherProvider):
                 "visibility",
                 "pressure",
                 "ozone",
+                "seeing"
             ]
             json_data = json.loads(data.text)
             if "hourly" in json_data and "data" in json_data["hourly"]:
@@ -116,7 +117,7 @@ class VisualCrossing(WeatherProvider):
             required_columns = [
                 "time", "summary", "precipType", "precipProbability", "precipIntensity",
                 "temperature", "apparentTemperature", "dewPoint", "humidity",
-                "windSpeed", "cloudCover", "visibility", "pressure", "ozone"
+                "windSpeed", "cloudCover", "visibility", "pressure", "ozone", "seeing"
             ]
             for col in required_columns:
                 if col not in df.columns:
@@ -126,7 +127,7 @@ class VisualCrossing(WeatherProvider):
 
 
 class Meteoblue(WeatherProvider):
-    API_URL = "https://my.meteoblue.com/packages/basic-1h_agro-1h_clouds-1h_airquality-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
+    API_URL = "https://my.meteoblue.com/packages/basic-1h_agro-1h_clouds-1h_airquality-1h_seeing-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
 
     def download_data(self):
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
@@ -156,7 +157,8 @@ class Meteoblue(WeatherProvider):
                 'totalcloudcover': 'cloudCover',
                 'visibility': 'visibility',
                 'sealevelpressure': 'pressure',
-                'ozone_concentration': 'ozone'
+                'ozone_concentration': 'ozone',
+                'seeing': 'seeing'
             }
             df.rename(columns=rename_map, inplace=True)
 
@@ -172,7 +174,7 @@ class Meteoblue(WeatherProvider):
             required_columns = [
                 "time", "summary", "precipType", "precipProbability", "precipIntensity",
                 "temperature", "apparentTemperature", "dewPoint", "humidity",
-                "windSpeed", "cloudCover", "visibility", "pressure", "ozone"
+                "windSpeed", "cloudCover", "visibility", "pressure", "ozone", "seeing"
             ]
             for col in required_columns:
                 if col not in df.columns:
@@ -244,7 +246,7 @@ class OpenWeatherMap(WeatherProvider):
             required_columns = [
                 "time", "summary", "precipType", "precipProbability", "precipIntensity",
                 "temperature", "apparentTemperature", "dewPoint", "humidity",
-                "windSpeed", "cloudCover", "visibility", "pressure", "ozone"
+                "windSpeed", "cloudCover", "visibility", "pressure", "ozone", "seeing"
             ]
             for col in required_columns:
                 if col not in df.columns:

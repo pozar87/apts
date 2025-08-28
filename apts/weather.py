@@ -423,8 +423,8 @@ class Weather:
 
     def get_critical_data(self, start, stop):
         if self.data.empty:
-            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature"])
-        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature"])
+            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature", "seeing"])
+        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature", "seeing"])
         return data[(data.time >= start) & (data.time <= stop)]
 
     def plot_visibility(
@@ -472,4 +472,50 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
+        return ax
+
+    def plot_seeing(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        data = self._filter_data(["seeing"])
+        data = data.query("seeing != 'none'")
+        if data.empty:
+            return None
+
+        ax = args.pop("ax", None)
+        fig = None
+
+        if ax:
+            fig = ax.figure
+
+        plot_kwargs = args.copy()
+        plot_ax = data.plot(x="time", title="Seeing", ax=ax, **plot_kwargs)
+
+        if not ax:  # ax was created by data.plot()
+            ax = plot_ax
+            fig = ax.figure
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
+
+        legend = ax.get_legend()
+        if legend:
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
+            if legend.get_title():
+                legend.get_title().set_color(style["TEXT_COLOR"])
+
+        Utils.annotate_plot(ax, "Seeing [arcsec]", effective_dark_mode)
         return ax
