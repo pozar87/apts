@@ -37,13 +37,14 @@ class Messier(Objects):
             lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use),
             axis=1
         )
-        # Compute altitude and azimuth of messier objects at transit (at given place)
-        self.objects[[ObjectTableLabels.ALTITUDE, ObjectTableLabels.AZIMUTH]] = self.objects.apply(
-            lambda row: self._altaz_at_transit(
-                self.get_skyfield_object(row), row.Transit, observer_to_use
+        # Compute altitude of messier objects at transit (at given place)
+        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
+            [ObjectTableLabels.TRANSIT]
+        ].apply(
+            lambda row: self._altitude_at_transit(
+                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
             ),
             axis=1,
-            result_type='expand'
         )
 
     def get_skyfield_object(self, messier_object):

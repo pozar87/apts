@@ -63,12 +63,13 @@ class SolarObjects(Objects):
             axis=1,
         ).apply(pandas.Series)
         # Compute altitude of planets at transit (at given place)
-        self.objects[[ObjectTableLabels.ALTITUDE, ObjectTableLabels.AZIMUTH]] = self.objects.apply(
-            lambda row: self._altaz_at_transit(
-                self.get_skyfield_object(row), row.Transit, observer_to_use
+        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
+            [ObjectTableLabels.TRANSIT]
+        ].apply(
+            lambda row: self._altitude_at_transit(
+                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
             ),
             axis=1,
-            result_type='expand'
         )
 
         t = observer_to_use.date
@@ -164,9 +165,6 @@ class SolarObjects(Objects):
                 )
             )
             &
-            # Filter objects by they min altitude at transit
-            (visible.Altitude > conditions.min_object_altitude)
-            &
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (
@@ -176,8 +174,36 @@ class SolarObjects(Objects):
                 < conditions.max_object_magnitude
             )
         ]
-        # Azimuth filtering
-        visible = self._filter_by_azimuth(visible, conditions)
+
+        if (
+            conditions.min_object_azimuth == 0
+            and conditions.max_object_azimuth == 360
+        ):
+            # Sort objects by given order
+            visible = visible.sort_values(by=sort_by, ascending=True)
+            if not visible.empty:
+                visible["TechnicalName"] = visible["Name"]
+                visible["Name"] = visible["TechnicalName"].apply(
+                    planetary.get_simple_name
+                ).astype("string")
+            return visible
+
+        visible_objects_indices = []
+        for index, row in visible.iterrows():
+            skyfield_object = self.get_skyfield_object(row)
+            altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
+
+            # Filter for times when altitude is sufficient
+            above_horizon_df = altaz_df[altaz_df['Altitude'] > conditions.min_object_altitude]
+
+            if not above_horizon_df.empty:
+                # Check if azimuth is within range for any of these times
+                az_conditions_met = self._is_azimuth_in_range(above_horizon_df['Azimuth'], conditions)
+                if az_conditions_met.any():
+                    visible_objects_indices.append(index)
+
+        visible = self.objects.loc[visible_objects_indices]
+
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
 

@@ -519,7 +519,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
     @patch("apts.observations.Utils.annotate_plot")
     @patch("apts.observations.pyplot")
     @patch("apts.observations.get_dark_mode")
-    @patch("apts.place.Place.get_altitude_curve")
+    @patch("apts.place.Place.get_altaz_curve")
     def test_generate_plot_planets_specific_colors(
         self, mock_get_altitude_curve, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
     ):
@@ -1070,11 +1070,13 @@ class TestSunObservation(unittest.TestCase):
         self.assertEqual(observation.stop, place.sunset_time.return_value)
 
 
+from skyfield.api import Star
+
 if __name__ == "__main__":
     unittest.main()
 
 
-class TestAzimuthFiltering(unittest.TestCase):
+class TestPathBasedAzimuthFiltering(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
         self.observation.start = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
@@ -1084,11 +1086,10 @@ class TestAzimuthFiltering(unittest.TestCase):
         messier_data = {
             "Messier": ["M1", "M42", "M31"],
             "Type": ["Nebula", "Nebula", "Galaxy"],
-            "RA": ["05h 34m 31.94s", "05h 35m 17.3s", "00h 42m 44.3s"],
-            "Dec": ["+22° 00′ 52.2″", "-05° 23′ 28″", "+41° 16′ 09″"],
+            "RA": [5.575538888888889, 5.588138888888889, 0.7123055555555556],
+            "Dec": [22.0145, -5.391111111111111, 41.26916666666666],
             "Magnitude": [8.4, 4.0, 3.4],
             "Altitude": [45, 60, 20],
-            "Azimuth": [180, 200, 355],
             "Transit": [
                 pd.Timestamp("2025-02-18 20:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
@@ -1099,10 +1100,9 @@ class TestAzimuthFiltering(unittest.TestCase):
         self.messier_df = pd.DataFrame(messier_data)
 
         planets_data = {
-            "Name": ["Mars", "Jupiter", "Saturn"],
+            "Name": ["mars", "jupiter barycenter", "saturn barycenter"],
             "Magnitude": [1.0, -2.0, 0.5],
             "Altitude": [30, 50, 40],
-            "Azimuth": [90, 150, 5],
             "Rising": [
                 pd.Timestamp("2025-02-18 18:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
@@ -1125,31 +1125,68 @@ class TestAzimuthFiltering(unittest.TestCase):
         self.observation.local_messier.objects = self.messier_df
         self.observation.local_planets.objects = self.planets_df
 
+        # Mock get_altaz_curve
+        def mock_get_altaz_curve(skyfield_object, start, stop):
+            if isinstance(skyfield_object, Star):
+                if skyfield_object.ra.hours == 5.575538888888889: # M1
+                    return pd.DataFrame({
+                        'Altitude': [10, 20, 30, 20, 10],
+                        'Azimuth': [170, 180, 190, 200, 210]
+                    })
+                elif skyfield_object.ra.hours == 5.588138888888889: # M42
+                    return pd.DataFrame({
+                        'Altitude': [40, 50, 60, 50, 40],
+                        'Azimuth': [190, 200, 210, 220, 230]
+                    })
+                elif skyfield_object.ra.hours == 0.7123055555555556: # M31
+                    return pd.DataFrame({
+                        'Altitude': [10, 15, 20, 15, 10],
+                        'Azimuth': [350, 355, 0, 5, 10]
+                    })
+            else: # It's a planet
+                if 'MARS' in str(skyfield_object):
+                    return pd.DataFrame({
+                        'Altitude': [20, 30, 40, 30, 20],
+                        'Azimuth': [80, 90, 100, 110, 120]
+                    })
+                elif 'JUPITER' in str(skyfield_object):
+                    return pd.DataFrame({
+                        'Altitude': [40, 50, 60, 50, 40],
+                        'Azimuth': [140, 150, 160, 170, 180]
+                    })
+                elif 'SATURN' in str(skyfield_object):
+                    return pd.DataFrame({
+                        'Altitude': [30, 40, 50, 40, 30],
+                        'Azimuth': [355, 0, 5, 10, 15]
+                    })
+
+        self.observation.place.get_altaz_curve = mock_get_altaz_curve
+
 
     def test_messier_azimuth_filter(self):
         # Test with a simple azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=170, max_object_azimuth=210, min_object_altitude=-90)
+        self.observation.conditions = Conditions(min_object_azimuth=170, max_object_azimuth=210, min_object_altitude=15)
         visible_messier = self.observation.get_visible_messier()
         self.assertEqual(len(visible_messier), 2)
         self.assertIn("M1", visible_messier["Messier"].values)
         self.assertIn("M42", visible_messier["Messier"].values)
 
         # Test with a wrap-around azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=10, min_object_altitude=-90)
+        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=10, min_object_altitude=15)
         visible_messier = self.observation.get_visible_messier()
         self.assertEqual(len(visible_messier), 1)
         self.assertIn("M31", visible_messier["Messier"].values)
 
     def test_planets_azimuth_filter(self):
         # Test with a simple azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=80, max_object_azimuth=160, min_object_altitude=-90)
+        self.observation.conditions = Conditions(min_object_azimuth=80, max_object_azimuth=160, min_object_altitude=25)
         visible_planets = self.observation.get_visible_planets()
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Mars", visible_planets["Name"].values)
         self.assertIn("Jupiter", visible_planets["Name"].values)
 
         # Test with a wrap-around azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=-90)
+        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=35)
         visible_planets = self.observation.get_visible_planets()
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Saturn", visible_planets["Name"].values)

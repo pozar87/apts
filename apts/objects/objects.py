@@ -28,9 +28,6 @@ class Objects:
             (visible.Transit > start - timedelta(hours=hours_margin))
             & (visible.Transit < stop + timedelta(hours=hours_margin))
             &
-            # Filter objects by they min altitude at transit
-            (visible.Altitude > conditions.min_object_altitude)
-            &
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (
@@ -40,29 +37,39 @@ class Objects:
                 < conditions.max_object_magnitude
             )
         ]
-        # Azimuth filtering
-        visible = self._filter_by_azimuth(visible, conditions)
+
+        if (
+            conditions.min_object_azimuth == 0
+            and conditions.max_object_azimuth == 360
+        ):
+            # Sort objects by given order
+            visible = visible.sort_values(by=sort_by, ascending=True)
+            return visible
+
+        visible_objects_indices = []
+        for index, row in visible.iterrows():
+            skyfield_object = self.get_skyfield_object(row)
+            altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
+
+            # Filter for times when altitude is sufficient
+            above_horizon_df = altaz_df[altaz_df['Altitude'] > conditions.min_object_altitude]
+
+            if not above_horizon_df.empty:
+                # Check if azimuth is within range for any of these times
+                az_conditions_met = self._is_azimuth_in_range(above_horizon_df['Azimuth'], conditions)
+                if az_conditions_met.any():
+                    visible_objects_indices.append(index)
+
+        visible = self.objects.loc[visible_objects_indices]
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
         return visible
 
-    def _filter_by_azimuth(self, visible, conditions):
-        if (
-            conditions.min_object_azimuth != 0
-            or conditions.max_object_azimuth != 360
-        ):
-            # Handle wrap-around case for azimuth (e.g., min=350, max=10)
-            if conditions.min_object_azimuth > conditions.max_object_azimuth:
-                visible = visible[
-                    (visible.Azimuth >= conditions.min_object_azimuth)
-                    | (visible.Azimuth <= conditions.max_object_azimuth)
-                ]
-            else:
-                visible = visible[
-                    (visible.Azimuth >= conditions.min_object_azimuth)
-                    & (visible.Azimuth <= conditions.max_object_azimuth)
-                ]
-        return visible
+    def _is_azimuth_in_range(self, azimuth_series, conditions):
+        if conditions.min_object_azimuth > conditions.max_object_azimuth:
+            return (azimuth_series >= conditions.min_object_azimuth) | (azimuth_series <= conditions.max_object_azimuth)
+        else:
+            return (azimuth_series >= conditions.min_object_azimuth) & (azimuth_series <= conditions.max_object_azimuth)
 
     @staticmethod
     def fixed_body(RA, Dec):
@@ -106,10 +113,10 @@ class Objects:
                 setting_time = local_time
         return rising_time, setting_time
 
-    def _altaz_at_transit(self, skyfield_object, transit, observer):
-        # Calculate objects altitude and azimuth at transit time
+    def _altitude_at_transit(self, skyfield_object, transit, observer):
+        # Calculate objects altitude at transit time
         if transit is None:
-            return 0, 0
+            return 0
         t = self.ts.utc(transit)
-        alt, az, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
-        return alt.degrees, az.degrees
+        alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
+        return alt.degrees

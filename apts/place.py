@@ -161,7 +161,7 @@ class Place:
     def moon_phase(self):
         return int(self.moon_path()["Phase"][48])
 
-    def get_altitude_curve(self, skyfield_object, start_time, end_time, num_points=100):
+    def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = self.ts.utc(start_time)
         t1 = self.ts.utc(end_time)
         times = self.ts.linspace(t0, t1, num_points)
@@ -181,7 +181,7 @@ class Place:
     def moon_path(self):
         start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + datetime.timedelta(days=1)
-        df = self.get_altitude_curve(self.moon, start_time, end_time, num_points=26 * 4)
+        df = self.get_altaz_curve(self.moon, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Moon altitude"})
 
         phases = []
@@ -199,7 +199,7 @@ class Place:
     def sun_path(self):
         start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
         end_time = start_time + datetime.timedelta(days=1)
-        df = self.get_altitude_curve(self.sun, start_time, end_time, num_points=26 * 4)
+        df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
         df["Time"] = [x.utc_datetime().time() for x in df["Time"]]
         return df
