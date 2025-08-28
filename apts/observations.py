@@ -8,10 +8,13 @@ import numpy  # Retained for potential use by other functions if Observation.to_
 from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot, lines
-from skyfield.api import utc
+from skyfield.api import utc, Star, load
+from skyfield.data import hipparcos
+from skyfield.projections import build_stereographic_projection
 
 from .conditions import Conditions
 from .objects.messier import Messier
+from .cache import get_ephemeris
 from .objects.solar_objects import SolarObjects
 from .utils import Utils, planetary
 from .constants import ObjectTableLabels
@@ -48,6 +51,7 @@ class Observation:
         self.equipment = equipment
         self.conditions = conditions
         self.sun_observation = sun_observation
+        self.eph = get_ephemeris()
 
         # Initialize core attributes that depend on date calculations
         self.effective_date = None
@@ -901,6 +905,101 @@ class Observation:
             return self.place.plot_sun_path(dark_mode_override, **args)
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
+
+    def plot_skymap(self, target_name: str, dark_mode_override: Optional[bool] = None, **args):
+        return self._generate_plot_skymap(
+            target_name=target_name, dark_mode_override=dark_mode_override, **args
+        )
+
+    def _generate_plot_skymap(self, target_name: str, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        # plot_colors = get_plot_colors(effective_dark_mode)
+
+        ax = args.pop("ax", None)
+        fig = None
+        if ax:
+            fig = ax.figure
+        else:
+            fig, ax = pyplot.subplots(figsize=(12, 12), **args)
+
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
+
+        # Load star data
+        with load.open(hipparcos.URL) as f:
+            stars = hipparcos.load_dataframe(f)
+
+        # Observer
+        ts = load.timescale()
+        observer = self.place.location.at(ts.from_datetime(self.effective_date.astimezone(utc)))
+
+        # Center of projection
+        target_object = None
+
+        # Try to find in Messier catalog
+        messier_obj = self.local_messier.get_by_name(target_name)
+        if messier_obj is not None:
+            target_object = Star(ra_hours=messier_obj['RA'], dec_degrees=messier_obj['Dec'])
+
+        # Try to find in solar system objects
+        if target_object is None:
+            try:
+                planet_obj = self.local_planets.get_skyfield_object_by_name(target_name)
+                if planet_obj:
+                    target_object = planet_obj
+            except ValueError:
+                pass # Object not found
+
+        if target_object is None:
+            logger.error(f"Could not find an object named '{target_name}'")
+            ax.text(0.5, 0.5, f"Object '{target_name}' not found.",
+                    horizontalalignment='center', verticalalignment='center',
+                    transform=ax.transAxes, color=style.get("TEXT_COLOR", "red"))
+            return fig
+
+        center = observer.observe(target_object)
+        projection = build_stereographic_projection(center)
+
+        # Project stars
+        star_positions = observer.observe(Star.from_dataframe(stars))
+        stars['x'], stars['y'] = projection(star_positions)
+
+        # Plotting
+        chart_size = 10
+        max_star_size = 100
+        limiting_magnitude = 6.0  # Common limit for naked eye
+
+        bright_stars = (stars.magnitude <= limiting_magnitude)
+        magnitude = stars['magnitude'][bright_stars]
+
+        marker_size = max_star_size * 10 ** (magnitude / -2.5)
+
+        ax.scatter(stars['x'][bright_stars], stars['y'][bright_stars],
+                   s=marker_size, color=style.get("TEXT_COLOR", "white"), marker='.', linewidths=0, zorder=2)
+
+        # Plot target object
+        target_x, target_y = projection(observer.observe(target_object))
+        ax.scatter(target_x, target_y, s=200, color='red', marker='+', zorder=3)
+        ax.annotate(target_name, (target_x, target_y), textcoords="offset points", xytext=(0,10), ha='center', color='red')
+
+        # Set limits and hide axes
+        limit = 1.0
+        ax.set_xlim(-limit, limit)
+        ax.set_ylim(-limit, limit)
+        ax.axis('off')
+
+        # Draw a circle for the horizon
+        border = pyplot.Circle((0, 0), limit, color=style.get("GRID_COLOR", "grey"), fill=False)
+        ax.add_patch(border)
+        ax.set_aspect('equal', 'box')
+
+        ax.set_title(f"Skymap centered on {target_name}", color=style["TEXT_COLOR"])
+        return fig
 
     def __str__(self) -> str:
         return (
