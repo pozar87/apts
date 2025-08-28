@@ -1,6 +1,8 @@
 class ObjectTableLabels:
     # Altitude
     ALTITUDE = "Altitude"
+    # Azimuth
+    AZIMUTH = "Azimuth"
     # Transit time
     TRANSIT = "Transit"
     # Right ascension

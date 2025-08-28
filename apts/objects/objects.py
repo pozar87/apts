@@ -40,8 +40,28 @@ class Objects:
                 < conditions.max_object_magnitude
             )
         ]
+        # Azimuth filtering
+        visible = self._filter_by_azimuth(visible, conditions)
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
+        return visible
+
+    def _filter_by_azimuth(self, visible, conditions):
+        if (
+            conditions.min_object_azimuth != 0
+            or conditions.max_object_azimuth != 360
+        ):
+            # Handle wrap-around case for azimuth (e.g., min=350, max=10)
+            if conditions.min_object_azimuth > conditions.max_object_azimuth:
+                visible = visible[
+                    (visible.Azimuth >= conditions.min_object_azimuth)
+                    | (visible.Azimuth <= conditions.max_object_azimuth)
+                ]
+            else:
+                visible = visible[
+                    (visible.Azimuth >= conditions.min_object_azimuth)
+                    & (visible.Azimuth <= conditions.max_object_azimuth)
+                ]
         return visible
 
     @staticmethod
@@ -86,10 +106,10 @@ class Objects:
                 setting_time = local_time
         return rising_time, setting_time
 
-    def _altitude_at_transit(self, skyfield_object, transit, observer):
-        # Calculate objects altitude at transit time
+    def _altaz_at_transit(self, skyfield_object, transit, observer):
+        # Calculate objects altitude and azimuth at transit time
         if transit is None:
-            return 0
+            return 0, 0
         t = self.ts.utc(transit)
-        alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
-        return alt.degrees
+        alt, az, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
+        return alt.degrees, az.degrees

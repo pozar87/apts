@@ -63,13 +63,12 @@ class SolarObjects(Objects):
             axis=1,
         ).apply(pandas.Series)
         # Compute altitude of planets at transit (at given place)
-        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
-            [ObjectTableLabels.TRANSIT]
-        ].apply(
-            lambda row: self._altitude_at_transit(
-                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
+        self.objects[[ObjectTableLabels.ALTITUDE, ObjectTableLabels.AZIMUTH]] = self.objects.apply(
+            lambda row: self._altaz_at_transit(
+                self.get_skyfield_object(row), row.Transit, observer_to_use
             ),
             axis=1,
+            result_type='expand'
         )
 
         t = observer_to_use.date
@@ -177,6 +176,8 @@ class SolarObjects(Objects):
                 < conditions.max_object_magnitude
             )
         ]
+        # Azimuth filtering
+        visible = self._filter_by_azimuth(visible, conditions)
         # Sort objects by given order
         visible = visible.sort_values(by=sort_by, ascending=True)
 

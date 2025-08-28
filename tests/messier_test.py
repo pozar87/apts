@@ -16,7 +16,7 @@ INITIAL_DT = datetime.datetime.strptime(INITIAL_DATE_STR, "%Y/%m/%d %H:%M:%S").r
 def test_visiable_messier():
     o = setup_observation()
     m = o.get_visible_messier()
-    assert len(m) == 24
+    assert len(m) == 19
 
     # Check that string columns have string dtype
     assert m["Messier"].dtype == "string"
