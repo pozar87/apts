@@ -955,6 +955,9 @@ class Observation:
         if self.effective_date is not None:
             t = self.effective_date
         observer = self.place.observer.at(t)
+        
+        # Format the generation time
+        generation_time_str = t.astimezone(self.place.local_timezone).strftime("%Y-%m-%d %H:%M %Z")
 
         # 1. Plot stars
         with load.open(hipparcos.URL) as f:
@@ -1051,7 +1054,7 @@ class Observation:
                     ha="center",
                     fontsize=12,
                 )
-            ax.set_title(f"Skymap for {target_name}", color=style["TEXT_COLOR"])
+            ax.set_title(f"Skymap for {target_name} (Generated: {generation_time_str})", color=style["TEXT_COLOR"])
         else:
             ax.text(
                 0.5,
@@ -1062,7 +1065,7 @@ class Observation:
                 transform=ax.transAxes,
                 color=style["TEXT_COLOR"],
             )
-            ax.set_title(f"Skymap", color=style["TEXT_COLOR"])
+            ax.set_title(f"Skymap (Generated: {generation_time_str})", color=style["TEXT_COLOR"])
 
         return fig
 
