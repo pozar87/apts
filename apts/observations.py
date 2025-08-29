@@ -932,6 +932,24 @@ class Observation:
         ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
         ax.set_rlabel_position(22.5)  # Move labels away from the line
 
+        # Add cardinal direction labels
+        cardinal_directions = {
+            "N": 0,
+            "E": numpy.pi / 2,
+            "S": numpy.pi,
+            "W": 3 * numpy.pi / 2,
+        }
+        for direction, angle in cardinal_directions.items():
+            ax.text(
+                angle,
+                95,  # Place it just outside the 90-degree limit
+                direction,
+                ha="center",
+                va="center",
+                color=style["TEXT_COLOR"],
+                fontsize=12,
+            )
+
         # Time for observation
         t = self.place.ts.now()
         if self.effective_date is not None:
