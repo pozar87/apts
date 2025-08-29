@@ -183,9 +183,7 @@ class Observation:
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
         max_size = (
-            visible_planets[["Size"]].max().iloc[0]
-            if not visible_planets.empty
-            else 0
+            visible_planets[["Size"]].max().iloc[0] if not visible_planets.empty else 0
         )
         max_size_val = (
             max_size.magnitude if hasattr(max_size, "magnitude") else max_size
@@ -522,7 +520,9 @@ class Observation:
             name = planet[ObjectTableLabels.NAME]
             skyfield_object = self.local_planets.get_skyfield_object(planet)
 
-            curve_df = self.place.get_altaz_curve(skyfield_object, self.start, self.stop)
+            curve_df = self.place.get_altaz_curve(
+                skyfield_object, self.start, self.stop
+            )
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
@@ -533,14 +533,26 @@ class Observation:
                 curve_df["Time"].apply(lambda t: t.utc_datetime()),
                 curve_df["Altitude"],
                 color=specific_planet_color,
-                label=name
+                label=name,
             )
 
             # Mark rise and set times
             if planet[ObjectTableLabels.RISING] is not None:
-                ax.scatter(planet[ObjectTableLabels.RISING], 0, marker='^', color=specific_planet_color, s=100)
+                ax.scatter(
+                    planet[ObjectTableLabels.RISING],
+                    0,
+                    marker="^",
+                    color=specific_planet_color,
+                    s=100,
+                )
             if planet[ObjectTableLabels.SETTING] is not None:
-                ax.scatter(planet[ObjectTableLabels.SETTING], 0, marker='v', color=specific_planet_color, s=100)
+                ax.scatter(
+                    planet[ObjectTableLabels.SETTING],
+                    0,
+                    marker="v",
+                    color=specific_planet_color,
+                    s=100,
+                )
 
             # Annotate planet name
             # Find a good position for the annotation, e.g., at the peak of the curve
@@ -663,7 +675,11 @@ class Observation:
                 "stop": Utils.format_date(self.stop),
                 "planets_count": len(visible_planets_df),
                 "messier_count": len(self.get_visible_messier()),
-                "planets_table": visible_planets_df.drop(columns=["TechnicalName"]).to_html() if "TechnicalName" in visible_planets_df.columns else visible_planets_df.to_html(),
+                "planets_table": visible_planets_df.drop(
+                    columns=["TechnicalName"]
+                ).to_html()
+                if "TechnicalName" in visible_planets_df.columns
+                else visible_planets_df.to_html(),
                 "messier_table": self.get_visible_messier().to_html(),
                 "equipment_table": self.equipment.data().to_html(),
                 "place_name": self.place.name,
@@ -952,51 +968,58 @@ class Observation:
 
         # Mark minimum altitude
         min_alt_zenith_angle = 90 - self.conditions.min_object_altitude
-        if min_alt_zenith_angle < 90: # Only draw if it's above the horizon
+        if min_alt_zenith_angle < 90:  # Only draw if it's above the horizon
             ax.plot(
                 numpy.linspace(0, 2 * numpy.pi, 100),
                 [min_alt_zenith_angle] * 100,
                 color=style["GRID_COLOR"],
                 linestyle="--",
                 linewidth=1,
-                label=f"Min Altitude ({self.conditions.min_object_altitude}°)"
+                label=f"Min Altitude ({self.conditions.min_object_altitude}°)",
             )
             # Add a label for the min altitude circle
             ax.text(
-                numpy.deg2rad(90), # East direction
+                numpy.deg2rad(90),  # East direction
                 min_alt_zenith_angle,
                 f"{self.conditions.min_object_altitude}°",
                 ha="center",
                 va="bottom",
                 color=style["TEXT_COLOR"],
                 fontsize=10,
-                bbox=dict(facecolor=style["AXES_FACE_COLOR"], edgecolor='none', boxstyle='round,pad=0.2')
+                bbox=dict(
+                    facecolor=style["AXES_FACE_COLOR"],
+                    edgecolor="none",
+                    boxstyle="round,pad=0.2",
+                ),
             )
-
 
         # Mark azimuth conditions
         min_az_rad = numpy.deg2rad(float(self.conditions.min_object_azimuth))
         max_az_rad = numpy.deg2rad(float(self.conditions.max_object_azimuth))
 
         # Only draw if there's an actual restriction (not 0-360)
-        if not (self.conditions.min_object_azimuth == 0 and self.conditions.max_object_azimuth == 360):
+        if not (
+            float(self.conditions.min_object_azimuth) == 0.0
+            and float(self.conditions.max_object_azimuth) == 360.0
+        ):
             # Draw radial line for min azimuth
+            print("Drawing min azimuth line")
             ax.plot(
                 [min_az_rad, min_az_rad],
-                [0, 90], # From center to horizon
+                [0, 90],  # From center to horizon
                 color=style["GRID_COLOR"],
                 linestyle=":",
                 linewidth=1,
-                label=f"Min Azimuth ({self.conditions.min_object_azimuth}°)"
+                label=f"Min Azimuth ({self.conditions.min_object_azimuth}°)",
             )
             # Draw radial line for max azimuth
             ax.plot(
                 [max_az_rad, max_az_rad],
-                [0, 90], # From center to horizon
+                [0, 90],  # From center to horizon
                 color=style["GRID_COLOR"],
                 linestyle=":",
                 linewidth=1,
-                label=f"Max Azimuth ({self.conditions.max_object_azimuth}°)"
+                label=f"Max Azimuth ({self.conditions.max_object_azimuth}°)",
             )
 
         # Time for observation
@@ -1004,9 +1027,11 @@ class Observation:
         if self.effective_date is not None:
             t = self.effective_date
         observer = self.place.observer.at(t)
-        
+
         # Format the generation time
-        generation_time_str = t.astimezone(self.place.local_timezone).strftime("%Y-%m-%d %H:%M %Z")
+        generation_time_str = t.astimezone(self.place.local_timezone).strftime(
+            "%Y-%m-%d %H:%M %Z"
+        )
 
         # 1. Plot stars
         with load.open(hipparcos.URL) as f:
@@ -1103,7 +1128,10 @@ class Observation:
                     ha="center",
                     fontsize=12,
                 )
-            ax.set_title(f"Skymap for {target_name} (Generated: {generation_time_str})", color=style["TEXT_COLOR"])
+            ax.set_title(
+                f"Skymap for {target_name} (Generated: {generation_time_str})",
+                color=style["TEXT_COLOR"],
+            )
         else:
             ax.text(
                 0.5,
@@ -1114,7 +1142,9 @@ class Observation:
                 transform=ax.transAxes,
                 color=style["TEXT_COLOR"],
             )
-            ax.set_title(f"Skymap (Generated: {generation_time_str})", color=style["TEXT_COLOR"])
+            ax.set_title(
+                f"Skymap (Generated: {generation_time_str})", color=style["TEXT_COLOR"]
+            )
 
         return fig
 
