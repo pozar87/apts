@@ -60,4 +60,4 @@ except ValueError:
 # Disable label trimming in pandas tables
 pd.set_option("display.max_colwidth", None)
 
-__version__ = "0.7.3"
+__version__ = "0.7.2"

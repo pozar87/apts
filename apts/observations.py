@@ -536,7 +536,7 @@ class Observation:
             name = planet[ObjectTableLabels.NAME]
             skyfield_object = self.local_planets.get_skyfield_object(planet)
 
-            curve_df = self.place.get_altaz_curve(skyfield_object, self.start, self.stop)
+            curve_df = self.place.get_altitude_curve(skyfield_object, self.start, self.stop)
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
@@ -950,7 +950,7 @@ class Observation:
 
         # Observer
         ts = load.timescale()
-        observer = self.place.location.at(ts.from_datetime(self.effective_date.astimezone(utc)))
+        timed_observer = self.place.observer.at(ts.from_datetime(self.effective_date.astimezone(utc)))
 
         # Center of projection
         target_object = None
@@ -976,11 +976,11 @@ class Observation:
                     transform=ax.transAxes, color=style.get("TEXT_COLOR", "red"))
             return fig
 
-        center = observer.observe(target_object)
+        center = timed_observer.observe(target_object)
         projection = build_stereographic_projection(center)
 
         # Project stars
-        star_positions = observer.observe(Star.from_dataframe(stars))
+        star_positions = timed_observer.observe(Star.from_dataframe(stars))
         stars['x'], stars['y'] = projection(star_positions)
 
         # Plotting
@@ -997,7 +997,7 @@ class Observation:
                    s=marker_size, color=style.get("TEXT_COLOR", "white"), marker='.', linewidths=0, zorder=2)
 
         # Plot target object
-        target_x, target_y = projection(observer.observe(target_object))
+        target_x, target_y = projection(timed_observer.observe(target_object))
         ax.scatter(target_x, target_y, s=200, color='red', marker='+', zorder=3)
         ax.annotate(target_name, (target_x, target_y), textcoords="offset points", xytext=(0,10), ha='center', color='red')
 
