@@ -49,10 +49,3 @@ class Messier(Objects):
 
     def get_skyfield_object(self, messier_object):
         return Star(ra_hours=messier_object.RA, dec_degrees=messier_object.Dec)
-
-    def get_by_name(self, name):
-        # Case-insensitive search for the Messier object by its ID.
-        result = self.objects[self.objects['Messier'].str.lower() == name.lower()]
-        if not result.empty:
-            return result.iloc[0]
-        return None

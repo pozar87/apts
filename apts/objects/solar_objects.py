@@ -38,13 +38,6 @@ class SolarObjects(Objects):
         name_to_use = solar_object.get("TechnicalName", solar_object.Name)
         return eph[name_to_use]
 
-    def get_skyfield_object_by_name(self, name: str):
-        eph = get_ephemeris()
-        technical_name = planetary.get_technical_name(name)
-        if technical_name in planetary.TECHNICAL_NAMES:
-            return eph[technical_name]
-        raise ValueError(f"Planet '{name}' not found.")
-
     def compute(self, calculation_date=None):
         if calculation_date is not None:
             # Instantiate as Place object
