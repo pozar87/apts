@@ -536,7 +536,7 @@ class Observation:
             name = planet[ObjectTableLabels.NAME]
             skyfield_object = self.local_planets.get_skyfield_object(planet)
 
-            curve_df = self.place.get_altaz_curve(skyfield_object, self.start, self.stop)
+            curve_df = self.place.get_altitude_curve(skyfield_object, self.start, self.stop)
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
@@ -1104,3 +1104,7 @@ class Observation:
             )
 
         return analysis_results
+
+
+if __name__ == "__main__":
+    unittest.main()

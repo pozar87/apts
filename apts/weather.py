@@ -359,13 +359,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-
-        # Check for available columns
-        available_columns = [col for col in ["pressure", "ozone"] if col in self.data.columns and self.data[col].astype(str).str.lower().nunique() > 1 and self.data[col].notna().any()]
-        if not available_columns:
-            return None # Nothing to plot
-
-        data = self._filter_data(available_columns)
+        data = self._filter_data(["pressure", "ozone"])
         if data.empty:
             return None
 
@@ -375,30 +369,24 @@ class Weather:
 
         if ax:
             fig = ax.figure
-
-        # Determine plot parameters based on available data
-        plot_title = "Pressure"
-        secondary_y_plot = []
-        if "ozone" in available_columns and "pressure" in available_columns:
-            plot_title = "Pressure and Ozone"
-            secondary_y_plot = ["ozone"]
-        elif "ozone" in available_columns:
-            plot_title = "Ozone"
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
+            # For secondary_y plots, ensure the primary axis spines are also styled early if needed,
+            # though annotate_plot should handle this for the primary axis.
+            # ax.spines['left'].set_color(style['AXIS_COLOR']) # Example
 
         plot_ax = data.plot(
             x="time",
-            title=plot_title,
-            secondary_y=secondary_y_plot,
+            title="Pressure and Ozone",
+            secondary_y=["ozone"],
             ax=ax,
             **plot_kwargs,
         )
-
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-        else:  # ax was passed in
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
@@ -414,22 +402,22 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        # Annotate primary Y axis
-        primary_y_label = ""
-        if "pressure" in available_columns:
-            primary_y_label = "Pressure [hPa]"
-        elif "ozone" in available_columns:
-            primary_y_label = "Ozone [DU]" # Assuming Dobson Units for Ozone
-        Utils.annotate_plot(ax, primary_y_label, effective_dark_mode)
+        # Utils.annotate_plot handles primary X and Y axes (labels, ticks, spines)
+        Utils.annotate_plot(ax, "Pressure [hPa]", effective_dark_mode)
 
-        # Style secondary Y axis if it exists
-        if secondary_y_plot and hasattr(ax, "right_ax"):
+        # Style secondary Y axis (right axis for 'ozone')
+        if hasattr(ax, "right_ax"):
             ax_secondary = ax.right_ax
             ax_secondary.set_ylabel(
-                "Ozone [DU]", color=style["TEXT_COLOR"] # Assuming Dobson Units
+                ax_secondary.get_ylabel(), color=style["TEXT_COLOR"]
             )
             ax_secondary.tick_params(axis="y", colors=style["TICK_COLOR"])
+            # Ensure the spine for the secondary y-axis is styled.
+            # Other spines (top, bottom) are shared and should be styled by annotate_plot on primary ax.
+            # The 'left' spine is for the primary y-axis.
             ax_secondary.spines["right"].set_color(style["AXIS_COLOR"])
+            # If primary y-axis spine ('left') was not handled by annotate_plot for some reason:
+            # ax.spines['left'].set_color(style['AXIS_COLOR'])
 
         return ax
 

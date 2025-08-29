@@ -126,7 +126,7 @@ class VisualCrossing(WeatherProvider):
 
 
 class Meteoblue(WeatherProvider):
-    API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
+    API_URL = "https://my.meteoblue.com/packages/basic-1h_agro-1h_clouds-1h_airquality-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
 
     def download_data(self):
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)

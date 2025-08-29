@@ -52,9 +52,6 @@ if observation.is_weather_good():
     # Alternatively, you could use a completely custom template:
     # custom_template_path = "/path/to/custom_template.html"
     # notify.send(observation, custom_template=custom_template_path, css=custom_css)
-
-    # You can also specify a custom plain text fallback message:
-    # notify.send(observation, plain_text_fallback="Your custom fallback message here.")
     
     print("Notification sent with custom styling!")
 else:
