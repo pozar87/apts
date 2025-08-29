@@ -966,60 +966,79 @@ class Observation:
                 fontsize=12,
             )
 
-        # Mark minimum altitude
+        # Define good condition highlight color
+        good_condition_color = style.get(
+            "GOOD_CONDITION_HL_COLOR",
+            "#90EE90" if not effective_dark_mode else "#007447",
+        )
+
+        # Mark minimum altitude with background fill
         min_alt_zenith_angle = 90 - self.conditions.min_object_altitude
-        if min_alt_zenith_angle < 90:  # Only draw if it's above the horizon
+        if min_alt_zenith_angle < 90: # Only draw if it's above the horizon
+            # Fill the area between r_inner and r_outer
+            theta = numpy.linspace(0, 2 * numpy.pi, 100)
+            r_inner = min_alt_zenith_angle
+            r_outer = 90
+            ax.fill_between(theta, r_inner, r_outer, color=good_condition_color, alpha=0.1)
+
+            # Keep the line for clarity, but make it subtle
             ax.plot(
                 numpy.linspace(0, 2 * numpy.pi, 100),
                 [min_alt_zenith_angle] * 100,
-                color=style["GRID_COLOR"],
-                linestyle="--",
-                linewidth=1,
-                label=f"Min Altitude ({self.conditions.min_object_altitude}°)",
+                color=style["GRID_COLOR"], # Revert to subtle grid color
+                linestyle="--", # Revert to dashed
+                linewidth=1, # Revert to thin
+                label=f"Min Altitude ({self.conditions.min_object_altitude}°)"
             )
             # Add a label for the min altitude circle
             ax.text(
-                numpy.deg2rad(90),  # East direction
+                numpy.deg2rad(90), # East direction
                 min_alt_zenith_angle,
                 f"{self.conditions.min_object_altitude}°",
                 ha="center",
                 va="bottom",
                 color=style["TEXT_COLOR"],
                 fontsize=10,
-                bbox=dict(
-                    facecolor=style["AXES_FACE_COLOR"],
-                    edgecolor="none",
-                    boxstyle="round,pad=0.2",
-                ),
+                bbox=dict(facecolor=style["AXES_FACE_COLOR"], edgecolor='none', boxstyle='round,pad=0.2')
             )
 
-        # Mark azimuth conditions
+
+        # Mark azimuth conditions with background fill
         min_az_rad = numpy.deg2rad(float(self.conditions.min_object_azimuth))
         max_az_rad = numpy.deg2rad(float(self.conditions.max_object_azimuth))
 
         # Only draw if there's an actual restriction (not 0-360)
-        if not (
-            float(self.conditions.min_object_azimuth) == 0.0
-            and float(self.conditions.max_object_azimuth) == 360.0
-        ):
+        if not (float(self.conditions.min_object_azimuth) == 0.0 and float(self.conditions.max_object_azimuth) == 360.0):
+            # Handle wrapping around 0/360 degrees
+            if min_az_rad > max_az_rad: # Crosses the North (0/360) line
+                # Fill from min_az_rad to 2*pi
+                theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
+                ax.fill_between(theta1, 0, 90, color=good_condition_color, alpha=0.1)
+                # Fill from 0 to max_az_rad
+                theta2 = numpy.linspace(0, max_az_rad, 50)
+                ax.fill_between(theta2, 0, 90, color=good_condition_color, alpha=0.1)
+            else: # Simple sector
+                theta = numpy.linspace(min_az_rad, max_az_rad, 100)
+                ax.fill_between(theta, 0, 90, color=good_condition_color, alpha=0.1)
+
+            # Keep the lines for clarity, but make them subtle
             # Draw radial line for min azimuth
-            print("Drawing min azimuth line")
             ax.plot(
                 [min_az_rad, min_az_rad],
                 [0, 90],  # From center to horizon
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
-                label=f"Min Azimuth ({self.conditions.min_object_azimuth}°)",
+                color=style["GRID_COLOR"], # Revert to subtle grid color
+                linestyle=":", # Revert to dotted
+                linewidth=1, # Revert to thin
+                label=f"Min Azimuth ({self.conditions.min_object_azimuth}°)"
             )
             # Draw radial line for max azimuth
             ax.plot(
                 [max_az_rad, max_az_rad],
                 [0, 90],  # From center to horizon
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
-                label=f"Max Azimuth ({self.conditions.max_object_azimuth}°)",
+                color=style["GRID_COLOR"], # Revert to subtle grid color
+                linestyle=":", # Revert to dotted
+                linewidth=1, # Revert to thin
+                label=f"Max Azimuth ({self.conditions.max_object_azimuth}°)"
             )
 
         # Time for observation
