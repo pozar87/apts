@@ -950,6 +950,55 @@ class Observation:
                 fontsize=12,
             )
 
+        # Mark minimum altitude
+        min_alt_zenith_angle = 90 - self.conditions.min_object_altitude
+        if min_alt_zenith_angle < 90: # Only draw if it's above the horizon
+            ax.plot(
+                numpy.linspace(0, 2 * numpy.pi, 100),
+                [min_alt_zenith_angle] * 100,
+                color=style["GRID_COLOR"],
+                linestyle="--",
+                linewidth=1,
+                label=f"Min Altitude ({self.conditions.min_object_altitude}°)"
+            )
+            # Add a label for the min altitude circle
+            ax.text(
+                numpy.deg2rad(90), # East direction
+                min_alt_zenith_angle,
+                f"{self.conditions.min_object_altitude}°",
+                ha="center",
+                va="bottom",
+                color=style["TEXT_COLOR"],
+                fontsize=10,
+                bbox=dict(facecolor=style["AXES_FACE_COLOR"], edgecolor='none', boxstyle='round,pad=0.2')
+            )
+
+
+        # Mark azimuth conditions
+        min_az_rad = numpy.deg2rad(float(self.conditions.min_object_azimuth))
+        max_az_rad = numpy.deg2rad(float(self.conditions.max_object_azimuth))
+
+        # Only draw if there's an actual restriction (not 0-360)
+        if not (self.conditions.min_object_azimuth == 0 and self.conditions.max_object_azimuth == 360):
+            # Draw radial line for min azimuth
+            ax.plot(
+                [min_az_rad, min_az_rad],
+                [0, 90], # From center to horizon
+                color=style["GRID_COLOR"],
+                linestyle=":",
+                linewidth=1,
+                label=f"Min Azimuth ({self.conditions.min_object_azimuth}°)"
+            )
+            # Draw radial line for max azimuth
+            ax.plot(
+                [max_az_rad, max_az_rad],
+                [0, 90], # From center to horizon
+                color=style["GRID_COLOR"],
+                linestyle=":",
+                linewidth=1,
+                label=f"Max Azimuth ({self.conditions.max_object_azimuth}°)"
+            )
+
         # Time for observation
         t = self.place.ts.now()
         if self.effective_date is not None:
