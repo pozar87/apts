@@ -1210,7 +1210,7 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         mock_ax.set_title.assert_called_with(
-            "Skymap centered on M31", color=unittest.mock.ANY
+            f"Skymap for M31 (Generated: {unittest.mock.ANY})", color=unittest.mock.ANY
         )
 
     @patch("apts.observations.pyplot")
@@ -1226,7 +1226,7 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         mock_ax.set_title.assert_called_with(
-            "Skymap centered on Mars", color=unittest.mock.ANY
+            f"Skymap for Mars (Generated: {unittest.mock.ANY})", color=unittest.mock.ANY
         )
 
     @patch("apts.observations.pyplot")
