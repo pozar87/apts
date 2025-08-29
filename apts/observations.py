@@ -906,7 +906,7 @@ class Observation:
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
 
-    def plot_skymap(
+    def _generate_plot_skymap(
         self, target_name: str, dark_mode_override: Optional[bool] = None, **kwargs
     ):
         """
@@ -1065,6 +1065,13 @@ class Observation:
             ax.set_title(f"Skymap", color=style["TEXT_COLOR"])
 
         return fig
+
+    def plot_skymap(
+        self, target_name: str, dark_mode_override: Optional[bool] = None, **kwargs
+    ):
+        return self._generate_plot_skymap(
+            target_name=target_name, dark_mode_override=dark_mode_override, **kwargs
+        )
 
     def __str__(self) -> str:
         return (
