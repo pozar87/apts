@@ -99,8 +99,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html uses the default template when no custom template is provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame({
-                "time": pd.to_datetime([]).tz_localize('UTC'),
+        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+            {
+                "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
                 "precipProbability": [],
                 "windSpeed": [],
@@ -127,8 +128,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html uses a custom template when provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame({
-                "time": pd.to_datetime([]).tz_localize('UTC'),
+        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+            {
+                "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
                 "precipProbability": [],
                 "windSpeed": [],
@@ -155,8 +157,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html injects custom CSS when provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame({
-                "time": pd.to_datetime([]).tz_localize('UTC'),
+        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+            {
+                "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
                 "precipProbability": [],
                 "windSpeed": [],
@@ -175,8 +178,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test to_html with an actual temporary template file"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame({
-                "time": pd.to_datetime([]).tz_localize('UTC'),
+        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+            {
+                "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
                 "precipProbability": [],
                 "windSpeed": [],
@@ -521,7 +525,11 @@ class TestObservationPlottingStyles(unittest.TestCase):
     @patch("apts.observations.get_dark_mode")
     @patch("apts.place.Place.get_altaz_curve")
     def test_generate_plot_planets_specific_colors(
-        self, mock_get_altitude_curve, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
+        self,
+        mock_get_altitude_curve,
+        mock_get_dark_mode,
+        mock_pyplot,
+        mock_annotate_plot,
     ):
         self.observation.get_visible_planets = MagicMock(
             return_value=self.mock_planets_data_for_color_test
@@ -529,13 +537,17 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
         t0 = self.observation.place.ts.utc(self.observation.start)
         t1 = self.observation.place.ts.utc(self.observation.stop)
-        mock_curve_df = pd.DataFrame({
-            'Time': self.observation.place.ts.linspace(t0, t1, 10),
-            'Altitude': [10, 20, 30, 40, 50, 40, 30, 20, 10, 0]
-        })
+        mock_curve_df = pd.DataFrame(
+            {
+                "Time": self.observation.place.ts.linspace(t0, t1, 10),
+                "Altitude": [10, 20, 30, 40, 50, 40, 30, 20, 10, 0],
+            }
+        )
         mock_get_altitude_curve.return_value = mock_curve_df
 
-        self.observation.local_planets.get_skyfield_object = MagicMock(return_value=MagicMock())
+        self.observation.local_planets.get_skyfield_object = MagicMock(
+            return_value=MagicMock()
+        )
 
         scenarios = [
             {
@@ -1095,7 +1107,7 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
-            "ID": [0,1,2]
+            "ID": [0, 1, 2],
         }
         self.messier_df = pd.DataFrame(messier_data)
 
@@ -1118,7 +1130,7 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 23:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 20:00:00", tz="UTC"),
             ],
-             "ID": [0,1,2]
+            "ID": [0, 1, 2],
         }
         self.planets_df = pd.DataFrame(planets_data)
 
@@ -1128,65 +1140,84 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
         # Mock get_altaz_curve
         def mock_get_altaz_curve(skyfield_object, start, stop):
             if isinstance(skyfield_object, Star):
-                if skyfield_object.ra.hours == 5.575538888888889: # M1
-                    return pd.DataFrame({
-                        'Altitude': [10, 20, 30, 20, 10],
-                        'Azimuth': [170, 180, 190, 200, 210]
-                    })
-                elif skyfield_object.ra.hours == 5.588138888888889: # M42
-                    return pd.DataFrame({
-                        'Altitude': [40, 50, 60, 50, 40],
-                        'Azimuth': [190, 200, 210, 220, 230]
-                    })
-                elif skyfield_object.ra.hours == 0.7123055555555556: # M31
-                    return pd.DataFrame({
-                        'Altitude': [10, 15, 20, 15, 10],
-                        'Azimuth': [350, 355, 0, 5, 10]
-                    })
-            else: # It's a planet
-                if 'MARS' in str(skyfield_object):
-                    return pd.DataFrame({
-                        'Altitude': [20, 30, 40, 30, 20],
-                        'Azimuth': [80, 90, 100, 110, 120]
-                    })
-                elif 'JUPITER' in str(skyfield_object):
-                    return pd.DataFrame({
-                        'Altitude': [40, 50, 60, 50, 40],
-                        'Azimuth': [140, 150, 160, 170, 180]
-                    })
-                elif 'SATURN' in str(skyfield_object):
-                    return pd.DataFrame({
-                        'Altitude': [30, 40, 50, 40, 30],
-                        'Azimuth': [355, 0, 5, 10, 15]
-                    })
+                if skyfield_object.ra.hours == 5.575538888888889:  # M1
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [10, 20, 30, 20, 10],
+                            "Azimuth": [170, 180, 190, 200, 210],
+                        }
+                    )
+                elif skyfield_object.ra.hours == 5.588138888888889:  # M42
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [40, 50, 60, 50, 40],
+                            "Azimuth": [190, 200, 210, 220, 230],
+                        }
+                    )
+                elif skyfield_object.ra.hours == 0.7123055555555556:  # M31
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [10, 15, 20, 15, 10],
+                            "Azimuth": [350, 355, 0, 5, 10],
+                        }
+                    )
+            else:  # It's a planet
+                if "MARS" in str(skyfield_object):
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [20, 30, 40, 30, 20],
+                            "Azimuth": [80, 90, 100, 110, 120],
+                        }
+                    )
+                elif "JUPITER" in str(skyfield_object):
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [40, 50, 60, 50, 40],
+                            "Azimuth": [140, 150, 160, 170, 180],
+                        }
+                    )
+                elif "SATURN" in str(skyfield_object):
+                    return pd.DataFrame(
+                        {
+                            "Altitude": [30, 40, 50, 40, 30],
+                            "Azimuth": [355, 0, 5, 10, 15],
+                        }
+                    )
 
         self.observation.place.get_altaz_curve = mock_get_altaz_curve
 
-
     def test_messier_azimuth_filter(self):
         # Test with a simple azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=170, max_object_azimuth=210, min_object_altitude=15)
+        self.observation.conditions = Conditions(
+            min_object_azimuth=170, max_object_azimuth=210, min_object_altitude=15
+        )
         visible_messier = self.observation.get_visible_messier()
         self.assertEqual(len(visible_messier), 2)
         self.assertIn("M1", visible_messier["Messier"].values)
         self.assertIn("M42", visible_messier["Messier"].values)
 
         # Test with a wrap-around azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=10, min_object_altitude=15)
+        self.observation.conditions = Conditions(
+            min_object_azimuth=350, max_object_azimuth=10, min_object_altitude=15
+        )
         visible_messier = self.observation.get_visible_messier()
         self.assertEqual(len(visible_messier), 1)
         self.assertIn("M31", visible_messier["Messier"].values)
 
     def test_planets_azimuth_filter(self):
         # Test with a simple azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=80, max_object_azimuth=160, min_object_altitude=25)
+        self.observation.conditions = Conditions(
+            min_object_azimuth=80, max_object_azimuth=160, min_object_altitude=25
+        )
         visible_planets = self.observation.get_visible_planets()
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Mars", visible_planets["Name"].values)
         self.assertIn("Jupiter", visible_planets["Name"].values)
 
         # Test with a wrap-around azimuth range
-        self.observation.conditions = Conditions(min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=35)
+        self.observation.conditions = Conditions(
+            min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=35
+        )
         visible_planets = self.observation.get_visible_planets()
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Saturn", visible_planets["Name"].values)
@@ -1213,7 +1244,7 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         mock_ax.set_title.assert_called_with(
-            f"Skymap for M31 (Generated: {unittest.mock.ANY})", color=unittest.mock.ANY
+            "Skymap for M31 (Generated: 2025-02-18 13:00 CET)", color="#000000"
         )
 
     @patch("apts.observations.pyplot")
@@ -1229,7 +1260,7 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         mock_ax.set_title.assert_called_with(
-            f"Skymap for Mars (Generated: {unittest.mock.ANY})", color=unittest.mock.ANY
+            "Skymap for Mars (Generated: 2025-02-18 13:00 CET)", color="#000000"
         )
 
     @patch("apts.observations.pyplot")
