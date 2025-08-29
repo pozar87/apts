@@ -49,3 +49,12 @@ class Messier(Objects):
 
     def get_skyfield_object(self, messier_object):
         return Star(ra_hours=messier_object.RA, dec_degrees=messier_object.Dec)
+
+    def find_by_name(self, name):
+        """
+        Finds a Messier object by its name (e.g., "M31").
+        """
+        result = self.objects[self.objects["Messier"] == name]
+        if not result.empty:
+            return self.get_skyfield_object(result.iloc[0])
+        return None

@@ -1191,3 +1191,66 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Saturn", visible_planets["Name"].values)
         self.assertIn("Mars", visible_planets["Name"].values)
+
+
+class TestObservationSkymap(unittest.TestCase):
+    def setUp(self):
+        self.observation = setup_observation()
+
+    @patch("apts.observations.pyplot")
+    def test_plot_skymap_messier(self, mock_pyplot):
+        """Test that plot_skymap generates a plot for a Messier object without errors."""
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        fig = self.observation.plot_skymap(target_name="M31")
+
+        self.assertIsNotNone(fig)
+        mock_pyplot.subplots.assert_called_once()
+        mock_ax.set_title.assert_called_with(
+            "Skymap centered on M31", color=unittest.mock.ANY
+        )
+
+    @patch("apts.observations.pyplot")
+    def test_plot_skymap_planet(self, mock_pyplot):
+        """Test that plot_skymap generates a plot for a planet without errors."""
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        fig = self.observation.plot_skymap(target_name="Mars")
+
+        self.assertIsNotNone(fig)
+        mock_pyplot.subplots.assert_called_once()
+        mock_ax.set_title.assert_called_with(
+            "Skymap centered on Mars", color=unittest.mock.ANY
+        )
+
+    @patch("apts.observations.pyplot")
+    def test_plot_skymap_object_not_found(self, mock_pyplot):
+        """Test that plot_skymap handles object not found gracefully."""
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        fig = self.observation.plot_skymap(target_name="Not an object")
+
+        self.assertIsNotNone(fig)
+        mock_pyplot.subplots.assert_called_once()
+        mock_ax.text.assert_called_with(
+            0.5,
+            0.5,
+            "Object 'Not an object' not found.",
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=mock_ax.transAxes,
+            color=unittest.mock.ANY,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

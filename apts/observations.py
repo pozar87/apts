@@ -24,6 +24,10 @@ from apts.constants.graphconstants import (
 )  # Added get_planet_color
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
+from skyfield.api import Star
+from skyfield.data import hipparcos
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Circle
 
 logger = logging.getLogger(__name__)
 
@@ -901,6 +905,69 @@ class Observation:
             return self.place.plot_sun_path(dark_mode_override, **args)
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
+
+    def plot_skymap(
+        self, target_name: str, dark_mode_override: Optional[bool] = None, **kwargs
+    ):
+        """
+        Generates a skymap centered on a specific celestial object.
+        """
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+
+        fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
+        ax.set_rlim(0, 90)
+        ax.set_theta_zero_location("N")
+        ax.set_theta_direction(-1)
+        ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
+        ax.set_yticklabels([])
+
+        # Find the target object
+        target_object = self.local_messier.find_by_name(target_name)
+        if target_object is None:
+            target_object = self.local_planets.find_by_name(target_name)
+
+        if target_object is None:
+            ax.text(
+                0.5,
+                0.5,
+                f"Object '{target_name}' not found.",
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=ax.transAxes,
+                color=style["TEXT_COLOR"],
+            )
+            ax.set_title(f"Skymap", color=style["TEXT_COLOR"])
+            return fig
+
+        # Center the skymap on the target object
+        observer = self.place.observer
+        astrometric = observer.at(self.place.ts.now()).observe(target_object)
+        ra, dec, _ = astrometric.radec()
+
+        center = Star(ra=ra, dec=dec)
+
+        # This is a placeholder for the actual projection implementation
+        # The real implementation would use the center object to project other objects
+        # For now, we will just plot the target at the center
+        ax.scatter([0], [0], s=100, color="red", marker="*")
+        ax.annotate(
+            target_name,
+            (0, 0),
+            xytext=(5, 5),
+            textcoords="offset points",
+            color=style["TEXT_COLOR"],
+        )
+
+        ax.set_title(f"Skymap centered on {target_name}", color=style["TEXT_COLOR"])
+        ax.legend()
+        return fig
 
     def __str__(self) -> str:
         return (
