@@ -67,8 +67,7 @@ METEOBLUE_MOCK = {
         "windspeed": [5],
         "totalcloudcover": [10],
         "visibility": [10000],
-        "sealevelpressure": [1013],
-        "ozone_concentration": [300]
+        "sealevelpressure": [1013]
     }
 }
 
@@ -114,7 +113,7 @@ def test_weather_providers(mock_get_weather_settings, requests_mock, provider_na
         assert data['ozone'] == 'none' # Not provided by OWM
     elif provider_name == 'meteoblue':
         assert data['windSpeed'] == 5
-        assert data['ozone'] == 300
+        assert data['ozone'] == 'none'
 
 
 @pytest.mark.parametrize(
