@@ -24,7 +24,7 @@ from apts.constants.graphconstants import (
 )  # Added get_planet_color
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
-from skyfield.api import Star
+from skyfield.api import Star, load
 from skyfield.data import hipparcos
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Circle
@@ -910,7 +910,7 @@ class Observation:
         self, target_name: str, dark_mode_override: Optional[bool] = None, **kwargs
     ):
         """
-        Generates a skymap centered on a specific celestial object.
+        Generates a skymap for the current time and location, highlighting a target object.
         """
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
@@ -922,18 +922,119 @@ class Observation:
         fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
-        ax.set_rlim(0, 90)
+        ax.set_rlim(0, 90)  # Zenith angle from 0 (zenith) to 90 (horizon)
         ax.set_theta_zero_location("N")
         ax.set_theta_direction(-1)
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
-        ax.set_yticklabels([])
 
-        # Find the target object
+        # Custom radial labels for altitude
+        ax.set_yticks([0, 30, 60, 90])  # Zenith angles
+        ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
+        ax.set_rlabel_position(22.5)  # Move labels away from the line
+
+        # Time for observation
+        t = self.place.ts.now()
+        if self.effective_date is not None:
+            t = self.effective_date
+        observer = self.place.observer.at(t)
+
+        # 1. Plot stars
+        with load.open(hipparcos.URL) as f:
+            stars = hipparcos.load_dataframe(f)
+
+        bright_stars = stars[stars["magnitude"] <= 4.5]
+        star_positions = observer.observe(Star.from_dataframe(bright_stars))
+        alt, az, _ = star_positions.apparent().altaz()
+
+        visible = alt.degrees > 0
+        az_rad = az.radians[visible]
+        zenith_angle = 90 - alt.degrees[visible]
+        magnitudes = bright_stars["magnitude"][visible]
+
+        sizes = (5 - magnitudes) * 5
+        ax.scatter(
+            az_rad,
+            zenith_angle,
+            s=sizes,
+            color=style["TEXT_COLOR"],
+            marker=".",
+        )
+
+        # 2. Plot Messier objects
+        visible_messier = self.get_visible_messier()
+        if not visible_messier.empty:
+            for _, m_obj in visible_messier.iterrows():
+                messier_name = m_obj[ObjectTableLabels.MESSIER]
+                messier_object = self.local_messier.find_by_name(messier_name)
+                if messier_object:
+                    alt, az, _ = observer.observe(messier_object).apparent().altaz()
+                    if alt.degrees > 0:
+                        ax.scatter(
+                            az.radians, 90 - alt.degrees, s=50, color="red", marker="+"
+                        )
+                        ax.annotate(
+                            messier_name,
+                            (az.radians, 90 - alt.degrees),
+                            textcoords="offset points",
+                            xytext=(5, 5),
+                            color="red",
+                        )
+
+        # 3. Plot Planets
+        visible_planets = self.get_visible_planets()
+        if not visible_planets.empty:
+            for _, p_obj in visible_planets.iterrows():
+                planet_name = p_obj[ObjectTableLabels.NAME]
+                planet_object = self.local_planets.find_by_name(planet_name)
+                if planet_object:
+                    alt, az, _ = observer.observe(planet_object).apparent().altaz()
+                    if alt.degrees > 0:
+                        planet_color = get_planet_color(
+                            planet_name, effective_dark_mode, style["TEXT_COLOR"]
+                        )
+                        ax.scatter(
+                            az.radians,
+                            90 - alt.degrees,
+                            s=100,
+                            color=planet_color,
+                            marker="o",
+                        )
+                        ax.annotate(
+                            planet_name,
+                            (az.radians, 90 - alt.degrees),
+                            textcoords="offset points",
+                            xytext=(5, 5),
+                            color=planet_color,
+                        )
+
+        # 4. Highlight target object
         target_object = self.local_messier.find_by_name(target_name)
         if target_object is None:
             target_object = self.local_planets.find_by_name(target_name)
 
-        if target_object is None:
+        if target_object:
+            alt, az, _ = observer.observe(target_object).apparent().altaz()
+            if alt.degrees > 0:
+                ax.scatter(
+                    az.radians,
+                    90 - alt.degrees,
+                    s=200,
+                    facecolors="none",
+                    edgecolors="yellow",
+                    marker="o",
+                    linewidths=2,
+                )
+                ax.annotate(
+                    target_name,
+                    (az.radians, 90 - alt.degrees),
+                    textcoords="offset points",
+                    xytext=(0, 15),
+                    color="yellow",
+                    ha="center",
+                    fontsize=12,
+                )
+            ax.set_title(f"Skymap for {target_name}", color=style["TEXT_COLOR"])
+        else:
             ax.text(
                 0.5,
                 0.5,
@@ -944,29 +1045,7 @@ class Observation:
                 color=style["TEXT_COLOR"],
             )
             ax.set_title(f"Skymap", color=style["TEXT_COLOR"])
-            return fig
 
-        # Center the skymap on the target object
-        observer = self.place.observer
-        astrometric = observer.at(self.place.ts.now()).observe(target_object)
-        ra, dec, _ = astrometric.radec()
-
-        center = Star(ra=ra, dec=dec)
-
-        # This is a placeholder for the actual projection implementation
-        # The real implementation would use the center object to project other objects
-        # For now, we will just plot the target at the center
-        ax.scatter([0], [0], s=100, color="red", marker="*")
-        ax.annotate(
-            target_name,
-            (0, 0),
-            xytext=(5, 5),
-            textcoords="offset points",
-            color=style["TEXT_COLOR"],
-        )
-
-        ax.set_title(f"Skymap centered on {target_name}", color=style["TEXT_COLOR"])
-        ax.legend()
         return fig
 
     def __str__(self) -> str:
