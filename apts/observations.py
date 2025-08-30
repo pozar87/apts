@@ -5,6 +5,7 @@ from typing import Optional, List  # Added Optional
 
 import matplotlib.dates as mdates
 import numpy  # Retained for potential use by other functions if Observation.to_html is modified
+import pandas as pd
 from importlib import resources
 import svgwrite as svg
 from matplotlib import pyplot, lines
@@ -935,6 +936,11 @@ class Observation:
             f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}"
         )
 
+        # Ensure numeric types for comparison
+        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility']:
+            if col in hourly_data.columns:
+                hourly_data[col] = pd.to_numeric(hourly_data[col], errors='coerce')
+
         analysis_results = []
 
         for index, row in hourly_data.iterrows():
@@ -943,14 +949,20 @@ class Observation:
             reasons = []
 
             # Check cloud cover
-            if not (row.cloudCover < self.conditions.max_clouds):
+            if pd.isna(row.cloudCover):
+                is_good_hour = False
+                reasons.append("Cloud cover data not available")
+            elif not (row.cloudCover < self.conditions.max_clouds):
                 is_good_hour = False
                 reasons.append(
                     f"Cloud cover {row.cloudCover:.1f}% exceeds limit {self.conditions.max_clouds:.1f}%"
                 )
 
             # Check precipitation probability
-            if not (
+            if pd.isna(row.precipProbability):
+                is_good_hour = False
+                reasons.append("Precipitation probability data not available")
+            elif not (
                 row.precipProbability < self.conditions.max_precipitation_probability
             ):
                 is_good_hour = False
@@ -959,27 +971,39 @@ class Observation:
                 )
 
             # Check wind speed
-            if not (row.windSpeed < self.conditions.max_wind):
+            if pd.isna(row.windSpeed):
+                is_good_hour = False
+                reasons.append("Wind speed data not available")
+            elif not (row.windSpeed < self.conditions.max_wind):
                 is_good_hour = False
                 reasons.append(
                     f"Wind speed {row.windSpeed:.1f} km/h exceeds limit {self.conditions.max_wind:.1f} km/h"
                 )
 
             # Check temperature (min)
-            if not (row.temperature > self.conditions.min_temperature):
+            if pd.isna(row.temperature):
+                is_good_hour = False
+                reasons.append("Temperature data not available")
+            elif not (row.temperature > self.conditions.min_temperature):
                 is_good_hour = False
                 reasons.append(
                     f"Temperature {row.temperature:.1f}°C below limit {self.conditions.min_temperature:.1f}°C"
                 )
 
             # Check temperature (max)
-            if not (row.temperature < self.conditions.max_temperature):
+            if pd.isna(row.temperature):
+                is_good_hour = False
+                reasons.append("Temperature data not available")
+            elif not (row.temperature < self.conditions.max_temperature):
                 is_good_hour = False
                 reasons.append(
                     f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
                 )
 
-            if not (row.visibility > self.conditions.min_visibility):
+            if pd.isna(row.visibility):
+                is_good_hour = False
+                reasons.append("Visibility data not available")
+            elif not (row.visibility > self.conditions.min_visibility):
                 is_good_hour = False
                 reasons.append(
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
