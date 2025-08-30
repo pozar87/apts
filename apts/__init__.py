@@ -34,14 +34,7 @@ except AttributeError:
     )
 
 # Load static fields from the imported config
-# Weather API Key
-weather_api_key = config.get("weather", "api_key", fallback="")
-if weather_api_key:
-    setattr(Weather, "API_KEY", weather_api_key)
-else:
-    logger.warning(
-        "Weather API key not found in configuration. Weather features may fail."
-    )
+# Weather API Key (handled directly by Weather class and config.get_weather_settings)
 
 # Note: Notification settings are handled within the Notify class using the imported config.
 
