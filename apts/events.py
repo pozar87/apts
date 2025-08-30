@@ -88,6 +88,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_space_launches))
         if self.event_settings.get("space_events", False):
             futures.append(executor.submit(self.calculate_space_events))
+        if self.event_settings.get("iss_flybys", False):
+            futures.append(executor.submit(self.calculate_iss_flybys))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -141,6 +143,14 @@ class AstronomicalEvents:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching space events: {e}")
         logger.debug(f"--- calculate_space_events: {time.time() - start_time}s")
+        return events
+
+    def calculate_iss_flybys(self):
+        start_time = time.time()
+        events = skyfield_searches.find_iss_flybys(
+            self.observer, self.start_date, self.end_date
+        )
+        logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
         return events
 
     def calculate_moon_phases(self):
