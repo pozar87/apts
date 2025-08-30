@@ -67,19 +67,18 @@ def get_weather_settings(provider: str = None) -> tuple[str, str]:
     Returns:
         tuple: A tuple containing the provider name and the API key.
     """
-    if provider is None:
-        provider = 'pirateweather'
-        api_key = '12345'  # Default dummy key
-
-        if config.has_section('weather'):
-            if config.has_option('weather', 'provider'):
-                provider = config.get('weather', 'provider')
-            if config.has_option('weather', 'api_key'):
-                api_key = config.get('weather', 'api_key')
+    if config.has_section('weather'):
+        if provider is None:
+            # Get default provider and API key
+            provider = config.get('weather', 'provider', fallback='pirateweather')
+            api_key = config.get('weather', 'api_key', fallback=None) # Default to None if not found
+        else:
+            # Get API key for specific provider
+            api_key = config.get('weather', f'{provider}_api_key', fallback=None) # Default to None if not found
     else:
-        api_key = '12345'
-        if config.has_section('weather'):
-            if config.has_option('weather', f'{provider}_api_key'):
-                api_key = config.get('weather', f'{provider}_api_key')
+        # No weather section, return defaults or None
+        if provider is None:
+            provider = 'pirateweather'
+        api_key = None # No API key found in config
 
     return provider, api_key
