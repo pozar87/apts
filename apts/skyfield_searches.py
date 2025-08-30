@@ -3,7 +3,7 @@ from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize_scalar
-from .cache import get_timescale
+from .cache import get_timescale, get_ephemeris
 
 
 
@@ -224,3 +224,71 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
                 events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_name}'})
 
     return events
+
+
+def find_iss_flybys(observer, start_date, end_date, magnitude_threshold=-1.5, peak_altitude_threshold=40, rise_altitude_threshold=10):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+
+    try:
+        stations_url = 'https://celestrak.org/NORAD/elements/stations.txt'
+        satellites = load.tle_file(stations_url, reload=True)
+        iss = next(s for s in satellites if s.name == 'ISS (ZARYA)')
+    except Exception as e:
+        # Could be network error, or ISS not in file
+        print(f"Could not load ISS TLEs: {e}")
+        return []
+
+    times, events = iss.find_events(
+        observer, t0, t1, altitude_threshold=rise_altitude_threshold)
+
+    events_list = []
+
+    for i, event_code in enumerate(events):
+        if event_code == 1:  # Culmination
+            culmination_time = times[i]
+
+            # Check for dark sky at culmination
+            sun = eph['sun']
+            sun_alt, _, _ = observer.at(culmination_time).observe(
+                sun).apparent().altaz()
+            if sun_alt.degrees > -18:
+                continue
+
+            # Check magnitude at culmination
+            mag = observer.at(culmination_time).observe(
+                iss).apparent().magnitude
+            if mag > magnitude_threshold:
+                continue
+
+            # Check peak altitude
+            peak_alt, _, _ = observer.at(culmination_time).observe(
+                iss).apparent().altaz()
+            if peak_alt.degrees < peak_altitude_threshold:
+                continue
+
+            # Find rise and set times for this pass
+            if i > 0 and events[i-1] == 0:
+                rise_time = times[i-1]
+            else:
+                continue  # Should not happen in a normal pass
+
+            if i < len(events) - 1 and events[i+1] == 2:
+                set_time = times[i+1]
+            else:
+                continue  # Should not happen in a normal pass
+
+            events_list.append({
+                'date': culmination_time.utc_datetime(),
+                'event': f"Bright ISS Flyby (mag {mag:.2f}, peak alt {peak_alt.degrees:.1f}°)",
+                'type': 'ISS Flyby',
+                'rise_time': rise_time.utc_datetime(),
+                'culmination_time': culmination_time.utc_datetime(),
+                'set_time': set_time.utc_datetime(),
+                'peak_altitude': peak_alt.degrees,
+                'peak_magnitude': mag,
+            })
+
+    return events_list

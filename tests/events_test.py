@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from datetime import datetime, timezone
 from apts.events import AstronomicalEvents
 from apts.constants.event_types import EventType
@@ -112,6 +113,33 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.year, 2020)
         self.assertEqual(event_date.month, 12)
         self.assertEqual(event_date.day, 21)
+
+    @patch('apts.events.skyfield_searches.find_iss_flybys')
+    def test_calculate_iss_flybys(self, mock_find_iss_flybys):
+        # Arrange
+        mock_flyby_event = {
+            'date': datetime(2023, 1, 15, 18, 30, 0, tzinfo=utc),
+            'event': 'Bright ISS Flyby (mag -3.5, peak alt 85.0°)',
+            'type': 'ISS Flyby',
+            'peak_altitude': 85.0,
+            'peak_magnitude': -3.5
+        }
+        mock_find_iss_flybys.return_value = [mock_flyby_event]
+
+        # Act
+        events_calculator = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+            events_to_calculate=[EventType.ISS_FLYBYS]
+        )
+        events_df = events_calculator.get_events()
+
+        # Assert
+        mock_find_iss_flybys.assert_called_once()
+        self.assertEqual(len(events_df), 1)
+        self.assertEqual(events_df.iloc[0]['event'], mock_flyby_event['event'])
+        self.assertEqual(events_df.iloc[0]['type'], 'ISS Flyby')
 
 
 if __name__ == "__main__":

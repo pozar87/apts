@@ -18,6 +18,7 @@ class EventType(str, Enum):
     MOON_MESSIER_CONJUNCTIONS = "moon_messier_conjunctions"
     SPACE_LAUNCHES = "space_launches"
     SPACE_EVENTS = "space_events"
+    ISS_FLYBYS = "iss_flybys"
 
     def __str__(self):
         return self.value
