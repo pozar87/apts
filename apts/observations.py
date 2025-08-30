@@ -571,7 +571,7 @@ class Observation:
             dark_mode_override=dark_mode_override, **args
         )
 
-    def _compute_weather_goodnse(self):
+    def _compute_weather_goodness(self):
         data = self.place.weather.get_critical_data(self.start, self.stop)
         data = data[data.time <= self.time_limit]
         all_hours = len(data)
@@ -581,6 +581,7 @@ class Observation:
             & (data.windSpeed < self.conditions.max_wind)
             & (data.temperature > self.conditions.min_temperature)
             & (data.temperature < self.conditions.max_temperature)
+            & (data.visibility > self.conditions.min_visibility)
         ]
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
@@ -596,7 +597,7 @@ class Observation:
             self.place.get_weather()
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
-        return self._compute_weather_goodnse() > self.conditions.min_weather_goodness
+        return self._compute_weather_goodness() > self.conditions.min_weather_goodness
 
     # plot_weather is a public method, add dark_mode_override
     def plot_weather(self, dark_mode_override: Optional[bool] = None, **args):
@@ -978,6 +979,12 @@ class Observation:
                     f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
                 )
 
+            if not (row.visibility > self.conditions.min_visibility):
+                is_good_hour = False
+                reasons.append(
+                    f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
+                )
+
             analysis_results.append(
                 {
                     "time": current_time,
@@ -987,6 +994,7 @@ class Observation:
                     "clouds": row.cloudCover,
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
+                    "visibility": row.visibility
                 }
             )
 

@@ -14,6 +14,8 @@ class DefaultConditions:
   MAX_TEMPERATURE = 20  # [C°]
   # Threshold for abstract measurement of weather goodness. 0 - crappy weather, 1 - best weather
   MIN_WEATHER_GOODNESS = 80  # [%], range [0,100]
+  # Minimal visibility
+  MIN_VISIBILITY = 10  # [km], range [0,∞)
   # Max acceptable hour of return
   MAX_RETURN = "02:00:00"
   # Minimal object (i.e. Messier) altitude (https://en.wikipedia.org/wiki/Horizontal_coordinate_system)
@@ -38,6 +40,7 @@ class Conditions:
                min_temperature=DefaultConditions.MIN_TEMPERATURE,
                max_temperature=DefaultConditions.MAX_TEMPERATURE,
                min_weather_goodness=DefaultConditions.MIN_WEATHER_GOODNESS,
+               min_visibility=DefaultConditions.MIN_VISIBILITY,
                max_return=DefaultConditions.MAX_RETURN,
                min_object_altitude=DefaultConditions.MIN_OBJECT_ALTITUDE,
                max_object_magnitude=DefaultConditions.MAX_OBJECT_MAGNITUDE,
@@ -51,6 +54,7 @@ class Conditions:
     self.min_temperature = min_temperature
     self.max_temperature = max_temperature
     self.min_weather_goodness = min_weather_goodness
+    self.min_visibility = min_visibility
     self.max_return = max_return
     self.min_object_altitude = min_object_altitude
     self.max_object_magnitude = max_object_magnitude
