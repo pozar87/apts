@@ -435,8 +435,8 @@ class Weather:
 
     def get_critical_data(self, start, stop):
         if self.data.empty:
-            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature"])
-        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature"])
+            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature", "visibility"])
+        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature", "visibility"])
         return data[(data.time >= start) & (data.time <= stop)]
 
     def plot_visibility(

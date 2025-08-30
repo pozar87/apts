@@ -105,6 +105,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
+                "visibility": [],
             }
         )
         html = self.observation.to_html()
@@ -133,6 +134,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
+                "visibility": [],
             }
         )
         custom_template = "/path/to/custom/template.html"
@@ -161,6 +163,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
+                "visibility": [],
             }
         )
         custom_css = "h1 { color: blue; }"
@@ -181,6 +184,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
+                "visibility": [],
             }
         )
         # Create a temporary template file
@@ -678,6 +682,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 # Example: make cloud cover too high. More sophisticated logic can be added.
                 cloud = self.obs.conditions.max_clouds + 10
 
+            vis = self.obs.conditions.min_visibility + 5
+
             data.append(
                 {
                     "time": hour_time,
@@ -685,6 +691,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "precipProbability": precip,
                     "windSpeed": wind,
                     "temperature": temp,
+                    "visibility": vis,
                 }
             )
         return pd.DataFrame(data)
@@ -732,6 +739,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "precipProbability": precip,
                     "windSpeed": wind,
                     "temperature": temp,
+                    "visibility": self.obs.conditions.min_visibility + 1,
                 }
             )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -765,6 +773,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     + self.obs.conditions.max_temperature
                 )
                 / 2,  # Good
+                "visibility": self.obs.conditions.min_visibility + 1,
             }
         )
         # Hour 1: Good
@@ -780,6 +789,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     + self.obs.conditions.max_temperature
                 )
                 / 2,
+                "visibility": self.obs.conditions.min_visibility + 1,
             }
         )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -875,6 +885,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": self.obs.conditions.min_temperature - 5,  # Too cold
+                "visibility": self.obs.conditions.min_visibility + 1,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -896,6 +907,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": self.obs.conditions.max_temperature + 5,  # Too hot
+                "visibility": self.obs.conditions.min_visibility + 1,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -921,6 +933,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     + self.obs.conditions.max_temperature
                 )
                 / 2,
+                "visibility": self.obs.conditions.min_visibility + 1,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -939,6 +952,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "precipProbability",
                 "windSpeed",
                 "temperature",
+                "visibility",
             ]
         )
         results = self.obs.get_hourly_weather_analysis()
