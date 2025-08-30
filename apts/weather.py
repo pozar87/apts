@@ -18,12 +18,15 @@ requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
 
 class Weather:
 
-    def __init__(self, lat, lon, local_timezone):
+    def __init__(self, lat, lon, local_timezone, provider_name: Optional[str] = None, api_key: Optional[str] = None):
         self.lat = lat
         self.lon = lon
         self.local_timezone = local_timezone
 
-        provider_name, api_key = get_weather_settings()
+        if provider_name is None:
+            provider_name, api_key = get_weather_settings()
+        elif api_key is None:
+            _, api_key = get_weather_settings(provider_name)
 
         if provider_name == 'pirateweather':
             provider = PirateWeather(api_key, lat, lon, local_timezone)

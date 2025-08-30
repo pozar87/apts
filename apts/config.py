@@ -60,20 +60,26 @@ def get_event_settings() -> dict:
     return event_settings
 
 
-def get_weather_settings() -> tuple[str, str]:
+def get_weather_settings(provider: str = None) -> tuple[str, str]:
     """
     Reads the weather settings from the [weather] section.
 
     Returns:
         tuple: A tuple containing the provider name and the API key.
     """
-    provider = 'pirateweather'
-    api_key = '12345'  # Default dummy key
+    if provider is None:
+        provider = 'pirateweather'
+        api_key = '12345'  # Default dummy key
 
-    if config.has_section('weather'):
-        if config.has_option('weather', 'provider'):
-            provider = config.get('weather', 'provider')
-        if config.has_option('weather', 'api_key'):
-            api_key = config.get('weather', 'api_key')
+        if config.has_section('weather'):
+            if config.has_option('weather', 'provider'):
+                provider = config.get('weather', 'provider')
+            if config.has_option('weather', 'api_key'):
+                api_key = config.get('weather', 'api_key')
+    else:
+        api_key = '12345'
+        if config.has_section('weather'):
+            if config.has_option('weather', f'{provider}_api_key'):
+                api_key = config.get('weather', f'{provider}_api_key')
 
     return provider, api_key
