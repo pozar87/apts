@@ -1196,6 +1196,9 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
 class TestObservationSkymap(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
+        # Set a fixed date for deterministic tests
+        self.observation.effective_date = self.observation.place.ts.utc(2025, 2, 18, 12, 0, 0)
+
 
     @patch("apts.observations.pyplot")
     def test_plot_skymap_messier(self, mock_pyplot):
