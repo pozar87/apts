@@ -55,19 +55,28 @@ class SolarObjects(Objects):
 
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
-            lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use), axis=1
+            lambda body: self._compute_tranzit(
+                self.get_skyfield_object(body), observer_to_use
+            ),
+            axis=1,
         )
         # Compute rising and setting of planets at given place
-        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects.apply(
-            lambda body: self._compute_rising_and_setting(self.get_skyfield_object(body), observer_to_use),
-            axis=1,
-        ).apply(pandas.Series)
+        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
+            self.objects.apply(
+                lambda body: self._compute_rising_and_setting(
+                    self.get_skyfield_object(body), observer_to_use
+                ),
+                axis=1,
+            ).apply(pandas.Series)
+        )
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.TRANSIT]
         ].apply(
             lambda row: self._altitude_at_transit(
-                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
+                self.get_skyfield_object(self.objects.loc[row.name]),
+                row.Transit,
+                observer_to_use,
             ),
             axis=1,
         )
@@ -175,17 +184,16 @@ class SolarObjects(Objects):
             )
         ]
 
-        if (
-            conditions.min_object_azimuth == 0
-            and conditions.max_object_azimuth == 360
-        ):
+        if conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
             # Sort objects by given order
             visible = visible.sort_values(by=sort_by, ascending=True)
             if not visible.empty:
                 visible["TechnicalName"] = visible["Name"]
-                visible["Name"] = visible["TechnicalName"].apply(
-                    planetary.get_simple_name
-                ).astype("string")
+                visible["Name"] = (
+                    visible["TechnicalName"]
+                    .apply(planetary.get_simple_name)
+                    .astype("string")
+                )
             return visible
 
         visible_objects_indices = []
@@ -194,11 +202,15 @@ class SolarObjects(Objects):
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
 
             # Filter for times when altitude is sufficient
-            above_horizon_df = altaz_df[altaz_df['Altitude'] > conditions.min_object_altitude]
+            above_horizon_df = altaz_df[
+                altaz_df["Altitude"] > conditions.min_object_altitude
+            ]
 
             if not above_horizon_df.empty:
                 # Check if azimuth is within range for any of these times
-                az_conditions_met = self._is_azimuth_in_range(above_horizon_df['Azimuth'], conditions)
+                az_conditions_met = self._is_azimuth_in_range(
+                    above_horizon_df["Azimuth"], conditions
+                )
                 if az_conditions_met.any():
                     visible_objects_indices.append(index)
 
@@ -209,11 +221,28 @@ class SolarObjects(Objects):
 
         if not visible.empty:
             visible["TechnicalName"] = visible["Name"]
-            visible["Name"] = visible["TechnicalName"].apply(
-                planetary.get_simple_name
-            ).astype("string")
+            visible["Name"] = (
+                visible["TechnicalName"]
+                .apply(planetary.get_simple_name)
+                .astype("string")
+            )
 
         return visible
 
-    
-        
+    def find_by_name(self, name):
+        """
+        Finds a planet by its name (e.g., "Mars").
+        """
+        # First, try to find by the simple name
+        result = self.objects[self.objects["Name"].str.lower() == name.lower()]
+        if not result.empty:
+            return self.get_skyfield_object(result.iloc[0])
+
+        # If not found, try the technical name
+        if "TechnicalName" in self.objects.columns:
+            result = self.objects[
+                self.objects["TechnicalName"].str.lower() == name.lower()
+            ]
+            if not result.empty:
+                return self.get_skyfield_object(result.iloc[0])
+        return None
