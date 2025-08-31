@@ -59,8 +59,8 @@ class Place:
         self.weather = None
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
-    def get_weather(self):
-        self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone)
+    def get_weather(self, provider_name: Optional[str] = None):
+        self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone, provider_name=provider_name)
 
     def _next_setting_time(self, obj, start):
         t0 = self.ts.utc(start)

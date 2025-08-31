@@ -18,30 +18,25 @@ __all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType"
 
 logger = logging.getLogger(__name__)
 
-# Set logging level from the imported config
-log_level_str = config.get("logging", "level", fallback="INFO")  # Default to INFO
-try:
-    log_level = getattr(logging, log_level_str.upper())
-    # Basic logging configuration for the library
-    logging.basicConfig(
-        level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    logger.info(f"Logging level set to {log_level_str}")
-except AttributeError:
-    logging.basicConfig(level=logging.INFO)  # Fallback level
-    logger.warning(
-        f"Invalid logging level '{log_level_str}' in config. Using INFO level."
-    )
+# The logging level is already set to DEBUG above.
+# This block can be removed or commented out if it's causing issues,
+# but for now, we'll keep it as is, as the basicConfig call above takes precedence.
+# log_level_str = config.get("logging", "level", fallback="INFO")  # Default to INFO
+# try:
+#     log_level = getattr(logging, log_level_str.upper())
+#     # Basic logging configuration for the library
+#     logging.basicConfig(
+#         level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+#     )
+#     logger.info(f"Logging level set to {log_level_str}")
+# except AttributeError:
+#     logging.basicConfig(level=logging.INFO)  # Fallback level
+#     logger.warning(
+#         f"Invalid logging level '{log_level_str}' in config. Using INFO level."
+#     )
 
 # Load static fields from the imported config
-# Weather API Key
-weather_api_key = config.get("weather", "api_key", fallback="")
-if weather_api_key:
-    setattr(Weather, "API_KEY", weather_api_key)
-else:
-    logger.warning(
-        "Weather API key not found in configuration. Weather features may fail."
-    )
+# Weather API Key (handled directly by Weather class and config.get_weather_settings)
 
 # Note: Notification settings are handled within the Notify class using the imported config.
 

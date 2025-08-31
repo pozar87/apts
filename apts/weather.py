@@ -9,7 +9,12 @@ from typing import Optional
 from .utils import Utils
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
-from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap, Meteoblue
+from apts.weather_providers import (
+    PirateWeather,
+    VisualCrossing,
+    OpenWeatherMap,
+    Meteoblue,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,29 +22,57 @@ requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
 
 
 class Weather:
-
-    def __init__(self, lat, lon, local_timezone, provider_name: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        lat,
+        lon,
+        local_timezone,
+        provider_name: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ):
         self.lat = lat
         self.lon = lon
         self.local_timezone = local_timezone
 
+        # If provider_name is not explicitly given, get it from settings
         if provider_name is None:
-            provider_name, api_key = get_weather_settings()
+            provider_name, config_api_key = get_weather_settings()
+            # Use config_api_key if it's not None, otherwise use the passed api_key (which might be None)
+            api_key = config_api_key if config_api_key is not None else api_key
+        # If provider_name is given but api_key is not, try to get api_key from settings for that provider
         elif api_key is None:
-            _, api_key = get_weather_settings(provider_name)
+            _, config_api_key = get_weather_settings(provider_name)
+            api_key = config_api_key if config_api_key is not None else api_key
 
-        if provider_name == 'pirateweather':
+        # Fallback to default dummy key if API key is still None
+        if api_key is None:
+            api_key = '12345'
+            logger.warning(f"API key for {provider_name or 'default provider'} not found in config. Using dummy key '12345'.")
+
+        logger.info(
+            f"Initializing weather provider: {provider_name} for lat={self.lat}, lon={self.lon}"
+        )
+
+        if provider_name == "pirateweather":
             provider = PirateWeather(api_key, lat, lon, local_timezone)
-        elif provider_name == 'visualcrossing':
+        elif provider_name == "visualcrossing":
             provider = VisualCrossing(api_key, lat, lon, local_timezone)
-        elif provider_name == 'openweathermap':
+        elif provider_name == "openweathermap":
             provider = OpenWeatherMap(api_key, lat, lon, local_timezone)
-        elif provider_name == 'meteoblue':
+        elif provider_name == "meteoblue":
             provider = Meteoblue(api_key, lat, lon, local_timezone)
         else:
+            logger.error(f"Unknown weather provider specified: {provider_name}")
             raise ValueError(f"Unknown weather provider: {provider_name}")
 
+        logger.info(f"Attempting to download data from {provider_name}.")
         self.data = provider.download_data()
+        if self.data is not None and not self.data.empty:
+            logger.info(f"Successfully downloaded weather data from {provider_name}.")
+        else:
+            logger.warning(
+                f"Failed to download or received empty data from {provider_name}."
+            )
 
     def _filter_data(self, rows):
         # Always add time column
@@ -262,9 +295,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(
-            ["temperature", "apparentTemperature", "dewPoint"]
-        )
+        data = self._filter_data(["temperature", "apparentTemperature", "dewPoint"])
         if data.empty:
             return None
 
@@ -364,9 +395,15 @@ class Weather:
         style = get_plot_style(effective_dark_mode)
 
         # Check for available columns
-        available_columns = [col for col in ["pressure", "ozone"] if col in self.data.columns and self.data[col].astype(str).str.lower().nunique() > 1 and self.data[col].notna().any()]
+        available_columns = [
+            col
+            for col in ["pressure", "ozone"]
+            if col in self.data.columns
+            and self.data[col].astype(str).str.lower().nunique() > 1
+            and self.data[col].notna().any()
+        ]
         if not available_columns:
-            return None # Nothing to plot
+            return None  # Nothing to plot
 
         data = self._filter_data(available_columns)
         if data.empty:
@@ -422,14 +459,15 @@ class Weather:
         if "pressure" in available_columns:
             primary_y_label = "Pressure [hPa]"
         elif "ozone" in available_columns:
-            primary_y_label = "Ozone [DU]" # Assuming Dobson Units for Ozone
+            primary_y_label = "Ozone [DU]"  # Assuming Dobson Units for Ozone
         Utils.annotate_plot(ax, primary_y_label, effective_dark_mode)
 
         # Style secondary Y axis if it exists
         if secondary_y_plot and hasattr(ax, "right_ax"):
             ax_secondary = ax.right_ax
             ax_secondary.set_ylabel(
-                "Ozone [DU]", color=style["TEXT_COLOR"] # Assuming Dobson Units
+                "Ozone [DU]",
+                color=style["TEXT_COLOR"],  # Assuming Dobson Units
             )
             ax_secondary.tick_params(axis="y", colors=style["TICK_COLOR"])
             ax_secondary.spines["right"].set_color(style["AXIS_COLOR"])
@@ -438,8 +476,25 @@ class Weather:
 
     def get_critical_data(self, start, stop):
         if self.data.empty:
-            return pd.DataFrame(columns=["time", "cloudCover", "precipProbability", "windSpeed", "temperature", "visibility"])
-        data = self._filter_data(["cloudCover", "precipProbability", "windSpeed", "temperature", "visibility"])
+            return pd.DataFrame(
+                columns=[
+                    "time",
+                    "cloudCover",
+                    "precipProbability",
+                    "windSpeed",
+                    "temperature",
+                    "visibility",
+                ]
+            )
+        data = self._filter_data(
+            [
+                "cloudCover",
+                "precipProbability",
+                "windSpeed",
+                "temperature",
+                "visibility",
+            ]
+        )
         return data[(data.time >= start) & (data.time <= stop)]
 
     def plot_visibility(

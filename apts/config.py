@@ -13,12 +13,18 @@ user_config = os.path.expanduser("~/.config/apts/apts.ini")
 candidates = [example_config, user_config]
 
 # Read configurations
+logger.debug(f"Attempting to load configuration from candidates: {candidates}")
 found_configs = config.read(candidates)
 
 if not found_configs:
     logger.warning(f"No configuration file found. Looked in: {candidates}")
 else:
     logger.info(f"Loaded configuration from: {found_configs}")
+    # Also log the content of the weather section if it exists
+    if config.has_section('weather'):
+        logger.debug(f"Content of [weather] section: {dict(config.items('weather'))}")
+    else:
+        logger.debug("No [weather] section found in loaded configuration.")
 
 # Ensure [Display] section and dark_mode option exist with a default value
 if not config.has_section('Display'):
@@ -67,19 +73,23 @@ def get_weather_settings(provider: str = None) -> tuple[str, str]:
     Returns:
         tuple: A tuple containing the provider name and the API key.
     """
-    if provider is None:
-        provider = 'pirateweather'
-        api_key = '12345'  # Default dummy key
+    logger.debug(f"Inside get_weather_settings. Provider: {provider}")
+    api_key = None # Initialize api_key to None
 
-        if config.has_section('weather'):
-            if config.has_option('weather', 'provider'):
-                provider = config.get('weather', 'provider')
-            if config.has_option('weather', 'api_key'):
-                api_key = config.get('weather', 'api_key')
+    if config.has_section('weather'):
+        if provider is None:
+            # Try to get default provider from config
+            configured_provider = config.get('weather', 'provider', fallback='pirateweather')
+            # Then try to get API key for that configured provider
+            api_key = config.get('weather', f'{configured_provider}_api_key', fallback=None)
+            provider = configured_provider # Update provider to the configured one
+        else:
+            # Get API key for specific provider passed as argument
+            api_key = config.get('weather', f'{provider}_api_key', fallback=None)
     else:
-        api_key = '12345'
-        if config.has_section('weather'):
-            if config.has_option('weather', f'{provider}_api_key'):
-                api_key = config.get('weather', f'{provider}_api_key')
+        # No weather section, return defaults or None
+        if provider is None:
+            provider = 'pirateweather' # Default provider if no config section
 
+    logger.debug(f"get_weather_settings returning provider: {provider}, api_key: {api_key}")
     return provider, api_key
