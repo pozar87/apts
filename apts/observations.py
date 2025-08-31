@@ -25,6 +25,10 @@ from apts.constants.graphconstants import (
 )  # Added get_planet_color
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
+from skyfield.api import Star, load
+from skyfield.data import hipparcos
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Circle
 
 logger = logging.getLogger(__name__)
 
@@ -180,9 +184,7 @@ class Observation:
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
         max_size = (
-            visible_planets[["Size"]].max().iloc[0]
-            if not visible_planets.empty
-            else 0
+            visible_planets[["Size"]].max().iloc[0] if not visible_planets.empty else 0
         )
         max_size_val = (
             max_size.magnitude if hasattr(max_size, "magnitude") else max_size
@@ -519,7 +521,9 @@ class Observation:
             name = planet[ObjectTableLabels.NAME]
             skyfield_object = self.local_planets.get_skyfield_object(planet)
 
-            curve_df = self.place.get_altaz_curve(skyfield_object, self.start, self.stop)
+            curve_df = self.place.get_altaz_curve(
+                skyfield_object, self.start, self.stop
+            )
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
@@ -530,14 +534,26 @@ class Observation:
                 curve_df["Time"].apply(lambda t: t.utc_datetime()),
                 curve_df["Altitude"],
                 color=specific_planet_color,
-                label=name
+                label=name,
             )
 
             # Mark rise and set times
             if planet[ObjectTableLabels.RISING] is not None:
-                ax.scatter(planet[ObjectTableLabels.RISING], 0, marker='^', color=specific_planet_color, s=100)
+                ax.scatter(
+                    planet[ObjectTableLabels.RISING],
+                    0,
+                    marker="^",
+                    color=specific_planet_color,
+                    s=100,
+                )
             if planet[ObjectTableLabels.SETTING] is not None:
-                ax.scatter(planet[ObjectTableLabels.SETTING], 0, marker='v', color=specific_planet_color, s=100)
+                ax.scatter(
+                    planet[ObjectTableLabels.SETTING],
+                    0,
+                    marker="v",
+                    color=specific_planet_color,
+                    s=100,
+                )
 
             # Annotate planet name
             # Find a good position for the annotation, e.g., at the peak of the curve
@@ -661,7 +677,11 @@ class Observation:
                 "stop": Utils.format_date(self.stop),
                 "planets_count": len(visible_planets_df),
                 "messier_count": len(self.get_visible_messier()),
-                "planets_table": visible_planets_df.drop(columns=["TechnicalName"]).to_html() if "TechnicalName" in visible_planets_df.columns else visible_planets_df.to_html(),
+                "planets_table": visible_planets_df.drop(
+                    columns=["TechnicalName"]
+                ).to_html()
+                if "TechnicalName" in visible_planets_df.columns
+                else visible_planets_df.to_html(),
                 "messier_table": self.get_visible_messier().to_html(),
                 "equipment_table": self.equipment.data().to_html(),
                 "place_name": self.place.name,
@@ -903,6 +923,447 @@ class Observation:
             return self.place.plot_sun_path(dark_mode_override, **args)
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
+
+    def _generate_plot_skymap(
+        self,
+        target_name: str,
+        dark_mode_override: Optional[bool] = None,
+        zoom_deg: Optional[float] = None,
+        star_magnitude_limit: Optional[float] = None,
+        **kwargs,
+    ):
+        """
+        Generates a skymap for the current time and location, highlighting a target object.
+        Can generate a full polar skymap or a zoomed-in Cartesian skymap.
+        """
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+
+        # Time for observation
+        t = self.place.ts.now()
+        if self.effective_date is not None:
+            t = self.effective_date
+        observer = self.place.observer.at(t)
+
+        # Format the generation time
+        generation_time_str = t.astimezone(self.place.local_timezone).strftime(
+            "%Y-%m-%d %H:%M %Z"
+        )
+
+        # Find target object first, as we need its coordinates for zoom
+        target_object = self.local_messier.find_by_name(target_name)
+        if target_object is None:
+            target_object = self.local_planets.find_by_name(target_name)
+
+        if not target_object:
+            fig, ax = pyplot.subplots(figsize=(10, 10))
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            ax.text(
+                0.5,
+                0.5,
+                f"Object '{target_name}' not found.",
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=ax.transAxes,
+                color=style["TEXT_COLOR"],
+            )
+            ax.set_title(
+                f"Skymap (Generated: {generation_time_str})",
+                color=style["TEXT_COLOR"],
+            )
+            return fig
+
+        target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
+
+        # If zoomed view is requested
+        if zoom_deg is not None:
+            if target_alt.degrees < 0:
+                fig, ax = pyplot.subplots(figsize=(10, 10))
+                fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+                ax.set_facecolor(style["AXES_FACE_COLOR"])
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"Target '{target_name}' is below the horizon.",
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    transform=ax.transAxes,
+                    color=style["TEXT_COLOR"],
+                )
+                ax.set_title(
+                    f"Skymap for {target_name} (Generated: {generation_time_str})",
+                    color=style["TEXT_COLOR"],
+                )
+                return fig
+
+            fig, ax = pyplot.subplots(figsize=(10, 10))
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+
+            ax.set_xlabel("Azimuth (°)", color=style["TEXT_COLOR"])
+            ax.set_ylabel("Altitude (°)", color=style["TEXT_COLOR"])
+            ax.tick_params(axis="x", colors=style["TEXT_COLOR"])
+            ax.tick_params(axis="y", colors=style["TEXT_COLOR"])
+            ax.spines["left"].set_color(style["AXIS_COLOR"])
+            ax.spines["bottom"].set_color(style["AXIS_COLOR"])
+            ax.spines["top"].set_color(style["AXIS_COLOR"])
+            ax.spines["right"].set_color(style["AXIS_COLOR"])
+
+            half_zoom = zoom_deg / 2
+            ax.set_xlim(target_az.degrees - half_zoom, target_az.degrees + half_zoom)
+            ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
+            ax.set_aspect("equal", adjustable="box")
+            ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
+
+            # 1. Plot stars (dimmer)
+            with load.open(hipparcos.URL) as f:
+                stars = hipparcos.load_dataframe(f)
+
+            mag_limit = (
+                star_magnitude_limit if star_magnitude_limit is not None else 7.5
+            )
+            dim_stars = stars[stars["magnitude"] <= mag_limit]
+            star_positions = observer.observe(Star.from_dataframe(dim_stars))
+            alt, az, _ = star_positions.apparent().altaz()
+
+            visible = alt.degrees > 0
+            sizes = (
+                mag_limit + 1 - numpy.array(dim_stars["magnitude"][visible])
+            ) * 3  # Adjust size formula
+            ax.scatter(
+                az.degrees[visible],
+                alt.degrees[visible],
+                s=sizes,
+                color=style["TEXT_COLOR"],
+                marker=".",
+            )
+
+            # 2. Plot Messier objects
+            visible_messier = self.get_visible_messier()
+            if not visible_messier.empty:
+                for _, m_obj in visible_messier.iterrows():
+                    messier_name = m_obj[ObjectTableLabels.MESSIER]
+                    messier_object = self.local_messier.find_by_name(messier_name)
+                    if messier_object:
+                        (
+                            alt,
+                            az,
+                            _,
+                        ) = observer.observe(messier_object).apparent().altaz()
+                        if alt.degrees > 0:
+                            ax.scatter(
+                                az.degrees,
+                                alt.degrees,
+                                s=50,
+                                color="red",
+                                marker="+",
+                            )
+                            ax.annotate(
+                                messier_name,
+                                (az.degrees, alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="red",
+                            )
+
+            # 3. Plot Planets
+            visible_planets = self.get_visible_planets()
+            if not visible_planets.empty:
+                for _, p_obj in visible_planets.iterrows():
+                    planet_name = p_obj[ObjectTableLabels.NAME]
+                    planet_object = self.local_planets.find_by_name(planet_name)
+                    if planet_object:
+                        alt, az, _ = observer.observe(planet_object).apparent().altaz()
+                        if alt.degrees > 0:
+                            planet_color = get_planet_color(
+                                planet_name, effective_dark_mode, style["TEXT_COLOR"]
+                            )
+                            ax.scatter(
+                                az.degrees,
+                                alt.degrees,
+                                s=100,
+                                color=planet_color,
+                                marker="o",
+                            )
+                            ax.annotate(
+                                planet_name,
+                                (az.degrees, alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color=planet_color,
+                            )
+
+            # 4. Highlight target object
+            ax.scatter(
+                target_az.degrees,
+                target_alt.degrees,
+                s=200,
+                facecolors="none",
+                edgecolors="yellow",
+                marker="o",
+                linewidths=2,
+            )
+            ax.annotate(
+                target_name,
+                (target_az.degrees, target_alt.degrees),
+                textcoords="offset points",
+                xytext=(0, 15),
+                color="yellow",
+                ha="center",
+                fontsize=12,
+            )
+            ax.set_title(
+                f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
+                color=style["TEXT_COLOR"],
+            )
+            return fig
+        else:
+            # --- Full sky (polar) plot logic (existing code) ---
+            fig, ax = pyplot.subplots(
+                figsize=(10, 10), subplot_kw={"projection": "polar"}
+            )
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            ax.set_rlim(0, 90)  # Zenith angle from 0 (zenith) to 90 (horizon)
+            ax.set_theta_zero_location("N")
+            ax.set_theta_direction(-1)
+            ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
+
+            # Custom radial labels for altitude
+            ax.set_yticks([0, 30, 60, 90])  # Zenith angles
+            ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
+            ax.set_rlabel_position(22.5)  # Move labels away from the line
+
+            # Add cardinal direction labels
+            cardinal_directions = {
+                "N": 0,
+                "E": numpy.pi / 2,
+                "S": numpy.pi,
+                "W": 3 * numpy.pi / 2,
+            }
+            for direction, angle in cardinal_directions.items():
+                ax.text(
+                    angle,
+                    95,  # Place it just outside the 90-degree limit
+                    direction,
+                    ha="center",
+                    va="center",
+                    color=style["TEXT_COLOR"],
+                    fontsize=12,
+                )
+
+            # Define good condition highlight color
+            good_condition_color = style.get(
+                "GOOD_CONDITION_HL_COLOR",
+                "#90EE90" if not effective_dark_mode else "#007447",
+            )
+
+            # Calculate altitude boundaries
+            r_inner_good = 0
+            r_outer_good = 90 - self.conditions.min_object_altitude
+
+            # Calculate azimuth boundaries
+            min_az_rad = numpy.deg2rad(float(self.conditions.min_object_azimuth))
+            max_az_rad = numpy.deg2rad(float(self.conditions.max_object_azimuth))
+
+            if (r_outer_good > 0) or not (
+                float(self.conditions.min_object_azimuth) == 0.0
+                and float(self.conditions.max_object_azimuth) == 360.0
+            ):
+                if min_az_rad > max_az_rad:  # Crosses North
+                    theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
+                    ax.fill_between(
+                        theta1,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                    theta2 = numpy.linspace(0, max_az_rad, 50)
+                    ax.fill_between(
+                        theta2,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                else:
+                    theta = numpy.linspace(min_az_rad, max_az_rad, 100)
+                    ax.fill_between(
+                        theta,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+
+            if r_outer_good > 0:
+                ax.plot(
+                    numpy.linspace(0, 2 * numpy.pi, 100),
+                    [90 - self.conditions.min_object_altitude] * 100,
+                    color=style["GRID_COLOR"],
+                    linestyle="--",
+                    linewidth=1,
+                )
+                ax.text(
+                    numpy.deg2rad(90),
+                    90 - self.conditions.min_object_altitude,
+                    f"{self.conditions.min_object_altitude}°",
+                    ha="center",
+                    va="bottom",
+                    color=style["TEXT_COLOR"],
+                    fontsize=10,
+                    bbox=dict(
+                        facecolor=style["AXES_FACE_COLOR"],
+                        edgecolor="none",
+                        boxstyle="round,pad=0.2",
+                    ),
+                )
+
+            if not (
+                float(self.conditions.min_object_azimuth) == 0.0
+                and float(self.conditions.max_object_azimuth) == 360.0
+            ):
+                ax.plot(
+                    [min_az_rad, min_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+                ax.plot(
+                    [max_az_rad, max_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+
+            # 1. Plot stars
+            with load.open(hipparcos.URL) as f:
+                stars = hipparcos.load_dataframe(f)
+
+            mag_limit = (
+                star_magnitude_limit if star_magnitude_limit is not None else 4.5
+            )
+            bright_stars = stars[stars["magnitude"] <= mag_limit]
+            star_positions = observer.observe(Star.from_dataframe(bright_stars))
+            alt, az, _ = star_positions.apparent().altaz()
+
+            visible = alt.degrees > 0
+            az_rad = az.radians[visible]
+            zenith_angle = 90 - alt.degrees[visible]
+            magnitudes = numpy.array(bright_stars["magnitude"][visible])
+
+            sizes = (mag_limit + 1 - magnitudes) * 5
+            ax.scatter(
+                az_rad,
+                zenith_angle,
+                s=sizes,
+                color=style["TEXT_COLOR"],
+                marker=".",
+            )
+
+            # 2. Plot Messier objects
+            visible_messier = self.get_visible_messier()
+            if not visible_messier.empty:
+                for _, m_obj in visible_messier.iterrows():
+                    messier_name = m_obj[ObjectTableLabels.MESSIER]
+                    messier_object = self.local_messier.find_by_name(messier_name)
+                    if messier_object:
+                        alt, az, _ = (
+                            observer.observe(messier_object).apparent().altaz()
+                        )
+                        if alt.degrees > 0:
+                            ax.scatter(
+                                az.radians,
+                                90 - alt.degrees,
+                                s=50,
+                                color="red",
+                                marker="+",
+                            )
+                            ax.annotate(
+                                messier_name,
+                                (az.radians, 90 - alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="red",
+                            )
+
+            # 3. Plot Planets
+            visible_planets = self.get_visible_planets()
+            if not visible_planets.empty:
+                for _, p_obj in visible_planets.iterrows():
+                    planet_name = p_obj[ObjectTableLabels.NAME]
+                    planet_object = self.local_planets.find_by_name(planet_name)
+                    if planet_object:
+                        alt, az, _ = observer.observe(planet_object).apparent().altaz()
+                        if alt.degrees > 0:
+                            planet_color = get_planet_color(
+                                planet_name, effective_dark_mode, style["TEXT_COLOR"]
+                            )
+                            ax.scatter(
+                                az.radians,
+                                90 - alt.degrees,
+                                s=100,
+                                color=planet_color,
+                                marker="o",
+                            )
+                            ax.annotate(
+                                planet_name,
+                                (az.radians, 90 - alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color=planet_color,
+                            )
+
+            # 4. Highlight target object
+            if target_alt.degrees > 0:
+                ax.scatter(
+                    target_az.radians,
+                    90 - target_alt.degrees,
+                    s=200,
+                    facecolors="none",
+                    edgecolors="yellow",
+                    marker="o",
+                    linewidths=2,
+                )
+                ax.annotate(
+                    target_name,
+                    (target_az.radians, 90 - target_alt.degrees),
+                    textcoords="offset points",
+                    xytext=(0, 15),
+                    color="yellow",
+                    ha="center",
+                    fontsize=12,
+                )
+            ax.set_title(
+                f"Skymap for {target_name} (Generated: {generation_time_str})",
+                color=style["TEXT_COLOR"],
+            )
+
+            return fig
+
+    def plot_skymap(
+        self,
+        target_name: str,
+        dark_mode_override: Optional[bool] = None,
+        zoom_deg: Optional[float] = None,
+        star_magnitude_limit: Optional[float] = None,
+        **kwargs,
+    ):
+        return self._generate_plot_skymap(
+            target_name=target_name,
+            dark_mode_override=dark_mode_override,
+            zoom_deg=zoom_deg,
+            star_magnitude_limit=star_magnitude_limit,
+            **kwargs,
+        )
 
     def __str__(self) -> str:
         return (
