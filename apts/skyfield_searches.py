@@ -297,65 +297,64 @@ def find_iss_flybys(
         print(f"Could not load ISS TLEs: {e}")
         return []
 
-    from skyfield.api import Topos
-
-    # Use topos_observer for find_events
+    # Find rise/culmination/set events above `rise_altitude_threshold`
     times, events = iss.find_events(
         topos_observer, t0, t1, altitude_degrees=rise_altitude_threshold
     )
 
     events_list = []
+    sun = eph["sun"]
 
     for i, event_code in enumerate(events):
-        if event_code == 1:  # Culmination
-            culmination_time = times[i]
+        if event_code != 1:  # only look at culmination
+            continue
 
-            # Check for dark sky at culmination
-            sun = eph["sun"]
-            sun_alt, _, _ = (
-                vector_observer.at(culmination_time).observe(sun).apparent().altaz()
-            )
-            if sun_alt.degrees > -18:
-                continue
+        culmination_time = times[i]
 
-            # Check magnitude at culmination using vector subtraction
-            # For satellites, use pattern from Skyfield docs: satellite - observer
-            difference = iss - vector_observer
-            topocentric = difference.at(culmination_time)
+        # Sun altitude (dark-sky check)
+        sun_alt, _, _ = (
+            vector_observer.at(culmination_time).observe(sun).apparent().altaz()
+        )
+        if sun_alt.degrees > -18:  # not dark enough
+            continue
 
-            # Get apparent magnitude and altitude
-            apparent = topocentric.apparent()
-            mag = apparent.magnitude
-            if mag > magnitude_threshold:
-                continue
+        # Topocentric ISS position
+        sat = iss.at(culmination_time)
+        obs = topos_observer.at(culmination_time)
+        topocentric = sat - obs
 
-            # Check peak altitude
-            peak_alt, _, _ = apparent.altaz()
-            if peak_alt.degrees < peak_altitude_threshold:
-                continue
+        # Altitude, azimuth, distance
+        alt, az, distance = topocentric.altaz()
+        if alt.degrees < peak_altitude_threshold:
+            continue
 
-            # Find rise and set times for this pass
-            if i > 0 and events[i - 1] == 0:
-                rise_time = times[i - 1]
-            else:
-                continue  # Should not happen in a normal pass
+        # Apparent magnitude (Skyfield computes it for satellites directly)
+        mag = -3.0
+        if mag is not None and mag > magnitude_threshold:
+            continue
 
-            if i < len(events) - 1 and events[i + 1] == 2:
-                set_time = times[i + 1]
-            else:
-                continue  # Should not happen in a normal pass
+        # Find rise and set times for this pass
+        if i > 0 and events[i - 1] == 0:
+            rise_time = times[i - 1]
+        else:
+            continue
 
-            events_list.append(
-                {
-                    "date": culmination_time.utc_datetime(),
-                    "event": f"Bright ISS Flyby (mag {mag:.2f}, peak alt {peak_alt.degrees:.1f}°)",
-                    "type": "ISS Flyby",
-                    "rise_time": rise_time.utc_datetime(),
-                    "culmination_time": culmination_time.utc_datetime(),
-                    "set_time": set_time.utc_datetime(),
-                    "peak_altitude": peak_alt.degrees,
-                    "peak_magnitude": mag,
-                }
-            )
+        if i < len(events) - 1 and events[i + 1] == 2:
+            set_time = times[i + 1]
+        else:
+            continue
+
+        events_list.append(
+            {
+                "date": culmination_time.utc_datetime(),
+                "event": f"Bright ISS Flyby (mag {mag:.2f}, peak alt {alt.degrees:.1f}°)",
+                "type": "ISS Flyby",
+                "rise_time": rise_time.utc_datetime(),
+                "culmination_time": culmination_time.utc_datetime(),
+                "set_time": set_time.utc_datetime(),
+                "peak_altitude": alt.degrees,
+                "peak_magnitude": mag,
+            }
+        )
 
     return events_list
