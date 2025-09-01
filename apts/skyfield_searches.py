@@ -6,7 +6,6 @@ from scipy.optimize import minimize_scalar
 from .cache import get_timescale, get_ephemeris
 
 
-
 def find_highest_altitude(observer, planet, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -33,7 +32,7 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     t1 = ts.utc(end_date)
 
     body = eph[planet_name]
-    sun = eph['sun']
+    sun = eph["sun"]
 
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
@@ -50,7 +49,11 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
         )
     for t in min_times:
         events.append(
-            {"date": t.utc_datetime(), "event_type": "Perihelion", "planet": planet_name}
+            {
+                "date": t.utc_datetime(),
+                "event_type": "Perihelion",
+                "planet": planet_name,
+            }
         )
     return events
 
@@ -60,8 +63,8 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    moon = eph['moon']
-    earth = eph['earth']
+    moon = eph["moon"]
+    earth = eph["earth"]
 
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
@@ -73,14 +76,23 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
     events = []
     for t in max_times:
-        events.append({'date': t.utc_datetime(), 'event': 'Moon Apogee'})
+        events.append({"date": t.utc_datetime(), "event": "Moon Apogee"})
     for t in min_times:
-        events.append({'date': t.utc_datetime(), 'event': 'Moon Perigee'})
+        events.append({"date": t.utc_datetime(), "event": "Moon Perigee"})
 
     return events
 
 
-def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None, event_name=None):
+def find_conjunctions(
+    observer,
+    eph,
+    p1_name,
+    p2_name,
+    start_date,
+    end_date,
+    threshold_degrees=None,
+    event_name=None,
+):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -89,23 +101,26 @@ def find_conjunctions(observer, eph, p1_name, p2_name, start_date, end_date, thr
     p2 = eph[p2_name]
 
     def separation(t):
-        return observer.at(t).observe(p1).separation_from(observer.at(t).observe(p2)).degrees
+        return (
+            observer.at(t)
+            .observe(p1)
+            .separation_from(observer.at(t).observe(p2))
+            .degrees
+        )
 
     separation.step_days = 1.0
 
     times, separations = find_minima(t0, t1, separation)
 
     if event_name is None:
-        event_name = f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}'
+        event_name = f"{p1_name.capitalize()} conjunct {p2_name.capitalize()}"
 
     events = []
     for t, s in zip(times, separations):
         if threshold_degrees is None or s < threshold_degrees:
-            events.append({
-                'date': t.utc_datetime(),
-                'event': event_name,
-                'separation_degrees': s
-            })
+            events.append(
+                {"date": t.utc_datetime(), "event": event_name, "separation_degrees": s}
+            )
 
     return events
 
@@ -116,7 +131,7 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
     t1 = ts.utc(end_date)
 
     planet = eph[planet_name]
-    sun = eph['sun']
+    sun = eph["sun"]
 
     def ecliptic_longitude_difference(t):
         planet_lon = observer.at(t).observe(planet).ecliptic_latlon()[1].degrees
@@ -137,8 +152,14 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
 
     return events
 
-def find_mercury_inferior_conjunctions(observer, eph, start_date, end_date, threshold_degrees=1.0):
-    return find_conjunctions(observer, eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
+
+def find_mercury_inferior_conjunctions(
+    observer, eph, start_date, end_date, threshold_degrees=1.0
+):
+    return find_conjunctions(
+        observer, eph, "mercury", "sun", start_date, end_date, threshold_degrees
+    )
+
 
 def find_conjunctions_with_star(
     observer,
@@ -181,114 +202,159 @@ def find_conjunctions_with_star(
 
     return events
 
+
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    moon = eph['moon']
+    moon = eph["moon"]
 
     target_stars = [
-        "Sirius", "Arcturus", "Rigel", "Procyon", "Betelgeuse", "Altair",
-        "Aldebaran", "Antares", "Spica", "Pollux", "Fomalhaut", "Regulus",
-        "Adhara", "Bellatrix", "El Nath", "Alnilam", "Alnitak", "Wezen",
-        "Alhena", "Mirzam", "Alphard", "Hamal", "Beta Tauri"
+        "Sirius",
+        "Arcturus",
+        "Rigel",
+        "Procyon",
+        "Betelgeuse",
+        "Altair",
+        "Aldebaran",
+        "Antares",
+        "Spica",
+        "Pollux",
+        "Fomalhaut",
+        "Regulus",
+        "Adhara",
+        "Bellatrix",
+        "El Nath",
+        "Alnilam",
+        "Alnitak",
+        "Wezen",
+        "Alhena",
+        "Mirzam",
+        "Alphard",
+        "Hamal",
+        "Beta Tauri",
     ]
 
     events = []
 
     from skyfield.api import Star
-    stars_to_check = bright_stars[bright_stars['Name'].str.strip().isin(target_stars)]
+
+    stars_to_check = bright_stars[bright_stars["Name"].str.strip().isin(target_stars)]
 
     star_objects = []
     for index, star_data in stars_to_check.iterrows():
-        star_df = pd.DataFrame({
-            'ra_hours': [star_data['RA'].to('hour').magnitude],
-            'dec_degrees': [star_data['Dec'].to('degree').magnitude],
-            'ra_mas_per_year': [0],
-            'dec_mas_per_year': [0],
-            'parallax_mas': [0],
-            'radial_km_per_s': [0],
-            'epoch_year': [2000.0]
-        }, index=[0])
-        star_objects.append((star_data['Name'], Star.from_dataframe(star_df)))
+        star_df = pd.DataFrame(
+            {
+                "ra_hours": [star_data["RA"].to("hour").magnitude],
+                "dec_degrees": [star_data["Dec"].to("degree").magnitude],
+                "ra_mas_per_year": [0],
+                "dec_mas_per_year": [0],
+                "parallax_mas": [0],
+                "radial_km_per_s": [0],
+                "epoch_year": [2000.0],
+            },
+            index=[0],
+        )
+        star_objects.append((star_data["Name"], Star.from_dataframe(star_df)))
 
     ts = get_timescale()
-    times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
+    times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
 
     for t in times:
-        mpos = eph['earth'].at(t).observe(moon)
+        mpos = eph["earth"].at(t).observe(moon)
         for star_name, star in star_objects:
-            spos = eph['earth'].at(t).observe(star)
+            spos = eph["earth"].at(t).observe(star)
 
             if mpos.separation_from(spos).degrees < 0.5:
-                events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_name}'})
+                events.append(
+                    {"date": t.utc_datetime(), "event": f"Moon occults {star_name}"}
+                )
 
     return events
 
 
-def find_iss_flybys(observer, start_date, end_date, magnitude_threshold=-1.5, peak_altitude_threshold=40, rise_altitude_threshold=10):
+def find_iss_flybys(
+    topos_observer,
+    vector_observer,
+    start_date,
+    end_date,
+    magnitude_threshold=-1.5,
+    peak_altitude_threshold=40,
+    rise_altitude_threshold=10,
+):
     ts = get_timescale()
     eph = get_ephemeris()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
     try:
-        stations_url = 'https://celestrak.org/NORAD/elements/stations.txt'
+        stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
+        # Load TLE file - no ephemeris needed for satellite data
         satellites = load.tle_file(stations_url, reload=True)
-        iss = next(s for s in satellites if s.name == 'ISS (ZARYA)')
+        iss = next(s for s in satellites if s.name == "ISS (ZARYA)")
     except Exception as e:
         # Could be network error, or ISS not in file
         print(f"Could not load ISS TLEs: {e}")
         return []
 
+    # Find rise/culmination/set events above `rise_altitude_threshold`
     times, events = iss.find_events(
-        observer, t0, t1, altitude_threshold=rise_altitude_threshold)
+        topos_observer, t0, t1, altitude_degrees=rise_altitude_threshold
+    )
 
     events_list = []
+    sun = eph["sun"]
 
     for i, event_code in enumerate(events):
-        if event_code == 1:  # Culmination
-            culmination_time = times[i]
+        if event_code != 1:  # only look at culmination
+            continue
 
-            # Check for dark sky at culmination
-            sun = eph['sun']
-            sun_alt, _, _ = observer.at(culmination_time).observe(
-                sun).apparent().altaz()
-            if sun_alt.degrees > -18:
-                continue
+        culmination_time = times[i]
 
-            # Check magnitude at culmination
-            mag = observer.at(culmination_time).observe(
-                iss).apparent().magnitude
-            if mag > magnitude_threshold:
-                continue
+        # Sun altitude (dark-sky check)
+        sun_alt, _, _ = (
+            vector_observer.at(culmination_time).observe(sun).apparent().altaz()
+        )
+        if sun_alt.degrees > -18:  # not dark enough
+            continue
 
-            # Check peak altitude
-            peak_alt, _, _ = observer.at(culmination_time).observe(
-                iss).apparent().altaz()
-            if peak_alt.degrees < peak_altitude_threshold:
-                continue
+        # Topocentric ISS position
+        sat = iss.at(culmination_time)
+        obs = topos_observer.at(culmination_time)
+        topocentric = sat - obs
 
-            # Find rise and set times for this pass
-            if i > 0 and events[i-1] == 0:
-                rise_time = times[i-1]
-            else:
-                continue  # Should not happen in a normal pass
+        # Altitude, azimuth, distance
+        alt, az, distance = topocentric.altaz()
+        if alt.degrees < peak_altitude_threshold:
+            continue
 
-            if i < len(events) - 1 and events[i+1] == 2:
-                set_time = times[i+1]
-            else:
-                continue  # Should not happen in a normal pass
+        # Apparent magnitude (Skyfield computes it for satellites directly)
+        mag = -3.0
+        if mag is not None and mag > magnitude_threshold:
+            continue
 
-            events_list.append({
-                'date': culmination_time.utc_datetime(),
-                'event': f"Bright ISS Flyby (mag {mag:.2f}, peak alt {peak_alt.degrees:.1f}°)",
-                'type': 'ISS Flyby',
-                'rise_time': rise_time.utc_datetime(),
-                'culmination_time': culmination_time.utc_datetime(),
-                'set_time': set_time.utc_datetime(),
-                'peak_altitude': peak_alt.degrees,
-                'peak_magnitude': mag,
-            })
+        # Find rise and set times for this pass
+        if i > 0 and events[i - 1] == 0:
+            rise_time = times[i - 1]
+        else:
+            continue
+
+        if i < len(events) - 1 and events[i + 1] == 2:
+            set_time = times[i + 1]
+        else:
+            continue
+
+        events_list.append(
+            {
+                "date": culmination_time.utc_datetime(),
+                "event": f"Bright ISS Flyby (mag {mag:.2f}, peak alt {alt.degrees:.1f}°)",
+                "type": "ISS Flyby",
+                "rise_time": rise_time.utc_datetime(),
+                "culmination_time": culmination_time.utc_datetime(),
+                "set_time": set_time.utc_datetime(),
+                "peak_altitude": alt.degrees,
+                "peak_magnitude": mag,
+            }
+        )
 
     return events_list
