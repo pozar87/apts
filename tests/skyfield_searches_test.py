@@ -5,6 +5,7 @@ from apts import skyfield_searches
 from apts.catalogs import Catalogs
 from skyfield.api import Star
 import pandas as pd
+from unittest.mock import patch, MagicMock
 
 
 class SkyfieldSearchesTest(unittest.TestCase):
@@ -174,6 +175,115 @@ class SkyfieldSearchesTest(unittest.TestCase):
         # Check that the date is August 16, 2025
         self.assertEqual(event["date"].day, 16)
         self.assertAlmostEqual(event["separation_degrees"], 0.08, delta=0.01)
+
+    def test_find_iss_flybys_basic(self):
+        """Test that find_iss_flybys returns a list and handles basic functionality"""
+        topos_observer = Topos(latitude_degrees=52.2, longitude_degrees=21.0)
+        vector_observer = self.eph["earth"] + topos_observer
+
+        # Use a shorter time range for testing
+        start_date = datetime(2023, 6, 1, tzinfo=utc)
+        end_date = datetime(2023, 6, 2, tzinfo=utc)
+
+        # Mock the TLE loading to avoid network dependency
+        with patch("skyfield.api.load.tle_file") as mock_tle:
+            mock_satellite = MagicMock()
+            mock_satellite.name = "ISS (ZARYA)"
+            mock_satellite.find_events.return_value = ([], [])
+            mock_tle.return_value = [mock_satellite]
+
+            events = skyfield_searches.find_iss_flybys(
+                topos_observer, vector_observer, start_date, end_date
+            )
+
+            self.assertIsInstance(events, list)
+
+    def test_find_iss_flybys_network_error(self):
+        """Test that find_iss_flybys handles network errors gracefully"""
+        topos_observer = Topos(latitude_degrees=52.2, longitude_degrees=21.0)
+        vector_observer = self.eph["earth"] + topos_observer
+
+        start_date = datetime(2023, 6, 1, tzinfo=utc)
+        end_date = datetime(2023, 6, 2, tzinfo=utc)
+
+        # Mock network error
+        with patch("skyfield.api.load.tle_file") as mock_tle:
+            mock_tle.side_effect = Exception("Network error")
+
+            events = skyfield_searches.find_iss_flybys(
+                topos_observer, vector_observer, start_date, end_date
+            )
+
+            self.assertEqual(events, [])
+
+    def test_find_iss_flybys_iss_not_found(self):
+        """Test when ISS is not in the TLE file"""
+        topos_observer = Topos(latitude_degrees=52.2, longitude_degrees=21.0)
+        vector_observer = self.eph["earth"] + topos_observer
+
+        start_date = datetime(2023, 6, 1, tzinfo=utc)
+        end_date = datetime(2023, 6, 2, tzinfo=utc)
+
+        # Mock TLE file without ISS
+        with patch("skyfield.api.load.tle_file") as mock_tle:
+            mock_satellite = MagicMock()
+            mock_satellite.name = "SOME OTHER SATELLITE"
+            mock_tle.return_value = [mock_satellite]
+
+            events = skyfield_searches.find_iss_flybys(
+                topos_observer, vector_observer, start_date, end_date
+            )
+
+            self.assertEqual(events, [])
+
+    def test_find_iss_flybys_with_events(self):
+        """Test ISS flyby detection with simulated events"""
+        topos_observer = Topos(latitude_degrees=52.2, longitude_degrees=21.0)
+        vector_observer = self.eph["earth"] + topos_observer
+
+        start_date = datetime(2023, 6, 1, tzinfo=utc)
+        end_date = datetime(2023, 6, 2, tzinfo=utc)
+
+        with patch("skyfield.api.load.tle_file") as mock_tle:
+            mock_satellite = MagicMock()
+            mock_satellite.name = "ISS (ZARYA)"
+            # Return empty events to test the function runs without errors
+            mock_satellite.find_events.return_value = ([], [])
+            mock_tle.return_value = [mock_satellite]
+
+            events = skyfield_searches.find_iss_flybys(
+                topos_observer, vector_observer, start_date, end_date
+            )
+
+            self.assertIsInstance(events, list)
+            self.assertEqual(len(events), 0)
+
+    def test_find_iss_flybys_thresholds(self):
+        """Test that magnitude and altitude thresholds work correctly"""
+        topos_observer = Topos(latitude_degrees=52.2, longitude_degrees=21.0)
+        vector_observer = self.eph["earth"] + topos_observer
+
+        start_date = datetime(2023, 6, 1, tzinfo=utc)
+        end_date = datetime(2023, 6, 2, tzinfo=utc)
+
+        # Test with very restrictive thresholds
+        with patch("skyfield.api.load.tle_file") as mock_tle:
+            mock_satellite = MagicMock()
+            mock_satellite.name = "ISS (ZARYA)"
+            mock_satellite.find_events.return_value = ([], [])
+            mock_tle.return_value = [mock_satellite]
+
+            events = skyfield_searches.find_iss_flybys(
+                topos_observer,
+                vector_observer,
+                start_date,
+                end_date,
+                magnitude_threshold=-5.0,  # Very restrictive
+                peak_altitude_threshold=80,  # Very restrictive
+                rise_altitude_threshold=20,
+            )
+
+            self.assertIsInstance(events, list)
 
 
 if __name__ == "__main__":

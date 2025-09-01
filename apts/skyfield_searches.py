@@ -289,8 +289,8 @@ def find_iss_flybys(
 
     try:
         stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
-        # Pass eph directly to load.tle_file
-        satellites = load.tle_file(stations_url, eph=eph, reload=True)
+        # Load TLE file - no ephemeris needed for satellite data
+        satellites = load.tle_file(stations_url, reload=True)
         iss = next(s for s in satellites if s.name == "ISS (ZARYA)")
     except Exception as e:
         # Could be network error, or ISS not in file
@@ -318,18 +318,19 @@ def find_iss_flybys(
             if sun_alt.degrees > -18:
                 continue
 
-            # Check magnitude at culmination
-            iss_pos = iss.at(culmination_time)
-            observer_pos = vector_observer.at(culmination_time)
+            # Check magnitude at culmination using vector subtraction
+            # For satellites, use pattern from Skyfield docs: satellite - observer
+            difference = iss - vector_observer
+            topocentric = difference.at(culmination_time)
 
-            difference = iss_pos - observer_pos
-            topocentric = difference
-            mag = topocentric.apparent().magnitude
+            # Get apparent magnitude and altitude
+            apparent = topocentric.apparent()
+            mag = apparent.magnitude
             if mag > magnitude_threshold:
                 continue
 
             # Check peak altitude
-            peak_alt, _, _ = topocentric.apparent().altaz()
+            peak_alt, _, _ = apparent.altaz()
             if peak_alt.degrees < peak_altitude_threshold:
                 continue
 
