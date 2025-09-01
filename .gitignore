@@ -108,3 +108,4 @@ ENV/
 # Skyfield data
 de421.bsp
 hip_main.dat
+stations.txt

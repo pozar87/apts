@@ -241,8 +241,27 @@ def find_iss_flybys(observer, start_date, end_date, magnitude_threshold=-1.5, pe
         print(f"Could not load ISS TLEs: {e}")
         return []
 
+    from skyfield.api import Topos
+    topos_obj = None
+    if isinstance(observer, Topos):
+        topos_obj = observer
+    elif hasattr(observer, 'vectors'):
+        for v in observer.vectors:
+            if isinstance(v, Topos):
+                topos_obj = v
+                break
+            # skyfield > 1.42 uses Geodetic
+            if 'Geodetic' in str(type(v)):
+                topos_obj = Topos(latitude_degrees=v.latitude.degrees,
+                                  longitude_degrees=v.longitude.degrees,
+                                  elevation_m=v.elevation.m)
+                break
+
+    if topos_obj is None:
+        raise ValueError("Observer must be a Topos object or a VectorSum containing a Topos/Geodetic object.")
+
     times, events = iss.find_events(
-        observer, t0, t1, altitude_threshold=rise_altitude_threshold)
+        topos_obj, t0, t1, altitude_degrees=rise_altitude_threshold)
 
     events_list = []
 
