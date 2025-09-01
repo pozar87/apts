@@ -147,8 +147,14 @@ class AstronomicalEvents:
 
     def calculate_iss_flybys(self):
         start_time = time.time()
+        # Create the Topos object directly from place attributes
+        topos_observer = Topos(
+            latitude_degrees=self.place.lat_decimal,
+            longitude_degrees=self.place.lon_decimal,
+            elevation_m=self.place.elevation,
+        )
         events = skyfield_searches.find_iss_flybys(
-            self.observer, self.start_date, self.end_date
+            topos_observer, self.observer, self.start_date, self.end_date
         )
         logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
         return events
