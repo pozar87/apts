@@ -7,6 +7,7 @@ import logging
 import time
 from typing import List, Optional
 import requests
+import requests_cache
 from dateutil.parser import parse as parse_date
 from .config import get_event_settings
 from .constants.event_types import EventType
@@ -14,6 +15,7 @@ from .utils import planetary
 
 logger = logging.getLogger(__name__)
 
+requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
 
 utc = timezone.utc
 from . import skyfield_searches

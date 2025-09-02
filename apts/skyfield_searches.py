@@ -290,7 +290,7 @@ def find_iss_flybys(
     try:
         stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
         # Load TLE file - no ephemeris needed for satellite data
-        satellites = load.tle_file(stations_url, reload=True)
+        satellites = load.tle_file(stations_url)
         iss = next(s for s in satellites if s.name == "ISS (ZARYA)")
     except Exception as e:
         # Could be network error, or ISS not in file
