@@ -1,4 +1,4 @@
-from .messier import Messier
-from .solar_objects import SolarObjects
+from .messier import Messier as Messier
+from .solar_objects import SolarObjects as SolarObjects
 
-# Keep any other necessary imports if they exist, though the provided content only shows these.
+__all__ = ["Messier", "SolarObjects"]

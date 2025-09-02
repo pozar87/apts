@@ -2,7 +2,6 @@ from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
 from apts.place import Place
-import numpy
 from skyfield.api import Star
 
 

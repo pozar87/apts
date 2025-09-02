@@ -4,6 +4,7 @@ import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.ticker import FuncFormatter
 from typing import Optional
 
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
@@ -11,11 +12,6 @@ from .config import get_dark_mode
 from .constants.graphconstants import get_plot_style, get_plot_colors
 from .opticalequipment import (
     OpticalEquipment,
-    Telescope,
-    Camera,
-    Eyepiece,
-    Barlow,
-    Binoculars,
 )
 from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
@@ -54,7 +50,7 @@ class Equipment:
                 self.connection_garph.vs[id][NodeLabels.EQUIPMENT]
                 for id in optical_path
             ]
-            op = OpticalPath.from_path([item for item in result if item is not None])
+            op = OpticalPath.from_path([item for item in result if item is not None])  # pyright: ignore
             if op.elements() not in results_set:
                 results_set.add(op.elements())
                 results.append(op)
@@ -136,7 +132,7 @@ class Equipment:
                 )
 
             if rows:
-                new_data = pd.DataFrame(rows, columns=columns)
+                new_data = pd.DataFrame(rows, columns=columns)  # pyright: ignore
                 if result_data.empty:
                     result_data = new_data
                 else:
@@ -151,10 +147,10 @@ class Equipment:
                                 logging.warning(
                                     f"Could not align dtype for column {col}: {e}. This might lead to concat issues."
                                 )
-                    result_data = pd.concat([result_data, new_data], ignore_index=True)
+                    result_data = pd.concat([result_data, new_data], ignore_index=True)  # pyright: ignore
             return result_data
 
-        result = pd.DataFrame(columns=columns)
+        result = pd.DataFrame(columns=columns)  # pyright: ignore
         all_paths = self._get_paths(GraphConstants.EYE_ID) + self._get_paths(GraphConstants.IMAGE_ID)
         result = append(result, all_paths)
 
@@ -227,7 +223,7 @@ class Equipment:
             dark_mode_enabled=effective_dark_mode,
             **args,
         )
-        plot.yaxis.set_major_formatter(plt.FuncFormatter(formatter))
+        plot.yaxis.set_major_formatter(FuncFormatter(formatter))
         # Pleiades width is 1°50'
         add_line("Pleiades size", (1, 50, 0))
         # Average moon size is 0°31'42"

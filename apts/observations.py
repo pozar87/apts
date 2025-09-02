@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from string import Template
 from typing import Optional, List  # Added Optional
 
@@ -14,7 +14,7 @@ from skyfield.api import utc
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.solar_objects import SolarObjects
-from .utils import Utils, planetary
+from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
@@ -27,8 +27,6 @@ from .events import AstronomicalEvents
 from .constants.event_types import EventType
 from skyfield.api import Star, load
 from skyfield.data import hipparcos
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Circle
 
 logger = logging.getLogger(__name__)
 
@@ -430,43 +428,6 @@ class Observation:
             stop += timedelta(days=1)
         return (start, stop)
 
-    def plot_weather(
-        self, dark_mode_override: Optional[bool] = None, **args
-    ):  # Added dark_mode_override
-        logger.info(
-            f"plot_weather called for place: {self.place.name}. Current self.place.weather is: {type(self.place.weather)}"
-        )
-        if self.place.weather is None:
-            logger.info(
-                "self.place.weather is None, calling self.place.get_weather()..."
-            )
-            try:
-                self.place.get_weather()
-                logger.info(
-                    f"self.place.get_weather() called. self.place.weather is now: {type(self.place.weather)}"
-                )
-                if self.place.weather is not None:
-                    # Add a log for a key attribute if it exists, e.g., hourly data
-                    if (
-                        hasattr(self.place.weather, "hourly")
-                        and self.place.weather.hourly is not None
-                    ):
-                        logger.info(
-                            f"Weather hourly data length: {len(self.place.weather.hourly.time) if hasattr(self.place.weather.hourly, 'time') else 'N/A'}"
-                        )
-                    else:
-                        logger.info(
-                            "Weather hourly data is None or not present after get_weather."
-                        )
-            except Exception as e:
-                logger.error(
-                    f"Error calling self.place.get_weather(): {e}", exc_info=True
-                )
-        else:
-            logger.info("self.place.weather already exists, not calling get_weather().")
-        return self._generate_plot_weather(
-            dark_mode_override=dark_mode_override, **args
-        )
 
     def plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
         return self._generate_plot_messier(

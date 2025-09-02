@@ -1,7 +1,7 @@
 from aenum import Enum, auto
 
 
-class OpticalType(Enum):
+class OpticalType(Enum):  # pyright: ignore
     OPTICAL = auto()
     INPUT = auto()
     OUTPUT = auto()

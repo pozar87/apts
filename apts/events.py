@@ -1,6 +1,5 @@
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from itertools import combinations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
@@ -12,15 +11,17 @@ from .config import get_event_settings
 from .constants.event_types import EventType
 from .utils import planetary
 
+from skyfield import almanac
+from skyfield.api import Star, Topos
+
+from . import skyfield_searches
+from .cache import get_ephemeris, get_timescale
+from .catalogs import Catalogs
+
 logger = logging.getLogger(__name__)
 
 
 utc = timezone.utc
-from . import skyfield_searches
-from .catalogs import Catalogs
-from skyfield.api import Topos, Star
-from skyfield import almanac
-from .cache import get_ephemeris, get_timescale
 
 
 class AstronomicalEvents:

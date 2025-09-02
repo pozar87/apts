@@ -1,11 +1,12 @@
 import io
 from aenum import Enum, auto
 
-import matplotlib.dates as mdates
 from matplotlib import pyplot
 
 from apts.constants.graphconstants import get_plot_style
-from apts.units import ureg
+from apts.units import ureg as ureg
+
+__all__ = ["ureg"]
 
 
 class ConnectionType(Enum):

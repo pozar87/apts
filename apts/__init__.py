@@ -14,7 +14,7 @@ from .utils import Utils
 from .weather import Weather
 from .constants.event_types import EventType
 
-__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType"]
+__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType", "Notify", "Weather"]
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +41,21 @@ logger = logging.getLogger(__name__)
 # Note: Notification settings are handled within the Notify class using the imported config.
 
 # Seaborn style from the imported config
+allowed_styles = ["white", "dark", "whitegrid", "darkgrid", "ticks"]
 seaborn_style = config.get("style", "seaborn", fallback="whitegrid")
+if seaborn_style not in allowed_styles:
+    logger.warning(
+        f"Invalid seaborn style '{seaborn_style}' in config. Using default 'whitegrid'."
+    )
+    seaborn_style = "whitegrid"
+
 try:
     sns.set_style(seaborn_style)
     logger.info(f"Seaborn style set to '{seaborn_style}'")
 except ValueError:
+    # This is a fallback, in case of unexpected issues with seaborn
     logger.warning(
-        f"Invalid seaborn style '{seaborn_style}' in config. Using default 'whitegrid'."
+        f"Could not set seaborn style to '{seaborn_style}'. Using default 'whitegrid'."
     )
     sns.set_style("whitegrid")
 
