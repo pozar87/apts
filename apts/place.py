@@ -414,7 +414,7 @@ class Place:
             )
         ax.text(
             180,
-            -2,
+            -3,
             str(self.moon_phase()) + "%",
             color=style[
                 "TEXT_COLOR"
