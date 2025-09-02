@@ -181,12 +181,13 @@ class Observation:
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
-        max_size = (
-            visible_planets[["Size"]].max().iloc[0] if not visible_planets.empty else 0
-        )
-        max_size_val = (
-            max_size.magnitude if hasattr(max_size, "magnitude") else max_size
-        )
+        if not visible_planets.empty:
+            max_size = visible_planets[["Size"]].max().iloc[0]
+            max_size_val = (
+                max_size.magnitude if hasattr(max_size, "magnitude") else max_size
+            )
+        else:
+            max_size_val = 0
         y = int(max_size_val + 12)
         # Set x offset to constant value
         x = 20
@@ -250,7 +251,7 @@ class Observation:
 
     def plot_visible_planets(self):
         try:
-            from IPython.display import SVG
+            from IPython.display import SVG  # pyright: ignore
         except ImportError:
             logger.warning("You can plot images only in Ipython notebook!")
             return
@@ -281,12 +282,13 @@ class Observation:
             messier_df = self.get_visible_messier().copy()
 
             if len(messier_df) == 0:
-                ax.set_xlim(
-                    [
-                        self.start - timedelta(minutes=15),
-                        self.time_limit + timedelta(minutes=15),
-                    ]
-                )
+                if self.start is not None and self.time_limit is not None:
+                    ax.set_xlim(
+                        [
+                            self.start - timedelta(minutes=15),
+                            self.time_limit + timedelta(minutes=15),
+                        ]
+                    )
                 ax.set_ylim(0, 90)
                 self._mark_observation(ax, effective_dark_mode, style)
                 self._mark_good_conditions(
@@ -345,7 +347,7 @@ class Observation:
                 marker_size = (width * height) ** 0.5
                 color = current_messier_colors.get(
                     obj_type, current_messier_colors["Other"]
-                )
+                )  # pyright: ignore
                 plotted_types[obj_type] = color
                 ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
                 ax.annotate(
@@ -356,12 +358,13 @@ class Observation:
                     color=style["TEXT_COLOR"],
                 )
 
-            ax.set_xlim(
-                [
-                    self.start - timedelta(minutes=15),
-                    self.time_limit + timedelta(minutes=15),
-                ]
-            )
+            if self.start is not None and self.time_limit is not None:
+                ax.set_xlim(
+                    [
+                        self.start - timedelta(minutes=15),
+                        self.time_limit + timedelta(minutes=15),
+                    ]
+                )
             ax.set_ylim(0, 90)
             date_format = mdates.DateFormatter(
                 "%H:%M:%S %Z", tz=self.place.local_timezone
@@ -461,12 +464,13 @@ class Observation:
 
         planets_df = self.get_visible_planets().copy()
         if len(planets_df) == 0:
-            ax.set_xlim(
-                [
-                    self.start - timedelta(minutes=15),
-                    self.time_limit + timedelta(minutes=15),
-                ]
-            )
+            if self.start is not None and self.time_limit is not None:
+                ax.set_xlim(
+                    [
+                        self.start - timedelta(minutes=15),
+                        self.time_limit + timedelta(minutes=15),
+                    ]
+                )
             ax.set_ylim(0, 90)
             self._mark_observation(ax, effective_dark_mode, style)
             self._mark_good_conditions(
@@ -488,7 +492,7 @@ class Observation:
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
-            )
+            )  # pyright: ignore
 
             # Plot altitude curve
             ax.plot(
@@ -527,9 +531,10 @@ class Observation:
                 xytext=(5, 5),
                 textcoords="offset points",
                 color=style["TEXT_COLOR"],
-            )
+            )  # pyright: ignore
 
-        ax.set_xlim([self.start, self.stop])
+        if self.start is not None and self.stop is not None:
+            ax.set_xlim([self.start, self.stop])
         ax.set_ylim(0, 90)
         date_format = mdates.DateFormatter("%H:%M", tz=self.place.local_timezone)
         ax.xaxis.set_major_formatter(date_format)

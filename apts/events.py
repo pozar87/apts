@@ -270,13 +270,13 @@ class AstronomicalEvents:
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, dates in showers.items():
-                start_date = datetime(
+                start_date: datetime = datetime(
                     year, dates["start"][0], dates["start"][1], tzinfo=utc
                 )
-                peak_date = datetime(
+                peak_date: datetime = datetime(
                     year, dates["peak"][0], dates["peak"][1], tzinfo=utc
                 )
-                end_date = datetime(year, dates["end"][0], dates["end"][1], tzinfo=utc)
+                end_date: datetime = datetime(year, dates["end"][0], dates["end"][1], tzinfo=utc)
 
                 if self.start_date <= start_date <= self.end_date:
                     events.append(
@@ -493,15 +493,15 @@ class AstronomicalEvents:
             messier_stars[row["Messier"]] = Star.from_dataframe(
                 pd.DataFrame(
                     {
-                        "ra_hours": [row["RA"].to("hour").magnitude],
-                        "dec_degrees": [row["Dec"].to("degree").magnitude],
+                        "ra_hours": [row["RA"].to("hour").magnitude],  # pyright: ignore
+                        "dec_degrees": [row["Dec"].to("degree").magnitude],  # pyright: ignore
                         "ra_mas_per_year": [0],
                         "dec_mas_per_year": [0],
                         "parallax_mas": [0],
                         "radial_km_per_s": [0],
                         "epoch_year": [2000.0],
                     },
-                    index=[0],
+                    index=[0],  # pyright: ignore
                 )
             )
 

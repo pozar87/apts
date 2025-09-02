@@ -283,7 +283,7 @@ class Equipment:
         # Filter only relevant data - by to_plot key
         data = self.data()[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
-        ].sort_values(by=to_plot)
+        ].sort_values(by=to_plot)  # pyright: ignore
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
             labels = [
@@ -294,7 +294,7 @@ class Equipment:
             # For more than 8 option display only ids
             labels = data.index
         # Merge Image and Eye series together
-        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
+        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)  # pyright: ignore
 
     def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
         # Connect all outputs with inputs

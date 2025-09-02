@@ -1,4 +1,5 @@
 import io
+from typing import overload, Literal, Tuple, Union
 from aenum import Enum, auto
 
 from matplotlib import pyplot
@@ -19,6 +20,7 @@ class ConnectionType(Enum):
 
 
 class Utils:
+    @staticmethod
     def find_all_paths(graph, start, end, mode="OUT", maxlen=None):
         def find_all_paths_aux(adjlist, start, end, path, maxlen=None):
             path = path + [start]
@@ -41,7 +43,14 @@ class Utils:
                 all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
         return all_paths
 
-    def decdeg2dms(dd, pretty=False):
+    @staticmethod
+    @overload
+    def decdeg2dms(dd: float, pretty: Literal[True]) -> str: ...
+    @staticmethod
+    @overload
+    def decdeg2dms(dd: float, pretty: Literal[False] = False) -> Tuple[float, float, float]: ...
+    @staticmethod
+    def decdeg2dms(dd: float, pretty: bool = False) -> Union[str, Tuple[float, float, float]]:
         mnt, sec = divmod(dd * 3600, 60)
         deg, mnt = divmod(mnt, 60)
         if pretty:
@@ -49,13 +58,16 @@ class Utils:
         else:
             return deg, mnt, sec
 
+    @staticmethod
     def dms2decdeg(dms):
         deg, mnt, sec = dms
         return deg + mnt / 60 + sec / 3600
 
+    @staticmethod
     def format_date(date):
         return date.strftime("%Y-%m-%d %H:%M")
 
+    @staticmethod
     def plot_to_bytes(plot):
         plot_bytes = io.BytesIO()
         plot.savefig(plot_bytes, format="png")
@@ -64,9 +76,11 @@ class Utils:
         plot_bytes.seek(0)
         return plot_bytes
 
+    @staticmethod
     def date_format(date_time):
         return date_time.isoformat(timespec="seconds")
 
+    @staticmethod
     def annotate_plot(plot, y_label, dark_mode_enabled: bool): # Removed local_tz
         style = get_plot_style(dark_mode_enabled)
 

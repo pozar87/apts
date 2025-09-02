@@ -19,7 +19,7 @@ class SolarObjects(Objects):
         self.objects = pandas.DataFrame(
             planetary.TECHNICAL_NAMES,
             columns=[ObjectTableLabels.NAME],
-        )
+        )  # pyright: ignore
 
         # Set proper dtype for string columns
         self.objects[ObjectTableLabels.NAME] = self.objects[
@@ -81,15 +81,15 @@ class SolarObjects(Objects):
         # Define a mapping from Skyfield object names to Pyephem object constructors
         # This map is local to the compute method as it's only used here.
         ephem_object_map = {
-            "mercury": ephem.Mercury,
-            "venus": ephem.Venus,
-            "mars": ephem.Mars,
-            "jupiter barycenter": ephem.Jupiter,
-            "saturn barycenter": ephem.Saturn,
-            "uranus barycenter": ephem.Uranus,
-            "neptune barycenter": ephem.Neptune,
-            "moon": ephem.Moon,
-            "sun": ephem.Sun,
+            "mercury": ephem.Mercury,  # pyright: ignore
+            "venus": ephem.Venus,  # pyright: ignore
+            "mars": ephem.Mars,  # pyright: ignore
+            "jupiter barycenter": ephem.Jupiter,  # pyright: ignore
+            "saturn barycenter": ephem.Saturn,  # pyright: ignore
+            "uranus barycenter": ephem.Uranus,  # pyright: ignore
+            "neptune barycenter": ephem.Neptune,  # pyright: ignore
+            "moon": ephem.Moon,  # pyright: ignore
+            "sun": ephem.Sun,  # pyright: ignore
         }
 
         # Create an ephem observer for the current place and time, once for efficiency
@@ -181,7 +181,7 @@ class SolarObjects(Objects):
 
         if conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
             # Sort objects by given order
-            visible = visible.sort_values(by=sort_by, ascending=True)
+            visible = visible.sort_values(by=sort_by, ascending=True)  # pyright: ignore
             if not visible.empty:
                 visible["TechnicalName"] = visible["Name"]
                 visible["Name"] = (
