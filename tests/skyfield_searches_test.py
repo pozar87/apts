@@ -4,7 +4,6 @@ from skyfield.api import load, Topos, utc
 from apts import skyfield_searches
 from apts.catalogs import Catalogs
 from skyfield.api import Star
-import pandas as pd
 from unittest.mock import patch, MagicMock
 
 

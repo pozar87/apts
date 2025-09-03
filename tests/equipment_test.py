@@ -1,15 +1,9 @@
-import unittest
-import unittest
 import pytest
 import numpy as np # Added for np.log10
-import pandas as pd # Added for DataFrame operations
 from unittest.mock import patch, MagicMock, ANY
 
-from apts import equipment
 from apts.equipment import Equipment
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels
-from apts.constants.graphconstants import OpticalType, get_plot_style, get_plot_colors
-from apts.config import get_dark_mode
 from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece
 from apts.units import ureg
 from apts.utils import ConnectionType
