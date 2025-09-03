@@ -13,7 +13,7 @@ from apts.config import get_dark_mode  # Added
 from apts.constants.graphconstants import get_plot_style  # Added
 
 from .weather import Weather
-from skyfield.api import load, Topos, Star
+from skyfield.api import load, Topos
 from skyfield import almanac
 
 logger = logging.getLogger(__name__)

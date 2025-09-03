@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from string import Template
 from typing import Optional, List  # Added Optional
 
@@ -14,7 +14,7 @@ from skyfield.api import utc
 from .conditions import Conditions
 from .objects.messier import Messier
 from .objects.solar_objects import SolarObjects
-from .utils import Utils, planetary
+from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
@@ -27,8 +27,6 @@ from .events import AstronomicalEvents
 from .constants.event_types import EventType
 from skyfield.api import Star, load
 from skyfield.data import hipparcos
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import Circle
 
 logger = logging.getLogger(__name__)
 
@@ -183,12 +181,13 @@ class Observation:
         visible_planets = self.get_visible_planets(**args)
         dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
         # Set y offset to biggest planet - extract magnitude from pint.Quantity
-        max_size = (
-            visible_planets[["Size"]].max().iloc[0] if not visible_planets.empty else 0
-        )
-        max_size_val = (
-            max_size.magnitude if hasattr(max_size, "magnitude") else max_size
-        )
+        if not visible_planets.empty:
+            max_size = visible_planets[["Size"]].max().iloc[0]
+            max_size_val = (
+                max_size.magnitude if hasattr(max_size, "magnitude") else max_size
+            )
+        else:
+            max_size_val = 0
         y = int(max_size_val + 12)
         # Set x offset to constant value
         x = 20
@@ -252,7 +251,7 @@ class Observation:
 
     def plot_visible_planets(self):
         try:
-            from IPython.display import SVG
+            from IPython.display import SVG  # pyright: ignore
         except ImportError:
             logger.warning("You can plot images only in Ipython notebook!")
             return
@@ -283,12 +282,13 @@ class Observation:
             messier_df = self.get_visible_messier().copy()
 
             if len(messier_df) == 0:
-                ax.set_xlim(
-                    [
-                        self.start - timedelta(minutes=15),
-                        self.time_limit + timedelta(minutes=15),
-                    ]
-                )
+                if self.start is not None and self.time_limit is not None:
+                    ax.set_xlim(
+                        [
+                            self.start - timedelta(minutes=15),
+                            self.time_limit + timedelta(minutes=15),
+                        ]
+                    )
                 ax.set_ylim(0, 90)
                 self._mark_observation(ax, effective_dark_mode, style)
                 self._mark_good_conditions(
@@ -347,7 +347,7 @@ class Observation:
                 marker_size = (width * height) ** 0.5
                 color = current_messier_colors.get(
                     obj_type, current_messier_colors["Other"]
-                )
+                )  # pyright: ignore
                 plotted_types[obj_type] = color
                 ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
                 ax.annotate(
@@ -358,12 +358,13 @@ class Observation:
                     color=style["TEXT_COLOR"],
                 )
 
-            ax.set_xlim(
-                [
-                    self.start - timedelta(minutes=15),
-                    self.time_limit + timedelta(minutes=15),
-                ]
-            )
+            if self.start is not None and self.time_limit is not None:
+                ax.set_xlim(
+                    [
+                        self.start - timedelta(minutes=15),
+                        self.time_limit + timedelta(minutes=15),
+                    ]
+                )
             ax.set_ylim(0, 90)
             date_format = mdates.DateFormatter(
                 "%H:%M:%S %Z", tz=self.place.local_timezone
@@ -430,43 +431,6 @@ class Observation:
             stop += timedelta(days=1)
         return (start, stop)
 
-    def plot_weather(
-        self, dark_mode_override: Optional[bool] = None, **args
-    ):  # Added dark_mode_override
-        logger.info(
-            f"plot_weather called for place: {self.place.name}. Current self.place.weather is: {type(self.place.weather)}"
-        )
-        if self.place.weather is None:
-            logger.info(
-                "self.place.weather is None, calling self.place.get_weather()..."
-            )
-            try:
-                self.place.get_weather()
-                logger.info(
-                    f"self.place.get_weather() called. self.place.weather is now: {type(self.place.weather)}"
-                )
-                if self.place.weather is not None:
-                    # Add a log for a key attribute if it exists, e.g., hourly data
-                    if (
-                        hasattr(self.place.weather, "hourly")
-                        and self.place.weather.hourly is not None
-                    ):
-                        logger.info(
-                            f"Weather hourly data length: {len(self.place.weather.hourly.time) if hasattr(self.place.weather.hourly, 'time') else 'N/A'}"
-                        )
-                    else:
-                        logger.info(
-                            "Weather hourly data is None or not present after get_weather."
-                        )
-            except Exception as e:
-                logger.error(
-                    f"Error calling self.place.get_weather(): {e}", exc_info=True
-                )
-        else:
-            logger.info("self.place.weather already exists, not calling get_weather().")
-        return self._generate_plot_weather(
-            dark_mode_override=dark_mode_override, **args
-        )
 
     def plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
         return self._generate_plot_messier(
@@ -500,12 +464,13 @@ class Observation:
 
         planets_df = self.get_visible_planets().copy()
         if len(planets_df) == 0:
-            ax.set_xlim(
-                [
-                    self.start - timedelta(minutes=15),
-                    self.time_limit + timedelta(minutes=15),
-                ]
-            )
+            if self.start is not None and self.time_limit is not None:
+                ax.set_xlim(
+                    [
+                        self.start - timedelta(minutes=15),
+                        self.time_limit + timedelta(minutes=15),
+                    ]
+                )
             ax.set_ylim(0, 90)
             self._mark_observation(ax, effective_dark_mode, style)
             self._mark_good_conditions(
@@ -527,7 +492,7 @@ class Observation:
 
             specific_planet_color = get_planet_color(
                 name, effective_dark_mode, default_planet_color
-            )
+            )  # pyright: ignore
 
             # Plot altitude curve
             ax.plot(
@@ -566,9 +531,10 @@ class Observation:
                 xytext=(5, 5),
                 textcoords="offset points",
                 color=style["TEXT_COLOR"],
-            )
+            )  # pyright: ignore
 
-        ax.set_xlim([self.start, self.stop])
+        if self.start is not None and self.stop is not None:
+            ax.set_xlim([self.start, self.stop])
         ax.set_ylim(0, 90)
         date_format = mdates.DateFormatter("%H:%M", tz=self.place.local_timezone)
         ax.xaxis.set_major_formatter(date_format)

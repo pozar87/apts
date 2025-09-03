@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 # Example showing how to use custom template and CSS with notifications
-import apts
 from apts import Place, Equipment, Observation, Notify
 
 # Create a place for observation

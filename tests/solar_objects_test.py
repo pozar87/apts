@@ -1,6 +1,5 @@
 import unittest
 from datetime import datetime, timezone
-import pandas as pd
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels

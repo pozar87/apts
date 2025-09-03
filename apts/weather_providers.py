@@ -23,7 +23,7 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self):
+    def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with requests.get(url) as data:
@@ -71,7 +71,7 @@ class PirateWeather(WeatherProvider):
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self):
+    def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with requests.get(url) as data:
@@ -145,7 +145,7 @@ class VisualCrossing(WeatherProvider):
 class Meteoblue(WeatherProvider):
     API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
 
-    def download_data(self):
+    def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with requests.get(url) as data:
@@ -220,7 +220,7 @@ class Meteoblue(WeatherProvider):
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self):
+    def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with requests.get(url) as data:

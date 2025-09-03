@@ -2,7 +2,6 @@ from skyfield.api import load
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize_scalar
 from .cache import get_timescale, get_ephemeris
 
 

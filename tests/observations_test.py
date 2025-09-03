@@ -5,11 +5,10 @@ import datetime  # Added
 from datetime import timedelta
 from unittest.mock import patch, mock_open
 import pandas as pd
-from unittest.mock import MagicMock, call  # Added MagicMock and call
+from unittest.mock import MagicMock  # Added MagicMock and call
 from apts.observations import Observation
 from apts.constants.graphconstants import (
     get_plot_style,
-    OpticalType,
     GraphConstants,
 )  # Added GraphConstants
 from apts.constants.objecttablelabels import (

@@ -1,6 +1,7 @@
 import logging
 import pytz
 import pandas
+from abc import ABC, abstractmethod
 
 from datetime import timedelta
 from ..constants import ObjectTableLabels
@@ -11,7 +12,11 @@ from skyfield.searchlib import find_discrete
 logger = logging.getLogger(__name__)
 
 
-class Objects:
+class Objects(ABC):
+    @abstractmethod
+    def get_skyfield_object(self, obj) -> object:
+        pass
+
     def __init__(self, place):
         self.place = place
         self.objects: pandas.DataFrame = pandas.DataFrame()
@@ -43,7 +48,7 @@ class Objects:
             and conditions.max_object_azimuth == 360
         ):
             # Sort objects by given order
-            visible = visible.sort_values(by=sort_by, ascending=True)
+            visible = visible.sort_values(by=sort_by, ascending=True)  # pyright: ignore
             return visible
 
         visible_objects_indices = []

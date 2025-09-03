@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timedelta
 
 import pandas as pd
 import requests_cache
@@ -77,7 +76,7 @@ class Weather:
     def _filter_data(self, rows):
         # Always add time column
         columns = list(set(["time"] + rows))
-        return self.data[columns]
+        return self.data[columns]  # pyright: ignore
 
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
@@ -101,7 +100,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time", ylim=(0, 105), title="Clouds", ax=ax, **plot_kwargs
-        )
+        )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -152,7 +151,7 @@ class Weather:
             title="Precipitation intensity and probability",
             ax=ax,
             **plot_kwargs,
-        )
+        )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -200,7 +199,7 @@ class Weather:
 
         # Pandas pie plot returns an Axes object.
         plot_ax = (
-            data.groupby("precipType")
+            data.groupby("precipType")  # pyright: ignore
             .size()
             .plot(kind="pie", label="Precipitation type summary", ax=ax, **plot_kwargs)
         )
@@ -259,7 +258,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_ax = (
-            data.groupby("summary")
+            data.groupby("summary")  # pyright: ignore
             .size()
             .plot(kind="pie", label="Cloud summary", ax=ax, **plot_kwargs)
         )
@@ -307,7 +306,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title="Temperatures", ax=ax, **plot_kwargs)
+        plot_ax = data.plot(x="time", title="Temperatures", ax=ax, **plot_kwargs)  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -352,7 +351,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(
+        plot_ax = data.plot(  # pyright: ignore
             x="time",
             y="windSpeed",
             ylim=(0, max_wind_speed + 1),
@@ -425,7 +424,7 @@ class Weather:
         elif "ozone" in available_columns:
             plot_title = "Ozone"
 
-        plot_ax = data.plot(
+        plot_ax = data.plot(  # pyright: ignore
             x="time",
             title=plot_title,
             secondary_y=secondary_y_plot,
@@ -495,7 +494,7 @@ class Weather:
                 "visibility",
             ]
         )
-        return data[(data.time >= start) & (data.time <= stop)]
+        return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
 
     def plot_visibility(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
@@ -507,7 +506,7 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["visibility"])
-        data = data.query("visibility != 'none'")
+        data = data.query("visibility != 'none'")  # pyright: ignore
         if data.empty:
             return None
 
@@ -519,7 +518,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title="Visibility", ax=ax, **plot_kwargs)
+        plot_ax = data.plot(x="time", title="Visibility", ax=ax, **plot_kwargs)  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax

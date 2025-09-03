@@ -38,6 +38,10 @@ class Notify:
 
     def _send_email(self, msg):
         """Internal helper to send a MIME message using configured SMTP."""
+        if not self.smtp_host:
+            logger.error("SMTP host is not configured. Cannot send email.")
+            return False
+        server = None
         try:
             server = smtplib.SMTP(self.smtp_host, self.smtp_port)
             server.ehlo()
@@ -66,6 +70,9 @@ class Notify:
 
     def send_simple_email(self, subject, body, html_body=None):
         """Sends a simple email with optional HTML content."""
+        if not self.sender_email or not self.recipient_email:
+            logger.error("Sender or recipient email not configured. Cannot send email.")
+            return False
         msg_root = MIMEMultipart("alternative")
         msg_root["Subject"] = subject
         msg_root["From"] = self.sender_email
@@ -84,6 +91,9 @@ class Notify:
 
     def send(self, observations, custom_template=None, css=None, plain_text_fallback=None):
         """Sends a complex email notification with observation details and plots."""
+        if not self.sender_email or not self.recipient_email:
+            logger.error("Sender or recipient email not configured. Cannot send email.")
+            return False
         # Overall message container: multipart/alternative for text and HTML versions
         msg_root = MIMEMultipart("alternative")
         msg_root["Subject"] = f"Good weather in {observations.place.name}"

@@ -1,11 +1,8 @@
 import pytest
-import json
 import datetime
 import unittest
 from unittest.mock import patch, MagicMock
-import pandas as pd
 from apts.weather import Weather
-from apts.weather_providers import PirateWeather, VisualCrossing, OpenWeatherMap, Meteoblue
 from apts.constants.graphconstants import get_plot_style
 from . import setup_place
 from requests_mock import ANY

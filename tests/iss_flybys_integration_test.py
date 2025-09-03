@@ -170,7 +170,6 @@ class ISSFlybysIntegrationTest(unittest.TestCase):
 
     def test_time_conversion_handling(self):
         """Test that the function properly handles time conversions"""
-        from skyfield.api import Time
 
         with patch("skyfield.api.load.tle_file") as mock_tle:
             mock_satellite = MagicMock()

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, Mock, MagicMock, call
+from unittest.mock import patch, MagicMock, call
 from apts.notify import Notify
 from tests import setup_observation
 
