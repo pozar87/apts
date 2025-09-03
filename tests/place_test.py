@@ -428,7 +428,7 @@ class TestPlacePlotting(unittest.TestCase):
                     )
                 mock_ax.text.assert_any_call(
                     180,
-                    5,
+                    -3,
                     "50%",
                     color=expected_style["TEXT_COLOR"],
                     alpha=0.7,
