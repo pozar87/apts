@@ -1,11 +1,11 @@
-from apts import equipment, observations, place
+from apts import equipment, observations, place, opticalequipment
 import datetime
 
 def setup_equipment():
   # Setup basic equipment
   e = equipment.Equipment()
-  e.register(equipment.Telescope(150, 750, t2_output=True))
-  e.register(equipment.Eyepiece(25))
+  e.register(opticalequipment.Telescope(150, 750, t2_output=True))
+  e.register(opticalequipment.Eyepiece(25))
   return e
 
 

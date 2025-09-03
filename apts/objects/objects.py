@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Objects(ABC):
     @abstractmethod
-    def get_skyfield_object(self, obj):
+    def get_skyfield_object(self, obj) -> object:
         pass
 
     def __init__(self, place):

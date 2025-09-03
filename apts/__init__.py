@@ -1,4 +1,5 @@
 import logging.config
+from typing import Literal
 import pandas as pd
 import seaborn as sns
 
@@ -50,7 +51,7 @@ if seaborn_style not in allowed_styles:
     seaborn_style = "whitegrid"
 
 try:
-    sns.set_style(seaborn_style)
+    sns.set_style(seaborn_style)  # pyright: ignore
     logger.info(f"Seaborn style set to '{seaborn_style}'")
 except ValueError:
     # This is a fallback, in case of unexpected issues with seaborn

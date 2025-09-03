@@ -80,7 +80,7 @@ def test_with_local_tle():
 
         except Exception as e:
             print(f"❌ Direct satellite observation failed: {e}")
-            return False
+            assert False
 
         # Test find_events functionality
         print("\nTesting find_events...")
@@ -103,11 +103,11 @@ def test_with_local_tle():
             print(f"❌ find_events failed: {e}")
             return False
 
-        return True
+        assert True
 
     except Exception as e:
         print(f"❌ Error loading local TLE: {e}")
-        return False
+        assert False
 
 
 def test_full_function():
@@ -230,14 +230,14 @@ def test_full_function():
                 "   No events found (this may be normal depending on timing and location)"
             )
 
-        return True
+        assert True
 
     except Exception as e:
         print(f"❌ Full function test failed: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
+        assert False
 
 
 def main():

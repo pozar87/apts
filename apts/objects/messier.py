@@ -46,8 +46,8 @@ class Messier(Objects):
             axis=1,
         )
 
-    def get_skyfield_object(self, messier_object):
-        return Star(ra_hours=messier_object.RA, dec_degrees=messier_object.Dec)
+    def get_skyfield_object(self, obj):
+        return Star(ra_hours=obj.RA, dec_degrees=obj.Dec)
 
     def find_by_name(self, name):
         """

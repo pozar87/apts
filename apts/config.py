@@ -1,7 +1,6 @@
 import configparser
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +61,10 @@ def get_event_settings() -> dict:
     """
     event_settings = {}
     if config.has_section('events'):
-        for option in config.options('events'):
-            event_settings[option] = config.getboolean('events', option)
+        options = config.options('events')
+        if options:
+            for option in options:
+                event_settings[option] = config.getboolean('events', option)  # pyright: ignore
     return event_settings
 
 

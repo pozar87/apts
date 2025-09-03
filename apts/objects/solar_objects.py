@@ -28,9 +28,9 @@ class SolarObjects(Objects):
         # Compute positions
         self.compute(calculation_date)
 
-    def get_skyfield_object(self, solar_object):
+    def get_skyfield_object(self, obj):
         eph = get_ephemeris()
-        name_to_use = solar_object.get("TechnicalName", solar_object.Name)
+        name_to_use = obj.get("TechnicalName", obj.Name)
         return eph[name_to_use]
 
     def compute(self, calculation_date=None):
