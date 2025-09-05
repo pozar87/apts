@@ -75,9 +75,9 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
     events = []
     for t in max_times:
-        events.append({"date": t.utc_datetime(), "event": "Moon Apogee"})
+        events.append({"date": t.utc_datetime(), "event": "Apogee", "object": "Moon"})
     for t in min_times:
-        events.append({"date": t.utc_datetime(), "event": "Moon Perigee"})
+        events.append({"date": t.utc_datetime(), "event": "Perigee", "object": "Moon"})
 
     return events
 
@@ -90,7 +90,6 @@ def find_conjunctions(
     start_date,
     end_date,
     threshold_degrees=None,
-    event_name=None,
 ):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -111,14 +110,11 @@ def find_conjunctions(
 
     times, separations = find_minima(t0, t1, separation)
 
-    if event_name is None:
-        event_name = f"{p1_name.capitalize()} conjunct {p2_name.capitalize()}"
-
     events = []
     for t, s in zip(times, separations):
         if threshold_degrees is None or s < threshold_degrees:
             events.append(
-                {"date": t.utc_datetime(), "event": event_name, "separation_degrees": s}
+                {"date": t.utc_datetime(), "separation_degrees": s}
             )
 
     return events
@@ -168,7 +164,6 @@ def find_conjunctions_with_star(
     start_date,
     end_date,
     threshold_degrees=1.0,
-    event_name=None,
 ):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -194,7 +189,6 @@ def find_conjunctions_with_star(
             events.append(
                 {
                     "date": times[i].utc_datetime(),
-                    "event": event_name,
                     "separation_degrees": separations[i],
                 }
             )
@@ -266,7 +260,11 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
 
             if mpos.separation_from(spos).degrees < 0.5:
                 events.append(
-                    {"date": t.utc_datetime(), "event": f"Moon occults {star_name}"}
+                    {
+                        "date": t.utc_datetime(),
+                        "object1": "Moon",
+                        "object2": star_name,
+                    }
                 )
 
     return events
@@ -346,7 +344,7 @@ def find_iss_flybys(
         events_list.append(
             {
                 "date": culmination_time.utc_datetime(),
-                "event": f"Bright ISS Flyby (mag {mag:.2f}, peak alt {alt.degrees:.1f}°)",
+                "event": "Bright ISS Flyby",
                 "type": "ISS Flyby",
                 "rise_time": rise_time.utc_datetime(),
                 "culmination_time": culmination_time.utc_datetime(),

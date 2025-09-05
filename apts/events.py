@@ -188,44 +188,42 @@ class AstronomicalEvents:
         moon_display_name = "Moon"
 
         executor = self.executor
+        futures = {}
         # Planet-Planet conjunctions
-        futures = []
         for (p1, p1_name), (p2, p2_name) in combinations(planets.items(), 2):
-            event_name = f"{p1_name} conjunct {p2_name}"
-            futures.append(
-                executor.submit(
-                    skyfield_searches.find_conjunctions,
-                    self.observer,
-                    self.eph,
-                    p1,
-                    p2,
-                    self.start_date,
-                    self.end_date,
-                    event_name=event_name,
-                )
+            future = executor.submit(
+                skyfield_searches.find_conjunctions,
+                self.observer,
+                self.eph,
+                p1,
+                p2,
+                self.start_date,
+                self.end_date,
             )
+            futures[future] = (p1_name, p2_name)
 
         # Planet-Moon conjunctions
         for p, p_name in planets.items():
-            event_name = f"{p_name} conjunct {moon_display_name}"
-            futures.append(
-                executor.submit(
-                    skyfield_searches.find_conjunctions,
-                    self.observer,
-                    self.eph,
-                    p,
-                    moon,
-                    self.start_date,
-                    self.end_date,
-                    event_name=event_name,
-                )
+            future = executor.submit(
+                skyfield_searches.find_conjunctions,
+                self.observer,
+                self.eph,
+                p,
+                moon,
+                self.start_date,
+                self.end_date,
             )
+            futures[future] = (p_name, moon_display_name)
 
         for future in as_completed(futures):
+            p1_name, p2_name = futures[future]
             found_events = future.result()
             for event in found_events:
                 event["type"] = "Conjunction"
-            events.extend(found_events)
+                event["event"] = "Conjunction"
+                event["object1"] = p1_name
+                event["object2"] = p2_name
+                events.append(event)
         logger.debug(f"--- calculate_conjunctions: {time.time() - start_time}s")
         return events
 
@@ -250,7 +248,8 @@ class AstronomicalEvents:
             for event in found_events:
                 event["type"] = "Opposition"
                 simple_name = planetary.get_simple_name(event["planet"])
-                event["event"] = f"{simple_name} at opposition"
+                event["event"] = "Opposition"
+                event["object"] = simple_name
                 del event["planet"]
             events.extend(found_events)
         logger.debug(f"--- calculate_oppositions: {time.time() - start_time}s")
@@ -284,7 +283,9 @@ class AstronomicalEvents:
                     events.append(
                         {
                             "date": start_date.astimezone(utc),
-                            "event": f"{shower} Meteor Shower (Start)",
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "Start",
                             "type": "Meteor Shower",
                         }
                     )
@@ -292,7 +293,9 @@ class AstronomicalEvents:
                     events.append(
                         {
                             "date": peak_date.astimezone(utc),
-                            "event": f"{shower} Meteor Shower (Peak)",
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "Peak",
                             "type": "Meteor Shower",
                         }
                     )
@@ -300,7 +303,9 @@ class AstronomicalEvents:
                     events.append(
                         {
                             "date": end_date.astimezone(utc),
-                            "event": f"{shower} Meteor Shower (End)",
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "End",
                             "type": "Meteor Shower",
                         }
                     )
@@ -329,8 +334,10 @@ class AstronomicalEvents:
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": f"Highest altitude of {simple_name} ({alt:.2f}°)",
+                        "event": "Highest altitude",
+                        "object": simple_name,
                         "type": "Planet Altitude",
+                        "altitude": alt,
                     }
                 )
         logger.debug(f"--- calculate_highest_altitudes: {time.time() - start_time}s")
@@ -347,6 +354,7 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Lunar Occultation"
+            event["event"] = "Lunar Occultation"
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
         return events
 
@@ -369,9 +377,8 @@ class AstronomicalEvents:
             events_from_search = future.result()
             for event_dict in events_from_search:
                 simple_name = planetary.get_simple_name(event_dict["planet"])
-                event_dict[
-                    "event"
-                ] = f"{simple_name} {event_dict['event_type']}"
+                event_dict["event"] = event_dict["event_type"]
+                event_dict["object"] = simple_name
                 del event_dict["planet"]
                 del event_dict["event_type"]
                 event_dict["date"] = event_dict["date"].astimezone(utc)
@@ -397,6 +404,8 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Inferior Conjunction"
+            event["event"] = "Inferior Conjunction"
+            event["object"] = "Mercury"
         logger.debug(
             f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
         )
@@ -510,7 +519,6 @@ class AstronomicalEvents:
         def find_all_conjunctions(messier_stars_subset):
             all_events = []
             for messier_name, messier_star in messier_stars_subset.items():
-                event_name = f"Moon conjunct {messier_name}"
                 conjunctions = skyfield_searches.find_conjunctions_with_star(
                     self.observer,
                     self.eph,
@@ -519,13 +527,15 @@ class AstronomicalEvents:
                     self.start_date,
                     self.end_date,
                     threshold_degrees=4.0,
-                    event_name=event_name,
                 )
                 for conj in conjunctions:
                     all_events.append(
                         {
                             "date": conj["date"].astimezone(utc),
-                            "event": f"{conj['event']} (Separation: {conj['separation_degrees']:.2f}°)",
+                            "event": "Conjunction",
+                            "object1": "Moon",
+                            "object2": messier_name,
+                            "separation_degrees": conj["separation_degrees"],
                             "type": "Moon-Messier Conjunction",
                         }
                     )

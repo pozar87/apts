@@ -57,15 +57,15 @@ class EventsTest(unittest.TestCase):
         self.assertTrue(events)
 
         # Find the event for Venus
-        venus_event = next((e for e in events if "Venus" in e["event"]), None)
+        venus_event = next((e for e in events if e.get("object") == "Venus"), None)
         self.assertIsNotNone(venus_event)
 
-        # Check if the event description contains the degree information
-        self.assertIn("°", venus_event['event'])
+        # Check if the event description is correct
+        self.assertEqual(venus_event['event'], "Highest altitude")
 
         # Check the date and altitude
         self.assertEqual(venus_event["date"].day, 14)
-        self.assertAlmostEqual(float(venus_event["event"].split("(")[1].split("°")[0]), 48.23, delta=0.01)
+        self.assertAlmostEqual(venus_event["altitude"], 48.23, delta=0.01)
 
 
     def test_events_with_enum(self):
@@ -102,7 +102,9 @@ class EventsTest(unittest.TestCase):
 
         # Find the Jupiter-Saturn conjunction event
         jupiter_saturn_event = events_df[
-            (events_df["event"] == "Jupiter conjunct Saturn")
+            (events_df["event"] == "Conjunction") &
+            (events_df["object1"] == "Jupiter") &
+            (events_df["object2"] == "Saturn")
         ]
 
         # Check that the event was found
@@ -119,7 +121,7 @@ class EventsTest(unittest.TestCase):
         # Arrange
         mock_flyby_event = {
             'date': datetime(2023, 1, 15, 18, 30, 0, tzinfo=utc),
-            'event': 'Bright ISS Flyby (mag -3.5, peak alt 85.0°)',
+            'event': 'Bright ISS Flyby',
             'type': 'ISS Flyby',
             'peak_altitude': 85.0,
             'peak_magnitude': -3.5
@@ -138,8 +140,10 @@ class EventsTest(unittest.TestCase):
         # Assert
         mock_find_iss_flybys.assert_called_once()
         self.assertEqual(len(events_df), 1)
-        self.assertEqual(events_df.iloc[0]['event'], mock_flyby_event['event'])
+        self.assertEqual(events_df.iloc[0]['event'], 'Bright ISS Flyby')
         self.assertEqual(events_df.iloc[0]['type'], 'ISS Flyby')
+        self.assertEqual(events_df.iloc[0]['peak_altitude'], 85.0)
+        self.assertEqual(events_df.iloc[0]['peak_magnitude'], -3.5)
 
 
 if __name__ == "__main__":
