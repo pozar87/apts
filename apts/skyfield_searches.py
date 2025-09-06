@@ -1,7 +1,11 @@
 from skyfield.api import load
+from skyfield import eclipselib
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
+from datetime import timedelta
+from skyfield.constants import ERAD
+from skyfield.functions import angle_between, length_of
 from .cache import get_timescale, get_ephemeris
 
 
@@ -355,3 +359,53 @@ def find_iss_flybys(
         )
 
     return events_list
+
+
+def find_lunar_eclipses(eph, start_date, end_date):
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    t, y, details = eclipselib.lunar_eclipses(t0, t1, eph)
+    events = []
+    for i, (ti, yi) in enumerate(zip(t, y)):
+        events.append(
+            {
+                "date": ti.utc_datetime(),
+                "type": eclipselib.LUNAR_ECLIPSES[yi],
+                "penumbral_magnitude": details["penumbral_magnitude"][i],
+                "umbral_magnitude": details["umbral_magnitude"][i],
+            }
+        )
+    return events
+
+
+def find_solar_eclipses(observer, eph, start_date, end_date):
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    sun = eph["sun"]
+    moon = eph["moon"]
+
+    earth = eph["earth"]
+    Rs = 695700  # km
+    rm = 1737.4  # km
+    re = 6378  # km
+
+    def eclipse_separation(t):
+        s = earth.at(t).observe(sun)
+        m = earth.at(t).observe(moon)
+        Ds = s.distance().km
+        dm = m.distance().km
+        mu = s.separation_from(m).radians
+        threshold = np.arcsin((rm + re) / dm) + np.arcsin((Rs - re) / Ds)
+        return mu - threshold
+
+    eclipse_separation.step_days = 0.1
+    times, separations = find_minima(t0, t1, eclipse_separation)
+    events = []
+    for t, sep in zip(times, separations):
+        if sep < 0:
+            events.append(
+                {"date": t.utc_datetime(), "type": "Solar", "separation": sep}
+            )
+    return events
