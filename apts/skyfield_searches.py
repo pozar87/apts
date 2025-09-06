@@ -3,6 +3,9 @@ from skyfield import eclipselib
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
+from datetime import timedelta
+from skyfield.constants import ERAD
+from skyfield.functions import angle_between, length_of
 from .cache import get_timescale, get_ephemeris
 
 
@@ -364,8 +367,15 @@ def find_lunar_eclipses(eph, start_date, end_date):
     t1 = ts.utc(end_date)
     t, y, details = eclipselib.lunar_eclipses(t0, t1, eph)
     events = []
-    for ti, yi in zip(t, y):
-        events.append({"date": ti.utc_datetime(), "type": eclipselib.LUNAR_ECLIPSES[yi]})
+    for i, (ti, yi) in enumerate(zip(t, y)):
+        events.append(
+            {
+                "date": ti.utc_datetime(),
+                "type": eclipselib.LUNAR_ECLIPSES[yi],
+                "penumbral_magnitude": details["penumbral_magnitude"][i],
+                "umbral_magnitude": details["umbral_magnitude"][i],
+            }
+        )
     return events
 
 

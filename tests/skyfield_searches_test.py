@@ -294,9 +294,13 @@ class SkyfieldSearchesTest(unittest.TestCase):
         self.assertEqual(events[0]["type"], "Penumbral")
         self.assertEqual(events[0]["date"].day, 5)
         self.assertEqual(events[0]["date"].month, 5)
+        self.assertIn("penumbral_magnitude", events[0])
+        self.assertIn("umbral_magnitude", events[0])
         self.assertEqual(events[1]["type"], "Partial")
         self.assertEqual(events[1]["date"].day, 28)
         self.assertEqual(events[1]["date"].month, 10)
+        self.assertIn("penumbral_magnitude", events[1])
+        self.assertIn("umbral_magnitude", events[1])
 
     def test_find_solar_eclipses(self):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
