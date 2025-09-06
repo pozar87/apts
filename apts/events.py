@@ -93,6 +93,10 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_space_events))
         if self.event_settings.get("iss_flybys", False):
             futures.append(executor.submit(self.calculate_iss_flybys))
+        if self.event_settings.get("solar_eclipses", False):
+            futures.append(executor.submit(self.calculate_solar_eclipses))
+        if self.event_settings.get("lunar_eclipses", False):
+            futures.append(executor.submit(self.calculate_lunar_eclipses))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -160,6 +164,26 @@ class AstronomicalEvents:
             topos_observer, self.observer, self.start_date, self.end_date
         )
         logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
+        return events
+
+    def calculate_solar_eclipses(self):
+        start_time = time.time()
+        events = skyfield_searches.find_solar_eclipses(
+            self.observer, self.eph, self.start_date, self.end_date
+        )
+        for event in events:
+            event["event"] = "Solar Eclipse"
+        logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
+        return events
+
+    def calculate_lunar_eclipses(self):
+        start_time = time.time()
+        events = skyfield_searches.find_lunar_eclipses(
+            self.eph, self.start_date, self.end_date
+        )
+        for event in events:
+            event["event"] = f"Lunar Eclipse: {event['type']}"
+        logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
 
     def calculate_moon_phases(self):
