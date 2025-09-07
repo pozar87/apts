@@ -183,7 +183,7 @@ class AstronomicalEvents:
             self.eph, self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = f"Lunar Eclipse: {event['eclipse_kind']}"
+            event["event"] = "Lunar Eclipse"
             event["type"] = "Lunar Eclipse"
         logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
@@ -303,7 +303,9 @@ class AstronomicalEvents:
                 peak_date: datetime = datetime(
                     year, dates["peak"][0], dates["peak"][1], tzinfo=utc
                 )
-                end_date: datetime = datetime(year, dates["end"][0], dates["end"][1], tzinfo=utc)
+                end_date: datetime = datetime(
+                    year, dates["end"][0], dates["end"][1], tzinfo=utc
+                )
 
                 if self.start_date <= start_date <= self.end_date:
                     events.append(
