@@ -173,6 +173,7 @@ class AstronomicalEvents:
         )
         for event in events:
             event["event"] = "Solar Eclipse"
+            event["type"] = "Solar Eclipse"
         logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -182,9 +183,8 @@ class AstronomicalEvents:
             self.eph, self.start_date, self.end_date
         )
         for event in events:
-            event[
-                "event"
-            ] = f"Lunar Eclipse: {event['type']} (Penumbral Magnitude: {event['penumbral_magnitude']:.2f}, Umbral Magnitude: {event['umbral_magnitude']:.2f})"
+            event["event"] = f"Lunar Eclipse: {event['eclipse_kind']}"
+            event["type"] = "Lunar Eclipse"
         logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
 

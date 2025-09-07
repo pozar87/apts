@@ -371,7 +371,8 @@ def find_lunar_eclipses(eph, start_date, end_date):
         events.append(
             {
                 "date": ti.utc_datetime(),
-                "type": eclipselib.LUNAR_ECLIPSES[yi],
+                "type": "Lunar Eclipse",
+                "eclipse_kind": eclipselib.LUNAR_ECLIPSES[yi],
                 "penumbral_magnitude": details["penumbral_magnitude"][i],
                 "umbral_magnitude": details["umbral_magnitude"][i],
             }
@@ -406,6 +407,6 @@ def find_solar_eclipses(observer, eph, start_date, end_date):
     for t, sep in zip(times, separations):
         if sep < 0:
             events.append(
-                {"date": t.utc_datetime(), "type": "Solar", "separation": sep}
+                {"date": t.utc_datetime(), "type": "Solar Eclipse", "separation": sep}
             )
     return events
