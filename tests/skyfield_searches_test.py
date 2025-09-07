@@ -284,6 +284,41 @@ class SkyfieldSearchesTest(unittest.TestCase):
 
             self.assertIsInstance(events, list)
 
+    def test_find_lunar_eclipses(self):
+        start_date = datetime(2023, 1, 1, tzinfo=utc)
+        end_date = datetime(2023, 12, 31, tzinfo=utc)
+        events = skyfield_searches.find_lunar_eclipses(self.eph, start_date, end_date)
+        self.assertIsInstance(events, list)
+        # There are two lunar eclipses in 2023
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0]["type"], "Lunar Eclipse")
+        self.assertEqual(events[0]["eclipse_kind"], "Penumbral")
+        self.assertEqual(events[0]["date"].day, 5)
+        self.assertEqual(events[0]["date"].month, 5)
+        self.assertIn("penumbral_magnitude", events[0])
+        self.assertIn("umbral_magnitude", events[0])
+        self.assertEqual(events[1]["type"], "Lunar Eclipse")
+        self.assertEqual(events[1]["eclipse_kind"], "Partial")
+        self.assertEqual(events[1]["date"].day, 28)
+        self.assertEqual(events[1]["date"].month, 10)
+        self.assertIn("penumbral_magnitude", events[1])
+        self.assertIn("umbral_magnitude", events[1])
+
+    def test_find_solar_eclipses(self):
+        start_date = datetime(2023, 1, 1, tzinfo=utc)
+        end_date = datetime(2023, 12, 31, tzinfo=utc)
+        events = skyfield_searches.find_solar_eclipses(
+            self.observer, self.eph, start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0]["type"], "Solar Eclipse")
+        self.assertEqual(events[0]["date"].day, 20)
+        self.assertEqual(events[0]["date"].month, 4)
+        self.assertEqual(events[1]["type"], "Solar Eclipse")
+        self.assertEqual(events[1]["date"].day, 14)
+        self.assertEqual(events[1]["date"].month, 10)
+
 
 if __name__ == "__main__":
     unittest.main()
