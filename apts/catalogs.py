@@ -7,6 +7,7 @@ from .units import get_unit_registry
 
 _messier_df = None
 _bright_stars_df = None
+_ngc_df = None
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,25 @@ def _load_messier_with_units():
     messier_df["Magnitude"] = messier_df["Magnitude"].apply(lambda x: x * ureg.mag)
 
     return messier_df
+
+
+def _load_ngc_with_units():
+    # Load NGC catalogue data
+    ngc_df = pd.read_csv(str(resources.files("apts").joinpath("data/ngc.csv")))
+
+    # Set proper dtypes for string columns
+    string_columns = ["NGC", "Name", "Type", "Constellation"]
+    for column in string_columns:
+        ngc_df[column] = ngc_df[column].astype("string")
+
+    # Convert columns to quantities with units
+    ureg = get_unit_registry()
+    ngc_df["RA"] = ngc_df["RA"].apply(lambda x: x * ureg.hour)
+    ngc_df["Dec"] = ngc_df["Dec"].apply(lambda x: x * ureg.degree)
+    ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x * ureg.mag)
+    ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute)
+
+    return ngc_df
 
 
 def _load_bright_stars_with_units():
@@ -63,6 +83,13 @@ class Catalogs:
         return _messier_df
 
     @property
+    def NGC(self):
+        global _ngc_df
+        if _ngc_df is None:
+            _ngc_df = _load_ngc_with_units()
+        return _ngc_df
+
+    @property
     def BRIGHT_STARS(self):
         global _bright_stars_df
         if _bright_stars_df is None:
@@ -76,3 +103,4 @@ def initialize_catalogs():
     # when it's explicitly called.
     _ = Catalogs().MESSIER
     _ = Catalogs().BRIGHT_STARS
+    _ = Catalogs().NGC
