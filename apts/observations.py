@@ -13,6 +13,8 @@ from skyfield.api import utc
 
 from .conditions import Conditions
 from .objects.messier import Messier
+from .objects.ngc import NGC
+from .objects.stars import Stars
 from .objects.solar_objects import SolarObjects
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -116,6 +118,8 @@ class Observation:
         self.local_planets = SolarObjects(
             self.place, calculation_date=self.effective_date
         )
+        self.local_ngc = NGC(self.place, calculation_date=self.effective_date)
+        self.local_stars = Stars(self.place, calculation_date=self.effective_date)
 
         # Compute time limit for observation
         if self.start is not None:
@@ -137,6 +141,11 @@ class Observation:
 
     def get_visible_messier(self, **args):
         return self.local_messier.get_visible(
+            self.conditions, self.start, self.time_limit, **args
+        )
+
+    def get_visible_ngc(self, **args):
+        return self.local_ngc.get_visible(
             self.conditions, self.start, self.time_limit, **args
         )
 
@@ -890,6 +899,72 @@ class Observation:
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
 
+    def _plot_stars_on_skymap(self, ax, observer, mag_limit, is_polar):
+        with load.open(hipparcos.URL) as f:
+            stars = hipparcos.load_dataframe(f)
+
+        limit = mag_limit if mag_limit is not None else (4.5 if is_polar else 7.5)
+        bright_stars = stars[stars["magnitude"] <= limit]
+        star_positions = observer.observe(Star.from_dataframe(bright_stars))
+        alt, az, _ = star_positions.apparent().altaz()
+
+        visible = alt.degrees > 0
+        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (5 if is_polar else 3)
+
+        if is_polar:
+            ax.scatter(az.radians[visible], 90 - alt.degrees[visible], s=sizes, color=ax.get_facecolor(), marker='.', edgecolors=ax.get_tick_params()['text.color'])
+        else:
+            ax.scatter(az.degrees[visible], alt.degrees[visible], s=sizes, color=ax.get_tick_params()['text.color'], marker='.')
+
+    def _plot_messier_on_skymap(self, ax, observer, is_polar):
+        visible_messier = self.get_visible_messier()
+        if not visible_messier.empty:
+            for _, m_obj in visible_messier.iterrows():
+                messier_name = m_obj[ObjectTableLabels.MESSIER]
+                messier_object = self.local_messier.find_by_name(messier_name)
+                if messier_object:
+                    alt, az, _ = observer.observe(messier_object).apparent().altaz()
+                    if alt.degrees > 0:
+                        if is_polar:
+                            ax.scatter(az.radians, 90 - alt.degrees, s=50, color='red', marker='+')
+                            ax.annotate(messier_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color='red')
+                        else:
+                            ax.scatter(az.degrees, alt.degrees, s=50, color='red', marker='+')
+                            ax.annotate(messier_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color='red')
+
+    def _plot_ngc_on_skymap(self, ax, observer, is_polar):
+        visible_ngc = self.get_visible_ngc()
+        if not visible_ngc.empty:
+            for _, n_obj in visible_ngc.iterrows():
+                ngc_name = n_obj[ObjectTableLabels.NGC]
+                ngc_object = self.local_ngc.find_by_name(ngc_name)
+                if ngc_object:
+                    alt, az, _ = observer.observe(ngc_object).apparent().altaz()
+                    if alt.degrees > 0:
+                        if is_polar:
+                            ax.scatter(az.radians, 90 - alt.degrees, s=50, color='green', marker='x')
+                            ax.annotate(ngc_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color='green')
+                        else:
+                            ax.scatter(az.degrees, alt.degrees, s=50, color='green', marker='x')
+                            ax.annotate(ngc_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color='green')
+
+    def _plot_planets_on_skymap(self, ax, observer, is_polar, effective_dark_mode, style):
+        visible_planets = self.get_visible_planets()
+        if not visible_planets.empty:
+            for _, p_obj in visible_planets.iterrows():
+                planet_name = p_obj[ObjectTableLabels.NAME]
+                planet_object = self.local_planets.find_by_name(planet_name)
+                if planet_object:
+                    alt, az, _ = observer.observe(planet_object).apparent().altaz()
+                    if alt.degrees > 0:
+                        planet_color = get_planet_color(planet_name, effective_dark_mode, style["TEXT_COLOR"])
+                        if is_polar:
+                            ax.scatter(az.radians, 90 - alt.degrees, s=100, color=planet_color, marker='o')
+                            ax.annotate(planet_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color=planet_color)
+                        else:
+                            ax.scatter(az.degrees, alt.degrees, s=100, color=planet_color, marker='o')
+                            ax.annotate(planet_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color=planet_color)
+
     def _generate_plot_skymap(
         self,
         target_name: str,
@@ -924,6 +999,10 @@ class Observation:
         target_object = self.local_messier.find_by_name(target_name)
         if target_object is None:
             target_object = self.local_planets.find_by_name(target_name)
+        if target_object is None:
+            target_object = self.local_ngc.find_by_name(target_name)
+        if target_object is None:
+            target_object = self.local_stars.find_by_name(target_name)
 
         if not target_object:
             fig, ax = pyplot.subplots(figsize=(10, 10))
@@ -986,83 +1065,11 @@ class Observation:
             ax.set_aspect("equal", adjustable="box")
             ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
-            # 1. Plot stars (dimmer)
-            with load.open(hipparcos.URL) as f:
-                stars = hipparcos.load_dataframe(f)
-
-            mag_limit = (
-                star_magnitude_limit if star_magnitude_limit is not None else 7.5
-            )
-            dim_stars = stars[stars["magnitude"] <= mag_limit]
-            star_positions = observer.observe(Star.from_dataframe(dim_stars))
-            alt, az, _ = star_positions.apparent().altaz()
-
-            visible = alt.degrees > 0
-            sizes = (
-                mag_limit + 1 - numpy.array(dim_stars["magnitude"][visible])
-            ) * 3  # Adjust size formula
-            ax.scatter(
-                az.degrees[visible],
-                alt.degrees[visible],
-                s=sizes,
-                color=style["TEXT_COLOR"],
-                marker=".",
-            )
-
-            # 2. Plot Messier objects
-            visible_messier = self.get_visible_messier()
-            if not visible_messier.empty:
-                for _, m_obj in visible_messier.iterrows():
-                    messier_name = m_obj[ObjectTableLabels.MESSIER]
-                    messier_object = self.local_messier.find_by_name(messier_name)
-                    if messier_object:
-                        (
-                            alt,
-                            az,
-                            _,
-                        ) = observer.observe(messier_object).apparent().altaz()
-                        if alt.degrees > 0:
-                            ax.scatter(
-                                az.degrees,
-                                alt.degrees,
-                                s=50,
-                                color="red",
-                                marker="+",
-                            )
-                            ax.annotate(
-                                messier_name,
-                                (az.degrees, alt.degrees),
-                                textcoords="offset points",
-                                xytext=(5, 5),
-                                color="red",
-                            )
-
-            # 3. Plot Planets
-            visible_planets = self.get_visible_planets()
-            if not visible_planets.empty:
-                for _, p_obj in visible_planets.iterrows():
-                    planet_name = p_obj[ObjectTableLabels.NAME]
-                    planet_object = self.local_planets.find_by_name(planet_name)
-                    if planet_object:
-                        alt, az, _ = observer.observe(planet_object).apparent().altaz()
-                        if alt.degrees > 0:
-                            planet_color = get_planet_color(
-                                planet_name, effective_dark_mode, style["TEXT_COLOR"]
-                            )
-                            ax.scatter(
-                                az.degrees,
-                                alt.degrees,
-                                s=100,
-                                color=planet_color,
-                                marker="o",
-                            )
-                            ax.annotate(
-                                planet_name,
-                                (az.degrees, alt.degrees),
-                                textcoords="offset points",
-                                xytext=(5, 5),
-                                color=planet_color,
-                            )
+            # Plot celestial objects
+            self._plot_stars_on_skymap(ax, observer, star_magnitude_limit, is_polar=False)
+            self._plot_messier_on_skymap(ax, observer, is_polar=False)
+            self._plot_ngc_on_skymap(ax, observer, is_polar=False)
+            self._plot_planets_on_skymap(ax, observer, is_polar=False, effective_dark_mode=effective_dark_mode, style=style)
 
             # 4. Highlight target object
             ax.scatter(
