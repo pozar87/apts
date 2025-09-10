@@ -333,10 +333,11 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         patch(
             "apts.observations.Observation.plot_sun_and_moon_path"
         ) as mock_plot_sun_and_moon_path,
+        patch.object(mock_weather_instance, "plot_moon_phase") as mock_plot_moon_phase,
     ):
         fig = obs.plot_weather()
 
-        mock_subplots.assert_called_once_with(nrows=4, ncols=2, figsize=(13, 18))
+        mock_subplots.assert_called_once_with(nrows=5, ncols=2, figsize=(13, 22))
 
         mock_plot_clouds.assert_called_once()
         mock_plot_clouds_summary.assert_called_once()
@@ -346,12 +347,49 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         mock_plot_wind.assert_called_once()
         mock_plot_pressure_and_ozone.assert_called_once()
         mock_plot_visibility.assert_called_once()
+        mock_plot_moon_phase.assert_called_once()
 
         assert mock_mark_observation.call_count >= 1
         assert mock_mark_good_conditions.call_count >= 1
 
         assert fig is not None
         assert isinstance(fig, MagicMock)
+
+
+@patch("apts.weather.get_weather_settings")
+def test_plot_moon_phase(mock_get_weather_settings, requests_mock):
+    mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
+    mock_api_response = {
+        "hourly": {
+            "data": [
+                {
+                    "time": 1624000000 + i * 3600,
+                    "cloudCover": 0.1,
+                    "precipProbability": 0.05,
+                    "windSpeed": 5,
+                    "temperature": 15,
+                    "summary": "Clear",
+                    "precipType": "none",
+                    "apparentTemperature": 14,
+                    "dewPoint": 10,
+                    "humidity": 0.7,
+                    "visibility": 10,
+                    "pressure": 1012,
+                    "ozone": 300,
+                }
+                for i in range(24)
+            ]
+        }
+    }
+    requests_mock.get(ANY, json=mock_api_response)
+
+    weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
+    with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
+        ax = weather.plot_moon_phase()
+        assert ax is not None
+        mock_annotate_plot.assert_called_once_with(
+            ax, "Moon Phase [%]", False
+        )
 
 
 if __name__ == "__main__":

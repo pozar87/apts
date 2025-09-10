@@ -703,6 +703,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "windSpeed": wind,
                     "temperature": temp,
                     "visibility": vis,
+                    "moonPhase": 0,
                 }
             )
         return pd.DataFrame(data)
