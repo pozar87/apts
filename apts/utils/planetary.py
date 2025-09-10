@@ -58,3 +58,15 @@ def get_technical_name(simple_name: str) -> str:
         if simple.lower() == simple_name.lower():
             return technical
     return simple_name.lower()
+
+
+def get_moon_phase(time):
+    """
+    Returns the moon phase for a given time.
+    """
+    from apts.cache import get_ephemeris
+    from skyfield import almanac
+
+    eph = get_ephemeris()
+    moon_phase = almanac.moon_phase(eph, time).degrees
+    return moon_phase

@@ -6,6 +6,8 @@ import requests_cache
 from typing import Optional
 
 from .utils import Utils
+from apts.utils.planetary import get_moon_phase
+from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
 from apts.weather_providers import (
@@ -68,6 +70,10 @@ class Weather:
         self.data = provider.download_data()
         if self.data is not None and not self.data.empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
+            ts = get_timescale()
+            self.data["moonPhase"] = self.data["time"].apply(
+                lambda x: get_moon_phase(ts.from_datetime(x))
+            )
         else:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."
@@ -483,6 +489,7 @@ class Weather:
                     "windSpeed",
                     "temperature",
                     "visibility",
+                    "moonPhase",
                 ]
             )
         data = self._filter_data(
@@ -492,6 +499,7 @@ class Weather:
                 "windSpeed",
                 "temperature",
                 "visibility",
+                "moonPhase",
             ]
         )
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
@@ -541,4 +549,52 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
+        return ax
+
+    def plot_moon_phase(
+        self, hours=24, dark_mode_override: Optional[bool] = None, **args
+    ):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        data = self._filter_data(["moonPhase"])
+        if data.empty:
+            return None
+
+        ax = args.pop("ax", None)
+        fig = None
+
+        if ax:
+            fig = ax.figure
+            # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
+
+        plot_kwargs = args.copy()
+        plot_ax = data.plot(
+            x="time", ylim=(0, 105), title="Moon Phase", ax=ax, **plot_kwargs
+        )  # pyright: ignore
+
+        if not ax:  # ax was created by data.plot()
+            ax = plot_ax
+            fig = ax.figure
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
+
+        legend = ax.get_legend()
+        if legend:
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text_obj in legend.get_texts():  # Changed variable name
+                text_obj.set_color(style["TEXT_COLOR"])
+            if legend.get_title():
+                legend.get_title().set_color(style["TEXT_COLOR"])
+
+        Utils.annotate_plot(ax, "Moon Phase [%]", effective_dark_mode)
         return ax
