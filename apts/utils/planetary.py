@@ -62,11 +62,13 @@ def get_technical_name(simple_name: str) -> str:
 
 def get_moon_phase(time):
     """
-    Returns the moon phase for a given time.
+    Returns the moon illumination percentage for a given time.
     """
     from apts.cache import get_ephemeris
     from skyfield import almanac
+    import numpy as np
 
     eph = get_ephemeris()
-    moon_phase = almanac.moon_phase(eph, time).degrees
-    return moon_phase
+    phase_angle = almanac.moon_phase(eph, time).degrees
+    illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2
+    return illumination * 100

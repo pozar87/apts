@@ -1372,7 +1372,7 @@ class Observation:
         )
 
         # Ensure numeric types for comparison
-        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility']:
+        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility', 'moonPhase']:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors='coerce')
 
@@ -1443,6 +1443,15 @@ class Observation:
                 reasons.append(
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
                 )
+            
+            if pd.isna(row.moonPhase):
+                is_good_hour = False
+                reasons.append("Moon phase data not available")
+            elif not (row.moonPhase < self.conditions.max_moon_phase):
+                is_good_hour = False
+                reasons.append(
+                    f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                )
 
             analysis_results.append(
                 {
@@ -1453,7 +1462,8 @@ class Observation:
                     "clouds": row.cloudCover,
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
-                    "visibility": row.visibility
+                    "visibility": row.visibility,
+                    "moon_phase": row.moonPhase
                 }
             )
 
