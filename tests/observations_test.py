@@ -106,6 +106,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
+                "moonPhase": [],
             }
         )
         html = self.observation.to_html()
@@ -136,6 +137,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
+                "moonPhase": [],
             }
         )
         custom_template = "/path/to/custom/template.html"
@@ -166,6 +168,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
+                "moonPhase": [],
             }
         )
         custom_css = "h1 { color: blue; }"
@@ -188,6 +191,7 @@ class TestObservationTemplate(unittest.TestCase):
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
+                "moonPhase": [],
             }
         )
         # Create a temporary template file
@@ -656,6 +660,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.max_wind = 15.0
         self.obs.conditions.min_temperature = 0.0
         self.obs.conditions.max_temperature = 25.0
+        self.obs.conditions.max_moon_phase = 50.0
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
@@ -686,6 +691,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
+            moonPhase = self.obs.conditions.max_moon_phase - 1
 
             if (
                 i < len(conditions_met_flags) and not conditions_met_flags[i]
@@ -703,7 +709,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "windSpeed": wind,
                     "temperature": temp,
                     "visibility": vis,
-                    "moonPhase": 0,
+                    "moonPhase": moonPhase,
                 }
             )
         return pd.DataFrame(data)
@@ -740,6 +746,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
+            moonPhase = self.obs.conditions.max_moon_phase - 1
 
             if i == 1:  # Second hour
                 cloud = self.obs.conditions.max_clouds + 5  # Exceeds limit
@@ -752,6 +759,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "windSpeed": wind,
                     "temperature": temp,
                     "visibility": self.obs.conditions.min_visibility + 1,
+                    "moonPhase": moonPhase,
                 }
             )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -786,6 +794,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 )
                 / 2,  # Good
                 "visibility": self.obs.conditions.min_visibility + 1,
+                "moonPhase": 0,
             }
         )
         # Hour 1: Good
@@ -802,6 +811,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 )
                 / 2,
                 "visibility": self.obs.conditions.min_visibility + 1,
+                "moonPhase": 0,
             }
         )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -898,6 +908,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": self.obs.conditions.min_temperature - 5,  # Too cold
                 "visibility": self.obs.conditions.min_visibility + 1,
+                "moonPhase": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -920,6 +931,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": self.obs.conditions.max_temperature + 5,  # Too hot
                 "visibility": self.obs.conditions.min_visibility + 1,
+                "moonPhase": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -946,6 +958,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 )
                 / 2,
                 "visibility": self.obs.conditions.min_visibility + 1,
+                "moonPhase": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -965,6 +978,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "windSpeed",
                 "temperature",
                 "visibility",
+                "moonPhase",
             ]
         )
         results = self.obs.get_hourly_weather_analysis()
