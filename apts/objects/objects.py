@@ -82,6 +82,8 @@ class Objects(ABC):
         return Star(ra_hours=RA, dec_degrees=Dec)
 
     def _compute_tranzit(self, skyfield_object, observer):
+        if skyfield_object is None:
+            return None
         # Return transit time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
@@ -97,6 +99,8 @@ class Objects(ABC):
         return None
 
     def _compute_rising_and_setting(self, skyfield_object, observer):
+        if skyfield_object is None:
+            return None, None
         # Return rising and setting time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
@@ -120,7 +124,7 @@ class Objects(ABC):
 
     def _altitude_at_transit(self, skyfield_object, transit, observer):
         # Calculate objects altitude at transit time
-        if transit is None:
+        if transit is None or pandas.isna(transit):
             return 0
         t = self.ts.utc(transit)
         alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
