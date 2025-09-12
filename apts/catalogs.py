@@ -52,7 +52,7 @@ def _load_ngc_with_units():
     ngc_df['RA'] = ngc_df['RA'].apply(
         lambda x: (
             (lambda parts: float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)(x.split(':'))
-        ) if isinstance(x, str) and len(x.split(':')) == 3 else None
+        ) if isinstance(x, str) and x.count(':') == 2 else None
     )
 
     # Dec parsing from DD:MM:SS.S string to degrees
@@ -60,7 +60,7 @@ def _load_ngc_with_units():
         lambda x: (
             (lambda sign, parts: sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600))
             (-1 if x.startswith('-') else 1, x.lstrip('+-').split(':'))
-        ) if isinstance(x, str) and len(x.split(':')) == 3 else None
+        ) if isinstance(x, str) and x.count(':') == 2 else None
     )
 
     # Set proper dtypes for string columns
@@ -71,8 +71,6 @@ def _load_ngc_with_units():
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    ngc_df["RA"] = ngc_df["RA"].apply(lambda x: x * ureg.hour if pd.notna(x) else None)
-    ngc_df["Dec"] = ngc_df["Dec"].apply(lambda x: x * ureg.degree if pd.notna(x) else None)
     ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x * ureg.mag if pd.notna(x) else None)
     ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute if pd.notna(x) else None)
 
