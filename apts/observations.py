@@ -113,13 +113,11 @@ class Observation:
             )
         # If not, self.start and self.stop remain None
 
-        # Instantiate Messier and SolarObjects objects
-        self.local_messier = Messier(self.place, calculation_date=self.effective_date)
-        self.local_planets = SolarObjects(
-            self.place, calculation_date=self.effective_date
-        )
-        self.local_ngc = NGC(self.place, calculation_date=self.effective_date)
-        self.local_stars = Stars(self.place, calculation_date=self.effective_date)
+        # Catalog objects are lazy-loaded to improve performance
+        self._local_messier = None
+        self._local_planets = None
+        self._local_ngc = None
+        self._local_stars = None
 
         # Compute time limit for observation
         if self.start is not None:
@@ -138,6 +136,32 @@ class Observation:
                 else time_limit_dt + timedelta(days=1)
             )
         # If self.start is None, self.time_limit remains None.
+
+    @property
+    def local_messier(self):
+        if self._local_messier is None:
+            self._local_messier = Messier(self.place, calculation_date=self.effective_date)
+        return self._local_messier
+
+    @property
+    def local_planets(self):
+        if self._local_planets is None:
+            self._local_planets = SolarObjects(
+                self.place, calculation_date=self.effective_date
+            )
+        return self._local_planets
+
+    @property
+    def local_ngc(self):
+        if self._local_ngc is None:
+            self._local_ngc = NGC(self.place, calculation_date=self.effective_date)
+        return self._local_ngc
+
+    @property
+    def local_stars(self):
+        if self._local_stars is None:
+            self._local_stars = Stars(self.place, calculation_date=self.effective_date)
+        return self._local_stars
 
     def get_visible_messier(self, **args):
         return self.local_messier.get_visible(
