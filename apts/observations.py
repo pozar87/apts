@@ -140,7 +140,9 @@ class Observation:
     @property
     def local_messier(self):
         if self._local_messier is None:
-            self._local_messier = Messier(self.place, calculation_date=self.effective_date)
+            self._local_messier = Messier(
+                self.place, calculation_date=self.effective_date
+            )
         return self._local_messier
 
     @property
@@ -653,43 +655,44 @@ class Observation:
         )
 
     def to_html(self, custom_template=None, css=None):
-        template_path = (
-            custom_template if custom_template else Observation.NOTIFICATION_TEMPLATE
-        )
-        with open(template_path) as template_file:
-            template_content = template_file.read()
-            if css:
-                style_end_pos = template_content.find("</style>")
-                if style_end_pos != -1:
-                    template_content = (
-                        template_content[:style_end_pos]
-                        + css
-                        + template_content[style_end_pos:]
-                    )
-            template = Template(template_content)
-            hourly_weather = self.get_hourly_weather_analysis()
-            visible_planets_df = self.get_visible_planets()
+        if custom_template:
+            with open(custom_template, "r", encoding="utf-8") as f:
+                template_content = f.read()
+        else:
+            template_content = self.NOTIFICATION_TEMPLATE.read_text(encoding="utf-8")
 
-            data = {
-                "title": "APTS",
-                "start": Utils.format_date(self.start),
-                "stop": Utils.format_date(self.stop),
-                "planets_count": len(visible_planets_df),
-                "messier_count": len(self.get_visible_messier()),
-                "planets_table": visible_planets_df.drop(
-                    columns=["TechnicalName"]
-                ).to_html()
-                if "TechnicalName" in visible_planets_df.columns
-                else visible_planets_df.to_html(),
-                "messier_table": self.get_visible_messier().to_html(),
-                "equipment_table": self.equipment.data().to_html(),
-                "place_name": self.place.name,
-                "lat": numpy.rad2deg(self.place.lat),
-                "lon": numpy.rad2deg(self.place.lon),
-                "hourly_weather": hourly_weather,
-                "timezone": self.place.local_timezone,
-            }
-            return str(template.substitute(data))
+        if css:
+            style_end_pos = template_content.find("</style>")
+            if style_end_pos != -1:
+                template_content = (
+                    template_content[:style_end_pos]
+                    + css
+                    + template_content[style_end_pos:]
+                )
+        template = Template(template_content)
+        hourly_weather = self.get_hourly_weather_analysis()
+        visible_planets_df = self.get_visible_planets()
+
+        data = {
+            "title": "APTS",
+            "start": Utils.format_date(self.start),
+            "stop": Utils.format_date(self.stop),
+            "planets_count": len(visible_planets_df),
+            "messier_count": len(self.get_visible_messier()),
+            "planets_table": visible_planets_df.drop(
+                columns=["TechnicalName"]
+            ).to_html()
+            if "TechnicalName" in visible_planets_df.columns
+            else visible_planets_df.to_html(),
+            "messier_table": self.get_visible_messier().to_html(),
+            "equipment_table": self.equipment.data().to_html(),
+            "place_name": self.place.name,
+            "lat": numpy.rad2deg(self.place.lat),
+            "lon": numpy.rad2deg(self.place.lon),
+            "hourly_weather": hourly_weather,
+            "timezone": self.place.local_timezone,
+        }
+        return str(template.substitute(data))
 
     def _mark_observation(self, plot, dark_mode_enabled: bool, style: dict):
         if plot is None:
@@ -1591,5 +1594,4 @@ class Observation:
                     "moon_phase": row.moonPhase,
                 }
             )
-
         return analysis_results

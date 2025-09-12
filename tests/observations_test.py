@@ -75,7 +75,7 @@ class TestObservationTemplate(unittest.TestCase):
                     "2025/02/19 02:00:00", tz=obs_local_tz
                 )
 
-        self.default_template_content = """<!doctype html>
+        self.default_template_content = '''<!doctype html>
 <html>
   <head>
     <style>
@@ -86,15 +86,11 @@ class TestObservationTemplate(unittest.TestCase):
     <h1>$title</h1>
     <p>$place_name</p>
   </body>
-</html>"""
+</html>'''
 
     @patch("apts.weather.Weather.__init__")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
-    )
-    def test_to_html_default_template(self, mock_file, mock_weather_init):
+    @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
+    def test_to_html_default_template(self, mock_template, mock_weather_init):
         """Test that to_html uses the default template when no custom template is provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
@@ -109,11 +105,11 @@ class TestObservationTemplate(unittest.TestCase):
                 "moonPhase": [],
             }
         )
+        mock_template.read_text.return_value = self.default_template_content
         html = self.observation.to_html()
 
-        # Verify that open was called with the default template path
-        mock_file.assert_called_once()
-        self.assertEqual(mock_file.call_args[0][0], Observation.NOTIFICATION_TEMPLATE)
+        # Verify that read_text was called
+        mock_template.read_text.assert_called_once_with(encoding="utf-8")
 
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
@@ -123,10 +119,10 @@ class TestObservationTemplate(unittest.TestCase):
     @patch(
         "builtins.open",
         new_callable=mock_open,
-        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
     )
     def test_to_html_custom_template(self, mock_file, mock_weather_init):
         """Test that to_html uses a custom template when provided"""
+        mock_file.return_value.read.return_value = self.default_template_content
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
         self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
@@ -144,19 +140,15 @@ class TestObservationTemplate(unittest.TestCase):
         html = self.observation.to_html(custom_template=custom_template)
 
         # Verify that open was called with the custom template path
-        mock_file.assert_called_once_with(custom_template)
+        mock_file.assert_called_once_with(custom_template, "r", encoding="utf-8")
 
         # Verify that the template contains the substituted values
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
 
     @patch("apts.weather.Weather.__init__")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data="<!doctype html><html><head><style>body{color:#555;}</style></head><body><h1>$title</h1><p>$place_name</p></body></html>",
-    )
-    def test_to_html_custom_css(self, mock_file, mock_weather_init):
+    @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
+    def test_to_html_custom_css(self, mock_template, mock_weather_init):
         """Test that to_html injects custom CSS when provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
@@ -171,12 +163,13 @@ class TestObservationTemplate(unittest.TestCase):
                 "moonPhase": [],
             }
         )
+        mock_template.read_text.return_value = self.default_template_content
         custom_css = "h1 { color: blue; }"
         html = self.observation.to_html(css=custom_css)
 
         # Verify that the CSS was properly injected
         self.assertIn(custom_css, html)
-        self.assertIn("body{color:#555;}", html)
+        self.assertIn("body { color: #555; }", html)
 
     @patch("apts.weather.Weather.__init__")
     def test_to_html_with_actual_template_file(self, mock_weather_init):
