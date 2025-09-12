@@ -82,6 +82,8 @@ class Objects(ABC):
         return Star(ra_hours=RA, dec_degrees=Dec)
 
     def _compute_tranzit(self, skyfield_object, observer):
+        if skyfield_object is None:
+            return None
         # Return transit time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
@@ -97,6 +99,8 @@ class Objects(ABC):
         return None
 
     def _compute_rising_and_setting(self, skyfield_object, observer):
+        if skyfield_object is None:
+            return None, None
         # Return rising and setting time in local time
         t0 = self.ts.utc(observer.date.utc_datetime())
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))

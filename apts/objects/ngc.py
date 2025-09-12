@@ -47,6 +47,8 @@ class NGC(Objects):
         )
 
     def get_skyfield_object(self, obj):
+        if obj.RA is None or obj.Dec is None:
+            return None
         return Star(ra_hours=obj.RA, dec_degrees=obj.Dec)
 
     def find_by_name(self, name):
