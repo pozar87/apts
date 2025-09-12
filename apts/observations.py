@@ -907,7 +907,7 @@ class Observation:
         else:
             return self.place.plot_moon_path(dark_mode_override, **args)
 
-    def _plot_stars_on_skymap(self, ax, observer, mag_limit, is_polar):
+    def _plot_stars_on_skymap(self, ax, observer, mag_limit, is_polar, style: dict):
         with load.open(hipparcos.URL) as f:
             stars = hipparcos.load_dataframe(f)
 
@@ -920,9 +920,9 @@ class Observation:
         sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (5 if is_polar else 3)
 
         if is_polar:
-            ax.scatter(az.radians[visible], 90 - alt.degrees[visible], s=sizes, color=ax.get_facecolor(), marker='.', edgecolors=ax.get_tick_params()['text.color'])
+            ax.scatter(az.radians[visible], 90 - alt.degrees[visible], s=sizes, color=ax.get_facecolor(), marker='.', edgecolors=style["TEXT_COLOR"])
         else:
-            ax.scatter(az.degrees[visible], alt.degrees[visible], s=sizes, color=ax.get_tick_params()['text.color'], marker='.')
+            ax.scatter(az.degrees[visible], alt.degrees[visible], s=sizes, color=style["TEXT_COLOR"], marker='.')
 
     def _plot_messier_on_skymap(self, ax, observer, is_polar):
         visible_messier = self.get_visible_messier()
@@ -1235,7 +1235,7 @@ class Observation:
 
             # Plot celestial objects
             if plot_stars:
-                self._plot_stars_on_skymap(ax, observer, star_magnitude_limit, is_polar=True)
+                self._plot_stars_on_skymap(ax, observer, star_magnitude_limit, is_polar=True, style=style)
             if plot_messier:
                 self._plot_messier_on_skymap(ax, observer, is_polar=True)
             if plot_ngc:
