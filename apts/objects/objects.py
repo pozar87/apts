@@ -124,7 +124,7 @@ class Objects(ABC):
 
     def _altitude_at_transit(self, skyfield_object, transit, observer):
         # Calculate objects altitude at transit time
-        if transit is None:
+        if transit is None or pandas.isna(transit):
             return 0
         t = self.ts.utc(transit)
         alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
