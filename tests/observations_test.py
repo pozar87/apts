@@ -116,13 +116,8 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn("APTS", html)
 
     @patch("apts.weather.Weather.__init__")
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-    )
-    def test_to_html_custom_template(self, mock_file, mock_weather_init):
+    def test_to_html_custom_template(self, mock_weather_init):
         """Test that to_html uses a custom template when provided"""
-        mock_file.return_value.read.return_value = self.default_template_content
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
         self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
@@ -136,15 +131,18 @@ class TestObservationTemplate(unittest.TestCase):
                 "moonPhase": [],
             }
         )
-        custom_template = "/path/to/custom/template.html"
-        html = self.observation.to_html(custom_template=custom_template)
 
-        # Verify that open was called with the custom template path
-        mock_file.assert_called_once_with(custom_template, "r", encoding="utf-8")
+        with tempfile.NamedTemporaryFile(mode="w", delete=False, encoding='utf-8') as temp_file:
+            temp_file.write(self.default_template_content)
+            custom_template_path = temp_file.name
 
-        # Verify that the template contains the substituted values
-        self.assertIn(self.observation.place.name, html)
-        self.assertIn("APTS", html)
+        try:
+            html = self.observation.to_html(custom_template=custom_template_path)
+            # Verify that the template contains the substituted values
+            self.assertIn(self.observation.place.name, html)
+            self.assertIn("APTS", html)
+        finally:
+            os.unlink(custom_template_path)
 
     @patch("apts.weather.Weather.__init__")
     @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
