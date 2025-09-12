@@ -574,6 +574,7 @@ class Observation:
             & (data.temperature > self.conditions.min_temperature)
             & (data.temperature < self.conditions.max_temperature)
             & (data.visibility > self.conditions.min_visibility)
+            & (data.moonPhase < self.conditions.max_moon_phase)
         ]
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
@@ -755,13 +756,13 @@ class Observation:
             if (
                 axes_arg is not None
                 and isinstance(axes_arg, numpy.ndarray)
-                and axes_arg.shape == (4, 2)
+                and axes_arg.shape == (5, 2)
             ):  # Assuming numpy is available
                 axes = axes_arg
                 fig = axes[0, 0].figure
                 logger.debug("Using provided axes for weather plot.")
             else:
-                fig, axes = pyplot.subplots(nrows=4, ncols=2, figsize=(13, 18), **args)
+                fig, axes = pyplot.subplots(nrows=5, ncols=2, figsize=(13, 22), **args)
                 logger.debug("Created new figure and axes for weather plot.")
 
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
@@ -852,6 +853,13 @@ class Observation:
             )
             if plt_visibility_ax:
                 self._mark_observation(plt_visibility_ax, effective_dark_mode, style)
+
+            logger.debug("Plotting moon phase...")
+            plt_moon_phase_ax = self.place.weather.plot_moon_phase(
+                ax=axes[4, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_moon_phase_ax:
+                self._mark_observation(plt_moon_phase_ax, effective_dark_mode, style)
 
             fig.tight_layout()
             logger.info(
@@ -1319,7 +1327,7 @@ class Observation:
         )
 
         # Ensure numeric types for comparison
-        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility']:
+        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility', 'moonPhase']:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors='coerce')
 
@@ -1390,6 +1398,15 @@ class Observation:
                 reasons.append(
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
                 )
+            
+            if pd.isna(row.moonPhase):
+                is_good_hour = False
+                reasons.append("Moon phase data not available")
+            elif not (row.moonPhase < self.conditions.max_moon_phase):
+                is_good_hour = False
+                reasons.append(
+                    f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                )
 
             analysis_results.append(
                 {
@@ -1400,7 +1417,8 @@ class Observation:
                     "clouds": row.cloudCover,
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
-                    "visibility": row.visibility
+                    "visibility": row.visibility,
+                    "moon_phase": row.moonPhase
                 }
             )
 
