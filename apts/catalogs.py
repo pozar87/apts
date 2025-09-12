@@ -35,19 +35,46 @@ def _load_messier_with_units():
 
 def _load_ngc_with_units():
     # Load NGC catalogue data
-    ngc_df = pd.read_csv(str(resources.files("apts").joinpath("data/ngc.csv")))
+    ngc_df = pd.read_csv(
+        str(resources.files("apts").joinpath("data/ngc.csv")),
+        sep=';',
+        na_values=['']
+    )
+
+    # Rename columns for consistency
+    ngc_df.rename(columns={
+        'Const': 'Constellation',
+        'V-Mag': 'Magnitude',
+        'MajAx': 'Size'
+    }, inplace=True)
+
+    # RA parsing from HH:MM:SS.SS string to hours
+    ngc_df['RA'] = ngc_df['RA'].apply(
+        lambda x: (
+            (lambda parts: float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)(x.split(':'))
+        ) if isinstance(x, str) and len(x.split(':')) == 3 else None
+    )
+
+    # Dec parsing from DD:MM:SS.S string to degrees
+    ngc_df['Dec'] = ngc_df['Dec'].apply(
+        lambda x: (
+            (lambda sign, parts: sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600))
+            (-1 if x.startswith('-') else 1, x.lstrip('+-').split(':'))
+        ) if isinstance(x, str) and len(x.split(':')) == 3 else None
+    )
 
     # Set proper dtypes for string columns
-    string_columns = ["NGC", "Name", "Type", "Constellation"]
+    string_columns = ["Name", "Type", "Constellation", "NGC", "IC", "Common names"]
     for column in string_columns:
-        ngc_df[column] = ngc_df[column].astype("string")
+        if column in ngc_df.columns:
+            ngc_df[column] = ngc_df[column].astype("string")
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    ngc_df["RA"] = ngc_df["RA"].apply(lambda x: x * ureg.hour)
-    ngc_df["Dec"] = ngc_df["Dec"].apply(lambda x: x * ureg.degree)
-    ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x * ureg.mag)
-    ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute)
+    ngc_df["RA"] = ngc_df["RA"].apply(lambda x: x * ureg.hour if pd.notna(x) else None)
+    ngc_df["Dec"] = ngc_df["Dec"].apply(lambda x: x * ureg.degree if pd.notna(x) else None)
+    ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x * ureg.mag if pd.notna(x) else None)
+    ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute if pd.notna(x) else None)
 
     return ngc_df
 
