@@ -440,7 +440,6 @@ class Observation:
             stop += timedelta(days=1)
         return (start, stop)
 
-
     def plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
         return self._generate_plot_messier(
             dark_mode_override=dark_mode_override, **args
@@ -917,12 +916,27 @@ class Observation:
         alt, az, _ = star_positions.apparent().altaz()
 
         visible = alt.degrees > 0
-        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (5 if is_polar else 3)
+        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (
+            5 if is_polar else 3
+        )
 
         if is_polar:
-            ax.scatter(az.radians[visible], 90 - alt.degrees[visible], s=sizes, color=ax.get_facecolor(), marker='.', edgecolors=style["TEXT_COLOR"])
+            ax.scatter(
+                az.radians[visible],
+                90 - alt.degrees[visible],
+                s=sizes,
+                color=ax.get_facecolor(),
+                marker=".",
+                edgecolors=style["TEXT_COLOR"],
+            )
         else:
-            ax.scatter(az.degrees[visible], alt.degrees[visible], s=sizes, color=style["TEXT_COLOR"], marker='.')
+            ax.scatter(
+                az.degrees[visible],
+                alt.degrees[visible],
+                s=sizes,
+                color=style["TEXT_COLOR"],
+                marker=".",
+            )
 
     def _plot_messier_on_skymap(self, ax, observer, is_polar):
         visible_messier = self.get_visible_messier()
@@ -934,11 +948,31 @@ class Observation:
                     alt, az, _ = observer.observe(messier_object).apparent().altaz()
                     if alt.degrees > 0:
                         if is_polar:
-                            ax.scatter(az.radians, 90 - alt.degrees, s=50, color='red', marker='+')
-                            ax.annotate(messier_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color='red')
+                            ax.scatter(
+                                az.radians,
+                                90 - alt.degrees,
+                                s=50,
+                                color="red",
+                                marker="+",
+                            )
+                            ax.annotate(
+                                messier_name,
+                                (az.radians, 90 - alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="red",
+                            )
                         else:
-                            ax.scatter(az.degrees, alt.degrees, s=50, color='red', marker='+')
-                            ax.annotate(messier_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color='red')
+                            ax.scatter(
+                                az.degrees, alt.degrees, s=50, color="red", marker="+"
+                            )
+                            ax.annotate(
+                                messier_name,
+                                (az.degrees, alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="red",
+                            )
 
     def _plot_ngc_on_skymap(self, ax, observer, is_polar):
         visible_ngc = self.get_visible_ngc()
@@ -950,13 +984,35 @@ class Observation:
                     alt, az, _ = observer.observe(ngc_object).apparent().altaz()
                     if alt.degrees > 0:
                         if is_polar:
-                            ax.scatter(az.radians, 90 - alt.degrees, s=50, color='green', marker='x')
-                            ax.annotate(ngc_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color='green')
+                            ax.scatter(
+                                az.radians,
+                                90 - alt.degrees,
+                                s=50,
+                                color="green",
+                                marker="x",
+                            )
+                            ax.annotate(
+                                ngc_name,
+                                (az.radians, 90 - alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="green",
+                            )
                         else:
-                            ax.scatter(az.degrees, alt.degrees, s=50, color='green', marker='x')
-                            ax.annotate(ngc_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color='green')
+                            ax.scatter(
+                                az.degrees, alt.degrees, s=50, color="green", marker="x"
+                            )
+                            ax.annotate(
+                                ngc_name,
+                                (az.degrees, alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color="green",
+                            )
 
-    def _plot_planets_on_skymap(self, ax, observer, is_polar, effective_dark_mode, style):
+    def _plot_planets_on_skymap(
+        self, ax, observer, is_polar, effective_dark_mode, style
+    ):
         visible_planets = self.get_visible_planets()
         if not visible_planets.empty:
             for _, p_obj in visible_planets.iterrows():
@@ -965,13 +1021,39 @@ class Observation:
                 if planet_object:
                     alt, az, _ = observer.observe(planet_object).apparent().altaz()
                     if alt.degrees > 0:
-                        planet_color = get_planet_color(planet_name, effective_dark_mode, style["TEXT_COLOR"])
+                        planet_color = get_planet_color(
+                            planet_name, effective_dark_mode, style["TEXT_COLOR"]
+                        )
                         if is_polar:
-                            ax.scatter(az.radians, 90 - alt.degrees, s=100, color=planet_color, marker='o')
-                            ax.annotate(planet_name, (az.radians, 90 - alt.degrees), textcoords="offset points", xytext=(5, 5), color=planet_color)
+                            ax.scatter(
+                                az.radians,
+                                90 - alt.degrees,
+                                s=100,
+                                color=planet_color,
+                                marker="o",
+                            )
+                            ax.annotate(
+                                planet_name,
+                                (az.radians, 90 - alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color=planet_color,
+                            )
                         else:
-                            ax.scatter(az.degrees, alt.degrees, s=100, color=planet_color, marker='o')
-                            ax.annotate(planet_name, (az.degrees, alt.degrees), textcoords="offset points", xytext=(5, 5), color=planet_color)
+                            ax.scatter(
+                                az.degrees,
+                                alt.degrees,
+                                s=100,
+                                color=planet_color,
+                                marker="o",
+                            )
+                            ax.annotate(
+                                planet_name,
+                                (az.degrees, alt.degrees),
+                                textcoords="offset points",
+                                xytext=(5, 5),
+                                color=planet_color,
+                            )
 
     def _generate_plot_skymap(
         self,
@@ -1079,13 +1161,21 @@ class Observation:
 
             # Plot celestial objects
             if plot_stars:
-                self._plot_stars_on_skymap(ax, observer, star_magnitude_limit, is_polar=False)
+                self._plot_stars_on_skymap(
+                    ax, observer, star_magnitude_limit, is_polar=False
+                )
             if plot_messier:
                 self._plot_messier_on_skymap(ax, observer, is_polar=False)
             if plot_ngc:
                 self._plot_ngc_on_skymap(ax, observer, is_polar=False)
             if plot_planets:
-                self._plot_planets_on_skymap(ax, observer, is_polar=False, effective_dark_mode=effective_dark_mode, style=style)
+                self._plot_planets_on_skymap(
+                    ax,
+                    observer,
+                    is_polar=False,
+                    effective_dark_mode=effective_dark_mode,
+                    style=style,
+                )
 
             # 4. Highlight target object
             ax.scatter(
@@ -1235,13 +1325,21 @@ class Observation:
 
             # Plot celestial objects
             if plot_stars:
-                self._plot_stars_on_skymap(ax, observer, star_magnitude_limit, is_polar=True, style=style)
+                self._plot_stars_on_skymap(
+                    ax, observer, star_magnitude_limit, is_polar=True, style=style
+                )
             if plot_messier:
                 self._plot_messier_on_skymap(ax, observer, is_polar=True)
             if plot_ngc:
                 self._plot_ngc_on_skymap(ax, observer, is_polar=True)
             if plot_planets:
-                self._plot_planets_on_skymap(ax, observer, is_polar=True, effective_dark_mode=effective_dark_mode, style=style)
+                self._plot_planets_on_skymap(
+                    ax,
+                    observer,
+                    is_polar=True,
+                    effective_dark_mode=effective_dark_mode,
+                    style=style,
+                )
 
             # 4. Highlight target object
             if target_alt.degrees > 0:
@@ -1327,9 +1425,16 @@ class Observation:
         )
 
         # Ensure numeric types for comparison
-        for col in ['cloudCover', 'precipProbability', 'windSpeed', 'temperature', 'visibility', 'moonPhase']:
+        for col in [
+            "cloudCover",
+            "precipProbability",
+            "windSpeed",
+            "temperature",
+            "visibility",
+            "moonPhase",
+        ]:
             if col in hourly_data.columns:
-                hourly_data[col] = pd.to_numeric(hourly_data[col], errors='coerce')
+                hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
 
         analysis_results = []
 
@@ -1398,7 +1503,7 @@ class Observation:
                 reasons.append(
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
                 )
-            
+
             if pd.isna(row.moonPhase):
                 is_good_hour = False
                 reasons.append("Moon phase data not available")
@@ -1418,7 +1523,7 @@ class Observation:
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
                     "visibility": row.visibility,
-                    "moon_phase": row.moonPhase
+                    "moon_phase": row.moonPhase,
                 }
             )
 
