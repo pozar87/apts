@@ -1162,7 +1162,7 @@ class Observation:
             # Plot celestial objects
             if plot_stars:
                 self._plot_stars_on_skymap(
-                    ax, observer, star_magnitude_limit, is_polar=False
+                    ax, observer, star_magnitude_limit, is_polar=False, style=style
                 )
             if plot_messier:
                 self._plot_messier_on_skymap(ax, observer, is_polar=False)
@@ -1176,6 +1176,26 @@ class Observation:
                     effective_dark_mode=effective_dark_mode,
                     style=style,
                 )
+
+            # 4. Highlight target object
+            ax.scatter(
+                target_az.degrees,
+                target_alt.degrees,
+                s=200,
+                facecolors="none",
+                edgecolors="yellow",
+                marker="o",
+                linewidths=2,
+            )
+            ax.annotate(
+                target_name,
+                (target_az.degrees, target_alt.degrees),
+                textcoords="offset points",
+                xytext=(0, 15),
+                color="yellow",
+                ha="center",
+                fontsize=12,
+            )
 
             # 4. Highlight target object
             ax.scatter(
@@ -1339,6 +1359,27 @@ class Observation:
                     is_polar=True,
                     effective_dark_mode=effective_dark_mode,
                     style=style,
+                )
+
+            # 4. Highlight target object
+            if target_alt.degrees > 0:
+                ax.scatter(
+                    target_az.radians,
+                    90 - target_alt.degrees,
+                    s=200,
+                    facecolors="none",
+                    edgecolors="yellow",
+                    marker="o",
+                    linewidths=2,
+                )
+                ax.annotate(
+                    target_name,
+                    (target_az.radians, 90 - target_alt.degrees),
+                    textcoords="offset points",
+                    xytext=(0, 15),
+                    color="yellow",
+                    ha="center",
+                    fontsize=12,
                 )
 
             # 4. Highlight target object
