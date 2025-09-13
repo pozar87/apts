@@ -19,6 +19,7 @@ from apts.constants.graphconstants import (
     get_planet_color,
 )
 from .cache import get_hipparcos_data
+from .catalogs import Catalogs
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -653,18 +654,21 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
 
 
 def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None):
-    stars = get_hipparcos_data()
-
-    if mag_limit is not None:
-        limit = mag_limit
-    elif is_polar:
-        limit = 4.5
-    elif zoom_deg is not None:
-        limit = 7.5
+    if zoom_deg is None and mag_limit is None and not is_polar:
+        bright_stars = Catalogs().BRIGHT_STARS.copy()
+        limit = bright_stars["magnitude"].max()
     else:
-        limit = 6.0
+        stars = get_hipparcos_data()
+        if mag_limit is not None:
+            limit = mag_limit
+        elif is_polar:
+            limit = 4.5
+        elif zoom_deg is not None:
+            limit = 7.5
+        else:
+            limit = 6.0
+        bright_stars = stars[stars["magnitude"] <= limit]
 
-    bright_stars = stars[stars["magnitude"] <= limit]
     star_positions = observer.observe(Star.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
