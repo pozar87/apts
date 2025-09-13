@@ -652,36 +652,65 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
         return observation.place.plot_moon_path(dark_mode_override, **args)
 
 
-def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict):
+def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None):
     stars = get_hipparcos_data()
 
-    limit = mag_limit if mag_limit is not None else (4.5 if is_polar else 7.5)
+    if mag_limit is not None:
+        limit = mag_limit
+    elif is_polar:
+        limit = 4.5
+    elif zoom_deg is not None:
+        limit = 7.5
+    else:
+        limit = 6.0
+
     bright_stars = stars[stars["magnitude"] <= limit]
     star_positions = observer.observe(Star.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
-    sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (
-        5 if is_polar else 3
-    )
 
-    if is_polar:
+    if not is_polar and zoom_deg is not None:
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        az_degrees = az.degrees[visible]
+        alt_degrees = alt.degrees[visible]
+        zoom_mask = (az_degrees > xlim[0]) & (az_degrees < xlim[1]) & (alt_degrees > ylim[0]) & (alt_degrees < ylim[1])
+        
+        visible_indices = numpy.where(visible)[0][zoom_mask]
+        alt_plot = alt[visible_indices]
+        az_plot = az[visible_indices]
+        mag_plot = bright_stars["magnitude"].iloc[visible_indices]
+
+        sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
-            az.radians[visible],
-            90 - alt.degrees[visible],
-            s=sizes,
-            color=ax.get_facecolor(),
-            marker=".",
-            edgecolors=style["TEXT_COLOR"],
-        )
-    else:
-        ax.scatter(
-            az.degrees[visible],
-            alt.degrees[visible],
+            az_plot.degrees,
+            alt_plot.degrees,
             s=sizes,
             color=style["TEXT_COLOR"],
             marker=".",
         )
+    else:
+        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (
+            5 if is_polar else 3
+        )
+        if is_polar:
+            ax.scatter(
+                az.radians[visible],
+                90 - alt.degrees[visible],
+                s=sizes,
+                color=ax.get_facecolor(),
+                marker=".",
+                edgecolors=style["TEXT_COLOR"],
+            )
+        else:
+            ax.scatter(
+                az.degrees[visible],
+                alt.degrees[visible],
+                s=sizes,
+                color=style["TEXT_COLOR"],
+                marker=".",
+            )
 
 
 def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
@@ -911,7 +940,7 @@ def _generate_plot_skymap(
         # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=False, style=style
+                observation, ax, observer, star_magnitude_limit, is_polar=False, style=style, zoom_deg=zoom_deg
             )
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
@@ -1096,7 +1125,7 @@ def _generate_plot_skymap(
         # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=True, style=style
+                observation, ax, observer, star_magnitude_limit, is_polar=True, style=style, zoom_deg=zoom_deg
             )
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
