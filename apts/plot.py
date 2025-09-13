@@ -8,7 +8,6 @@ import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
 from skyfield.api import Star, load
-from skyfield.data import hipparcos
 
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -19,6 +18,7 @@ from apts.constants.graphconstants import (
     OpticalType,
     get_planet_color,
 )
+from .cache import get_hipparcos_data
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -276,7 +276,7 @@ def _generate_plot_messier(
         fig.patch.set_facecolor(
             style["FIGURE_FACE_COLOR"]
         )  # Ensure figure bg is set
-        ax.set_facecolor(style["AXES_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])  # Ensure axes bg is set
 
         error_text_color = "#FF6B6B" if effective_dark_mode else "red"
         ax.text(
@@ -653,8 +653,7 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
 
 
 def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict):
-    with load.open(hipparcos.URL) as f:
-        stars = hipparcos.load_dataframe(f)
+    stars = get_hipparcos_data()
 
     limit = mag_limit if mag_limit is not None else (4.5 if is_polar else 7.5)
     bright_stars = stars[stars["magnitude"] <= limit]
