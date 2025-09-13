@@ -653,12 +653,19 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
         return observation.place.plot_moon_path(dark_mode_override, **args)
 
 
-def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None):
+def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
     if zoom_deg is None and mag_limit is None and not is_polar:
         bright_stars = Catalogs().BRIGHT_STARS.copy()
         limit = bright_stars["magnitude"].max()
     else:
         stars = get_hipparcos_data()
+        if zoom_deg is not None and target_object is not None:
+            center = Star(ra=target_object.ra, dec=target_object.dec)
+            all_stars_vectors = Star.from_dataframe(stars)
+            separation = center.separation_from(all_stars_vectors).degrees
+            nearby_mask = separation < zoom_deg
+            stars = stars[nearby_mask]
+
         if mag_limit is not None:
             limit = mag_limit
         elif is_polar:
