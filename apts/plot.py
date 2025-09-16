@@ -27,8 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 def _normalize_dates(start, stop):
-    # If the stop time is earlier than the start time, it means the observation
-    # spans across midnight, so we add one day to the stop time.
     if stop < start:
         stop += timedelta(days=1)
     return (start, stop)
@@ -43,40 +41,35 @@ def plot_visible_planets_svg(
         effective_dark_mode = get_dark_mode()
 
     style = get_plot_style(effective_dark_mode)
-    # colors = get_plot_colors(effective_dark_mode) # Not strictly needed as style dict has most
     default_fill_color = style["AXES_FACE_COLOR"]
 
     visible_planets = observation.get_visible_planets(**args)
     dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
-    # Set y offset to biggest planet - extract magnitude from pint.Quantity
     if not visible_planets.empty:
         max_size = visible_planets[["Size"]].max().iloc[0]
-        max_size_val =
+        max_size_val = (
             max_size.magnitude if hasattr(max_size, "magnitude") else max_size
+        )
     else:
         max_size_val = 0
     y = int(max_size_val + 12)
-    # Set x offset to constant value
     x = 20
-    # Set delta to constant value
     minimal_delta = 52
     last_radius = None
-    for planet in visible_planets[
-        ["Name", "Size", "Phase", "TechnicalName"]
-    ].values:
+    for planet in visible_planets[["Name", "Size", "Phase", "TechnicalName"]].values:
         name = planet[0]
-        # Handle radius as pint.Quantity
         radius_with_units = planet[1]
-        radius =
+        radius = (
             radius_with_units.magnitude
             if hasattr(radius_with_units, "magnitude")
             else radius_with_units
-        # Handle phase as pint.Quantity
+        )
         phase_with_units = planet[2]
-        phase =
+        phase = (
             phase_with_units.magnitude
             if hasattr(phase_with_units, "magnitude")
             else phase_with_units
+        )
         phase_str = str(round(phase, 2))
 
         if last_radius is None:
@@ -91,14 +84,12 @@ def plot_visible_planets_svg(
                 r=radius,
                 stroke=style["AXIS_COLOR"],
                 stroke_width="1",
-                fill=get_planet_color(
-                    name, effective_dark_mode, default_fill_color
-                ),
+                fill=get_planet_color(name, effective_dark_mode, default_fill_color),
             )
         )
         dwg.add(
             dwg.text(
-                name, 
+                name,
                 insert=(x, y + radius + 15),
                 text_anchor="middle",
                 fill=style["TEXT_COLOR"],
@@ -115,7 +106,9 @@ def plot_visible_planets_svg(
     return dwg.tostring()
 
 
-def plot_visible_planets(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def plot_visible_planets(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     try:
         from IPython.display import SVG  # pyright: ignore
     except ImportError:
@@ -126,14 +119,13 @@ def plot_visible_planets(observation: "Observation", dark_mode_override: Optiona
 
 def _generate_plot_messier(
     observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):  # Added dark_mode_override from previous step
+):
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
     else:
         effective_dark_mode = get_dark_mode()
 
     style = get_plot_style(effective_dark_mode)
-    # plot_colors = get_plot_colors(effective_dark_mode) # Messier uses specific type colors
 
     ax = args.pop("ax", None)
     fig = None
@@ -172,22 +164,22 @@ def _generate_plot_messier(
             return fig
 
         LIGHT_MESSIER_TYPE_COLORS = {
-            "Galaxy": "#8CA2AD",  # Muted Blue-Grey
-            "Globular Cluster": "#A38F9B",  # Muted Rose/Brown
-            "Open Cluster": "#8EA397",  # Muted Green
-            "Nebula": "#9B8FA3",  # Muted Purple
-            "Planetary Nebula": "#A39B8F",  # Muted Orange/Brown
-            "Supernova Remnant": "#AD9F9A",  # Muted Brown-Grey
-            "Other": "#A0A0A0",  # Mid-Gray
+            "Galaxy": "#8CA2AD",
+            "Globular Cluster": "#A38F9B",
+            "Open Cluster": "#8EA397",
+            "Nebula": "#9B8FA3",
+            "Planetary Nebula": "#A39B8F",
+            "Supernova Remnant": "#AD9F9A",
+            "Other": "#A0A0A0",
         }
         DARK_MESSIER_TYPE_COLORS = {
-            "Galaxy": "#5A1A75",  # Bright Purple
-            "Globular Cluster": "#CCCCCC",  # Light Gray
-            "Open Cluster": "#FFFFFF",  # White
-            "Nebula": "#5A1A75",  # Bright Purple (or a different shade)
-            "Planetary Nebula": "#007447",  # Vibrant Green
-            "Supernova Remnant": "#BBBBBB",  # Muted Light Gray
-            "Other": "#999999",  # Another Muted Gray
+            "Galaxy": "#5A1A75",
+            "Globular Cluster": "#CCCCCC",
+            "Open Cluster": "#FFFFFF",
+            "Nebula": "#5A1A75",
+            "Planetary Nebula": "#007447",
+            "Supernova Remnant": "#BBBBBB",
+            "Other": "#999999",
         }
 
         if effective_dark_mode:
@@ -214,8 +206,8 @@ def _generate_plot_messier(
             messier_id = obj[ObjectTableLabels.MESSIER]
             marker_size = (width * height) ** 0.5
             color = current_messier_colors.get(
-                obj_type, current_messier_colors["Other"] 
-            )  # pyright: ignore
+                obj_type, current_messier_colors["Other"]
+            )
             plotted_types[obj_type] = color
             ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
             ax.annotate(
@@ -240,7 +232,12 @@ def _generate_plot_messier(
         ax.xaxis.set_major_formatter(date_format)
         _mark_observation(observation, ax, effective_dark_mode, style)
         _mark_good_conditions(
-            observation, ax, observation.conditions.min_object_altitude, 90, effective_dark_mode, style
+            observation,
+            ax,
+            observation.conditions.min_object_altitude,
+            90,
+            effective_dark_mode,
+            style,
         )
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
 
@@ -250,7 +247,7 @@ def _generate_plot_messier(
                 [0],
                 marker="o",
                 color="w",
-                label=obj_type,  # 'w' background for marker for visibility
+                label=obj_type,
                 markerfacecolor=color,
                 markersize=10,
             )
@@ -269,10 +266,8 @@ def _generate_plot_messier(
 
     except Exception as e:
         logger.error(f"Error generating Messier plot: {e}", exc_info=True)
-        ax.clear()  # Clear existing axes
-        fig.patch.set_facecolor(
-            style["FIGURE_FACE_COLOR"]
-        )  # Ensure figure bg is set
+        ax.clear()
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         error_text_color = "#FF6B6B" if effective_dark_mode else "red"
@@ -293,13 +288,17 @@ def _generate_plot_messier(
         return fig
 
 
-def plot_messier(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def plot_messier(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     return _generate_plot_messier(
         observation, dark_mode_override=dark_mode_override, **args
     )
 
 
-def _generate_plot_planets(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def _generate_plot_planets(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
     else:
@@ -330,7 +329,12 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
         ax.set_ylim(0, 90)
         _mark_observation(observation, ax, effective_dark_mode, style)
         _mark_good_conditions(
-            observation, ax, observation.conditions.min_object_altitude, 90, effective_dark_mode, style
+            observation,
+            ax,
+            observation.conditions.min_object_altitude,
+            90,
+            effective_dark_mode,
+            style,
         )
         Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
         ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
@@ -348,9 +352,8 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
 
         specific_planet_color = get_planet_color(
             name, effective_dark_mode, default_planet_color
-        )  # pyright: ignore
+        )
 
-        # Plot altitude curve
         ax.plot(
             curve_df["Time"].apply(lambda t: t.utc_datetime()),
             curve_df["Altitude"],
@@ -358,7 +361,6 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
             label=name,
         )
 
-        # Mark rise and set times
         if planet[ObjectTableLabels.RISING] is not None:
             ax.scatter(
                 planet[ObjectTableLabels.RISING],
@@ -376,8 +378,6 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
                 s=100,
             )
 
-        # Annotate planet name
-        # Find a good position for the annotation, e.g., at the peak of the curve
         peak_idx = curve_df["Altitude"].idxmax()
         peak_time = curve_df["Time"].iloc[peak_idx].utc_datetime()
         peak_alt = curve_df["Altitude"].iloc[peak_idx]
@@ -387,7 +387,7 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
             xytext=(5, 5),
             textcoords="offset points",
             color=style["TEXT_COLOR"],
-        )  # pyright: ignore
+        )
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
@@ -397,7 +397,12 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
 
     _mark_observation(observation, ax, effective_dark_mode, style)
     _mark_good_conditions(
-        observation, ax, observation.conditions.min_object_altitude, 90, effective_dark_mode, style
+        observation,
+        ax,
+        observation.conditions.min_object_altitude,
+        90,
+        effective_dark_mode,
+        style,
     )
     Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
     ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
@@ -406,50 +411,27 @@ def _generate_plot_planets(observation: "Observation", dark_mode_override: Optio
     return fig
 
 
-def plot_planets(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def plot_planets(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     return _generate_plot_planets(
         observation, dark_mode_override=dark_mode_override, **args
     )
 
 
-def plot_weather(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
-    logger.info(
-        f"plot_weather called for place: {observation.place.name}. Current observation.place.weather is: {type(observation.place.weather)}"
-    )
+def plot_weather(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     if observation.place.weather is None:
-        logger.info(
-            "observation.place.weather is None, calling observation.place.get_weather()..."
-        )
-        try:
-            observation.place.get_weather()
-            logger.info(
-                f"observation.place.get_weather() called. observation.place.weather is now: {type(observation.place.weather)}"
-            )
-            if observation.place.weather is not None:
-                # Add a log for a key attribute if it exists, e.g., hourly data
-                if (
-                    hasattr(observation.place.weather, "hourly")
-                    and observation.place.weather.hourly is not None
-                ):
-                    logger.info(
-                        f"Weather hourly data length: {len(observation.place.weather.hourly.time) if hasattr(observation.place.weather.hourly, 'time') else 'N/A'}"
-                    )
-                else:
-                    logger.info(
-                        "Weather hourly data is None or not present after get_weather."
-                    )
-        except Exception as e:
-            logger.error(
-                f"Error calling observation.place.get_weather(): {e}", exc_info=True
-            )
-    else:
-        logger.info("observation.place.weather already exists, not calling get_weather().")
+        observation.place.get_weather()
     return _generate_plot_weather(
         observation, dark_mode_override=dark_mode_override, **args
     )
 
 
-def _generate_plot_weather(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def _generate_plot_weather(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
     else:
@@ -457,23 +439,15 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
 
     style = get_plot_style(effective_dark_mode)
 
-    logger.info(
-        f"_generate_plot_weather called. observation.place.weather type: {type(observation.place.weather)}"
-    )
     if observation.place.weather is None:
-        logger.warning(
-            "_generate_plot_weather: observation.place.weather is None. Cannot generate plots. Returning error plot."
-        )
         fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
         fig_err.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax_err.set_facecolor(style["AXES_FACE_COLOR"])
-        warning_color = (
-            "#FFCC00" if effective_dark_mode else "orange" 
-        )  # Light orange for dark mode
+        warning_color = "#FFCC00" if effective_dark_mode else "orange"
         ax_err.text(
             0.5,
             0.5,
-            "Weather data not available for plotting.\n(observation.place.weather was None)",
+            "Weather data not available for plotting.",
             horizontalalignment="center",
             verticalalignment="center",
             fontsize=12,
@@ -493,31 +467,20 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
         if (
             axes_arg is not None
             and isinstance(axes_arg, numpy.ndarray)
-            and axes_arg.shape == (5, 2) 
-        ):  # Assuming numpy is available
+            and axes_arg.shape == (5, 2)
+        ):
             axes = axes_arg
             fig = axes[0, 0].figure
-            logger.debug("Using provided axes for weather plot.")
         else:
             fig, axes = pyplot.subplots(nrows=5, ncols=2, figsize=(13, 22), **args)
-            logger.debug("Created new figure and axes for weather plot.")
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-        # Individual subplots face colors will be handled by their respective plot_... methods in weather.py (next subtask)
-        # For now, we set the overall figure background. Titles and labels within this function are not present.
-        # The _mark_observation and _mark_good_conditions calls below are on plots returned by weather.py methods.
-        # Those methods in weather.py will need to be dark-mode aware to correctly style their axes.
 
-        logger.debug("Plotting clouds...")
-        # The plot_clouds method itself will need to be dark_mode aware.
-        # The plot_clouds method itself (and others from weather.py) will use their own dark_mode_override logic.
-        # The effective_dark_mode is passed to them to ensure consistency.
         plt_clouds_ax = observation.place.weather.plot_clouds(
             ax=axes[0, 0], dark_mode_override=effective_dark_mode
         )
         if plt_clouds_ax:
             _mark_observation(observation, plt_clouds_ax, effective_dark_mode, style)
-        if plt_clouds_ax:
             _mark_good_conditions(
                 observation,
                 plt_clouds_ax,
@@ -527,18 +490,15 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
                 style,
             )
 
-        logger.debug("Plotting clouds summary...")
         observation.place.weather.plot_clouds_summary(
             ax=axes[0, 1], dark_mode_override=effective_dark_mode
         )
 
-        logger.debug("Plotting precipitation...")
         plt_precip_ax = observation.place.weather.plot_precipitation(
             ax=axes[1, 0], dark_mode_override=effective_dark_mode
         )
         if plt_precip_ax:
             _mark_observation(observation, plt_precip_ax, effective_dark_mode, style)
-        if plt_precip_ax:
             _mark_good_conditions(
                 observation,
                 plt_precip_ax,
@@ -548,18 +508,15 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
                 style,
             )
 
-        logger.debug("Plotting precipitation type summary...")
         observation.place.weather.plot_precipitation_type_summary(
             ax=axes[1, 1], dark_mode_override=effective_dark_mode
         )
 
-        logger.debug("Plotting temperature...")
         plt_temp_ax = observation.place.weather.plot_temperature(
             ax=axes[2, 0], dark_mode_override=effective_dark_mode
         )
         if plt_temp_ax:
             _mark_observation(observation, plt_temp_ax, effective_dark_mode, style)
-        if plt_temp_ax:
             _mark_good_conditions(
                 observation,
                 plt_temp_ax,
@@ -569,47 +526,47 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
                 style,
             )
 
-        logger.debug("Plotting wind...")
         plt_wind_ax = observation.place.weather.plot_wind(
             ax=axes[2, 1], dark_mode_override=effective_dark_mode
         )
         if plt_wind_ax:
             _mark_observation(observation, plt_wind_ax, effective_dark_mode, style)
-        if plt_wind_ax:
             _mark_good_conditions(
-                observation, plt_wind_ax, 0, observation.conditions.max_wind, effective_dark_mode, style
+                observation,
+                plt_wind_ax,
+                0,
+                observation.conditions.max_wind,
+                effective_dark_mode,
+                style,
             )
 
-        logger.debug("Plotting pressure and ozone...")
         plt_pressure_ax = observation.place.weather.plot_pressure_and_ozone(
             ax=axes[3, 0], dark_mode_override=effective_dark_mode
         )
         if plt_pressure_ax:
             _mark_observation(observation, plt_pressure_ax, effective_dark_mode, style)
 
-        logger.debug("Plotting visibility...")
         plt_visibility_ax = observation.place.weather.plot_visibility(
             ax=axes[3, 1], dark_mode_override=effective_dark_mode
         )
         if plt_visibility_ax:
-            _mark_observation(observation, plt_visibility_ax, effective_dark_mode, style)
+            _mark_observation(
+                observation, plt_visibility_ax, effective_dark_mode, style
+            )
 
-        logger.debug("Plotting moon phase...")
         plt_moon_phase_ax = observation.place.weather.plot_moon_phase(
             ax=axes[4, 0], dark_mode_override=effective_dark_mode
         )
         if plt_moon_phase_ax:
-            _mark_observation(observation, plt_moon_phase_ax, effective_dark_mode, style)
+            _mark_observation(
+                observation, plt_moon_phase_ax, effective_dark_mode, style
+            )
 
         fig.tight_layout()
-        logger.info(
-            "Successfully generated Weather plot (figure setup). Sub-plot styling uses dark_mode_override."
-        )
         return fig
 
     except Exception as e:
         logger.error(f"Error generating Weather plot details: {e}", exc_info=True)
-        # Ensure fig is defined for closing
         current_fig = locals().get("fig", None)
         if current_fig is not None:
             try:
@@ -622,9 +579,7 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
         fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
         fig_err.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax_err.set_facecolor(style["AXES_FACE_COLOR"])
-        error_color = (
-            "#FF6B6B" if effective_dark_mode else "red" 
-        )  # Light red for dark mode
+        error_color = "#FF6B6B" if effective_dark_mode else "red"
         ax_err.text(
             0.5,
             0.5,
@@ -642,38 +597,50 @@ def _generate_plot_weather(observation: "Observation", dark_mode_override: Optio
         return fig_err
 
 
-def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optional[bool] = None, **args):
+def plot_sun_and_moon_path(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
     if observation.sun_observation:
         return observation.place.plot_sun_path(dark_mode_override, **args)
     else:
         return observation.place.plot_moon_path(dark_mode_override, **args)
 
 
-def _plot_bright_stars_on_skymap(observation: "Observation", ax, observer, is_polar, style: dict, zoom_deg: Optional[float] = None):
+def _plot_bright_stars_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    style: dict,
+    zoom_deg: Optional[float] = None,
+):
     bright_stars_df = observation.local_stars.objects.copy()
     if bright_stars_df.empty:
         return
 
-    # Schema correction
-    if hasattr(bright_stars_df['RA'].iloc[0], 'magnitude'):
-        bright_stars_df['RA'] = bright_stars_df['RA'].apply(lambda x: x.magnitude)
-    if hasattr(bright_stars_df['Dec'].iloc[0], 'magnitude'):
-        bright_stars_df['Dec'] = bright_stars_df['Dec'].apply(lambda x: x.magnitude)
-    if hasattr(bright_stars_df['Magnitude'].iloc[0], 'magnitude'):
-        bright_stars_df['Magnitude'] = bright_stars_df['Magnitude'].apply(lambda x: x.magnitude)
-    
-    bright_stars_df['epoch_year'] = 2000.0
-    bright_stars_df.rename(columns={'RA': 'ra_hours', 'Dec': 'dec_degrees'}, inplace=True)
+    if hasattr(bright_stars_df["RA"].iloc[0], "magnitude"):
+        bright_stars_df["RA"] = bright_stars_df["RA"].apply(lambda x: x.magnitude)
+    if hasattr(bright_stars_df["Dec"].iloc[0], "magnitude"):
+        bright_stars_df["Dec"] = bright_stars_df["Dec"].apply(lambda x: x.magnitude)
+    if hasattr(bright_stars_df["Magnitude"].iloc[0], "magnitude"):
+        bright_stars_df["Magnitude"] = bright_stars_df["Magnitude"].apply(
+            lambda x: x.magnitude
+        )
+
+    bright_stars_df["epoch_year"] = 2000.0
+    bright_stars_df.rename(
+        columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True
+    )
 
     star_positions = observer.observe(Star.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible_mask = alt.degrees > 0
-    
+
     df_visible = bright_stars_df[visible_mask]
     alt_visible = alt[visible_mask]
     az_visible = az[visible_mask]
-    
+
     if df_visible.empty:
         return
 
@@ -682,49 +649,86 @@ def _plot_bright_stars_on_skymap(observation: "Observation", ax, observer, is_po
     if not is_polar and zoom_deg is not None:
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
-        
-        zoom_mask = (az_visible.degrees >= xlim[0]) & (az_visible.degrees <= xlim[1]) & \
-                    (alt_visible.degrees >= ylim[0]) & (alt_visible.degrees <= ylim[1])
-        
+
+        zoom_mask = (
+            (az_visible.degrees >= xlim[0])
+            & (az_visible.degrees <= xlim[1])
+            & (alt_visible.degrees >= ylim[0])
+            & (alt_visible.degrees <= ylim[1])
+        )
+
         df_zoomed = df_visible[zoom_mask]
         alt_zoomed = alt_visible[zoom_mask]
         az_zoomed = az_visible[zoom_mask]
 
         if df_zoomed.empty:
             return
-        
-        ax.scatter(az_zoomed.degrees, alt_zoomed.degrees, s=40, color=star_color, marker="*")
-        
+
+        ax.scatter(
+            az_zoomed.degrees, alt_zoomed.degrees, s=40, color=star_color, marker="*"
+        )
+
         for i in range(len(df_zoomed)):
             star = df_zoomed.iloc[i]
             ax.annotate(
-                star['Name'],
+                star["Name"],
                 (az_zoomed.degrees[i], alt_zoomed.degrees[i]),
-                textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+                textcoords="offset points",
+                xytext=(5, 5),
+                color=star_color,
+                fontsize=8,
             )
     else:
         if is_polar:
-            ax.scatter(az_visible.radians, 90 - alt_visible.degrees, s=40, color=star_color, marker="*")
+            ax.scatter(
+                az_visible.radians,
+                90 - alt_visible.degrees,
+                s=40,
+                color=star_color,
+                marker="*",
+            )
             for i in range(len(df_visible)):
                 star = df_visible.iloc[i]
                 ax.annotate(
-                    star['Name'],
+                    star["Name"],
                     (az_visible.radians[i], 90 - alt_visible.degrees[i]),
-                    textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    color=star_color,
+                    fontsize=8,
                 )
         else:
-            ax.scatter(az_visible.degrees, alt_visible.degrees, s=40, color=star_color, marker="*")
+            ax.scatter(
+                az_visible.degrees,
+                alt_visible.degrees,
+                s=40,
+                color=star_color,
+                marker="*",
+            )
             for i in range(len(df_visible)):
                 star = df_visible.iloc[i]
                 ax.annotate(
-                    star['Name'],
+                    star["Name"],
                     (az_visible.degrees[i], alt_visible.degrees[i]),
-                    textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    color=star_color,
+                    fontsize=8,
                 )
 
-def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
+
+def _plot_stars_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    mag_limit,
+    is_polar,
+    style: dict,
+    zoom_deg: Optional[float] = None,
+    target_object=None,
+):
     stars = get_hipparcos_data()
-    
+
     if zoom_deg is not None and target_object is not None:
         center = Star(ra=target_object.ra, dec=target_object.dec)
         all_stars_vectors = Star.from_dataframe(stars)
@@ -740,8 +744,8 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
         limit = 7.5
     else:
         limit = 6.0
-    
-bright_stars = stars[stars["magnitude"] <= limit]
+
+    bright_stars = stars[stars["magnitude"] <= limit]
 
     if bright_stars.empty:
         return
@@ -750,26 +754,30 @@ bright_stars = stars[stars["magnitude"] <= limit]
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
-    
+
     if not any(visible):
         return
 
     if not is_polar and zoom_deg is not None:
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
-        
+
         visible_mask = alt.degrees > 0
-        
+
         az_visible = az.degrees[visible_mask]
         alt_visible = alt.degrees[visible_mask]
-        
-        zoom_mask = (az_visible >= xlim[0]) & (az_visible <= xlim[1]) & \
-                    (alt_visible >= ylim[0]) & (alt_visible <= ylim[1])
+
+        zoom_mask = (
+            (az_visible >= xlim[0])
+            & (az_visible <= xlim[1])
+            & (alt_visible >= ylim[0])
+            & (alt_visible <= ylim[1])
+        )
 
         az_plot = az_visible[zoom_mask]
         alt_plot = alt_visible[zoom_mask]
-        
-        mag_plot = bright_stars[visible_mask][zoom_mask]['magnitude']
+
+        mag_plot = bright_stars[visible_mask][zoom_mask]["magnitude"]
 
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
@@ -887,7 +895,7 @@ def _plot_planets_on_skymap(
             if planet_object:
                 alt, az, _ = observer.observe(planet_object).apparent().altaz()
                 if alt.degrees > 0:
-                    planet_.color = get_planet_color(
+                    planet_color = get_planet_color(
                         planet_name, effective_dark_mode, style["TEXT_COLOR"]
                     )
                     if is_polar:
@@ -945,18 +953,15 @@ def _generate_plot_skymap(
 
     style = get_plot_style(effective_dark_mode)
 
-    # Time for observation
     t = observation.place.ts.now()
     if observation.effective_date is not None:
         t = observation.effective_date
     observer = observation.place.observer.at(t)
 
-    # Format the generation time
     generation_time_str = t.astimezone(observation.place.local_timezone).strftime(
         "%Y-%m-%d %H:%M %Z"
     )
 
-    # Find target object first, as we need its coordinates for zoom
     target_object = observation.local_messier.find_by_name(target_name)
     if target_object is None:
         target_object = observation.local_planets.find_by_name(target_name)
@@ -986,7 +991,6 @@ def _generate_plot_skymap(
 
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
 
-    # If zoomed view is requested
     if zoom_deg is not None:
         is_polar = False
         if target_alt.degrees < 0:
@@ -1027,13 +1031,24 @@ def _generate_plot_skymap(
         ax.set_aspect("equal", adjustable="box")
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
-        # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=False, style=style, zoom_deg=zoom_deg, target_object=target_object
+                observation,
+                ax,
+                observer,
+                star_magnitude_limit,
+                is_polar=False,
+                style=style,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
             )
             _plot_bright_stars_on_skymap(
-                observation, ax, observer, is_polar=False, style=style, zoom_deg=zoom_deg
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                style=style,
+                zoom_deg=zoom_deg,
             )
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
@@ -1049,7 +1064,6 @@ def _generate_plot_skymap(
                 style=style,
             )
 
-        # 4. Highlight target object
         ax.scatter(
             target_az.degrees,
             target_alt.degrees,
@@ -1076,23 +1090,18 @@ def _generate_plot_skymap(
         return fig
     else:
         is_polar = True
-        # --- Full sky (polar) plot logic (existing code) ---
-        fig, ax = pyplot.subplots(
-            figsize=(10, 10), subplot_kw={"projection": "polar"}
-        )
+        fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
-        ax.set_rlim(0, 90)  # Zenith angle from 0 (zenith) to 90 (horizon)
+        ax.set_rlim(0, 90)
         ax.set_theta_zero_location("N")
         ax.set_theta_direction(-1)
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
-        # Custom radial labels for altitude
-        ax.set_yticks([0, 30, 60, 90])  # Zenith angles
+        ax.set_yticks([0, 30, 60, 90])
         ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
-        ax.set_rlabel_position(22.5)  # Move labels away from the line
+        ax.set_rlabel_position(22.5)
 
-        # Add cardinal direction labels
         cardinal_directions = {
             "N": 0,
             "E": numpy.pi / 2,
@@ -1102,7 +1111,7 @@ def _generate_plot_skymap(
         for direction, angle in cardinal_directions.items():
             ax.text(
                 angle,
-                95,  # Place it just outside the 90-degree limit
+                95,
                 direction,
                 ha="center",
                 va="center",
@@ -1110,17 +1119,14 @@ def _generate_plot_skymap(
                 fontsize=12,
             )
 
-        # Define good condition highlight color
         good_condition_color = style.get(
             "GOOD_CONDITION_HL_COLOR",
             "#90EE90" if not effective_dark_mode else "#007447",
         )
 
-        # Calculate altitude boundaries
         r_inner_good = 0
         r_outer_good = 90 - observation.conditions.min_object_altitude
 
-        # Calculate azimuth boundaries
         min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
         max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
 
@@ -1197,10 +1203,16 @@ def _generate_plot_skymap(
                 linewidth=1,
             )
 
-        # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=True, style=style, zoom_deg=zoom_deg, target_object=target_object
+                observation,
+                ax,
+                observer,
+                star_magnitude_limit,
+                is_polar=True,
+                style=style,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
             )
             _plot_bright_stars_on_skymap(
                 observation, ax, observer, is_polar=True, style=style, zoom_deg=zoom_deg
@@ -1219,7 +1231,6 @@ def _generate_plot_skymap(
                 style=style,
             )
 
-        # 4. Highlight target object
         if target_alt.degrees > 0:
             ax.scatter(
                 target_az.radians,
@@ -1274,10 +1285,11 @@ def plot_skymap(
     )
 
 
-def _mark_observation(observation: "Observation", plot, dark_mode_enabled: bool, style: dict):
+def _mark_observation(
+    observation: "Observation", plot, dark_mode_enabled: bool, style: dict
+):
     if plot is None:
         return
-    # Use dedicated span colors from the style dictionary
     plot.axvspan(
         observation.start,
         observation.stop,
@@ -1285,7 +1297,7 @@ def _mark_observation(observation: "Observation", plot, dark_mode_enabled: bool,
             "SPAN_BACKGROUND_COLOR",
             "#DDDDDD" if not dark_mode_enabled else "#FFFFFF",
         ),
-        alpha=0.07 if dark_mode_enabled else 0.2,  # Default light mode color if key missing
+        alpha=0.07 if dark_mode_enabled else 0.2,
     )
     moon_start, moon_stop = _normalize_dates(
         observation.place.moonrise_time(), observation.place.moonset_time()
@@ -1296,7 +1308,7 @@ def _mark_observation(observation: "Observation", plot, dark_mode_enabled: bool,
         color=style.get(
             "MOON_SPAN_COLOR", "#FFFFE0" if not dark_mode_enabled else "#5A1A75"
         ),
-        alpha=0.07 if dark_mode_enabled else 0.1,  # Default light mode color if key missing
+        alpha=0.07 if dark_mode_enabled else 0.1,
     )
 
     plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
@@ -1304,11 +1316,15 @@ def _mark_observation(observation: "Observation", plot, dark_mode_enabled: bool,
 
 
 def _mark_good_conditions(
-    observation: "Observation", plot, minimal, maximal, dark_mode_enabled: bool, style: dict
+    observation: "Observation",
+    plot,
+    minimal,
+    maximal,
+    dark_mode_enabled: bool,
+    style: dict,
 ):
     if plot is None:
         return
-    # Use dedicated good condition highlight color
     plot.axhspan(
         minimal,
         maximal,
@@ -1316,5 +1332,5 @@ def _mark_good_conditions(
             "GOOD_CONDITION_HL_COLOR",
             "#90EE90" if not dark_mode_enabled else "#007447",
         ),
-        alpha=0.1,  # Default light mode color if key missing. Alpha is same for both.
+        alpha=0.1,
     )
