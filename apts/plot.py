@@ -655,13 +655,14 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
     if stars.empty:
         return
 
-    stars['epoch_year'] = 2000.0
-
     if 'RA' in stars.columns and hasattr(stars['RA'].iloc[0], 'magnitude'):
         stars['RA'] = stars['RA'].apply(lambda x: x.magnitude)
     if 'Dec' in stars.columns and hasattr(stars['Dec'].iloc[0], 'magnitude'):
         stars['Dec'] = stars['Dec'].apply(lambda x: x.magnitude)
-    
+    if 'Magnitude' in stars.columns and hasattr(stars['Magnitude'].iloc[0], 'magnitude'):
+        stars['Magnitude'] = stars['Magnitude'].apply(lambda x: x.magnitude)
+
+    stars['epoch_year'] = 2000.0
     stars.rename(columns={'RA': 'ra_hours', 'Dec': 'dec_degrees'}, inplace=True)
 
     if zoom_deg is None and mag_limit is None and not is_polar:
