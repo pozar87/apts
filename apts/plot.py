@@ -18,9 +18,6 @@ from apts.constants.graphconstants import (
     OpticalType,
     get_planet_color,
 )
-from .cache import get_hipparcos_data
-from .catalogs import Catalogs
-
 if TYPE_CHECKING:
     from .observations import Observation
 
@@ -277,7 +274,7 @@ def _generate_plot_messier(
         fig.patch.set_facecolor(
             style["FIGURE_FACE_COLOR"]
         )  # Ensure figure bg is set
-        ax.set_facecolor(style["AXES_FACE_COLOR"])  # Ensure axes bg is set
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         error_text_color = "#FF6B6B" if effective_dark_mode else "red"
         ax.text(
@@ -655,10 +652,10 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
 
 def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
     if zoom_deg is None and mag_limit is None and not is_polar:
-        bright_stars = Catalogs().BRIGHT_STARS.copy()
+        bright_stars = observation.local_stars.objects.copy()
         limit = bright_stars["magnitude"].max()
     else:
-        stars = get_hipparcos_data()
+        stars = observation.local_stars.objects.copy()
         if zoom_deg is not None and target_object is not None:
             center = Star(ra=target_object.ra, dec=target_object.dec)
             all_stars_vectors = Star.from_dataframe(stars)
