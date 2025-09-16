@@ -7,9 +7,9 @@ from skyfield.api import Star
 
 class NGC(Objects):
     def __init__(self, place, calculation_date=None):
-        super(NGC, self).__init__(place)
+        super(NGC, self).__init__(place, calculation_date=calculation_date)
         self.objects = Catalogs().NGC.copy()
-        self.compute(calculation_date)
+        self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:

@@ -7,9 +7,9 @@ from skyfield.api import Star
 
 class Stars(Objects):
     def __init__(self, place, calculation_date=None):
-        super(Stars, self).__init__(place)
+        super(Stars, self).__init__(place, calculation_date=calculation_date)
         self.objects = Catalogs().BRIGHT_STARS.copy()
-        self.compute(calculation_date)
+        self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:

@@ -17,14 +17,20 @@ class Objects(ABC):
     def get_skyfield_object(self, obj) -> object:
         pass
 
-    def __init__(self, place):
+    def __init__(self, place, calculation_date=None):
         self.place = place
         self.objects: pandas.DataFrame = pandas.DataFrame()
         self.ts = load.timescale()
+        self.calculation_date = calculation_date # Store it here
 
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
     ):
+        # Check if 'TRANSIT' and 'ALTITUDE' columns exist. If not, compute them.
+        if ObjectTableLabels.TRANSIT not in self.objects.columns or \
+           ObjectTableLabels.ALTITUDE not in self.objects.columns:
+            self.compute(self.calculation_date)
+
         visible = self.objects
         # Add ID collumn
         visible["ID"] = visible.index
