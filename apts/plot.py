@@ -653,7 +653,7 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
 def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
     if zoom_deg is None and mag_limit is None and not is_polar:
         bright_stars = observation.local_stars.objects.copy()
-        limit = bright_stars["magnitude"].max()
+        limit = bright_stars["Magnitude"].max()
     else:
         stars = observation.local_stars.objects.copy()
         if zoom_deg is not None and target_object is not None:
@@ -671,7 +671,7 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
             limit = 7.5
         else:
             limit = 6.0
-        bright_stars = stars[stars["magnitude"] <= limit]
+        bright_stars = stars[stars["Magnitude"] <= limit]
 
     star_positions = observer.observe(Star.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
@@ -688,7 +688,7 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
         visible_indices = numpy.where(visible)[0][zoom_mask]
         alt_plot = alt[visible_indices]
         az_plot = az[visible_indices]
-        mag_plot = bright_stars["magnitude"].iloc[visible_indices]
+        mag_plot = bright_stars["Magnitude"].iloc[visible_indices]
 
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
@@ -699,7 +699,7 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
             marker=".",
         )
     else:
-        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (
+        sizes = (limit + 1 - numpy.array(bright_stars["Magnitude"][visible])) * (
             5 if is_polar else 3
         )
         if is_polar:
