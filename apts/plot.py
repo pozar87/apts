@@ -18,6 +18,8 @@ from apts.constants.graphconstants import (
     OpticalType,
     get_planet_color,
 )
+from .cache import get_hipparcos_data
+
 if TYPE_CHECKING:
     from .observations import Observation
 
@@ -49,9 +51,8 @@ def plot_visible_planets_svg(
     # Set y offset to biggest planet - extract magnitude from pint.Quantity
     if not visible_planets.empty:
         max_size = visible_planets[["Size"]].max().iloc[0]
-        max_size_val = (
+        max_size_val =
             max_size.magnitude if hasattr(max_size, "magnitude") else max_size
-        )
     else:
         max_size_val = 0
     y = int(max_size_val + 12)
@@ -66,18 +67,16 @@ def plot_visible_planets_svg(
         name = planet[0]
         # Handle radius as pint.Quantity
         radius_with_units = planet[1]
-        radius = (
+        radius =
             radius_with_units.magnitude
             if hasattr(radius_with_units, "magnitude")
             else radius_with_units
-        )
         # Handle phase as pint.Quantity
         phase_with_units = planet[2]
-        phase = (
+        phase =
             phase_with_units.magnitude
             if hasattr(phase_with_units, "magnitude")
             else phase_with_units
-        )
         phase_str = str(round(phase, 2))
 
         if last_radius is None:
@@ -650,41 +649,99 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
         return observation.place.plot_moon_path(dark_mode_override, **args)
 
 
-def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
-    stars = observation.local_stars.objects.copy()
-    if stars.empty:
+def _plot_bright_stars_on_skymap(observation: "Observation", ax, observer, is_polar, style: dict, zoom_deg: Optional[float] = None):
+    bright_stars_df = observation.local_stars.objects.copy()
+    if bright_stars_df.empty:
         return
 
-    if 'RA' in stars.columns and hasattr(stars['RA'].iloc[0], 'magnitude'):
-        stars['RA'] = stars['RA'].apply(lambda x: x.magnitude)
-    if 'Dec' in stars.columns and hasattr(stars['Dec'].iloc[0], 'magnitude'):
-        stars['Dec'] = stars['Dec'].apply(lambda x: x.magnitude)
-    if 'Magnitude' in stars.columns and hasattr(stars['Magnitude'].iloc[0], 'magnitude'):
-        stars['Magnitude'] = stars['Magnitude'].apply(lambda x: x.magnitude)
+    # Schema correction
+    if hasattr(bright_stars_df['RA'].iloc[0], 'magnitude'):
+        bright_stars_df['RA'] = bright_stars_df['RA'].apply(lambda x: x.magnitude)
+    if hasattr(bright_stars_df['Dec'].iloc[0], 'magnitude'):
+        bright_stars_df['Dec'] = bright_stars_df['Dec'].apply(lambda x: x.magnitude)
+    if hasattr(bright_stars_df['Magnitude'].iloc[0], 'magnitude'):
+        bright_stars_df['Magnitude'] = bright_stars_df['Magnitude'].apply(lambda x: x.magnitude)
+    
+    bright_stars_df['epoch_year'] = 2000.0
+    bright_stars_df.rename(columns={'RA': 'ra_hours', 'Dec': 'dec_degrees'}, inplace=True)
 
-    stars['epoch_year'] = 2000.0
-    stars.rename(columns={'RA': 'ra_hours', 'Dec': 'dec_degrees'}, inplace=True)
+    star_positions = observer.observe(Star.from_dataframe(bright_stars_df))
+    alt, az, _ = star_positions.apparent().altaz()
 
-    if zoom_deg is None and mag_limit is None and not is_polar:
-        bright_stars = stars
-        limit = bright_stars["Magnitude"].max()
+    visible_mask = alt.degrees > 0
+    
+    df_visible = bright_stars_df[visible_mask]
+    alt_visible = alt[visible_mask]
+    az_visible = az[visible_mask]
+    
+    if df_visible.empty:
+        return
+
+    star_color = style.get("EMPHASIS_COLOR", "yellow")
+
+    if not is_polar and zoom_deg is not None:
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        
+        zoom_mask = (az_visible.degrees >= xlim[0]) & (az_visible.degrees <= xlim[1]) & \
+                    (alt_visible.degrees >= ylim[0]) & (alt_visible.degrees <= ylim[1])
+        
+        df_zoomed = df_visible[zoom_mask]
+        alt_zoomed = alt_visible[zoom_mask]
+        az_zoomed = az_visible[zoom_mask]
+
+        if df_zoomed.empty:
+            return
+        
+        ax.scatter(az_zoomed.degrees, alt_zoomed.degrees, s=40, color=star_color, marker="*")
+        
+        for i in range(len(df_zoomed)):
+            star = df_zoomed.iloc[i]
+            ax.annotate(
+                star['Name'],
+                (az_zoomed.degrees[i], alt_zoomed.degrees[i]),
+                textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+            )
     else:
-        if zoom_deg is not None and target_object is not None:
-            center = Star(ra=target_object.ra, dec=target_object.dec)
-            all_stars_vectors = Star.from_dataframe(stars)
-            separation = center.separation_from(all_stars_vectors).degrees
-            nearby_mask = separation < zoom_deg
-            stars = stars[nearby_mask]
-
-        if mag_limit is not None:
-            limit = mag_limit
-        elif is_polar:
-            limit = 4.5
-        elif zoom_deg is not None:
-            limit = 7.5
+        if is_polar:
+            ax.scatter(az_visible.radians, 90 - alt_visible.degrees, s=40, color=star_color, marker="*")
+            for i in range(len(df_visible)):
+                star = df_visible.iloc[i]
+                ax.annotate(
+                    star['Name'],
+                    (az_visible.radians[i], 90 - alt_visible.degrees[i]),
+                    textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+                )
         else:
-            limit = 6.0
-        bright_stars = stars[stars["Magnitude"] <= limit]
+            ax.scatter(az_visible.degrees, alt_visible.degrees, s=40, color=star_color, marker="*")
+            for i in range(len(df_visible)):
+                star = df_visible.iloc[i]
+                ax.annotate(
+                    star['Name'],
+                    (az_visible.degrees[i], alt_visible.degrees[i]),
+                    textcoords="offset points", xytext=(5, 5), color=star_color, fontsize=8
+                )
+
+def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
+    stars = get_hipparcos_data()
+    
+    if zoom_deg is not None and target_object is not None:
+        center = Star(ra=target_object.ra, dec=target_object.dec)
+        all_stars_vectors = Star.from_dataframe(stars)
+        separation = center.separation_from(all_stars_vectors).degrees
+        nearby_mask = separation < zoom_deg
+        stars = stars[nearby_mask]
+
+    if mag_limit is not None:
+        limit = mag_limit
+    elif is_polar:
+        limit = 4.5
+    elif zoom_deg is not None:
+        limit = 7.5
+    else:
+        limit = 6.0
+    
+bright_stars = stars[stars["magnitude"] <= limit]
 
     if bright_stars.empty:
         return
@@ -693,32 +750,37 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
-
+    
     if not any(visible):
         return
 
     if not is_polar and zoom_deg is not None:
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
-        az_degrees = az.degrees[visible]
-        alt_degrees = alt.degrees[visible]
-        zoom_mask = (az_degrees > xlim[0]) & (az_degrees < xlim[1]) & (alt_degrees > ylim[0]) & (alt_degrees < ylim[1])
         
-        visible_indices = numpy.where(visible)[0][zoom_mask]
-        alt_plot = alt[visible_indices]
-        az_plot = az[visible_indices]
-        mag_plot = bright_stars["Magnitude"].iloc[visible_indices]
+        visible_mask = alt.degrees > 0
+        
+        az_visible = az.degrees[visible_mask]
+        alt_visible = alt.degrees[visible_mask]
+        
+        zoom_mask = (az_visible >= xlim[0]) & (az_visible <= xlim[1]) & \
+                    (alt_visible >= ylim[0]) & (alt_visible <= ylim[1])
+
+        az_plot = az_visible[zoom_mask]
+        alt_plot = alt_visible[zoom_mask]
+        
+        mag_plot = bright_stars[visible_mask][zoom_mask]['magnitude']
 
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
-            az_plot.degrees,
-            alt_plot.degrees,
+            az_plot,
+            alt_plot,
             s=sizes,
             color=style["TEXT_COLOR"],
             marker=".",
         )
     else:
-        sizes = (limit + 1 - numpy.array(bright_stars["Magnitude"][visible])) * (
+        sizes = (limit + 1 - numpy.array(bright_stars["magnitude"][visible])) * (
             5 if is_polar else 3
         )
         if is_polar:
@@ -825,7 +887,7 @@ def _plot_planets_on_skymap(
             if planet_object:
                 alt, az, _ = observer.observe(planet_object).apparent().altaz()
                 if alt.degrees > 0:
-                    planet_color = get_planet_color(
+                    planet_.color = get_planet_color(
                         planet_name, effective_dark_mode, style["TEXT_COLOR"]
                     )
                     if is_polar:
@@ -926,6 +988,7 @@ def _generate_plot_skymap(
 
     # If zoomed view is requested
     if zoom_deg is not None:
+        is_polar = False
         if target_alt.degrees < 0:
             fig, ax = pyplot.subplots(figsize=(10, 10))
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
@@ -967,7 +1030,10 @@ def _generate_plot_skymap(
         # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=False, style=style, zoom_deg=zoom_deg
+                observation, ax, observer, star_magnitude_limit, is_polar=False, style=style, zoom_deg=zoom_deg, target_object=target_object
+            )
+            _plot_bright_stars_on_skymap(
+                observation, ax, observer, is_polar=False, style=style, zoom_deg=zoom_deg
             )
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
@@ -1003,31 +1069,13 @@ def _generate_plot_skymap(
             fontsize=12,
         )
 
-        # 4. Highlight target object
-        ax.scatter(
-            target_az.degrees,
-            target_alt.degrees,
-            s=200,
-            facecolors="none",
-            edgecolors="yellow",
-            marker="o",
-            linewidths=2,
-        )
-        ax.annotate(
-            target_name,
-            (target_az.degrees, target_alt.degrees),
-            textcoords="offset points",
-            xytext=(0, 15),
-            color="yellow",
-            ha="center",
-            fontsize=12,
-        )
         ax.set_title(
             f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
             color=style["TEXT_COLOR"],
         )
         return fig
     else:
+        is_polar = True
         # --- Full sky (polar) plot logic (existing code) ---
         fig, ax = pyplot.subplots(
             figsize=(10, 10), subplot_kw={"projection": "polar"}
@@ -1152,7 +1200,10 @@ def _generate_plot_skymap(
         # Plot celestial objects
         if plot_stars:
             _plot_stars_on_skymap(
-                observation, ax, observer, star_magnitude_limit, is_polar=True, style=style, zoom_deg=zoom_deg
+                observation, ax, observer, star_magnitude_limit, is_polar=True, style=style, zoom_deg=zoom_deg, target_object=target_object
+            )
+            _plot_bright_stars_on_skymap(
+                observation, ax, observer, is_polar=True, style=style, zoom_deg=zoom_deg
             )
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
@@ -1189,26 +1240,6 @@ def _generate_plot_skymap(
                 fontsize=12,
             )
 
-        # 4. Highlight target object
-        if target_alt.degrees > 0:
-            ax.scatter(
-                target_az.radians,
-                90 - target_alt.degrees,
-                s=200,
-                facecolors="none",
-                edgecolors="yellow",
-                marker="o",
-                linewidths=2,
-            )
-            ax.annotate(
-                target_name,
-                (target_az.radians, 90 - target_alt.degrees),
-                textcoords="offset points",
-                xytext=(0, 15),
-                color="yellow",
-                ha="center",
-                fontsize=12,
-            )
         ax.set_title(
             f"Skymap for {target_name} (Generated: {generation_time_str})",
             color=style["TEXT_COLOR"],
