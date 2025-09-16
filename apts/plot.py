@@ -638,8 +638,9 @@ def _plot_bright_stars_on_skymap(
     visible_mask = alt.degrees > 0
 
     df_visible = bright_stars_df[visible_mask]
-    alt_visible = alt[visible_mask]
-    az_visible = az[visible_mask]
+    alt_visible_deg = alt.degrees[visible_mask]
+    az_visible_deg = az.degrees[visible_mask]
+    az_visible_rad = az.radians[visible_mask]
 
     if df_visible.empty:
         return
@@ -651,28 +652,28 @@ def _plot_bright_stars_on_skymap(
         ylim = ax.get_ylim()
 
         zoom_mask = (
-            (az_visible.degrees >= xlim[0])
-            & (az_visible.degrees <= xlim[1])
-            & (alt_visible.degrees >= ylim[0])
-            & (alt_visible.degrees <= ylim[1])
+            (az_visible_deg >= xlim[0])
+            & (az_visible_deg <= xlim[1])
+            & (alt_visible_deg >= ylim[0])
+            & (alt_visible_deg <= ylim[1])
         )
 
         df_zoomed = df_visible[zoom_mask]
-        alt_zoomed = alt_visible[zoom_mask]
-        az_zoomed = az_visible[zoom_mask]
+        alt_zoomed_deg = alt_visible_deg[zoom_mask]
+        az_zoomed_deg = az_visible_deg[zoom_mask]
 
         if df_zoomed.empty:
             return
 
         ax.scatter(
-            az_zoomed.degrees, alt_zoomed.degrees, s=40, color=star_color, marker="*"
+            az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*"
         )
 
         for i in range(len(df_zoomed)):
             star = df_zoomed.iloc[i]
             ax.annotate(
                 star["Name"],
-                (az_zoomed.degrees[i], alt_zoomed.degrees[i]),
+                (az_zoomed_deg[i], alt_zoomed_deg[i]),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color=star_color,
@@ -681,8 +682,8 @@ def _plot_bright_stars_on_skymap(
     else:
         if is_polar:
             ax.scatter(
-                az_visible.radians,
-                90 - alt_visible.degrees,
+                az_visible_rad,
+                90 - alt_visible_deg,
                 s=40,
                 color=star_color,
                 marker="*",
@@ -691,7 +692,7 @@ def _plot_bright_stars_on_skymap(
                 star = df_visible.iloc[i]
                 ax.annotate(
                     star["Name"],
-                    (az_visible.radians[i], 90 - alt_visible.degrees[i]),
+                    (az_visible_rad[i], 90 - alt_visible_deg[i]),
                     textcoords="offset points",
                     xytext=(5, 5),
                     color=star_color,
@@ -699,8 +700,8 @@ def _plot_bright_stars_on_skymap(
                 )
         else:
             ax.scatter(
-                az_visible.degrees,
-                alt_visible.degrees,
+                az_visible_deg,
+                alt_visible_deg,
                 s=40,
                 color=star_color,
                 marker="*",
@@ -709,7 +710,7 @@ def _plot_bright_stars_on_skymap(
                 star = df_visible.iloc[i]
                 ax.annotate(
                     star["Name"],
-                    (az_visible.degrees[i], alt_visible.degrees[i]),
+                    (az_visible_deg[i], alt_visible_deg[i]),
                     textcoords="offset points",
                     xytext=(5, 5),
                     color=star_color,
