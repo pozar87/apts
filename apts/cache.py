@@ -1,5 +1,7 @@
 import functools
 from skyfield.api import load
+from skyfield.data import hipparcos
+import pandas as pd
 
 @functools.lru_cache(maxsize=None)
 def get_timescale():
@@ -21,3 +23,11 @@ def get_ephemeris():
     Returns an ephemeris object.
     """
     return load(get_ephemeris_path())
+
+@functools.lru_cache(maxsize=None)
+def get_hipparcos_data() -> pd.DataFrame:
+    """
+    Returns a cached Hipparcos catalog as a pandas DataFrame.
+    """
+    with load.open(hipparcos.URL) as f:
+        return hipparcos.load_dataframe(f)

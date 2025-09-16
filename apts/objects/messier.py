@@ -7,9 +7,9 @@ from skyfield.api import Star
 
 class Messier(Objects):
     def __init__(self, place, calculation_date=None):
-        super(Messier, self).__init__(place)
+        super(Messier, self).__init__(place, calculation_date=calculation_date)
         self.objects = Catalogs().MESSIER.copy()
-        self.compute(calculation_date)
+        self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:

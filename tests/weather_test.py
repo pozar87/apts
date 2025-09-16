@@ -321,17 +321,17 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         ) as mock_plot_pressure_and_ozone,
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
         patch(
-            "apts.observations.pyplot.subplots",
+            "apts.plot.pyplot.subplots",
             return_value=(MagicMock(), MagicMock(shape=(4, 2))),
         ) as mock_subplots,
         patch(
-            "apts.observations.Observation._mark_observation"
+            "apts.plot._mark_observation"
         ) as mock_mark_observation,
         patch(
-            "apts.observations.Observation._mark_good_conditions"
+            "apts.plot._mark_good_conditions"
         ) as mock_mark_good_conditions,
         patch(
-            "apts.observations.Observation.plot_sun_and_moon_path"
+            "apts.plot.plot_sun_and_moon_path"
         ) as mock_plot_sun_and_moon_path,
         patch.object(mock_weather_instance, "plot_moon_phase") as mock_plot_moon_phase,
     ):
