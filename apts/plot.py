@@ -731,11 +731,36 @@ def _plot_stars_on_skymap(
     stars = get_hipparcos_data()
 
     if zoom_deg is not None and target_object is not None:
-        center = Star(ra=target_object.ra, dec=target_object.dec)
-        all_stars_vectors = Star.from_dataframe(stars)
-        separation = center.separation_from(all_stars_vectors).degrees
-        nearby_mask = separation < zoom_deg
-        stars = stars[nearby_mask]
+        # Optimization: pre-filter stars to a bounding box before expensive separation calculation
+        ra_center_hours = target_object.ra.hours
+        dec_center_degrees = target_object.dec.degrees
+
+        # Create a generous bounding box around the target
+        # The conversion from degrees to RA hours depends on declination,
+        # but for a rough filter, a fixed factor is acceptable.
+        deg_margin = zoom_deg * 2  # A larger margin to be safe
+        ra_margin_hours = deg_margin / 15.0
+
+        ra_min = ra_center_hours - ra_margin_hours
+        ra_max = ra_center_hours + ra_margin_hours
+        dec_min = dec_center_degrees - deg_margin
+        dec_max = dec_center_degrees + deg_margin
+
+        # Simple bounding box filter
+        stars_in_box = stars[
+            (stars['ra_hours'] >= ra_min) & (stars['ra_hours'] <= ra_max) &
+            (stars['dec_degrees'] >= dec_min) & (stars['dec_degrees'] <= dec_max)
+        ]
+
+        # Now perform the precise separation calculation on the much smaller subset
+        if not stars_in_box.empty:
+            center = Star(ra=target_object.ra, dec=target_object.dec)
+            all_stars_vectors = Star.from_dataframe(stars_in_box)
+            separation = center.separation_from(all_stars_vectors).degrees
+            nearby_mask = separation < zoom_deg
+            stars = stars_in_box[nearby_mask]
+        else:
+            stars = stars_in_box # empty dataframe
 
     if mag_limit is not None:
         limit = mag_limit
