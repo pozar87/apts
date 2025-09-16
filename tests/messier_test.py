@@ -134,7 +134,8 @@ def test_planets_recomputation_with_date():
 
 def test_messier_recomputation_with_date():
     place = setup_place()  # Uses fixed date '2025/02/18 12:00:00'
-    messier = Messier(place)
+    messier = Messier(place, calculation_date=place.date)
+    messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
 
     # Store the original transit time for M1 (Crab Nebula)
     # Assuming M1 is in the catalog and its name is 'M1' in the 'Messier' column
@@ -196,7 +197,8 @@ def test_planets_backward_compatibility():
 
 def test_messier_backward_compatibility():
     place = setup_place()
-    messier = Messier(place)
+    messier = Messier(place, calculation_date=place.date)
+    messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
     original_transit_time_m1 = messier.objects.loc[
         messier.objects[ObjectTableLabels.MESSIER] == "M1", ObjectTableLabels.TRANSIT
     ].iloc[0]
