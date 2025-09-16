@@ -652,7 +652,17 @@ def plot_sun_and_moon_path(observation: "Observation", dark_mode_override: Optio
 
 def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, is_polar, style: dict, zoom_deg: Optional[float] = None, target_object=None):
     stars = observation.local_stars.objects.copy()
+    if stars.empty:
+        return
+
     stars['epoch_year'] = 2000.0
+
+    if 'RA' in stars.columns and hasattr(stars['RA'].iloc[0], 'magnitude'):
+        stars['RA'] = stars['RA'].apply(lambda x: x.magnitude)
+    if 'Dec' in stars.columns and hasattr(stars['Dec'].iloc[0], 'magnitude'):
+        stars['Dec'] = stars['Dec'].apply(lambda x: x.magnitude)
+    
+    stars.rename(columns={'RA': 'ra_hours', 'Dec': 'dec_degrees'}, inplace=True)
 
     if zoom_deg is None and mag_limit is None and not is_polar:
         bright_stars = stars
@@ -675,10 +685,16 @@ def _plot_stars_on_skymap(observation: "Observation", ax, observer, mag_limit, i
             limit = 6.0
         bright_stars = stars[stars["Magnitude"] <= limit]
 
+    if bright_stars.empty:
+        return
+
     star_positions = observer.observe(Star.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
+
+    if not any(visible):
+        return
 
     if not is_polar and zoom_deg is not None:
         xlim = ax.get_xlim()
