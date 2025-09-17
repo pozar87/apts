@@ -80,7 +80,7 @@ def _load_ngc_with_units():
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x * ureg.mag if pd.notna(x) else None)
+    ngc_df["Magnitude"] = pd.to_numeric(ngc_df["Magnitude"], errors='coerce').fillna(99).apply(lambda x: x * ureg.mag)
     ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute if pd.notna(x) else None)
 
     return ngc_df

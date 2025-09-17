@@ -43,7 +43,7 @@ class Objects(ABC):
             # Handle pint.Quantity objects for magnitude
             (
                 visible.Magnitude.apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                    lambda x: x.magnitude if x and hasattr(x, "magnitude") else 99
                 )
                 < conditions.max_object_magnitude
             )
