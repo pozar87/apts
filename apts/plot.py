@@ -7,7 +7,7 @@ import numpy
 import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
-from skyfield.api import Star, load
+from skyfield.api import Star as SkyfieldStar, load, Topos, EarthSatellite
 
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -632,7 +632,7 @@ def _plot_bright_stars_on_skymap(
         columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True
     )
 
-    star_positions = observer.observe(Star.from_dataframe(bright_stars_df))
+    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible_mask = alt.degrees > 0
@@ -754,8 +754,8 @@ def _plot_stars_on_skymap(
 
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
-            center = Star(ra=target_object.ra, dec=target_object.dec)
-            all_stars_vectors = Star.from_dataframe(stars_in_box)
+            center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
             separation = center.separation_from(all_stars_vectors).degrees
             nearby_mask = separation < zoom_deg
             stars = stars_in_box[nearby_mask]
@@ -776,7 +776,7 @@ def _plot_stars_on_skymap(
     if bright_stars.empty:
         return
 
-    star_positions = observer.observe(Star.from_dataframe(bright_stars))
+    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
