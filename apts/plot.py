@@ -886,10 +886,13 @@ def _parse_dec(dec_str):
         return sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)
     return None
 
-def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar):
+def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar, star_magnitude_limit: Optional[float] = None):
     ngc_df = observation.local_ngc.objects.copy()
     if ngc_df.empty:
         return
+
+    if star_magnitude_limit is not None:
+        ngc_df = ngc_df[ngc_df["Magnitude"] <= star_magnitude_limit]
 
     ngc_df["ra_hours"] = ngc_df["RA"].apply(_parse_ra)
     ngc_df["dec_degrees"] = ngc_df["Dec"].apply(_parse_dec)
@@ -1109,7 +1112,7 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=False)
+            _plot_ngc_on_skymap(observation, ax, observer, is_polar=False, star_magnitude_limit=star_magnitude_limit)
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
@@ -1276,7 +1279,7 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=True)
+            _plot_ngc_on_skymap(observation, ax, observer, is_polar=True, star_magnitude_limit=star_magnitude_limit)
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
