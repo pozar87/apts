@@ -24,7 +24,7 @@ class Objects(ABC):
         self.calculation_date = calculation_date # Store it here
 
     def get_visible(
-        self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
+        self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT, star_magnitude_limit=None
     ):
         # Check if 'TRANSIT' and 'ALTITUDE' columns exist. If not, compute them.
         if ObjectTableLabels.TRANSIT not in self.objects.columns or \
@@ -45,7 +45,7 @@ class Objects(ABC):
                 visible.Magnitude.apply(
                     lambda x: x.magnitude if x and hasattr(x, "magnitude") else 99
                 )
-                < conditions.max_object_magnitude
+                < (star_magnitude_limit if star_magnitude_limit is not None else conditions.max_object_magnitude)
             )
         ]
 
