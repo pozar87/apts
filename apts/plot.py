@@ -895,68 +895,42 @@ def _plot_ngc_on_skymap(
     is_polar,
     star_magnitude_limit: Optional[float] = None,
 ):
-    ngc_df = observation.local_ngc.objects.copy()
-    if ngc_df.empty:
-        return
-
-    if star_magnitude_limit is not None:
-        ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(
-            lambda x: x.magnitude if hasattr(x, "magnitude") else x
-        )
-        ngc_df["Magnitude"] = pd.to_numeric(
-            ngc_df["Magnitude"], errors="coerce"
-        ).fillna(999)
-        ngc_df = ngc_df[ngc_df["Magnitude"] <= star_magnitude_limit]
-
-    ngc_df["ra_hours"] = ngc_df["RA"].apply(_parse_ra)
-    ngc_df["dec_degrees"] = ngc_df["Dec"].apply(_parse_dec)
-    ngc_df.dropna(subset=["ra_hours", "dec_degrees"], inplace=True)
-
-    ngc_df["epoch_year"] = 2000.0
-
-    ngc_positions = observer.observe(Star.from_dataframe(ngc_df))
-    alt, az, _ = ngc_positions.apparent().altaz()
-
-    visible_mask = alt.degrees > 0
-    df_visible = ngc_df[visible_mask].reset_index(drop=True)
-    alt_visible_deg = alt.degrees[visible_mask]
-    az_visible_rad = az.radians[visible_mask]
-
-    if not df_visible.empty:
-        for i, n_obj in df_visible.iterrows():
+    visible_ngc = observation.get_visible_ngc(star_magnitude_limit=star_magnitude_limit)
+    if not visible_ngc.empty:
+        for _, n_obj in visible_ngc.iterrows():
             ngc_name = n_obj[ObjectTableLabels.NGC]
             if pd.isna(ngc_name):
                 ngc_name = n_obj[ObjectTableLabels.NAME]
-            if is_polar:
-                ax.scatter(
-                    az_visible_rad[i],
-                    90 - alt_visible_deg[i],
-                    s=50,
-                    color="green",
-                    marker="x",
-                )
-                ax.annotate(
-                    ngc_name,
-                    (az_visible_rad[i], 90 - alt_visible_deg[i]),
-                    textcoords="offset points",
-                    xytext=(5, 5),
-                    color="green",
-                )
-            else:
-                ax.scatter(
-                    az_visible_rad[i],
-                    alt_visible_deg[i],
-                    s=50,
-                    color="green",
-                    marker="x",
-                )
-                ax.annotate(
-                    ngc_name,
-                    (az_visible_rad[i], alt_visible_deg[i]),
-                    textcoords="offset points",
-                    xytext=(5, 5),
-                    color="green",
-                )
+            ngc_object = observation.local_ngc.get_skyfield_object(n_obj)
+            if ngc_object:
+                alt, az, _ = observer.observe(ngc_object).apparent().altaz()
+                if alt.degrees > 0:
+                    if is_polar:
+                        ax.scatter(
+                            az.radians,
+                            90 - alt.degrees,
+                            s=50,
+                            color="green",
+                            marker="x",
+                        )
+                        ax.annotate(
+                            ngc_name,
+                            (az.radians, 90 - alt.degrees),
+                            textcoords="offset points",
+                            xytext=(5, 5),
+                            color="green",
+                        )
+                    else:
+                        ax.scatter(
+                            az.degrees, alt.degrees, s=50, color="green", marker="x"
+                        )
+                        ax.annotate(
+                            ngc_name,
+                            (az.degrees, alt.degrees),
+                            textcoords="offset points",
+                            xytext=(5, 5),
+                            color="green",
+                        )
 
 
 def _plot_planets_on_skymap(
