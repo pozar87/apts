@@ -62,14 +62,17 @@ class Objects(ABC):
             skyfield_object = self.get_skyfield_object(row)
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
 
-            # Filter for times when altitude is sufficient
-            above_horizon_df = altaz_df[altaz_df['Altitude'] > conditions.min_object_altitude]
+            # Extract magnitude from Altitude and Azimuth Quantity objects
+            altitude_values = altaz_df['Altitude'].apply(lambda x: x.magnitude if hasattr(x, 'magnitude') else x)
+            azimuth_values = altaz_df['Azimuth'].apply(lambda x: x.magnitude if hasattr(x, 'magnitude') else x)
 
-            if not above_horizon_df.empty:
-                # Check if azimuth is within range for any of these times
-                az_conditions_met = self._is_azimuth_in_range(above_horizon_df['Azimuth'], conditions)
-                if az_conditions_met.any():
-                    visible_objects_indices.append(index)
+            # Combine altitude and azimuth conditions
+            altitude_condition = altitude_values > conditions.min_object_altitude
+            azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
+
+            # Check if any time satisfies both conditions
+            if (altitude_condition & azimuth_condition).any():
+                visible_objects_indices.append(index)
 
         visible = self.objects.loc[visible_objects_indices]
         # Sort objects by given order
@@ -77,10 +80,13 @@ class Objects(ABC):
         return visible
 
     def _is_azimuth_in_range(self, azimuth_series, conditions):
-        if conditions.min_object_azimuth > conditions.max_object_azimuth:
-            return (azimuth_series >= conditions.min_object_azimuth) | (azimuth_series <= conditions.max_object_azimuth)
+        min_az = conditions.min_object_azimuth.magnitude if hasattr(conditions.min_object_azimuth, 'magnitude') else conditions.min_object_azimuth
+        max_az = conditions.max_object_azimuth.magnitude if hasattr(conditions.max_object_azimuth, 'magnitude') else conditions.max_object_azimuth
+
+        if min_az > max_az:
+            return (azimuth_series >= min_az) | (azimuth_series <= max_az)
         else:
-            return (azimuth_series >= conditions.min_object_azimuth) & (azimuth_series <= conditions.max_object_azimuth)
+            return (azimuth_series >= min_az) & (azimuth_series <= max_az)
 
     @staticmethod
     def fixed_body(RA, Dec):

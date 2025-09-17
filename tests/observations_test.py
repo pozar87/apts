@@ -1119,8 +1119,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
             "Type": ["Nebula", "Nebula", "Galaxy"],
             "RA": [5.575538888888889, 5.588138888888889, 0.7123055555555556],
             "Dec": [22.0145, -5.391111111111111, 41.26916666666666],
-            "Magnitude": [8.4, 4.0, 3.4],
-            "Altitude": [45, 60, 20],
+            "Magnitude": [8.4 * ureg.mag, 4.0 * ureg.mag, 3.4 * ureg.mag],
+            "Altitude": [45 * ureg.deg, 60 * ureg.deg, 20 * ureg.deg],
             "Transit": [
                 pd.Timestamp("2025-02-18 20:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
