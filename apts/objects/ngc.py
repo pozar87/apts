@@ -55,7 +55,9 @@ class NGC(Objects):
         """
         Finds a NGC object by its name (e.g., "NGC 224").
         """
-        result = self.objects[self.objects["NGC"] == name]
+        result = self.objects[
+            (self.objects["NGC"] == name) | (self.objects["Name"] == name)
+        ]
         if not result.empty:
             return self.get_skyfield_object(result.iloc[0])
         return None
