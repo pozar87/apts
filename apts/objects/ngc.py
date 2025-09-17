@@ -46,10 +46,25 @@ class NGC(Objects):
             axis=1,
         )
 
+    def _parse_ra(self, ra_str):
+        if isinstance(ra_str, str) and ra_str.count(':') == 2:
+            parts = ra_str.split(':')
+            return float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600
+        return None
+
+    def _parse_dec(self, dec_str):
+        if isinstance(dec_str, str) and dec_str.count(':') == 2:
+            sign = -1 if dec_str.startswith('-') else 1
+            parts = dec_str.lstrip('+-').split(':')
+            return sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)
+        return None
+
     def get_skyfield_object(self, obj):
-        if obj.RA is None or obj.Dec is None:
+        ra = self._parse_ra(obj.RA)
+        dec = self._parse_dec(obj.Dec)
+        if ra is None or dec is None:
             return None
-        return Star(ra_hours=obj.RA, dec_degrees=obj.Dec)
+        return Star(ra_hours=ra, dec_degrees=dec)
 
     def find_by_name(self, name):
         """

@@ -52,26 +52,6 @@ def _load_ngc_with_units():
     # Map constellation abbreviations to full names
     ngc_df['Constellation'] = ngc_df['Constellation'].map(constellation_map)
 
-    # RA parsing from HH:MM:SS.SS string to hours
-    ngc_df['RA'] = ngc_df['RA'].apply(
-        lambda x: (
-            (lambda parts: float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)(x.split(':'))
-        ) if isinstance(x, str) and x.count(':') == 2 else None
-    )
-
-    # Dec parsing from DD:MM:SS.S string to degrees
-    ngc_df['Dec'] = ngc_df['Dec'].apply(
-        lambda x: (
-            (lambda sign, parts: sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600))
-            (-1 if x.startswith('-') else 1, x.lstrip('+-').split(':'))
-        ) if isinstance(x, str) and x.count(':') == 2 else None
-    )
-
-    # Select and order columns to match the old format
-    columns_to_keep = ['NGC', 'Name', 'Type', 'Constellation', 'RA', 'Dec', 'Magnitude', 'Size']
-    ngc_df = ngc_df[columns_to_keep]
-
-
     # Set proper dtypes for string columns
     string_columns = ["Name", "Type", "Constellation", "NGC"]
     for column in string_columns:
