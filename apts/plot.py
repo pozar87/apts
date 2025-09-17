@@ -665,9 +665,7 @@ def _plot_bright_stars_on_skymap(
         if df_zoomed.empty:
             return
 
-        ax.scatter(
-            az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*"
-        )
+        ax.scatter(az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*")
 
         for i in range(len(df_zoomed)):
             star = df_zoomed.iloc[i]
@@ -748,8 +746,10 @@ def _plot_stars_on_skymap(
 
         # Simple bounding box filter
         stars_in_box = stars[
-            (stars['ra_hours'] >= ra_min) & (stars['ra_hours'] <= ra_max) &
-            (stars['dec_degrees'] >= dec_min) & (stars['dec_degrees'] <= dec_max)
+            (stars["ra_hours"] >= ra_min)
+            & (stars["ra_hours"] <= ra_max)
+            & (stars["dec_degrees"] >= dec_min)
+            & (stars["dec_degrees"] <= dec_max)
         ]
 
         # Now perform the precise separation calculation on the much smaller subset
@@ -760,7 +760,7 @@ def _plot_stars_on_skymap(
             nearby_mask = separation < zoom_deg
             stars = stars_in_box[nearby_mask]
         else:
-            stars = stars_in_box # empty dataframe
+            stars = stars_in_box  # empty dataframe
 
     if mag_limit is not None:
         limit = mag_limit
@@ -874,25 +874,38 @@ def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
 
 
 def _parse_ra(ra_str):
-    if isinstance(ra_str, str) and ra_str.count(':') == 2:
-        parts = ra_str.split(':')
-        return float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600
+    if isinstance(ra_str, str) and ra_str.count(":") == 2:
+        parts = ra_str.split(":")
+        return float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600
     return None
+
 
 def _parse_dec(dec_str):
-    if isinstance(dec_str, str) and dec_str.count(':') == 2:
-        sign = -1 if dec_str.startswith('-') else 1
-        parts = dec_str.lstrip('+-').split(':')
-        return sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)
+    if isinstance(dec_str, str) and dec_str.count(":") == 2:
+        sign = -1 if dec_str.startswith("-") else 1
+        parts = dec_str.lstrip("+-").split(":")
+        return sign * (float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600)
     return None
 
-def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar, star_magnitude_limit: Optional[float] = None):
+
+def _plot_ngc_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    star_magnitude_limit: Optional[float] = None,
+):
     ngc_df = observation.local_ngc.objects.copy()
     if ngc_df.empty:
         return
 
     if star_magnitude_limit is not None:
-        ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+        ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(
+            lambda x: x.magnitude if hasattr(x, "magnitude") else x
+        )
+        ngc_df["Magnitude"] = pd.to_numeric(
+            ngc_df["Magnitude"], errors="coerce"
+        ).fillna(999)
         ngc_df = ngc_df[ngc_df["Magnitude"] <= star_magnitude_limit]
 
     ngc_df["ra_hours"] = ngc_df["RA"].apply(_parse_ra)
@@ -1115,7 +1128,13 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=False, star_magnitude_limit=star_magnitude_limit)
+            _plot_ngc_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                star_magnitude_limit=star_magnitude_limit,
+            )
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
@@ -1282,7 +1301,13 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=True, star_magnitude_limit=star_magnitude_limit)
+            _plot_ngc_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                star_magnitude_limit=star_magnitude_limit,
+            )
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
