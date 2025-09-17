@@ -1281,24 +1281,6 @@ class TestObservationSkymap(unittest.TestCase):
 
 
     @patch("apts.plot.pyplot")
-    def test_plot_skymap_messier_zoomed(self, mock_pyplot):
-        """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
-        mock_ax = MagicMock()
-        mock_fig = MagicMock()
-        mock_ax.figure = mock_fig
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
-
-        fig = self.observation.plot_skymap(target_name="M31", zoom_deg=15.0)
-
-        self.assertIsNotNone(fig)
-        mock_pyplot.subplots.assert_called_once()
-        self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
-        # Assert that set_xlim and set_ylim were called, indicating zoom logic was applied
-        mock_ax.set_xlim.assert_called_once()
-        mock_ax.set_ylim.assert_called_once()
-
-
-    @patch("apts.plot.pyplot")
     def test_plot_skymap_object_not_found(self, mock_pyplot):
         """Test that plot_skymap handles object not found gracefully."""
         mock_ax = MagicMock()

@@ -755,8 +755,27 @@ def _plot_stars_on_skymap(
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
             center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+            observed_center = observer.observe(center)
+
             all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
-            separation = center.separation_from(all_stars_vectors).degrees
+            observed_all_stars = observer.observe(all_stars_vectors)
+
+            dist_center = observed_center.position.au
+            dist_all_stars = observed_all_stars.position.au
+
+            vec_center_np = dist_center
+            vec_all_stars_np = dist_all_stars
+
+            dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
+
+            len_center = numpy.linalg.norm(vec_center_np, axis=0)
+            len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
+
+            cosine_angle = dot_product / (len_center * len_all_stars)
+            cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+
+            separation_radians = numpy.arccos(cosine_angle)
+            separation = numpy.degrees(separation_radians)
             nearby_mask = separation < zoom_deg
             stars = stars_in_box[nearby_mask]
         else:
