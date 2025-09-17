@@ -892,6 +892,7 @@ def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar, star
         return
 
     if star_magnitude_limit is not None:
+        ngc_df["Magnitude"] = ngc_df["Magnitude"].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
         ngc_df = ngc_df[ngc_df["Magnitude"] <= star_magnitude_limit]
 
     ngc_df["ra_hours"] = ngc_df["RA"].apply(_parse_ra)
@@ -911,6 +912,8 @@ def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar, star
     if not df_visible.empty:
         for i, n_obj in df_visible.iterrows():
             ngc_name = n_obj[ObjectTableLabels.NGC]
+            if pd.isna(ngc_name):
+                ngc_name = n_obj[ObjectTableLabels.NAME]
             if is_polar:
                 ax.scatter(
                     az_visible_rad[i],
