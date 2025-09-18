@@ -5,6 +5,7 @@ import datetime
 
 # timedelta is part of datetime
 import pytz  # For timezone awareness
+from apts import catalogs
 
 # Helper to get initial datetime from setup_place
 INITIAL_DATE_STR = "2025/02/18 12:00:00"
@@ -134,7 +135,7 @@ def test_planets_recomputation_with_date():
 
 def test_messier_recomputation_with_date():
     place = setup_place()  # Uses fixed date '2025/02/18 12:00:00'
-    messier = Messier(place, calculation_date=place.date)
+    messier = Messier(place, catalogs, calculation_date=place.date)
     messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
 
     # Store the original transit time for M1 (Crab Nebula)
@@ -197,7 +198,7 @@ def test_planets_backward_compatibility():
 
 def test_messier_backward_compatibility():
     place = setup_place()
-    messier = Messier(place, calculation_date=place.date)
+    messier = Messier(place, catalogs, calculation_date=place.date)
     messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
     original_transit_time_m1 = messier.objects.loc[
         messier.objects[ObjectTableLabels.MESSIER] == "M1", ObjectTableLabels.TRANSIT

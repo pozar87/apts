@@ -130,8 +130,9 @@ class Observation:
     @property
     def local_messier(self):
         if self._local_messier is None:
+            from apts import catalogs
             self._local_messier = Messier(
-                self.place, calculation_date=self.effective_date
+                self.place, catalogs, calculation_date=self.effective_date
             )
         return self._local_messier
 
@@ -146,13 +147,15 @@ class Observation:
     @property
     def local_ngc(self):
         if self._local_ngc is None:
-            self._local_ngc = NGC(self.place, calculation_date=self.effective_date)
+            from apts import catalogs
+            self._local_ngc = NGC(self.place, catalogs, calculation_date=self.effective_date)
         return self._local_ngc
 
     @property
     def local_stars(self):
         if self._local_stars is None:
-            self._local_stars = Stars(self.place, calculation_date=self.effective_date)
+            from apts import catalogs
+            self._local_stars = Stars(self.place, catalogs, calculation_date=self.effective_date)
         return self._local_stars
 
     def get_visible_messier(self, **args):

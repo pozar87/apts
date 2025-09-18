@@ -17,6 +17,7 @@ from apts.constants.objecttablelabels import (
 from apts.units import ureg
 from tests import setup_observation
 from apts.conditions import Conditions  # Import Conditions at the top level
+from apts import catalogs
 
 
 # MockPlace and MockEquipment classes are removed
@@ -1127,6 +1128,7 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
             "ID": [0, 1, 2],
+            "skyfield_object": [Star(ra_hours=5.575538888888889, dec_degrees=22.0145), Star(ra_hours=5.588138888888889, dec_degrees=-5.391111111111111), Star(ra_hours=0.7123055555555556, dec_degrees=41.26916666666666)]
         }
         self.messier_df = pd.DataFrame(messier_data)
 
