@@ -93,6 +93,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_space_events))
         if self.event_settings.get("iss_flybys", False):
             futures.append(executor.submit(self.calculate_iss_flybys))
+        if self.event_settings.get("tiangong_flybys", False):
+            futures.append(executor.submit(self.calculate_tiangong_flybys))
         if self.event_settings.get("solar_eclipses", False):
             futures.append(executor.submit(self.calculate_solar_eclipses))
         if self.event_settings.get("lunar_eclipses", False):
@@ -164,6 +166,20 @@ class AstronomicalEvents:
             topos_observer, self.observer, self.start_date, self.end_date
         )
         logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
+        return events
+
+    def calculate_tiangong_flybys(self):
+        start_time = time.time()
+        # Create the Topos object directly from place attributes
+        topos_observer = Topos(
+            latitude_degrees=self.place.lat_decimal,
+            longitude_degrees=self.place.lon_decimal,
+            elevation_m=self.place.elevation,
+        )
+        events = skyfield_searches.find_tiangong_flybys(
+            topos_observer, self.observer, self.start_date, self.end_date
+        )
+        logger.debug(f"--- calculate_tiangong_flybys: {time.time() - start_time}s")
         return events
 
     def calculate_solar_eclipses(self):
