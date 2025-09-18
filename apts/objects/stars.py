@@ -6,9 +6,9 @@ from skyfield.api import Star
 
 
 class Stars(Objects):
-    def __init__(self, place, calculation_date=None):
+    def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Stars, self).__init__(place, calculation_date=calculation_date)
-        self.objects = Catalogs().BRIGHT_STARS.copy()
+        self.objects = catalogs.BRIGHT_STARS.copy()
         self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
     def compute(self, calculation_date=None):
@@ -45,7 +45,7 @@ class Stars(Objects):
         )
 
     def get_skyfield_object(self, obj):
-        return Star(ra_hours=obj.RA, dec_degrees=obj.Dec)
+        return obj.skyfield_object
 
     def find_by_name(self, name):
         """

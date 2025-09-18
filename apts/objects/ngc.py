@@ -7,9 +7,9 @@ from skyfield.api import Star
 
 
 class NGC(Objects):
-    def __init__(self, place, calculation_date=None):
+    def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
-        self.objects = Catalogs().NGC.copy()
+        self.objects = catalogs.NGC.copy()
         self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
     def compute(self, calculation_date=None):
@@ -47,30 +47,8 @@ class NGC(Objects):
             axis=1,
         )
 
-    def _parse_ra(self, ra_str):
-        if isinstance(ra_str, str) and ra_str.count(':') == 2:
-            parts = ra_str.split(':')
-            return float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600
-        return None
-
-    def _parse_dec(self, dec_str):
-        if isinstance(dec_str, str) and dec_str.count(':') == 2:
-            sign = -1 if dec_str.startswith('-') else 1
-            parts = dec_str.lstrip('+-').split(':')
-            return sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)
-        return None
-
     def get_skyfield_object(self, obj):
-        if isinstance(obj, pd.DataFrame):
-            ra_hours = obj["RA"].apply(self._parse_ra)
-            dec_degrees = obj["Dec"].apply(self._parse_dec)
-            return Star(ra_hours=ra_hours.values, dec_degrees=dec_degrees.values)
-
-        ra = self._parse_ra(obj.RA)
-        dec = self._parse_dec(obj.Dec)
-        if ra is None or dec is None:
-            return None
-        return Star(ra_hours=ra, dec_degrees=dec)
+        return obj.skyfield_object
 
     def find_by_name(self, name):
         """

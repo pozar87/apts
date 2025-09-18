@@ -8,6 +8,7 @@ from apts.opticalequipment import Telescope, Eyepiece
 import unittest
 import pint
 from apts.units import ureg
+from apts import catalogs
 
 
 class CacheTest(unittest.TestCase):
@@ -52,7 +53,7 @@ class CacheTest(unittest.TestCase):
 
     def test_messier_pickle(self):
         p = Place(lat=52.2, lon=21.0, name="Warsaw")
-        m = Messier(p)
+        m = Messier(p, catalogs)
         pickled_m = pickle.dumps(m)
         unpickled_m = pickle.loads(pickled_m)
         self.assertIsNotNone(unpickled_m)

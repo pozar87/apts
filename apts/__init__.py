@@ -6,7 +6,7 @@ import seaborn as sns
 # Import the config object from the new config module
 from .config import config
 
-from .catalogs import Catalogs
+from .catalogs import Catalogs, initialize_catalogs
 from .equipment import Equipment
 from .notify import Notify
 from .observations import Observation
@@ -15,7 +15,7 @@ from .utils import Utils
 from .weather import Weather
 from .constants.event_types import EventType
 
-__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType", "Notify", "Weather"]
+__all__ = ["Catalogs", "Equipment", "Observation", "Place", "Utils", "EventType", "Notify", "Weather", "catalogs"]
 
 logger = logging.getLogger(__name__)
 
@@ -63,5 +63,10 @@ except ValueError:
 
 # Disable label trimming in pandas tables
 pd.set_option("display.max_colwidth", None)
+
+# Initialize catalogs
+initialize_catalogs()
+catalogs = Catalogs()
+
 
 __version__ = "0.7.4"
