@@ -1119,8 +1119,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
             "Type": ["Nebula", "Nebula", "Galaxy"],
             "RA": [5.575538888888889, 5.588138888888889, 0.7123055555555556],
             "Dec": [22.0145, -5.391111111111111, 41.26916666666666],
-            "Magnitude": [8.4, 4.0, 3.4],
-            "Altitude": [45, 60, 20],
+            "Magnitude": [8.4 * ureg.mag, 4.0 * ureg.mag, 3.4 * ureg.mag],
+            "Altitude": [45 * ureg.deg, 60 * ureg.deg, 20 * ureg.deg],
             "Transit": [
                 pd.Timestamp("2025-02-18 20:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
@@ -1278,6 +1278,28 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
+
+
+    @patch("apts.plot.pyplot")
+    def test_plot_skymap_messier_zoomed(self, mock_pyplot):
+        """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # Configure mock_ax to return realistic limits
+        mock_ax.get_xlim.return_value = (-10, 10)
+        mock_ax.get_ylim.return_value = (-10, 10)
+
+        fig = self.observation.plot_skymap(target_name="M31", zoom_deg=15.0)
+
+        self.assertIsNotNone(fig)
+        mock_pyplot.subplots.assert_called_once()
+        self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
+        # Assert that set_xlim and set_ylim were called, indicating zoom logic was applied
+        mock_ax.set_xlim.assert_called_once()
+        mock_ax.set_ylim.assert_called_once()
 
 
     @patch("apts.plot.pyplot")

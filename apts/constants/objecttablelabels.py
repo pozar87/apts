@@ -27,4 +27,5 @@ class ObjectTableLabels:
     SETTING = "Setting"
 
     MESSIER = "Messier"
+    NGC = "NGC"
     WIDTH = "Width"

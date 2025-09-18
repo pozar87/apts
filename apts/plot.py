@@ -7,7 +7,7 @@ import numpy
 import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
-from skyfield.api import Star, load
+from skyfield.api import Star as SkyfieldStar, load, Topos, EarthSatellite
 
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -632,7 +632,7 @@ def _plot_bright_stars_on_skymap(
         columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True
     )
 
-    star_positions = observer.observe(Star.from_dataframe(bright_stars_df))
+    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible_mask = alt.degrees > 0
@@ -665,9 +665,7 @@ def _plot_bright_stars_on_skymap(
         if df_zoomed.empty:
             return
 
-        ax.scatter(
-            az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*"
-        )
+        ax.scatter(az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*")
 
         for i in range(len(df_zoomed)):
             star = df_zoomed.iloc[i]
@@ -748,19 +746,40 @@ def _plot_stars_on_skymap(
 
         # Simple bounding box filter
         stars_in_box = stars[
-            (stars['ra_hours'] >= ra_min) & (stars['ra_hours'] <= ra_max) &
-            (stars['dec_degrees'] >= dec_min) & (stars['dec_degrees'] <= dec_max)
+            (stars["ra_hours"] >= ra_min)
+            & (stars["ra_hours"] <= ra_max)
+            & (stars["dec_degrees"] >= dec_min)
+            & (stars["dec_degrees"] <= dec_max)
         ]
 
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
-            center = Star(ra=target_object.ra, dec=target_object.dec)
-            all_stars_vectors = Star.from_dataframe(stars_in_box)
-            separation = center.separation_from(all_stars_vectors).degrees
+            center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+            observed_center = observer.observe(center)
+
+            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
+            observed_all_stars = observer.observe(all_stars_vectors)
+
+            dist_center = observed_center.position.au
+            dist_all_stars = observed_all_stars.position.au
+
+            vec_center_np = dist_center
+            vec_all_stars_np = dist_all_stars
+
+            dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
+
+            len_center = numpy.linalg.norm(vec_center_np, axis=0)
+            len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
+
+            cosine_angle = dot_product / (len_center * len_all_stars)
+            cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+
+            separation_radians = numpy.arccos(cosine_angle)
+            separation = numpy.degrees(separation_radians)
             nearby_mask = separation < zoom_deg
             stars = stars_in_box[nearby_mask]
         else:
-            stars = stars_in_box # empty dataframe
+            stars = stars_in_box  # empty dataframe
 
     if mag_limit is not None:
         limit = mag_limit
@@ -776,7 +795,7 @@ def _plot_stars_on_skymap(
     if bright_stars.empty:
         return
 
-    star_positions = observer.observe(Star.from_dataframe(bright_stars))
+    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
     visible = alt.degrees > 0
@@ -873,12 +892,92 @@ def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
                         )
 
 
-def _plot_ngc_on_skymap(observation: "Observation", ax, observer, is_polar):
-    visible_ngc = observation.get_visible_ngc()
+def _parse_ra(ra_str):
+    if isinstance(ra_str, str) and ra_str.count(":") == 2:
+        parts = ra_str.split(":")
+        return float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600
+    return None
+
+
+def _parse_dec(dec_str):
+    if isinstance(dec_str, str) and dec_str.count(":") == 2:
+        sign = -1 if dec_str.startswith("-") else 1
+        parts = dec_str.lstrip("+-").split(":")
+        return sign * (float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600)
+    return None
+
+
+def _plot_ngc_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    star_magnitude_limit: Optional[float] = None,
+    zoom_deg: Optional[float] = None,
+    target_object=None,
+):
+    if zoom_deg is not None and target_object is not None:
+        visible_ngc = observation.local_ngc.objects.copy()
+    else:
+        visible_ngc = observation.get_visible_ngc(
+            star_magnitude_limit=star_magnitude_limit
+        )
+
+    if not visible_ngc.empty:
+        if zoom_deg is not None and target_object is not None:
+            ra_center_hours = target_object.ra.hours
+            dec_center_degrees = target_object.dec.degrees
+            deg_margin = zoom_deg * 2
+            ra_margin_hours = deg_margin / 15.0
+            ra_min = ra_center_hours - ra_margin_hours
+            ra_max = ra_center_hours + ra_margin_hours
+            dec_min = dec_center_degrees - deg_margin
+            dec_max = dec_center_degrees + deg_margin
+
+            visible_ngc["RA_parsed"] = visible_ngc["RA"].apply(_parse_ra)
+            visible_ngc["Dec_parsed"] = visible_ngc["Dec"].apply(_parse_dec)
+
+            ngc_in_box = visible_ngc[
+                (visible_ngc["RA_parsed"] >= ra_min)
+                & (visible_ngc["RA_parsed"] <= ra_max)
+                & (visible_ngc["Dec_parsed"] >= dec_min)
+                & (visible_ngc["Dec_parsed"] <= dec_max)
+            ]
+
+            if not ngc_in_box.empty:
+                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+                observed_center = observer.observe(center)
+
+                all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
+                observed_all_ngc = observer.observe(all_ngc_vectors)
+
+                dist_center = observed_center.position.au
+                dist_all_ngc = observed_all_ngc.position.au
+
+                vec_center_np = dist_center
+                vec_all_ngc_np = dist_all_ngc
+
+                dot_product = numpy.dot(vec_all_ngc_np.T, vec_center_np)
+
+                len_center = numpy.linalg.norm(vec_center_np)
+                len_all_ngc = numpy.linalg.norm(vec_all_ngc_np, axis=0)
+
+                cosine_angle = dot_product / (len_center * len_all_ngc)
+                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+
+                separation_radians = numpy.arccos(cosine_angle)
+                separation = numpy.degrees(separation_radians)
+                nearby_mask = separation < zoom_deg
+                visible_ngc = ngc_in_box[nearby_mask]
+            else:
+                visible_ngc = ngc_in_box
+
     if not visible_ngc.empty:
         for _, n_obj in visible_ngc.iterrows():
             ngc_name = n_obj[ObjectTableLabels.NGC]
-            ngc_object = observation.local_ngc.find_by_name(ngc_name)
+            if pd.isna(ngc_name):
+                ngc_name = n_obj[ObjectTableLabels.NAME]
+            ngc_object = observation.local_ngc.get_skyfield_object(n_obj)
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
                 if alt.degrees > 0:
@@ -1079,7 +1178,15 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=False)
+            _plot_ngc_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                star_magnitude_limit=star_magnitude_limit,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
+            )
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
@@ -1246,7 +1353,15 @@ def _generate_plot_skymap(
         if plot_messier:
             _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
         if plot_ngc:
-            _plot_ngc_on_skymap(observation, ax, observer, is_polar=True)
+            _plot_ngc_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                star_magnitude_limit=star_magnitude_limit,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
+            )
         if plot_planets:
             _plot_planets_on_skymap(
                 observation,
