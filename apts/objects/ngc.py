@@ -1,3 +1,4 @@
+import pandas as pd
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
@@ -60,6 +61,11 @@ class NGC(Objects):
         return None
 
     def get_skyfield_object(self, obj):
+        if isinstance(obj, pd.DataFrame):
+            ra_hours = obj["RA"].apply(self._parse_ra)
+            dec_degrees = obj["Dec"].apply(self._parse_dec)
+            return Star(ra_hours=ra_hours.values, dec_degrees=dec_degrees.values)
+
         ra = self._parse_ra(obj.RA)
         dec = self._parse_dec(obj.Dec)
         if ra is None or dec is None:

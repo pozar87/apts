@@ -913,8 +913,65 @@ def _plot_ngc_on_skymap(
     observer,
     is_polar,
     star_magnitude_limit: Optional[float] = None,
+    zoom_deg: Optional[float] = None,
+    target_object=None,
 ):
-    visible_ngc = observation.get_visible_ngc(star_magnitude_limit=star_magnitude_limit)
+    if zoom_deg is not None and target_object is not None:
+        visible_ngc = observation.local_ngc.objects.copy()
+    else:
+        visible_ngc = observation.get_visible_ngc(
+            star_magnitude_limit=star_magnitude_limit
+        )
+
+    if not visible_ngc.empty:
+        if zoom_deg is not None and target_object is not None:
+            ra_center_hours = target_object.ra.hours
+            dec_center_degrees = target_object.dec.degrees
+            deg_margin = zoom_deg * 2
+            ra_margin_hours = deg_margin / 15.0
+            ra_min = ra_center_hours - ra_margin_hours
+            ra_max = ra_center_hours + ra_margin_hours
+            dec_min = dec_center_degrees - deg_margin
+            dec_max = dec_center_degrees + deg_margin
+
+            visible_ngc["RA_parsed"] = visible_ngc["RA"].apply(_parse_ra)
+            visible_ngc["Dec_parsed"] = visible_ngc["Dec"].apply(_parse_dec)
+
+            ngc_in_box = visible_ngc[
+                (visible_ngc["RA_parsed"] >= ra_min)
+                & (visible_ngc["RA_parsed"] <= ra_max)
+                & (visible_ngc["Dec_parsed"] >= dec_min)
+                & (visible_ngc["Dec_parsed"] <= dec_max)
+            ]
+
+            if not ngc_in_box.empty:
+                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+                observed_center = observer.observe(center)
+
+                all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
+                observed_all_ngc = observer.observe(all_ngc_vectors)
+
+                dist_center = observed_center.position.au
+                dist_all_ngc = observed_all_ngc.position.au
+
+                vec_center_np = dist_center
+                vec_all_ngc_np = dist_all_ngc
+
+                dot_product = numpy.dot(vec_all_ngc_np.T, vec_center_np)
+
+                len_center = numpy.linalg.norm(vec_center_np)
+                len_all_ngc = numpy.linalg.norm(vec_all_ngc_np, axis=0)
+
+                cosine_angle = dot_product / (len_center * len_all_ngc)
+                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+
+                separation_radians = numpy.arccos(cosine_angle)
+                separation = numpy.degrees(separation_radians)
+                nearby_mask = separation < zoom_deg
+                visible_ngc = ngc_in_box[nearby_mask]
+            else:
+                visible_ngc = ngc_in_box
+
     if not visible_ngc.empty:
         for _, n_obj in visible_ngc.iterrows():
             ngc_name = n_obj[ObjectTableLabels.NGC]
@@ -1127,6 +1184,8 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=False,
                 star_magnitude_limit=star_magnitude_limit,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
             )
         if plot_planets:
             _plot_planets_on_skymap(
@@ -1300,6 +1359,8 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=True,
                 star_magnitude_limit=star_magnitude_limit,
+                zoom_deg=zoom_deg,
+                target_object=target_object,
             )
         if plot_planets:
             _plot_planets_on_skymap(
