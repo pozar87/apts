@@ -274,12 +274,15 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     return events
 
 
-def find_iss_flybys(
+def _find_satellite_flybys(
     topos_observer,
     vector_observer,
     start_date,
     end_date,
-    magnitude_threshold=-1.5,
+    satellite_name,
+    event_name,
+    event_type,
+    magnitude_threshold=None,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
 ):
@@ -291,15 +294,16 @@ def find_iss_flybys(
     try:
         stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
         # Load TLE file - no ephemeris needed for satellite data
+        # Skyfield will cache this file by default
         satellites = load.tle_file(stations_url)
-        iss = next(s for s in satellites if s.name == "ISS (ZARYA)")
+        satellite = next(s for s in satellites if s.name == satellite_name)
     except Exception as e:
-        # Could be network error, or ISS not in file
-        print(f"Could not load ISS TLEs: {e}")
+        # Could be network error, or satellite not in file
+        print(f"Could not load TLEs for {satellite_name}: {e}")
         return []
 
     # Find rise/culmination/set events above `rise_altitude_threshold`
-    times, events = iss.find_events(
+    times, events = satellite.find_events(
         topos_observer, t0, t1, altitude_degrees=rise_altitude_threshold
     )
 
@@ -319,8 +323,8 @@ def find_iss_flybys(
         if sun_alt.degrees > -18:  # not dark enough
             continue
 
-        # Topocentric ISS position
-        sat = iss.at(culmination_time)
+        # Topocentric satellite position
+        sat = satellite.at(culmination_time)
         obs = topos_observer.at(culmination_time)
         topocentric = sat - obs
 
@@ -329,36 +333,82 @@ def find_iss_flybys(
         if alt.degrees < peak_altitude_threshold:
             continue
 
-        # Apparent magnitude (Skyfield computes it for satellites directly)
-        mag = -3.0
-        if mag is not None and mag > magnitude_threshold:
-            continue
+        event_data = {
+            "date": culmination_time.utc_datetime(),
+            "event": event_name,
+            "type": event_type,
+            "rise_time": None,
+            "culmination_time": culmination_time.utc_datetime(),
+            "set_time": None,
+            "peak_altitude": alt.degrees,
+        }
+
+        if magnitude_threshold is not None:
+            # Apparent magnitude (Skyfield computes it for satellites directly)
+            mag = -3.0
+            if mag is not None and mag > magnitude_threshold:
+                continue
+            event_data["peak_magnitude"] = mag
 
         # Find rise and set times for this pass
         if i > 0 and events[i - 1] == 0:
-            rise_time = times[i - 1]
+            event_data["rise_time"] = times[i - 1].utc_datetime()
         else:
             continue
 
         if i < len(events) - 1 and events[i + 1] == 2:
-            set_time = times[i + 1]
+            event_data["set_time"] = times[i + 1].utc_datetime()
         else:
             continue
 
-        events_list.append(
-            {
-                "date": culmination_time.utc_datetime(),
-                "event": "Bright ISS Flyby",
-                "type": "ISS Flyby",
-                "rise_time": rise_time.utc_datetime(),
-                "culmination_time": culmination_time.utc_datetime(),
-                "set_time": set_time.utc_datetime(),
-                "peak_altitude": alt.degrees,
-                "peak_magnitude": mag,
-            }
-        )
+        events_list.append(event_data)
 
     return events_list
+
+
+def find_iss_flybys(
+    topos_observer,
+    vector_observer,
+    start_date,
+    end_date,
+    magnitude_threshold=-1.5,
+    peak_altitude_threshold=40,
+    rise_altitude_threshold=10,
+):
+    return _find_satellite_flybys(
+        topos_observer,
+        vector_observer,
+        start_date,
+        end_date,
+        "ISS (ZARYA)",
+        "Bright ISS Flyby",
+        "ISS Flyby",
+        magnitude_threshold,
+        peak_altitude_threshold,
+        rise_altitude_threshold,
+    )
+
+
+def find_tiangong_flybys(
+    topos_observer,
+    vector_observer,
+    start_date,
+    end_date,
+    peak_altitude_threshold=40,
+    rise_altitude_threshold=10,
+):
+    return _find_satellite_flybys(
+        topos_observer,
+        vector_observer,
+        start_date,
+        end_date,
+        "CSS (TIANHE)",
+        "Bright Tiangong Flyby",
+        "Tiangong Flyby",
+        None,  # No magnitude threshold for Tiangong
+        peak_altitude_threshold,
+        rise_altitude_threshold,
+    )
 
 
 def find_lunar_eclipses(eph, start_date, end_date):
