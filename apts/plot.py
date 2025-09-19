@@ -949,15 +949,15 @@ def _plot_ngc_on_skymap(
                 observed_center = observer.observe(center)
 
                 all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
-                observed_all_ngc = observer.observe(all_ngc_vectors)
+                observed_all_ngc = all_ngc_vectors.apply(observer.observe)
 
                 dist_center = observed_center.position.au
-                dist_all_ngc = observed_all_ngc.position.au
+                vec_all_ngc = observed_all_ngc.apply(lambda x: x.xyz.au)
 
                 vec_center_np = dist_center
-                vec_all_ngc_np = dist_all_ngc
+                vec_all_ngc_np = numpy.array(vec_all_ngc.tolist()).T
 
-                dot_product = numpy.dot(vec_all_ngc_np.T, vec_center_np)
+                dot_product = numpy.dot(vec_center_np, vec_all_ngc_np)
 
                 len_center = numpy.linalg.norm(vec_center_np)
                 len_all_ngc = numpy.linalg.norm(vec_all_ngc_np, axis=0)
