@@ -476,6 +476,8 @@ def _generate_plot_weather(
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
+        axes[4, 1].axis("off")
+
         plt_clouds_ax = observation.place.weather.plot_clouds(
             ax=axes[0, 0], dark_mode_override=effective_dark_mode
         )
