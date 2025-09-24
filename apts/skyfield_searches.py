@@ -3,9 +3,6 @@ from skyfield import eclipselib
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
-from datetime import timedelta
-from skyfield.constants import ERAD
-from skyfield.functions import angle_between, length_of
 from .cache import get_timescale, get_ephemeris
 
 

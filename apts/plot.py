@@ -1,13 +1,13 @@
 import logging
 from datetime import timedelta
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import matplotlib.dates as mdates
 import numpy
 import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
-from skyfield.api import Star as SkyfieldStar, load, Topos, EarthSatellite
+from skyfield.api import Star as SkyfieldStar
 
 from .utils import Utils
 from .constants import ObjectTableLabels

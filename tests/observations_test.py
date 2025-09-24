@@ -3,9 +3,9 @@ import unittest
 import tempfile
 import datetime  # Added
 from datetime import timedelta
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 import pandas as pd
-from unittest.mock import MagicMock, call  # Added MagicMock and call
+from unittest.mock import MagicMock  # Added MagicMock and call
 from apts.observations import Observation
 from apts.constants.graphconstants import (
     get_plot_style,
@@ -17,7 +17,6 @@ from apts.constants.objecttablelabels import (
 from apts.units import ureg
 from tests import setup_observation
 from apts.conditions import Conditions  # Import Conditions at the top level
-from apts import catalogs
 
 
 # MockPlace and MockEquipment classes are removed
