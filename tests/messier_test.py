@@ -120,7 +120,7 @@ def test_planets_recomputation_with_date():
         # Mars' transit shifts by about 24 hours and ~39 minutes per solar day.
         # We'll check if it's within a reasonable window (e.g., 23 to 25 hours to be safe, or more precisely for Mars)
         # For simplicity, we'll check if it's roughly one day later.
-        expected_new_transit_time = original_transit_time_mars + datetime.timedelta(
+        original_transit_time_mars + datetime.timedelta(
             days=1
         )
         # Allow for some variation due to planetary motion, not exactly 24h.

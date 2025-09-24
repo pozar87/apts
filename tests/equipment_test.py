@@ -210,7 +210,7 @@ def test_binoculars_in_equipment_data():
     assert bino_row[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"
     assert bino_row[EquipmentTableLabels.TYPE] == "Visual"
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
-    assert bino_row[EquipmentTableLabels.USEFUL_ZOOM] == True
+    assert bino_row[EquipmentTableLabels.USEFUL_ZOOM]
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8) # 7.5
 
     expected_exit_pupil = 42.0 / 8.0  # 5.25

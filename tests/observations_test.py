@@ -723,7 +723,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         """Test one hour bad due to high cloud cover."""
         num_hours = 3
         # Second hour has bad weather (cloud cover)
-        conditions_flags = [True, False, True]
 
         # Explicitly create data that violates cloud cover for the second hour
         data_rows = []
@@ -889,7 +888,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_temperature_low(self):
         """Test bad weather due to low temperature."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
@@ -912,7 +910,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_temperature_high(self):
         """Test bad weather due to high temperature."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
@@ -935,7 +932,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_precipitation(self):
         """Test bad weather due to high precipitation probability."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
