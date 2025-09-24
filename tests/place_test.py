@@ -3,6 +3,12 @@ from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
 import datetime as dt_module  # Added alias
 from skyfield.timelib import Time
+import unittest
+from unittest.mock import patch, MagicMock, ANY
+import pandas as pd
+
+# from apts.config import config # Not directly used if get_dark_mode is mocked
+from apts.constants.graphconstants import get_plot_style
 
 
 from apts.place import Place
@@ -258,14 +264,6 @@ class TestPlace:
         assert "Local_time" in moon_df.columns
         assert "Phase" in moon_df.columns
         assert "Lunation" in moon_df.columns
-
-
-import unittest
-from unittest.mock import patch, MagicMock, ANY
-import pandas as pd
-
-# from apts.config import config # Not directly used if get_dark_mode is mocked
-from apts.constants.graphconstants import get_plot_style
 
 
 class TestPlacePlotting(unittest.TestCase):

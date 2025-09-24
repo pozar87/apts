@@ -3,9 +3,10 @@ import unittest
 import tempfile
 import datetime  # Added
 from datetime import timedelta
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
+from skyfield.api import Star
 import pandas as pd
-from unittest.mock import MagicMock, call  # Added MagicMock and call
+from unittest.mock import MagicMock  # Added MagicMock and call
 from apts.observations import Observation
 from apts.constants.graphconstants import (
     get_plot_style,
@@ -17,7 +18,6 @@ from apts.constants.objecttablelabels import (
 from apts.units import ureg
 from tests import setup_observation
 from apts.conditions import Conditions  # Import Conditions at the top level
-from apts import catalogs
 
 
 # MockPlace and MockEquipment classes are removed
@@ -76,7 +76,7 @@ class TestObservationTemplate(unittest.TestCase):
                     "2025/02/19 02:00:00", tz=obs_local_tz
                 )
 
-        self.default_template_content = '''<!doctype html>
+        self.default_template_content = """<!doctype html>
 <html>
   <head>
     <style>
@@ -87,7 +87,7 @@ class TestObservationTemplate(unittest.TestCase):
     <h1>$title</h1>
     <p>$place_name</p>
   </body>
-</html>'''
+</html>"""
 
     @patch("apts.weather.Weather.__init__")
     @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
@@ -133,7 +133,9 @@ class TestObservationTemplate(unittest.TestCase):
             }
         )
 
-        with tempfile.NamedTemporaryFile(mode="w", delete=False, encoding='utf-8') as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, encoding="utf-8"
+        ) as temp_file:
             temp_file.write(self.default_template_content)
             custom_template_path = temp_file.name
 
@@ -724,7 +726,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         """Test one hour bad due to high cloud cover."""
         num_hours = 3
         # Second hour has bad weather (cloud cover)
-        conditions_flags = [True, False, True]
 
         # Explicitly create data that violates cloud cover for the second hour
         data_rows = []
@@ -890,7 +891,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_temperature_low(self):
         """Test bad weather due to low temperature."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
@@ -913,7 +913,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_temperature_high(self):
         """Test bad weather due to high temperature."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
@@ -936,7 +935,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_precipitation(self):
         """Test bad weather due to high precipitation probability."""
-        num_hours = 1
         data_rows = [
             {
                 "time": self.obs.start,
@@ -1102,12 +1100,6 @@ class TestSunObservation(unittest.TestCase):
         self.assertEqual(observation.stop, place.sunset_time.return_value)
 
 
-from skyfield.api import Star
-
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
@@ -1128,7 +1120,11 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
             "ID": [0, 1, 2],
-            "skyfield_object": [Star(ra_hours=5.575538888888889, dec_degrees=22.0145), Star(ra_hours=5.588138888888889, dec_degrees=-5.391111111111111), Star(ra_hours=0.7123055555555556, dec_degrees=41.26916666666666)]
+            "skyfield_object": [
+                Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
+                Star(ra_hours=5.588138888888889, dec_degrees=-5.391111111111111),
+                Star(ra_hours=0.7123055555555556, dec_degrees=41.26916666666666),
+            ],
         }
         self.messier_df = pd.DataFrame(messier_data)
 
@@ -1249,8 +1245,9 @@ class TestObservationSkymap(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
         # Set a fixed date for deterministic tests
-        self.observation.effective_date = self.observation.place.ts.utc(2025, 2, 18, 12, 0, 0)
-
+        self.observation.effective_date = self.observation.place.ts.utc(
+            2025, 2, 18, 12, 0, 0
+        )
 
     @patch("apts.plot.pyplot")
     def test_plot_skymap_messier(self, mock_pyplot):
@@ -1266,7 +1263,6 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
 
-
     @patch("apts.plot.pyplot")
     def test_plot_skymap_planet(self, mock_pyplot):
         """Test that plot_skymap generates a plot for a planet without errors."""
@@ -1280,7 +1276,6 @@ class TestObservationSkymap(unittest.TestCase):
         self.assertIsNotNone(fig)
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
-
 
     @patch("apts.plot.pyplot")
     def test_plot_skymap_messier_zoomed(self, mock_pyplot):
@@ -1302,7 +1297,6 @@ class TestObservationSkymap(unittest.TestCase):
         # Assert that set_xlim and set_ylim were called, indicating zoom logic was applied
         mock_ax.set_xlim.assert_called_once()
         mock_ax.set_ylim.assert_called_once()
-
 
     @patch("apts.plot.pyplot")
     def test_plot_skymap_object_not_found(self, mock_pyplot):

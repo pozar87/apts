@@ -1,5 +1,4 @@
 import logging.config
-from typing import Literal
 import pandas as pd
 import seaborn as sns
 

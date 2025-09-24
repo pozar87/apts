@@ -14,7 +14,6 @@ from .objects.ngc import NGC
 from .objects.stars import Stars
 from .objects.solar_objects import SolarObjects
 from .utils import Utils
-from .constants import ObjectTableLabels
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
 from . import plot as apts_plot

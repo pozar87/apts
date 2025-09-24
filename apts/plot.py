@@ -1,13 +1,13 @@
 import logging
 from datetime import timedelta
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 import matplotlib.dates as mdates
 import numpy
 import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
-from skyfield.api import Star as SkyfieldStar, load, Topos, EarthSatellite
+from skyfield.api import Star as SkyfieldStar
 
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -1119,7 +1119,6 @@ def _generate_plot_skymap(
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
 
     if zoom_deg is not None:
-        is_polar = False
         if target_alt.degrees < 0:
             fig, ax = pyplot.subplots(figsize=(10, 10))
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
@@ -1224,7 +1223,6 @@ def _generate_plot_skymap(
         )
         return fig
     else:
-        is_polar = True
         fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])

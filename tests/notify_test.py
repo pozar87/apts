@@ -27,7 +27,6 @@ class TestNotify(unittest.TestCase):
         self, mock_attach_image_spy, mock_send_email_internal, mock_smtp_constructor
     ):
         """Test send default template, plot attachment, and email structure."""
-        mock_smtp_instance = mock_smtp_constructor.return_value
 
         html_body_content = "<html><body>Test Default Template</body></html>"
         self.mock_observation.to_html.return_value = html_body_content

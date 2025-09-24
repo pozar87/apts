@@ -3,9 +3,10 @@ from unittest.mock import patch
 from datetime import datetime, timezone
 from apts.events import AstronomicalEvents
 from apts.constants.event_types import EventType
+from apts.place import Place
+
 
 utc = timezone.utc
-from apts.place import Place
 
 
 class EventsTest(unittest.TestCase):
@@ -61,12 +62,11 @@ class EventsTest(unittest.TestCase):
         self.assertIsNotNone(venus_event)
 
         # Check if the event description is correct
-        self.assertEqual(venus_event['event'], "Highest altitude")
+        self.assertEqual(venus_event["event"], "Highest altitude")
 
         # Check the date and altitude
         self.assertEqual(venus_event["date"].day, 14)
         self.assertAlmostEqual(venus_event["altitude"], 48.23, delta=0.01)
-
 
     def test_events_with_enum(self):
         # Calculate only moon phases using the new enum parameter
@@ -83,7 +83,6 @@ class EventsTest(unittest.TestCase):
 
         # Check for a known moon phase event
         self.assertEqual(sum(events_df["event"] == "New Moon"), 2)
-
 
     def test_jupiter_saturn_conjunction(self):
         # Set a date range around the Great Conjunction of 2020
@@ -102,9 +101,9 @@ class EventsTest(unittest.TestCase):
 
         # Find the Jupiter-Saturn conjunction event
         jupiter_saturn_event = events_df[
-            (events_df["event"] == "Conjunction") &
-            (events_df["object1"] == "Jupiter") &
-            (events_df["object2"] == "Saturn")
+            (events_df["event"] == "Conjunction")
+            & (events_df["object1"] == "Jupiter")
+            & (events_df["object2"] == "Saturn")
         ]
 
         # Check that the event was found
@@ -116,15 +115,15 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 12)
         self.assertEqual(event_date.day, 21)
 
-    @patch('apts.events.skyfield_searches.find_iss_flybys')
+    @patch("apts.events.skyfield_searches.find_iss_flybys")
     def test_calculate_iss_flybys(self, mock_find_iss_flybys):
         # Arrange
         mock_flyby_event = {
-            'date': datetime(2023, 1, 15, 18, 30, 0, tzinfo=utc),
-            'event': 'Bright ISS Flyby',
-            'type': 'ISS Flyby',
-            'peak_altitude': 85.0,
-            'peak_magnitude': -3.5
+            "date": datetime(2023, 1, 15, 18, 30, 0, tzinfo=utc),
+            "event": "Bright ISS Flyby",
+            "type": "ISS Flyby",
+            "peak_altitude": 85.0,
+            "peak_magnitude": -3.5,
         }
         mock_find_iss_flybys.return_value = [mock_flyby_event]
 
@@ -133,17 +132,17 @@ class EventsTest(unittest.TestCase):
             self.place,
             self.start_date,
             self.end_date,
-            events_to_calculate=[EventType.ISS_FLYBYS]
+            events_to_calculate=[EventType.ISS_FLYBYS],
         )
         events_df = events_calculator.get_events()
 
         # Assert
         mock_find_iss_flybys.assert_called_once()
         self.assertEqual(len(events_df), 1)
-        self.assertEqual(events_df.iloc[0]['event'], 'Bright ISS Flyby')
-        self.assertEqual(events_df.iloc[0]['type'], 'ISS Flyby')
-        self.assertEqual(events_df.iloc[0]['peak_altitude'], 85.0)
-        self.assertEqual(events_df.iloc[0]['peak_magnitude'], -3.5)
+        self.assertEqual(events_df.iloc[0]["event"], "Bright ISS Flyby")
+        self.assertEqual(events_df.iloc[0]["type"], "ISS Flyby")
+        self.assertEqual(events_df.iloc[0]["peak_altitude"], 85.0)
+        self.assertEqual(events_df.iloc[0]["peak_magnitude"], -3.5)
 
 
 if __name__ == "__main__":
