@@ -42,7 +42,7 @@ class TestSolarObjects(unittest.TestCase):
     def test_mars_properties(self):
         """Test the calculated properties for Mars."""
         mars_data = self.solar_objects.objects[
-            self.solar_objects.objects[ObjectTableLabels.NAME] == "mars"
+            self.solar_objects.objects[ObjectTableLabels.NAME] == "mars barycenter"
         ].iloc[0]
 
         # Plausibility checks for Mars

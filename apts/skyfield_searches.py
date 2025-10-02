@@ -4,6 +4,7 @@ from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
 from .cache import get_timescale, get_ephemeris
+from .utils import planetary
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
@@ -26,13 +27,13 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     return times[max_altitude_index].utc_datetime(), altitudes[max_altitude_index]
 
 
-def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
+def find_aphelion_perihelion(planet_name, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    body = eph[planet_name]
-    sun = eph["sun"]
+    body = planetary.get_skyfield_obj(planet_name)
+    sun = planetary.get_skyfield_obj("sun")
 
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
@@ -58,13 +59,13 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     return events
 
 
-def find_moon_apogee_perigee(eph, start_date, end_date):
+def find_moon_apogee_perigee(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    moon = eph["moon"]
-    earth = eph["earth"]
+    moon = planetary.get_skyfield_obj("moon")
+    earth = planetary.get_skyfield_obj("earth")
 
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
@@ -85,7 +86,6 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
 def find_conjunctions(
     observer,
-    eph,
     p1_name,
     p2_name,
     start_date,
@@ -96,8 +96,8 @@ def find_conjunctions(
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    p1 = eph[p1_name]
-    p2 = eph[p2_name]
+    p1 = planetary.get_skyfield_obj(p1_name)
+    p2 = planetary.get_skyfield_obj(p2_name)
 
     def separation(t):
         return (
@@ -121,13 +121,13 @@ def find_conjunctions(
     return events
 
 
-def find_oppositions(observer, eph, planet_name, start_date, end_date):
+def find_oppositions(observer, planet_name, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    planet = eph[planet_name]
-    sun = eph["sun"]
+    planet = planetary.get_skyfield_obj(planet_name)
+    sun = planetary.get_skyfield_obj("sun")
 
     def ecliptic_longitude_difference(t):
         planet_lon = observer.at(t).observe(planet).ecliptic_latlon()[1].degrees
@@ -150,16 +150,15 @@ def find_oppositions(observer, eph, planet_name, start_date, end_date):
 
 
 def find_mercury_inferior_conjunctions(
-    observer, eph, start_date, end_date, threshold_degrees=1.0
+    observer, start_date, end_date, threshold_degrees=1.0
 ):
     return find_conjunctions(
-        observer, eph, "mercury", "sun", start_date, end_date, threshold_degrees
+        observer, "mercury", "sun", start_date, end_date, threshold_degrees
     )
 
 
 def find_conjunctions_with_star(
     observer,
-    eph,
     body1_name,
     star_object,
     start_date,
@@ -169,7 +168,7 @@ def find_conjunctions_with_star(
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    body1 = eph[body1_name]
+    body1 = planetary.get_skyfield_obj(body1_name)
 
     times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
 
@@ -197,11 +196,12 @@ def find_conjunctions_with_star(
     return events
 
 
-def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
+def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    moon = eph["moon"]
+    moon = planetary.get_skyfield_obj("moon")
+    earth = planetary.get_skyfield_obj("earth")
 
     target_stars = [
         "Sirius",
@@ -255,9 +255,9 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
 
     for t in times:
-        mpos = eph["earth"].at(t).observe(moon)
+        mpos = earth.at(t).observe(moon)
         for star_name, star in star_objects:
-            spos = eph["earth"].at(t).observe(star)
+            spos = earth.at(t).observe(star)
 
             if mpos.separation_from(spos).degrees < 0.5:
                 events.append(
@@ -284,7 +284,6 @@ def _find_satellite_flybys(
     rise_altitude_threshold=10,
 ):
     ts = get_timescale()
-    eph = get_ephemeris()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
@@ -305,7 +304,7 @@ def _find_satellite_flybys(
     )
 
     events_list = []
-    sun = eph["sun"]
+    sun = planetary.get_skyfield_obj("sun")
 
     for i, event_code in enumerate(events):
         if event_code != 1:  # only look at culmination
@@ -408,10 +407,11 @@ def find_tiangong_flybys(
     )
 
 
-def find_lunar_eclipses(eph, start_date, end_date):
+def find_lunar_eclipses(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
+    eph = get_ephemeris()
     t, y, details = eclipselib.lunar_eclipses(t0, t1, eph)
     events = []
     for i, (ti, yi) in enumerate(zip(t, y)):
@@ -427,14 +427,14 @@ def find_lunar_eclipses(eph, start_date, end_date):
     return events
 
 
-def find_solar_eclipses(observer, eph, start_date, end_date):
+def find_solar_eclipses(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    sun = eph["sun"]
-    moon = eph["moon"]
+    sun = planetary.get_skyfield_obj("sun")
+    moon = planetary.get_skyfield_obj("moon")
+    earth = planetary.get_skyfield_obj("earth")
 
-    earth = eph["earth"]
     Rs = 695700  # km
     rm = 1737.4  # km
     re = 6378  # km
