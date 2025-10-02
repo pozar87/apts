@@ -33,6 +33,7 @@ def get_hipparcos_data() -> pd.DataFrame:
 from .config import get_minor_planet_settings
 import re
 
+
 @functools.lru_cache(maxsize=None)
 def get_mpcorb_data() -> pd.DataFrame:
     """
