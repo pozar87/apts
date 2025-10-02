@@ -185,7 +185,7 @@ class AstronomicalEvents:
     def calculate_solar_eclipses(self):
         start_time = time.time()
         events = skyfield_searches.find_solar_eclipses(
-            self.observer, self.eph, self.start_date, self.end_date
+            self.observer, self.start_date, self.end_date
         )
         for event in events:
             event["event"] = "Solar Eclipse"
@@ -196,7 +196,7 @@ class AstronomicalEvents:
     def calculate_lunar_eclipses(self):
         start_time = time.time()
         events = skyfield_searches.find_lunar_eclipses(
-            self.eph, self.start_date, self.end_date
+            self.start_date, self.end_date
         )
         for event in events:
             event["event"] = "Lunar Eclipse"
@@ -236,7 +236,6 @@ class AstronomicalEvents:
             future = executor.submit(
                 skyfield_searches.find_conjunctions,
                 self.observer,
-                self.eph,
                 p1,
                 p2,
                 self.start_date,
@@ -249,7 +248,6 @@ class AstronomicalEvents:
             future = executor.submit(
                 skyfield_searches.find_conjunctions,
                 self.observer,
-                self.eph,
                 p,
                 moon,
                 self.start_date,
@@ -278,7 +276,6 @@ class AstronomicalEvents:
             executor.submit(
                 skyfield_searches.find_oppositions,
                 self.observer,
-                self.eph,
                 p,
                 self.start_date,
                 self.end_date,
@@ -364,7 +361,7 @@ class AstronomicalEvents:
             executor.submit(
                 skyfield_searches.find_highest_altitude,
                 self.observer,
-                self.eph[planet_name],
+                planetary.get_skyfield_obj(planet_name),
                 self.start_date,
                 self.end_date,
             ): planet_name
@@ -391,7 +388,6 @@ class AstronomicalEvents:
         start_time = time.time()
         events = skyfield_searches.find_lunar_occultations(
             self.observer,
-            self.eph,
             self.catalogs.BRIGHT_STARS,
             self.start_date,
             self.end_date,
@@ -410,7 +406,6 @@ class AstronomicalEvents:
         futures = [
             executor.submit(
                 skyfield_searches.find_aphelion_perihelion,
-                self.eph,
                 planet_name,
                 self.start_date,
                 self.end_date,
@@ -434,7 +429,7 @@ class AstronomicalEvents:
     def calculate_moon_apogee_perigee(self):
         start_time = time.time()
         events = skyfield_searches.find_moon_apogee_perigee(
-            self.eph, self.start_date, self.end_date
+            self.start_date, self.end_date
         )
         for event in events:
             event["type"] = "Moon Apogee/Perigee"
@@ -444,7 +439,7 @@ class AstronomicalEvents:
     def calculate_mercury_inferior_conjunctions(self):
         start_time = time.time()
         events = skyfield_searches.find_mercury_inferior_conjunctions(
-            self.observer, self.eph, self.start_date, self.end_date
+            self.observer, self.start_date, self.end_date
         )
         for event in events:
             event["type"] = "Inferior Conjunction"
@@ -565,7 +560,6 @@ class AstronomicalEvents:
             for messier_name, messier_star in messier_stars_subset.items():
                 conjunctions = skyfield_searches.find_conjunctions_with_star(
                     self.observer,
-                    self.eph,
                     "moon",
                     messier_star,
                     self.start_date,

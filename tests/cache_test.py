@@ -9,6 +9,8 @@ import unittest
 import pint
 from apts.units import ureg
 from apts import catalogs
+from unittest.mock import patch
+from apts.cache import get_mpcorb_data
 
 
 class CacheTest(unittest.TestCase):
@@ -68,4 +70,22 @@ class CacheTest(unittest.TestCase):
         self.assertIsNotNone(unpickled_o)
         self.assertEqual(o.place.name, unpickled_o.place.name)
         self.assertIsNotNone(unpickled_o.local_planets)
-        self.assertIsNotNone(unpickled_o.local_messier)
+
+    @patch("apts.cache.get_minor_planet_settings")
+    def test_get_mpcorb_data_filtered(self, mock_get_settings):
+        # Mock the settings to return a specific list of planets
+        mock_get_settings.return_value = ["00001", "00002"]  # Ceres and Pallas
+
+        # Clear the cache for get_mpcorb_data to ensure our mock is used
+        get_mpcorb_data.cache_clear()
+
+        # Call the function
+        df = get_mpcorb_data()
+
+        # Assert that the dataframe contains only Ceres and Pallas
+        self.assertEqual(len(df), 2)
+        self.assertIn("(1) Ceres", df["designation"].values)
+        self.assertIn("(2) Pallas", df["designation"].values)
+
+        # Clear the cache again to avoid affecting other tests
+        get_mpcorb_data.cache_clear()

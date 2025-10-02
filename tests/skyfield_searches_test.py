@@ -3,6 +3,8 @@ from datetime import datetime
 from skyfield.api import load, Topos, utc
 from apts import skyfield_searches
 from apts.catalogs import Catalogs
+from apts.cache import get_ephemeris
+from apts.utils import planetary
 from skyfield.api import Star
 from unittest.mock import patch, MagicMock
 
@@ -10,7 +12,7 @@ from unittest.mock import patch, MagicMock
 class SkyfieldSearchesTest(unittest.TestCase):
     def setUp(self):
         self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.eph = get_ephemeris()
         self.observer = self.eph["earth"] + Topos(
             latitude_degrees=52.2, longitude_degrees=21.0
         )
@@ -21,14 +23,14 @@ class SkyfieldSearchesTest(unittest.TestCase):
 
     def test_find_highest_altitude(self):
         time, alt = skyfield_searches.find_highest_altitude(
-            self.observer, self.eph["venus"], self.start_date, self.end_date
+            self.observer, planetary.get_skyfield_obj("venus"), self.start_date, self.end_date
         )
         self.assertIsInstance(time, datetime)
         self.assertIsInstance(alt, float)
 
     def test_find_aphelion_perihelion(self):
         events = skyfield_searches.find_aphelion_perihelion(
-            self.eph, "mars", self.start_date, self.end_date
+            "mars", self.start_date, self.end_date
         )
         self.assertIsInstance(events, list)
 
@@ -37,21 +39,61 @@ class SkyfieldSearchesTest(unittest.TestCase):
         short_end = datetime(2023, 1, 2, tzinfo=utc)
         sirius = Catalogs().BRIGHT_STARS[Catalogs().BRIGHT_STARS["Name"] == "Sirius"]
         events = skyfield_searches.find_lunar_occultations(
-            self.observer, self.eph, sirius, short_start, short_end
+            self.observer, sirius, short_start, short_end
         )
         self.assertIsInstance(events, list)
+
+    def test_find_oppositions(self):
+        # Mars was at opposition on December 8, 2022.
+        start_date = datetime(2022, 12, 1, tzinfo=utc)
+        end_date = datetime(2022, 12, 31, tzinfo=utc)
+        events = skyfield_searches.find_oppositions(
+            self.observer, "mars", start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        self.assertEqual(event["date"].day, 8)
+        self.assertEqual(event["planet"], "mars")
+
+    def test_find_pluto_opposition(self):
+        # Pluto opposition in 2023 was on July 22.
+        start_date = datetime(2023, 7, 20, tzinfo=utc)
+        end_date = datetime(2023, 7, 24, tzinfo=utc)
+        events = skyfield_searches.find_oppositions(
+            self.observer, "pluto", start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        # The exact time can vary, so we just check the day
+        self.assertEqual(event["date"].day, 22)
+        self.assertEqual(event["planet"], "pluto")
+
+    def test_find_ceres_opposition(self):
+        # Ceres opposition in 2023 was on March 21.
+        start_date = datetime(2023, 3, 1, tzinfo=utc)
+        end_date = datetime(2023, 3, 31, tzinfo=utc)
+        events = skyfield_searches.find_oppositions(
+            self.observer, "ceres", start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        self.assertEqual(event["date"].day, 21)
+        self.assertEqual(event["planet"], "ceres")
 
     def test_find_mercury_inferior_conjunctions(self):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 12, 31, tzinfo=utc)
         events = skyfield_searches.find_mercury_inferior_conjunctions(
-            self.observer, self.eph, start_date, end_date
+            self.observer, start_date, end_date
         )
         self.assertIsInstance(events, list)
 
     def test_find_moon_apogee_perigee(self):
         events = skyfield_searches.find_moon_apogee_perigee(
-            self.eph, self.start_date, self.end_date
+            self.start_date, self.end_date
         )
         self.assertIsInstance(events, list)
 
@@ -60,9 +102,8 @@ class SkyfieldSearchesTest(unittest.TestCase):
         end_date = datetime(2023, 3, 31, tzinfo=utc)
         events = skyfield_searches.find_conjunctions(
             self.observer,
-            self.eph,
             "venus",
-            "jupiter barycenter",
+            "jupiter",
             start_date,
             end_date,
             threshold_degrees=1.0,
@@ -77,9 +118,8 @@ class SkyfieldSearchesTest(unittest.TestCase):
         end_date = datetime(2020, 12, 22, tzinfo=utc)
         events = skyfield_searches.find_conjunctions(
             self.observer,
-            self.eph,
-            "jupiter barycenter",
-            "saturn barycenter",
+            "jupiter",
+            "saturn",
             start_date,
             end_date,
         )
@@ -96,7 +136,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
 
         # First, find all conjunctions without a threshold.
         all_events = skyfield_searches.find_conjunctions(
-            self.observer, self.eph, "venus", "saturn barycenter", start_date, end_date
+            self.observer, "venus", "saturn", start_date, end_date
         )
         self.assertGreater(
             len(all_events), 0, "Should find at least one conjunction in 2023"
@@ -108,9 +148,8 @@ class SkyfieldSearchesTest(unittest.TestCase):
         # Test with a threshold slightly smaller than the actual separation.
         tighter_events = skyfield_searches.find_conjunctions(
             self.observer,
-            self.eph,
             "venus",
-            "saturn barycenter",
+            "saturn",
             start_date,
             end_date,
             threshold_degrees=separation - 0.1,
@@ -126,9 +165,8 @@ class SkyfieldSearchesTest(unittest.TestCase):
         # Test with a threshold slightly larger than the actual separation.
         wider_events = skyfield_searches.find_conjunctions(
             self.observer,
-            self.eph,
             "venus",
-            "saturn barycenter",
+            "saturn",
             start_date,
             end_date,
             threshold_degrees=separation + 0.1,
@@ -139,7 +177,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 3, 31, tzinfo=utc)
         events = skyfield_searches.find_conjunctions(
-            self.observer, self.eph, "venus", "jupiter barycenter", start_date, end_date
+            self.observer, "venus", "jupiter", start_date, end_date
         )
         self.assertGreater(len(events), 0)
         self.assertIn("separation_degrees", events[0])
@@ -148,7 +186,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
         start_date = datetime(2021, 5, 28, tzinfo=utc)
         end_date = datetime(2021, 5, 30, tzinfo=utc)
         events = skyfield_searches.find_conjunctions(
-            self.observer, self.eph, "venus", "mercury", start_date, end_date
+            self.observer, "venus", "mercury", start_date, end_date
         )
         self.assertIsInstance(events, list)
         self.assertEqual(len(events), 1)
@@ -166,7 +204,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
             dec_degrees=m45_data["Dec"].to("degree").magnitude,
         )
         events = skyfield_searches.find_conjunctions_with_star(
-            self.observer, self.eph, "moon", m45, start_date, end_date
+            self.observer, "moon", m45, start_date, end_date
         )
         self.assertIsInstance(events, list)
         self.assertEqual(len(events), 1)
@@ -287,7 +325,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
     def test_find_lunar_eclipses(self):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 12, 31, tzinfo=utc)
-        events = skyfield_searches.find_lunar_eclipses(self.eph, start_date, end_date)
+        events = skyfield_searches.find_lunar_eclipses(start_date, end_date)
         self.assertIsInstance(events, list)
         # There are two lunar eclipses in 2023
         self.assertEqual(len(events), 2)
@@ -308,7 +346,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 12, 31, tzinfo=utc)
         events = skyfield_searches.find_solar_eclipses(
-            self.observer, self.eph, start_date, end_date
+            self.observer, start_date, end_date
         )
         self.assertIsInstance(events, list)
         self.assertEqual(len(events), 2)

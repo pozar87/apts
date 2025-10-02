@@ -55,5 +55,13 @@ pd.set_option("display.max_colwidth", None)
 initialize_catalogs()
 catalogs = Catalogs()
 
+# Preload ephemeris and other data
+from . import cache
+logger.info("Preloading ephemeris and other data...")
+cache.get_timescale()
+cache.get_ephemeris()
+cache.get_mpcorb_data()
+logger.info("Data preloading complete.")
+
 
 __version__ = "0.7.5"
