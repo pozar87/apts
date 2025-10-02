@@ -9,6 +9,7 @@ import pandas as pd
 
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
+from apts.constants.twilight import Twilight
 
 
 from apts.place import Place
@@ -190,47 +191,51 @@ class TestPlace:
             "Sunset should be None (never up)"
         )
 
-    # --- Tests for get_time_relative_to_sunset() ---
-
-    def test_get_time_relative_to_sunset_basic(self, mid_latitude_place):
+    def test_twilight_times_order(self, mid_latitude_place):
         p = mid_latitude_place
-        original_place_date = p.date
-        target_d = date(2024, 3, 20)  # A specific date
-        offsets = [0, 30, -30]  # Test zero, positive, and negative offsets
+        target_d = date(2024, 3, 15)
 
-        expected_sunset_dt = p.sunset_time(target_date=target_d)
-        assert expected_sunset_dt is not None, (
-            "Prerequisite: sunset must occur for this test"
+        # Evening times
+        sunset = p.sunset_time(target_date=target_d)
+        civil_dusk = p.sunset_time(target_date=target_d, twilight=Twilight.CIVIL)
+        nautical_dusk = p.sunset_time(target_date=target_d, twilight=Twilight.NAUTICAL)
+        astronomical_dusk = p.sunset_time(
+            target_date=target_d, twilight=Twilight.ASTRONOMICAL
         )
 
-        for offset_mins in offsets:
-            local_obs_time, obs_date = p.get_time_relative_to_event(
-                target_d, offset_minutes=offset_mins
-            )
+        # Morning times
+        sunrise = p.sunrise_time(target_date=target_d)
+        civil_dawn = p.sunrise_time(target_date=target_d, twilight=Twilight.CIVIL)
+        nautical_dawn = p.sunrise_time(
+            target_date=target_d, twilight=Twilight.NAUTICAL
+        )
+        astronomical_dawn = p.sunrise_time(
+            target_date=target_d, twilight=Twilight.ASTRONOMICAL
+        )
 
-            assert local_obs_time is not None
-            assert isinstance(local_obs_time, datetime)
-            assert local_obs_time.tzinfo == p.local_timezone
+        # Assertions for evening
+        assert all([sunset, civil_dusk, nautical_dusk, astronomical_dusk])
+        assert sunset < civil_dusk < nautical_dusk < astronomical_dusk
 
-            assert obs_date is not None
-            assert isinstance(obs_date, Time)
+        # Assertions for morning
+        assert all([astronomical_dawn, nautical_dawn, civil_dawn, sunrise])
+        assert astronomical_dawn < nautical_dawn < civil_dawn < sunrise
 
-            # Verify local_obs_time calculation
-            expected_local_time = expected_sunset_dt + timedelta(minutes=offset_mins)
-            assert local_obs_time == expected_local_time
-
-        assert p.date == original_place_date, "place.date should not be modified"
-
-    def test_get_time_relative_to_sunset_polar_always_up(self, north_pole_place):
+    def test_twilight_polar_summer(self, north_pole_place):
         p = north_pole_place
-        target_d = date(2024, 6, 21)  # Summer solstice, sun always up
+        target_d = date(2024, 6, 21)  # Summer solstice
 
-        local_obs_time, utc_obs_date = p.get_time_relative_to_event(
-            target_d, offset_minutes=30
-        )
+        # At the North Pole in summer, the sun is always up, so there should be no twilight.
+        assert p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        assert p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
 
-        assert local_obs_time is None
-        assert utc_obs_date is None
+    def test_twilight_polar_winter(self, north_pole_place):
+        p = north_pole_place
+        target_d = date(2024, 12, 21)  # Winter solstice
+
+        # At the North Pole in winter, the sun is always down, so there should be no twilight.
+        assert p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        assert p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
 
     def test_place_setup_from_init(self):
         """Test the original setup_place function if it's still relevant"""

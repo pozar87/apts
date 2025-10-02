@@ -1,3 +1,8 @@
+from typing import Optional
+
+from apts.constants.twilight import Twilight
+
+
 class DefaultConditions:
   """
   Class containing default thresholds for observation quality.
@@ -18,6 +23,8 @@ class DefaultConditions:
   MIN_VISIBILITY = 10  # [km], range [0,∞)
   # Max acceptable hour of return
   MAX_RETURN = "02:00:00"
+  # Start time for observation
+  START_TIME: Optional[str] = None
   # Minimal object (i.e. Messier) altitude (https://en.wikipedia.org/wiki/Horizontal_coordinate_system)
   MIN_OBJECT_ALTITUDE = 15  # [°], range [0,90]
   # Minimal and maximal object azimuth
@@ -27,6 +34,8 @@ class DefaultConditions:
   MAX_OBJECT_MAGNITUDE = 9  # [m], range [∞,-∞]
   # Maximal moon phase
   MAX_MOON_PHASE = 50  # [%], range [0,100]
+  # Twilight setting for observation start
+  TWILIGHT = Twilight.NAUTICAL
 
 
 class Conditions:
@@ -44,11 +53,13 @@ class Conditions:
                min_weather_goodness=DefaultConditions.MIN_WEATHER_GOODNESS,
                min_visibility=DefaultConditions.MIN_VISIBILITY,
                max_return=DefaultConditions.MAX_RETURN,
+               start_time=DefaultConditions.START_TIME,
                min_object_altitude=DefaultConditions.MIN_OBJECT_ALTITUDE,
                max_object_magnitude=DefaultConditions.MAX_OBJECT_MAGNITUDE,
                min_object_azimuth=DefaultConditions.MIN_OBJECT_AZIMUTH,
                max_object_azimuth=DefaultConditions.MAX_OBJECT_AZIMUTH,
-               max_moon_phase=DefaultConditions.MAX_MOON_PHASE
+               max_moon_phase=DefaultConditions.MAX_MOON_PHASE,
+               twilight: Twilight = DefaultConditions.TWILIGHT
                ):
     self.max_clouds = max_clouds
     self.max_precipitation_probability = max_precipitation_probability
@@ -59,8 +70,10 @@ class Conditions:
     self.min_weather_goodness = min_weather_goodness
     self.min_visibility = min_visibility
     self.max_return = max_return
+    self.start_time = start_time
     self.min_object_altitude = min_object_altitude
     self.max_object_magnitude = max_object_magnitude
     self.min_object_azimuth = min_object_azimuth
     self.max_object_azimuth = max_object_azimuth
     self.max_moon_phase = max_moon_phase
+    self.twilight = twilight

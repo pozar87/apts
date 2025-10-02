@@ -33,7 +33,6 @@ class Observation:
         equipment,
         conditions=Conditions(),
         target_date=None,
-        offset_to_sunset_minutes=0,
         sun_observation=False,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
@@ -60,29 +59,35 @@ class Observation:
                 start_time  # Use start_time as local observation time
             )
         elif target_date:
-            # New behavior: use target_date and offset
-            event = "sunrise" if sun_observation else "sunset"
-            local_dt_obs_time, dt_obs_time = self.place.get_time_relative_to_event(
-                target_date, offset_to_sunset_minutes, event=event
-            )
-
-            if dt_obs_time is None:
-                logger.warning(
-                    f"Could not determine observation time for {self.place.name} "
-                    f"on {target_date} with offset {offset_to_sunset_minutes} mins. "
-                    "Sun may be always up or down, or another issue occurred."
-                )
-                # Attributes remain None, subsequent operations should handle this
+            if self.sun_observation:
+                self.start = self.place.sunrise_time(target_date=target_date)
+                self.stop = self.place.sunset_time(target_date=target_date)
             else:
-                self.effective_date = dt_obs_time
-                self.observation_local_time = local_dt_obs_time
-                if sun_observation:
-                    self.start = self.place.sunrise_time(target_date=target_date)
-                    self.stop = self.place.sunset_time(target_date=target_date)
+                self.start = self.place.sunset_time(target_date=target_date, twilight=self.conditions.twilight)
+                if self.start:
+                    self.stop = self.place.sunrise_time(start_search_from=self.start, twilight=self.conditions.twilight)
                 else:
-                    self.start = self.place.sunset_time(target_date=target_date)
-                    # For night observations, the stop time is sunrise of the *next* day
-                    self.stop = self.place.sunrise_time(start_search_from=self.start)
+                    self.stop = None
+
+            if self.start is None or self.stop is None:
+                logger.warning(
+                    f"Could not determine observation window for {self.place.name} "
+                    f"on {target_date} with twilight '{self.conditions.twilight.value}'. "
+                    "Sun may be always up or down."
+                )
+            else:
+                if self.conditions.start_time:
+                    start_time_values = [int(v) for v in self.conditions.start_time.split(':')]
+                    override_start_dt = self.start.replace(
+                        hour=start_time_values[0],
+                        minute=start_time_values[1],
+                        second=start_time_values[2]
+                    )
+                    self.start = override_start_dt
+
+                self.effective_date = self.place.ts.utc(self.start)
+                self.observation_local_time = self.start
+
         else:
             # Legacy behavior: use place.date
             self.effective_date = self.place.date
@@ -90,9 +95,12 @@ class Observation:
                 self.start = self.place.sunrise_time()
                 self.stop = self.place.sunset_time()
             else:
-                self.start = self.place.sunset_time()
-                self.stop = self.place.sunrise_time()
-            # self.observation_local_time remains None for legacy mode
+                self.start = self.place.sunset_time(twilight=self.conditions.twilight)
+                if self.start:
+                    self.stop = self.place.sunrise_time(start_search_from=self.start, twilight=self.conditions.twilight)
+                else:
+                    self.stop = None
+            self.observation_local_time = self.start
 
         # Normalize start and stop dates for the observation window
         if self.start is not None and self.stop is not None:

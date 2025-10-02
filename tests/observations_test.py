@@ -17,10 +17,127 @@ from apts.constants.objecttablelabels import (
 )  # Added ObjectTableLabels
 from apts.units import ureg
 from tests import setup_observation
-from apts.conditions import Conditions  # Import Conditions at the top level
+from apts.conditions import Conditions, DefaultConditions
+from apts.constants.twilight import Twilight
 
 
 # MockPlace and MockEquipment classes are removed
+
+
+class TestObservationInitialization(unittest.TestCase):
+    def setUp(self):
+        self.place = MagicMock()
+        self.place.local_timezone = datetime.timezone.utc
+        self.place.ts = MagicMock()
+        self.place.ts.utc.side_effect = lambda dt: dt # Simple mock for ts.utc()
+        self.equipment = MagicMock()
+        self.target_date = datetime.date(2025, 2, 18)
+
+    def test_sun_observation_window(self):
+        """Test that the observation window is set correctly for sun observations."""
+        # Arrange
+        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
+        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
+        conditions = Conditions()
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=True,
+        )
+
+        # Assert
+        self.assertEqual(observation.start, self.place.sunrise_time.return_value)
+        self.assertEqual(observation.stop, self.place.sunset_time.return_value)
+        self.place.sunrise_time.assert_called_with(target_date=self.target_date)
+        self.place.sunset_time.assert_called_with(target_date=self.target_date)
+
+    def test_night_observation_default_nautical_twilight(self):
+        """Test night observation uses nautical twilight by default."""
+        # Arrange
+        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
+        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        conditions = Conditions()  # Default conditions use NAUTICAL
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=False,
+        )
+
+        # Assert
+        self.place.sunset_time.assert_called_with(target_date=self.target_date, twilight=Twilight.NAUTICAL)
+        self.place.sunrise_time.assert_called_with(start_search_from=pd.Timestamp("2025-02-18 18:30:00", tz="UTC"), twilight=Twilight.NAUTICAL)
+        self.assertEqual(observation.start, self.place.sunset_time.return_value)
+        self.assertEqual(observation.stop, self.place.sunrise_time.return_value)
+
+    def test_night_observation_custom_twilight(self):
+        """Test night observation with a custom twilight setting."""
+        # Arrange
+        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 19:00:00", tz="UTC")
+        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:00:00", tz="UTC")
+        conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=False,
+        )
+
+        # Assert
+        self.place.sunset_time.assert_called_with(target_date=self.target_date, twilight=Twilight.ASTRONOMICAL)
+        self.place.sunrise_time.assert_called_with(start_search_from=pd.Timestamp("2025-02-18 19:00:00", tz="UTC"), twilight=Twilight.ASTRONOMICAL)
+
+    def test_night_observation_start_time_override(self):
+        """Test that conditions.start_time overrides the calculated start time."""
+        # Arrange
+        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
+        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        conditions = Conditions(start_time="20:00:00")
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=False,
+        )
+
+        # Assert
+        expected_start_time = pd.Timestamp("2025-02-18 20:00:00", tz="UTC")
+        self.assertEqual(observation.start, expected_start_time)
+        # Stop time should still be based on the original sunset time for the next sunrise search
+        self.assertEqual(observation.stop, self.place.sunrise_time.return_value)
+
+    def test_observation_init_no_window(self):
+        """Test observation init when sunset/sunrise cannot be determined."""
+        # Arrange
+        self.place.sunset_time.return_value = None
+        conditions = Conditions()
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=False,
+        )
+
+        # Assert
+        self.assertIsNone(observation.start)
+        self.assertIsNone(observation.stop)
+        self.place.sunrise_time.assert_not_called()
 
 
 class TestObservationTemplate(unittest.TestCase):
@@ -1067,37 +1184,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_fetched.get_critical_data.assert_called_once()  # Verify critical data was called after fetch
 
 
-class TestSunObservation(unittest.TestCase):
-    @patch("apts.observations.Messier")
-    @patch("apts.observations.SolarObjects")
-    def test_sun_observation_window(self, mock_planets, mock_messier):
-        """Test that the observation window is set correctly for sun observations."""
-        # Arrange
-        place = MagicMock()
-        place.local_timezone = datetime.timezone.utc
-        place.sunrise_time.return_value = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
-        place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
-
-        ts = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
-        place.get_time_relative_to_event.return_value = (ts, ts.to_pydatetime())
-
-        equipment = MagicMock()
-        conditions = MagicMock()
-        conditions.max_return = "02:00:00"
-        target_date = datetime.date(2025, 2, 18)
-
-        # Act
-        observation = Observation(
-            place=place,
-            equipment=equipment,
-            conditions=conditions,
-            target_date=target_date,
-            sun_observation=True,
-        )
-
-        # Assert
-        self.assertEqual(observation.start, place.sunrise_time.return_value)
-        self.assertEqual(observation.stop, place.sunset_time.return_value)
 
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
