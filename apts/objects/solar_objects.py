@@ -16,19 +16,7 @@ class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
         # Load minor planets data and index by name
-        self.minor_planets_df = get_mpcorb_data()
-
-        # Coerce numeric columns to numeric types, handling potential errors
-        numeric_cols = [
-            'semimajor_axis_au', 'eccentricity', 'inclination_degrees',
-            'longitude_of_ascending_node_degrees', 'argument_of_perihelion_degrees',
-            'mean_anomaly_degrees', 'mean_daily_motion_degrees'
-        ]
-        for col in numeric_cols:
-            self.minor_planets_df[col] = pd.to_numeric(self.minor_planets_df[col], errors='coerce')
-
-        self.minor_planets_df["designation"] = self.minor_planets_df["designation"].str.strip()
-        self.minor_planets = self.minor_planets_df.set_index("designation")
+        self.minor_planets = get_mpcorb_data()
         self.minor_planet_names = {
             "ceres": "(1) Ceres",
             "haumea": "(136108) Haumea",
@@ -192,9 +180,13 @@ class SolarObjects(Objects):
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (
-                visible.Magnitude.apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                pd.to_numeric(
+                    visible.Magnitude.apply(
+                        lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                    ),
+                    errors="coerce",
                 )
+                .fillna(999)
                 < conditions.max_object_magnitude
             )
         ]

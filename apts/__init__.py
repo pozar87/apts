@@ -4,6 +4,8 @@ import seaborn as sns
 
 # Import the config object from the new config module
 from .config import config
+from . import cache
+
 
 from .catalogs import Catalogs, initialize_catalogs
 from .equipment import Equipment
@@ -55,5 +57,12 @@ pd.set_option("display.max_colwidth", None)
 initialize_catalogs()
 catalogs = Catalogs()
 
+# Preload ephemeris and other data
+logger.info("Preloading ephemeris and other data...")
+cache.get_timescale()
+cache.get_ephemeris()
+cache.get_mpcorb_data()
+logger.info("Data preloading complete.")
 
-__version__ = "0.7.5"
+
+__version__ = "0.8.0"

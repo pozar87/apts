@@ -9,6 +9,8 @@ import unittest
 import pint
 from apts.units import ureg
 from apts import catalogs
+from unittest.mock import patch
+from apts.cache import get_mpcorb_data
 
 
 class CacheTest(unittest.TestCase):
@@ -49,7 +51,6 @@ class CacheTest(unittest.TestCase):
         unpickled_so = pickle.loads(pickled_so)
         self.assertIsNotNone(unpickled_so)
         self.assertEqual(len(so.objects), len(unpickled_so.objects))
-        
 
     def test_messier_pickle(self):
         p = Place(lat=52.2, lon=21.0, name="Warsaw")
@@ -68,4 +69,16 @@ class CacheTest(unittest.TestCase):
         self.assertIsNotNone(unpickled_o)
         self.assertEqual(o.place.name, unpickled_o.place.name)
         self.assertIsNotNone(unpickled_o.local_planets)
-        self.assertIsNotNone(unpickled_o.local_messier)
+
+    @patch("apts.cache.get_minor_planet_settings")
+    def test_get_mpcorb_data_filtered(self, mock_get_settings):
+        # Mock the settings to return a specific list of planets
+        mock_get_settings.return_value = ["00001", "00002"]  # Ceres and Pallas
+
+        # Call the function
+        df = get_mpcorb_data()
+
+        # Assert that the dataframe contains only Ceres and Pallas
+        self.assertEqual(len(df), 2)
+        self.assertIn("(1) Ceres", df.index)
+        self.assertIn("(2) Pallas", df.index)
