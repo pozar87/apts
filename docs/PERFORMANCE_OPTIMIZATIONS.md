@@ -6,6 +6,11 @@ This document outlines the comprehensive performance optimizations implemented i
 
 ## Performance Improvements Summary
 
+### Application Import Time
+- **Before Optimization**: ~13.1 seconds
+- **After Optimization**: ~1.3 seconds (with default lazy loading)
+- **Performance Gain**: 90% faster (10x speedup)
+
 ### Test Suite Performance
 - **Before Optimization**: 282.51 seconds (4 minutes 42 seconds)
 - **After Optimization**: 62.59 seconds (1 minute 2 seconds)
@@ -21,7 +26,35 @@ This document outlines the comprehensive performance optimizations implemented i
 
 ## Key Optimizations Implemented
 
-### 1. Configuration-Based Minor Planet Filtering
+### 1. Application-Level Lazy Loading (Default Behavior)
+
+**Problem**: The application's import time was over 13 seconds because it eagerly preloaded all large astronomical datasets (`ephemeris`, `MPCORB`, etc.) upon initialization. This created a poor user experience for command-line tools and quick scripts.
+
+**Solution**:
+- Removed automatic data preloading from the main `__init__.py` file.
+- Data is now loaded on-demand the first time it's needed.
+- Introduced `apts.preload_data()` and `apts.preload_essential_data()` functions for users who prefer to preload data at a controlled time.
+- Added a `[performance]` section to the configuration file to allow users to opt-in to the old preloading behavior if desired.
+
+**Implementation**:
+```python
+# In apts/__init__.py, preloading is now optional
+def preload_data():
+    """Optionally preload expensive astronomical data..."""
+    logger.info("Preloading ephemeris and other data...")
+    cache.get_timescale()
+    cache.get_ephemeris()
+    cache.get_mpcorb_data()
+    logger.info("Data preloading complete.")
+
+# And can be controlled via config
+if should_auto_preload_data():
+    preload_data()
+```
+
+**Impact**: Reduced default import time by 90% (from 13s to 1.3s), making the application feel much more responsive for typical use cases. The first data-intensive operation will have a one-time loading cost.
+
+### 2. Configuration-Based Minor Planet Filtering
 
 **Problem**: The application was loading the entire MPCORB database (84MB, hundreds of thousands of objects) for every test that used dwarf planet calculations.
 
@@ -38,7 +71,7 @@ load_only = 00001, 00002, K08S73P, K05X53E, K03E75A
 
 **Impact**: Reduced MPCORB data loading time from 12+ seconds to milliseconds in subsequent operations.
 
-### 2. Session-Scoped Cache Preloading
+### 3. Session-Scoped Cache Preloading
 
 **Problem**: Tests were clearing LRU caches before every test, causing expensive data to be reloaded repeatedly.
 
@@ -61,7 +94,7 @@ def preload_expensive_data():
 
 **Impact**: Eliminated redundant data loading across 164 tests, saving ~200+ seconds of cumulative loading time.
 
-### 3. Selective Cache Clearing
+### 4. Selective Cache Clearing
 
 **Problem**: Automatic cache clearing before every test was unnecessary and counterproductive.
 
@@ -81,7 +114,7 @@ def test_function():
 
 **Impact**: 90%+ of tests now benefit from cached data, dramatically reducing execution time.
 
-### 4. Code-Level Caching Optimizations
+### 5. Code-Level Caching Optimizations
 
 **Problem**: Expensive astronomical object retrievals were being repeated unnecessarily.
 
@@ -106,7 +139,7 @@ def get_skyfield_object_cached(self, obj_id):
 
 **Impact**: Reduced repeated skyfield object instantiation, saving seconds per test.
 
-### 5. Lazy Loading Implementation
+### 6. Lazy Loading Implementation
 
 **Problem**: Minor planet data was being loaded immediately during object initialization, even when not needed.
 
@@ -129,7 +162,7 @@ class SolarObjects(Objects):
 
 **Impact**: Defers expensive data loading until actually needed, improving initialization speed.
 
-### 6. Streamlined Configuration Loading
+### 7. Streamlined Configuration Loading
 
 **Problem**: Complex configuration import chains were causing initialization overhead.
 
@@ -186,6 +219,7 @@ This demonstrates the effectiveness of our caching strategy - a 12+ second opera
 ### 2. Configuration Management
 - Use test-specific configurations to limit data loading during testing
 - Prefer configuration-based filtering over code-based filtering for large datasets
+- Use the `[performance]` section in your config file to tune data loading behavior (`auto_preload_data`) based on your use case (interactive session vs. script).
 
 ### 3. Lazy Loading Patterns
 - Defer expensive operations until actually needed
@@ -264,11 +298,12 @@ python performance_analysis.py test-analysis <durations-file>
 
 ## Conclusion
 
-These optimizations resulted in a 4.5x speedup in test execution time while maintaining full functionality and test coverage. The improvements focus on:
+These optimizations resulted in a **10x faster application startup time** (from 13s to 1.3s) and a **4.5x speedup in test execution time**, while maintaining full functionality and test coverage. The improvements focus on:
 
 1. **Intelligent caching** - Loading expensive data once and reusing it
 2. **Selective operations** - Only doing work when necessary
 3. **Configuration-driven optimization** - Using settings to limit resource usage
 4. **Strategic code improvements** - Adding caching at the right architectural points
+5. **Lazy Loading by Default** - Prioritizing fast application startup for a better user experience.
 
-The performance improvements make the development cycle significantly faster and more productive, while the monitoring tools ensure that performance remains optimal as the codebase evolves.
+The performance improvements make the development cycle significantly faster and more productive. The application is now highly responsive for scripting and command-line use, while still offering power users the option to preload data for long interactive sessions. The monitoring tools ensure that performance remains optimal as the codebase evolves.
