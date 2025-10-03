@@ -1,9 +1,12 @@
 import functools
 from skyfield.api import load
 from skyfield.data import hipparcos, mpc
+from .config import get_minor_planet_settings
+import re
 import pandas as pd
 import zlib
 import io
+
 
 @functools.lru_cache(maxsize=None)
 def get_timescale():
@@ -11,6 +14,7 @@ def get_timescale():
     Returns a cached timescale object.
     """
     return load.timescale()
+
 
 @functools.lru_cache(maxsize=None)
 def get_ephemeris():
@@ -22,6 +26,7 @@ def get_ephemeris():
     url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp"
     return load(url)
 
+
 @functools.lru_cache(maxsize=None)
 def get_hipparcos_data() -> pd.DataFrame:
     """
@@ -29,9 +34,6 @@ def get_hipparcos_data() -> pd.DataFrame:
     """
     with load.open(hipparcos.URL) as f:
         return hipparcos.load_dataframe(f)
-
-from .config import get_minor_planet_settings
-import re
 
 
 @functools.lru_cache(maxsize=None)
@@ -49,40 +51,62 @@ def get_mpcorb_data() -> pd.DataFrame:
         if planets_to_load:
             # Build a regex pattern to match the packed designations at the start of the line
             # This is much faster than reading line by line
-            escaped_designations = [re.escape(d.encode('ascii')) for d in planets_to_load]
-            pattern = rb'^(?:' + rb'|'.join(escaped_designations) + rb').*'
+            escaped_designations = [
+                re.escape(d.encode("ascii")) for d in planets_to_load
+            ]
+            pattern = rb"^(?:" + rb"|".join(escaped_designations) + rb").*"
             regex = re.compile(pattern, re.MULTILINE)
 
             # Find all matching lines and join them
             lines = regex.findall(data)
-            data = b'\n'.join(lines)
+            data = b"\n".join(lines)
 
         df = mpc.load_mpcorb_dataframe(io.BytesIO(data))
 
     # Post-processing to ensure data types are correct and index is set
     if df.empty:
-        df = pd.DataFrame(columns=[
-            'designation_packed', 'magnitude_H', 'magnitude_G', 'epoch_packed',
-            'mean_anomaly_degrees', 'argument_of_perihelion_degrees',
-            'longitude_of_ascending_node_degrees', 'inclination_degrees',
-            'eccentricity', 'mean_daily_motion_degrees', 'semimajor_axis_au',
-            'uncertainty', 'reference', 'observations', 'oppositions',
-            'observation_period_years', 'rms_residual_arcseconds',
-            'coarse_perturbers', 'precise_perturbers', 'computer_name',
-            'hex_flags', 'designation', 'last_observation_date'
-        ])
-        return df.set_index('designation')
+        df = pd.DataFrame(
+            columns=[
+                "designation_packed",
+                "magnitude_H",
+                "magnitude_G",
+                "epoch_packed",
+                "mean_anomaly_degrees",
+                "argument_of_perihelion_degrees",
+                "longitude_of_ascending_node_degrees",
+                "inclination_degrees",
+                "eccentricity",
+                "mean_daily_motion_degrees",
+                "semimajor_axis_au",
+                "uncertainty",
+                "reference",
+                "observations",
+                "oppositions",
+                "observation_period_years",
+                "rms_residual_arcseconds",
+                "coarse_perturbers",
+                "precise_perturbers",
+                "computer_name",
+                "hex_flags",
+                "designation",
+                "last_observation_date",
+            ]
+        )
+        return df.set_index("designation")
 
     numeric_cols = [
-        'semimajor_axis_au', 'eccentricity', 'inclination_degrees',
-        'longitude_of_ascending_node_degrees', 'argument_of_perihelion_degrees',
-        'mean_anomaly_degrees'
+        "semimajor_axis_au",
+        "eccentricity",
+        "inclination_degrees",
+        "longitude_of_ascending_node_degrees",
+        "argument_of_perihelion_degrees",
+        "mean_anomaly_degrees",
     ]
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    if 'designation' in df.columns:
-        df['designation'] = df['designation'].str.strip()
-        df = df.set_index('designation')
+    if "designation" in df.columns:
+        df["designation"] = df["designation"].str.strip()
+        df = df.set_index("designation")
 
     return df
