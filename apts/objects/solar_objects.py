@@ -180,9 +180,13 @@ class SolarObjects(Objects):
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (
-                visible.Magnitude.apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                pd.to_numeric(
+                    visible.Magnitude.apply(
+                        lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                    ),
+                    errors="coerce",
                 )
+                .fillna(999)
                 < conditions.max_object_magnitude
             )
         ]
