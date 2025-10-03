@@ -1,5 +1,5 @@
 import functools
-from skyfield.api import load
+from skyfield.api import load, Loader
 from skyfield.data import hipparcos, mpc
 from .config import get_minor_planet_settings
 from . import data_loader
@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import zlib
 import io
+import os
 
 
 @functools.lru_cache(maxsize=None)
@@ -23,8 +24,16 @@ def get_ephemeris():
     Returns an ephemeris object, loading from a URL or local file.
     This ensures that the file is downloaded if not present in full mode.
     """
-    path = data_loader.get_ephemeris_path()
-    return load(path)
+    path_or_url = data_loader.get_ephemeris_path()
+    if '://' in path_or_url:
+        # In 'full' mode, this is a URL, so we use the default `load`.
+        return load(path_or_url)
+    else:
+        # In 'light' mode, this is an absolute path to a local file.
+        # We need a Loader configured for the file's directory.
+        directory, filename = os.path.split(path_or_url)
+        local_loader = Loader(directory)
+        return local_loader(filename)
 
 
 @functools.lru_cache(maxsize=None)
