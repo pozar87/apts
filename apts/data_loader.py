@@ -1,7 +1,8 @@
 import os
 from .config import get_data_settings
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+# Use abspath to ensure the path is absolute
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
 
 
 def get_ephemeris_path():
