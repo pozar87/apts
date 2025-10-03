@@ -1,11 +1,13 @@
 import functools
-from skyfield.api import load
+from skyfield.api import load, Loader
 from skyfield.data import hipparcos, mpc
 from .config import get_minor_planet_settings
+from . import data_loader
 import re
 import pandas as pd
 import zlib
 import io
+import os
 
 
 @functools.lru_cache(maxsize=None)
@@ -19,12 +21,19 @@ def get_timescale():
 @functools.lru_cache(maxsize=None)
 def get_ephemeris():
     """
-    Returns an ephemeris object, loading from a URL.
-    This ensures that the file is downloaded if not present.
+    Returns an ephemeris object, loading from a URL or local file.
+    This ensures that the file is downloaded if not present in full mode.
     """
-    # de440 is a comprehensive ephemeris that includes dwarf planets.
-    url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp"
-    return load(url)
+    path_or_url = data_loader.get_ephemeris_path()
+    if '://' in path_or_url:
+        # In 'full' mode, this is a URL, so we use the default `load`.
+        return load(path_or_url)
+    else:
+        # In 'light' mode, this is an absolute path to a local file.
+        # We need a Loader configured for the file's directory.
+        directory, filename = os.path.split(path_or_url)
+        local_loader = Loader(directory)
+        return local_loader(filename)
 
 
 @functools.lru_cache(maxsize=None)
@@ -44,8 +53,9 @@ def get_mpcorb_data() -> pd.DataFrame:
     planets will be loaded.
     """
     planets_to_load = get_minor_planet_settings()
+    path = data_loader.get_mpcorb_path()
 
-    with load.open(mpc.MPCORB_URL, reload=False) as f:
+    with load.open(path, reload=False) as f:
         data = zlib.decompress(f.read(), wbits=zlib.MAX_WBITS | 16)
 
         if planets_to_load:

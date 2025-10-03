@@ -38,6 +38,10 @@ seaborn = whitegrid
 # Test logging level
 level = WARNING
 
+[data]
+# Use light data mode for tests
+mode = light
+
 [Display]
 # Test display settings
 dark_mode = false

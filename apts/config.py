@@ -152,6 +152,16 @@ def get_minor_planet_settings() -> list[str]:
     return []
 
 
+def get_data_settings() -> str:
+    """
+    Reads the data settings from the [data] section.
+
+    Returns:
+        str: The data mode ('light' or 'full').
+    """
+    return config.get("data", "mode", fallback="light")
+
+
 def get_performance_settings() -> dict:
     """
     Reads performance settings from the [performance] section.
