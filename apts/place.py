@@ -60,7 +60,12 @@ class Place:
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
     def get_weather(self, provider_name: Optional[str] = None):
-        self.weather = Weather(self.lat_decimal, self.lon_decimal, self.local_timezone, provider_name=provider_name)
+        self.weather = Weather(
+            self.lat_decimal,
+            self.lon_decimal,
+            self.local_timezone,
+            provider_name=provider_name,
+        )
 
     def _next_setting_time(self, obj, start):
         t0 = self.ts.utc(start)
@@ -170,23 +175,29 @@ class Place:
 
         time_list = [times[i] for i in range(len(times))]
 
-        df = pd.DataFrame({
-            "Time": time_list,
-            "Altitude": alt.degrees,
-            "Azimuth": az.degrees,
-        })
-        df["Local_time"] = [t.astimezone(self.local_timezone).strftime("%H:%M") for t in df["Time"]]
+        df = pd.DataFrame(
+            {
+                "Time": time_list,
+                "Altitude": alt.degrees,
+                "Azimuth": az.degrees,
+            }
+        )
+        df["Local_time"] = [
+            t.astimezone(self.local_timezone).strftime("%H:%M") for t in df["Time"]
+        ]
         return df
 
     def moon_path(self):
-        start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
+        start_time = self.date.utc_datetime().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.moon, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Moon altitude"})
 
         phases = []
         lunations = []
-        for t in df['Time']:
+        for t in df["Time"]:
             moon_phase_angle = almanac.moon_phase(self.eph, t)
             phases.append((moon_phase_angle.degrees / 360.0) * 100)
             lunations.append(moon_phase_angle.degrees / 360.0)
@@ -197,7 +208,9 @@ class Place:
         return df
 
     def sun_path(self):
-        start_time = self.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0)
+        start_time = self.date.utc_datetime().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
