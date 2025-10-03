@@ -99,17 +99,6 @@ def get_skyfield_obj(planet_name: str):
     if technical_name in minor_planet_names:
         try:
             minor_planets_df = get_mpcorb_data()
-            numeric_cols = [
-                'semimajor_axis_au', 'eccentricity', 'inclination_degrees',
-                'longitude_of_ascending_node_degrees', 'argument_of_perihelion_degrees',
-                'mean_anomaly_degrees'
-            ]
-            for col in numeric_cols:
-                minor_planets_df[col] = pd.to_numeric(minor_planets_df[col], errors='coerce')
-
-            minor_planets_df["designation"] = minor_planets_df["designation"].str.strip()
-            minor_planets_df = minor_planets_df.set_index("designation")
-
             full_designation = minor_planet_names[technical_name]
             kepler_orbit_row = minor_planets_df.loc[full_designation]
             kepler_orbit_obj = SimpleNamespace(**kepler_orbit_row.to_dict())

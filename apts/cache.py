@@ -50,28 +50,39 @@ def get_mpcorb_data() -> pd.DataFrame:
             # Build a regex pattern to match the packed designations at the start of the line
             # This is much faster than reading line by line
             escaped_designations = [re.escape(d.encode('ascii')) for d in planets_to_load]
-            pattern = rb'^(?:' + rb'|'.join(escaped_designations) + rb')'
+            pattern = rb'^(?:' + rb'|'.join(escaped_designations) + rb').*'
             regex = re.compile(pattern, re.MULTILINE)
 
             # Find all matching lines and join them
             lines = regex.findall(data)
-            filtered_data = b'\n'.join(lines)
+            data = b'\n'.join(lines)
 
-            # If no lines are found, return an empty dataframe with correct columns
-            if not filtered_data:
-                # Create an empty dataframe with the expected columns from mpc.mpcorb_dataframe
-                # This avoids errors when no planets are found
-                return pd.DataFrame(columns=[
-                    'designation_packed', 'magnitude_H', 'magnitude_G', 'epoch_packed',
-                    'mean_anomaly_degrees', 'argument_of_perihelion_degrees',
-                    'longitude_of_ascending_node_degrees', 'inclination_degrees',
-                    'eccentricity', 'mean_daily_motion_degrees', 'semimajor_axis_au',
-                    'uncertainty', 'reference', 'observations', 'oppositions',
-                    'observation_period_years', 'rms_residual_arcseconds',
-                    'coarse_perturbers', 'precise_perturbers', 'computer_name',
-                    'hex_flags', 'designation', 'last_observation_date'
-                ])
+        df = mpc.load_mpcorb_dataframe(io.BytesIO(data))
 
-            data = filtered_data
+    # Post-processing to ensure data types are correct and index is set
+    if df.empty:
+        df = pd.DataFrame(columns=[
+            'designation_packed', 'magnitude_H', 'magnitude_G', 'epoch_packed',
+            'mean_anomaly_degrees', 'argument_of_perihelion_degrees',
+            'longitude_of_ascending_node_degrees', 'inclination_degrees',
+            'eccentricity', 'mean_daily_motion_degrees', 'semimajor_axis_au',
+            'uncertainty', 'reference', 'observations', 'oppositions',
+            'observation_period_years', 'rms_residual_arcseconds',
+            'coarse_perturbers', 'precise_perturbers', 'computer_name',
+            'hex_flags', 'designation', 'last_observation_date'
+        ])
+        return df.set_index('designation')
 
-        return mpc.load_mpcorb_dataframe(io.BytesIO(data))
+    numeric_cols = [
+        'semimajor_axis_au', 'eccentricity', 'inclination_degrees',
+        'longitude_of_ascending_node_degrees', 'argument_of_perihelion_degrees',
+        'mean_anomaly_degrees'
+    ]
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    if 'designation' in df.columns:
+        df['designation'] = df['designation'].str.strip()
+        df = df.set_index('designation')
+
+    return df
