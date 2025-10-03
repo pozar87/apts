@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import functools
 import numpy
 import pandas as pd
 import ephem
@@ -15,8 +16,8 @@ from ..cache import get_ephemeris, get_mpcorb_data, get_timescale
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        # Load minor planets data and index by name
-        self.minor_planets = get_mpcorb_data()
+        # Initialize minor planets data for lazy loading
+        self._minor_planets = None
         self.minor_planet_names = {
             "ceres": "(1) Ceres",
             "haumea": "(136108) Haumea",
@@ -36,9 +37,22 @@ class SolarObjects(Objects):
         # Compute positions
         self.compute(calculation_date)
 
+    @property
+    def minor_planets(self):
+        """Lazy loading of minor planets data."""
+        if self._minor_planets is None:
+            self._minor_planets = get_mpcorb_data()
+        return self._minor_planets
+
+    @functools.lru_cache(maxsize=32)
+    def _get_skyfield_object_cached(self, obj_name):
+        """Internal cached version of skyfield object retrieval."""
+        return planetary.get_skyfield_obj(obj_name)
+
     def get_skyfield_object(self, obj):
+        """Get skyfield object with caching when possible."""
         name_to_use = obj.get("TechnicalName", obj.Name)
-        return planetary.get_skyfield_obj(name_to_use)
+        return self._get_skyfield_object_cached(name_to_use)
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:
@@ -130,7 +144,22 @@ class SolarObjects(Objects):
                 ObjectTableLabels.PHASE,
             ]
         ] = self.objects.apply(get_ephem_properties, axis=1)
+
         # Calculate planets RA, Dec, Distance, and Elongation
+        # Batch compute positions for better performance
+        def compute_position(row):
+            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row))
+            return pd.Series(
+                {
+                    ObjectTableLabels.RA: pos.radec()[0].hours,
+                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
+                    ObjectTableLabels.DISTANCE: pos.distance().au,
+                    ObjectTableLabels.ELONGATION: pos.separation_from(
+                        observer_to_use.sun.at(t)
+                    ).degrees,
+                }
+            )
+
         self.objects[
             [
                 ObjectTableLabels.RA,
@@ -138,24 +167,7 @@ class SolarObjects(Objects):
                 ObjectTableLabels.DISTANCE,
                 ObjectTableLabels.ELONGATION,
             ]
-        ] = self.objects.apply(
-            lambda row: pd.Series(
-                (
-                    pos := self.place.observer.at(t).observe(
-                        self.get_skyfield_object(row)
-                    )
-                )
-                and {
-                    ObjectTableLabels.RA: pos.radec()[0].hours,
-                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
-                    ObjectTableLabels.DISTANCE: pos.distance().au,
-                    ObjectTableLabels.ELONGATION: pos.separation_from(
-                        self.place.sun.at(t)
-                    ).degrees,
-                }
-            ),
-            axis=1,
-        )
+        ] = self.objects.apply(compute_position, axis=1)
 
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
@@ -185,8 +197,7 @@ class SolarObjects(Objects):
                         lambda x: x.magnitude if hasattr(x, "magnitude") else x
                     ),
                     errors="coerce",
-                )
-                .fillna(999)
+                ).fillna(999)
                 < conditions.max_object_magnitude
             )
         ]
