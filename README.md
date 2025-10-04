@@ -62,6 +62,12 @@ seaborn = whitegrid
 [logging]
 # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 level = INFO
+
+[data]
+# Data loading mode.
+# 'light' (default): Uses smaller, bundled data files for faster startup.
+# 'full': Downloads larger, more comprehensive data files from the internet.
+mode = light
 ```
 
 **Note:** The notification settings (SMTP host, port, user, password, TLS usage, and recipient email) are read from the configuration file when you instantiate the `apts.Notify` class in your script.

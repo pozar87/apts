@@ -1,6 +1,7 @@
-
+from types import SimpleNamespace
+import functools
 import numpy
-import pandas
+import pandas as pd
 import ephem
 
 from .objects import Objects
@@ -9,14 +10,22 @@ from ..utils import planetary
 from apts.place import Place
 
 
-from ..cache import get_ephemeris
+from ..cache import get_ephemeris, get_mpcorb_data, get_timescale
 
 
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
+        # Initialize minor planets data for lazy loading
+        self._minor_planets = None
+        self.minor_planet_names = {
+            "ceres": "(1) Ceres",
+            "haumea": "(136108) Haumea",
+            "makemake": "(136472) Makemake",
+            "eris": "(136199) Eris",
+        }
         # Init object list with all planets
-        self.objects = pandas.DataFrame(
+        self.objects = pd.DataFrame(
             planetary.TECHNICAL_NAMES,
             columns=[ObjectTableLabels.NAME],
         )  # pyright: ignore
@@ -28,10 +37,22 @@ class SolarObjects(Objects):
         # Compute positions
         self.compute(calculation_date)
 
+    @property
+    def minor_planets(self):
+        """Lazy loading of minor planets data."""
+        if self._minor_planets is None:
+            self._minor_planets = get_mpcorb_data()
+        return self._minor_planets
+
+    @functools.lru_cache(maxsize=32)
+    def _get_skyfield_object_cached(self, obj_name):
+        """Internal cached version of skyfield object retrieval."""
+        return planetary.get_skyfield_obj(obj_name)
+
     def get_skyfield_object(self, obj):
-        eph = get_ephemeris()
+        """Get skyfield object with caching when possible."""
         name_to_use = obj.get("TechnicalName", obj.Name)
-        return eph[name_to_use]
+        return self._get_skyfield_object_cached(name_to_use)
 
     def compute(self, calculation_date=None):
         if calculation_date is not None:
@@ -62,7 +83,7 @@ class SolarObjects(Objects):
                     self.get_skyfield_object(body), observer_to_use
                 ),
                 axis=1,
-            ).apply(pandas.Series)
+            ).apply(pd.Series)
         )
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
@@ -83,7 +104,7 @@ class SolarObjects(Objects):
         ephem_object_map = {
             "mercury": ephem.Mercury,  # pyright: ignore
             "venus": ephem.Venus,  # pyright: ignore
-            "mars": ephem.Mars,  # pyright: ignore
+            "mars barycenter": ephem.Mars,  # pyright: ignore
             "jupiter barycenter": ephem.Jupiter,  # pyright: ignore
             "saturn barycenter": ephem.Saturn,  # pyright: ignore
             "uranus barycenter": ephem.Uranus,  # pyright: ignore
@@ -102,18 +123,19 @@ class SolarObjects(Objects):
         # pyephem expects a datetime object or ephem.Date
         ephem_observer.date = t.utc_datetime()
 
-        # Helper function to calculate magnitude using pyephem
-        # This function is defined locally to enclose ephem_observer and ephem_object_map
+        # Helper function to calculate magnitude
         def get_ephem_properties(row):
             object_name = row[ObjectTableLabels.NAME]
-            ephem_obj_constructor = ephem_object_map.get(object_name)
-            if ephem_obj_constructor:
-                ephem_obj = ephem_obj_constructor()
-                ephem_obj.compute(ephem_observer)
-                return pandas.Series([ephem_obj.mag, ephem_obj.size, ephem_obj.phase])
-            # This case should ideally not be reached if the initial object list is complete
-            # and mapped correctly. Returning numpy.nan for unhandled objects.
-            return pandas.Series([numpy.nan, numpy.nan, numpy.nan])
+            if object_name in self.minor_planet_names:
+                # For minor planets, we'll use a placeholder for magnitude, size, and phase for now
+                return pd.Series([pd.NA, pd.NA, pd.NA])
+            else:
+                ephem_obj_constructor = ephem_object_map.get(object_name)
+                if ephem_obj_constructor:
+                    ephem_obj = ephem_obj_constructor()
+                    ephem_obj.compute(ephem_observer)
+                    return pd.Series([ephem_obj.mag, ephem_obj.size, ephem_obj.phase])
+            return pd.Series([numpy.nan, numpy.nan, numpy.nan])
 
         self.objects[
             [
@@ -122,7 +144,22 @@ class SolarObjects(Objects):
                 ObjectTableLabels.PHASE,
             ]
         ] = self.objects.apply(get_ephem_properties, axis=1)
+
         # Calculate planets RA, Dec, Distance, and Elongation
+        # Batch compute positions for better performance
+        def compute_position(row):
+            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row))
+            return pd.Series(
+                {
+                    ObjectTableLabels.RA: pos.radec()[0].hours,
+                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
+                    ObjectTableLabels.DISTANCE: pos.distance().au,
+                    ObjectTableLabels.ELONGATION: pos.separation_from(
+                        observer_to_use.sun.at(t)
+                    ).degrees,
+                }
+            )
+
         self.objects[
             [
                 ObjectTableLabels.RA,
@@ -130,24 +167,7 @@ class SolarObjects(Objects):
                 ObjectTableLabels.DISTANCE,
                 ObjectTableLabels.ELONGATION,
             ]
-        ] = self.objects.apply(
-            lambda row: pandas.Series(
-                (
-                    pos := self.place.observer.at(t).observe(
-                        self.get_skyfield_object(row)
-                    )
-                )
-                and {
-                    ObjectTableLabels.RA: pos.radec()[0].hours,
-                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
-                    ObjectTableLabels.DISTANCE: pos.distance().au,
-                    ObjectTableLabels.ELONGATION: pos.separation_from(
-                        self.place.sun.at(t)
-                    ).degrees,
-                }
-            ),
-            axis=1,
-        )
+        ] = self.objects.apply(compute_position, axis=1)
 
     def get_visible(
         self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
@@ -172,9 +192,12 @@ class SolarObjects(Objects):
             # Filter object by they magnitude
             # Handle pint.Quantity objects for magnitude
             (
-                visible.Magnitude.apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
-                )
+                pd.to_numeric(
+                    visible.Magnitude.apply(
+                        lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                    ),
+                    errors="coerce",
+                ).fillna(999)
                 < conditions.max_object_magnitude
             )
         ]
@@ -228,16 +251,7 @@ class SolarObjects(Objects):
         """
         Finds a planet by its name (e.g., "Mars").
         """
-        # First, try to find by the simple name
-        result = self.objects[self.objects["Name"].str.lower() == name.lower()]
-        if not result.empty:
-            return self.get_skyfield_object(result.iloc[0])
-
-        # If not found, try the technical name
-        if "TechnicalName" in self.objects.columns:
-            result = self.objects[
-                self.objects["TechnicalName"].str.lower() == name.lower()
-            ]
-            if not result.empty:
-                return self.get_skyfield_object(result.iloc[0])
-        return None
+        try:
+            return planetary.get_skyfield_obj(name)
+        except (ValueError, KeyError):
+            return None

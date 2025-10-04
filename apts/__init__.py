@@ -3,7 +3,9 @@ import pandas as pd
 import seaborn as sns
 
 # Import the config object from the new config module
-from .config import config
+from .config import config, should_auto_preload_data, should_preload_essential_only
+from . import cache
+
 
 from .catalogs import Catalogs, initialize_catalogs
 from .equipment import Equipment
@@ -24,6 +26,8 @@ __all__ = [
     "Notify",
     "Weather",
     "catalogs",
+    "preload_data",
+    "preload_essential_data",
 ]
 
 logger = logging.getLogger(__name__)
@@ -56,4 +60,41 @@ initialize_catalogs()
 catalogs = Catalogs()
 
 
-__version__ = "0.7.5"
+def preload_data():
+    """
+    Optionally preload expensive astronomical data for faster subsequent operations.
+
+    This function loads:
+    - Timescale data
+    - Ephemeris data (planetary positions)
+    - Minor Planet Center orbit data
+
+    Call this function once at application startup if you want to frontload
+    the initialization cost. Otherwise, data will be loaded lazily as needed.
+    """
+    logger.info("Preloading ephemeris and other data...")
+    cache.get_timescale()
+    cache.get_ephemeris()
+    cache.get_mpcorb_data()
+    logger.info("Data preloading complete.")
+
+
+def preload_essential_data():
+    """
+    Preload only the most essential data for basic operations.
+    This is faster than preload_data() but still provides some performance benefit.
+    """
+    logger.info("Preloading essential astronomical data...")
+    cache.get_timescale()
+    logger.info("Essential data preloading complete.")
+
+
+# Conditional preloading based on configuration
+if should_auto_preload_data():
+    if should_preload_essential_only():
+        preload_essential_data()
+    else:
+        preload_data()
+
+
+__version__ = "0.8.0"
