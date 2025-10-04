@@ -139,6 +139,25 @@ class TestObservationInitialization(unittest.TestCase):
         self.assertIsNone(observation.stop)
         self.place.sunrise_time.assert_not_called()
 
+    def test_max_return_none(self):
+        """Test that observation initialization handles max_return=None gracefully."""
+        # Arrange
+        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
+        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        conditions = Conditions(max_return=None)
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+            sun_observation=False,
+        )
+
+        # Assert
+        self.assertIsNone(observation.time_limit)
+
 
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
