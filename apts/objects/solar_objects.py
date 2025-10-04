@@ -128,7 +128,7 @@ class SolarObjects(Objects):
             object_name = row[ObjectTableLabels.NAME]
             if object_name in self.minor_planet_names:
                 # For minor planets, we'll use a placeholder for magnitude, size, and phase for now
-                return pd.Series([10.0, 0, 0])
+                return pd.Series([pd.NA, pd.NA, pd.NA])
             else:
                 ephem_obj_constructor = ephem_object_map.get(object_name)
                 if ephem_obj_constructor:
