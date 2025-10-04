@@ -11,6 +11,7 @@ from timezonefinder import TimezoneFinder
 from typing import Optional  # Added
 from apts.config import get_dark_mode  # Added
 from apts.constants.graphconstants import get_plot_style  # Added
+from apts.constants.twilight import Twilight
 
 from .weather import Weather
 from skyfield.api import load, Topos
@@ -97,34 +98,63 @@ class Place:
                 )
         return None
 
-    def sunset_time(
-        self, target_date=None, start_search_from: Optional[datetime.datetime] = None
-    ):
+    def _get_start_date(self, target_date, start_search_from):
         if start_search_from:
-            start_date = start_search_from
+            return start_search_from
         elif target_date:
-            # Create datetime at the beginning of the day in the local timezone, then convert to UTC
             local_start_of_day = datetime.datetime.combine(
                 target_date, datetime.time.min
             ).replace(tzinfo=self.local_timezone)
-            start_date = local_start_of_day.astimezone(datetime.timezone.utc)
+            return local_start_of_day.astimezone(datetime.timezone.utc)
         else:
-            start_date = self.date.utc_datetime()
+            return self.date.utc_datetime()
+
+    def _get_twilight_time(self, start_date, twilight: Twilight, event: str):
+        t0 = self.ts.utc(start_date)
+        t1 = self.ts.utc(start_date + datetime.timedelta(days=2))
+
+        f = almanac.dark_twilight_day(self.eph, self.location)
+        times, events = almanac.find_discrete(t0, t1, f)
+
+        # Define transitions for evening (set) and morning (rise)
+        if event == 'set':  # Evening: getting darker
+            transitions = {
+                Twilight.CIVIL: (4, 3),  # Day -> Civil
+                Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
+                Twilight.ASTRONOMICAL: (2, 1)  # Nautical -> Astronomical
+            }
+        else:  # Morning: getting lighter
+            transitions = {
+                Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
+                Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
+                Twilight.CIVIL: (2, 3)  # Nautical -> Civil
+            }
+
+        prev_event, next_event = transitions.get(twilight)
+
+        # The first event is the state at t0
+        previous_y = f(t0)
+        for t, y in zip(times, events):
+            if previous_y == prev_event and y == next_event:
+                return t.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+            previous_y = y
+
+        return None
+
+    def sunset_time(
+        self, target_date=None, start_search_from: Optional[datetime.datetime] = None, twilight: Optional[Twilight] = None
+    ):
+        start_date = self._get_start_date(target_date, start_search_from)
+        if twilight:
+            return self._get_twilight_time(start_date, twilight, 'set')
         return self._next_setting_time(self.sun, start=start_date)
 
     def sunrise_time(
-        self, target_date=None, start_search_from: Optional[datetime.datetime] = None
+        self, target_date=None, start_search_from: Optional[datetime.datetime] = None, twilight: Optional[Twilight] = None
     ):
-        if start_search_from:
-            start_date = start_search_from
-        elif target_date:
-            # Create datetime at the beginning of the day in the local timezone, then convert to UTC
-            local_start_of_day = datetime.datetime.combine(
-                target_date, datetime.time.min
-            ).replace(tzinfo=self.local_timezone)
-            start_date = local_start_of_day.astimezone(datetime.timezone.utc)
-        else:
-            start_date = self.date.utc_datetime()
+        start_date = self._get_start_date(target_date, start_search_from)
+        if twilight:
+            return self._get_twilight_time(start_date, twilight, 'rise')
         return self._next_rising_time(self.sun, start=start_date)
 
     def moonset_time(self):
@@ -132,28 +162,6 @@ class Place:
 
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date.utc_datetime())
-
-    def get_time_relative_to_event(self, target_date, offset_minutes=0, event="sunset"):
-        # Get sunset time for the target_date
-        if event == "sunset":
-            event_dt = self.sunset_time(target_date=target_date)
-        else:
-            event_dt = self.sunrise_time(target_date=target_date)
-
-        # If sunset doesn't occur (e.g., polar day/night)
-        if event_dt is None:
-            return (None, None)
-
-        # Apply the offset
-        # sunset_dt is already a timezone-aware local datetime object
-        local_datetime_obs_time = event_dt + datetime.timedelta(minutes=offset_minutes)
-
-        # Convert local observation time to UTC datetime
-        utc_datetime_obs_time = local_datetime_obs_time.astimezone(
-            datetime.timezone.utc
-        )
-
-        return (local_datetime_obs_time, self.ts.utc(utc_datetime_obs_time))
 
     def _moon_phase_letter(self):
         lunation = self.moon_lunation() / 100
