@@ -284,7 +284,7 @@ class SolarObjects(Objects):
                             lambda x: x.magnitude if hasattr(x, "magnitude") else x
                         ),
                         errors="coerce",
-                    )
+                    ).astype("float")
                     < conditions.max_object_magnitude
                 )
             )
