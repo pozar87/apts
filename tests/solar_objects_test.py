@@ -54,5 +54,7 @@ class TestSolarObjects(unittest.TestCase):
         self.assertGreater(mars_data[ObjectTableLabels.SIZE], 0)
 
 
+
+
 if __name__ == "__main__":
     unittest.main()
