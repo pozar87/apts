@@ -149,9 +149,7 @@ class SolarObjects(Objects):
                 try:
                     minor_planet_details = self.minor_planets.loc[object_name]
                     dp = ephem.EllipticalBody()
-                    dp._inc = numpy.deg2rad(
-                        minor_planet_details["inclination_degrees"]
-                    )
+                    dp._inc = numpy.deg2rad(minor_planet_details["inclination_degrees"])
                     dp._Om = numpy.deg2rad(
                         minor_planet_details["longitude_of_ascending_node_degrees"]
                     )
@@ -216,10 +214,7 @@ class SolarObjects(Objects):
                         "U": 30,
                         "V": 31,
                     }
-                    year = (
-                        _MPC_CENTURY[packed_epoch[0]] * 100
-                        + int(packed_epoch[1:3])
-                    )
+                    year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
                     month = _MPC_MONTH[packed_epoch[3]]
                     day = _MPC_DAY[packed_epoch[4]]
                     dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
@@ -297,7 +292,7 @@ class SolarObjects(Objects):
             # or filter by magnitude for others.
             (
                 pd.isna(visible.MagnitudeFloat)
-                | (visible.MagnitudeFloat < conditions.max_object_magnitude)
+                | (visible.MagnitudeFloat < float(conditions.max_object_magnitude))
             )
         ]
 
