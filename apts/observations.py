@@ -129,9 +129,8 @@ class Observation:
                 if self.time_limit < self.start:
                     self.time_limit += timedelta(days=1)
             else:
-                # If max_return is None, default time_limit to None so the
-                # observation ends at dawn.
-                self.time_limit = None
+                # If max_return is None, default time_limit to dawn (self.stop)
+                self.time_limit = self.stop
         # If self.start is None, self.time_limit remains None.
 
     @property

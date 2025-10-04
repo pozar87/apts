@@ -156,7 +156,7 @@ class TestObservationInitialization(unittest.TestCase):
         )
 
         # Assert
-        self.assertIsNone(observation.time_limit)
+        self.assertEqual(observation.time_limit, observation.stop)
 
 
 class TestObservationTemplate(unittest.TestCase):
