@@ -6,27 +6,46 @@ import ephem
 
 from .objects import Objects
 from ..constants import ObjectTableLabels
-from ..utils import planetary
+from ..utils import planetary, MINOR_PLANET_NAMES
 from apts.place import Place
 
 
 from ..cache import get_ephemeris, get_mpcorb_data, get_timescale
 
 
+from decimal import Decimal
+
+
+def _to_float(value):
+    """
+    Safely converts a value to a float, handling Decimal, NA, and other types.
+    """
+    if pd.isna(value):
+        return numpy.nan
+    if isinstance(value, Decimal):
+        return float(value)
+    if hasattr(value, "magnitude"):  # Handle pint.Quantity objects
+        return float(value.magnitude)
+    return float(value)
+
+
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
-        # Initialize minor planets data for lazy loading
-        self._minor_planets = None
-        self.minor_planet_names = {
-            "ceres": "(1) Ceres",
-            "haumea": "(136108) Haumea",
-            "makemake": "(136472) Makemake",
-            "eris": "(136199) Eris",
-        }
-        # Init object list with all planets
+        # Eagerly load minor planets data on initialization
+        self._minor_planets = get_mpcorb_data()
+        # Init object list with all planets and dwarf planets
+        dwarf_planet_technical_names = list(MINOR_PLANET_NAMES.keys())
+        major_planets_technical_names = [
+            name
+            for name in planetary.TECHNICAL_NAMES
+            if name not in dwarf_planet_technical_names
+        ]
+        all_solar_system_bodies = major_planets_technical_names + list(
+            MINOR_PLANET_NAMES.values()
+        )
         self.objects = pd.DataFrame(
-            planetary.TECHNICAL_NAMES,
+            all_solar_system_bodies,
             columns=[ObjectTableLabels.NAME],
         )  # pyright: ignore
 
@@ -126,9 +145,84 @@ class SolarObjects(Objects):
         # Helper function to calculate magnitude
         def get_ephem_properties(row):
             object_name = row[ObjectTableLabels.NAME]
-            if object_name in self.minor_planet_names:
-                # For minor planets, we'll use a placeholder for magnitude, size, and phase for now
-                return pd.Series([pd.NA, pd.NA, pd.NA])
+            if object_name in MINOR_PLANET_NAMES.values():
+                try:
+                    minor_planet_details = self.minor_planets.loc[object_name]
+                    dp = ephem.EllipticalBody()
+                    dp._inc = numpy.deg2rad(minor_planet_details["inclination_degrees"])
+                    dp._Om = numpy.deg2rad(
+                        minor_planet_details["longitude_of_ascending_node_degrees"]
+                    )
+                    dp._om = numpy.deg2rad(
+                        minor_planet_details["argument_of_perihelion_degrees"]
+                    )
+                    dp._a = minor_planet_details["semimajor_axis_au"]
+                    dp._e = minor_planet_details["eccentricity"]
+                    dp._M = numpy.deg2rad(minor_planet_details["mean_anomaly_degrees"])
+                    if pd.notna(minor_planet_details["magnitude_H"]):
+                        dp._H = minor_planet_details["magnitude_H"]
+                    if pd.notna(minor_planet_details["magnitude_G"]):
+                        dp._G = minor_planet_details["magnitude_G"]
+
+                    # Correctly parse the packed epoch format from MPCORB.DAT
+                    packed_epoch = minor_planet_details["epoch_packed"]
+                    _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
+                    _MPC_MONTH = {
+                        "1": 1,
+                        "2": 2,
+                        "3": 3,
+                        "4": 4,
+                        "5": 5,
+                        "6": 6,
+                        "7": 7,
+                        "8": 8,
+                        "9": 9,
+                        "A": 10,
+                        "B": 11,
+                        "C": 12,
+                    }
+                    _MPC_DAY = {
+                        "1": 1,
+                        "2": 2,
+                        "3": 3,
+                        "4": 4,
+                        "5": 5,
+                        "6": 6,
+                        "7": 7,
+                        "8": 8,
+                        "9": 9,
+                        "A": 10,
+                        "B": 11,
+                        "C": 12,
+                        "D": 13,
+                        "E": 14,
+                        "F": 15,
+                        "G": 16,
+                        "H": 17,
+                        "I": 18,
+                        "J": 19,
+                        "K": 20,
+                        "L": 21,
+                        "M": 22,
+                        "N": 23,
+                        "O": 24,
+                        "P": 25,
+                        "Q": 26,
+                        "R": 27,
+                        "S": 28,
+                        "T": 29,
+                        "U": 30,
+                        "V": 31,
+                    }
+                    year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
+                    month = _MPC_MONTH[packed_epoch[3]]
+                    day = _MPC_DAY[packed_epoch[4]]
+                    dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
+
+                    dp.compute(ephem_observer)
+                    return pd.Series([dp.mag, pd.NA, pd.NA])
+                except (KeyError, ValueError, IndexError):
+                    return pd.Series([pd.NA, pd.NA, pd.NA])
             else:
                 ephem_obj_constructor = ephem_object_map.get(object_name)
                 if ephem_obj_constructor:
@@ -175,6 +269,10 @@ class SolarObjects(Objects):
         visible = self.objects.copy()
         # Add ID collumn
         visible["ID"] = visible.index
+
+        # Safely convert Magnitude to float before filtering
+        visible["MagnitudeFloat"] = visible.Magnitude.apply(_to_float)
+
         visible = visible[
             # Filter objects by they rising and setting within the time window, handling wrap-around
             (
@@ -190,15 +288,11 @@ class SolarObjects(Objects):
             )
             &
             # Filter object by they magnitude
-            # Handle pint.Quantity objects for magnitude
+            # Allow objects with NA magnitude to pass through,
+            # or filter by magnitude for others.
             (
-                pd.to_numeric(
-                    visible.Magnitude.apply(
-                        lambda x: x.magnitude if hasattr(x, "magnitude") else x
-                    ),
-                    errors="coerce",
-                ).fillna(999)
-                < conditions.max_object_magnitude
+                pd.isna(visible.MagnitudeFloat)
+                | (visible.MagnitudeFloat < float(conditions.max_object_magnitude))
             )
         ]
 

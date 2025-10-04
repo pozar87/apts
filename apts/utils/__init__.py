@@ -6,8 +6,9 @@ from matplotlib import pyplot
 
 from apts.constants.graphconstants import get_plot_style
 from apts.units import ureg as ureg
+from .planetary import MINOR_PLANET_NAMES
 
-__all__ = ["ureg"]
+__all__ = ["ureg", "MINOR_PLANET_NAMES"]
 
 
 class ConnectionType(Enum):
