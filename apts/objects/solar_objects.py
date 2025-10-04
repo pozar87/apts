@@ -13,6 +13,22 @@ from apts.place import Place
 from ..cache import get_ephemeris, get_mpcorb_data, get_timescale
 
 
+from decimal import Decimal
+
+
+def _to_float(value):
+    """
+    Safely converts a value to a float, handling Decimal, NA, and other types.
+    """
+    if pd.isna(value):
+        return numpy.nan
+    if isinstance(value, Decimal):
+        return float(value)
+    if hasattr(value, "magnitude"):  # Handle pint.Quantity objects
+        return float(value.magnitude)
+    return float(value)
+
+
 class SolarObjects(Objects):
     def __init__(self, place, calculation_date=None):
         super(SolarObjects, self).__init__(place)
@@ -258,6 +274,10 @@ class SolarObjects(Objects):
         visible = self.objects.copy()
         # Add ID collumn
         visible["ID"] = visible.index
+
+        # Safely convert Magnitude to float before filtering
+        visible["MagnitudeFloat"] = visible.Magnitude.apply(_to_float)
+
         visible = visible[
             # Filter objects by they rising and setting within the time window, handling wrap-around
             (
@@ -273,20 +293,11 @@ class SolarObjects(Objects):
             )
             &
             # Filter object by they magnitude
-            # Handle pint.Quantity objects for magnitude
             # Allow objects with NA magnitude to pass through,
             # or filter by magnitude for others.
             (
-                pd.isna(visible.Magnitude)
-                | (
-                    pd.to_numeric(
-                        visible.Magnitude.apply(
-                            lambda x: x.magnitude if hasattr(x, "magnitude") else x
-                        ),
-                        errors="coerce",
-                    ).astype("float")
-                    < conditions.max_object_magnitude
-                )
+                pd.isna(visible.MagnitudeFloat)
+                | (visible.MagnitudeFloat < conditions.max_object_magnitude)
             )
         ]
 
