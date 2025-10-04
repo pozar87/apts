@@ -54,6 +54,10 @@ class Utils:
         mnt, sec = divmod(dd * 3600, 60)
         deg, mnt = divmod(mnt, 60)
         if pretty:
+            if hasattr(deg, "iloc"):
+                deg = deg.iloc[0]
+                mnt = mnt.iloc[0]
+                sec = sec.iloc[0]
             return "{}°{}'{}\"".format(int(deg), int(mnt), int(sec))
         else:
             return deg, mnt, sec
