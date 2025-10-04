@@ -118,20 +118,20 @@ class Observation:
 
         # Compute time limit for observation
         if self.start is not None:
-            max_return_values = [
-                int(value) for value in self.conditions.max_return.split(":")
-            ]
-            time_limit_dt = self.start.replace(
-                hour=max_return_values[0],
-                minute=max_return_values[1],
-                second=max_return_values[2],
-            )
-            # Ensure time_limit is after self.start, if it's on the same day but earlier, add a day
-            self.time_limit = (
-                time_limit_dt
-                if time_limit_dt > self.start
-                else time_limit_dt + timedelta(days=1)
-            )
+            if self.conditions.max_return:
+                h, m, s = (
+                    int(value) for value in self.conditions.max_return.split(":")
+                )
+                self.time_limit = self.start.replace(
+                    hour=h, minute=m, second=s, microsecond=0
+                )
+                # Adjust for overnight observations if necessary.
+                if self.time_limit < self.start:
+                    self.time_limit += timedelta(days=1)
+            else:
+                # If max_return is None, default time_limit to None so the
+                # observation ends at dawn.
+                self.time_limit = None
         # If self.start is None, self.time_limit remains None.
 
     @property
