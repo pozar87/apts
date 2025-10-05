@@ -401,7 +401,7 @@ def find_tiangong_flybys(
         "CSS (TIANHE)",
         "Bright Tiangong Flyby",
         "Tiangong Flyby",
-        None,  # No magnitude threshold for Tiangong
+        20,  # Effectively no magnitude threshold, but ensures mag is calculated
         peak_altitude_threshold,
         rise_altitude_threshold,
     )
