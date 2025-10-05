@@ -306,6 +306,7 @@ class Observation:
         plot_messier: bool = False,
         plot_ngc: bool = False,
         plot_planets: bool = False,
+        plot_date: Optional[datetime] = None,
         **kwargs,
     ):
         return apts_plot.plot_skymap(
@@ -318,6 +319,7 @@ class Observation:
             plot_messier=plot_messier,
             plot_ngc=plot_ngc,
             plot_planets=plot_planets,
+            plot_date=plot_date,
             **kwargs,
         )
 
