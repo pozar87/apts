@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Optional, TYPE_CHECKING
 
 import matplotlib.dates as mdates
@@ -1067,10 +1067,11 @@ def _generate_plot_skymap(
     plot_messier: bool = False,
     plot_ngc: bool = False,
     plot_planets: bool = False,
+    plot_date: Optional[datetime] = None,
     **kwargs,
 ):
     """
-    Generates a skymap for the current time and location, highlighting a target object.
+    Generates a skymap for a given time and location, highlighting a target object.
     Can generate a full polar skymap or a zoomed-in Cartesian skymap.
     """
     if dark_mode_override is not None:
@@ -1080,9 +1081,22 @@ def _generate_plot_skymap(
 
     style = get_plot_style(effective_dark_mode)
 
-    t = observation.place.ts.now()
-    if observation.effective_date is not None:
+    if plot_date:
+        # Use the specified plot_date
+        t = observation.place.ts.utc(plot_date)
+    elif observation.start and observation.stop:
+        # Default to the middle of the observation window
+        start_ts = observation.place.ts.utc(observation.start)
+        stop_ts = observation.place.ts.utc(observation.stop)
+        middle_julian_date = (start_ts.tt + stop_ts.tt) / 2
+        t = observation.place.ts.tt_jd(middle_julian_date)
+    elif observation.effective_date:
+        # Fallback to effective_date if start/stop are not available
         t = observation.effective_date
+    else:
+        # Final fallback to the current time
+        t = observation.place.ts.now()
+
     observer = observation.place.observer.at(t)
 
     generation_time_str = t.astimezone(observation.place.local_timezone).strftime(
@@ -1410,6 +1424,7 @@ def plot_skymap(
     plot_messier: bool = False,
     plot_ngc: bool = False,
     plot_planets: bool = False,
+    plot_date: Optional[datetime] = None,
     **kwargs,
 ):
     return _generate_plot_skymap(
@@ -1422,6 +1437,7 @@ def plot_skymap(
         plot_messier=plot_messier,
         plot_ngc=plot_ngc,
         plot_planets=plot_planets,
+        plot_date=plot_date,
         **kwargs,
     )
 
