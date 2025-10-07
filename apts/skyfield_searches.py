@@ -178,7 +178,7 @@ def find_conjunctions_with_star(
     for t in times:
         pos1 = observer.at(t).observe(body1)
         pos_star = observer.at(t).observe(star_object)
-        separations.append(float(pos1.separation_from(pos_star).degrees))
+        separations.append(pos1.separation_from(pos_star).degrees.item())
 
     for i in range(1, len(separations) - 1):
         if (
