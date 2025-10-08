@@ -24,28 +24,57 @@ class Objects(ABC):
         self.calculation_date = calculation_date # Store it here
 
     def get_visible(
-        self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT, star_magnitude_limit=None
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
     ):
-        # Check if 'TRANSIT' and 'ALTITUDE' columns exist. If not, compute them.
-        if ObjectTableLabels.TRANSIT not in self.objects.columns or \
-           ObjectTableLabels.ALTITUDE not in self.objects.columns:
-            self.compute(self.calculation_date)
+        max_magnitude = (
+            star_magnitude_limit
+            if star_magnitude_limit is not None
+            else conditions.max_object_magnitude
+        )
+        magnitude_values = self.objects["Magnitude"].apply(
+            lambda x: x.magnitude if hasattr(x, "magnitude") else x
+        )
+        candidate_objects = self.objects[magnitude_values < max_magnitude]
 
-        visible = self.objects
-        # Add ID collumn
-        visible["ID"] = visible.index
-        visible = visible[
-            # Filter objects by they transit
-            (visible.Transit > start - timedelta(hours=hours_margin))
-            & (visible.Transit < stop + timedelta(hours=hours_margin))
-            &
-            # Filter object by they magnitude
-            # Handle pint.Quantity objects for magnitude
-            (
-                visible.Magnitude.apply(
-                    lambda x: x.magnitude if x and hasattr(x, "magnitude") else 99
+        if (
+            ObjectTableLabels.TRANSIT not in candidate_objects.columns
+            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any()
+        ):
+            df_to_compute = (
+                candidate_objects
+                if ObjectTableLabels.TRANSIT not in self.objects.columns
+                else candidate_objects[
+                    candidate_objects[ObjectTableLabels.TRANSIT].isnull()
+                ]
+            )
+            if not df_to_compute.empty:
+                self.compute(
+                    calculation_date=self.calculation_date, df_to_compute=df_to_compute
                 )
-                < (star_magnitude_limit if star_magnitude_limit is not None else conditions.max_object_magnitude)
+
+        # Now that computations are done, filter from the updated self.objects
+        magnitude_values = self.objects["Magnitude"].apply(
+            lambda x: x.magnitude if hasattr(x, "magnitude") else x
+        )
+        visible = self.objects[magnitude_values < max_magnitude].copy()
+        visible["ID"] = visible.index
+
+        # Filter by transit time, ensuring Transit is not NaT
+        visible = visible.loc[
+            (visible[ObjectTableLabels.TRANSIT].notna())
+            & (
+                visible[ObjectTableLabels.TRANSIT]
+                > start - timedelta(hours=hours_margin)
+            )
+            & (
+                visible[ObjectTableLabels.TRANSIT]
+                < stop + timedelta(hours=hours_margin)
             )
         ]
 
