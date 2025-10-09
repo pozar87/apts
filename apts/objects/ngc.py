@@ -1,3 +1,4 @@
+import pandas as pd
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
@@ -8,9 +9,11 @@ class NGC(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
         self.objects = catalogs.NGC.copy()
+        self.objects[ObjectTableLabels.TRANSIT] = None
+        self.objects[ObjectTableLabels.ALTITUDE] = pd.NA
         self.calculation_date = calculation_date # Store calculation_date for lazy computation
 
-    def compute(self, calculation_date=None):
+    def compute(self, calculation_date=None, df_to_compute=None):
         if calculation_date is not None:
             # It's a Skyfield Time object. If it's an array, use the first element.
             if hasattr(calculation_date, "shape") and calculation_date.shape:
@@ -28,22 +31,27 @@ class NGC(Objects):
         else:
             observer_to_use = self.place
 
+        # If no specific DataFrame is provided, use the class's default.
+        if df_to_compute is None:
+            df_to_compute = self.objects
 
+        # Work on a copy to avoid modifying the original DataFrame slice
+        computed_df = df_to_compute.copy()
 
         # Compute transit of ngc objects at given place
-        self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
+        computed_df[ObjectTableLabels.TRANSIT] = computed_df.apply(
             lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use),
             axis=1
         )
         # Compute altitude of ngc objects at transit (at given place)
-        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
-            [ObjectTableLabels.TRANSIT]
-        ].apply(
+        computed_df[ObjectTableLabels.ALTITUDE] = computed_df.apply(
             lambda row: self._altitude_at_transit(
-                self.get_skyfield_object(self.objects.loc[row.name]), row.Transit, observer_to_use
+                self.get_skyfield_object(row), row.Transit, observer_to_use
             ),
             axis=1,
         )
+        self.objects.update(computed_df)
+        return computed_df
 
     def get_skyfield_object(self, obj):
         return obj.skyfield_object
