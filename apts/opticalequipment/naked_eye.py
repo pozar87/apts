@@ -13,7 +13,7 @@ class NakedEye(OpticalEquipment):
         self.magnification = magnification
         self.objective_diameter = objective_diameter * get_unit_registry().mm
         self.apparent_fov_deg = apparent_fov_deg * get_unit_registry().deg
-        self._type = OpticalType.BINOCULARS # Treat as binoculars for simplicity
+        self._type = OpticalType.VISUAL
 
     def get_name(self):
         return "NakedEye"
@@ -46,7 +46,7 @@ class NakedEye(OpticalEquipment):
         equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
     def output_type(self):
-        return "Visual"
+        return OpticalType.VISUAL
 
     def max_useful_zoom(self):
         return self.magnification

@@ -7,6 +7,7 @@ class OpticalType(Enum):  # pyright: ignore
     OUTPUT = auto()
     GENERIC = auto()
     BINOCULARS = auto()
+    VISUAL = auto()
 
 
 class GraphConstants:
@@ -20,7 +21,7 @@ class GraphConstants:
         OpticalType.OPTICAL: "#4B0082",
         OpticalType.OUTPUT: "#A9A9A9",
         OpticalType.BINOCULARS: "#00FF00",  # Green for Binoculars
-        "Visual": "#00FF00",
+        OpticalType.VISUAL: "#90EE90", # Light Green for Visual
     }
 
     DARK_COLORS = {
@@ -29,7 +30,7 @@ class GraphConstants:
         OpticalType.OPTICAL: "#5A1A75",  # Bright Purple
         OpticalType.OUTPUT: "#BBBBBB",  # Another Muted Light Gray
         OpticalType.BINOCULARS: "#007447",  # Vibrant Green
-        "Visual": "#007447",
+        OpticalType.VISUAL: "#3CB371", # Medium Sea Green for Visual
     }
 
     DARK_MODE_STYLE = {

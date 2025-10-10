@@ -30,7 +30,7 @@ class Equipment:
         self.connection_garph = ig.Graph(directed=True)
         # Register standard input and outputs
         self.add_vertex(GraphConstants.SPACE_ID)
-        self.add_vertex(GraphConstants.EYE_ID)
+        self.add_vertex(GraphConstants.EYE_ID, node_type=OpticalType.VISUAL)
         self.add_vertex(GraphConstants.IMAGE_ID)
         self.register(NakedEye())
         self._connected = False

@@ -3,7 +3,7 @@ import numpy as np # Added for np.log10
 from unittest.mock import patch, MagicMock, ANY
 
 from apts.equipment import Equipment
-from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels
+from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece
 from apts.units import ureg
 from apts.utils import ConnectionType
@@ -159,7 +159,7 @@ def test_binoculars_instantiation():
     # limiting_magnitude: 7.7 + 5 * log10(objective_diameter_cm) = 7.7 + 5 * log10(5.0)
     assert bino.limiting_magnitude() == pytest.approx(7.7 + 5 * np.log10(5.0), abs=1e-3)
     assert bino.brightness() == pytest.approx((5.0/7.0)**2 * 100) # (exit_pupil_mm / 7)^2 * 100
-    assert bino.output_type() == "Visual"
+    assert bino.output_type() == OpticalType.VISUAL
     assert bino.max_useful_zoom() == 10
 
 def test_binoculars_registration_and_graph():
@@ -216,7 +216,7 @@ def test_binoculars_in_equipment_data():
     bino_row = data_df.iloc[0]
 
     assert bino_row[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"
-    assert bino_row[EquipmentTableLabels.TYPE] == "Visual"
+    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
     assert bino_row[EquipmentTableLabels.USEFUL_ZOOM]
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8) # 7.5
@@ -575,7 +575,7 @@ def test_eyepiece_path_brightness_is_numeric():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == "Visual"]
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL]
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
