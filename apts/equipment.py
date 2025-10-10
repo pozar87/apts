@@ -168,7 +168,7 @@ class Equipment:
 
         return result
 
-    def plot_zoom(self, dark_mode_override: Optional[bool] = None, **args):
+    def plot_zoom(self, dark_mode_override: Optional[bool] = None, include_naked_eye: bool = False, **args):
         """
         Plot available magnification
         """
@@ -182,6 +182,7 @@ class Equipment:
             "Used equipment",
             "Magnification",
             dark_mode_enabled=effective_dark_mode,
+            include_naked_eye=include_naked_eye,
             **args,
         )
         # Add marker for maximal useful zoom
@@ -198,7 +199,7 @@ class Equipment:
         """
         return 350
 
-    def plot_fov(self, dark_mode_override: Optional[bool] = None, **args):
+    def plot_fov(self, dark_mode_override: Optional[bool] = None, include_naked_eye: bool = False, **args):
         """
         Plot available fields of view
         """
@@ -223,6 +224,7 @@ class Equipment:
             "Used equipment",
             "Field if view [°]",
             dark_mode_enabled=effective_dark_mode,
+            include_naked_eye=include_naked_eye,
             **args,
         )
         plot.yaxis.set_major_formatter(FuncFormatter(formatter))
@@ -242,10 +244,11 @@ class Equipment:
         dark_mode_enabled: bool,
         autolayout=False,
         multiline_labels=True,
+        include_naked_eye=False,
         **args,
     ):
         style = get_plot_style(dark_mode_enabled)
-        data = self._filter_and_merge(to_plot, multiline_labels)
+        data = self._filter_and_merge(to_plot, multiline_labels, include_naked_eye)
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
 
@@ -278,12 +281,16 @@ class Equipment:
                 text.set_color(style['TEXT_COLOR'])
         return ax
 
-    def _filter_and_merge(self, to_plot, multiline_labels):
+    def _filter_and_merge(self, to_plot, multiline_labels, include_naked_eye=False):
         """
         This methods filter data to plot and merge Eye and Image series together
         """
         # Filter only relevant data - by to_plot key
-        data = self.data()[
+        all_data = self.data()
+        if not include_naked_eye:
+            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != 'Naked Eye 1x7']
+
+        data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
         if len(data) <= 8:

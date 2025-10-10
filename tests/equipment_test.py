@@ -603,6 +603,26 @@ def _create_custom_equipment_for_plotting():
 
     return eq
 
+@patch('apts.equipment.plt')
+def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):
+    eq = setup_equipment()
+    eq.plot_zoom()
+
+    # Check that the data passed to the plot does not contain the naked eye
+    # This requires inspecting the call to _filter_and_merge, which is internal.
+    # A better approach is to mock _filter_and_merge or check the resulting plot data.
+    # Let's check the data that would be plotted.
+    data_for_plot = eq._filter_and_merge('Zoom', True, False)
+    assert 'Naked Eye 1x7' not in data_for_plot.index
+
+@patch('apts.equipment.plt')
+def test_plot_zoom_includes_naked_eye_when_flagged(mock_plt):
+    eq = setup_equipment()
+    eq.plot_zoom(include_naked_eye=True)
+
+    data_for_plot = eq._filter_and_merge('Zoom', True, True)
+    assert 'Naked Eye 1x7' in data_for_plot.index
+
 @patch('apts.equipment.get_dark_mode')
 @patch('apts.equipment.ig.plot') # Mock the ig.plot call itself
 def test_plot_connection_graph_override_dark(mock_ig_plot, mock_get_global_dark_mode):
