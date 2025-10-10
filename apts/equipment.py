@@ -12,6 +12,7 @@ from .config import get_dark_mode
 from .constants.graphconstants import get_plot_style, get_plot_colors
 from .opticalequipment import (
     OpticalEquipment,
+    NakedEye,
 )
 from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
@@ -31,6 +32,7 @@ class Equipment:
         self.add_vertex(GraphConstants.SPACE_ID)
         self.add_vertex(GraphConstants.EYE_ID)
         self.add_vertex(GraphConstants.IMAGE_ID)
+        self.register(NakedEye())
         self._connected = False
 
     def _get_paths(self, output_id):
@@ -91,11 +93,11 @@ class Equipment:
                 # path.telescope is the main optic (telescope or binoculars)
                 # path.output is the final element (eyepiece, camera, or binoculars itself)
 
-                # Determine if the main optic is Binoculars
-                is_binoculars = isinstance(path.telescope, Binoculars)
+                # Determine if the main optic is Binoculars or NakedEye
+                is_binoculars = isinstance(path.telescope, (Binoculars, NakedEye))
 
                 # Calculate useful_zoom
-                useful_zoom_value = True  # Default for binoculars
+                useful_zoom_value = True  # Default for binoculars and naked eye
                 if not is_binoculars:
                     if hasattr(path.telescope, "max_useful_zoom"):
                         # max_useful_zoom() on Telescope returns a float, zoom() is a Quantity

@@ -12,7 +12,9 @@ from . import setup_equipment
 
 def test_zoom():
   e = setup_equipment()
-  row = e.data().iloc[0]
+  df = e.data()
+  # Filter out NakedEye path
+  row = df[df['Label'] != 'Naked Eye 1x7'].iloc[0]
   # Only possiable zoom should be 750/25 = 30
   assert row[EquipmentTableLabels.ZOOM] == 30
   # Only possiable fov should be 2.333 ± 0.001
@@ -24,7 +26,9 @@ def test_zoom():
 def test_barlow():
   e = setup_equipment()
   e.register(Barlow(2))
-  row = e.data().iloc[0]
+  df = e.data()
+  # Filter out NakedEye path and sort by zoom to get the barlow path
+  row = df[df['Label'] != 'Naked Eye 1x7'].sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
   # Only possiable zoom should be 750/25 * 2 = 60
   assert row[EquipmentTableLabels.ZOOM] == 60
   # Using 3 elements
@@ -36,7 +40,8 @@ def test_barlow_stacking():
   e.register(Barlow(2)) # Changed to use Barlow directly
   e.register(Barlow(3)) # Changed to use Barlow directly
   # Get row with biggest zoom
-  row = e.data().sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
+  df = e.data()
+  row = df.sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
   # With two stacked barlows max zoom should be 180 (30 * 3 * 2)
   assert row[EquipmentTableLabels.ZOOM] == 180
   # Using 4 elements
@@ -48,7 +53,7 @@ def test_multi_barlow():
   e.register(Barlow(2)) # Changed to use Barlow directly
   e.register(Barlow(3)) # Changed to use Barlow directly
   # With two barlows and single eyepiece number of possiable connection is 4 (with barlow stacking)
-  assert len(e.data()[EquipmentTableLabels.ZOOM]) == 4
+  assert len(e.data()[e.data()['Label'] != 'Naked Eye 1x7']) == 4
 
 
 def test_camera_path_with_setup_equipment(): # Renamed
@@ -202,6 +207,9 @@ def test_binoculars_in_equipment_data():
     eq.register(bino)
 
     data_df = eq.data()
+
+    # Filter out NakedEye path
+    data_df = data_df[data_df['Label'] != 'Naked Eye 1x7']
 
     assert len(data_df) == 1, f"Expected 1 optical path for binoculars, got {len(data_df)}"
 
