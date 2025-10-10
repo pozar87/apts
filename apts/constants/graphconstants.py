@@ -11,7 +11,7 @@ class OpticalType(Enum):  # pyright: ignore
 
 class GraphConstants:
     SPACE_ID = "Space"
-    EYE_ID = "Eye"
+    EYE_ID = "Visual"
     IMAGE_ID = "Image"
 
     COLORS = {
@@ -20,6 +20,7 @@ class GraphConstants:
         OpticalType.OPTICAL: "#4B0082",
         OpticalType.OUTPUT: "#A9A9A9",
         OpticalType.BINOCULARS: "#00FF00",  # Green for Binoculars
+        "Visual": "#00FF00",
     }
 
     DARK_COLORS = {
@@ -28,6 +29,7 @@ class GraphConstants:
         OpticalType.OPTICAL: "#5A1A75",  # Bright Purple
         OpticalType.OUTPUT: "#BBBBBB",  # Another Muted Light Gray
         OpticalType.BINOCULARS: "#007447",  # Vibrant Green
+        "Visual": "#007447",
     }
 
     DARK_MODE_STYLE = {

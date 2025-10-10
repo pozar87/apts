@@ -21,7 +21,7 @@ class Eyepiece(OutputOpticalEqipment):
     return self._field_of_view / zoom
 
   def output_type(self):
-    return GraphConstants.EYE_ID
+    return "Visual"
 
   def register(self, equipment):
     """

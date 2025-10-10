@@ -575,7 +575,7 @@ def test_eyepiece_path_brightness_is_numeric():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == GraphConstants.EYE_ID]
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == "Visual"]
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
