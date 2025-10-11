@@ -3,7 +3,7 @@ import math
 import numpy
 
 from .abstract import OutputOpticalEqipment
-from ..constants import GraphConstants
+from ..constants import GraphConstants, OpticalType
 from ..units import get_unit_registry
 from ..utils import ConnectionType
 
@@ -32,7 +32,7 @@ class Camera(OutputOpticalEqipment):
     return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * get_unit_registry().deg
 
   def output_type(self):
-    return GraphConstants.IMAGE_ID
+    return OpticalType.IMAGE
 
   def register(self, equipment):
     # Add camera node

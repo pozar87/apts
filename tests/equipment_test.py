@@ -115,7 +115,7 @@ def test_camera_path_with_setup_equipment(): # Renamed
 
   # Verify the original DataFrame check for completeness, though target_op checks are more robust
   data_df = e.data()
-  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
   # Find the row corresponding to target_op for DataFrame value check
   found_in_df = False
@@ -292,7 +292,7 @@ def test_telescope_to_camera_direct_t2():
     data_df = eq.data()
 
     # Filter for paths that result in an "Image" type output
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope direct to Camera (T2)"
 
@@ -363,7 +363,7 @@ def test_telescope_barlow_t2_camera():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope -> Barlow (T2) -> Camera"
 
@@ -425,7 +425,7 @@ def test_telescope_std_barlow_t2_camera_variation():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope (std) -> Barlow (T2 out) -> Camera"
 
@@ -485,7 +485,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
@@ -519,7 +519,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     problematic_path_found = False
     for _, row in image_paths.iterrows():
@@ -554,7 +554,7 @@ def test_camera_path_brightness_is_nan():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    camera_rows = df[df[EquipmentTableLabels.TYPE] == GraphConstants.IMAGE_ID]
+    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN

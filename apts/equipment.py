@@ -31,7 +31,7 @@ class Equipment:
         # Register standard input and outputs
         self.add_vertex(GraphConstants.SPACE_ID)
         self.add_vertex(GraphConstants.EYE_ID, node_type=OpticalType.VISUAL)
-        self.add_vertex(GraphConstants.IMAGE_ID)
+        self.add_vertex(GraphConstants.IMAGE_ID, node_type=OpticalType.IMAGE)
         self.register(NakedEye())
         self._connected = False
 
@@ -404,7 +404,7 @@ class Equipment:
         if equipment is not None:
             node_type = equipment.type()
             node_label = "\n".join([equipment.get_name(), equipment.label()])
-        elif node_type == OpticalType.GENERIC or node_type == OpticalType.VISUAL:
+        elif node_type == OpticalType.GENERIC or node_type == OpticalType.VISUAL or node_type == OpticalType.IMAGE:
             node_label = node_name
         elif node_type == OpticalType.INPUT:
             node_label = str(connection_type) + " " + OpticalEquipment.IN
