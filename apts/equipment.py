@@ -278,7 +278,8 @@ class Equipment:
             legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
             if legend.get_title(): # Check if legend has a title
                 legend.get_title().set_color(style['TEXT_COLOR'])
-            for text in legend.get_texts():
+            for text, col in zip(legend.get_texts(), data.columns):
+                text.set_text(col.name)
                 text.set_color(style['TEXT_COLOR'])
         return ax
 
