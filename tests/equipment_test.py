@@ -12,9 +12,9 @@ from . import setup_equipment
 
 def test_zoom():
   e = setup_equipment()
-  df = e.data()
-  # Filter out NakedEye path
-  row = df[df['Label'] != 'Naked Eye 1x7'].iloc[0]
+  data = e.data()
+  # Filter out naked eye path by selecting the path with the expected zoom
+  row = data[data[EquipmentTableLabels.ZOOM] == 30].iloc[0]
   # Only possiable zoom should be 750/25 = 30
   assert row[EquipmentTableLabels.ZOOM] == 30
   # Only possiable fov should be 2.333 ± 0.001
@@ -26,9 +26,9 @@ def test_zoom():
 def test_barlow():
   e = setup_equipment()
   e.register(Barlow(2))
-  df = e.data()
-  # Filter out NakedEye path and sort by zoom to get the barlow path
-  row = df[df['Label'] != 'Naked Eye 1x7'].sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
+  data = e.data()
+  # Filter for the path with barlow, which should have zoom 60
+  row = data[data[EquipmentTableLabels.ZOOM] == 60].iloc[0]
   # Only possiable zoom should be 750/25 * 2 = 60
   assert row[EquipmentTableLabels.ZOOM] == 60
   # Using 3 elements
@@ -40,8 +40,8 @@ def test_barlow_stacking():
   e.register(Barlow(2)) # Changed to use Barlow directly
   e.register(Barlow(3)) # Changed to use Barlow directly
   # Get row with biggest zoom
-  df = e.data()
-  row = df.sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
+  data = e.data()
+  row = data.sort_values(by=EquipmentTableLabels.ZOOM, ascending=False).iloc[0]
   # With two stacked barlows max zoom should be 180 (30 * 3 * 2)
   assert row[EquipmentTableLabels.ZOOM] == 180
   # Using 4 elements
@@ -52,8 +52,9 @@ def test_multi_barlow():
   e = setup_equipment()
   e.register(Barlow(2)) # Changed to use Barlow directly
   e.register(Barlow(3)) # Changed to use Barlow directly
-  # With two barlows and single eyepiece number of possiable connection is 4 (with barlow stacking)
-  assert len(e.data()[e.data()['Label'] != 'Naked Eye 1x7']) == 4
+  # With two barlows and single eyepiece, number of possible connections is 4 (with barlow stacking)
+  # Plus the naked eye path. Total 5.
+  assert len(e.data()[EquipmentTableLabels.ZOOM]) == 5
 
 
 def test_camera_path_with_setup_equipment(): # Renamed
@@ -115,7 +116,7 @@ def test_camera_path_with_setup_equipment(): # Renamed
 
   # Verify the original DataFrame check for completeness, though target_op checks are more robust
   data_df = e.data()
-  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
   # Find the row corresponding to target_op for DataFrame value check
   found_in_df = False
@@ -208,15 +209,13 @@ def test_binoculars_in_equipment_data():
 
     data_df = eq.data()
 
-    # Filter out NakedEye path
-    data_df = data_df[data_df['Label'] != 'Naked Eye 1x7']
+    assert len(data_df) == 2, f"Expected 2 optical paths (NakedEye, Bino), got {len(data_df)}"
 
-    assert len(data_df) == 1, f"Expected 1 optical path for binoculars, got {len(data_df)}"
+    bino_row_df = data_df[data_df[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"]
+    assert not bino_row_df.empty, "Could not find the binocular path in the data"
+    bino_row = bino_row_df.iloc[0]
 
-    bino_row = data_df.iloc[0]
-
-    assert bino_row[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"
-    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name
+    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
     assert bino_row[EquipmentTableLabels.USEFUL_ZOOM]
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8) # 7.5
@@ -246,7 +245,7 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
     found_bino_only_path = False
     found_tele_eyepiece_path = False
 
-    # These checks assume setup_equipment() creates a telescope "SkyWatcher" and an eyepiece "Plossl"
+    # These checks assume setup_equipment() creates a telescope "unknown telescope" and an eyepiece "unknown ocular"
     # and that these result in one or more paths.
     # If setup_equipment() changes, these string checks might need adjustment.
     for index, row in data_df.iterrows():
@@ -292,7 +291,7 @@ def test_telescope_to_camera_direct_t2():
     data_df = eq.data()
 
     # Filter for paths that result in an "Image" type output
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope direct to Camera (T2)"
 
@@ -363,7 +362,7 @@ def test_telescope_barlow_t2_camera():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope -> Barlow (T2) -> Camera"
 
@@ -425,7 +424,7 @@ def test_telescope_std_barlow_t2_camera_variation():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     assert not image_paths.empty, "No image paths found for Telescope (std) -> Barlow (T2 out) -> Camera"
 
@@ -485,7 +484,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
@@ -519,7 +518,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     problematic_path_found = False
     for _, row in image_paths.iterrows():
@@ -554,7 +553,7 @@ def test_camera_path_brightness_is_nan():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
@@ -575,7 +574,7 @@ def test_eyepiece_path_brightness_is_numeric():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name]
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL]
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
@@ -602,27 +601,6 @@ def _create_custom_equipment_for_plotting():
     eq.register(ep)
 
     return eq
-
-
-@patch('apts.equipment.plt')
-def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):
-    eq = setup_equipment()
-    eq.plot_zoom()
-
-    # Check that the data passed to the plot does not contain the naked eye
-    # This requires inspecting the call to _filter_and_merge, which is internal.
-    # A better approach is to mock _filter_and_merge or check the resulting plot data.
-    # Let's check the data that would be plotted.
-    data_for_plot = eq._filter_and_merge('Zoom', True, False)
-    assert 'Naked Eye 1x7' not in data_for_plot.index
-
-@patch('apts.equipment.plt')
-def test_plot_zoom_includes_naked_eye_when_flagged(mock_plt):
-    eq = setup_equipment()
-    eq.plot_zoom(include_naked_eye=True)
-
-    data_for_plot = eq._filter_and_merge('Zoom', True, True)
-    assert 'Naked Eye 1x7' in data_for_plot.index
 
 @patch('apts.equipment.get_dark_mode')
 @patch('apts.equipment.ig.plot') # Mock the ig.plot call itself

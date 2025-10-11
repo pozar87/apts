@@ -160,7 +160,6 @@ class Equipment:
         if not result.empty:  # Only add ID if DataFrame is not empty
             result["ID"] = result.index
             result = result[["ID"] + columns]
-            result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(lambda x: x.name if isinstance(x, OpticalType) else x)
         else:  # If empty, ensure ID column exists for consistency if expected by other code
             result[
                 "ID"
@@ -250,12 +249,12 @@ class Equipment:
     ):
         style = get_plot_style(dark_mode_enabled)
         colors = get_plot_colors(dark_mode_enabled)
-        data = self._filter_and_merge(to_plot, multiline_labels, include_naked_eye)
+        data, legend_labels = self._filter_and_merge(to_plot, multiline_labels, include_naked_eye)
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
 
         # Pass title as None initially, then set it with color
-        ax = data.plot(kind="bar", title=None, stacked=True, color=[colors.get(c, '#CCCCCC') for c in data.columns], **args)
+        ax = data.plot(kind="bar", title=None, stacked=True, color=[colors.get(c, '#CCCCCC') for c in legend_labels], **args)
 
         fig = ax.figure # Get the figure object
         fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
@@ -279,11 +278,8 @@ class Equipment:
             legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
             if legend.get_title(): # Check if legend has a title
                 legend.get_title().set_color(style['TEXT_COLOR'])
-            for text, col in zip(legend.get_texts(), data.columns):
-                if isinstance(col, OpticalType):
-                    text.set_text(col.name)
-                else:
-                    text.set_text(col)
+            for text, col in zip(legend.get_texts(), legend_labels):
+                text.set_text(col.name)
                 text.set_color(style['TEXT_COLOR'])
         return ax
 
@@ -299,6 +295,10 @@ class Equipment:
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
+
+        # Keep the enum type for the legend
+        legend_labels = data[EquipmentTableLabels.TYPE].unique()
+
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
             labels = [
@@ -308,8 +308,12 @@ class Equipment:
         else:
             # For more than 8 option display only ids
             labels = data.index
+
+        # Convert the 'Type' column to string names for the DataFrame
+        data[EquipmentTableLabels.TYPE] = data[EquipmentTableLabels.TYPE].apply(lambda x: x.name if isinstance(x, OpticalType) else x)
+
         # Merge Image and Visual series together
-        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
+        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels), legend_labels
 
     def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
         # Connect all outputs with inputs
