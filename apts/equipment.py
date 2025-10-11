@@ -404,7 +404,7 @@ class Equipment:
         if equipment is not None:
             node_type = equipment.type()
             node_label = "\n".join([equipment.get_name(), equipment.label()])
-        elif node_type == OpticalType.GENERIC:
+        elif node_type == OpticalType.GENERIC or node_type == OpticalType.VISUAL:
             node_label = node_name
         elif node_type == OpticalType.INPUT:
             node_label = str(connection_type) + " " + OpticalEquipment.IN
