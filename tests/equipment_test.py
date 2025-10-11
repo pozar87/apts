@@ -115,7 +115,7 @@ def test_camera_path_with_setup_equipment(): # Renamed
 
   # Verify the original DataFrame check for completeness, though target_op checks are more robust
   data_df = e.data()
-  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+  image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
   # Find the row corresponding to target_op for DataFrame value check
   found_in_df = False
@@ -216,7 +216,7 @@ def test_binoculars_in_equipment_data():
     bino_row = data_df.iloc[0]
 
     assert bino_row[EquipmentTableLabels.LABEL] == "TestBino8x42 8x42"
-    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL
+    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
     assert bino_row[EquipmentTableLabels.USEFUL_ZOOM]
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8) # 7.5
@@ -292,7 +292,7 @@ def test_telescope_to_camera_direct_t2():
     data_df = eq.data()
 
     # Filter for paths that result in an "Image" type output
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, "No image paths found for Telescope direct to Camera (T2)"
 
@@ -363,7 +363,7 @@ def test_telescope_barlow_t2_camera():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, "No image paths found for Telescope -> Barlow (T2) -> Camera"
 
@@ -425,7 +425,7 @@ def test_telescope_std_barlow_t2_camera_variation():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, "No image paths found for Telescope (std) -> Barlow (T2 out) -> Camera"
 
@@ -485,7 +485,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
@@ -519,7 +519,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     problematic_path_found = False
     for _, row in image_paths.iterrows():
@@ -554,7 +554,7 @@ def test_camera_path_brightness_is_nan():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
@@ -575,7 +575,7 @@ def test_eyepiece_path_brightness_is_numeric():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL]
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name]
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
@@ -603,22 +603,6 @@ def _create_custom_equipment_for_plotting():
 
     return eq
 
-@patch('apts.equipment.Equipment._plot')
-def test_plot_legend_labels(mock_plot):
-    """Test that plot legends use the .name of the enum, not the full repr."""
-    eq = setup_equipment()
-
-    # Call the plotting function
-    eq.plot_zoom()
-
-    # The first argument to the first call of mock_plot is the data that was passed to it.
-    # The second argument is the title, and so on.
-    # We can check the `data` that was passed to the mocked `_plot` method.
-    # However, the legend formatting happens inside `_plot`, so we need to check the calls to the legend object.
-    # This test is becoming too complex. A simpler approach is to check the final plot object.
-    # Since we can't easily do that without a full rendering pipeline, we will trust the implementation
-    # and remove this complex test.
-    pass
 
 @patch('apts.equipment.plt')
 def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):

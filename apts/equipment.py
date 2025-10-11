@@ -160,6 +160,7 @@ class Equipment:
         if not result.empty:  # Only add ID if DataFrame is not empty
             result["ID"] = result.index
             result = result[["ID"] + columns]
+            result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(lambda x: x.name if isinstance(x, OpticalType) else x)
         else:  # If empty, ensure ID column exists for consistency if expected by other code
             result[
                 "ID"
@@ -279,7 +280,10 @@ class Equipment:
             if legend.get_title(): # Check if legend has a title
                 legend.get_title().set_color(style['TEXT_COLOR'])
             for text, col in zip(legend.get_texts(), data.columns):
-                text.set_text(col.name)
+                if isinstance(col, OpticalType):
+                    text.set_text(col.name)
+                else:
+                    text.set_text(col)
                 text.set_color(style['TEXT_COLOR'])
         return ax
 
@@ -305,7 +309,7 @@ class Equipment:
             # For more than 8 option display only ids
             labels = data.index
         # Merge Image and Visual series together
-        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)  # pyright: ignore
+        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)
 
     def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
         # Connect all outputs with inputs
