@@ -31,11 +31,16 @@ class Objects(ABC):
         hours_margin=0,
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
+        limiting_magnitude=None,
     ):
         max_magnitude = (
-            star_magnitude_limit
-            if star_magnitude_limit is not None
-            else conditions.max_object_magnitude
+            limiting_magnitude
+            if limiting_magnitude is not None
+            else (
+                star_magnitude_limit
+                if star_magnitude_limit is not None
+                else conditions.max_object_magnitude
+            )
         )
         magnitude_values = self.objects["Magnitude"].apply(
             lambda x: x.magnitude if hasattr(x, "magnitude") else x
