@@ -1,6 +1,7 @@
 import functools
 import operator
 from .opticalequipment.binoculars import Binoculars
+from .opticalequipment.naked_eye import NakedEye
 from .units import get_unit_registry
 
 
@@ -10,7 +11,7 @@ class OpticsUtils:
   def expand(path):
     # First item in the path should be the telescope or binoculars
     main_optic = path[0]
-    if isinstance(main_optic, Binoculars):
+    if isinstance(main_optic, (Binoculars, NakedEye)):
         # Treat binoculars as the 'output' as well for path structure consistency
         return (main_optic, [], main_optic)
 
@@ -30,7 +31,7 @@ class OpticsUtils:
 
   @staticmethod
   def compute_zoom(telescope, barlows, output):
-    if isinstance(telescope, Binoculars):
+    if isinstance(telescope, (Binoculars, NakedEye)):
         return telescope.magnification * get_unit_registry().dimensionless
 
     # Original logic
@@ -39,7 +40,7 @@ class OpticsUtils:
 
   @staticmethod
   def compute_field_of_view(telescope, barlows, output):
-    if isinstance(telescope, Binoculars):
+    if isinstance(telescope, (Binoculars, NakedEye)):
         return telescope.fov()
 
     # Original logic
@@ -71,7 +72,7 @@ class OpticalPath:
     return OpticsUtils.barlows_multiplications(self.barlows)
 
   def label(self):
-    if isinstance(self.telescope, Binoculars):
+    if isinstance(self.telescope, (Binoculars, NakedEye)):
         return str(self.telescope)
     return ", ".join([str(self.telescope)] + [str(item) for item in self.barlows] + [str(self.output)])
 
@@ -79,7 +80,7 @@ class OpticalPath:
     # For binoculars, path is [Binoculars], expanded to (Binoculars, [], Binoculars)
     # So self.barlows is []. Length should be 1 for a direct binocular path.
     # Original: return 2 + len(self.barlows) (Telescope + Output + Barlows)
-    if isinstance(self.telescope, Binoculars):
+    if isinstance(self.telescope, (Binoculars, NakedEye)):
         return 1 # Just the binoculars itself
     return 2 + len(self.barlows)
 
@@ -88,7 +89,7 @@ class OpticalPath:
     return OpticsUtils.compute_field_of_view(self.telescope, self.barlows, self.output)
 
   def brightness(self):
-    if isinstance(self.telescope, Binoculars):
+    if isinstance(self.telescope, (Binoculars, NakedEye)):
         # self.telescope.brightness() returns a float like 75.0 (for 75%)
         # OutputOpticalEquipment.brightness returns a value like <Quantity(75.0, 'dimensionless')>
         # To be consistent so that .magnitude can be called later:
@@ -97,7 +98,7 @@ class OpticalPath:
     return self.output.brightness(self.telescope, self.zoom())
 
   def exit_pupil(self):
-      if isinstance(self.telescope, Binoculars):
+      if isinstance(self.telescope, (Binoculars, NakedEye)):
           return self.telescope.exit_pupil() # This returns a Quantity
 
       # Original logic for telescopes:

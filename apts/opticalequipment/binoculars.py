@@ -75,7 +75,7 @@ class Binoculars(OpticalEquipment):
 
     def output_type(self):
         # Describes the type of view produced, similar to Eyepiece or Camera
-        return "Visual" # Or a more specific enum/constant if available
+        return OpticalType.VISUAL
 
     def max_useful_zoom(self):
         # For binoculars, their own magnification is effectively the max useful zoom

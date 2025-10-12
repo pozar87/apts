@@ -1,5 +1,5 @@
 from .abstract import OutputOpticalEqipment
-from ..constants import GraphConstants
+from ..constants import GraphConstants, OpticalType
 
 from ..units import get_unit_registry
 from ..utils import ConnectionType
@@ -21,7 +21,7 @@ class Eyepiece(OutputOpticalEqipment):
     return self._field_of_view / zoom
 
   def output_type(self):
-    return GraphConstants.EYE_ID
+    return OpticalType.VISUAL
 
   def register(self, equipment):
     """

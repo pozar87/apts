@@ -12,6 +12,7 @@ from .config import get_dark_mode
 from .constants.graphconstants import get_plot_style, get_plot_colors
 from .opticalequipment import (
     OpticalEquipment,
+    NakedEye,
 )
 from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
@@ -29,8 +30,9 @@ class Equipment:
         self.connection_garph = ig.Graph(directed=True)
         # Register standard input and outputs
         self.add_vertex(GraphConstants.SPACE_ID)
-        self.add_vertex(GraphConstants.EYE_ID)
-        self.add_vertex(GraphConstants.IMAGE_ID)
+        self.add_vertex(GraphConstants.EYE_ID, node_type=OpticalType.VISUAL)
+        self.add_vertex(GraphConstants.IMAGE_ID, node_type=OpticalType.IMAGE)
+        self.register(NakedEye())
         self._connected = False
 
     def _get_paths(self, output_id):
@@ -91,11 +93,11 @@ class Equipment:
                 # path.telescope is the main optic (telescope or binoculars)
                 # path.output is the final element (eyepiece, camera, or binoculars itself)
 
-                # Determine if the main optic is Binoculars
-                is_binoculars = isinstance(path.telescope, Binoculars)
+                # Determine if the main optic is Binoculars or NakedEye
+                is_binoculars = isinstance(path.telescope, (Binoculars, NakedEye))
 
                 # Calculate useful_zoom
-                useful_zoom_value = True  # Default for binoculars
+                useful_zoom_value = True  # Default for binoculars and naked eye
                 if not is_binoculars:
                     if hasattr(path.telescope, "max_useful_zoom"):
                         # max_useful_zoom() on Telescope returns a float, zoom() is a Quantity
@@ -166,7 +168,7 @@ class Equipment:
 
         return result
 
-    def plot_zoom(self, dark_mode_override: Optional[bool] = None, **args):
+    def plot_zoom(self, dark_mode_override: Optional[bool] = None, include_naked_eye: bool = False, **args):
         """
         Plot available magnification
         """
@@ -180,6 +182,7 @@ class Equipment:
             "Used equipment",
             "Magnification",
             dark_mode_enabled=effective_dark_mode,
+            include_naked_eye=include_naked_eye,
             **args,
         )
         # Add marker for maximal useful zoom
@@ -196,7 +199,7 @@ class Equipment:
         """
         return 350
 
-    def plot_fov(self, dark_mode_override: Optional[bool] = None, **args):
+    def plot_fov(self, dark_mode_override: Optional[bool] = None, include_naked_eye: bool = False, **args):
         """
         Plot available fields of view
         """
@@ -221,6 +224,7 @@ class Equipment:
             "Used equipment",
             "Field if view [°]",
             dark_mode_enabled=effective_dark_mode,
+            include_naked_eye=include_naked_eye,
             **args,
         )
         plot.yaxis.set_major_formatter(FuncFormatter(formatter))
@@ -240,15 +244,17 @@ class Equipment:
         dark_mode_enabled: bool,
         autolayout=False,
         multiline_labels=True,
+        include_naked_eye=False,
         **args,
     ):
         style = get_plot_style(dark_mode_enabled)
-        data = self._filter_and_merge(to_plot, multiline_labels)
+        colors = get_plot_colors(dark_mode_enabled)
+        data, legend_labels = self._filter_and_merge(to_plot, multiline_labels, include_naked_eye)
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
 
         # Pass title as None initially, then set it with color
-        ax = data.plot(kind="bar", title=None, stacked=True, **args)
+        ax = data.plot(kind="bar", title=None, stacked=True, color=[colors.get(c, '#CCCCCC') for c in legend_labels], **args)
 
         fig = ax.figure # Get the figure object
         fig.patch.set_facecolor(style['FIGURE_FACE_COLOR'])
@@ -272,18 +278,27 @@ class Equipment:
             legend.get_frame().set_edgecolor(style['AXIS_COLOR'])
             if legend.get_title(): # Check if legend has a title
                 legend.get_title().set_color(style['TEXT_COLOR'])
-            for text in legend.get_texts():
+            for text, col in zip(legend.get_texts(), legend_labels):
+                text.set_text(col.name)
                 text.set_color(style['TEXT_COLOR'])
         return ax
 
-    def _filter_and_merge(self, to_plot, multiline_labels):
+    def _filter_and_merge(self, to_plot, multiline_labels, include_naked_eye=False):
         """
-        This methods filter data to plot and merge Eye and Image series together
+        This methods filter data to plot and merge Visual and Image series together
         """
         # Filter only relevant data - by to_plot key
-        data = self.data()[
+        all_data = self.data()
+        if not include_naked_eye:
+            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != 'Naked Eye 1x7']
+
+        data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
+
+        # Keep the enum type for the legend
+        legend_labels = data[EquipmentTableLabels.TYPE].unique()
+
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
             labels = [
@@ -293,8 +308,12 @@ class Equipment:
         else:
             # For more than 8 option display only ids
             labels = data.index
-        # Merge Image and Eye series together
-        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels)  # pyright: ignore
+
+        # Convert the 'Type' column to string names for the DataFrame
+        data[EquipmentTableLabels.TYPE] = data[EquipmentTableLabels.TYPE].apply(lambda x: x.name if isinstance(x, OpticalType) else x)
+
+        # Merge Image and Visual series together
+        return pd.DataFrame([{row[1]: row[0]} for row in data.values], index=labels), legend_labels
 
     def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
         # Connect all outputs with inputs
@@ -394,7 +413,7 @@ class Equipment:
         if equipment is not None:
             node_type = equipment.type()
             node_label = "\n".join([equipment.get_name(), equipment.label()])
-        elif node_type == OpticalType.GENERIC:
+        elif node_type == OpticalType.GENERIC or node_type == OpticalType.VISUAL or node_type == OpticalType.IMAGE:
             node_label = node_name
         elif node_type == OpticalType.INPUT:
             node_label = str(connection_type) + " " + OpticalEquipment.IN
