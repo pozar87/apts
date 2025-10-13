@@ -264,7 +264,13 @@ class SolarObjects(Objects):
         ] = self.objects.apply(compute_position, axis=1)
 
     def get_visible(
-        self, conditions, start, stop, hours_margin=0, sort_by=ObjectTableLabels.TRANSIT
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        limiting_magnitude=None,
     ):
         visible = self.objects.copy()
         # Add ID collumn
@@ -272,6 +278,12 @@ class SolarObjects(Objects):
 
         # Safely convert Magnitude to float before filtering
         visible["MagnitudeFloat"] = visible.Magnitude.apply(_to_float)
+
+        max_magnitude = (
+            limiting_magnitude
+            if limiting_magnitude is not None
+            else conditions.max_object_magnitude
+        )
 
         visible = visible[
             # Filter objects by they rising and setting within the time window, handling wrap-around
@@ -290,10 +302,7 @@ class SolarObjects(Objects):
             # Filter object by they magnitude
             # Allow objects with NA magnitude to pass through,
             # or filter by magnitude for others.
-            (
-                pd.isna(visible.MagnitudeFloat)
-                | (visible.MagnitudeFloat < float(conditions.max_object_magnitude))
-            )
+            (pd.isna(visible.MagnitudeFloat) | (visible.MagnitudeFloat < float(max_magnitude)))
         ]
 
         if conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:

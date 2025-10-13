@@ -36,11 +36,13 @@ class Observation:
         sun_observation=False,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
+        limiting_magnitude: Optional[float] = None,
     ):
         self.place = place
         self.equipment = equipment
         self.conditions = conditions
         self.sun_observation = sun_observation
+        self.limiting_magnitude = limiting_magnitude
 
         # Initialize core attributes that depend on date calculations
         self.effective_date = None
@@ -166,17 +168,29 @@ class Observation:
 
     def get_visible_messier(self, **args):
         return self.local_messier.get_visible(
-            self.conditions, self.start, self.time_limit, **args
+            self.conditions,
+            self.start,
+            self.time_limit,
+            limiting_magnitude=self.limiting_magnitude,
+            **args,
         )
 
     def get_visible_ngc(self, **args):
         return self.local_ngc.get_visible(
-            self.conditions, self.start, self.time_limit, **args
+            self.conditions,
+            self.start,
+            self.time_limit,
+            limiting_magnitude=self.limiting_magnitude,
+            **args,
         )
 
     def get_visible_planets(self, **args):
         return self.local_planets.get_visible(
-            self.conditions, self.start, self.time_limit, **args
+            self.conditions,
+            self.start,
+            self.time_limit,
+            limiting_magnitude=self.limiting_magnitude,
+            **args,
         )
 
     def get_astronomical_events(
