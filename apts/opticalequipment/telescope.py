@@ -6,17 +6,31 @@ from ..utils import ConnectionType
 from ..constants import GraphConstants
 
 
+from enum import Enum
+
+
+class TelescopeType(Enum):
+    REFRACTOR = "refractor"
+    REFLECTOR = "reflector"
+    CATADIOPTRIC = "catadioptric"
+
+
 class Telescope(OpticalEquipment):
   """
   Class representing telescope
   """
 
   def __init__(self, aperture, focal_length, vendor="unknown telescope", connection_type=ConnectionType.F_1_25,
-               t2_output=False):
+               t2_output=False,
+               has_diagonal=False,
+               telescope_type: TelescopeType = TelescopeType.REFRACTOR
+               ):
     super(Telescope, self).__init__(focal_length, vendor)
     self.aperture = aperture * get_unit_registry().mm
     self.connection_type = connection_type
     self.t2_output = t2_output
+    self.has_diagonal = has_diagonal
+    self.telescope_type = telescope_type
 
   def focal_ratio(self):
     return self.focal_length / self.aperture

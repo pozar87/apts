@@ -122,3 +122,19 @@ class OpticalPath:
     elements = set((self.telescope, self.output))
     elements |= set(self.barlows)
     return frozenset(elements)
+
+  def is_flipped(self):
+    from .opticalequipment.telescope import Telescope, TelescopeType
+    if not isinstance(self.telescope, Telescope):
+        return False
+
+    # A refractor with a diagonal flips the image left-to-right (mirror image).
+    # A Newtonian reflector also produces a flipped image.
+    # For simplicity, we'll treat both as "flipped" for now.
+    if self.telescope.telescope_type == TelescopeType.REFRACTOR and self.telescope.has_diagonal:
+        return True
+    if self.telescope.telescope_type == TelescopeType.REFLECTOR:
+        return True
+    if self.telescope.telescope_type == TelescopeType.CATADIOPTRIC and self.telescope.has_diagonal:
+        return True
+    return False

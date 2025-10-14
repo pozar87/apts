@@ -9,3 +9,4 @@ class EquipmentTableLabels:
   RANGE = 'Range'
   BRIGHTNESS = 'Brightness'
   ELEMENTS = 'Elements'
+  FLIPPED = 'Flipped'

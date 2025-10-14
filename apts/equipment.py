@@ -80,6 +80,7 @@ class Equipment:
             EquipmentTableLabels.RANGE,
             EquipmentTableLabels.BRIGHTNESS,
             EquipmentTableLabels.ELEMENTS,
+            EquipmentTableLabels.FLIPPED
         ]
 
         # Import Binoculars here to keep it local to where it's used for isinstance
@@ -130,6 +131,7 @@ class Equipment:
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
                         path.length(),  # length() in OpticalPath returns int
+                        path.is_flipped()
                     ]
                 )
 

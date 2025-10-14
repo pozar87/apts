@@ -1068,6 +1068,7 @@ def _generate_plot_skymap(
     plot_ngc: bool = False,
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
+    flipped_view: bool = False,
     **kwargs,
 ):
     """
@@ -1235,6 +1236,10 @@ def _generate_plot_skymap(
             f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
             color=style["TEXT_COLOR"],
         )
+        if flipped_view:
+            ax.invert_xaxis()
+            ax.text(0.05, 0.95, "Flipped", transform=ax.transAxes, fontsize=12,
+                    verticalalignment='top', color=style["TEXT_COLOR"])
         return fig
     else:
         fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
@@ -1425,8 +1430,15 @@ def plot_skymap(
     plot_ngc: bool = False,
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
+    equipment_id: Optional[int] = None,
     **kwargs,
 ):
+    flipped_view = False
+    if equipment_id is not None and zoom_deg is not None:
+        equipment_data = observation.equipment.data()
+        if not equipment_data.empty and equipment_id in equipment_data['ID'].values:
+            flipped_view = equipment_data.loc[equipment_data['ID'] == equipment_id, 'Flipped'].iloc[0]
+
     return _generate_plot_skymap(
         observation,
         target_name=target_name,
@@ -1438,6 +1450,7 @@ def plot_skymap(
         plot_ngc=plot_ngc,
         plot_planets=plot_planets,
         plot_date=plot_date,
+        flipped_view=flipped_view,
         **kwargs,
     )
 
