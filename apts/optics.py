@@ -132,9 +132,9 @@ class OpticalPath:
     # A Newtonian reflector also produces a flipped image.
     # For simplicity, we'll treat both as "flipped" for now.
     if self.telescope.telescope_type == TelescopeType.REFRACTOR and self.telescope.has_diagonal:
-        return True
+        return bool(True)
     if self.telescope.telescope_type == TelescopeType.REFLECTOR:
-        return True
-    if self.telescope.telescope_type == TelescopeType.CATADIOPTRIC and self.telescope.has_diagonal:
-        return True
-    return False
+        return bool(True)
+    if self.telescope.telescope_type == TelescopeType.CATADIOPTRIC and not self.telescope.has_diagonal:
+        return bool(True)
+    return bool(False)

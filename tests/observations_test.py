@@ -1426,5 +1426,43 @@ class TestObservationSkymap(unittest.TestCase):
         )
 
 
+class TestObservationSkymapFlipped(unittest.TestCase):
+    def setUp(self):
+        self.observation = setup_observation()
+        # Set a fixed date for deterministic tests
+        self.observation.effective_date = self.observation.place.ts.utc(
+            2025, 2, 18, 12, 0, 0
+        )
+
+    @patch("apts.plot.pyplot")
+    def test_plot_skymap_flipped(self, mock_pyplot):
+        """Test that plot_skymap generates a flipped plot."""
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # Configure mock_ax to return realistic limits
+        mock_ax.get_xlim.return_value = (-10, 10)
+        mock_ax.get_ylim.return_value = (-10, 10)
+
+        self.observation.equipment.data = MagicMock(return_value=pd.DataFrame({
+            'ID': [0],
+            'Flipped': [True]
+        }))
+
+        fig = self.observation.plot_skymap(target_name="M31", zoom_deg=15.0, equipment_id=0)
+
+        self.assertIsNotNone(fig)
+        mock_pyplot.subplots.assert_called_once()
+        self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
+        # Assert that set_xlim and set_ylim were called, indicating zoom logic was applied
+        mock_ax.set_xlim.assert_called_once()
+        mock_ax.set_ylim.assert_called_once()
+        mock_ax.invert_xaxis.assert_called_once()
+        mock_ax.text.assert_called_with(0.05, 0.95, "Flipped", transform=mock_ax.transAxes, fontsize=12,
+                                        verticalalignment='top', color=unittest.mock.ANY)
+
+
 if __name__ == "__main__":
     unittest.main()

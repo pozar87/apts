@@ -5,9 +5,42 @@ from unittest.mock import patch, MagicMock, ANY
 from apts.equipment import Equipment
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece
+from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
 from apts.utils import ConnectionType
 from . import setup_equipment
+
+
+def test_flipped_view():
+    # Refractor with diagonal should be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, has_diagonal=True, telescope_type=TelescopeType.REFRACTOR))
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == True
+
+    # Refractor without diagonal should not be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, has_diagonal=False, telescope_type=TelescopeType.REFRACTOR))
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == False
+
+    # Reflector should be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFLECTOR))
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == True
+
+    # Catadioptric with diagonal should be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, has_diagonal=True, telescope_type=TelescopeType.CATADIOPTRIC))
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == False
+
+    # Catadioptric without diagonal should not be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, has_diagonal=False, telescope_type=TelescopeType.CATADIOPTRIC))
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == True
 
 
 def test_zoom():
