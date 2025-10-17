@@ -9,19 +9,22 @@ class OpticsUtils:
 
   @staticmethod
   def expand(path):
+    from .opticalequipment.diagonal import Diagonal
     # First item in the path should be the telescope or binoculars
     main_optic = path[0]
     if isinstance(main_optic, (Binoculars, NakedEye)):
         # Treat binoculars as the 'output' as well for path structure consistency
-        return (main_optic, [], main_optic)
+        return (main_optic, [], [], main_optic)
 
     # Original logic for telescopes
     telescope = main_optic
     # Last item in the path is output
     output = path[-1]
     # Barlow lenses are in the middle
-    barlows = path[1:-1]
-    return (telescope, barlows, output)
+    intermediate = path[1:-1]
+    barlows = [item for item in intermediate if not isinstance(item, Diagonal)]
+    diagonals = [item for item in intermediate if isinstance(item, Diagonal)]
+    return (telescope, barlows, diagonals, output)
 
   @staticmethod
   def barlows_multiplications(barlows_list):
@@ -55,15 +58,16 @@ class OpticalPath:
   Class representing an optical path in a telescope setup.
   """
 
-  def __init__(self, telescope, barlows, output):
+  def __init__(self, telescope, barlows, diagonals, output):
     self.telescope = telescope
     self.barlows = barlows
+    self.diagonals = diagonals
     self.output = output
 
   @classmethod
   def from_path(cls, path):
-    telescope, barlows, output = OpticsUtils.expand(path)
-    return cls(telescope, barlows, output)
+    telescope, barlows, diagonals, output = OpticsUtils.expand(path)
+    return cls(telescope, barlows, diagonals, output)
 
   def zoom(self):
     return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
@@ -74,7 +78,7 @@ class OpticalPath:
   def label(self):
     if isinstance(self.telescope, (Binoculars, NakedEye)):
         return str(self.telescope)
-    return ", ".join([str(self.telescope)] + [str(item) for item in self.barlows] + [str(self.output)])
+    return ", ".join([str(self.telescope)] + [str(item) for item in self.barlows] + [str(item) for item in self.diagonals] + [str(self.output)])
 
   def length(self):
     # For binoculars, path is [Binoculars], expanded to (Binoculars, [], Binoculars)
@@ -82,7 +86,7 @@ class OpticalPath:
     # Original: return 2 + len(self.barlows) (Telescope + Output + Barlows)
     if isinstance(self.telescope, (Binoculars, NakedEye)):
         return 1 # Just the binoculars itself
-    return 2 + len(self.barlows)
+    return 2 + len(self.barlows) + len(self.diagonals)
 
 
   def fov(self):
@@ -121,6 +125,7 @@ class OpticalPath:
     """
     elements = set((self.telescope, self.output))
     elements |= set(self.barlows)
+    elements |= set(self.diagonals)
     return frozenset(elements)
 
   def is_flipped(self):
@@ -130,11 +135,10 @@ class OpticalPath:
 
     # A refractor with a diagonal flips the image left-to-right (mirror image).
     # A Newtonian reflector also produces a flipped image.
-    # For simplicity, we'll treat both as "flipped" for now.
-    if self.telescope.telescope_type == TelescopeType.REFRACTOR and self.telescope.has_diagonal:
-        return bool(True)
+    if self.telescope.telescope_type == TelescopeType.REFRACTOR and self.diagonals:
+        return True
     if self.telescope.telescope_type == TelescopeType.REFLECTOR:
-        return bool(True)
-    if self.telescope.telescope_type == TelescopeType.CATADIOPTRIC and not self.telescope.has_diagonal:
-        return bool(True)
-    return bool(False)
+        return True
+    if self.telescope.telescope_type == TelescopeType.CATADIOPTRIC and self.diagonals:
+        return True
+    return False

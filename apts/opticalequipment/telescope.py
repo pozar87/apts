@@ -22,14 +22,12 @@ class Telescope(OpticalEquipment):
 
   def __init__(self, aperture, focal_length, vendor="unknown telescope", connection_type=ConnectionType.F_1_25,
                t2_output=False,
-               has_diagonal=False,
                telescope_type: TelescopeType = TelescopeType.REFRACTOR
                ):
     super(Telescope, self).__init__(focal_length, vendor)
     self.aperture = aperture * get_unit_registry().mm
     self.connection_type = connection_type
     self.t2_output = t2_output
-    self.has_diagonal = has_diagonal
     self.telescope_type = telescope_type
 
   def focal_ratio(self):
