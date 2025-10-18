@@ -1,6 +1,6 @@
 import unittest
 from apts.equipment import Equipment
-from apts.opticalequipment import NakedEye, Binoculars
+from apts.opticalequipment import NakedEye
 from apts.constants import GraphConstants, EquipmentTableLabels
 
 class TestNakedEye(unittest.TestCase):

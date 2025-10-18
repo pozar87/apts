@@ -11,11 +11,10 @@ import functools
 import cProfile
 import pstats
 import io
-import os
 from contextlib import contextmanager
-from typing import Dict, List, Callable, Any, Optional
+from typing import Dict, List, Callable, Optional
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class PerformanceProfiler:

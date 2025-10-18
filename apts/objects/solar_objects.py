@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 import functools
 import numpy
 import pandas as pd
@@ -10,7 +9,7 @@ from ..utils import planetary, MINOR_PLANET_NAMES
 from apts.place import Place
 
 
-from ..cache import get_ephemeris, get_mpcorb_data, get_timescale
+from ..cache import get_mpcorb_data
 
 
 from decimal import Decimal

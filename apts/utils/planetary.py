@@ -102,7 +102,6 @@ def get_technical_name(simple_name: str) -> str:
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
 from types import SimpleNamespace
-import pandas as pd
 from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
 
 

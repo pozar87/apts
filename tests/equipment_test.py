@@ -5,7 +5,6 @@ from unittest.mock import patch, MagicMock, ANY
 from apts.equipment import Equipment
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece, Diagonal
-from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece, Diagonal
 from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
 from apts.utils import ConnectionType

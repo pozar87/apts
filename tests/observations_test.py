@@ -17,7 +17,7 @@ from apts.constants.objecttablelabels import (
 )  # Added ObjectTableLabels
 from apts.units import ureg
 from tests import setup_observation
-from apts.conditions import Conditions, DefaultConditions
+from apts.conditions import Conditions
 from apts.constants.twilight import Twilight
 
 
