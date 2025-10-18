@@ -1461,18 +1461,22 @@ def plot_skymap(
     plot_date: Optional[datetime] = None,
     equipment_id: Optional[int] = None,
     magnification: Optional[float] = None,
-    is_flipped: Optional[bool] = None,
+    flip_horizontally: Optional[bool] = None,
+    flip_vertically: Optional[bool] = None,
     **kwargs,
 ):
-    flipped_view = False
-    if is_flipped is not None:
-        flipped_view = is_flipped
+    flipped_horizontally = False
+    flipped_vertically = False
+    if flip_horizontally is not None:
+        flipped_horizontally = flip_horizontally
+    if flip_vertically is not None:
+        flipped_vertically = flip_vertically
     elif equipment_id is not None and zoom_deg is not None:
         equipment_data = observation.equipment.data()
         if not equipment_data.empty and equipment_id in equipment_data["ID"].values:
-            flipped_view = equipment_data.loc[
-                equipment_data["ID"] == equipment_id, "Flipped"
-            ].iloc[0]
+            row = equipment_data.loc[equipment_data["ID"] == equipment_id]
+            flipped_horizontally = row["Flipped Horizontally"].iloc[0]
+            flipped_vertically = row["Flipped Vertically"].iloc[0]
 
     return _generate_plot_skymap(
         observation,
@@ -1485,7 +1489,7 @@ def plot_skymap(
         plot_ngc=plot_ngc,
         plot_planets=plot_planets,
         plot_date=plot_date,
-        flipped_view=flipped_view,
+        flipped_view=flipped_horizontally,
         magnification=magnification,
         **kwargs,
     )

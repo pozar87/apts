@@ -322,7 +322,8 @@ class Observation:
         plot_planets: bool = False,
         plot_date: Optional[datetime] = None,
         magnification: Optional[float] = None,
-        is_flipped: Optional[bool] = None,
+        flip_horizontally: Optional[bool] = None,
+        flip_vertically: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -345,7 +346,8 @@ class Observation:
             plot_date (Optional[datetime]): The specific date and time for which to generate the skymap.
                                             If None, the middle of the observation window is used.
             magnification (Optional[float]): The magnification level to display on the plot.
-            is_flipped (Optional[bool]): If True, the skymap's horizontal axis is inverted.
+            flip_horizontally (Optional[bool]): If True, the skymap's horizontal axis is inverted.
+            flip_vertically (Optional[bool]): If True, the skymap's vertical axis is inverted.
             **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id`.
 
         Returns:
@@ -363,7 +365,8 @@ class Observation:
             plot_planets=plot_planets,
             plot_date=plot_date,
             magnification=magnification,
-            is_flipped=is_flipped,
+            flip_horizontally=flip_horizontally,
+            flip_vertically=flip_vertically,
             **kwargs,
         )
 
