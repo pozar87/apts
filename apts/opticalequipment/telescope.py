@@ -99,9 +99,8 @@ class Telescope(OpticalEquipment):
 
     def __str__(self):
         # Format: <vendor> <aperture>/<focal length>
-        return "{} ({}) {}/{}".format(
+        return "{} {}/{}".format(
             self.vendor,
-            self.telescope_type,
             self.aperture.magnitude,
             self.focal_length.magnitude,
         )
