@@ -9,4 +9,5 @@ class EquipmentTableLabels:
   RANGE = 'Range'
   BRIGHTNESS = 'Brightness'
   ELEMENTS = 'Elements'
-  FLIPPED = 'Flipped'
+  FLIPPED_HORIZONTALLY = 'Flipped Horizontally'
+  FLIPPED_VERTICALLY = 'Flipped Vertically'

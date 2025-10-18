@@ -12,45 +12,41 @@ from . import setup_equipment
 
 
 def test_flipped_view():
-    # Refractor with diagonal should be flipped
+    # Telescope only is flipped horizontally and vertically
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
+    e.register(Telescope(150, 750))
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 2].iloc[0]
+    assert row['Flipped Horizontally'] == True
+    assert row['Flipped Vertically'] == True
+
+    # Telescope with star diagonal is not flipped horizontally, but is flipped vertically
+    e = Equipment()
+    e.register(Telescope(150, 750))
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    assert e.data()[e.data()['Elements'] == 3].iloc[0]['Flipped'] == True
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row['Flipped Horizontally'] == False
+    assert row['Flipped Vertically'] == True
 
-    # Refractor without diagonal should not be flipped
+    # Telescope with two star diagonals is flipped horizontally and vertically
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
-    e.register(Eyepiece(25))
-    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == False
-
-    # Reflector should be flipped
-    e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFLECTOR))
-    e.register(Eyepiece(25))
-    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == True
-
-    # Catadioptric with diagonal should be flipped
-    e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.CATADIOPTRIC))
+    e.register(Telescope(150, 750))
+    e.register(Diagonal())
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    assert e.data()[e.data()['Elements'] == 3].iloc[0]['Flipped'] == True
+    row = e.data()[e.data()['Elements'] == 4].iloc[0]
+    assert row['Flipped Horizontally'] == True
+    assert row['Flipped Vertically'] == True
 
-    # Catadioptric without diagonal should not be flipped
+    # Telescope with erecting diagonal is not flipped
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.CATADIOPTRIC))
+    e.register(Telescope(150, 750))
+    e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
-    assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == False
-
-    # Refractor with Barlow and Diagonal should be flipped
-    e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
-    e.register(Barlow(2))
-    e.register(Diagonal())
-    e.register(Eyepiece(25))
-    assert e.data()[e.data()['Elements'] == 4].iloc[0]['Flipped'] == True
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row['Flipped Horizontally'] == False
+    assert row['Flipped Vertically'] == False
 
 
 def test_zoom():

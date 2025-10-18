@@ -1447,7 +1447,7 @@ class TestObservationSkymapFlipped(unittest.TestCase):
         mock_ax.get_ylim.return_value = (-10, 10)
 
         fig = self.observation.plot_skymap(
-            target_name="M31", zoom_deg=15.0, is_flipped=True
+            target_name="M31", zoom_deg=15.0, flip_horizontally=True
         )
 
         self.assertIsNotNone(fig)
