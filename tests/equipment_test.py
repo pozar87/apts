@@ -45,6 +45,14 @@ def test_flipped_view():
     e.register(Eyepiece(25))
     assert e.data()[e.data()['Label'] != 'Naked Eye 1x7'].iloc[0]['Flipped'] == False
 
+    # Refractor with Barlow and Diagonal should be flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
+    e.register(Barlow(2))
+    e.register(Diagonal())
+    e.register(Eyepiece(25))
+    assert e.data()[e.data()['Elements'] == 4].iloc[0]['Flipped'] == True
+
 
 def test_zoom():
     e = setup_equipment()
