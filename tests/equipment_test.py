@@ -356,7 +356,7 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
                 "Binocular path should not include Eyepiece parts"
             )
             found_bino_only_path = True
-        elif "unknown telescope 150/750" in label and "unknown ocular f=25" in label:
+        elif "unknown telescope" in label and "150/750" in label and "unknown ocular f=25" in label:
             # Assuming a telescope path will have more than 1 element (telescope + eyepiece/camera)
             assert elements > 1, (
                 f"Telescope path '{label}' should have more than 1 element, got {elements}"
