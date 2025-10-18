@@ -321,8 +321,36 @@ class Observation:
         plot_ngc: bool = False,
         plot_planets: bool = False,
         plot_date: Optional[datetime] = None,
+        magnification: Optional[float] = None,
+        is_flipped: Optional[bool] = None,
         **kwargs,
     ):
+        """
+        Generates and displays a skymap for a specified celestial object.
+
+        This method provides a high-level interface to the plotting capabilities in `apts.plot`.
+        It can generate either a full-sky polar plot or a zoomed-in Cartesian plot for a
+        given target. The orientation of the view can be flipped to match the output of
+        certain telescopes.
+
+        Args:
+            target_name (str): The name of the target object to center the skymap on.
+            dark_mode_override (Optional[bool]): If set, overrides the system's dark mode setting.
+            zoom_deg (Optional[float]): The diameter of the zoomed-in view in degrees. If None, a full skymap is generated.
+            star_magnitude_limit (Optional[float]): The faintest magnitude of stars to plot.
+            plot_stars (bool): Whether to plot stars on the skymap. Defaults to True.
+            plot_messier (bool): Whether to plot Messier objects. Defaults to False.
+            plot_ngc (bool): Whether to plot NGC objects. Defaults to False.
+            plot_planets (bool): Whether to plot planets. Defaults to False.
+            plot_date (Optional[datetime]): The specific date and time for which to generate the skymap.
+                                            If None, the middle of the observation window is used.
+            magnification (Optional[float]): The magnification level to display on the plot.
+            is_flipped (Optional[bool]): If True, the skymap's horizontal axis is inverted.
+            **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id`.
+
+        Returns:
+            A matplotlib Figure object representing the skymap.
+        """
         return apts_plot.plot_skymap(
             self,
             target_name=target_name,
@@ -334,6 +362,8 @@ class Observation:
             plot_ngc=plot_ngc,
             plot_planets=plot_planets,
             plot_date=plot_date,
+            magnification=magnification,
+            is_flipped=is_flipped,
             **kwargs,
         )
 
