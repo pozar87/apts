@@ -10,6 +10,7 @@ class OpticsUtils:
   @staticmethod
   def expand(path):
     from .opticalequipment.diagonal import Diagonal
+    from .opticalequipment.barlow import Barlow
     # First item in the path should be the telescope or binoculars
     main_optic = path[0]
     if isinstance(main_optic, (Binoculars, NakedEye)):
@@ -22,7 +23,7 @@ class OpticsUtils:
     output = path[-1]
     # Barlow lenses are in the middle
     intermediate = path[1:-1]
-    barlows = [item for item in intermediate if not isinstance(item, Diagonal)]
+    barlows = [item for item in intermediate if isinstance(item, Barlow)]
     diagonals = [item for item in intermediate if isinstance(item, Diagonal)]
     return (telescope, barlows, diagonals, output)
 
