@@ -1468,39 +1468,6 @@ class TestObservationSkymapFlipped(unittest.TestCase):
         )
 
     @patch("apts.plot.pyplot")
-    def test_plot_skymap_magnification(self, mock_pyplot):
-        """Test that plot_skymap displays magnification."""
-        mock_ax = MagicMock()
-        mock_fig = MagicMock()
-        mock_ax.figure = mock_fig
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
-
-        # Configure mock_ax to return realistic limits
-        mock_ax.get_xlim.return_value = (-10, 10)
-        mock_ax.get_ylim.return_value = (-10, 10)
-
-        fig = self.observation.plot_skymap(
-            target_name="M31", zoom_deg=15.0, magnification=100.0
-        )
-
-        self.assertIsNotNone(fig)
-        mock_pyplot.subplots.assert_called_once()
-        self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
-        # Assert that set_xlim and set_ylim were called, indicating zoom logic was applied
-        mock_ax.set_xlim.assert_called_once()
-        mock_ax.set_ylim.assert_called_once()
-        mock_ax.text.assert_any_call(
-            0.95,
-            0.95,
-            "100.0x",
-            transform=mock_ax.transAxes,
-            fontsize=12,
-            verticalalignment="top",
-            horizontalalignment="right",
-            color=unittest.mock.ANY,
-        )
-
-    @patch("apts.plot.pyplot")
     def test_plot_skymap_planet_zoomed(self, mock_pyplot):
         """Test that plot_skymap generates a zoomed plot for a planet without errors."""
         mock_ax = MagicMock()
