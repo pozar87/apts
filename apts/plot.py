@@ -1079,7 +1079,6 @@ def _generate_plot_skymap(
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
     flipped_view: bool = False,
-    magnification: Optional[float] = None,
     **kwargs,
 ):
     """
@@ -1256,17 +1255,6 @@ def _generate_plot_skymap(
                 transform=ax.transAxes,
                 fontsize=12,
                 verticalalignment="top",
-                color=style["TEXT_COLOR"],
-            )
-        if magnification is not None:
-            ax.text(
-                0.95,
-                0.95,
-                f"{magnification:.1f}x",
-                transform=ax.transAxes,
-                fontsize=12,
-                verticalalignment="top",
-                horizontalalignment="right",
                 color=style["TEXT_COLOR"],
             )
         return fig
@@ -1460,7 +1448,6 @@ def plot_skymap(
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
     equipment_id: Optional[int] = None,
-    magnification: Optional[float] = None,
     flip_horizontally: Optional[bool] = None,
     flip_vertically: Optional[bool] = None,
     **kwargs,
@@ -1490,7 +1477,6 @@ def plot_skymap(
         plot_planets=plot_planets,
         plot_date=plot_date,
         flipped_view=flipped_horizontally,
-        magnification=magnification,
         **kwargs,
     )
 
