@@ -7,6 +7,7 @@ import numpy
 import pandas as pd
 import svgwrite as svg
 from matplotlib import pyplot, lines
+from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
 
 from .utils import Utils
@@ -732,7 +733,7 @@ def _plot_stars_on_skymap(
 
     if zoom_deg is not None and target_object is not None:
         # Optimization: pre-filter stars to a bounding box before expensive separation calculation
-        if hasattr(target_object, 'ra'):
+        if hasattr(target_object, "ra"):
             ra_center_hours = target_object.ra.hours
             dec_center_degrees = target_object.dec.degrees
         else:
@@ -762,34 +763,34 @@ def _plot_stars_on_skymap(
 
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
-                if hasattr(target_object, 'ra'):
-                    center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-                else:
-                    ra, dec, _ = observer.observe(target_object).radec()
-                    center = SkyfieldStar(ra_hours=ra.hours, dec_degrees=dec.degrees)
-                observed_center = observer.observe(center)
+            if hasattr(target_object, "ra"):
+                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+            else:
+                ra, dec, _ = observer.observe(target_object).radec()
+                center = SkyfieldStar(ra_hours=ra.hours, dec_degrees=dec.degrees)
+            observed_center = observer.observe(center)
 
-                all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
-                observed_all_stars = observer.observe(all_stars_vectors)
+            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
+            observed_all_stars = observer.observe(all_stars_vectors)
 
-                dist_center = observed_center.position.au
-                dist_all_stars = observed_all_stars.position.au
+            dist_center = observed_center.position.au
+            dist_all_stars = observed_all_stars.position.au
 
-                vec_center_np = dist_center
-                vec_all_stars_np = dist_all_stars
+            vec_center_np = dist_center
+            vec_all_stars_np = dist_all_stars
 
-                dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
+            dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
 
-                len_center = numpy.linalg.norm(vec_center_np, axis=0)
-                len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
+            len_center = numpy.linalg.norm(vec_center_np, axis=0)
+            len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
 
-                cosine_angle = dot_product / (len_center * len_all_stars)
-                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+            cosine_angle = dot_product / (len_center * len_all_stars)
+            cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
 
-                separation_radians = numpy.arccos(cosine_angle)
-                separation = numpy.degrees(separation_radians)
-                nearby_mask = separation < zoom_deg
-                stars = stars_in_box[nearby_mask]
+            separation_radians = numpy.arccos(cosine_angle)
+            separation = numpy.degrees(separation_radians)
+            nearby_mask = separation < zoom_deg
+            stars = stars_in_box[nearby_mask]
         else:
             stars = stars_in_box  # empty dataframe
 
@@ -867,7 +868,14 @@ def _plot_stars_on_skymap(
             )
 
 
-def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
+def _plot_messier_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    flipped_horizontally: bool = False,
+    flipped_vertically: bool = False,
+):
     visible_messier = observation.get_visible_messier()
     if not visible_messier.empty:
         for _, m_obj in visible_messier.iterrows():
@@ -876,11 +884,28 @@ def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
             if messier_object:
                 alt, az, _ = observer.observe(messier_object).apparent().altaz()
                 if alt.degrees > 0:
+                    width_arcmin = m_obj[ObjectTableLabels.WIDTH]
+                    if hasattr(width_arcmin, "magnitude"):
+                        width_arcmin = width_arcmin.magnitude
+                    width_deg = width_arcmin / 60.0
+
+                    height_arcmin = m_obj.get("Height", width_arcmin)
+                    if hasattr(height_arcmin, "magnitude"):
+                        height_arcmin = height_arcmin.magnitude
+                    height_deg = height_arcmin / 60.0
+
+                    angle = m_obj.get("Angle", 0)
+                    if flipped_horizontally:
+                        angle = -angle
+                    if flipped_vertically:
+                        angle = 180 - angle
+
                     if is_polar:
+                        size = (width_deg + height_deg) / 2 * 100
                         ax.scatter(
                             az.radians,
                             90 - alt.degrees,
-                            s=50,
+                            s=size,
                             color="red",
                             marker="+",
                         )
@@ -892,9 +917,16 @@ def _plot_messier_on_skymap(observation: "Observation", ax, observer, is_polar):
                             color="red",
                         )
                     else:
-                        ax.scatter(
-                            az.degrees, alt.degrees, s=50, color="red", marker="+"
+                        ellipse = Ellipse(
+                            xy=(az.degrees, alt.degrees),
+                            width=width_deg,
+                            height=height_deg,
+                            angle=angle,
+                            edgecolor="red",
+                            facecolor="none",
+                            alpha=0.6,
                         )
+                        ax.add_patch(ellipse)
                         ax.annotate(
                             messier_name,
                             (az.degrees, alt.degrees),
@@ -927,6 +959,8 @@ def _plot_ngc_on_skymap(
     star_magnitude_limit: Optional[float] = None,
     zoom_deg: Optional[float] = None,
     target_object=None,
+    flipped_horizontally: bool = False,
+    flipped_vertically: bool = False,
 ):
     if zoom_deg is not None and target_object is not None:
         visible_ngc = observation.local_ngc.objects.copy()
@@ -993,11 +1027,33 @@ def _plot_ngc_on_skymap(
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
                 if alt.degrees > 0:
+                    width_arcmin = n_obj.get("Size")
+                    if pd.isna(width_arcmin):
+                        width_arcmin = 0.0
+                    if hasattr(width_arcmin, "magnitude"):
+                        width_arcmin = width_arcmin.magnitude
+                    width_deg = float(width_arcmin) / 60.0
+
+                    height_arcmin = n_obj.get("MinAx")
+                    if pd.isna(height_arcmin):
+                        height_arcmin = width_arcmin
+                    if hasattr(height_arcmin, "magnitude"):
+                        height_arcmin = height_arcmin.magnitude
+                    height_deg = float(height_arcmin) / 60.0
+
+                    angle = n_obj.get("PosAng")
+                    if pd.isna(angle):
+                        angle = 0.0
+                    if flipped_horizontally:
+                        angle = -angle
+                    if flipped_vertically:
+                        angle = 180 - angle
                     if is_polar:
+                        size = (width_deg + height_deg) / 2 * 100
                         ax.scatter(
                             az.radians,
                             90 - alt.degrees,
-                            s=50,
+                            s=size,
                             color="green",
                             marker="x",
                         )
@@ -1009,9 +1065,16 @@ def _plot_ngc_on_skymap(
                             color="green",
                         )
                     else:
-                        ax.scatter(
-                            az.degrees, alt.degrees, s=50, color="green", marker="x"
+                        ellipse = Ellipse(
+                            xy=(az.degrees, alt.degrees),
+                            width=width_deg,
+                            height=height_deg,
+                            angle=angle,
+                            edgecolor="green",
+                            facecolor="none",
+                            alpha=0.6,
                         )
+                        ax.add_patch(ellipse)
                         ax.annotate(
                             ngc_name,
                             (az.degrees, alt.degrees),
@@ -1035,11 +1098,19 @@ def _plot_planets_on_skymap(
                     planet_color = get_planet_color(
                         planet_name, effective_dark_mode, style["TEXT_COLOR"]
                     )
+                    size_arcsec = p_obj.get(ObjectTableLabels.SIZE)
+                    if pd.isna(size_arcsec):
+                        size_arcsec = 0.0
+                    if hasattr(size_arcsec, "magnitude"):
+                        size_arcsec = size_arcsec.magnitude
+                    size_deg = float(size_arcsec) / 3600.0
+
                     if is_polar:
+                        size = size_deg * 200 if size_deg > 0 else 5
                         ax.scatter(
                             az.radians,
                             90 - alt.degrees,
-                            s=100,
+                            s=size,
                             color=planet_color,
                             marker="o",
                         )
@@ -1051,13 +1122,16 @@ def _plot_planets_on_skymap(
                             color=planet_color,
                         )
                     else:
-                        ax.scatter(
-                            az.degrees,
-                            alt.degrees,
-                            s=100,
-                            color=planet_color,
-                            marker="o",
+                        ellipse = Ellipse(
+                            xy=(az.degrees, alt.degrees),
+                            width=size_deg,
+                            height=size_deg,
+                            angle=0,
+                            edgecolor=planet_color,
+                            facecolor=planet_color,
+                            alpha=0.6,
                         )
+                        ax.add_patch(ellipse)
                         ax.annotate(
                             planet_name,
                             (az.degrees, alt.degrees),
@@ -1065,6 +1139,78 @@ def _plot_planets_on_skymap(
                             xytext=(5, 5),
                             color=planet_color,
                         )
+
+
+def _plot_sun_on_skymap(observation: "Observation", ax, observer, is_polar, style):
+    sun = observation.place.sun
+    alt, az, _ = observer.observe(sun).apparent().altaz()
+    if alt.degrees > 0:
+        # Approximate angular size of the sun
+        size_deg = 0.5
+        if is_polar:
+            size = size_deg * 200
+            ax.scatter(az.radians, 90 - alt.degrees, s=size, color="yellow", marker="*")
+            ax.annotate(
+                "Sun",
+                (az.radians, 90 - alt.degrees),
+                textcoords="offset points",
+                xytext=(5, 5),
+                color="yellow",
+            )
+        else:
+            ellipse = Ellipse(
+                xy=(az.degrees, alt.degrees),
+                width=size_deg,
+                height=size_deg,
+                angle=0,
+                edgecolor="yellow",
+                facecolor="yellow",
+                alpha=0.6,
+            )
+            ax.add_patch(ellipse)
+            ax.annotate(
+                "Sun",
+                (az.degrees, alt.degrees),
+                textcoords="offset points",
+                xytext=(5, 5),
+                color="yellow",
+            )
+
+
+def _plot_moon_on_skymap(observation: "Observation", ax, observer, is_polar, style):
+    moon = observation.place.moon
+    alt, az, _ = observer.observe(moon).apparent().altaz()
+    if alt.degrees > 0:
+        # Approximate angular size of the moon
+        size_deg = 0.5
+        if is_polar:
+            size = size_deg * 200
+            ax.scatter(az.radians, 90 - alt.degrees, s=size, color="gray", marker="o")
+            ax.annotate(
+                "Moon",
+                (az.radians, 90 - alt.degrees),
+                textcoords="offset points",
+                xytext=(5, 5),
+                color="gray",
+            )
+        else:
+            ellipse = Ellipse(
+                xy=(az.degrees, alt.degrees),
+                width=size_deg,
+                height=size_deg,
+                angle=0,
+                edgecolor="gray",
+                facecolor="gray",
+                alpha=0.6,
+            )
+            ax.add_patch(ellipse)
+            ax.annotate(
+                "Moon",
+                (az.degrees, alt.degrees),
+                textcoords="offset points",
+                xytext=(5, 5),
+                color="gray",
+            )
 
 
 def _generate_plot_skymap(
@@ -1077,8 +1223,11 @@ def _generate_plot_skymap(
     plot_messier: bool = False,
     plot_ngc: bool = False,
     plot_planets: bool = False,
+    plot_sun: bool = False,
+    plot_moon: bool = False,
     plot_date: Optional[datetime] = None,
-    flipped_view: bool = False,
+    flipped_horizontally: bool = False,
+    flipped_vertically: bool = False,
     **kwargs,
 ):
     """
@@ -1202,7 +1351,14 @@ def _generate_plot_skymap(
                 zoom_deg=zoom_deg,
             )
         if plot_messier:
-            _plot_messier_on_skymap(observation, ax, observer, is_polar=False)
+            _plot_messier_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                flipped_horizontally=flipped_horizontally,
+                flipped_vertically=flipped_vertically,
+            )
         if plot_ngc:
             _plot_ngc_on_skymap(
                 observation,
@@ -1212,6 +1368,8 @@ def _generate_plot_skymap(
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
+                flipped_horizontally=flipped_horizontally,
+                flipped_vertically=flipped_vertically,
             )
         if plot_planets:
             _plot_planets_on_skymap(
@@ -1222,6 +1380,10 @@ def _generate_plot_skymap(
                 effective_dark_mode=effective_dark_mode,
                 style=style,
             )
+        if plot_sun:
+            _plot_sun_on_skymap(observation, ax, observer, is_polar=False, style=style)
+        if plot_moon:
+            _plot_moon_on_skymap(observation, ax, observer, is_polar=False, style=style)
 
         ax.scatter(
             target_az.degrees,
@@ -1246,17 +1408,26 @@ def _generate_plot_skymap(
             f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
             color=style["TEXT_COLOR"],
         )
-        if flipped_view:
+        if flipped_horizontally:
             ax.invert_xaxis()
+        if flipped_vertically:
+            ax.invert_yaxis()
+        if flipped_horizontally or flipped_vertically:
+            flip_str = "Flipped "
+            if flipped_horizontally:
+                flip_str += "H"
+            if flipped_vertically:
+                flip_str += "V"
             ax.text(
                 0.05,
                 0.95,
-                "Flipped",
+                flip_str,
                 transform=ax.transAxes,
                 fontsize=12,
                 verticalalignment="top",
                 color=style["TEXT_COLOR"],
             )
+
         return fig
     else:
         fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
@@ -1387,7 +1558,14 @@ def _generate_plot_skymap(
                 observation, ax, observer, is_polar=True, style=style, zoom_deg=zoom_deg
             )
         if plot_messier:
-            _plot_messier_on_skymap(observation, ax, observer, is_polar=True)
+            _plot_messier_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                flipped_horizontally=flipped_horizontally,
+                flipped_vertically=flipped_vertically,
+            )
         if plot_ngc:
             _plot_ngc_on_skymap(
                 observation,
@@ -1397,6 +1575,8 @@ def _generate_plot_skymap(
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
+                flipped_horizontally=flipped_horizontally,
+                flipped_vertically=flipped_vertically,
             )
         if plot_planets:
             _plot_planets_on_skymap(
@@ -1407,6 +1587,10 @@ def _generate_plot_skymap(
                 effective_dark_mode=effective_dark_mode,
                 style=style,
             )
+        if plot_sun:
+            _plot_sun_on_skymap(observation, ax, observer, is_polar=True, style=style)
+        if plot_moon:
+            _plot_moon_on_skymap(observation, ax, observer, is_polar=True, style=style)
 
         if target_alt.degrees > 0:
             ax.scatter(
@@ -1446,6 +1630,8 @@ def plot_skymap(
     plot_messier: bool = False,
     plot_ngc: bool = False,
     plot_planets: bool = False,
+    plot_sun: bool = False,
+    plot_moon: bool = False,
     plot_date: Optional[datetime] = None,
     equipment_id: Optional[int] = None,
     flip_horizontally: Optional[bool] = None,
@@ -1475,8 +1661,11 @@ def plot_skymap(
         plot_messier=plot_messier,
         plot_ngc=plot_ngc,
         plot_planets=plot_planets,
+        plot_sun=plot_sun,
+        plot_moon=plot_moon,
         plot_date=plot_date,
-        flipped_view=flipped_horizontally,
+        flipped_horizontally=flipped_horizontally,
+        flipped_vertically=flipped_vertically,
         **kwargs,
     )
 

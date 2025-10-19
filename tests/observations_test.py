@@ -1460,7 +1460,7 @@ class TestObservationSkymapFlipped(unittest.TestCase):
         mock_ax.text.assert_any_call(
             0.05,
             0.95,
-            "Flipped",
+            "Flipped H",
             transform=mock_ax.transAxes,
             fontsize=12,
             verticalalignment="top",
