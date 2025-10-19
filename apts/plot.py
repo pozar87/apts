@@ -1027,19 +1027,23 @@ def _plot_ngc_on_skymap(
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
                 if alt.degrees > 0:
-                    width_arcmin = n_obj.get("Size", 0)
+                    width_arcmin = n_obj.get("Size")
+                    if pd.isna(width_arcmin):
+                        width_arcmin = 0.0
                     if hasattr(width_arcmin, "magnitude"):
                         width_arcmin = width_arcmin.magnitude
-                    width_deg = width_arcmin / 60.0
+                    width_deg = float(width_arcmin) / 60.0
 
-                    height_arcmin = n_obj.get(
-                        "MinAx", width_arcmin if width_arcmin else 0
-                    )
+                    height_arcmin = n_obj.get("MinAx")
+                    if pd.isna(height_arcmin):
+                        height_arcmin = width_arcmin
                     if hasattr(height_arcmin, "magnitude"):
                         height_arcmin = height_arcmin.magnitude
-                    height_deg = height_arcmin / 60.0
+                    height_deg = float(height_arcmin) / 60.0
 
-                    angle = n_obj.get("PosAng", 0)
+                    angle = n_obj.get("PosAng")
+                    if pd.isna(angle):
+                        angle = 0.0
                     if flipped_horizontally:
                         angle = -angle
                     if flipped_vertically:

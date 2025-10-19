@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apts.plot import plot_skymap, _plot_messier_on_skymap, _plot_planets_on_skymap, _plot_sun_on_skymap, _plot_moon_on_skymap
+from apts.plot import plot_skymap, _plot_messier_on_skymap, _plot_planets_on_skymap, _plot_sun_on_skymap, _plot_moon_on_skymap, _plot_ngc_on_skymap
 from apts.observations import Observation
 from apts.equipment import Equipment
 from apts.catalogs import Catalogs
@@ -192,3 +192,24 @@ def test_plot_moon_on_skymap_renders_moon():
 
     # Check that an ellipse was added
     assert mock_ax.add_patch.call_count > 0
+
+def test_plot_ngc_object_with_no_size(mock_observation):
+    # Mock the necessary methods and data to avoid actual plotting
+    with patch("apts.plot.pyplot") as mock_pyplot:
+        # Mock the figure and axes objects
+        mock_fig = MagicMock()
+        mock_ax = MagicMock()
+        mock_ax.get_xlim.return_value = (0, 360)
+        mock_ax.get_ylim.return_value = (0, 90)
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # Call the function to be tested
+        plot_skymap(
+            observation=mock_observation,
+            target_name="IC0024",
+            plot_ngc=True,
+            zoom_deg=10.0,
+        )
+
+        # Assert that the subplots function was called, indicating a plot was created
+        mock_pyplot.subplots.assert_called_once()
