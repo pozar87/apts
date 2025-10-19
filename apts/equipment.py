@@ -80,6 +80,8 @@ class Equipment:
             EquipmentTableLabels.RANGE,
             EquipmentTableLabels.BRIGHTNESS,
             EquipmentTableLabels.ELEMENTS,
+            EquipmentTableLabels.FLIPPED_HORIZONTALLY,
+            EquipmentTableLabels.FLIPPED_VERTICALLY,
         ]
 
         # Import Binoculars here to keep it local to where it's used for isinstance
@@ -118,6 +120,8 @@ class Equipment:
                 if exit_pupil_value < 0:  # Guard against potential negative values
                     exit_pupil_value = 0
 
+                flipped_horizontally, flipped_vertically = path.get_image_orientation()
+
                 rows.append(
                     [
                         path.label(),
@@ -130,6 +134,8 @@ class Equipment:
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
                         path.length(),  # length() in OpticalPath returns int
+                        flipped_horizontally,
+                        flipped_vertically,
                     ]
                 )
 

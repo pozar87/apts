@@ -65,9 +65,13 @@ class Observation:
                 self.start = self.place.sunrise_time(target_date=target_date)
                 self.stop = self.place.sunset_time(target_date=target_date)
             else:
-                self.start = self.place.sunset_time(target_date=target_date, twilight=self.conditions.twilight)
+                self.start = self.place.sunset_time(
+                    target_date=target_date, twilight=self.conditions.twilight
+                )
                 if self.start:
-                    self.stop = self.place.sunrise_time(start_search_from=self.start, twilight=self.conditions.twilight)
+                    self.stop = self.place.sunrise_time(
+                        start_search_from=self.start, twilight=self.conditions.twilight
+                    )
                 else:
                     self.stop = None
 
@@ -79,11 +83,13 @@ class Observation:
                 )
             else:
                 if self.conditions.start_time:
-                    start_time_values = [int(v) for v in self.conditions.start_time.split(':')]
+                    start_time_values = [
+                        int(v) for v in self.conditions.start_time.split(":")
+                    ]
                     override_start_dt = self.start.replace(
                         hour=start_time_values[0],
                         minute=start_time_values[1],
-                        second=start_time_values[2]
+                        second=start_time_values[2],
                     )
                     self.start = override_start_dt
 
@@ -99,7 +105,9 @@ class Observation:
             else:
                 self.start = self.place.sunset_time(twilight=self.conditions.twilight)
                 if self.start:
-                    self.stop = self.place.sunrise_time(start_search_from=self.start, twilight=self.conditions.twilight)
+                    self.stop = self.place.sunrise_time(
+                        start_search_from=self.start, twilight=self.conditions.twilight
+                    )
                 else:
                     self.stop = None
             self.observation_local_time = self.start
@@ -139,6 +147,7 @@ class Observation:
     def local_messier(self):
         if self._local_messier is None:
             from apts import catalogs
+
             self._local_messier = Messier(
                 self.place, catalogs, calculation_date=self.effective_date
             )
@@ -156,14 +165,20 @@ class Observation:
     def local_ngc(self):
         if self._local_ngc is None:
             from apts import catalogs
-            self._local_ngc = NGC(self.place, catalogs, calculation_date=self.effective_date)
+
+            self._local_ngc = NGC(
+                self.place, catalogs, calculation_date=self.effective_date
+            )
         return self._local_ngc
 
     @property
     def local_stars(self):
         if self._local_stars is None:
             from apts import catalogs
-            self._local_stars = Stars(self.place, catalogs, calculation_date=self.effective_date)
+
+            self._local_stars = Stars(
+                self.place, catalogs, calculation_date=self.effective_date
+            )
         return self._local_stars
 
     def get_visible_messier(self, **args):
@@ -321,8 +336,36 @@ class Observation:
         plot_ngc: bool = False,
         plot_planets: bool = False,
         plot_date: Optional[datetime] = None,
+        flip_horizontally: Optional[bool] = None,
+        flip_vertically: Optional[bool] = None,
         **kwargs,
     ):
+        """
+        Generates and displays a skymap for a specified celestial object.
+
+        This method provides a high-level interface to the plotting capabilities in `apts.plot`.
+        It can generate either a full-sky polar plot or a zoomed-in Cartesian plot for a
+        given target. The orientation of the view can be flipped to match the output of
+        certain telescopes.
+
+        Args:
+            target_name (str): The name of the target object to center the skymap on.
+            dark_mode_override (Optional[bool]): If set, overrides the system's dark mode setting.
+            zoom_deg (Optional[float]): The diameter of the zoomed-in view in degrees. If None, a full skymap is generated.
+            star_magnitude_limit (Optional[float]): The faintest magnitude of stars to plot.
+            plot_stars (bool): Whether to plot stars on the skymap. Defaults to True.
+            plot_messier (bool): Whether to plot Messier objects. Defaults to False.
+            plot_ngc (bool): Whether to plot NGC objects. Defaults to False.
+            plot_planets (bool): Whether to plot planets. Defaults to False.
+            plot_date (Optional[datetime]): The specific date and time for which to generate the skymap.
+                                            If None, the middle of the observation window is used.
+            flip_horizontally (Optional[bool]): If True, the skymap's horizontal axis is inverted.
+            flip_vertically (Optional[bool]): If True, the skymap's vertical axis is inverted.
+            **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id`.
+
+        Returns:
+            A matplotlib Figure object representing the skymap.
+        """
         return apts_plot.plot_skymap(
             self,
             target_name=target_name,
@@ -334,6 +377,8 @@ class Observation:
             plot_ngc=plot_ngc,
             plot_planets=plot_planets,
             plot_date=plot_date,
+            flip_horizontally=flip_horizontally,
+            flip_vertically=flip_vertically,
             **kwargs,
         )
 

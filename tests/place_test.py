@@ -2,7 +2,6 @@ import pytest
 from math import radians as rad
 from datetime import date, datetime, timedelta, timezone
 import datetime as dt_module  # Added alias
-from skyfield.timelib import Time
 import unittest
 from unittest.mock import patch, MagicMock, ANY
 import pandas as pd

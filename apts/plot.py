@@ -732,8 +732,14 @@ def _plot_stars_on_skymap(
 
     if zoom_deg is not None and target_object is not None:
         # Optimization: pre-filter stars to a bounding box before expensive separation calculation
-        ra_center_hours = target_object.ra.hours
-        dec_center_degrees = target_object.dec.degrees
+        if hasattr(target_object, 'ra'):
+            ra_center_hours = target_object.ra.hours
+            dec_center_degrees = target_object.dec.degrees
+        else:
+            # It's a planet or other solar system body
+            ra, dec, _ = observer.observe(target_object).radec()
+            ra_center_hours = ra.hours
+            dec_center_degrees = dec.degrees
 
         # Create a generous bounding box around the target
         # The conversion from degrees to RA hours depends on declination,
@@ -756,30 +762,34 @@ def _plot_stars_on_skymap(
 
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
-            center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-            observed_center = observer.observe(center)
+                if hasattr(target_object, 'ra'):
+                    center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+                else:
+                    ra, dec, _ = observer.observe(target_object).radec()
+                    center = SkyfieldStar(ra_hours=ra.hours, dec_degrees=dec.degrees)
+                observed_center = observer.observe(center)
 
-            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
-            observed_all_stars = observer.observe(all_stars_vectors)
+                all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
+                observed_all_stars = observer.observe(all_stars_vectors)
 
-            dist_center = observed_center.position.au
-            dist_all_stars = observed_all_stars.position.au
+                dist_center = observed_center.position.au
+                dist_all_stars = observed_all_stars.position.au
 
-            vec_center_np = dist_center
-            vec_all_stars_np = dist_all_stars
+                vec_center_np = dist_center
+                vec_all_stars_np = dist_all_stars
 
-            dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
+                dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
 
-            len_center = numpy.linalg.norm(vec_center_np, axis=0)
-            len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
+                len_center = numpy.linalg.norm(vec_center_np, axis=0)
+                len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
 
-            cosine_angle = dot_product / (len_center * len_all_stars)
-            cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
+                cosine_angle = dot_product / (len_center * len_all_stars)
+                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
 
-            separation_radians = numpy.arccos(cosine_angle)
-            separation = numpy.degrees(separation_radians)
-            nearby_mask = separation < zoom_deg
-            stars = stars_in_box[nearby_mask]
+                separation_radians = numpy.arccos(cosine_angle)
+                separation = numpy.degrees(separation_radians)
+                nearby_mask = separation < zoom_deg
+                stars = stars_in_box[nearby_mask]
         else:
             stars = stars_in_box  # empty dataframe
 
@@ -1068,6 +1078,7 @@ def _generate_plot_skymap(
     plot_ngc: bool = False,
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
+    flipped_view: bool = False,
     **kwargs,
 ):
     """
@@ -1235,6 +1246,17 @@ def _generate_plot_skymap(
             f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
             color=style["TEXT_COLOR"],
         )
+        if flipped_view:
+            ax.invert_xaxis()
+            ax.text(
+                0.05,
+                0.95,
+                "Flipped",
+                transform=ax.transAxes,
+                fontsize=12,
+                verticalalignment="top",
+                color=style["TEXT_COLOR"],
+            )
         return fig
     else:
         fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
@@ -1425,8 +1447,24 @@ def plot_skymap(
     plot_ngc: bool = False,
     plot_planets: bool = False,
     plot_date: Optional[datetime] = None,
+    equipment_id: Optional[int] = None,
+    flip_horizontally: Optional[bool] = None,
+    flip_vertically: Optional[bool] = None,
     **kwargs,
 ):
+    flipped_horizontally = False
+    flipped_vertically = False
+    if flip_horizontally is not None:
+        flipped_horizontally = flip_horizontally
+    if flip_vertically is not None:
+        flipped_vertically = flip_vertically
+    elif equipment_id is not None and zoom_deg is not None:
+        equipment_data = observation.equipment.data()
+        if not equipment_data.empty and equipment_id in equipment_data["ID"].values:
+            row = equipment_data.loc[equipment_data["ID"] == equipment_id]
+            flipped_horizontally = row["Flipped Horizontally"].iloc[0]
+            flipped_vertically = row["Flipped Vertically"].iloc[0]
+
     return _generate_plot_skymap(
         observation,
         target_name=target_name,
@@ -1438,6 +1476,7 @@ def plot_skymap(
         plot_ngc=plot_ngc,
         plot_planets=plot_planets,
         plot_date=plot_date,
+        flipped_view=flipped_horizontally,
         **kwargs,
     )
 

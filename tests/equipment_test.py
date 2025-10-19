@@ -4,10 +4,49 @@ from unittest.mock import patch, MagicMock, ANY
 
 from apts.equipment import Equipment
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
-from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece
+from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece, Diagonal
+from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
 from apts.utils import ConnectionType
 from . import setup_equipment
+
+
+def test_flipped_view():
+    # Telescope only is flipped horizontally and vertically
+    e = Equipment()
+    e.register(Telescope(150, 750))
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 2].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+
+    # Telescope with star diagonal is flipped horizontally, but not flipped vertically
+    e = Equipment()
+    e.register(Telescope(150, 750))
+    e.register(Diagonal())
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+
+    # Telescope with two star diagonals is flipped horizontally and vertically
+    e = Equipment()
+    e.register(Telescope(150, 750))
+    e.register(Diagonal())
+    e.register(Diagonal())
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 4].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+
+    # Telescope with erecting diagonal is not flipped
+    e = Equipment()
+    e.register(Telescope(150, 750))
+    e.register(Diagonal(is_erecting=True))
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
 
 
 def test_zoom():
@@ -313,7 +352,7 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
                 "Binocular path should not include Eyepiece parts"
             )
             found_bino_only_path = True
-        elif "unknown telescope 150/750" in label and "unknown ocular f=25" in label:
+        elif "unknown telescope" in label and "150/750" in label and "unknown ocular f=25" in label:
             # Assuming a telescope path will have more than 1 element (telescope + eyepiece/camera)
             assert elements > 1, (
                 f"Telescope path '{label}' should have more than 1 element, got {elements}"
@@ -942,6 +981,76 @@ def test_plot_connection_graph_svg_override_dark(
     assert called_kwargs.get("dark_mode_override") is True
     assert "target" in called_kwargs
     assert called_kwargs["target"] == mock_cairo_surface.return_value
+
+
+def test_flipped_view_with_different_telescopes():
+    # Newtonian reflector without diagonal should be flipped horizontally and vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR))
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 2].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+
+    # Newtonian reflector with star diagonal should be flipped horizontally, but not vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR))
+    e.register(Diagonal())
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+
+    # Schmidt-Cassegrain with star diagonal is flipped horizontally, but not flipped vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.SCHMIDT_CASSEGRAIN))
+    e.register(Diagonal())
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+
+    # Maksutov-Cassegrain with erecting diagonal is not flipped
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.MAKSTUTOV_CASSEGRAIN))
+    e.register(Diagonal(is_erecting=True))
+    e.register(Eyepiece(25))
+    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+
+
+def test_flipped_view_with_camera():
+    # Refractor with camera (no diagonal) is flipped horizontally and vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, t2_output=True))
+    e.register(Camera(10, 10, 1, 1))
+    df = e.data()
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    row = image_paths.iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+
+    # Refractor with star diagonal and camera is flipped horizontally, but not vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
+    e.register(Diagonal(t2_output=True))
+    e.register(Camera(10, 10, 1, 1))
+    df = e.data()
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    row = image_paths.iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+
+    # Newtonian with camera (no diagonal) is flipped horizontally and vertically
+    e = Equipment()
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR, t2_output=True))
+    e.register(Camera(10, 10, 1, 1))
+    df = e.data()
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    row = image_paths.iloc[0]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
 
 
 @patch("apts.equipment.ca.ImageSurface")

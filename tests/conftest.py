@@ -1,7 +1,6 @@
 import pytest
 import os
 import tempfile
-import configparser
 from apts.cache import get_mpcorb_data, get_timescale, get_ephemeris, get_hipparcos_data
 
 # Global variable to store the temporary config file path

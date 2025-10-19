@@ -67,6 +67,16 @@ class OpticalEquipment:
     return "{} f={}".format(self.vendor, self.focal_length)
 
 
+class IntermediateOpticalEquipment(OpticalEquipment):
+    def __init__(self, vendor):
+        super(IntermediateOpticalEquipment, self).__init__(focal_length=0, vendor=vendor)
+
+    def _register(self, equipment, in_connection_type, out_connection_type):
+        super(IntermediateOpticalEquipment, self)._register(equipment)
+        self._register_input(equipment, in_connection_type)
+        self._register_output(equipment, out_connection_type)
+
+
 class OutputOpticalEqipment(OpticalEquipment):
 
   def __init__(self, focal_length, vendor):
