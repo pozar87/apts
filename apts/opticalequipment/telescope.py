@@ -11,7 +11,9 @@ from enum import Enum
 
 class TelescopeType(Enum):
     REFRACTOR = "refractor"
-    REFLECTOR = "reflector"
+    NEWTONIAN_REFLECTOR = "newtonian_reflector"
+    SCHMIDT_CASSEGRAIN = "schmidt_cassegrain"
+    MAKSTUTOV_CASSEGRAIN = "makstutov_cassegrain"
     CATADIOPTRIC = "catadioptric"
 
 

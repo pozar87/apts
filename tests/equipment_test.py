@@ -20,14 +20,14 @@ def test_flipped_view():
     assert row['Flipped Horizontally'] == True
     assert row['Flipped Vertically'] == True
 
-    # Telescope with star diagonal is not flipped horizontally, but is flipped vertically
+    # Telescope with star diagonal is flipped horizontally, but not flipped vertically
     e = Equipment()
     e.register(Telescope(150, 750))
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row['Flipped Horizontally'] == False
-    assert row['Flipped Vertically'] == True
+    assert row['Flipped Horizontally'] == True
+    assert row['Flipped Vertically'] == False
 
     # Telescope with two star diagonals is flipped horizontally and vertically
     e = Equipment()
