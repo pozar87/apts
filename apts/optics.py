@@ -140,19 +140,13 @@ class OpticalPath:
 
     # Diagonals are typically used with Refractors and Catadioptrics,
     # and their effect depends on the telescope type.
-    if self.telescope.telescope_type in [
-        TelescopeType.REFRACTOR,
-        TelescopeType.SCHMIDT_CASSEGRAIN,
-        TelescopeType.MAKSTUTOV_CASSEGRAIN,
-        TelescopeType.CATADIOPTRIC
-    ]:
-        for diagonal in self.diagonals:
-            if diagonal.is_erecting:
-                # Erecting diagonal adds 1 horizontal and 1 vertical flip
-                flipped_horizontally = not flipped_horizontally
-                flipped_vertically = not flipped_vertically
-            else:
-                # Standard star diagonal adds 1 vertical flip
-                flipped_vertically = not flipped_vertically
+    for diagonal in self.diagonals:
+        if diagonal.is_erecting:
+            # Erecting diagonal adds 1 horizontal and 1 vertical flip
+            flipped_horizontally = not flipped_horizontally
+            flipped_vertically = not flipped_vertically
+        else:
+            # Standard star diagonal adds 1 vertical flip
+            flipped_vertically = not flipped_vertically
 
     return (flipped_horizontally, flipped_vertically)
