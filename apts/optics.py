@@ -130,7 +130,7 @@ class OpticalPath:
     return frozenset(elements)
 
   def get_image_orientation(self):
-    from .opticalequipment.telescope import Telescope, TelescopeType
+    from .opticalequipment.telescope import Telescope
     if not isinstance(self.telescope, Telescope):
         return (False, False)
 
