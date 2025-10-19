@@ -1098,13 +1098,15 @@ def _plot_planets_on_skymap(
                     planet_color = get_planet_color(
                         planet_name, effective_dark_mode, style["TEXT_COLOR"]
                     )
-                    size_arcsec = p_obj.get(ObjectTableLabels.SIZE, 0)
+                    size_arcsec = p_obj.get(ObjectTableLabels.SIZE)
+                    if pd.isna(size_arcsec):
+                        size_arcsec = 0.0
                     if hasattr(size_arcsec, "magnitude"):
                         size_arcsec = size_arcsec.magnitude
-                    size_deg = size_arcsec / 3600.0
+                    size_deg = float(size_arcsec) / 3600.0
 
                     if is_polar:
-                        size = size_deg * 200
+                        size = size_deg * 200 if size_deg > 0 else 100
                         ax.scatter(
                             az.radians,
                             90 - alt.degrees,

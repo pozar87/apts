@@ -213,3 +213,21 @@ def test_plot_ngc_object_with_no_size(mock_observation):
 
         # Assert that the subplots function was called, indicating a plot was created
         mock_pyplot.subplots.assert_called_once()
+
+def test_plot_planet_with_no_size_polar(mock_observation):
+    # Mock the necessary methods and data to avoid actual plotting
+    with patch("apts.plot.pyplot") as mock_pyplot:
+        # Mock the figure and axes objects
+        mock_fig = MagicMock()
+        mock_ax = MagicMock()
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # Call the function to be tested
+        plot_skymap(
+            observation=mock_observation,
+            target_name="Mars",
+            plot_planets=True,
+        )
+
+        # Assert that the subplots function was called, indicating a plot was created
+        mock_pyplot.subplots.assert_called_once()
