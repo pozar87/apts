@@ -80,8 +80,8 @@ class Equipment:
             EquipmentTableLabels.RANGE,
             EquipmentTableLabels.BRIGHTNESS,
             EquipmentTableLabels.ELEMENTS,
-            "Flipped Horizontally",
-            "Flipped Vertically",
+            EquipmentTableLabels.FLIPPED_HORIZONTALLY,
+            EquipmentTableLabels.FLIPPED_VERTICALLY,
         ]
 
         # Import Binoculars here to keep it local to where it's used for isinstance
