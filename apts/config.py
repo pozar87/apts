@@ -152,6 +152,27 @@ def get_minor_planet_settings() -> list[str]:
     return []
 
 
+def get_cache_settings() -> dict:
+    """
+    Reads the cache settings from the [cache] section.
+
+    Returns:
+        dict: A dictionary of cache-related settings.
+    """
+    cache_settings = {
+        "backend": "memory",
+        "expire_after": 300,
+    }
+
+    if config.has_section("cache"):
+        if config.has_option("cache", "backend"):
+            cache_settings["backend"] = config.get("cache", "backend")
+        if config.has_option("cache", "expire_after"):
+            cache_settings["expire_after"] = config.getint("cache", "expire_after")
+
+    return cache_settings
+
+
 def get_data_settings() -> str:
     """
     Reads the data settings from the [data] section.

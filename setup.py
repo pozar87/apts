@@ -31,7 +31,7 @@ setup(
         "pint>=0.8.1",
         "pycairo>=1.16.2",
         "python-igraph>=0.7.1.post6",
-        "requests-cache>=0.4.13",
+        "requests-cache>=1.2.0",
         "requests-mock>=1.12.1",
         "seaborn>=0.8.1",
         "svgwrite>=1.1.12",
