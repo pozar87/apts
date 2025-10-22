@@ -65,6 +65,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
         mock_ts.tdb.return_value = mock_time
         mock_skyfield_obj._observe_from_bcrs.return_value = (np.zeros(3), np.zeros(3), mock_time, 0)
         mock_local_messier.find_by_name.return_value = mock_skyfield_obj
+        mock_local_messier.get_skyfield_object.return_value = mock_skyfield_obj
         mock_local_messier.objects = mock_visible_messier
 
         # Call the function to be tested

@@ -1270,29 +1270,40 @@ def _generate_plot_skymap(
     )
 
     target_object = None
-    target_catalog_df = None
+    target_object_data = None
 
-    # Try to find in Messier catalog
-    messier_obj = observation.local_messier.find_by_name(target_name)
-    if messier_obj:
-        target_object = messier_obj
-        target_catalog_df = observation.local_messier.objects
+    # Search logic that mirrors find_by_name methods
+    # Messier
+    result_df = observation.local_messier.objects[
+        observation.local_messier.objects["Messier"] == target_name
+    ]
+    if not result_df.empty:
+        target_object_data = result_df.iloc[0]
+        target_object = observation.local_messier.get_skyfield_object(
+            target_object_data
+        )
     else:
-        # Try to find in Planets
-        planet_obj = observation.local_planets.find_by_name(target_name)
-        if planet_obj:
-            target_object = planet_obj
+        # NGC
+        result_df = observation.local_ngc.objects[
+            (observation.local_ngc.objects["NGC"] == target_name)
+            | (observation.local_ngc.objects["Name"] == target_name)
+        ]
+        if not result_df.empty:
+            target_object_data = result_df.iloc[0]
+            target_object = observation.local_ngc.get_skyfield_object(target_object_data)
         else:
-            # Try to find in NGC catalog
-            ngc_obj = observation.local_ngc.find_by_name(target_name)
-            if ngc_obj:
-                target_object = ngc_obj
-                target_catalog_df = observation.local_ngc.objects
+            # Stars
+            result_df = observation.local_stars.objects[
+                observation.local_stars.objects["Name"] == target_name
+            ]
+            if not result_df.empty:
+                target_object_data = result_df.iloc[0]
+                target_object = observation.local_stars.get_skyfield_object(
+                    target_object_data
+                )
             else:
-                # Try to find in Stars catalog
-                star_obj = observation.local_stars.find_by_name(target_name)
-                if star_obj:
-                    target_object = star_obj
+                # Planets
+                target_object = observation.local_planets.find_by_name(target_name)
 
     if not target_object:
         fig, ax = pyplot.subplots(figsize=(10, 10))
@@ -1410,21 +1421,18 @@ def _generate_plot_skymap(
         if plot_moon:
             _plot_moon_on_skymap(observation, ax, observer, is_polar=False, style=style)
 
-        if target_catalog_df is not None:
-            obj_data = target_catalog_df[
-                target_catalog_df["Name"] == target_name
-            ].iloc[0]
-            width_arcmin = obj_data.get(ObjectTableLabels.WIDTH, 0)
+        if target_object_data is not None:
+            width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
             if hasattr(width_arcmin, "magnitude"):
                 width_arcmin = width_arcmin.magnitude
             width_deg = width_arcmin / 60.0
 
-            height_arcmin = obj_data.get("Height", width_arcmin)
+            height_arcmin = target_object_data.get("Height", width_arcmin)
             if hasattr(height_arcmin, "magnitude"):
                 height_arcmin = height_arcmin.magnitude
             height_deg = height_arcmin / 60.0
 
-            angle = obj_data.get("Angle", 0)
+            angle = target_object_data.get("Angle", 0)
             if flipped_horizontally:
                 angle = -angle
             if flipped_vertically:
@@ -1652,16 +1660,13 @@ def _generate_plot_skymap(
             _plot_moon_on_skymap(observation, ax, observer, is_polar=True, style=style)
 
         if target_alt.degrees > 0:
-            if target_catalog_df is not None:
-                obj_data = target_catalog_df[
-                    target_catalog_df["Name"] == target_name
-                ].iloc[0]
-                width_arcmin = obj_data.get(ObjectTableLabels.WIDTH, 0)
+            if target_object_data is not None:
+                width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
                 if hasattr(width_arcmin, "magnitude"):
                     width_arcmin = width_arcmin.magnitude
                 width_deg = width_arcmin / 60.0
 
-                height_arcmin = obj_data.get("Height", width_arcmin)
+                height_arcmin = target_object_data.get("Height", width_arcmin)
                 if hasattr(height_arcmin, "magnitude"):
                     height_arcmin = height_arcmin.magnitude
                 height_deg = height_arcmin / 60.0
