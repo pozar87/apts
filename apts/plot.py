@@ -873,6 +873,7 @@ def _plot_messier_on_skymap(
     ax,
     observer,
     is_polar,
+    target_name: str,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
 ):
@@ -880,6 +881,8 @@ def _plot_messier_on_skymap(
     if not visible_messier.empty:
         for _, m_obj in visible_messier.iterrows():
             messier_name = m_obj[ObjectTableLabels.MESSIER]
+            if messier_name == target_name:
+                continue
             messier_object = observation.local_messier.find_by_name(messier_name)
             if messier_object:
                 alt, az, _ = observer.observe(messier_object).apparent().altaz()
@@ -956,6 +959,7 @@ def _plot_ngc_on_skymap(
     ax,
     observer,
     is_polar,
+    target_name: str,
     star_magnitude_limit: Optional[float] = None,
     zoom_deg: Optional[float] = None,
     target_object=None,
@@ -1023,6 +1027,8 @@ def _plot_ngc_on_skymap(
             ngc_name = n_obj[ObjectTableLabels.NGC]
             if pd.isna(ngc_name):
                 ngc_name = n_obj[ObjectTableLabels.NAME]
+            if ngc_name == target_name:
+                continue
             ngc_object = observation.local_ngc.get_skyfield_object(n_obj)
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
@@ -1263,13 +1269,41 @@ def _generate_plot_skymap(
         "%Y-%m-%d %H:%M %Z"
     )
 
-    target_object = observation.local_messier.find_by_name(target_name)
-    if target_object is None:
-        target_object = observation.local_planets.find_by_name(target_name)
-    if target_object is None:
-        target_object = observation.local_ngc.find_by_name(target_name)
-    if target_object is None:
-        target_object = observation.local_stars.find_by_name(target_name)
+    target_object = None
+    target_object_data = None
+
+    # Search logic that mirrors find_by_name methods
+    # Messier
+    result_df = observation.local_messier.objects[
+        observation.local_messier.objects["Messier"] == target_name
+    ]
+    if not result_df.empty:
+        target_object_data = result_df.iloc[0]
+        target_object = observation.local_messier.get_skyfield_object(
+            target_object_data
+        )
+    else:
+        # NGC
+        result_df = observation.local_ngc.objects[
+            (observation.local_ngc.objects["NGC"] == target_name)
+            | (observation.local_ngc.objects["Name"] == target_name)
+        ]
+        if not result_df.empty:
+            target_object_data = result_df.iloc[0]
+            target_object = observation.local_ngc.get_skyfield_object(target_object_data)
+        else:
+            # Stars
+            result_df = observation.local_stars.objects[
+                observation.local_stars.objects["Name"] == target_name
+            ]
+            if not result_df.empty:
+                target_object_data = result_df.iloc[0]
+                target_object = observation.local_stars.get_skyfield_object(
+                    target_object_data
+                )
+            else:
+                # Planets
+                target_object = observation.local_planets.find_by_name(target_name)
 
     if not target_object:
         fig, ax = pyplot.subplots(figsize=(10, 10))
@@ -1356,6 +1390,7 @@ def _generate_plot_skymap(
                 ax,
                 observer,
                 is_polar=False,
+                target_name=target_name,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
             )
@@ -1365,6 +1400,7 @@ def _generate_plot_skymap(
                 ax,
                 observer,
                 is_polar=False,
+                target_name=target_name,
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
@@ -1385,15 +1421,44 @@ def _generate_plot_skymap(
         if plot_moon:
             _plot_moon_on_skymap(observation, ax, observer, is_polar=False, style=style)
 
-        ax.scatter(
-            target_az.degrees,
-            target_alt.degrees,
-            s=200,
-            facecolors="none",
-            edgecolors="yellow",
-            marker="o",
-            linewidths=2,
-        )
+        if target_object_data is not None:
+            width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
+            if hasattr(width_arcmin, "magnitude"):
+                width_arcmin = width_arcmin.magnitude
+            width_deg = width_arcmin / 60.0
+
+            height_arcmin = target_object_data.get("Height", width_arcmin)
+            if hasattr(height_arcmin, "magnitude"):
+                height_arcmin = height_arcmin.magnitude
+            height_deg = height_arcmin / 60.0
+
+            angle = target_object_data.get("Angle", 0)
+            if flipped_horizontally:
+                angle = -angle
+            if flipped_vertically:
+                angle = 180 - angle
+
+            ellipse = Ellipse(
+                xy=(target_az.degrees, target_alt.degrees),
+                width=width_deg,
+                height=height_deg,
+                angle=angle,
+                edgecolor="yellow",
+                facecolor="none",
+                linewidth=2,
+                linestyle="--",
+            )
+            ax.add_patch(ellipse)
+        else:
+            ax.scatter(
+                target_az.degrees,
+                target_alt.degrees,
+                s=200,
+                facecolors="none",
+                edgecolors="yellow",
+                marker="o",
+                linewidths=2,
+            )
         ax.annotate(
             target_name,
             (target_az.degrees, target_alt.degrees),
@@ -1563,6 +1628,7 @@ def _generate_plot_skymap(
                 ax,
                 observer,
                 is_polar=True,
+                target_name=target_name,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
             )
@@ -1572,6 +1638,7 @@ def _generate_plot_skymap(
                 ax,
                 observer,
                 is_polar=True,
+                target_name=target_name,
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
@@ -1593,15 +1660,35 @@ def _generate_plot_skymap(
             _plot_moon_on_skymap(observation, ax, observer, is_polar=True, style=style)
 
         if target_alt.degrees > 0:
-            ax.scatter(
-                target_az.radians,
-                90 - target_alt.degrees,
-                s=200,
-                facecolors="none",
-                edgecolors="yellow",
-                marker="o",
-                linewidths=2,
-            )
+            if target_object_data is not None:
+                width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
+                if hasattr(width_arcmin, "magnitude"):
+                    width_arcmin = width_arcmin.magnitude
+                width_deg = width_arcmin / 60.0
+
+                height_arcmin = target_object_data.get("Height", width_arcmin)
+                if hasattr(height_arcmin, "magnitude"):
+                    height_arcmin = height_arcmin.magnitude
+                height_deg = height_arcmin / 60.0
+
+                size = (width_deg + height_deg) / 2 * 100
+                ax.scatter(
+                    target_az.radians,
+                    90 - target_alt.degrees,
+                    s=size,
+                    color="yellow",
+                    marker="+",
+                )
+            else:
+                ax.scatter(
+                    target_az.radians,
+                    90 - target_alt.degrees,
+                    s=200,
+                    facecolors="none",
+                    edgecolors="yellow",
+                    marker="o",
+                    linewidths=2,
+                )
             ax.annotate(
                 target_name,
                 (target_az.radians, 90 - target_alt.degrees),

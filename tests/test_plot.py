@@ -30,13 +30,43 @@ def mock_observation():
 
 def test_plot_skymap_renders_messier_objects(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
-    with patch("apts.plot.pyplot") as mock_pyplot:
+    with patch("apts.plot.pyplot") as mock_pyplot, \
+         patch.object(Observation, 'local_messier', MagicMock()) as mock_local_messier:
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
         mock_ax.get_xlim.return_value = (0, 360)
         mock_ax.get_ylim.return_value = (0, 90)
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        messier_data = {
+            "Name": ["M31", "M42"],
+            "Messier": ["M31", "M42"],
+            "Width": [178.0, 85.0],
+            "Height": [63.0, 60.0],
+            "Angle": [35.0, 0.0],
+        }
+        mock_visible_messier = pd.DataFrame(messier_data)
+        mock_observation.get_visible_messier = MagicMock(return_value=mock_visible_messier)
+
+        # Create a mock Skyfield object that can be observed
+        from skyfield.timelib import Time, Timescale
+        from skyfield.units import Angle
+        import numpy as np
+        mock_skyfield_obj = MagicMock()
+        mock_skyfield_obj.ra = Angle(hours=0.0)
+        mock_skyfield_obj.dec = Angle(degrees=0.0)
+        mock_ts = MagicMock(spec=Timescale)
+        mock_time = MagicMock(spec=Time)
+        mock_time.tdb = 2451545.0
+        mock_time.whole = 2451545.0
+        mock_time.tdb_fraction = 0.0
+        mock_time.ts = mock_ts
+        mock_ts.tdb.return_value = mock_time
+        mock_skyfield_obj._observe_from_bcrs.return_value = (np.ones(3), np.ones(3), mock_time, 0)
+        mock_local_messier.find_by_name.return_value = mock_skyfield_obj
+        mock_local_messier.get_skyfield_object.return_value = mock_skyfield_obj
+        mock_local_messier.objects = mock_visible_messier
 
         # Call the function to be tested
         plot_skymap(
@@ -80,6 +110,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
         mock_ax,
         mock_observer,
         is_polar=False,
+        target_name="M42",
         flipped_horizontally=True,
         flipped_vertically=False,
     )
@@ -96,6 +127,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
         mock_ax,
         mock_observer,
         is_polar=False,
+        target_name="M42",
         flipped_horizontally=False,
         flipped_vertically=True,
     )
