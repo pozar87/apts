@@ -1213,6 +1213,7 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
         self.observation.time_limit = pd.Timestamp("2025-02-19 02:00:00", tz="UTC")
 
         messier_data = {
+            "Name": ["M1", "M42", "M31"],
             "Messier": ["M1", "M42", "M31"],
             "Type": ["Nebula", "Nebula", "Galaxy"],
             "RA": [5.575538888888889, 5.588138888888889, 0.7123055555555556],
@@ -1353,6 +1354,29 @@ class TestObservationSkymap(unittest.TestCase):
         self.observation.effective_date = self.observation.place.ts.utc(
             2025, 2, 18, 12, 0, 0
         )
+        messier_data = {
+            "Name": ["M1", "M42", "M31"],
+            "Messier": ["M1", "M42", "M31"],
+            "Type": ["Nebula", "Nebula", "Galaxy"],
+            "RA": [5.575538888888889, 5.588138888888889, 0.7123055555555556],
+            "Dec": [22.0145, -5.391111111111111, 41.26916666666666],
+            "Magnitude": [8.4 * ureg.mag, 4.0 * ureg.mag, 3.4 * ureg.mag],
+            "Altitude": [45 * ureg.deg, 60 * ureg.deg, 20 * ureg.deg],
+            "Transit": [
+                pd.Timestamp("2025-02-18 20:00:00", tz="UTC"),
+                pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
+                pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
+            ],
+            "ID": [0, 1, 2],
+            "skyfield_object": [
+                Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
+                Star(ra_hours=5.588138888888889, dec_degrees=-5.391111111111111),
+                Star(ra_hours=0.7123055555555556, dec_degrees=41.26916666666666),
+            ],
+        }
+        self.messier_df = pd.DataFrame(messier_data)
+        self.observation.local_messier.objects = self.messier_df
+        self.observation.get_visible_messier = MagicMock(return_value=self.messier_df)
 
     @patch("apts.plot.pyplot")
     def test_plot_skymap_messier(self, mock_pyplot):
@@ -1426,13 +1450,7 @@ class TestObservationSkymap(unittest.TestCase):
         )
 
 
-class TestObservationSkymapFlipped(unittest.TestCase):
-    def setUp(self):
-        self.observation = setup_observation()
-        # Set a fixed date for deterministic tests
-        self.observation.effective_date = self.observation.place.ts.utc(
-            2025, 2, 18, 12, 0, 0
-        )
+class TestObservationSkymapFlipped(TestObservationSkymap):
 
     @patch("apts.plot.pyplot")
     def test_plot_skymap_flipped(self, mock_pyplot):
