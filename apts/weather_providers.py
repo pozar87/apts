@@ -4,8 +4,24 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 import requests
+import requests_cache
+from apts.config import get_cache_settings
 
 logger = logging.getLogger(__name__)
+
+session = None
+
+
+def get_session():
+    global session
+    if session is None:
+        cache_settings = get_cache_settings()
+        session = requests_cache.CachedSession(
+            "weather_cache",
+            backend=cache_settings["backend"],
+            expire_after=cache_settings["expire_after"],
+        )
+    return session
 
 
 class WeatherProvider(ABC):
@@ -26,7 +42,7 @@ class PirateWeather(WeatherProvider):
     def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
-        with requests.get(url) as data:
+        with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             columns = [
                 "time",
@@ -74,7 +90,7 @@ class VisualCrossing(WeatherProvider):
     def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
-        with requests.get(url) as data:
+        with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             json_data = json.loads(data.text)
 
@@ -148,7 +164,7 @@ class Meteoblue(WeatherProvider):
     def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
-        with requests.get(url) as data:
+        with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             json_data = json.loads(data.text)
 
@@ -223,7 +239,7 @@ class OpenWeatherMap(WeatherProvider):
     def download_data(self):  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
-        with requests.get(url) as data:
+        with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             json_data = json.loads(data.text)
 

@@ -15,10 +15,20 @@ PIRATE_WEATHER_MOCK = {
     "hourly": {
         "data": [
             {
-                "time": 1624000000, "summary": "Clear", "precipType": "rain", "precipProbability": 0.2,
-                "precipIntensity": 0.1, "temperature": 20, "apparentTemperature": 21, "dewPoint": 10,
-                "humidity": 0.5, "windSpeed": 5, "cloudCover": 0.1, "visibility": 10,
-                "pressure": 1013, "ozone": 300,
+                "time": 1624000000,
+                "summary": "Clear",
+                "precipType": "rain",
+                "precipProbability": 0.2,
+                "precipIntensity": 0.1,
+                "temperature": 20,
+                "apparentTemperature": 21,
+                "dewPoint": 10,
+                "humidity": 0.5,
+                "windSpeed": 5,
+                "cloudCover": 0.1,
+                "visibility": 10,
+                "pressure": 1013,
+                "ozone": 300,
             }
         ]
     }
@@ -29,10 +39,20 @@ VISUAL_CROSSING_MOCK = {
         {
             "hours": [
                 {
-                    "datetimeEpoch": 1624000000, "conditions": "Clear", "preciptype": ["rain"], "precipprob": 0.2,
-                    "precip": 0.1, "temp": 20, "feelslike": 21, "dew": 10,
-                    "humidity": 0.5, "windspeed": 18, "cloudcover": 10, "visibility": 10,
-                    "pressure": 1013, "ozone": 300,
+                    "datetimeEpoch": 1624000000,
+                    "conditions": "Clear",
+                    "preciptype": ["rain"],
+                    "precipprob": 0.2,
+                    "precip": 0.1,
+                    "temp": 20,
+                    "feelslike": 21,
+                    "dew": 10,
+                    "humidity": 0.5,
+                    "windspeed": 18,
+                    "cloudcover": 10,
+                    "visibility": 10,
+                    "pressure": 1013,
+                    "ozone": 300,
                 }
             ]
         }
@@ -42,10 +62,18 @@ VISUAL_CROSSING_MOCK = {
 OPEN_WEATHER_MAP_MOCK = {
     "hourly": [
         {
-            "dt": 1624000000, "temp": 20, "feels_like": 21, "pressure": 1013, "humidity": 50,
-            "dew_point": 10, "clouds": 10, "visibility": 10000, "wind_speed": 5,
-            "weather": [{"main": "Rain", "description": "light rain"}], "pop": 0.2,
-            "rain": {"1h": 0.1}
+            "dt": 1624000000,
+            "temp": 20,
+            "feels_like": 21,
+            "pressure": 1013,
+            "humidity": 50,
+            "dew_point": 10,
+            "clouds": 10,
+            "visibility": 10000,
+            "wind_speed": 5,
+            "weather": [{"main": "Rain", "description": "light rain"}],
+            "pop": 0.2,
+            "rain": {"1h": 0.1},
         }
     ]
 }
@@ -64,7 +92,7 @@ METEOBLUE_MOCK = {
         "windspeed": [5],
         "totalcloudcover": [10],
         "visibility": [10000],
-        "sealevelpressure": [1013]
+        "sealevelpressure": [1013],
     }
 }
 
@@ -78,8 +106,10 @@ METEOBLUE_MOCK = {
         ("meteoblue", METEOBLUE_MOCK),
     ],
 )
-@patch('apts.weather.get_weather_settings')
-def test_weather_providers(mock_get_weather_settings, requests_mock, provider_name, mock_response):
+@patch("apts.weather.get_weather_settings")
+def test_weather_providers(
+    mock_get_weather_settings, requests_mock, provider_name, mock_response
+):
     mock_get_weather_settings.return_value = (provider_name, "dummy_key")
     requests_mock.get(ANY, json=mock_response)
 
@@ -90,35 +120,70 @@ def test_weather_providers(mock_get_weather_settings, requests_mock, provider_na
 
     data = weather.data.iloc[0]
 
-    assert data['temperature'] == 20
-    assert data['apparentTemperature'] == 21
-    assert data['dewPoint'] == 10
-    assert data['pressure'] == 1013
-    assert data['cloudCover'] == 10
-    assert data['visibility'] == 10
-    assert data['precipProbability'] == 20
-    assert data['precipIntensity'] == 0.1
+    assert data["temperature"] == 20
+    assert data["apparentTemperature"] == 21
+    assert data["dewPoint"] == 10
+    assert data["pressure"] == 1013
+    assert data["cloudCover"] == 10
+    assert data["visibility"] == 10
+    assert data["precipProbability"] == 20
+    assert data["precipIntensity"] == 0.1
 
-    if provider_name == 'pirateweather':
-        assert data['windSpeed'] == 5
-        assert data['ozone'] == 300
-    elif provider_name == 'visualcrossing':
-        assert round(data['windSpeed']) == 18 # It's already in km/h
-        assert data['ozone'] == 300
-    elif provider_name == 'openweathermap':
-        assert data['windSpeed'] == 18.0 # 5 m/s * 3.6 = 18 km/h
-        assert data['ozone'] == 'none' # Not provided by OWM
-    elif provider_name == 'meteoblue':
-        assert data['windSpeed'] == 5
-        assert data['ozone'] == 'none'
+    if provider_name == "pirateweather":
+        assert data["windSpeed"] == 5
+        assert data["ozone"] == 300
+    elif provider_name == "visualcrossing":
+        assert round(data["windSpeed"]) == 18  # It's already in km/h
+        assert data["ozone"] == 300
+    elif provider_name == "openweathermap":
+        assert data["windSpeed"] == 18.0  # 5 m/s * 3.6 = 18 km/h
+        assert data["ozone"] == "none"  # Not provided by OWM
+    elif provider_name == "meteoblue":
+        assert data["windSpeed"] == 5
+        assert data["ozone"] == "none"
 
 
 @pytest.mark.parametrize(
     "provider_name, mock_response",
     [
-        ("pirateweather", {"hourly": {"data": [{"time": 1624000000, "cloudCover": 50, "summary": "Cloudy"}]}}),
-        ("visualcrossing", {"days": [{"hours": [{"datetimeEpoch": 1624000000, "cloudcover": 50, "conditions": "Cloudy"}]}]}),
-        ("openweathermap", {"hourly": [{"dt": 1624000000, "clouds": 50, "weather": [{"main": "Clouds", "description": "Cloudy"}]}]}),
+        (
+            "pirateweather",
+            {
+                "hourly": {
+                    "data": [
+                        {"time": 1624000000, "cloudCover": 50, "summary": "Cloudy"}
+                    ]
+                }
+            },
+        ),
+        (
+            "visualcrossing",
+            {
+                "days": [
+                    {
+                        "hours": [
+                            {
+                                "datetimeEpoch": 1624000000,
+                                "cloudcover": 50,
+                                "conditions": "Cloudy",
+                            }
+                        ]
+                    }
+                ]
+            },
+        ),
+        (
+            "openweathermap",
+            {
+                "hourly": [
+                    {
+                        "dt": 1624000000,
+                        "clouds": 50,
+                        "weather": [{"main": "Clouds", "description": "Cloudy"}],
+                    }
+                ]
+            },
+        ),
     ],
 )
 @pytest.mark.parametrize(
@@ -247,7 +312,9 @@ def test_weather_provider_key_error(requests_mock):
     # It assumes the provider's `download_data` will return an empty DataFrame.
     mock_response_missing_key = {"wrong_key": {}}
 
-    with patch('apts.weather.get_weather_settings', return_value=('pirateweather', 'dummy_key')):
+    with patch(
+        "apts.weather.get_weather_settings", return_value=("pirateweather", "dummy_key")
+    ):
         requests_mock.get(ANY, json=mock_response_missing_key)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
         assert weather.data.empty
@@ -324,15 +391,9 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             "apts.plot.pyplot.subplots",
             return_value=(MagicMock(), MagicMock(shape=(4, 2))),
         ) as mock_subplots,
-        patch(
-            "apts.plot._mark_observation"
-        ) as mock_mark_observation,
-        patch(
-            "apts.plot._mark_good_conditions"
-        ) as mock_mark_good_conditions,
-        patch(
-            "apts.plot.plot_sun_and_moon_path"
-        ),
+        patch("apts.plot._mark_observation") as mock_mark_observation,
+        patch("apts.plot._mark_good_conditions") as mock_mark_good_conditions,
+        patch("apts.plot.plot_sun_and_moon_path"),
         patch.object(mock_weather_instance, "plot_moon_phase") as mock_plot_moon_phase,
     ):
         fig = obs.plot_weather()
@@ -387,9 +448,7 @@ def test_plot_moon_phase(mock_get_weather_settings, requests_mock):
     with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_phase()
         assert ax is not None
-        mock_annotate_plot.assert_called_once_with(
-            ax, "Moon Phase [%]", False
-        )
+        mock_annotate_plot.assert_called_once_with(ax, "Moon Phase [%]", False)
 
 
 if __name__ == "__main__":

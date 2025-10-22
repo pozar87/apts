@@ -19,8 +19,6 @@ from apts.weather_providers import (
 
 logger = logging.getLogger(__name__)
 
-requests_cache.install_cache("apts_cache", backend="memory", expire_after=300)
-
 
 class Weather:
     def __init__(
@@ -47,8 +45,10 @@ class Weather:
 
         # Fallback to default dummy key if API key is still None
         if api_key is None:
-            api_key = '12345'
-            logger.warning(f"API key for {provider_name or 'default provider'} not found in config. Using dummy key '12345'.")
+            api_key = "12345"
+            logger.warning(
+                f"API key for {provider_name or 'default provider'} not found in config. Using dummy key '12345'."
+            )
 
         logger.info(
             f"Initializing weather provider: {provider_name} for lat={self.lat}, lon={self.lon}"
