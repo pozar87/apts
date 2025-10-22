@@ -1,6 +1,8 @@
 import pytest
 import os
 import tempfile
+import requests
+from unittest.mock import patch, MagicMock
 from apts.cache import get_mpcorb_data, get_timescale, get_ephemeris, get_hipparcos_data
 
 # Global variable to store the temporary config file path
@@ -191,3 +193,18 @@ def conditional_cache_clearing(request):
         get_hipparcos_data.cache_clear()
     elif request.node.get_closest_marker("clear_mpcorb"):
         get_mpcorb_data.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def mock_weather_session(request):
+    """Mock get_session to return a regular requests.Session for tests.
+
+    This ensures that requests_mock can properly intercept HTTP calls
+    made by weather providers, bypassing the caching mechanism.
+    """
+    # Create a fresh session for each test
+    test_session = requests.Session()
+
+    # Patch get_session to return our test session
+    with patch("apts.weather_providers.get_session", return_value=test_session):
+        yield test_session
