@@ -79,7 +79,7 @@ class Telescope(OpticalEquipment):
         return self.aperture**2 / other_aperture**2
 
     def min_useful_zoom(self):
-        return self.aperture / 6
+        return self.aperture.magnitude / 6
 
     def max_useful_zoom(self):
         return self.aperture.magnitude * 2.5
