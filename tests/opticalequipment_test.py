@@ -14,7 +14,7 @@ class OpticalEquipmentTest(unittest.TestCase):
         self.assertEqual(t.dawes_limit().magnitude, 0.773)
         self.assertEqual(t.rayleigh_limit().magnitude, 0.92)
         self.assertAlmostEqual(t.limiting_magnitude(), 13.58, 2)
-        self.assertAlmostEqual(t.light_grasp_ratio(7).magnitude, 460, 0)
+        self.assertAlmostEqual(t.light_grasp_ratio(7).magnitude, 459.18, 2)
         self.assertEqual(t.min_useful_zoom(), 25)
         self.assertEqual(t.max_useful_zoom(), 375)
 
