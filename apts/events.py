@@ -599,6 +599,7 @@ class AstronomicalEvents:
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
         )
+        return events
 
     def calculate_nasa_comets(self):
         start_time = time.time()
