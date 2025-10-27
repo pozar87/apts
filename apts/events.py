@@ -15,7 +15,7 @@ from .utils import planetary
 from skyfield import almanac
 from skyfield.api import Star, Topos
 
-from . import skyfield_searches
+from . import skyfield_searches, cache
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 
@@ -604,7 +604,7 @@ class AstronomicalEvents:
     def calculate_nasa_comets(self):
         start_time = time.time()
         events = []
-        comets = self.cache.get_nasa_comets_data(self.start_date, self.end_date)
+        comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
         for _, comet in comets.iterrows():
             events.append(
                 {

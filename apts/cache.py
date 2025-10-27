@@ -122,21 +122,6 @@ def get_mpcorb_data() -> pd.DataFrame:
     return df
 
 
-COMETS_URL = "https://cobs.si/api/elements.api?format=ephem"
-
-
-@functools.lru_cache(maxsize=None)
-def get_comets_data() -> pd.DataFrame:
-    """
-    Returns a cached comets catalog as a pandas DataFrame.
-    Data is from COBS API.
-    """
-    with load.open(COMETS_URL) as f:
-        df = mpc.load_comets_dataframe(f)
-        df["Name"] = df.index
-        return df
-
-
 @functools.lru_cache(maxsize=None)
 def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
     """
