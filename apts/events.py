@@ -15,7 +15,7 @@ from .utils import planetary
 from skyfield import almanac
 from skyfield.api import Star, Topos
 
-from . import skyfield_searches
+from . import skyfield_searches, cache
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 
@@ -99,6 +99,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_solar_eclipses))
         if self.event_settings.get("lunar_eclipses", False):
             futures.append(executor.submit(self.calculate_lunar_eclipses))
+        if self.event_settings.get("nasa_comets", False):
+            futures.append(executor.submit(self.calculate_nasa_comets))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -597,4 +599,21 @@ class AstronomicalEvents:
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
         )
+        return events
+
+    def calculate_nasa_comets(self):
+        start_time = time.time()
+        events = []
+        comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
+        for _, comet in comets.iterrows():
+            events.append(
+                {
+                    "date": parse_date(
+                        comet["close_approach_data"][0]["close_approach_date_full"]
+                    ).astimezone(utc),
+                    "event": comet["name"],
+                    "type": "Comet",
+                }
+            )
+        logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
         return events

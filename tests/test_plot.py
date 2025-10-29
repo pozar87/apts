@@ -1,9 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apts.plot import plot_skymap, _plot_messier_on_skymap, _plot_planets_on_skymap, _plot_sun_on_skymap, _plot_moon_on_skymap, _plot_ngc_on_skymap
+from apts.plot import plot_skymap, _plot_messier_on_skymap, _plot_planets_on_skymap, _plot_sun_on_skymap, _plot_moon_on_skymap
 from apts.observations import Observation
 from apts.equipment import Equipment
-from apts.catalogs import Catalogs
 from apts.place import Place
 from apts.conditions import Conditions
 from datetime import datetime
