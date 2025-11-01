@@ -1516,7 +1516,27 @@ def _generate_plot_skymap(
                 height_arcmin = height_arcmin.magnitude
             height_deg = height_arcmin / 60.0
 
-            angle = target_object_data.get("Angle", 0)
+            pos_angle = target_object_data.get("PosAng", 0.0)
+            if pd.isna(pos_angle):
+                pos_angle = 0.0
+            if hasattr(pos_angle, "magnitude"):
+                pos_angle = pos_angle.magnitude
+            pos_angle = float(pos_angle)
+
+            dec = None
+            if hasattr(target_object, "dec"):
+                dec = target_object.dec
+            else:
+                _, dec, _ = observer.observe(target_object).apparent().radec()
+
+            if dec:
+                parallactic_angle = _calculate_parallactic_angle(
+                    observation.place.lat, dec, target_az
+                )
+                angle = pos_angle - parallactic_angle
+            else:
+                angle = pos_angle
+
             if flipped_horizontally:
                 angle = -angle
             if flipped_vertically:
