@@ -6,6 +6,7 @@ from .abstract import OpticalEquipment
 from .binoculars import Binoculars
 from .naked_eye import NakedEye
 from .diagonal import Diagonal
+from .smart_telescope import SmartTelescope
 
 __all__ = [
     "Barlow",
@@ -16,6 +17,7 @@ __all__ = [
     "Binoculars",
     "NakedEye",
     "Diagonal",
+    "SmartTelescope",
 ]
 
 __version__ = "0.2.0"
