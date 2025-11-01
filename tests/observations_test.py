@@ -1406,8 +1406,9 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
 
+    @patch("apts.plot._get_brightness_color", return_value="0.5")
     @patch("apts.plot.pyplot")
-    def test_plot_skymap_messier_zoomed(self, mock_pyplot):
+    def test_plot_skymap_messier_zoomed(self, mock_pyplot, mock_get_brightness_color):
         """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
         mock_ax = MagicMock()
         mock_fig = MagicMock()
@@ -1452,8 +1453,9 @@ class TestObservationSkymap(unittest.TestCase):
 
 class TestObservationSkymapFlipped(TestObservationSkymap):
 
+    @patch("apts.plot._get_brightness_color", return_value="0.5")
     @patch("apts.plot.pyplot")
-    def test_plot_skymap_flipped(self, mock_pyplot):
+    def test_plot_skymap_flipped(self, mock_pyplot, mock_get_brightness_color):
         """Test that plot_skymap generates a flipped plot."""
         mock_ax = MagicMock()
         mock_fig = MagicMock()

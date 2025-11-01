@@ -87,7 +87,9 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
 
 def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
-    with patch("apts.plot.pyplot") as mock_pyplot:
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._get_brightness_color", return_value="0.5"
+    ) as mock_get_brightness_color:
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
