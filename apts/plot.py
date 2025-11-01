@@ -1003,7 +1003,7 @@ def _plot_messier_on_skymap(
                         pos_angle = pos_angle.magnitude
                     pos_angle = float(pos_angle)
 
-                    _, dec, _ = messier_object.radec()
+                    dec = messier_object.dec
                     parallactic_angle = _calculate_parallactic_angle(
                         observation.place.lat, dec, az
                     )
@@ -1145,7 +1145,7 @@ def _plot_ngc_on_skymap(
                         pos_angle = pos_angle.magnitude
                     pos_angle = float(pos_angle)
 
-                    _, dec, _ = ngc_object.radec()
+                    dec = ngc_object.dec
                     parallactic_angle = _calculate_parallactic_angle(
                         observation.place.lat, dec, az
                     )
