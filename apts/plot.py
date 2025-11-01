@@ -50,6 +50,8 @@ def _get_brightness_color(magnitude: Optional[float]) -> str:
     Calculates a grayscale color based on the magnitude of a celestial object.
     Dimmer objects get a color closer to the background.
     """
+    if hasattr(magnitude, "magnitude"):
+        magnitude = magnitude.magnitude
     if magnitude is None or pd.isna(magnitude):
         return "none"
 
@@ -1520,15 +1522,23 @@ def _generate_plot_skymap(
             if flipped_vertically:
                 angle = 180 - angle
 
+            magnitude = target_object_data.get("Magnitude")
+            if pd.isna(magnitude) or magnitude is None:
+                magnitude = target_object_data.get("Mag")
+            if pd.isna(magnitude) or magnitude is None:
+                magnitude = target_object_data.get("magnitude")
+            face_color = _get_brightness_color(magnitude)
+
             ellipse = Ellipse(
                 xy=(target_az.degrees, target_alt.degrees),
                 width=width_deg,
                 height=height_deg,
                 angle=angle,
                 edgecolor="yellow",
-                facecolor="none",
+                facecolor=face_color,
                 linewidth=2,
                 linestyle="--",
+                alpha=0.6,
             )
             ax.add_patch(ellipse)
         else:
