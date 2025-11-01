@@ -9,6 +9,7 @@ import svgwrite as svg
 from matplotlib import pyplot, lines
 from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
+from skyfield.units import Angle
 
 from .utils import Utils
 from .constants import ObjectTableLabels
@@ -968,7 +969,6 @@ def _plot_messier_on_skymap(
     observer,
     is_polar,
     target_name: str,
-    style: dict,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
 ):
@@ -1051,7 +1051,6 @@ def _plot_ngc_on_skymap(
     observer,
     is_polar,
     target_name: str,
-    style: dict,
     star_magnitude_limit: Optional[float] = None,
     zoom_deg: Optional[float] = None,
     target_object=None,
@@ -1474,7 +1473,6 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=False,
                 target_name=target_name,
-                style=style,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
             )
@@ -1485,7 +1483,6 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=False,
                 target_name=target_name,
-                    style=style,
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
