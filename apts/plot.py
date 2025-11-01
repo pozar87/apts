@@ -27,6 +27,55 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _calculate_parallactic_angle(
+    latitude_deg: float, declination: "Angle", azimuth: "Angle"
+) -> float:
+    """Calculates the parallactic angle in degrees."""
+    if abs(declination.degrees) > 89.99:
+        return 0.0
+
+    lat_rad = numpy.deg2rad(latitude_deg)
+    dec_rad = declination.radians
+    az_rad = azimuth.radians
+
+    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
+    sin_q = numpy.clip(sin_q, -1.0, 1.0)
+    q_rad = numpy.arcsin(sin_q)
+    return numpy.rad2deg(q_rad)
+
+
+def _get_brightness_color(magnitude: Optional[float]) -> str:
+    """
+    Calculates a grayscale color based on the magnitude of a celestial object.
+    Dimmer objects get a color closer to the background.
+    """
+    if magnitude is None or pd.isna(magnitude):
+        return "none"
+
+    # Normalize magnitude to a 0-1 range for color mapping
+    # Typical naked-eye limit is 6. Faintest in catalogs can be ~15-20.
+    # Let's cap the range for better visual differentiation.
+    min_mag = 2.0  # Brightest objects
+    max_mag = 12.0  # Faintest objects for fill variation
+
+    norm_mag = (magnitude - min_mag) / (max_mag - min_mag)
+    norm_mag = numpy.clip(norm_mag, 0, 1)
+
+    # Invert the value, so brighter objects (lower mag) are lighter
+    brightness = 1 - norm_mag
+
+    # Blend the color with the background color to avoid pure white/black
+    bg_color = pyplot.colormaps.get_cmap("gray")(0)
+    fg_color = pyplot.colormaps.get_cmap("gray")(brightness)
+
+    # Simple alpha blending: final_color = fg * alpha + bg * (1 - alpha)
+    # We use brightness as a proxy for alpha here.
+    final_color_val = fg_color[0] * brightness + bg_color[0] * (1 - brightness)
+    final_color_val = numpy.clip(final_color_val, 0, 1)
+
+    return str(final_color_val)
+
+
 def _normalize_dates(start, stop):
     if stop < start:
         stop += timedelta(days=1)
@@ -868,12 +917,58 @@ def _plot_stars_on_skymap(
             )
 
 
+def _plot_celestial_object(
+    ax,
+    name: str,
+    alt_deg: float,
+    az_deg: float,
+    width_deg: float,
+    height_deg: float,
+    angle: float,
+    face_color: str,
+    edge_color: str,
+    is_polar: bool,
+):
+    """Helper function to plot a celestial object on a skymap."""
+    angle = angle % 360
+    if is_polar:
+        size = (width_deg + height_deg) / 2 * 100
+        az_rad = numpy.deg2rad(az_deg)
+        ax.scatter(az_rad, 90 - alt_deg, s=size, color=edge_color, marker="+")
+        ax.annotate(
+            name,
+            (az_rad, 90 - alt_deg),
+            textcoords="offset points",
+            xytext=(5, 5),
+            color=edge_color,
+        )
+    else:
+        ellipse = Ellipse(
+            xy=(az_deg, alt_deg),
+            width=width_deg,
+            height=height_deg,
+            angle=angle,
+            edgecolor=edge_color,
+            facecolor=face_color,
+            alpha=0.6,
+        )
+        ax.add_patch(ellipse)
+        ax.annotate(
+            name,
+            (az_deg, alt_deg),
+            textcoords="offset points",
+            xytext=(5, 5),
+            color=edge_color,
+        )
+
+
 def _plot_messier_on_skymap(
     observation: "Observation",
     ax,
     observer,
     is_polar,
     target_name: str,
+    style: dict,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
 ):
@@ -887,56 +982,52 @@ def _plot_messier_on_skymap(
             if messier_object:
                 alt, az, _ = observer.observe(messier_object).apparent().altaz()
                 if alt.degrees > 0:
-                    width_arcmin = m_obj[ObjectTableLabels.WIDTH]
+                    width_arcmin = m_obj.get(ObjectTableLabels.WIDTH)
+                    if pd.isna(width_arcmin):
+                        width_arcmin = 1.0  # Default to 1 arcmin if missing
                     if hasattr(width_arcmin, "magnitude"):
                         width_arcmin = width_arcmin.magnitude
-                    width_deg = width_arcmin / 60.0
+                    width_deg = float(width_arcmin) / 60.0
 
-                    height_arcmin = m_obj.get("Height", width_arcmin)
+                    height_arcmin = m_obj.get("Height")
+                    if pd.isna(height_arcmin):
+                        height_arcmin = width_arcmin
                     if hasattr(height_arcmin, "magnitude"):
                         height_arcmin = height_arcmin.magnitude
-                    height_deg = height_arcmin / 60.0
+                    height_deg = float(height_arcmin) / 60.0
 
-                    angle = m_obj.get("Angle", 0)
+                    pos_angle = m_obj.get("PosAng", 0.0)
+                    if pd.isna(pos_angle):
+                        pos_angle = 0.0
+                    if hasattr(pos_angle, "magnitude"):
+                        pos_angle = pos_angle.magnitude
+                    pos_angle = float(pos_angle)
+
+                    _, dec, _ = messier_object.radec()
+                    parallactic_angle = _calculate_parallactic_angle(
+                        observation.place.lat, dec, az
+                    )
+                    angle = pos_angle - parallactic_angle
                     if flipped_horizontally:
                         angle = -angle
                     if flipped_vertically:
                         angle = 180 - angle
 
-                    if is_polar:
-                        size = (width_deg + height_deg) / 2 * 100
-                        ax.scatter(
-                            az.radians,
-                            90 - alt.degrees,
-                            s=size,
-                            color="red",
-                            marker="+",
-                        )
-                        ax.annotate(
-                            messier_name,
-                            (az.radians, 90 - alt.degrees),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color="red",
-                        )
-                    else:
-                        ellipse = Ellipse(
-                            xy=(az.degrees, alt.degrees),
-                            width=width_deg,
-                            height=height_deg,
-                            angle=angle,
-                            edgecolor="red",
-                            facecolor="none",
-                            alpha=0.6,
-                        )
-                        ax.add_patch(ellipse)
-                        ax.annotate(
-                            messier_name,
-                            (az.degrees, alt.degrees),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color="red",
-                        )
+                    magnitude = m_obj.get("Magnitude")
+                    face_color = _get_brightness_color(magnitude)
+
+                    _plot_celestial_object(
+                        ax,
+                        name=messier_name,
+                        alt_deg=alt.degrees,
+                        az_deg=az.degrees,
+                        width_deg=width_deg,
+                        height_deg=height_deg,
+                        angle=angle,
+                        face_color=face_color,
+                        edge_color="red",
+                        is_polar=is_polar,
+                    )
 
 
 def _parse_ra(ra_str):
@@ -960,6 +1051,7 @@ def _plot_ngc_on_skymap(
     observer,
     is_polar,
     target_name: str,
+    style: dict,
     star_magnitude_limit: Optional[float] = None,
     zoom_deg: Optional[float] = None,
     target_object=None,
@@ -1035,7 +1127,7 @@ def _plot_ngc_on_skymap(
                 if alt.degrees > 0:
                     width_arcmin = n_obj.get("Size")
                     if pd.isna(width_arcmin):
-                        width_arcmin = 0.0
+                        width_arcmin = n_obj.get("MajAx", 1.0)
                     if hasattr(width_arcmin, "magnitude"):
                         width_arcmin = width_arcmin.magnitude
                     width_deg = float(width_arcmin) / 60.0
@@ -1047,47 +1139,38 @@ def _plot_ngc_on_skymap(
                         height_arcmin = height_arcmin.magnitude
                     height_deg = float(height_arcmin) / 60.0
 
-                    angle = n_obj.get("PosAng")
-                    if pd.isna(angle):
-                        angle = 0.0
+                    pos_angle = n_obj.get("PosAng")
+                    if pd.isna(pos_angle):
+                        pos_angle = 0.0
+                    if hasattr(pos_angle, "magnitude"):
+                        pos_angle = pos_angle.magnitude
+                    pos_angle = float(pos_angle)
+
+                    _, dec, _ = ngc_object.radec()
+                    parallactic_angle = _calculate_parallactic_angle(
+                        observation.place.lat, dec, az
+                    )
+                    angle = pos_angle - parallactic_angle
+
                     if flipped_horizontally:
                         angle = -angle
                     if flipped_vertically:
                         angle = 180 - angle
-                    if is_polar:
-                        size = (width_deg + height_deg) / 2 * 100
-                        ax.scatter(
-                            az.radians,
-                            90 - alt.degrees,
-                            s=size,
-                            color="green",
-                            marker="x",
-                        )
-                        ax.annotate(
-                            ngc_name,
-                            (az.radians, 90 - alt.degrees),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color="green",
-                        )
-                    else:
-                        ellipse = Ellipse(
-                            xy=(az.degrees, alt.degrees),
-                            width=width_deg,
-                            height=height_deg,
-                            angle=angle,
-                            edgecolor="green",
-                            facecolor="none",
-                            alpha=0.6,
-                        )
-                        ax.add_patch(ellipse)
-                        ax.annotate(
-                            ngc_name,
-                            (az.degrees, alt.degrees),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color="green",
-                        )
+
+                    magnitude = n_obj.get("Mag")
+                    face_color = _get_brightness_color(magnitude)
+                    _plot_celestial_object(
+                        ax,
+                        name=ngc_name,
+                        alt_deg=alt.degrees,
+                        az_deg=az.degrees,
+                        width_deg=width_deg,
+                        height_deg=height_deg,
+                        angle=angle,
+                        face_color=face_color,
+                        edge_color="green",
+                        is_polar=is_polar,
+                    )
 
 
 def _plot_planets_on_skymap(
@@ -1391,6 +1474,7 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=False,
                 target_name=target_name,
+                style=style,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
             )
@@ -1401,6 +1485,7 @@ def _generate_plot_skymap(
                 observer,
                 is_polar=False,
                 target_name=target_name,
+                    style=style,
                 star_magnitude_limit=star_magnitude_limit,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
