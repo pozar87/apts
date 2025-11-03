@@ -735,11 +735,24 @@ def _plot_bright_stars_on_skymap(
                 fontsize=8,
             )
     elif coordinate_system == CoordinateSystem.EQUATORIAL and zoom_deg is not None:
-        ra_zoomed = df_visible["ra_hours"]
-        dec_zoomed = df_visible["dec_degrees"]
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        ra_visible = df_visible["ra_hours"]
+        dec_visible = df_visible["dec_degrees"]
+        zoom_mask = (
+            (ra_visible >= xlim[0])
+            & (ra_visible <= xlim[1])
+            & (dec_visible >= ylim[0])
+            & (dec_visible <= ylim[1])
+        )
+        df_zoomed = df_visible[zoom_mask]
+        ra_zoomed = df_zoomed["ra_hours"]
+        dec_zoomed = df_zoomed["dec_degrees"]
+        if df_zoomed.empty:
+            return
         ax.scatter(ra_zoomed, dec_zoomed, s=40, color=star_color, marker="*")
-        for i in range(len(df_visible)):
-            star = df_visible.iloc[i]
+        for i in range(len(df_zoomed)):
+            star = df_zoomed.iloc[i]
             ax.annotate(
                 star["Name"],
                 (ra_zoomed.iloc[i], dec_zoomed.iloc[i]),
@@ -750,23 +763,46 @@ def _plot_bright_stars_on_skymap(
             )
     else:
         if is_polar:
-            ax.scatter(
-                az_visible_rad,
-                90 - alt_visible_deg,
-                s=40,
-                color=star_color,
-                marker="*",
-            )
-            for i in range(len(df_visible)):
-                star = df_visible.iloc[i]
-                ax.annotate(
-                    star["Name"],
-                    (az_visible_rad[i], 90 - alt_visible_deg[i]),
-                    textcoords="offset points",
-                    xytext=(5, 5),
+            if coordinate_system == CoordinateSystem.HORIZONTAL:
+                ax.scatter(
+                    az_visible_rad,
+                    90 - alt_visible_deg,
+                    s=40,
                     color=star_color,
-                    fontsize=8,
+                    marker="*",
                 )
+                for i in range(len(df_visible)):
+                    star = df_visible.iloc[i]
+                    ax.annotate(
+                        star["Name"],
+                        (az_visible_rad[i], 90 - alt_visible_deg[i]),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        color=star_color,
+                        fontsize=8,
+                    )
+            else:
+                ra, dec, _ = star_positions.radec()
+                ax.scatter(
+                    ra.radians[visible_mask],
+                    90 - dec.degrees[visible_mask],
+                    s=40,
+                    color=star_color,
+                    marker="*",
+                )
+                for i in range(len(df_visible)):
+                    star = df_visible.iloc[i]
+                    ax.annotate(
+                        star["Name"],
+                        (
+                            ra.radians[visible_mask][i],
+                            90 - dec.degrees[visible_mask][i],
+                        ),
+                        textcoords="offset points",
+                        xytext=(5, 5),
+                        color=star_color,
+                        fontsize=8,
+                    )
         else:
             ax.scatter(
                 az_visible_deg,
@@ -915,9 +951,19 @@ def _plot_stars_on_skymap(
             marker=".",
         )
     elif coordinate_system == CoordinateSystem.EQUATORIAL and zoom_deg is not None:
-        ra_plot = bright_stars["ra_hours"][visible]
-        dec_plot = bright_stars["dec_degrees"][visible]
-        mag_plot = bright_stars["magnitude"][visible]
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        ra_visible = bright_stars["ra_hours"][visible]
+        dec_visible = bright_stars["dec_degrees"][visible]
+        zoom_mask = (
+            (ra_visible >= xlim[0])
+            & (ra_visible <= xlim[1])
+            & (dec_visible >= ylim[0])
+            & (dec_visible <= ylim[1])
+        )
+        ra_plot = ra_visible[zoom_mask]
+        dec_plot = dec_visible[zoom_mask]
+        mag_plot = bright_stars[visible][zoom_mask]["magnitude"]
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
             ra_plot,
@@ -931,14 +977,25 @@ def _plot_stars_on_skymap(
             5 if is_polar else 3
         )
         if is_polar:
-            ax.scatter(
-                az.radians[visible],
-                90 - alt.degrees[visible],
-                s=sizes,
-                color=ax.get_facecolor(),
-                marker=".",
-                edgecolors=style["TEXT_COLOR"],
-            )
+            if coordinate_system == CoordinateSystem.HORIZONTAL:
+                ax.scatter(
+                    az.radians[visible],
+                    90 - alt.degrees[visible],
+                    s=sizes,
+                    color=ax.get_facecolor(),
+                    marker=".",
+                    edgecolors=style["TEXT_COLOR"],
+                )
+            else:
+                ra, dec, _ = star_positions.radec()
+                ax.scatter(
+                    ra.radians[visible],
+                    90 - dec.degrees[visible],
+                    s=sizes,
+                    color=ax.get_facecolor(),
+                    marker=".",
+                    edgecolors=style["TEXT_COLOR"],
+                )
         else:
             ax.scatter(
                 az.degrees[visible],
@@ -1474,16 +1531,21 @@ def _generate_plot_skymap(
             half_zoom = zoom_deg / 2
             ax.set_xlim(target_az.degrees - half_zoom, target_az.degrees + half_zoom)
             ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
+            ax.set_aspect("equal", adjustable="box")
         else:  # Equatorial
             ax.set_xlabel("Right Ascension (hours)", color=style["TEXT_COLOR"])
             ax.set_ylabel("Declination (°)", color=style["TEXT_COLOR"])
-            half_zoom_ra = zoom_deg / (
-                15 * numpy.cos(numpy.deg2rad(target_dec.degrees))
+            dec_rad = numpy.deg2rad(target_dec.degrees)
+            half_zoom_dec = zoom_deg / 2.0
+            half_zoom_ra_hours = half_zoom_dec / (15.0 * numpy.cos(dec_rad))
+            ax.set_xlim(
+                target_ra.hours - half_zoom_ra_hours,
+                target_ra.hours + half_zoom_ra_hours,
             )
-            ax.set_xlim(target_ra.hours - half_zoom_ra, target_ra.hours + half_zoom_ra)
             ax.set_ylim(
-                target_dec.degrees - zoom_deg / 2, target_dec.degrees + zoom_deg / 2
+                target_dec.degrees - half_zoom_dec, target_dec.degrees + half_zoom_dec
             )
+            ax.set_aspect(1.0 / (15.0 * numpy.cos(dec_rad)))
 
         ax.tick_params(axis="x", colors=style["TEXT_COLOR"])
         ax.tick_params(axis="y", colors=style["TEXT_COLOR"])
@@ -1491,7 +1553,6 @@ def _generate_plot_skymap(
         ax.spines["bottom"].set_color(style["AXIS_COLOR"])
         ax.spines["top"].set_color(style["AXIS_COLOR"])
         ax.spines["right"].set_color(style["AXIS_COLOR"])
-        ax.set_aspect("equal", adjustable="box")
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
         if plot_stars:
