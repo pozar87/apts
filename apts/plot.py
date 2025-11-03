@@ -692,9 +692,15 @@ def _plot_bright_stars_on_skymap(
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
 
-    visible_mask = alt.degrees > 0
+    # For Equatorial plots, we don't filter by horizon. All stars in the catalog are candidates.
+    # For Horizontal plots, we only want stars above the horizon.
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
+        visible_mask = alt.degrees > 0
+    else:
+        visible_mask = numpy.ones(len(bright_stars_df), dtype=bool)
 
     df_visible = bright_stars_df[visible_mask]
+    # We still need these for the Horizontal plotting paths
     alt_visible_deg = alt.degrees[visible_mask]
     az_visible_deg = az.degrees[visible_mask]
     az_visible_rad = az.radians[visible_mask]
@@ -916,7 +922,10 @@ def _plot_stars_on_skymap(
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
 
-    visible = alt.degrees > 0
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
+        visible = alt.degrees > 0
+    else:
+        visible = numpy.ones(len(bright_stars), dtype=bool)
 
     if not any(visible):
         return
