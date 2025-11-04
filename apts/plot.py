@@ -934,7 +934,11 @@ def _plot_stars_on_skymap(
     if not any(visible):
         return
 
-    if not is_polar and zoom_deg is not None:
+    if (
+        not is_polar
+        and zoom_deg is not None
+        and coordinate_system == CoordinateSystem.HORIZONTAL
+    ):
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
 

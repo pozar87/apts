@@ -410,20 +410,43 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
     )
 
     # Mock the star observation results
+    import numpy as np
+
+    # Use PropertyMock for proper property mocking
+    from unittest.mock import PropertyMock
+
     mock_star_positions = MagicMock()
     mock_altaz = MagicMock()
-    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
+    mock_az = MagicMock()
+    mock_altaz.degrees = np.array([45.0, 50.0, 55.0, 60.0, 65.0])
+    mock_az.degrees = np.array([180.0, 200.0, 220.0, 240.0, 260.0])  # Azimuth values
+
+    # Set up the hours and degrees as properties that return numpy arrays
+    ra_hours_array = np.array([0.5, 1.2, 1.8, 2.5, 3.0])
+    dec_degrees_array = np.array([25.0, 35.0, 38.0, 45.0, 50.0])
+
+    # Create simple mock radec object that returns real numpy arrays
     mock_radec = MagicMock()
-    mock_radec.hours = [0.5, 1.2, 1.8, 2.5, 3.0]  # Should match ra_hours
-    mock_radec.degrees = [25.0, 35.0, 38.0, 45.0, 50.0]  # Should match dec_degrees
+
+    # Create separate mock objects for ra and dec with proper properties
+    mock_ra = MagicMock()
+    mock_dec = MagicMock()
+
+    # Configure ra to have .hours property
+    type(mock_ra).hours = PropertyMock(return_value=ra_hours_array)
+
+    # Configure dec to have .degrees property
+    type(mock_dec).degrees = PropertyMock(return_value=dec_degrees_array)
+
+    # Mock the altaz return
     mock_star_positions.apparent.return_value.altaz.return_value = (
         mock_altaz,
-        MagicMock(),
+        mock_az,
         MagicMock(),
     )
     mock_star_positions.apparent.return_value.radec.return_value = (
-        mock_radec,
-        MagicMock(),
+        mock_ra,  # This goes to ra
+        mock_dec,  # This goes to dec
         MagicMock(),
     )
     mock_observer.observe.return_value = mock_star_positions
@@ -431,6 +454,47 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
     # Mock get_hipparcos_data to return our test data
     with patch("apts.plot.get_hipparcos_data", return_value=mock_stars_data):
         # Test _plot_stars_on_skymap
+        print("=== DEBUG: About to call _plot_stars_on_skymap ===")
+        print(f"is_polar: False, zoom_deg: 2.0, coordinate_system: EQUATORIAL")
+        print(f"Mock dec_degrees_array: {dec_degrees_array}")
+        print(f"Mock dec_degrees_array type: {type(dec_degrees_array)}")
+
+        # Add debug output to track the mock objects
+        print(f"DEBUG: mock_observer: {mock_observer}")
+        print(f"DEBUG: mock_star_positions: {mock_star_positions}")
+        print(f"DEBUG: mock_radec: {mock_radec}")
+        print(f"DEBUG: mock_ra: {mock_ra}")
+        print(f"DEBUG: mock_dec: {mock_dec}")
+        print(f"DEBUG: type(mock_ra).hours: {type(mock_ra).hours}")
+        print(f"DEBUG: type(mock_dec).degrees: {type(mock_dec).degrees}")
+        print(
+            f"DEBUG: PropertyMock for ra hours: {PropertyMock(return_value=ra_hours_array)}"
+        )
+        print(
+            f"DEBUG: PropertyMock for dec degrees: {PropertyMock(return_value=dec_degrees_array)}"
+        )
+
+        # Test the actual property access and indexing
+        print(f"DEBUG: Testing property access...")
+        print(f"DEBUG: mock_ra.hours: {mock_ra.hours}")
+        print(f"DEBUG: type(mock_ra.hours): {type(mock_ra.hours)}")
+        print(f"DEBUG: mock_dec.degrees: {mock_dec.degrees}")
+        print(f"DEBUG: type(mock_dec.degrees): {type(mock_dec.degrees)}")
+
+        # Test boolean indexing
+        test_visible = np.ones(5, dtype=bool)
+        print(f"DEBUG: test_visible: {test_visible}")
+        print(f"DEBUG: mock_ra.hours[test_visible]: {mock_ra.hours[test_visible]}")
+        print(
+            f"DEBUG: type(mock_ra.hours[test_visible]): {type(mock_ra.hours[test_visible])}"
+        )
+        print(
+            f"DEBUG: mock_dec.degrees[test_visible]: {mock_dec.degrees[test_visible]}"
+        )
+        print(
+            f"DEBUG: type(mock_dec.degrees[test_visible]): {type(mock_dec.degrees[test_visible])}"
+        )
+
         _plot_stars_on_skymap(
             mock_observation,
             mock_ax,
@@ -441,6 +505,35 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             zoom_deg=2.0,
             coordinate_system=CoordinateSystem.EQUATORIAL,
         )
+
+        print("=== DEBUG: _plot_stars_on_skymap call completed ===")
+
+        # Check if scatter was called at all
+        print(f"mock_ax.scatter called: {mock_ax.scatter.called}")
+        print(f"Number of scatter calls: {mock_ax.scatter.call_count}")
+
+        if mock_ax.scatter.called:
+            scatter_calls = mock_ax.scatter.call_args_list
+            print(f"Scatter call args: {scatter_calls}")
+
+            # Print details of each scatter call
+            for i, call in enumerate(scatter_calls):
+                args, kwargs = call
+                print(f"Scatter call {i}: args={len(args) if args else 'None'}")
+                if args and len(args) >= 2:
+                    print(f"  First arg type: {type(args[0])}")
+                    print(f"  Second arg type: {type(args[1])}")
+                    if (
+                        hasattr(args[0], "__len__")
+                        and hasattr(args[1], "__len__")
+                        and len(args[0]) > 0
+                    ):
+                        print(
+                            f"  First arg values: {args[0][: min(3, len(args[0]))]}..."
+                        )
+                        print(
+                            f"  Second arg values: {args[1][: min(3, len(args[1]))]}..."
+                        )
 
         # Verify that scatter was called with stars in the zoom window
         # Should have 2 stars: (1.2, 35.0) and (1.8, 38.0)
@@ -454,10 +547,22 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             if len(args) >= 2:
                 # Check if this looks like RA/Dec coordinates (values in reasonable ranges)
                 ra_values, dec_values = args[0], args[1]
+                print(
+                    f"Checking scatter call: ra_values type: {type(ra_values)}, dec_values type: {type(dec_values)}"
+                )
                 if hasattr(ra_values, "__len__") and len(ra_values) > 0:
+                    print(
+                        f"RA values: {ra_values}, min/max: {min(ra_values) if hasattr(ra_values, '__iter__') else 'N/A'}/{max(ra_values) if hasattr(ra_values, '__iter__') else 'N/A'}"
+                    )
+                    print(
+                        f"Dec values: {dec_values}, min/max: {min(dec_values) if hasattr(dec_values, '__iter__') else 'N/A'}/{max(dec_values) if hasattr(dec_values, '__iter__') else 'N/A'}"
+                    )
                     if 0 <= min(ra_values) <= 24 and 0 <= min(dec_values) <= 90:
                         equatorial_scatter = call
+                        print(f"Found equatorial scatter call!")
                         break
+                else:
+                    print(f"Skipping scatter call - not iterable or empty")
 
         assert equatorial_scatter is not None, (
             "No equatorial coordinate scatter plot found"
@@ -641,15 +746,41 @@ def test_plot_stars_ra_wrapping_equatorial():
     )
 
     # Mock the star observation results
+    import numpy as np
+
     mock_star_positions = MagicMock()
     mock_altaz = MagicMock()
-    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
+    mock_az = MagicMock()
+    mock_altaz.degrees = np.array([45.0, 50.0, 55.0, 60.0, 65.0])
+    mock_az.degrees = np.array([180.0, 200.0, 220.0, 240.0, 260.0])  # Azimuth values
     mock_radec = MagicMock()
-    mock_radec.hours = [23.0, 23.8, 0.2, 0.8, 2.0]
-    mock_radec.degrees = [35.0, 35.0, 35.0, 35.0, 35.0]
+
+    # Create proper mock arrays that support boolean indexing
+    ra_hours_array = np.array([23.0, 23.8, 0.2, 0.8, 2.0])
+    dec_degrees_array = np.array([35.0, 35.0, 35.0, 35.0, 35.0])
+
+    # Mock the .hours and .degrees properties to return arrays
+    mock_radec.hours = ra_hours_array
+    mock_radec.degrees = dec_degrees_array
+
+    # Mock the indexing behavior for boolean arrays
+    def mock_indexing(key):
+        if isinstance(key, np.ndarray) and key.dtype == bool:
+            # Boolean indexing - return filtered array
+            return ra_hours_array[key]
+        return ra_hours_array
+
+    def mock_dec_indexing(key):
+        if isinstance(key, np.ndarray) and key.dtype == bool:
+            # Boolean indexing - return filtered array
+            return dec_degrees_array[key]
+        return dec_degrees_array
+
+    mock_radec.hours = ra_hours_array
+    mock_radec.degrees = dec_degrees_array
     mock_star_positions.apparent.return_value.altaz.return_value = (
         mock_altaz,
-        MagicMock(),
+        mock_az,
         MagicMock(),
     )
     mock_star_positions.apparent.return_value.radec.return_value = (
