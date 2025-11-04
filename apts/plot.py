@@ -81,8 +81,11 @@ def _get_brightness_color(magnitude: Optional[float]) -> str:
 
 
 def _normalize_dates(start, stop):
+    if start is None or stop is None:
+        return (None, None)
     if stop < start:
         stop += timedelta(days=1)
+    return (start, stop)
 
 
 def _create_ra_zoom_mask(ra_hours, xlim):
