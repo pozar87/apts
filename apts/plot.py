@@ -669,7 +669,7 @@ def _plot_bright_stars_on_skymap(
     is_polar,
     style: dict,
     zoom_deg: Optional[float] = None,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = None,
 ):
     bright_stars_df = observation.local_stars.objects.copy()
     if bright_stars_df.empty:
@@ -1036,16 +1036,23 @@ def _plot_celestial_object(
     face_color: str,
     edge_color: str,
     is_polar: bool,
+    ra_rad: float,
+    dec_deg: float,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     """Helper function to plot a celestial object on a skymap."""
     angle = angle % 360
     if is_polar:
         size = (width_deg + height_deg) / 2 * 100
-        az_rad = numpy.deg2rad(az_deg)
-        ax.scatter(az_rad, 90 - alt_deg, s=size, color=edge_color, marker="+")
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            x, y = numpy.deg2rad(az_deg), 90 - alt_deg
+        else:
+            x, y = ra_rad, 90 - dec_deg
+
+        ax.scatter(x, y, s=size, color=edge_color, marker="+")
         ax.annotate(
             name,
-            (az_rad, 90 - alt_deg),
+            (x, y),
             textcoords="offset points",
             xytext=(5, 5),
             color=edge_color,
@@ -1078,6 +1085,7 @@ def _plot_messier_on_skymap(
     target_name: str,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     visible_messier = observation.get_visible_messier()
     if not visible_messier.empty:
@@ -1088,6 +1096,7 @@ def _plot_messier_on_skymap(
             messier_object = observation.local_messier.find_by_name(messier_name)
             if messier_object:
                 alt, az, _ = observer.observe(messier_object).apparent().altaz()
+                ra, dec, _ = observer.observe(messier_object).apparent().radec()
                 if alt.degrees > 0:
                     width_arcmin = m_obj.get(ObjectTableLabels.WIDTH)
                     if pd.isna(width_arcmin):
@@ -1134,6 +1143,9 @@ def _plot_messier_on_skymap(
                         face_color=face_color,
                         edge_color="red",
                         is_polar=is_polar,
+                        ra_rad=ra.radians,
+                        dec_deg=dec.degrees,
+                        coordinate_system=coordinate_system,
                     )
 
 
@@ -1163,6 +1175,7 @@ def _plot_ngc_on_skymap(
     target_object=None,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     if zoom_deg is not None and target_object is not None:
         visible_ngc = observation.local_ngc.objects.copy()
@@ -1230,6 +1243,7 @@ def _plot_ngc_on_skymap(
             ngc_object = observation.local_ngc.get_skyfield_object(n_obj)
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
+                ra, dec, _ = observer.observe(ngc_object).apparent().radec()
                 if alt.degrees > 0:
                     width_arcmin = n_obj.get("Size")
                     if pd.isna(width_arcmin):
@@ -1276,11 +1290,20 @@ def _plot_ngc_on_skymap(
                         face_color=face_color,
                         edge_color="green",
                         is_polar=is_polar,
+                        ra_rad=ra.radians,
+                        dec_deg=dec.degrees,
+                        coordinate_system=coordinate_system,
                     )
 
 
 def _plot_planets_on_skymap(
-    observation: "Observation", ax, observer, is_polar, effective_dark_mode, style
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    effective_dark_mode,
+    style,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     visible_planets = observation.get_visible_planets()
     if not visible_planets.empty:
@@ -1289,6 +1312,7 @@ def _plot_planets_on_skymap(
             planet_object = observation.local_planets.find_by_name(planet_name)
             if planet_object:
                 alt, az, _ = observer.observe(planet_object).apparent().altaz()
+                ra, dec, _ = observer.observe(planet_object).apparent().radec()
                 if alt.degrees > 0:
                     planet_color = get_planet_color(
                         planet_name, effective_dark_mode, style["TEXT_COLOR"]
@@ -1302,16 +1326,20 @@ def _plot_planets_on_skymap(
 
                     if is_polar:
                         size = size_deg * 200 if size_deg > 0 else 5
+                        if coordinate_system == CoordinateSystem.HORIZONTAL:
+                            x, y = az.radians, 90 - alt.degrees
+                        else:
+                            x, y = ra.radians, 90 - dec.degrees
                         ax.scatter(
-                            az.radians,
-                            90 - alt.degrees,
+                            x,
+                            y,
                             s=size,
                             color=planet_color,
                             marker="o",
                         )
                         ax.annotate(
                             planet_name,
-                            (az.radians, 90 - alt.degrees),
+                            (x, y),
                             textcoords="offset points",
                             xytext=(5, 5),
                             color=planet_color,
@@ -1336,18 +1364,30 @@ def _plot_planets_on_skymap(
                         )
 
 
-def _plot_sun_on_skymap(observation: "Observation", ax, observer, is_polar, style):
+def _plot_sun_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    style,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+):
     sun = observation.place.sun
     alt, az, _ = observer.observe(sun).apparent().altaz()
+    ra, dec, _ = observer.observe(sun).apparent().radec()
     if alt.degrees > 0:
         # Approximate angular size of the sun
         size_deg = 0.5
         if is_polar:
             size = size_deg * 200
-            ax.scatter(az.radians, 90 - alt.degrees, s=size, color="yellow", marker="*")
+            if coordinate_system == CoordinateSystem.HORIZONTAL:
+                x, y = az.radians, 90 - alt.degrees
+            else:
+                x, y = ra.radians, 90 - dec.degrees
+            ax.scatter(x, y, s=size, color="yellow", marker="*")
             ax.annotate(
                 "Sun",
-                (az.radians, 90 - alt.degrees),
+                (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color="yellow",
@@ -1372,18 +1412,30 @@ def _plot_sun_on_skymap(observation: "Observation", ax, observer, is_polar, styl
             )
 
 
-def _plot_moon_on_skymap(observation: "Observation", ax, observer, is_polar, style):
+def _plot_moon_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    style,
+    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+):
     moon = observation.place.moon
     alt, az, _ = observer.observe(moon).apparent().altaz()
+    ra, dec, _ = observer.observe(moon).apparent().radec()
     if alt.degrees > 0:
         # Approximate angular size of the moon
         size_deg = 0.5
         if is_polar:
             size = size_deg * 200
-            ax.scatter(az.radians, 90 - alt.degrees, s=size, color="gray", marker="o")
+            if coordinate_system == CoordinateSystem.HORIZONTAL:
+                x, y = az.radians, 90 - alt.degrees
+            else:
+                x, y = ra.radians, 90 - dec.degrees
+            ax.scatter(x, y, s=size, color="gray", marker="o")
             ax.annotate(
                 "Moon",
-                (az.radians, 90 - alt.degrees),
+                (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color="gray",
@@ -1480,7 +1532,9 @@ def _generate_plot_skymap(
         ]
         if not result_df.empty:
             target_object_data = result_df.iloc[0]
-            target_object = observation.local_ngc.get_skyfield_object(target_object_data)
+            target_object = observation.local_ngc.get_skyfield_object(
+                target_object_data
+            )
         else:
             # Stars
             result_df = observation.local_stars.objects[
@@ -1518,10 +1572,7 @@ def _generate_plot_skymap(
     target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
 
     if zoom_deg is not None:
-        if (
-            coordinate_system == CoordinateSystem.HORIZONTAL
-            and target_alt.degrees < 0
-        ):
+        if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees < 0:
             fig, ax = pyplot.subplots(figsize=(10, 10))
             fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -1687,9 +1738,7 @@ def _generate_plot_skymap(
                 else width_deg / (15 * numpy.cos(numpy.deg2rad(target_dec.degrees)))
             )
             ellipse_angle = (
-                angle
-                if coordinate_system == CoordinateSystem.HORIZONTAL
-                else pos_angle
+                angle if coordinate_system == CoordinateSystem.HORIZONTAL else pos_angle
             )
 
             ellipse = Ellipse(
@@ -1894,9 +1943,16 @@ def _generate_plot_skymap(
                 style=style,
                 zoom_deg=zoom_deg,
                 target_object=target_object,
+                coordinate_system=coordinate_system,
             )
             _plot_bright_stars_on_skymap(
-                observation, ax, observer, is_polar=True, style=style, zoom_deg=zoom_deg
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                style=style,
+                zoom_deg=zoom_deg,
+                coordinate_system=coordinate_system,
             )
         if plot_messier:
             _plot_messier_on_skymap(
@@ -1907,6 +1963,7 @@ def _generate_plot_skymap(
                 target_name=target_name,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
+                coordinate_system=coordinate_system,
             )
         if plot_ngc:
             _plot_ngc_on_skymap(
@@ -1920,6 +1977,7 @@ def _generate_plot_skymap(
                 target_object=target_object,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
+                coordinate_system=coordinate_system,
             )
         if plot_planets:
             _plot_planets_on_skymap(
@@ -1929,11 +1987,16 @@ def _generate_plot_skymap(
                 is_polar=True,
                 effective_dark_mode=effective_dark_mode,
                 style=style,
+                coordinate_system=coordinate_system,
             )
         if plot_sun:
-            _plot_sun_on_skymap(observation, ax, observer, is_polar=True, style=style)
+            _plot_sun_on_skymap(
+                observation, ax, observer, is_polar=True, style=style, coordinate_system=coordinate_system
+            )
         if plot_moon:
-            _plot_moon_on_skymap(observation, ax, observer, is_polar=True, style=style)
+            _plot_moon_on_skymap(
+                observation, ax, observer, is_polar=True, style=style, coordinate_system=coordinate_system
+            )
 
         if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees > 0:
             if target_object_data is not None:

@@ -163,6 +163,11 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     mock_observer.observe.return_value.apparent.return_value.altaz.return_value = (
         Angle(degrees=45), Angle(degrees=180), Angle(degrees=0)
     )
+    mock_observer.observe.return_value.apparent.return_value.radec.return_value = (
+        Angle(hours=1.0),
+        Angle(degrees=40.0),
+        Angle(degrees=0),
+    )
     mock_observation.local_messier.find_by_name.return_value = mock_messier_object
 
 
@@ -231,10 +236,14 @@ def test_plot_planets_on_skymap_renders_planets_as_ellipses():
     }
     mock_visible_planets = pd.DataFrame(planets_data)
     mock_observation.get_visible_planets.return_value = mock_visible_planets
-    mock_observation.local_planets.find_by_name.return_value = MagicMock()
     mock_observer.observe.return_value.apparent.return_value.altaz.return_value = (
         MagicMock(degrees=45),
         MagicMock(degrees=180),
+        MagicMock(),
+    )
+    mock_observer.observe.return_value.apparent.return_value.radec.return_value = (
+        MagicMock(hours=1.0),
+        MagicMock(degrees=40.0),
         MagicMock(),
     )
     style = {"TEXT_COLOR": "white"}
@@ -267,6 +276,11 @@ def test_plot_sun_on_skymap_renders_sun():
         MagicMock(degrees=180),
         MagicMock(),
     )
+    mock_observer.observe.return_value.apparent.return_value.radec.return_value = (
+        MagicMock(hours=1.0),
+        MagicMock(degrees=40.0),
+        MagicMock(),
+    )
     style = {"TEXT_COLOR": "white"}
     # Call the function
     _plot_sun_on_skymap(
@@ -290,6 +304,11 @@ def test_plot_moon_on_skymap_renders_moon():
     mock_observer.observe.return_value.apparent.return_value.altaz.return_value = (
         MagicMock(degrees=45),
         MagicMock(degrees=180),
+        MagicMock(),
+    )
+    mock_observer.observe.return_value.apparent.return_value.radec.return_value = (
+        MagicMock(hours=1.0),
+        MagicMock(degrees=40.0),
         MagicMock(),
     )
     style = {"TEXT_COLOR": "white"}

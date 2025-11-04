@@ -17,6 +17,7 @@ from .utils import Utils
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
 from . import plot as apts_plot
+from apts.constants.plot import CoordinateSystem
 
 
 logger = logging.getLogger(__name__)
@@ -338,6 +339,7 @@ class Observation:
         plot_date: Optional[datetime] = None,
         flip_horizontally: Optional[bool] = None,
         flip_vertically: Optional[bool] = None,
+        coordinate_system: Optional[CoordinateSystem] = None,
         **kwargs,
     ):
         """
@@ -361,6 +363,7 @@ class Observation:
                                             If None, the middle of the observation window is used.
             flip_horizontally (Optional[bool]): If True, the skymap's horizontal axis is inverted.
             flip_vertically (Optional[bool]): If True, the skymap's vertical axis is inverted.
+            coordinate_system (Optional[CoordinateSystem]): The coordinate system to use for the skymap (e.g., 'altaz', 'radec').
             **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id`.
 
         Returns:
@@ -379,6 +382,7 @@ class Observation:
             plot_date=plot_date,
             flip_horizontally=flip_horizontally,
             flip_vertically=flip_vertically,
+            coordinate_system=coordinate_system,
             **kwargs,
         )
 
