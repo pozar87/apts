@@ -691,6 +691,7 @@ def _plot_bright_stars_on_skymap(
 
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
+    ra, dec, _ = star_positions.apparent().radec()
 
     # For Equatorial plots, we don't filter by horizon. All stars in the catalog are candidates.
     # For Horizontal plots, we only want stars above the horizon.
@@ -743,25 +744,31 @@ def _plot_bright_stars_on_skymap(
     elif coordinate_system == CoordinateSystem.EQUATORIAL and zoom_deg is not None:
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
-        ra_visible = df_visible["ra_hours"]
-        dec_visible = df_visible["dec_degrees"]
+
+        ra_hours_apparent = ra.hours
+        dec_degrees_apparent = dec.degrees
+
         zoom_mask = (
-            (ra_visible >= xlim[0])
-            & (ra_visible <= xlim[1])
-            & (dec_visible >= ylim[0])
-            & (dec_visible <= ylim[1])
+            (ra_hours_apparent >= xlim[0])
+            & (ra_hours_apparent <= xlim[1])
+            & (dec_degrees_apparent >= ylim[0])
+            & (dec_degrees_apparent <= ylim[1])
         )
+
         df_zoomed = df_visible[zoom_mask]
-        ra_zoomed = df_zoomed["ra_hours"]
-        dec_zoomed = df_zoomed["dec_degrees"]
         if df_zoomed.empty:
             return
+
+        ra_zoomed = ra_hours_apparent[zoom_mask]
+        dec_zoomed = dec_degrees_apparent[zoom_mask]
+
         ax.scatter(ra_zoomed, dec_zoomed, s=40, color=star_color, marker="*")
+
         for i in range(len(df_zoomed)):
             star = df_zoomed.iloc[i]
             ax.annotate(
                 star["Name"],
-                (ra_zoomed.iloc[i], dec_zoomed.iloc[i]),
+                (ra_zoomed[i], dec_zoomed[i]),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color=star_color,
@@ -788,7 +795,6 @@ def _plot_bright_stars_on_skymap(
                         fontsize=8,
                     )
             else:
-                ra, dec, _ = star_positions.radec()
                 ax.scatter(
                     ra.radians[visible_mask],
                     90 - dec.degrees[visible_mask],
@@ -921,6 +927,7 @@ def _plot_stars_on_skymap(
 
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
+    ra, dec, _ = star_positions.apparent().radec()
 
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         visible = alt.degrees > 0
@@ -962,17 +969,21 @@ def _plot_stars_on_skymap(
     elif coordinate_system == CoordinateSystem.EQUATORIAL and zoom_deg is not None:
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
-        ra_visible = bright_stars["ra_hours"][visible]
-        dec_visible = bright_stars["dec_degrees"][visible]
+
+        ra_hours_apparent = ra.hours[visible]
+        dec_degrees_apparent = dec.degrees[visible]
+
         zoom_mask = (
-            (ra_visible >= xlim[0])
-            & (ra_visible <= xlim[1])
-            & (dec_visible >= ylim[0])
-            & (dec_visible <= ylim[1])
+            (ra_hours_apparent >= xlim[0])
+            & (ra_hours_apparent <= xlim[1])
+            & (dec_degrees_apparent >= ylim[0])
+            & (dec_degrees_apparent <= ylim[1])
         )
-        ra_plot = ra_visible[zoom_mask]
-        dec_plot = dec_visible[zoom_mask]
+
+        ra_plot = ra_hours_apparent[zoom_mask]
+        dec_plot = dec_degrees_apparent[zoom_mask]
         mag_plot = bright_stars[visible][zoom_mask]["magnitude"]
+
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         ax.scatter(
             ra_plot,
@@ -996,7 +1007,6 @@ def _plot_stars_on_skymap(
                     edgecolors=style["TEXT_COLOR"],
                 )
             else:
-                ra, dec, _ = star_positions.radec()
                 ax.scatter(
                     ra.radians[visible],
                     90 - dec.degrees[visible],
