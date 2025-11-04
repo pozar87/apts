@@ -1,6 +1,12 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from apts.plot import plot_skymap, _plot_messier_on_skymap, _plot_planets_on_skymap, _plot_sun_on_skymap, _plot_moon_on_skymap
+from apts.plot import (
+    plot_skymap,
+    _plot_messier_on_skymap,
+    _plot_planets_on_skymap,
+    _plot_sun_on_skymap,
+    _plot_moon_on_skymap,
+)
 from apts.observations import Observation
 from apts.equipment import Equipment
 from apts.place import Place
@@ -22,16 +28,16 @@ def mock_observation():
     conditions = Conditions(
         start_time=datetime(2023, 1, 2, 4, 0, tzinfo=utc),
     )
-    observation = Observation(
-        place=place, equipment=equipment, conditions=conditions
-    )
+    observation = Observation(place=place, equipment=equipment, conditions=conditions)
     return observation
 
 
 def test_plot_skymap_renders_messier_objects(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
-    with patch("apts.plot.pyplot") as mock_pyplot, \
-         patch.object(Observation, 'local_messier', MagicMock()) as mock_local_messier:
+    with (
+        patch("apts.plot.pyplot") as mock_pyplot,
+        patch.object(Observation, "local_messier", MagicMock()) as mock_local_messier,
+    ):
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
@@ -47,12 +53,15 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
             "Angle": [35.0, 0.0],
         }
         mock_visible_messier = pd.DataFrame(messier_data)
-        mock_observation.get_visible_messier = MagicMock(return_value=mock_visible_messier)
+        mock_observation.get_visible_messier = MagicMock(
+            return_value=mock_visible_messier
+        )
 
         # Create a mock Skyfield object that can be observed
         from skyfield.timelib import Time, Timescale
         from skyfield.units import Angle
         import numpy as np
+
         mock_skyfield_obj = MagicMock()
         mock_skyfield_obj.ra = Angle(hours=0.0)
         mock_skyfield_obj.dec = Angle(degrees=0.0)
@@ -68,7 +77,12 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
         mock_time.tdb_fraction = 0.0
         mock_time.ts = mock_ts
         mock_ts.tdb.return_value = mock_time
-        mock_skyfield_obj._observe_from_bcrs.return_value = (np.ones(3), np.ones(3), mock_time, 0)
+        mock_skyfield_obj._observe_from_bcrs.return_value = (
+            np.ones(3),
+            np.ones(3),
+            mock_time,
+            0,
+        )
         mock_local_messier.find_by_name.return_value = mock_skyfield_obj
         mock_local_messier.get_skyfield_object.return_value = mock_skyfield_obj
         mock_local_messier.objects = mock_visible_messier
@@ -87,9 +101,12 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
 
 def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
-    with patch("apts.plot.pyplot") as mock_pyplot, patch(
-        "apts.plot._get_brightness_color", return_value="0.5"
-    ) as mock_get_brightness_color:
+    with (
+        patch("apts.plot.pyplot") as mock_pyplot,
+        patch(
+            "apts.plot._get_brightness_color", return_value="0.5"
+        ) as mock_get_brightness_color,
+    ):
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
@@ -108,6 +125,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         )
         from skyfield.timelib import Time, Timescale
         import numpy as np
+
         mock_ts = MagicMock(spec=Timescale)
         mock_time = MagicMock(spec=Time)
         mock_time.tdb = 2451545.0
@@ -115,15 +133,20 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         mock_time.tdb_fraction = 0.0
         mock_time.ts = mock_ts
         mock_ts.tdb.return_value = mock_time
-        mock_ngc_object._observe_from_bcrs.return_value = (np.ones(3), np.ones(3), mock_time, 0)
+        mock_ngc_object._observe_from_bcrs.return_value = (
+            np.ones(3),
+            np.ones(3),
+            mock_time,
+            0,
+        )
         mock_observation.local_ngc.find_by_name = MagicMock(
             return_value=mock_ngc_object
         )
         from skyfield.api import load
+
         ts = load.timescale()
         mock_observation.place.ts = ts
         mock_observation.conditions.start_time = ts.now()
-
 
         # Call the function to be tested
         plot_skymap(
@@ -161,7 +184,9 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     mock_observer.target.latitude.degrees = 34.0
     mock_observer.ts.now.return_value.gast = 15.0
     mock_observer.observe.return_value.apparent.return_value.altaz.return_value = (
-        Angle(degrees=45), Angle(degrees=180), Angle(degrees=0)
+        Angle(degrees=45),
+        Angle(degrees=180),
+        Angle(degrees=0),
     )
     mock_observer.observe.return_value.apparent.return_value.radec.return_value = (
         Angle(hours=1.0),
@@ -169,7 +194,6 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
         Angle(degrees=0),
     )
     mock_observation.local_messier.find_by_name.return_value = mock_messier_object
-
 
     # Call the function with horizontal flip
     _plot_messier_on_skymap(
@@ -264,6 +288,7 @@ def test_plot_planets_on_skymap_renders_planets_as_ellipses():
     assert ellipse.width == 14.5 / 3600.0
     assert ellipse.height == 14.5 / 3600.0
 
+
 def test_plot_sun_on_skymap_renders_sun():
     # Create mock objects
     mock_observation = MagicMock()
@@ -293,6 +318,7 @@ def test_plot_sun_on_skymap_renders_sun():
 
     # Check that an ellipse was added
     assert mock_ax.add_patch.call_count > 0
+
 
 def test_plot_moon_on_skymap_renders_moon():
     # Create mock objects
@@ -342,3 +368,349 @@ def test_plot_planet_with_no_size_polar(mock_observation):
 
         # Assert that the subplots function was called, indicating a plot was created
         mock_pyplot.subplots.assert_called_once()
+
+
+def test_plot_stars_on_skymap_equatorial_with_zoom():
+    """Test that stars are plotted correctly in equatorial coordinates with zoom."""
+    from apts.plot import (
+        _plot_stars_on_skymap,
+        _plot_bright_stars_on_skymap,
+        CoordinateSystem,
+    )
+
+    # Create mock objects
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_observer = MagicMock()
+
+    # Set up the axes limits for zoomed view
+    mock_ax.get_xlim.return_value = (1.0, 2.0)  # RA hours
+    mock_ax.get_ylim.return_value = (30.0, 40.0)  # Dec degrees
+
+    # Mock star data - some stars inside zoom window, some outside
+    mock_stars_data = pd.DataFrame(
+        {
+            "ra_hours": [0.5, 1.2, 1.8, 2.5, 3.0],  # 1.2, 1.8 inside zoom (1.0-2.0)
+            "dec_degrees": [
+                25.0,
+                35.0,
+                38.0,
+                45.0,
+                50.0,
+            ],  # 35.0, 38.0 inside zoom (30.0-40.0)
+            "magnitude": [3.0, 2.5, 4.0, 5.0, 6.0],
+            "epoch_year": [
+                2000.0,
+                2000.0,
+                2000.0,
+                2000.0,
+                2000.0,
+            ],  # Required by SkyfieldStar
+        }
+    )
+
+    # Mock the star observation results
+    mock_star_positions = MagicMock()
+    mock_altaz = MagicMock()
+    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
+    mock_radec = MagicMock()
+    mock_radec.hours = [0.5, 1.2, 1.8, 2.5, 3.0]  # Should match ra_hours
+    mock_radec.degrees = [25.0, 35.0, 38.0, 45.0, 50.0]  # Should match dec_degrees
+    mock_star_positions.apparent.return_value.altaz.return_value = (
+        mock_altaz,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_star_positions.apparent.return_value.radec.return_value = (
+        mock_radec,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_observer.observe.return_value = mock_star_positions
+
+    # Mock get_hipparcos_data to return our test data
+    with patch("apts.plot.get_hipparcos_data", return_value=mock_stars_data):
+        # Test _plot_stars_on_skymap
+        _plot_stars_on_skymap(
+            mock_observation,
+            mock_ax,
+            mock_observer,
+            mag_limit=6.0,
+            is_polar=False,
+            style={"TEXT_COLOR": "white"},
+            zoom_deg=2.0,
+            coordinate_system=CoordinateSystem.EQUATORIAL,
+        )
+
+        # Verify that scatter was called with stars in the zoom window
+        # Should have 2 stars: (1.2, 35.0) and (1.8, 38.0)
+        mock_ax.scatter.assert_called()
+        scatter_calls = mock_ax.scatter.call_args_list
+
+        # Find the equatorial scatter call (last one should be the equatorial plot)
+        equatorial_scatter = None
+        for call in scatter_calls:
+            args, kwargs = call
+            if len(args) >= 2:
+                # Check if this looks like RA/Dec coordinates (values in reasonable ranges)
+                ra_values, dec_values = args[0], args[1]
+                if hasattr(ra_values, "__len__") and len(ra_values) > 0:
+                    if 0 <= min(ra_values) <= 24 and 0 <= min(dec_values) <= 90:
+                        equatorial_scatter = call
+                        break
+
+        assert equatorial_scatter is not None, (
+            "No equatorial coordinate scatter plot found"
+        )
+
+        # Verify the scatter contains the correct stars (2 stars in zoom window)
+        args, kwargs = equatorial_scatter
+        ra_values, dec_values = args[0], args[1]
+        assert len(ra_values) == 2, (
+            f"Expected 2 stars in zoom window, got {len(ra_values)}"
+        )
+        assert 1.2 in ra_values, (
+            f"Star at RA=1.2 not found in plotted stars: {ra_values}"
+        )
+        assert 1.8 in ra_values, (
+            f"Star at RA=1.8 not found in plotted stars: {ra_values}"
+        )
+        assert 35.0 in dec_values, (
+            f"Star at Dec=35.0 not found in plotted stars: {dec_values}"
+        )
+        assert 38.0 in dec_values, (
+            f"Star at Dec=38.0 not found in plotted stars: {dec_values}"
+        )
+
+
+def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
+    """Test that bright stars are plotted correctly in equatorial coordinates with zoom."""
+    from apts.plot import _plot_bright_stars_on_skymap, CoordinateSystem
+
+    # Create mock objects
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_observer = MagicMock()
+
+    # Set up the axes limits for zoomed view
+    mock_ax.get_xlim.return_value = (1.0, 2.0)  # RA hours
+    mock_ax.get_ylim.return_value = (30.0, 40.0)  # Dec degrees
+
+    # Mock bright star data - some stars inside zoom window, some outside
+    mock_bright_stars_data = pd.DataFrame(
+        {
+            "Name": ["Sirius", "Vega", "Altair", "Betelgeuse", "Rigel"],
+            "RA": [
+                6.752,
+                18.615,
+                19.846,
+                5.919,
+                5.242,
+            ],  # Will be converted to magnitude
+            "Dec": [
+                -16.716,
+                38.784,
+                8.868,
+                7.407,
+                -8.202,
+            ],  # Will be converted to magnitude
+            "Magnitude": [-1.46, 0.03, 0.77, 0.50, 0.18],  # Bright stars
+        }
+    )
+
+    # Convert the values to magnitude objects (as the real code expects)
+    from astropy.coordinates import Longitude, Latitude, Magnitude
+    from astropy import units as u
+
+    mock_bright_stars_data["RA"] = mock_bright_stars_data["RA"].apply(
+        lambda x: Longitude(x * u.hour)
+    )
+    mock_bright_stars_data["Dec"] = mock_bright_stars_data["Dec"].apply(
+        lambda x: Latitude(x * u.deg)
+    )
+    mock_bright_stars_data["Magnitude"] = mock_bright_stars_data["Magnitude"].apply(
+        lambda x: Magnitude(x)
+    )
+
+    # Mock the local_stars
+    mock_observation.local_stars.objects = mock_bright_stars_data
+
+    # Mock the star observation results - need to match the RA/Dec we want in zoom
+    mock_star_positions = MagicMock()
+    mock_altaz = MagicMock()
+    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
+    mock_radec = MagicMock()
+    # Set up RA/Dec values where some fall in the zoom window (1.0-2.0, 30.0-40.0)
+    mock_radec.hours = [6.752, 1.5, 1.8, 5.919, 5.242]  # 1.5, 1.8 inside zoom
+    mock_radec.degrees = [-16.716, 35.0, 38.0, 7.407, -8.202]  # 35.0, 38.0 inside zoom
+    mock_star_positions.apparent.return_value.altaz.return_value = (
+        mock_altaz,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_star_positions.apparent.return_value.radec.return_value = (
+        mock_radec,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_observer.observe.return_value = mock_star_positions
+
+    # Test _plot_bright_stars_on_skymap
+    _plot_bright_stars_on_skymap(
+        mock_observation,
+        mock_ax,
+        mock_observer,
+        is_polar=False,
+        style={"EMPHASIS_COLOR": "yellow"},
+        zoom_deg=2.0,
+        coordinate_system=CoordinateSystem.EQUATORIAL,
+    )
+
+    # Verify that scatter was called for bright stars in zoom window
+    mock_ax.scatter.assert_called()
+    scatter_calls = mock_ax.scatter.call_args_list
+
+    # Find the equatorial bright star scatter call
+    equatorial_scatter = None
+    for call in scatter_calls:
+        args, kwargs = call
+        if len(args) >= 2:
+            ra_values, dec_values = args[0], args[1]
+            if hasattr(ra_values, "__len__") and len(ra_values) > 0:
+                if 0 <= min(ra_values) <= 24 and 0 <= min(dec_values) <= 90:
+                    equatorial_scatter = call
+                    break
+
+    assert equatorial_scatter is not None, (
+        "No equatorial bright star scatter plot found"
+    )
+
+    # Verify the scatter contains the correct bright stars (2 stars in zoom window)
+    args, kwargs = equatorial_scatter
+    ra_values, dec_values = args[0], args[1]
+    assert len(ra_values) == 2, (
+        f"Expected 2 bright stars in zoom window, got {len(ra_values)}"
+    )
+    assert 1.5 in ra_values, (
+        f"Bright star at RA=1.5 not found in plotted stars: {ra_values}"
+    )
+    assert 1.8 in ra_values, (
+        f"Bright star at RA=1.8 not found in plotted stars: {ra_values}"
+    )
+    assert 35.0 in dec_values, (
+        f"Bright star at Dec=35.0 not found in plotted stars: {dec_values}"
+    )
+    assert 38.0 in dec_values, (
+        f"Bright star at Dec=38.0 not found in plotted stars: {dec_values}"
+    )
+
+
+def test_plot_stars_ra_wrapping_equatorial():
+    """Test that RA coordinate wrapping works correctly in equatorial plots."""
+    from apts.plot import _plot_stars_on_skymap, _create_ra_zoom_mask, CoordinateSystem
+
+    # Create mock objects
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_observer = MagicMock()
+
+    # Set up axes limits that cross the RA = 0/24 boundary
+    mock_ax.get_xlim.return_value = (23.5, 0.5)  # Wraps around midnight
+    mock_ax.get_ylim.return_value = (30.0, 40.0)  # Normal dec range
+
+    # Mock star data with stars on both sides of the boundary
+    mock_stars_data = pd.DataFrame(
+        {
+            "ra_hours": [
+                23.0,
+                23.8,
+                0.2,
+                0.8,
+                2.0,
+            ],  # 23.8, 0.2 should be in zoom window
+            "dec_degrees": [35.0, 35.0, 35.0, 35.0, 35.0],  # All in dec range
+            "magnitude": [3.0, 2.5, 4.0, 5.0, 6.0],
+            "epoch_year": [
+                2000.0,
+                2000.0,
+                2000.0,
+                2000.0,
+                2000.0,
+            ],  # Required by SkyfieldStar
+        }
+    )
+
+    # Mock the star observation results
+    mock_star_positions = MagicMock()
+    mock_altaz = MagicMock()
+    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
+    mock_radec = MagicMock()
+    mock_radec.hours = [23.0, 23.8, 0.2, 0.8, 2.0]
+    mock_radec.degrees = [35.0, 35.0, 35.0, 35.0, 35.0]
+    mock_star_positions.apparent.return_value.altaz.return_value = (
+        mock_altaz,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_star_positions.apparent.return_value.radec.return_value = (
+        mock_radec,
+        MagicMock(),
+        MagicMock(),
+    )
+    mock_observer.observe.return_value = mock_star_positions
+
+    # Test the RA wrapping helper function directly
+    ra_values = [23.0, 23.8, 0.2, 0.8, 2.0]
+    xlim = (23.5, 0.5)
+    ra_mask = _create_ra_zoom_mask(ra_values, xlim)
+
+    # Should include stars at 23.8 and 0.2 (within the wrapped window)
+    expected_mask = [False, True, True, False, False]  # Only 23.8 and 0.2 in window
+    assert list(ra_mask) == expected_mask, (
+        f"RA wrapping mask failed: expected {expected_mask}, got {list(ra_mask)}"
+    )
+
+    # Now test the full function with RA wrapping
+    with patch("apts.plot.get_hipparcos_data", return_value=mock_stars_data):
+        _plot_stars_on_skymap(
+            mock_observation,
+            mock_ax,
+            mock_observer,
+            mag_limit=6.0,
+            is_polar=False,
+            style={"TEXT_COLOR": "white"},
+            zoom_deg=2.0,
+            coordinate_system=CoordinateSystem.EQUATORIAL,
+        )
+
+        # Verify that scatter was called with stars in the wrapped zoom window
+        mock_ax.scatter.assert_called()
+        scatter_calls = mock_ax.scatter.call_args_list
+
+        # Find the equatorial scatter call
+        equatorial_scatter = None
+        for call in scatter_calls:
+            args, kwargs = call
+            if len(args) >= 2:
+                ra_values, dec_values = args[0], args[1]
+                if hasattr(ra_values, "__len__") and len(ra_values) > 0:
+                    if 0 <= min(ra_values) <= 24:
+                        equatorial_scatter = call
+                        break
+
+        assert equatorial_scatter is not None, (
+            "No equatorial coordinate scatter plot found"
+        )
+
+        # Verify only the 2 stars in the wrapped zoom window were plotted
+        args, kwargs = equatorial_scatter
+        ra_values, dec_values = args[0], args[1]
+        assert len(ra_values) == 2, (
+            f"Expected 2 stars in wrapped zoom window, got {len(ra_values)}"
+        )
+        assert 23.8 in ra_values, (
+            f"Star at RA=23.8 not found in plotted stars: {ra_values}"
+        )
+        assert 0.2 in ra_values, (
+            f"Star at RA=0.2 not found in plotted stars: {ra_values}"
+        )
