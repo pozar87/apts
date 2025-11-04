@@ -83,7 +83,28 @@ def _get_brightness_color(magnitude: Optional[float]) -> str:
 def _normalize_dates(start, stop):
     if stop < start:
         stop += timedelta(days=1)
-    return (start, stop)
+
+
+def _create_ra_zoom_mask(ra_hours, xlim):
+    """
+    Create a mask for RA values that fall within the zoom window,
+    handling the case where the window crosses the RA = 0/24 boundary.
+
+    Args:
+        ra_hours: array of RA values in hours
+        xlim: tuple of (xmin, xmax) RA values in hours
+
+    Returns:
+        boolean array mask indicating which RA values are in the zoom window
+    """
+    ra_min, ra_max = xlim
+
+    if ra_min <= ra_max:
+        # Normal case: no wrapping
+        return (ra_hours >= ra_min) & (ra_hours <= ra_max)
+    else:
+        # Wrapping case: window crosses RA = 0/24 boundary
+        return (ra_hours >= ra_min) | (ra_hours <= ra_max)
 
 
 def plot_visible_planets_svg(
@@ -711,7 +732,11 @@ def _plot_bright_stars_on_skymap(
 
     star_color = style.get("EMPHASIS_COLOR", "yellow")
 
-    if not is_polar and zoom_deg is not None:
+    if (
+        not is_polar
+        and zoom_deg is not None
+        and coordinate_system == CoordinateSystem.HORIZONTAL
+    ):
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
 

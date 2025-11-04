@@ -623,39 +623,45 @@ def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
         }
     )
 
-    # Convert the values to magnitude objects (as the real code expects)
-    from astropy.coordinates import Longitude, Latitude, Magnitude
-    from astropy import units as u
-
-    mock_bright_stars_data["RA"] = mock_bright_stars_data["RA"].apply(
-        lambda x: Longitude(x * u.hour)
-    )
-    mock_bright_stars_data["Dec"] = mock_bright_stars_data["Dec"].apply(
-        lambda x: Latitude(x * u.deg)
-    )
-    mock_bright_stars_data["Magnitude"] = mock_bright_stars_data["Magnitude"].apply(
-        lambda x: Magnitude(x)
-    )
+    # Convert the values to simple numeric values (the real code converts from objects to numbers)
+    # We just use the raw numeric values since the plotting code converts them anyway
+    pass  # No conversion needed - using raw numeric values
 
     # Mock the local_stars
     mock_observation.local_stars.objects = mock_bright_stars_data
 
     # Mock the star observation results - need to match the RA/Dec we want in zoom
+    import numpy as np
+    from unittest.mock import PropertyMock
+
     mock_star_positions = MagicMock()
     mock_altaz = MagicMock()
-    mock_altaz.degrees = [45.0, 50.0, 55.0, 60.0, 65.0]
-    mock_radec = MagicMock()
+    mock_az = MagicMock()
+
+    mock_altaz.degrees = np.array([45.0, 50.0, 55.0, 60.0, 65.0])
+    mock_az.degrees = np.array([180.0, 200.0, 220.0, 240.0, 260.0])  # Azimuth values
+
+    # Create proper mock objects for ra and dec
+    mock_ra = MagicMock()
+    mock_dec = MagicMock()
+
     # Set up RA/Dec values where some fall in the zoom window (1.0-2.0, 30.0-40.0)
-    mock_radec.hours = [6.752, 1.5, 1.8, 5.919, 5.242]  # 1.5, 1.8 inside zoom
-    mock_radec.degrees = [-16.716, 35.0, 38.0, 7.407, -8.202]  # 35.0, 38.0 inside zoom
+    # Convert to numpy arrays for proper array operations
+    type(mock_ra).hours = PropertyMock(
+        return_value=np.array([6.752, 1.5, 1.8, 5.919, 5.242])
+    )  # 1.5, 1.8 inside zoom
+    type(mock_dec).degrees = PropertyMock(
+        return_value=np.array([-16.716, 35.0, 38.0, 7.407, -8.202])
+    )  # 35.0, 38.0 inside zoom
+
     mock_star_positions.apparent.return_value.altaz.return_value = (
         mock_altaz,
-        MagicMock(),
+        mock_az,  # Use proper az mock instead of MagicMock()
         MagicMock(),
     )
     mock_star_positions.apparent.return_value.radec.return_value = (
-        mock_radec,
-        MagicMock(),
+        mock_ra,  # This goes to ra
+        mock_dec,  # This goes to dec
         MagicMock(),
     )
     mock_observer.observe.return_value = mock_star_positions
@@ -759,39 +765,32 @@ def test_plot_stars_ra_wrapping_equatorial():
     ra_hours_array = np.array([23.0, 23.8, 0.2, 0.8, 2.0])
     dec_degrees_array = np.array([35.0, 35.0, 35.0, 35.0, 35.0])
 
-    # Mock the .hours and .degrees properties to return arrays
-    mock_radec.hours = ra_hours_array
-    mock_radec.degrees = dec_degrees_array
+    # Create separate mock objects for ra and dec
+    mock_ra = MagicMock()
+    mock_dec = MagicMock()
 
-    # Mock the indexing behavior for boolean arrays
-    def mock_indexing(key):
-        if isinstance(key, np.ndarray) and key.dtype == bool:
-            # Boolean indexing - return filtered array
-            return ra_hours_array[key]
-        return ra_hours_array
+    # Mock the .hours and .degrees properties to return arrays that support array operations
+    # We need to set these up as properties that return the actual numpy arrays
+    from unittest.mock import PropertyMock
 
-    def mock_dec_indexing(key):
-        if isinstance(key, np.ndarray) and key.dtype == bool:
-            # Boolean indexing - return filtered array
-            return dec_degrees_array[key]
-        return dec_degrees_array
-
-    mock_radec.hours = ra_hours_array
-    mock_radec.degrees = dec_degrees_array
+    type(mock_ra).hours = PropertyMock(return_value=ra_hours_array)
+    type(mock_dec).degrees = PropertyMock(return_value=dec_degrees_array)
     mock_star_positions.apparent.return_value.altaz.return_value = (
         mock_altaz,
         mock_az,
         MagicMock(),
     )
     mock_star_positions.apparent.return_value.radec.return_value = (
-        mock_radec,
-        MagicMock(),
+        mock_ra,  # This goes to ra
+        mock_dec,  # This goes to dec
         MagicMock(),
     )
     mock_observer.observe.return_value = mock_star_positions
 
     # Test the RA wrapping helper function directly
-    ra_values = [23.0, 23.8, 0.2, 0.8, 2.0]
+    import numpy as np
+
+    ra_values = np.array([23.0, 23.8, 0.2, 0.8, 2.0])
     xlim = (23.5, 0.5)
     ra_mask = _create_ra_zoom_mask(ra_values, xlim)
 
