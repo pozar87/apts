@@ -748,11 +748,8 @@ def _plot_bright_stars_on_skymap(
         ra_hours_apparent = ra.hours
         dec_degrees_apparent = dec.degrees
 
-        zoom_mask = (
-            (ra_hours_apparent >= xlim[0])
-            & (ra_hours_apparent <= xlim[1])
-            & (dec_degrees_apparent >= ylim[0])
-            & (dec_degrees_apparent <= ylim[1])
+        zoom_mask = _create_ra_zoom_mask(ra_hours_apparent, xlim) & (
+            (dec_degrees_apparent >= ylim[0]) & (dec_degrees_apparent <= ylim[1])
         )
 
         df_zoomed = df_visible[zoom_mask]
@@ -1683,11 +1680,21 @@ def _generate_plot_skymap(
             )
         if plot_sun:
             _plot_sun_on_skymap(
-                observation, ax, observer, is_polar=False, style=style, coordinate_system=coordinate_system
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                style=style,
+                coordinate_system=coordinate_system,
             )
         if plot_moon:
             _plot_moon_on_skymap(
-                observation, ax, observer, is_polar=False, style=style, coordinate_system=coordinate_system
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                style=style,
+                coordinate_system=coordinate_system,
             )
 
         if target_object_data is not None:
@@ -1998,11 +2005,21 @@ def _generate_plot_skymap(
             )
         if plot_sun:
             _plot_sun_on_skymap(
-                observation, ax, observer, is_polar=True, style=style, coordinate_system=coordinate_system
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                style=style,
+                coordinate_system=coordinate_system,
             )
         if plot_moon:
             _plot_moon_on_skymap(
-                observation, ax, observer, is_polar=True, style=style, coordinate_system=coordinate_system
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                style=style,
+                coordinate_system=coordinate_system,
             )
 
         if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees > 0:
