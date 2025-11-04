@@ -1655,6 +1655,7 @@ def _generate_plot_skymap(
                 target_name=target_name,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
+                coordinate_system=coordinate_system,
             )
         if plot_ngc:
             _plot_ngc_on_skymap(
@@ -1668,6 +1669,7 @@ def _generate_plot_skymap(
                 target_object=target_object,
                 flipped_horizontally=flipped_horizontally,
                 flipped_vertically=flipped_vertically,
+                coordinate_system=coordinate_system,
             )
         if plot_planets:
             _plot_planets_on_skymap(
@@ -1677,11 +1679,16 @@ def _generate_plot_skymap(
                 is_polar=False,
                 effective_dark_mode=effective_dark_mode,
                 style=style,
+                coordinate_system=coordinate_system,
             )
         if plot_sun:
-            _plot_sun_on_skymap(observation, ax, observer, is_polar=False, style=style)
+            _plot_sun_on_skymap(
+                observation, ax, observer, is_polar=False, style=style, coordinate_system=coordinate_system
+            )
         if plot_moon:
-            _plot_moon_on_skymap(observation, ax, observer, is_polar=False, style=style)
+            _plot_moon_on_skymap(
+                observation, ax, observer, is_polar=False, style=style, coordinate_system=coordinate_system
+            )
 
         if target_object_data is not None:
             width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
