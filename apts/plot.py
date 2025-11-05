@@ -50,14 +50,16 @@ def _get_object_angular_size_deg(observation: "Observation", object_name: str) -
     """Gets the angular size of a solar system object in degrees."""
     visible_planets = observation.get_visible_planets()
     object_data = visible_planets[visible_planets["Name"] == object_name]
-    size_deg = 0.5  # Default size
     if not object_data.empty:
         size_arcsec = object_data.iloc[0].get(ObjectTableLabels.SIZE)
         if pd.notna(size_arcsec):
             if hasattr(size_arcsec, "magnitude"):
                 size_arcsec = size_arcsec.magnitude
-            size_deg = float(size_arcsec) / 3600.0
-    return size_deg
+            return float(size_arcsec) / 3600.0
+    # Default size if not found or NaN
+    if object_name in ["Sun", "Moon"]:
+        return 0.5
+    return 0.0
 
 
 def _get_brightness_color(magnitude: Optional[float]) -> str:
@@ -1346,68 +1348,27 @@ def _plot_planets_on_skymap(
     is_polar,
     effective_dark_mode,
     style,
+    target_name: str,
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     visible_planets = observation.get_visible_planets()
     if not visible_planets.empty:
         for _, p_obj in visible_planets.iterrows():
             planet_name = p_obj[ObjectTableLabels.NAME]
-            planet_object = observation.local_planets.find_by_name(planet_name)
-            if planet_object:
-                alt, az, _ = observer.observe(planet_object).apparent().altaz()
-                ra, dec, _ = observer.observe(planet_object).apparent().radec()
-                if alt.degrees > 0:
-                    planet_color = get_planet_color(
-                        planet_name, effective_dark_mode, style["TEXT_COLOR"]
-                    )
-                    size_arcsec = p_obj.get(ObjectTableLabels.SIZE)
-                    if pd.isna(size_arcsec):
-                        size_arcsec = 0.0
-                    if hasattr(size_arcsec, "magnitude"):
-                        size_arcsec = size_arcsec.magnitude
-                    size_deg = float(size_arcsec) / 3600.0
-
-                    if is_polar:
-                        size = size_deg * 200 if size_deg > 0 else 5
-                        if coordinate_system == CoordinateSystem.HORIZONTAL:
-                            x, y = az.radians, 90 - alt.degrees
-                        else:
-                            x, y = ra.radians, 90 - dec.degrees
-                        ax.scatter(
-                            x,
-                            y,
-                            s=size,
-                            color=planet_color,
-                            marker="o",
-                        )
-                        ax.annotate(
-                            planet_name,
-                            (x, y),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color=planet_color,
-                        )
-                    else:
-                        ellipse = Ellipse(
-                            xy=(az.degrees, alt.degrees),
-                            width=size_deg,
-                            height=size_deg,
-                            angle=0,
-                            edgecolor=planet_color,
-                            facecolor=planet_color,
-                            alpha=0.6,
-                        )
-                        ax.add_patch(ellipse)
-                        ax.annotate(
-                            planet_name,
-                            (az.degrees, alt.degrees),
-                            textcoords="offset points",
-                            xytext=(5, 5),
-                            color=planet_color,
-                        )
+            if planet_name == target_name:
+                continue  # Skip the target object, it will be plotted separately
+            _plot_solar_system_object_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar,
+                style,
+                planet_name,
+                coordinate_system=coordinate_system,
+            )
 
 
-def _plot_sun_or_moon_on_skymap(
+def _plot_solar_system_object_on_skymap(
     observation: "Observation",
     ax,
     observer,
@@ -1417,8 +1378,11 @@ def _plot_sun_or_moon_on_skymap(
     is_target: bool = False,
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
-    """Helper to plot the Sun or Moon, handling regular and target styles."""
-    obj = observation.place.sun if object_name == "Sun" else observation.place.moon
+    """Helper to plot a solar system object, handling regular and target styles."""
+    obj = observation.local_planets.find_by_name(object_name)
+    if not obj:
+        return  # Object not found
+
     alt, az, _ = observer.observe(obj).apparent().altaz()
     ra, dec, _ = observer.observe(obj).apparent().radec()
 
@@ -1427,9 +1391,15 @@ def _plot_sun_or_moon_on_skymap(
 
     size_deg = _get_object_angular_size_deg(observation, object_name)
 
-    edge_color = "yellow" if object_name == "Sun" else "gray"
-    face_color = "yellow" if object_name == "Sun" else "gray"
-    marker = "*" if object_name == "Sun" else "o"
+    # Determine colors and markers
+    effective_dark_mode = get_dark_mode()
+    default_color = style.get("EMPHASIS_COLOR", "yellow")
+    edge_color = get_planet_color(object_name, effective_dark_mode, default_color)
+    face_color = edge_color
+    marker = "o"
+    if object_name == "Sun":
+        marker = "*"
+
     linestyle = "solid"
     linewidth = 1
 
@@ -1706,10 +1676,11 @@ def _generate_plot_skymap(
                 is_polar=False,
                 effective_dark_mode=effective_dark_mode,
                 style=style,
+                target_name=target_name,
                 coordinate_system=coordinate_system,
             )
         if plot_sun and target_name != "Sun":
-            _plot_sun_or_moon_on_skymap(
+            _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
                 observer,
@@ -1719,7 +1690,7 @@ def _generate_plot_skymap(
                 coordinate_system=coordinate_system,
             )
         if plot_moon and target_name != "Moon":
-            _plot_sun_or_moon_on_skymap(
+            _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
                 observer,
@@ -1728,7 +1699,6 @@ def _generate_plot_skymap(
                 object_name="Moon",
                 coordinate_system=coordinate_system,
             )
-
         if target_object_data is not None:
             width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
             if hasattr(width_arcmin, "magnitude"):
@@ -1799,8 +1769,8 @@ def _generate_plot_skymap(
                 alpha=0.6,
             )
             ax.add_patch(ellipse)
-        elif target_name in ["Sun", "Moon"]:
-            _plot_sun_or_moon_on_skymap(
+        elif observation.local_planets.find_by_name(target_name) is not None:
+            _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
                 observer,
@@ -2044,10 +2014,11 @@ def _generate_plot_skymap(
                 is_polar=True,
                 effective_dark_mode=effective_dark_mode,
                 style=style,
+                target_name=target_name,
                 coordinate_system=coordinate_system,
             )
         if plot_sun and target_name != "Sun":
-            _plot_sun_or_moon_on_skymap(
+            _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
                 observer,
@@ -2057,13 +2028,24 @@ def _generate_plot_skymap(
                 coordinate_system=coordinate_system,
             )
         if plot_moon and target_name != "Moon":
-            _plot_sun_or_moon_on_skymap(
+            _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
                 observer,
                 is_polar=True,
                 style=style,
                 object_name="Moon",
+                coordinate_system=coordinate_system,
+            )
+        if observation.local_planets.find_by_name(target_name) is not None:
+            _plot_solar_system_object_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=True,
+                style=style,
+                object_name=target_name,
+                is_target=True,
                 coordinate_system=coordinate_system,
             )
 
