@@ -46,6 +46,20 @@ def _calculate_parallactic_angle(
     return numpy.rad2deg(q_rad)
 
 
+def _get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
+    """Gets the angular size of a solar system object in degrees."""
+    visible_planets = observation.get_visible_planets()
+    object_data = visible_planets[visible_planets["Name"] == object_name]
+    size_deg = 0.5  # Default size
+    if not object_data.empty:
+        size_arcsec = object_data.iloc[0].get(ObjectTableLabels.SIZE)
+        if pd.notna(size_arcsec):
+            if hasattr(size_arcsec, "magnitude"):
+                size_arcsec = size_arcsec.magnitude
+            size_deg = float(size_arcsec) / 3600.0
+    return size_deg
+
+
 def _get_brightness_color(magnitude: Optional[float]) -> str:
     """
     Calculates a grayscale color based on the magnitude of a celestial object.
@@ -1393,99 +1407,83 @@ def _plot_planets_on_skymap(
                         )
 
 
-def _plot_sun_on_skymap(
+def _plot_sun_or_moon_on_skymap(
     observation: "Observation",
     ax,
     observer,
     is_polar,
     style,
+    object_name: str,
+    is_target: bool = False,
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
-    sun = observation.place.sun
-    alt, az, _ = observer.observe(sun).apparent().altaz()
-    ra, dec, _ = observer.observe(sun).apparent().radec()
-    if alt.degrees > 0:
-        # Approximate angular size of the sun
-        size_deg = 0.5
-        if is_polar:
-            size = size_deg * 200
-            if coordinate_system == CoordinateSystem.HORIZONTAL:
-                x, y = az.radians, 90 - alt.degrees
-            else:
-                x, y = ra.radians, 90 - dec.degrees
-            ax.scatter(x, y, s=size, color="yellow", marker="*")
+    """Helper to plot the Sun or Moon, handling regular and target styles."""
+    obj = observation.place.sun if object_name == "Sun" else observation.place.moon
+    alt, az, _ = observer.observe(obj).apparent().altaz()
+    ra, dec, _ = observer.observe(obj).apparent().radec()
+
+    if alt.degrees <= 0 and coordinate_system == CoordinateSystem.HORIZONTAL:
+        return
+
+    size_deg = _get_object_angular_size_deg(observation, object_name)
+
+    edge_color = "yellow" if object_name == "Sun" else "gray"
+    face_color = "yellow" if object_name == "Sun" else "gray"
+    marker = "*" if object_name == "Sun" else "o"
+    linestyle = "solid"
+    linewidth = 1
+
+    if is_target:
+        edge_color = "yellow"
+        linestyle = "--"
+        linewidth = 2
+
+    if is_polar:
+        size = size_deg * 200
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            x, y = az.radians, 90 - alt.degrees
+        else:
+            x, y = ra.radians, 90 - dec.degrees
+        ax.scatter(x, y, s=size, color=edge_color, marker=marker)
+        if not is_target:
             ax.annotate(
-                "Sun",
+                object_name,
                 (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
-                color="yellow",
+                color=edge_color,
             )
-        else:
-            ellipse = Ellipse(
-                xy=(az.degrees, alt.degrees),
-                width=size_deg,
-                height=size_deg,
-                angle=0,
-                edgecolor="yellow",
-                facecolor="yellow",
-                alpha=0.6,
-            )
-            ax.add_patch(ellipse)
-            ax.annotate(
-                "Sun",
-                (az.degrees, alt.degrees),
-                textcoords="offset points",
-                xytext=(5, 5),
-                color="yellow",
-            )
+    else:  # Cartesian / Zoomed
+        x_coord, y_coord = (
+            (az.degrees, alt.degrees)
+            if coordinate_system == CoordinateSystem.HORIZONTAL
+            else (ra.hours, dec.degrees)
+        )
+        ellipse_width = (
+            size_deg
+            if coordinate_system == CoordinateSystem.HORIZONTAL
+            else size_deg / (15 * numpy.cos(numpy.deg2rad(dec.degrees)))
+        )
 
-
-def _plot_moon_on_skymap(
-    observation: "Observation",
-    ax,
-    observer,
-    is_polar,
-    style,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
-):
-    moon = observation.place.moon
-    alt, az, _ = observer.observe(moon).apparent().altaz()
-    ra, dec, _ = observer.observe(moon).apparent().radec()
-    if alt.degrees > 0:
-        # Approximate angular size of the moon
-        size_deg = 0.5
-        if is_polar:
-            size = size_deg * 200
-            if coordinate_system == CoordinateSystem.HORIZONTAL:
-                x, y = az.radians, 90 - alt.degrees
-            else:
-                x, y = ra.radians, 90 - dec.degrees
-            ax.scatter(x, y, s=size, color="gray", marker="o")
+        ellipse = Ellipse(
+            xy=(x_coord, y_coord),
+            width=ellipse_width,
+            height=size_deg,
+            angle=0,
+            edgecolor=edge_color,
+            facecolor=face_color,
+            linewidth=linewidth,
+            linestyle=linestyle,
+            alpha=0.6,
+        )
+        ax.add_patch(ellipse)
+        if not is_target:
             ax.annotate(
-                "Moon",
-                (x, y),
+                object_name,
+                (x_coord, y_coord),
                 textcoords="offset points",
                 xytext=(5, 5),
-                color="gray",
-            )
-        else:
-            ellipse = Ellipse(
-                xy=(az.degrees, alt.degrees),
-                width=size_deg,
-                height=size_deg,
-                angle=0,
-                edgecolor="gray",
-                facecolor="gray",
-                alpha=0.6,
-            )
-            ax.add_patch(ellipse)
-            ax.annotate(
-                "Moon",
-                (az.degrees, alt.degrees),
-                textcoords="offset points",
-                xytext=(5, 5),
-                color="gray",
+                color=edge_color,
             )
 
 
@@ -1710,22 +1708,24 @@ def _generate_plot_skymap(
                 style=style,
                 coordinate_system=coordinate_system,
             )
-        if plot_sun:
-            _plot_sun_on_skymap(
+        if plot_sun and target_name != "Sun":
+            _plot_sun_or_moon_on_skymap(
                 observation,
                 ax,
                 observer,
                 is_polar=False,
                 style=style,
+                object_name="Sun",
                 coordinate_system=coordinate_system,
             )
-        if plot_moon:
-            _plot_moon_on_skymap(
+        if plot_moon and target_name != "Moon":
+            _plot_sun_or_moon_on_skymap(
                 observation,
                 ax,
                 observer,
                 is_polar=False,
                 style=style,
+                object_name="Moon",
                 coordinate_system=coordinate_system,
             )
 
@@ -1799,6 +1799,17 @@ def _generate_plot_skymap(
                 alpha=0.6,
             )
             ax.add_patch(ellipse)
+        elif target_name in ["Sun", "Moon"]:
+            _plot_sun_or_moon_on_skymap(
+                observation,
+                ax,
+                observer,
+                is_polar=False,
+                style=style,
+                object_name=target_name,
+                is_target=True,
+                coordinate_system=coordinate_system,
+            )
         else:
             x_coord, y_coord = (
                 (target_az.degrees, target_alt.degrees)
@@ -2035,22 +2046,24 @@ def _generate_plot_skymap(
                 style=style,
                 coordinate_system=coordinate_system,
             )
-        if plot_sun:
-            _plot_sun_on_skymap(
+        if plot_sun and target_name != "Sun":
+            _plot_sun_or_moon_on_skymap(
                 observation,
                 ax,
                 observer,
                 is_polar=True,
                 style=style,
+                object_name="Sun",
                 coordinate_system=coordinate_system,
             )
-        if plot_moon:
-            _plot_moon_on_skymap(
+        if plot_moon and target_name != "Moon":
+            _plot_sun_or_moon_on_skymap(
                 observation,
                 ax,
                 observer,
                 is_polar=True,
                 style=style,
+                object_name="Moon",
                 coordinate_system=coordinate_system,
             )
 
