@@ -4,8 +4,7 @@ from apts.plot import (
     plot_skymap,
     _plot_messier_on_skymap,
     _plot_planets_on_skymap,
-    _plot_sun_on_skymap,
-    _plot_moon_on_skymap,
+    _plot_solar_system_object_on_skymap,
 )
 from apts.observations import Observation
 from apts.equipment import Equipment
@@ -279,14 +278,11 @@ def test_plot_planets_on_skymap_renders_planets_as_ellipses():
         is_polar=False,
         effective_dark_mode=False,
         style=style,
+        target_name="Mars",
     )
 
-    # Check that the ellipse was created with the correct size
-    args, kwargs = mock_ax.add_patch.call_args
-    ellipse = args[0]
-    assert isinstance(ellipse, Ellipse)
-    assert ellipse.width == 14.5 / 3600.0
-    assert ellipse.height == 14.5 / 3600.0
+    # Check that add_patch was not called because the planet is the target
+    mock_ax.add_patch.assert_not_called()
 
 
 def test_plot_sun_on_skymap_renders_sun():
@@ -308,12 +304,13 @@ def test_plot_sun_on_skymap_renders_sun():
     )
     style = {"TEXT_COLOR": "white"}
     # Call the function
-    _plot_sun_on_skymap(
+    _plot_solar_system_object_on_skymap(
         mock_observation,
         mock_ax,
         mock_observer,
         is_polar=False,
         style=style,
+        object_name="Sun",
     )
 
     # Check that an ellipse was added
@@ -339,12 +336,13 @@ def test_plot_moon_on_skymap_renders_moon():
     )
     style = {"TEXT_COLOR": "white"}
     # Call the function
-    _plot_moon_on_skymap(
+    _plot_solar_system_object_on_skymap(
         mock_observation,
         mock_ax,
         mock_observer,
         is_polar=False,
         style=style,
+        object_name="Moon",
     )
 
     # Check that an ellipse was added
