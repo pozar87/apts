@@ -148,15 +148,37 @@ def get_skyfield_obj(planet_name: str):
         raise RuntimeError(f"Failed to create Skyfield object for '{planet_name}': {e}")
 
 
-def get_moon_phase(time):
+def get_moon_phase_details(time):
     """
-    Returns the moon illumination percentage for a given time.
+    Returns the moon illumination percentage and waxing/waning status for a given time.
     """
     from apts.cache import get_ephemeris
     from skyfield import almanac
     import numpy as np
 
     eph = get_ephemeris()
+    moon = eph['moon']
+    sun = eph['sun']
+
+    # Get the phase angle
     phase_angle = almanac.moon_phase(eph, time).degrees
+
+    # Determine if waxing or waning
+    # We can do this by checking the rate of change of the phase angle.
+    # A small time delta is used to check the angle just before and after the given time.
+    ts = get_timescale()
+    time_plus_delta = ts.tt(jd=time.tt + 0.001) # a small time step forward
+    phase_angle_plus = almanac.moon_phase(eph, time_plus_delta).degrees
+    is_waxing = phase_angle_plus > phase_angle
+
+
     illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2
-    return illumination * 100
+    return illumination * 100, is_waxing
+
+
+def get_moon_phase(time):
+    """
+    Returns the moon illumination percentage for a given time.
+    """
+    illumination, _ = get_moon_phase_details(time)
+    return illumination
