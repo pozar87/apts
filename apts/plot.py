@@ -650,12 +650,12 @@ def _generate_plot_weather(
                 observation, plt_visibility_ax, effective_dark_mode, style
             )
 
-        plt_moon_phase_ax = observation.place.weather.plot_moon_phase(
+        plt_moon_illumination_ax = observation.place.weather.plot_moon_illumination(
             ax=axes[4, 0], dark_mode_override=effective_dark_mode
         )
-        if plt_moon_phase_ax:
+        if plt_moon_illumination_ax:
             _mark_observation(
-                observation, plt_moon_phase_ax, effective_dark_mode, style
+                observation, plt_moon_illumination_ax, effective_dark_mode, style
             )
 
         fig.tight_layout()

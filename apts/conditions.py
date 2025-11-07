@@ -32,8 +32,8 @@ class DefaultConditions:
   MAX_OBJECT_AZIMUTH = 360  # [°], range [0,360]
   # Maximal object brightness (https://en.wikipedia.org/wiki/Apparent_magnitude)
   MAX_OBJECT_MAGNITUDE = 9  # [m], range [∞,-∞]
-  # Maximal moon phase
-  MAX_MOON_PHASE = 50  # [%], range [0,100]
+  # Maximal moon illumination
+  MAX_MOON_ILLUMINATION = 50  # [%], range [0,100]
   # Twilight setting for observation start
   TWILIGHT = Twilight.NAUTICAL
 
@@ -58,7 +58,7 @@ class Conditions:
                max_object_magnitude=DefaultConditions.MAX_OBJECT_MAGNITUDE,
                min_object_azimuth=DefaultConditions.MIN_OBJECT_AZIMUTH,
                max_object_azimuth=DefaultConditions.MAX_OBJECT_AZIMUTH,
-               max_moon_phase=DefaultConditions.MAX_MOON_PHASE,
+               max_moon_illumination=DefaultConditions.MAX_MOON_ILLUMINATION,
                twilight: Twilight = DefaultConditions.TWILIGHT
                ):
     self.max_clouds = max_clouds
@@ -75,5 +75,5 @@ class Conditions:
     self.max_object_magnitude = max_object_magnitude
     self.min_object_azimuth = min_object_azimuth
     self.max_object_azimuth = max_object_azimuth
-    self.max_moon_phase = max_moon_phase
+    self.max_moon_illumination = max_moon_illumination
     self.twilight = twilight

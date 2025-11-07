@@ -298,7 +298,7 @@ class TestPlacePlotting(unittest.TestCase):
         )
         self.place.moon_path = MagicMock(return_value=mock_moon_path_data)
         self.place._moon_phase_letter = MagicMock(return_value="M")
-        self.place.moon_phase = MagicMock(return_value=50)
+        self.place.moon_illumination = MagicMock(return_value=71)
 
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
@@ -429,7 +429,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_ax.text.assert_any_call(
                     180,
                     -3,
-                    "50%",
+                    "71%",
                     color=expected_style["TEXT_COLOR"],
                     alpha=0.7,
                     horizontalalignment="center",

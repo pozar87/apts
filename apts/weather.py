@@ -6,7 +6,7 @@ import requests_cache
 from typing import Optional
 
 from .utils import Utils
-from apts.utils.planetary import get_moon_phase_details
+from apts.utils.planetary import get_moon_illumination_details
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
@@ -71,11 +71,11 @@ class Weather:
         if self.data is not None and not self.data.empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
-            moon_phase_details = self.data["time"].apply(
-                lambda x: get_moon_phase_details(ts.from_datetime(x))
+            moon_illumination_details = self.data["time"].apply(
+                lambda x: get_moon_illumination_details(ts.from_datetime(x))
             )
-            self.data["moonPhase"] = [item[0] for item in moon_phase_details]
-            self.data["moonWaxing"] = [item[1] for item in moon_phase_details]
+            self.data["moonIllumination"] = [item[0] for item in moon_illumination_details]
+            self.data["moonWaxing"] = [item[1] for item in moon_illumination_details]
         else:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."
@@ -491,7 +491,7 @@ class Weather:
                     "windSpeed",
                     "temperature",
                     "visibility",
-                    "moonPhase",
+                    "moonIllumination",
                 ]
             )
         data = self._filter_data(
@@ -501,7 +501,7 @@ class Weather:
                 "windSpeed",
                 "temperature",
                 "visibility",
-                "moonPhase",
+                "moonIllumination",
             ]
         )
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
@@ -553,7 +553,7 @@ class Weather:
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
         return ax
 
-    def plot_moon_phase(
+    def plot_moon_illumination(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
     ):
         if dark_mode_override is not None:
@@ -562,7 +562,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["moonPhase", "moonWaxing"])
+        data = self._filter_data(["moonIllumination", "moonWaxing"])
         if data.empty:
             return None
 
@@ -576,11 +576,11 @@ class Weather:
         # Determine the title based on waxing/waning
         # Taking the status from the first data point for simplicity
         is_waxing = data["moonWaxing"].iloc[0]
-        title = f"Moon Phase {'Waxing' if is_waxing else 'Waning'}"
+        title = f"Moon Illumination {'Waxing' if is_waxing else 'Waning'}"
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", y="moonPhase", ylim=(0, 105), title=title, ax=ax, **plot_kwargs
+            x="time", y="moonIllumination", ylim=(0, 105), title=title, ax=ax, **plot_kwargs
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
