@@ -790,7 +790,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.max_wind = 15.0
         self.obs.conditions.min_temperature = 0.0
         self.obs.conditions.max_temperature = 25.0
-        self.obs.conditions.max_moon_phase = 50.0
+        self.obs.conditions.max_moon_illumination = 50.0
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
@@ -821,7 +821,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
-            moonIllumination = self.obs.conditions.max_moon_phase - 1
+            moonIllumination = self.obs.conditions.max_moon_illumination - 1
 
             if (
                 i < len(conditions_met_flags) and not conditions_met_flags[i]
@@ -875,7 +875,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
-            moonIllumination = self.obs.conditions.max_moon_phase - 1
+            moonIllumination = self.obs.conditions.max_moon_illumination - 1
 
             if i == 1:  # Second hour
                 cloud = self.obs.conditions.max_clouds + 5  # Exceeds limit

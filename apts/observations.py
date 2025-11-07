@@ -288,7 +288,7 @@ class Observation:
         # Moon-related condition: Apply only if the moon is above the horizon
         moon_up_mask = data["Altitude"] > 0
         moon_illumination_mask = (
-            data.moonIllumination < self.conditions.max_moon_phase
+            data.moonIllumination < self.conditions.max_moon_illumination
         )
         final_moon_mask = ~moon_up_mask | (moon_up_mask & moon_illumination_mask)
 
@@ -532,10 +532,10 @@ class Observation:
             if pd.isna(row.moonIllumination):
                 is_good_hour = False
                 reasons.append("Moon illumination data not available")
-            elif not (row.moonIllumination < self.conditions.max_moon_phase):
+            elif not (row.moonIllumination < self.conditions.max_moon_illumination):
                 is_good_hour = False
                 reasons.append(
-                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit {self.conditions.max_moon_illumination:.1f}%"
                 )
 
             analysis_results.append(
