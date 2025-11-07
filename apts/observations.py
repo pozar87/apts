@@ -254,16 +254,47 @@ class Observation:
     def _compute_weather_goodness(self):
         data = self.place.weather.get_critical_data(self.start, self.stop)
         data = data[data.time <= self.time_limit]
+
+        # Calculate moon altitude for each hour in the weather data
+        moon_altitudes = self.place.get_altaz_curve(
+            self.place.moon, self.start, self.stop, num_points=len(data)
+        )
+        # Convert 'Time' in moon_altitudes to the same timezone as 'time' in data for merging
+        moon_altitudes["Time"] = moon_altitudes["Time"].apply(
+            lambda t: t.astimezone(data["time"].dt.tz)
+        )
+
+        # Merge moon altitudes with weather data
+        data = pd.merge_asof(
+            data.sort_values("time"),
+            moon_altitudes.sort_values("Time"),
+            left_on="time",
+            right_on="Time",
+            direction="nearest",
+        )
+
         all_hours = len(data)
-        result = data[
+
+        # Base conditions
+        good_weather_mask = (
             (data.cloudCover < self.conditions.max_clouds)
             & (data.precipProbability < self.conditions.max_precipitation_probability)
             & (data.windSpeed < self.conditions.max_wind)
             & (data.temperature > self.conditions.min_temperature)
             & (data.temperature < self.conditions.max_temperature)
             & (data.visibility > self.conditions.min_visibility)
-            & (data.moonPhase < self.conditions.max_moon_phase)
-        ]
+        )
+
+        # Moon-related condition: Apply only if the moon is above the horizon
+        moon_up_mask = data["Altitude"] > 0
+        moon_illumination_mask = (
+            data.moonIllumination < self.conditions.max_moon_phase
+        )
+        final_moon_mask = ~moon_up_mask | (moon_up_mask & moon_illumination_mask)
+
+        # Combine all conditions
+        result = data[good_weather_mask & final_moon_mask]
+
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
         if all_hours == 0:
@@ -425,7 +456,7 @@ class Observation:
             "windSpeed",
             "temperature",
             "visibility",
-            "moonPhase",
+            "moonIllumination",
         ]:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
@@ -498,13 +529,13 @@ class Observation:
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
                 )
 
-            if pd.isna(row.moonPhase):
+            if pd.isna(row.moonIllumination):
                 is_good_hour = False
-                reasons.append("Moon phase data not available")
-            elif not (row.moonPhase < self.conditions.max_moon_phase):
+                reasons.append("Moon illumination data not available")
+            elif not (row.moonIllumination < self.conditions.max_moon_phase):
                 is_good_hour = False
                 reasons.append(
-                    f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
                 )
 
             analysis_results.append(
@@ -517,7 +548,7 @@ class Observation:
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
                     "visibility": row.visibility,
-                    "moon_phase": row.moonPhase,
+                    "moon_illumination": row.moonIllumination,
                 }
             )
         return analysis_results

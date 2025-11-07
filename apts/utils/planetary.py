@@ -148,7 +148,7 @@ def get_skyfield_obj(planet_name: str):
         raise RuntimeError(f"Failed to create Skyfield object for '{planet_name}': {e}")
 
 
-def get_moon_phase_details(time):
+def get_moon_illumination_details(time):
     """
     Returns the moon illumination percentage and waxing/waning status for a given time.
     """
@@ -171,9 +171,9 @@ def get_moon_phase_details(time):
     return illumination * 100, is_waxing
 
 
-def get_moon_phase(time):
+def get_moon_illumination(time):
     """
     Returns the moon illumination percentage for a given time.
     """
-    illumination, _ = get_moon_phase_details(time)
+    illumination, _ = get_moon_illumination_details(time)
     return illumination
