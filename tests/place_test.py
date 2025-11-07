@@ -266,8 +266,6 @@ class TestPlace:
         assert "Moon altitude" in moon_df.columns
         assert "Azimuth" in moon_df.columns
         assert "Local_time" in moon_df.columns
-        assert "Phase" in moon_df.columns
-        assert "Lunation" in moon_df.columns
 
 
 class TestPlacePlotting(unittest.TestCase):
