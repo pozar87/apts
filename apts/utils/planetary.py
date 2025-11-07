@@ -164,12 +164,7 @@ def get_moon_phase_details(time):
     phase_angle = almanac.moon_phase(eph, time).degrees
 
     # Determine if waxing or waning
-    # We can do this by checking the rate of change of the phase angle.
-    # A small time delta is used to check the angle just before and after the given time.
-    ts = get_timescale()
-    time_plus_delta = ts.tt(jd=time.tt + 0.001) # a small time step forward
-    phase_angle_plus = almanac.moon_phase(eph, time_plus_delta).degrees
-    is_waxing = phase_angle_plus > phase_angle
+    is_waxing = 0 < phase_angle < 180
 
 
     illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2

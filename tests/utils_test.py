@@ -1,6 +1,6 @@
 import unittest
 from apts.cache import get_timescale
-from apts.utils.planetary import get_moon_phase
+from apts.utils.planetary import get_moon_phase, get_moon_phase_details
 
 # Ensure apts is discoverable, assuming tests are run from project root or similar
 import sys
@@ -20,6 +20,18 @@ class TestUtils(unittest.TestCase):
         time = ts.utc(2023, 11, 28, 9, 16)
         illumination = get_moon_phase(time)
         self.assertAlmostEqual(illumination, 99, delta=1)
+
+    def test_get_moon_phase_details(self):
+        ts = get_timescale()
+        # Waxing crescent on 2023-11-15
+        time_waxing = ts.utc(2023, 11, 15)
+        _, is_waxing = get_moon_phase_details(time_waxing)
+        self.assertTrue(is_waxing)
+
+        # Waning gibbous on 2023-11-30
+        time_waning = ts.utc(2023, 11, 30)
+        _, is_waxing = get_moon_phase_details(time_waning)
+        self.assertFalse(is_waxing)
 
 
 if __name__ == '__main__':
