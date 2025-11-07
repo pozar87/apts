@@ -394,7 +394,9 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         patch("apts.plot._mark_observation") as mock_mark_observation,
         patch("apts.plot._mark_good_conditions") as mock_mark_good_conditions,
         patch("apts.plot.plot_sun_and_moon_path"),
-        patch.object(mock_weather_instance, "plot_moon_phase") as mock_plot_moon_phase,
+        patch.object(
+            mock_weather_instance, "plot_moon_illumination"
+        ) as mock_plot_moon_illumination,
     ):
         fig = obs.plot_weather()
 
@@ -408,7 +410,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         mock_plot_wind.assert_called_once()
         mock_plot_pressure_and_ozone.assert_called_once()
         mock_plot_visibility.assert_called_once()
-        mock_plot_moon_phase.assert_called_once()
+        mock_plot_moon_illumination.assert_called_once()
 
         assert mock_mark_observation.call_count >= 1
         assert mock_mark_good_conditions.call_count >= 1
@@ -418,7 +420,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
 
 
 @patch("apts.weather.get_weather_settings")
-def test_plot_moon_phase(mock_get_weather_settings, requests_mock):
+def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
         "hourly": {
@@ -446,9 +448,9 @@ def test_plot_moon_phase(mock_get_weather_settings, requests_mock):
 
     weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
     with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
-        ax = weather.plot_moon_phase()
+        ax = weather.plot_moon_illumination()
         assert ax is not None
-        mock_annotate_plot.assert_called_once_with(ax, "Moon Phase [%]", False)
+        mock_annotate_plot.assert_called_once_with(ax, "Illumination [%]", False)
 
 
 if __name__ == "__main__":

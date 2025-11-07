@@ -296,7 +296,7 @@ class Observation:
             & (data.visibility > self.conditions.min_visibility)
             & (
                 (data.moonAltitude <= 0)
-                | (data.moonPhase < self.conditions.max_moon_phase)
+                | (data.moonIllumination < self.conditions.max_moon_phase)
             )
         ]
         good_hours = len(result)
@@ -462,7 +462,7 @@ class Observation:
             "windSpeed",
             "temperature",
             "visibility",
-            "moonPhase",
+            "moonIllumination",
             "moonAltitude",
         ]:
             if col in hourly_data.columns:
@@ -538,13 +538,13 @@ class Observation:
 
             # Check moon phase only if moon is above horizon
             if row.moonAltitude > 0:
-                if pd.isna(row.moonPhase):
+                if pd.isna(row.moonIllumination):
                     is_good_hour = False
-                    reasons.append("Moon phase data not available")
-                elif not (row.moonPhase < self.conditions.max_moon_phase):
+                    reasons.append("Moon illumination data not available")
+                elif not (row.moonIllumination < self.conditions.max_moon_phase):
                     is_good_hour = False
                     reasons.append(
-                        f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                        f"Moon illumination {row.moonIllumination:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
                     )
 
             analysis_results.append(
@@ -557,7 +557,7 @@ class Observation:
                     "precipitation": row.precipProbability,
                     "wind_speed": row.windSpeed,
                     "visibility": row.visibility,
-                    "moon_phase": row.moonPhase,
+                    "moon_illumination": row.moonIllumination,
                     "moon_altitude": row.moonAltitude,
                 }
             )

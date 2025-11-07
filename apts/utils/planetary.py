@@ -148,7 +148,7 @@ def get_skyfield_obj(planet_name: str):
         raise RuntimeError(f"Failed to create Skyfield object for '{planet_name}': {e}")
 
 
-def get_moon_phase(time):
+def get_moon_illumination(time):
     """
     Returns the moon illumination percentage for a given time.
     """

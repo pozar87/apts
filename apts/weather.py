@@ -6,7 +6,7 @@ import requests_cache
 from typing import Optional
 
 from .utils import Utils
-from apts.utils.planetary import get_moon_phase
+from apts.utils.planetary import get_moon_illumination
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
@@ -71,8 +71,8 @@ class Weather:
         if self.data is not None and not self.data.empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
-            self.data["moonPhase"] = self.data["time"].apply(
-                lambda x: get_moon_phase(ts.from_datetime(x))
+            self.data["moonIllumination"] = self.data["time"].apply(
+                lambda x: get_moon_illumination(ts.from_datetime(x))
             )
         else:
             logger.warning(
@@ -489,7 +489,7 @@ class Weather:
                     "windSpeed",
                     "temperature",
                     "visibility",
-                    "moonPhase",
+                    "moonIllumination",
                 ]
             )
         data = self._filter_data(
@@ -499,7 +499,7 @@ class Weather:
                 "windSpeed",
                 "temperature",
                 "visibility",
-                "moonPhase",
+                "moonIllumination",
             ]
         )
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
@@ -551,7 +551,7 @@ class Weather:
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
         return ax
 
-    def plot_moon_phase(
+    def plot_moon_illumination(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
     ):
         if dark_mode_override is not None:
@@ -560,7 +560,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["moonPhase"])
+        data = self._filter_data(["moonIllumination"])
         if data.empty:
             return None
 
@@ -573,7 +573,7 @@ class Weather:
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", ylim=(0, 105), title="Moon Phase", ax=ax, **plot_kwargs
+            x="time", ylim=(0, 105), title="Moon Illumination", ax=ax, **plot_kwargs
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -596,5 +596,5 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Moon Phase [%]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Illumination [%]", effective_dark_mode)
         return ax
