@@ -74,6 +74,8 @@ class Weather:
             self.data["moonIllumination"] = self.data["time"].apply(
                 lambda x: get_moon_illumination(ts.from_datetime(x))
             )
+            self.data["moonPhase"] = [item[0] for item in moon_phase_details]
+            self.data["moonWaxing"] = [item[1] for item in moon_phase_details]
         else:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."
@@ -570,6 +572,11 @@ class Weather:
         if ax:
             fig = ax.figure
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
+
+        # Determine the title based on waxing/waning
+        # Taking the status from the first data point for simplicity
+        is_waxing = data["moonWaxing"].iloc[0]
+        title = f"Moon Phase {'Waxing' if is_waxing else 'Waning'}"
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
