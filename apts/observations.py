@@ -251,10 +251,39 @@ class Observation:
     def plot_planets(self, dark_mode_override: Optional[bool] = None, **args):
         return apts_plot.plot_planets(self, dark_mode_override, **args)
 
+    def _add_moon_altitude(self, weather_data):
+        moon = self.local_planets.find_by_name("moon")
+        if moon and not weather_data.empty:
+            moon_altaz_df = self.place.get_altaz_curve(
+                moon, weather_data["time"].min(), weather_data["time"].max()
+            )
+            time_as_pydatetime = [t.utc_datetime() for t in moon_altaz_df["Time"]]
+            moon_altaz_df["time"] = pd.to_datetime(
+                time_as_pydatetime, utc=True
+            ).tz_convert(weather_data["time"].dt.tz)
+            moon_altaz_df = moon_altaz_df.rename(columns={"Altitude": "moonAltitude"})
+            weather_data = weather_data.sort_values("time")
+            moon_altaz_df = moon_altaz_df.sort_values("time")
+            weather_data = pd.merge_asof(
+                weather_data,
+                moon_altaz_df[["time", "moonAltitude"]],
+                on="time",
+                direction="nearest",
+            )
+        else:
+            weather_data["moonAltitude"] = -1
+        return weather_data
+
     def _compute_weather_goodness(self):
         data = self.place.weather.get_critical_data(self.start, self.stop)
         data = data[data.time <= self.time_limit]
         all_hours = len(data)
+
+        if all_hours == 0:
+            return 0
+
+        data = self._add_moon_altitude(data)
+
         result = data[
             (data.cloudCover < self.conditions.max_clouds)
             & (data.precipProbability < self.conditions.max_precipitation_probability)
@@ -262,7 +291,10 @@ class Observation:
             & (data.temperature > self.conditions.min_temperature)
             & (data.temperature < self.conditions.max_temperature)
             & (data.visibility > self.conditions.min_visibility)
-            & (data.moonPhase < self.conditions.max_moon_phase)
+            & (
+                (data.moonAltitude <= 0)
+                | (data.moonPhase < self.conditions.max_moon_phase)
+            )
         ]
         good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
@@ -418,6 +450,8 @@ class Observation:
             f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}"
         )
 
+        hourly_data = self._add_moon_altitude(hourly_data)
+
         # Ensure numeric types for comparison
         for col in [
             "cloudCover",
@@ -426,6 +460,7 @@ class Observation:
             "temperature",
             "visibility",
             "moonPhase",
+            "moonAltitude",
         ]:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
@@ -498,14 +533,16 @@ class Observation:
                     f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
                 )
 
-            if pd.isna(row.moonPhase):
-                is_good_hour = False
-                reasons.append("Moon phase data not available")
-            elif not (row.moonPhase < self.conditions.max_moon_phase):
-                is_good_hour = False
-                reasons.append(
-                    f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
-                )
+            # Check moon phase only if moon is above horizon
+            if row.moonAltitude > 0:
+                if pd.isna(row.moonPhase):
+                    is_good_hour = False
+                    reasons.append("Moon phase data not available")
+                elif not (row.moonPhase < self.conditions.max_moon_phase):
+                    is_good_hour = False
+                    reasons.append(
+                        f"Moon phase {row.moonPhase:.1f}% exceeds limit {self.conditions.max_moon_phase:.1f}%"
+                    )
 
             analysis_results.append(
                 {
@@ -518,6 +555,7 @@ class Observation:
                     "wind_speed": row.windSpeed,
                     "visibility": row.visibility,
                     "moon_phase": row.moonPhase,
+                    "moon_altitude": row.moonAltitude,
                 }
             )
         return analysis_results
