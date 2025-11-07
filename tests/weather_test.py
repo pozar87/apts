@@ -448,7 +448,7 @@ def test_plot_moon_phase(mock_get_weather_settings, requests_mock):
     with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_phase()
         assert ax is not None
-        mock_annotate_plot.assert_called_once_with(ax, "Moon Phase [%]", False)
+        mock_annotate_plot.assert_called_once_with(ax, "Illumination [%]", False)
 
 
 if __name__ == "__main__":

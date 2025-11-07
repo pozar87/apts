@@ -6,7 +6,7 @@ import requests_cache
 from typing import Optional
 
 from .utils import Utils
-from apts.utils.planetary import get_moon_phase
+from apts.utils.planetary import get_moon_phase_details
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
@@ -71,9 +71,11 @@ class Weather:
         if self.data is not None and not self.data.empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
-            self.data["moonPhase"] = self.data["time"].apply(
-                lambda x: get_moon_phase(ts.from_datetime(x))
+            moon_phase_details = self.data["time"].apply(
+                lambda x: get_moon_phase_details(ts.from_datetime(x))
             )
+            self.data["moonPhase"] = [item[0] for item in moon_phase_details]
+            self.data["moonWaxing"] = [item[1] for item in moon_phase_details]
         else:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."
@@ -560,7 +562,7 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["moonPhase"])
+        data = self._filter_data(["moonPhase", "moonWaxing"])
         if data.empty:
             return None
 
@@ -571,9 +573,14 @@ class Weather:
             fig = ax.figure
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
+        # Determine the title based on waxing/waning
+        # Taking the status from the first data point for simplicity
+        is_waxing = data["moonWaxing"].iloc[0]
+        title = f"Moon Phase {'Waxing' if is_waxing else 'Waning'}"
+
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", ylim=(0, 105), title="Moon Phase", ax=ax, **plot_kwargs
+            x="time", y="moonPhase", ylim=(0, 105), title=title, ax=ax, **plot_kwargs
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -596,5 +603,5 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Moon Phase [%]", effective_dark_mode)
+        Utils.annotate_plot(ax, "Illumination [%]", effective_dark_mode)
         return ax

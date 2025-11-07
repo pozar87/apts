@@ -14,6 +14,7 @@ from apts.constants.graphconstants import get_plot_style  # Added
 from apts.constants.twilight import Twilight
 
 from .weather import Weather
+from .utils.planetary import get_moon_phase
 from skyfield.api import load, Topos
 from skyfield import almanac
 
@@ -164,15 +165,13 @@ class Place:
         return self._next_rising_time(self.moon, start=self.date.utc_datetime())
 
     def _moon_phase_letter(self):
-        lunation = self.moon_lunation() / 100
+        moon_phase_angle = almanac.moon_phase(self.eph, self.date).degrees
+        lunation = moon_phase_angle / 360.0
         letter = chr(ord("A") + int(round(lunation * 26)))
         return letter
 
-    def moon_lunation(self):
-        return int(self.moon_path()["Lunation"][48] * 100)
-
     def moon_phase(self):
-        return int(self.moon_path()["Phase"][48])
+        return get_moon_phase(self.date)
 
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = self.ts.utc(start_time)
@@ -436,7 +435,7 @@ class Place:
         ax.text(
             180,
             -3,
-            str(self.moon_phase()) + "%",
+            f"{self.moon_phase():.0f}%",
             color=style[
                 "TEXT_COLOR"
             ],  # Using main text color, adjust alpha for muted effect
