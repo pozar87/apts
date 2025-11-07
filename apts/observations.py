@@ -261,6 +261,9 @@ class Observation:
             moon_altaz_df["time"] = pd.to_datetime(
                 time_as_pydatetime, utc=True
             ).tz_convert(weather_data["time"].dt.tz)
+            moon_altaz_df["time"] = moon_altaz_df["time"].astype(
+                weather_data["time"].dtype
+            )
             moon_altaz_df = moon_altaz_df.rename(columns={"Altitude": "moonAltitude"})
             weather_data = weather_data.sort_values("time")
             moon_altaz_df = moon_altaz_df.sort_values("time")
