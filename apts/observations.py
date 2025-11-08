@@ -410,8 +410,11 @@ class Observation:
         )
 
         if not moon_altitudes.empty:
-            moon_altitudes["Time"] = moon_altitudes["Time"].apply(
-                lambda t: t.astimezone(hourly_data["time"].dt.tz)
+            # First, convert Skyfield Time objects to timezone-aware datetimes
+            moon_altitudes["Time"] = moon_altitudes["Time"].apply(lambda t: t.utc_datetime())
+            # Then, ensure the dtype (especially precision) matches the other dataframe's key
+            moon_altitudes["Time"] = moon_altitudes["Time"].astype(
+                hourly_data["time"].dtype
             )
             hourly_data = pd.merge_asof(
                 hourly_data.sort_values("time"),
