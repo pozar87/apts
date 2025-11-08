@@ -1045,7 +1045,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertFalse(results[0]["is_good_hour"])
         self.assertIn("Temperature", results[0]["reasons"][0])
-        self.assertIn("below limit", results[0]["reasons"][0])
+        self.assertIn("out of range", results[0]["reasons"][0])
 
     def test_get_hourly_weather_analysis_bad_temperature_high(self):
         """Test bad weather due to high temperature."""
@@ -1067,7 +1067,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertFalse(results[0]["is_good_hour"])
         self.assertIn("Temperature", results[0]["reasons"][0])
-        self.assertIn("exceeds limit", results[0]["reasons"][0])
+        self.assertIn("out of range", results[0]["reasons"][0])
 
     def test_get_hourly_weather_analysis_bad_precipitation(self):
         """Test bad weather due to high precipitation probability."""
@@ -1155,6 +1155,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.assert_called_once()  # Verify it was called
 
         # Test Case 2: Some bad weather, but overall good enough
+        self.obs._weather_analysis = None  # Reset cache
         self.obs.place.weather = MagicMock()  # Assign a fresh mock for this case
         num_hours_mixed = 4
         # 3 good, 1 bad -> 75% good
@@ -1167,6 +1168,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.assert_called_once()
 
         # Test Case 3: Too much bad weather, overall not good enough
+        self.obs._weather_analysis = None  # Reset cache
         self.obs.place.weather = MagicMock()  # Assign a fresh mock for this case
         num_hours_bad_overall = 4
         # 1 good, 3 bad -> 25% good
@@ -1181,6 +1183,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.assert_called_once()
 
         # Test Case 4: No weather data initially (self.obs.place.weather is None)
+        self.obs._weather_analysis = None  # Reset cache
         self.obs.place.weather = None  # Simulate no weather data initially
         self.obs.place.get_weather.reset_mock()  # Reset mock to count calls for this specific case
 

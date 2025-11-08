@@ -126,6 +126,7 @@ class Observation:
         self._local_planets = None
         self._local_ngc = None
         self._local_stars = None
+        self._weather_analysis = None
 
         # Compute time limit for observation
         if self.start is not None:
@@ -252,50 +253,13 @@ class Observation:
         return apts_plot.plot_planets(self, dark_mode_override, **args)
 
     def _compute_weather_goodness(self):
-        data = self.place.weather.get_critical_data(self.start, self.stop)
-        data = data[data.time <= self.time_limit]
+        analysis = self.get_weather_analysis()
+        if not analysis:
+            return 0
 
-        # Calculate moon altitude for each hour in the weather data
-        moon_altitudes = self.place.get_altaz_curve(
-            self.place.moon, self.start, self.stop, num_points=len(data)
-        )
-        # Convert 'Time' in moon_altitudes to the same timezone as 'time' in data for merging
-        moon_altitudes["Time"] = moon_altitudes["Time"].apply(
-            lambda t: t.astimezone(data["time"].dt.tz)
-        )
+        good_hours = sum(1 for hour in analysis if hour["is_good_hour"])
+        all_hours = len(analysis)
 
-        # Merge moon altitudes with weather data
-        data = pd.merge_asof(
-            data.sort_values("time"),
-            moon_altitudes.sort_values("Time"),
-            left_on="time",
-            right_on="Time",
-            direction="nearest",
-        )
-
-        all_hours = len(data)
-
-        # Base conditions
-        good_weather_mask = (
-            (data.cloudCover < self.conditions.max_clouds)
-            & (data.precipProbability < self.conditions.max_precipitation_probability)
-            & (data.windSpeed < self.conditions.max_wind)
-            & (data.temperature > self.conditions.min_temperature)
-            & (data.temperature < self.conditions.max_temperature)
-            & (data.visibility > self.conditions.min_visibility)
-        )
-
-        # Moon-related condition: Apply only if the moon is above the horizon
-        moon_up_mask = data["Altitude"] > 0
-        moon_illumination_mask = (
-            data.moonIllumination < self.conditions.max_moon_illumination
-        )
-        final_moon_mask = ~moon_up_mask | (moon_up_mask & moon_illumination_mask)
-
-        # Combine all conditions
-        result = data[good_weather_mask & final_moon_mask]
-
-        good_hours = len(result)
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
         if all_hours == 0:
             return 0
@@ -422,34 +386,46 @@ class Observation:
             f"Observation at {self.place.name} from {self.start} to {self.time_limit}"
         )
 
-    def get_hourly_weather_analysis(self):
-        if self.place.weather is None:
-            logger.info(
-                "get_hourly_weather_analysis: self.place.weather is None, calling get_weather."
-            )
-            self.place.get_weather()
-            if self.place.weather is None:  # Still None after trying to fetch
-                logger.warning(
-                    "get_hourly_weather_analysis: Weather data unavailable after fetch attempt."
-                )
-                return []  # Return empty list
+    def get_weather_analysis(self):
+        if self._weather_analysis is not None:
+            return self._weather_analysis
 
-        # Ensure start, stop, and time_limit are valid
+        if self.place.weather is None:
+            self.place.get_weather()
+            if self.place.weather is None:
+                logger.warning("Weather data unavailable after fetch attempt.")
+                return []
+
         if not all([self.start, self.stop, self.time_limit]):
             logger.warning(
-                "get_hourly_weather_analysis: Observation window (start, stop, time_limit) is not fully defined."
+                "Observation window (start, stop, time_limit) is not fully defined."
             )
             return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
-        # Filter data further by self.time_limit
-        # The time_limit is the exclusive end point for the observation window.
         hourly_data = hourly_data[hourly_data.time <= self.time_limit]
-        logger.debug(
-            f"[Observation.get_hourly_weather_analysis] Filtered hourly_data time range: {hourly_data.time.min()} to {hourly_data.time.max()}"
+
+        moon_altitudes = self.place.get_altaz_curve(
+            self.place.moon, self.start, self.stop, num_points=len(hourly_data)
         )
 
-        # Ensure numeric types for comparison
+        if not moon_altitudes.empty:
+            # First, convert Skyfield Time objects to timezone-aware datetimes
+            moon_altitudes["Time"] = moon_altitudes["Time"].apply(lambda t: t.utc_datetime())
+            # Then, ensure the dtype (especially precision) matches the other dataframe's key
+            moon_altitudes["Time"] = moon_altitudes["Time"].astype(
+                hourly_data["time"].dtype
+            )
+            hourly_data = pd.merge_asof(
+                hourly_data.sort_values("time"),
+                moon_altitudes.sort_values("Time"),
+                left_on="time",
+                right_on="Time",
+                direction="nearest",
+            )
+        else:
+            hourly_data["Altitude"] = -1
+
         for col in [
             "cloudCover",
             "precipProbability",
@@ -462,85 +438,52 @@ class Observation:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
 
         analysis_results = []
-
-        for index, row in hourly_data.iterrows():
-            current_time = row.time
+        for _, row in hourly_data.iterrows():
             is_good_hour = True
             reasons = []
 
-            # Check cloud cover
-            if pd.isna(row.cloudCover):
+            if pd.isna(row.cloudCover) or not (
+                row.cloudCover < self.conditions.max_clouds
+            ):
                 is_good_hour = False
-                reasons.append("Cloud cover data not available")
-            elif not (row.cloudCover < self.conditions.max_clouds):
-                is_good_hour = False
-                reasons.append(
-                    f"Cloud cover {row.cloudCover:.1f}% exceeds limit {self.conditions.max_clouds:.1f}%"
-                )
-
-            # Check precipitation probability
-            if pd.isna(row.precipProbability):
-                is_good_hour = False
-                reasons.append("Precipitation probability data not available")
-            elif not (
-                row.precipProbability < self.conditions.max_precipitation_probability
+                reasons.append(f"Cloud cover {row.cloudCover:.1f}% exceeds limit")
+            if pd.isna(row.precipProbability) or not (
+                row.precipProbability
+                < self.conditions.max_precipitation_probability
             ):
                 is_good_hour = False
                 reasons.append(
-                    f"Precipitation probability {row.precipProbability:.1f}% exceeds limit {self.conditions.max_precipitation_probability:.1f}%"
+                    f"Precipitation probability {row.precipProbability:.1f}% exceeds limit"
                 )
-
-            # Check wind speed
-            if pd.isna(row.windSpeed):
+            if pd.isna(row.windSpeed) or not (
+                row.windSpeed < self.conditions.max_wind
+            ):
                 is_good_hour = False
-                reasons.append("Wind speed data not available")
-            elif not (row.windSpeed < self.conditions.max_wind):
+                reasons.append(f"Wind speed {row.windSpeed:.1f} km/h exceeds limit")
+            if pd.isna(row.temperature) or not (
+                self.conditions.min_temperature
+                < row.temperature
+                < self.conditions.max_temperature
+            ):
+                is_good_hour = False
+                reasons.append(f"Temperature {row.temperature:.1f}°C out of range")
+            if pd.isna(row.visibility) or not (
+                row.visibility > self.conditions.min_visibility
+            ):
+                is_good_hour = False
+                reasons.append(f"Visibility {row.visibility:.1f} km below limit")
+            if (
+                row["Altitude"] > 0
+                and not row.moonIllumination < self.conditions.max_moon_illumination
+            ):
                 is_good_hour = False
                 reasons.append(
-                    f"Wind speed {row.windSpeed:.1f} km/h exceeds limit {self.conditions.max_wind:.1f} km/h"
-                )
-
-            # Check temperature (min)
-            if pd.isna(row.temperature):
-                is_good_hour = False
-                reasons.append("Temperature data not available")
-            elif not (row.temperature > self.conditions.min_temperature):
-                is_good_hour = False
-                reasons.append(
-                    f"Temperature {row.temperature:.1f}°C below limit {self.conditions.min_temperature:.1f}°C"
-                )
-
-            # Check temperature (max)
-            if pd.isna(row.temperature):
-                is_good_hour = False
-                reasons.append("Temperature data not available")
-            elif not (row.temperature < self.conditions.max_temperature):
-                is_good_hour = False
-                reasons.append(
-                    f"Temperature {row.temperature:.1f}°C exceeds limit {self.conditions.max_temperature:.1f}°C"
-                )
-
-            if pd.isna(row.visibility):
-                is_good_hour = False
-                reasons.append("Visibility data not available")
-            elif not (row.visibility > self.conditions.min_visibility):
-                is_good_hour = False
-                reasons.append(
-                    f"Visibility {row.visibility:.1f} km is below limit {self.conditions.min_visibility:.1f} km"
-                )
-
-            if pd.isna(row.moonIllumination):
-                is_good_hour = False
-                reasons.append("Moon illumination data not available")
-            elif not (row.moonIllumination < self.conditions.max_moon_illumination):
-                is_good_hour = False
-                reasons.append(
-                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit {self.conditions.max_moon_illumination:.1f}%"
+                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit while moon is up"
                 )
 
             analysis_results.append(
                 {
-                    "time": current_time,
+                    "time": row.time,
                     "is_good_hour": is_good_hour,
                     "reasons": reasons,
                     "temperature": row.temperature,
@@ -551,4 +494,8 @@ class Observation:
                     "moon_illumination": row.moonIllumination,
                 }
             )
-        return analysis_results
+        self._weather_analysis = analysis_results
+        return self._weather_analysis
+
+    def get_hourly_weather_analysis(self):
+        return self.get_weather_analysis()
