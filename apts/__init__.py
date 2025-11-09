@@ -15,6 +15,7 @@ from .place import Place
 from .utils import Utils
 from .weather import Weather
 from .constants.event_types import EventType
+from .i18n import set_language
 
 __all__ = [
     "Catalogs",
@@ -28,6 +29,7 @@ __all__ = [
     "catalogs",
     "preload_data",
     "preload_essential_data",
+    "set_language",
 ]
 
 logger = logging.getLogger(__name__)
