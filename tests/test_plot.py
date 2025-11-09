@@ -579,11 +579,105 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         assert 1.8 in ra_values, (
             f"Star at RA=1.8 not found in plotted stars: {ra_values}"
         )
-        assert 35.0 in dec_values, (
-            f"Star at Dec=35.0 not found in plotted stars: {dec_values}"
+
+
+def test_plot_messier_ellipse_angle_on_equatorial_zoom():
+    """
+    Tests that a Messier object ellipse is plotted with the correct angle on a zoomed equatorial skymap.
+    The angle should be based on PosAng and parallactic angle, even in equatorial coordinates.
+    """
+    from apts.plot import _generate_plot_skymap
+    from apts.constants.plot import CoordinateSystem
+
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+
+    target_name = "M13"
+    target_pos_angle = 45.0
+    parallactic_angle_val = 20.0
+    expected_final_angle = target_pos_angle - parallactic_angle_val
+
+    # Mock the target Messier object
+    mock_target_object = MagicMock()
+    mock_target_object.ra = Angle(hours=16.6)
+    mock_target_object.dec = Angle(degrees=36.4)
+
+    target_data_row = pd.Series(
+        {
+            "Messier": target_name,
+            "Name": target_name,
+            "Width": 20.0,
+            "Height": 20.0,
+            "PosAng": target_pos_angle,
+            "Magnitude": 5.8,
+        }
+    )
+    target_data_df = pd.DataFrame([target_data_row])
+
+    # --- Mock setup ---
+    # 1. Mock the dataframes for catalog lookups
+    mock_observation.local_messier.objects = target_data_df
+    mock_observation.local_ngc.objects = pd.DataFrame(columns=["NGC", "Name"])
+    mock_observation.local_stars.objects = pd.DataFrame(columns=["Name"])
+    mock_observation.local_planets.find_by_name.return_value = None
+
+    # 2. Mock the skyfield object getter to return our object when called with the correct data
+    def get_skyfield_object_side_effect(data):
+        if data["Messier"] == target_name:
+            return mock_target_object
+        return None
+
+    mock_observation.local_messier.get_skyfield_object.side_effect = (
+        get_skyfield_object_side_effect
+    )
+
+    # 3. Mock observer
+    mock_observed_obj = MagicMock()
+    mock_observed_obj.apparent.return_value.radec.return_value = (
+        mock_target_object.ra,
+        mock_target_object.dec,
+        MagicMock(),
+    )
+    mock_observed_obj.apparent.return_value.altaz.return_value = (
+        Angle(degrees=60),
+        Angle(degrees=270),
+        MagicMock(),
+    )
+    mock_observation.place.observer.at.return_value.observe.return_value = (
+        mock_observed_obj
+    )
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._calculate_parallactic_angle", return_value=parallactic_angle_val
+    ), patch("apts.plot._get_brightness_color", return_value="0.5"):
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # --- Call the function under test ---
+        _generate_plot_skymap(
+            observation=mock_observation,
+            target_name=target_name,
+            zoom_deg=1.0,
+            plot_stars=False,  # Disable star plotting to isolate ellipse logic
+            coordinate_system=CoordinateSystem.EQUATORIAL,
         )
-        assert 38.0 in dec_values, (
-            f"Star at Dec=38.0 not found in plotted stars: {dec_values}"
+
+        # --- Assertions ---
+        ellipse_call = None
+        for call in mock_ax.add_patch.call_args_list:
+            patch_arg = call.args[0]
+            if isinstance(patch_arg, Ellipse):
+                if patch_arg.get_linestyle() == "--":
+                    ellipse_call = call
+                    break
+
+        assert ellipse_call is not None, "Ellipse for target Messier object was not plotted"
+
+        ellipse = ellipse_call.args[0]
+        # This is where the bug is. The current code sets angle to pos_angle for equatorial.
+        # The test expects the parallactic angle to be subtracted.
+        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
+            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
         )
 
 

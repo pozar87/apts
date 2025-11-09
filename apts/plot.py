@@ -1075,6 +1075,8 @@ def _plot_celestial_object(
     name: str,
     alt_deg: float,
     az_deg: float,
+    ra_hours: float,
+    dec_deg: float,
     width_deg: float,
     height_deg: float,
     angle: float,
@@ -1082,7 +1084,6 @@ def _plot_celestial_object(
     edge_color: str,
     is_polar: bool,
     ra_rad: float,
-    dec_deg: float,
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     """Helper function to plot a celestial object on a skymap."""
@@ -1102,10 +1103,17 @@ def _plot_celestial_object(
             xytext=(5, 5),
             color=edge_color,
         )
-    else:
+    else:  # Cartesian / Zoomed
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            x_coord, y_coord = az_deg, alt_deg
+            ellipse_width = width_deg
+        else:  # Equatorial
+            x_coord, y_coord = ra_hours, dec_deg
+            ellipse_width = width_deg / (15 * numpy.cos(numpy.deg2rad(dec_deg)))
+
         ellipse = Ellipse(
-            xy=(az_deg, alt_deg),
-            width=width_deg,
+            xy=(x_coord, y_coord),
+            width=ellipse_width,
             height=height_deg,
             angle=angle,
             edgecolor=edge_color,
@@ -1115,7 +1123,7 @@ def _plot_celestial_object(
         ax.add_patch(ellipse)
         ax.annotate(
             name,
-            (az_deg, alt_deg),
+            (x_coord, y_coord),
             textcoords="offset points",
             xytext=(5, 5),
             color=edge_color,
@@ -1182,6 +1190,8 @@ def _plot_messier_on_skymap(
                         name=messier_name,
                         alt_deg=alt.degrees,
                         az_deg=az.degrees,
+                        ra_hours=ra.hours,
+                        dec_deg=dec.degrees,
                         width_deg=width_deg,
                         height_deg=height_deg,
                         angle=angle,
@@ -1189,7 +1199,6 @@ def _plot_messier_on_skymap(
                         edge_color="red",
                         is_polar=is_polar,
                         ra_rad=ra.radians,
-                        dec_deg=dec.degrees,
                         coordinate_system=coordinate_system,
                     )
 
@@ -1329,6 +1338,8 @@ def _plot_ngc_on_skymap(
                         name=ngc_name,
                         alt_deg=alt.degrees,
                         az_deg=az.degrees,
+                        ra_hours=ra.hours,
+                        dec_deg=dec.degrees,
                         width_deg=width_deg,
                         height_deg=height_deg,
                         angle=angle,
@@ -1336,7 +1347,6 @@ def _plot_ngc_on_skymap(
                         edge_color="green",
                         is_polar=is_polar,
                         ra_rad=ra.radians,
-                        dec_deg=dec.degrees,
                         coordinate_system=coordinate_system,
                     )
 
@@ -1753,15 +1763,12 @@ def _generate_plot_skymap(
                 if coordinate_system == CoordinateSystem.HORIZONTAL
                 else width_deg / (15 * numpy.cos(numpy.deg2rad(target_dec.degrees)))
             )
-            ellipse_angle = (
-                angle if coordinate_system == CoordinateSystem.HORIZONTAL else pos_angle
-            )
 
             ellipse = Ellipse(
                 xy=(x_coord, y_coord),
                 width=ellipse_width,
                 height=height_deg,
-                angle=ellipse_angle,
+                angle=angle,
                 edgecolor="yellow",
                 facecolor=face_color,
                 linewidth=2,
