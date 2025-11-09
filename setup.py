@@ -34,6 +34,7 @@ setup(
         "requests-cache>=1.2.0",
         "requests-mock>=1.12.1",
         "seaborn>=0.8.1",
+        "Babel>=2.9.1",
         "svgwrite>=1.1.12",
         "timezonefinder>=2.1.0",
         "pytz>=2018.3",

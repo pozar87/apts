@@ -18,6 +18,7 @@ from skyfield.api import Star, Topos
 from . import skyfield_searches, cache
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
+from apts.i18n import gettext_
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class AstronomicalEvents:
                     {
                         "date": parse_date(launch["window_start"]).astimezone(utc),
                         "event": launch["name"],
-                        "type": "Space Launch",
+                        "type": gettext_("Space Launch"),
                     }
                 )
         except requests.exceptions.RequestException as e:
@@ -148,7 +149,7 @@ class AstronomicalEvents:
                     {
                         "date": parse_date(event["date"]).astimezone(utc),
                         "event": event["name"],
-                        "type": "Space Event",
+                        "type": gettext_("Space Event"),
                     }
                 )
         except requests.exceptions.RequestException as e:
@@ -190,8 +191,8 @@ class AstronomicalEvents:
             self.observer, self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = "Solar Eclipse"
-            event["type"] = "Solar Eclipse"
+            event["event"] = gettext_("Solar Eclipse")
+            event["type"] = gettext_("Solar Eclipse")
         logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -201,8 +202,8 @@ class AstronomicalEvents:
             self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = "Lunar Eclipse"
-            event["type"] = "Lunar Eclipse"
+            event["event"] = gettext_("Lunar Eclipse")
+            event["type"] = gettext_("Lunar Eclipse")
         logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -217,8 +218,8 @@ class AstronomicalEvents:
             events.append(
                 {
                     "date": ti.utc_datetime().astimezone(utc),
-                    "event": almanac.MOON_PHASES[yi],
-                    "type": "Moon Phase",
+                    "event": gettext_(almanac.MOON_PHASES[yi]),
+                    "type": gettext_("Moon Phase"),
                 }
             )
         logger.debug(f"--- calculate_moon_phases: {time.time() - start_time}s")
@@ -229,7 +230,7 @@ class AstronomicalEvents:
         events = []
         planets = planetary.CONJUNCTION_PLANETS
         moon = "moon"
-        moon_display_name = "Moon"
+        moon_display_name = gettext_("Moon")
 
         executor = self.executor
         futures = {}
@@ -261,8 +262,8 @@ class AstronomicalEvents:
             p1_name, p2_name = futures[future]
             found_events = future.result()
             for event in found_events:
-                event["type"] = "Conjunction"
-                event["event"] = "Conjunction"
+                event["type"] = gettext_("Conjunction")
+                event["event"] = gettext_("Conjunction")
                 event["object1"] = p1_name
                 event["object2"] = p2_name
                 events.append(event)
@@ -287,9 +288,9 @@ class AstronomicalEvents:
         for future in as_completed(futures):
             found_events = future.result()
             for event in found_events:
-                event["type"] = "Opposition"
+                event["type"] = gettext_("Opposition")
                 simple_name = planetary.get_simple_name(event["planet"])
-                event["event"] = "Opposition"
+                event["event"] = gettext_("Opposition")
                 event["object"] = simple_name
                 del event["planet"]
             events.extend(found_events)
@@ -300,15 +301,15 @@ class AstronomicalEvents:
         start_time = time.time()
         events = []
         showers = {
-            "Quadrantids": {"start": (1, 1), "peak": (1, 4), "end": (1, 5)},
-            "Lyrids": {"start": (4, 14), "peak": (4, 22), "end": (4, 30)},
-            "Eta Aquarids": {"start": (4, 19), "peak": (5, 6), "end": (5, 28)},
-            "Delta Aquarids": {"start": (7, 12), "peak": (7, 30), "end": (8, 23)},
-            "Perseids": {"start": (7, 17), "peak": (8, 12), "end": (8, 24)},
-            "Orionids": {"start": (10, 2), "peak": (10, 21), "end": (11, 7)},
-            "Leonids": {"start": (11, 6), "peak": (11, 17), "end": (11, 30)},
-            "Geminids": {"start": (12, 4), "peak": (12, 14), "end": (12, 17)},
-            "Ursids": {"start": (12, 17), "peak": (12, 22), "end": (12, 26)},
+            gettext_("Quadrantids"): {"start": (1, 1), "peak": (1, 4), "end": (1, 5)},
+            gettext_("Lyrids"): {"start": (4, 14), "peak": (4, 22), "end": (4, 30)},
+            gettext_("Eta Aquarids"): {"start": (4, 19), "peak": (5, 6), "end": (5, 28)},
+            gettext_("Delta Aquarids"): {"start": (7, 12), "peak": (7, 30), "end": (8, 23)},
+            gettext_("Perseids"): {"start": (7, 17), "peak": (8, 12), "end": (8, 24)},
+            gettext_("Orionids"): {"start": (10, 2), "peak": (10, 21), "end": (11, 7)},
+            gettext_("Leonids"): {"start": (11, 6), "peak": (11, 17), "end": (11, 30)},
+            gettext_("Geminids"): {"start": (12, 4), "peak": (12, 14), "end": (12, 17)},
+            gettext_("Ursids"): {"start": (12, 17), "peak": (12, 22), "end": (12, 26)},
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, dates in showers.items():
@@ -326,30 +327,30 @@ class AstronomicalEvents:
                     events.append(
                         {
                             "date": start_date.astimezone(utc),
-                            "event": "Meteor Shower",
+                            "event": gettext_("Meteor Shower"),
                             "shower_name": shower,
-                            "phase": "Start",
-                            "type": "Meteor Shower",
+                            "phase": gettext_("Start"),
+                            "type": gettext_("Meteor Shower"),
                         }
                     )
                 if self.start_date <= peak_date <= self.end_date:
                     events.append(
                         {
                             "date": peak_date.astimezone(utc),
-                            "event": "Meteor Shower",
+                            "event": gettext_("Meteor Shower"),
                             "shower_name": shower,
-                            "phase": "Peak",
-                            "type": "Meteor Shower",
+                            "phase": gettext_("Peak"),
+                            "type": gettext_("Meteor Shower"),
                         }
                     )
                 if self.start_date <= end_date <= self.end_date:
                     events.append(
                         {
                             "date": end_date.astimezone(utc),
-                            "event": "Meteor Shower",
+                            "event": gettext_("Meteor Shower"),
                             "shower_name": shower,
-                            "phase": "End",
-                            "type": "Meteor Shower",
+                            "phase": gettext_("End"),
+                            "type": gettext_("Meteor Shower"),
                         }
                     )
         logger.debug(f"--- calculate_meteor_showers: {time.time() - start_time}s")
@@ -377,9 +378,9 @@ class AstronomicalEvents:
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": "Highest altitude",
+                        "event": gettext_("Highest altitude"),
                         "object": simple_name,
-                        "type": "Planet Altitude",
+                        "type": gettext_("Planet Altitude"),
                         "altitude": alt,
                     }
                 )
@@ -395,8 +396,8 @@ class AstronomicalEvents:
             self.end_date,
         )
         for event in events:
-            event["type"] = "Lunar Occultation"
-            event["event"] = "Lunar Occultation"
+            event["type"] = gettext_("Lunar Occultation")
+            event["event"] = gettext_("Lunar Occultation")
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
         return events
 
@@ -423,7 +424,7 @@ class AstronomicalEvents:
                 del event_dict["planet"]
                 del event_dict["event_type"]
                 event_dict["date"] = event_dict["date"].astimezone(utc)
-                event_dict["type"] = "Aphelion/Perihelion"
+                event_dict["type"] = gettext_("Aphelion/Perihelion")
                 events.append(event_dict)
         logger.debug(f"--- calculate_aphelion_perihelion: {time.time() - start_time}s")
         return events
@@ -434,7 +435,7 @@ class AstronomicalEvents:
             self.start_date, self.end_date
         )
         for event in events:
-            event["type"] = "Moon Apogee/Perigee"
+            event["type"] = gettext_("Moon Apogee/Perigee")
         logger.debug(f"--- calculate_moon_apogee_perigee: {time.time() - start_time}s")
         return events
 
@@ -444,9 +445,9 @@ class AstronomicalEvents:
             self.observer, self.start_date, self.end_date
         )
         for event in events:
-            event["type"] = "Inferior Conjunction"
-            event["event"] = "Inferior Conjunction"
-            event["object"] = "Mercury"
+            event["type"] = gettext_("Inferior Conjunction")
+            event["event"] = gettext_("Inferior Conjunction")
+            event["object"] = gettext_("Mercury")
         logger.debug(
             f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
         )
@@ -572,11 +573,11 @@ class AstronomicalEvents:
                     all_events.append(
                         {
                             "date": conj["date"].astimezone(utc),
-                            "event": "Conjunction",
-                            "object1": "Moon",
+                            "event": gettext_("Conjunction"),
+                            "object1": gettext_("Moon"),
                             "object2": messier_name,
                             "separation_degrees": conj["separation_degrees"],
-                            "type": "Moon-Messier Conjunction",
+                            "type": gettext_("Moon-Messier Conjunction"),
                         }
                     )
             return all_events
@@ -612,7 +613,7 @@ class AstronomicalEvents:
                         comet["close_approach_data"][0]["close_approach_date_full"]
                     ).astimezone(utc),
                     "event": comet["name"],
-                    "type": "Comet",
+                    "type": gettext_("Comet"),
                 }
             )
         logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
