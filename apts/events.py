@@ -242,6 +242,7 @@ class AstronomicalEvents:
                 p2,
                 self.start_date,
                 self.end_date,
+                threshold_degrees=5.0,
             )
             futures[future] = (p1_name, p2_name)
 
@@ -254,6 +255,7 @@ class AstronomicalEvents:
                 moon,
                 self.start_date,
                 self.end_date,
+                threshold_degrees=5.0,
             )
             futures[future] = (p_name, moon_display_name)
 
