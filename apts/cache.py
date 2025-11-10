@@ -140,3 +140,13 @@ def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
             if "comet" in comet["name"].lower():
                 records.append(comet)
     return pd.DataFrame(records)
+
+def clear_cache():
+    """
+    Clears all the caches.
+    """
+    get_timescale.cache_clear()
+    get_ephemeris.cache_clear()
+    get_hipparcos_data.cache_clear()
+    get_mpcorb_data.cache_clear()
+    get_nasa_comets_data.cache_clear()

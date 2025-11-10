@@ -301,15 +301,15 @@ class AstronomicalEvents:
         start_time = time.time()
         events = []
         showers = {
-            gettext_("Quadrantids"): {"start": (1, 1), "peak": (1, 4), "end": (1, 5)},
-            gettext_("Lyrids"): {"start": (4, 14), "peak": (4, 22), "end": (4, 30)},
-            gettext_("Eta Aquarids"): {"start": (4, 19), "peak": (5, 6), "end": (5, 28)},
-            gettext_("Delta Aquarids"): {"start": (7, 12), "peak": (7, 30), "end": (8, 23)},
-            gettext_("Perseids"): {"start": (7, 17), "peak": (8, 12), "end": (8, 24)},
-            gettext_("Orionids"): {"start": (10, 2), "peak": (10, 21), "end": (11, 7)},
-            gettext_("Leonids"): {"start": (11, 6), "peak": (11, 17), "end": (11, 30)},
-            gettext_("Geminids"): {"start": (12, 4), "peak": (12, 14), "end": (12, 17)},
-            gettext_("Ursids"): {"start": (12, 17), "peak": (12, 22), "end": (12, 26)},
+            "Quadrantids": {"start": (1, 1), "peak": (1, 4), "end": (1, 5)},
+            "Lyrids": {"start": (4, 14), "peak": (4, 22), "end": (4, 30)},
+            "Eta Aquarids": {"start": (4, 19), "peak": (5, 6), "end": (5, 28)},
+            "Delta Aquarids": {"start": (7, 12), "peak": (7, 30), "end": (8, 23)},
+            "Perseids": {"start": (7, 17), "peak": (8, 12), "end": (8, 24)},
+            "Orionids": {"start": (10, 2), "peak": (10, 21), "end": (11, 7)},
+            "Leonids": {"start": (11, 6), "peak": (11, 17), "end": (11, 30)},
+            "Geminids": {"start": (12, 4), "peak": (12, 14), "end": (12, 17)},
+            "Ursids": {"start": (12, 17), "peak": (12, 22), "end": (12, 26)},
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, dates in showers.items():
@@ -328,7 +328,7 @@ class AstronomicalEvents:
                         {
                             "date": start_date.astimezone(utc),
                             "event": gettext_("Meteor Shower"),
-                            "shower_name": shower,
+                            "shower_name": gettext_(shower),
                             "phase": gettext_("Start"),
                             "type": gettext_("Meteor Shower"),
                         }
@@ -338,7 +338,7 @@ class AstronomicalEvents:
                         {
                             "date": peak_date.astimezone(utc),
                             "event": gettext_("Meteor Shower"),
-                            "shower_name": shower,
+                            "shower_name": gettext_(shower),
                             "phase": gettext_("Peak"),
                             "type": gettext_("Meteor Shower"),
                         }
@@ -348,7 +348,7 @@ class AstronomicalEvents:
                         {
                             "date": end_date.astimezone(utc),
                             "event": gettext_("Meteor Shower"),
-                            "shower_name": shower,
+                            "shower_name": gettext_(shower),
                             "phase": gettext_("End"),
                             "type": gettext_("Meteor Shower"),
                         }
