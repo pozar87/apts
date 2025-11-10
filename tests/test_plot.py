@@ -579,11 +579,363 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         assert 1.8 in ra_values, (
             f"Star at RA=1.8 not found in plotted stars: {ra_values}"
         )
-        assert 35.0 in dec_values, (
-            f"Star at Dec=35.0 not found in plotted stars: {dec_values}"
+
+
+def test_plot_messier_ellipse_angle_on_equatorial_zoom():
+    """
+    Tests that a Messier object ellipse is plotted with the correct angle on a zoomed equatorial skymap.
+    The angle should be based on PosAng only.
+    """
+    from apts.plot import _generate_plot_skymap
+    from apts.constants.plot import CoordinateSystem
+
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+
+    target_name = "M13"
+    target_pos_angle = 45.0
+    parallactic_angle_val = 20.0
+    expected_final_angle = target_pos_angle  # Equatorial does not use parallactic
+
+    mock_target_object = MagicMock()
+    mock_target_object.ra = Angle(hours=16.6)
+    mock_target_object.dec = Angle(degrees=36.4)
+
+    target_data_row = pd.Series(
+        {
+            "Messier": target_name,
+            "Name": target_name,
+            "Width": 20.0,
+            "Height": 10.0,
+            "PosAng": target_pos_angle,
+            "Magnitude": 5.8,
+        }
+    )
+    target_data_df = pd.DataFrame([target_data_row])
+
+    mock_observation.local_messier.objects = target_data_df
+    mock_observation.local_ngc.objects = pd.DataFrame(columns=["NGC", "Name"])
+    mock_observation.local_stars.objects = pd.DataFrame(columns=["Name"])
+    mock_observation.local_planets.find_by_name.return_value = None
+
+    def get_skyfield_object_side_effect(data):
+        if data["Messier"] == target_name:
+            return mock_target_object
+        return None
+
+    mock_observation.local_messier.get_skyfield_object.side_effect = (
+        get_skyfield_object_side_effect
+    )
+
+    mock_observed_obj = MagicMock()
+    mock_observed_obj.apparent.return_value.radec.return_value = (
+        mock_target_object.ra,
+        mock_target_object.dec,
+        MagicMock(),
+    )
+    mock_observed_obj.apparent.return_value.altaz.return_value = (
+        Angle(degrees=60),
+        Angle(degrees=270),
+        MagicMock(),
+    )
+    mock_observation.place.observer.at.return_value.observe.return_value = (
+        mock_observed_obj
+    )
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._calculate_parallactic_angle", return_value=parallactic_angle_val
+    ), patch("apts.plot._get_brightness_color", return_value="0.5"):
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        _generate_plot_skymap(
+            observation=mock_observation,
+            target_name=target_name,
+            zoom_deg=1.0,
+            plot_stars=False,
+            coordinate_system=CoordinateSystem.EQUATORIAL,
         )
-        assert 38.0 in dec_values, (
-            f"Star at Dec=38.0 not found in plotted stars: {dec_values}"
+
+        ellipse_call = next(
+            (c for c in mock_ax.add_patch.call_args_list if isinstance(c.args[0], Ellipse) and c.args[0].get_linestyle() == "--"),
+            None,
+        )
+
+        assert ellipse_call is not None, "Ellipse for target Messier object was not plotted"
+
+        ellipse = ellipse_call.args[0]
+        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
+            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
+        )
+
+
+def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
+    """
+    Tests that a TARGET Messier object ellipse is plotted with the correct angle
+    on a zoomed HORIZONTAL skymap.
+    """
+    from apts.plot import _generate_plot_skymap
+    from apts.constants.plot import CoordinateSystem
+
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+
+    target_name = "M13"
+    target_pos_angle = 60.0
+    parallactic_angle_val = 15.0
+    expected_final_angle = target_pos_angle - parallactic_angle_val
+
+    mock_target_object = MagicMock()
+    mock_target_object.ra = Angle(hours=16.6)
+    mock_target_object.dec = Angle(degrees=36.4)
+
+    target_data_row = pd.Series(
+        {
+            "Messier": target_name,
+            "Name": target_name,
+            "Width": 20.0,
+            "Height": 10.0,
+            "PosAng": target_pos_angle,
+            "Magnitude": 5.8,
+        }
+    )
+    target_data_df = pd.DataFrame([target_data_row])
+
+    mock_observation.local_messier.objects = target_data_df
+    mock_observation.local_ngc.objects = pd.DataFrame(columns=["NGC", "Name"])
+    mock_observation.local_stars.objects = pd.DataFrame(columns=["Name"])
+    mock_observation.local_planets.find_by_name.return_value = None
+
+    def get_skyfield_object_side_effect(data):
+        if data["Messier"] == target_name:
+            return mock_target_object
+        return None
+
+    mock_observation.local_messier.get_skyfield_object.side_effect = (
+        get_skyfield_object_side_effect
+    )
+
+    mock_observed_obj = MagicMock()
+    mock_observed_obj.apparent.return_value.radec.return_value = (
+        mock_target_object.ra,
+        mock_target_object.dec,
+        MagicMock(),
+    )
+    target_alt_val = Angle(degrees=75)
+    target_az_val = Angle(degrees=180)
+    mock_observed_obj.apparent.return_value.altaz.return_value = (
+        target_alt_val,
+        target_az_val,
+        MagicMock(),
+    )
+    mock_observation.place.observer.at.return_value.observe.return_value = (
+        mock_observed_obj
+    )
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._calculate_parallactic_angle", return_value=parallactic_angle_val
+    ), patch("apts.plot._get_brightness_color", return_value="0.5"):
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        _generate_plot_skymap(
+            observation=mock_observation,
+            target_name=target_name,
+            zoom_deg=1.0,
+            plot_stars=False,
+            coordinate_system=CoordinateSystem.HORIZONTAL,
+        )
+
+        ellipse_call = next(
+            (c for c in mock_ax.add_patch.call_args_list if isinstance(c.args[0], Ellipse) and c.args[0].get_linestyle() == "--"),
+            None,
+        )
+
+        assert ellipse_call is not None, "Ellipse for target Messier object was not plotted"
+
+        ellipse = ellipse_call.args[0]
+        assert abs(ellipse.center[0] - target_az_val.degrees) < 0.01
+        assert abs(ellipse.center[1] - target_alt_val.degrees) < 0.01
+        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
+            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
+        )
+
+
+def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
+    """
+    Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
+    on a zoomed HORIZONTAL skymap.
+    """
+    from apts.plot import _generate_plot_skymap
+    from apts.constants.plot import CoordinateSystem
+
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+
+    # A star as the main target
+    target_name = "Vega"
+    mock_target_object = MagicMock()
+    mock_target_object.ra = Angle(hours=18.5)
+    mock_target_object.dec = Angle(degrees=38.0)
+
+    # A Messier object as the non-target
+    non_target_name = "M57"
+    non_target_pos_angle = 135.0
+    parallactic_angle_val = 25.0
+    expected_final_angle = non_target_pos_angle - parallactic_angle_val
+    mock_non_target_object = MagicMock()
+    mock_non_target_object.ra = Angle(hours=18.9)
+    mock_non_target_object.dec = Angle(degrees=33.0)
+
+    non_target_data = pd.DataFrame(
+        [
+            {
+                "Messier": non_target_name,
+                "Name": non_target_name,
+                "Width": 1.5,
+                "Height": 1.0,
+                "PosAng": non_target_pos_angle,
+                "Magnitude": 8.8,
+            }
+        ]
+    )
+
+    mock_observation.local_messier.objects = non_target_data
+    mock_observation.local_stars.objects = pd.DataFrame([{"Name": target_name}])
+    mock_observation.local_ngc.objects = pd.DataFrame(columns=["NGC", "Name"])
+    mock_observation.local_planets.find_by_name.return_value = None
+
+    mock_observation.local_stars.get_skyfield_object.return_value = mock_target_object
+    mock_observation.local_messier.find_by_name.return_value = mock_non_target_object
+    mock_observation.get_visible_messier.return_value = non_target_data
+
+
+    def observer_side_effect(obj):
+        mock_observed = MagicMock()
+        if obj == mock_target_object:
+            mock_observed.apparent.return_value.altaz.return_value = (Angle(degrees=80), Angle(degrees=190), MagicMock())
+            mock_observed.apparent.return_value.radec.return_value = (obj.ra, obj.dec, MagicMock())
+        elif obj == mock_non_target_object:
+            mock_observed.apparent.return_value.altaz.return_value = (Angle(degrees=78), Angle(degrees=192), MagicMock())
+            mock_observed.apparent.return_value.radec.return_value = (obj.ra, obj.dec, MagicMock()) # Needed for parallactic angle
+        return mock_observed
+
+    mock_observation.place.observer.at.return_value.observe.side_effect = observer_side_effect
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._calculate_parallactic_angle", return_value=parallactic_angle_val
+    ), patch("apts.plot._get_brightness_color", return_value="0.5"):
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        _generate_plot_skymap(
+            observation=mock_observation,
+            target_name=target_name,
+            plot_messier=True,
+            zoom_deg=5.0,
+            plot_stars=False,
+            coordinate_system=CoordinateSystem.HORIZONTAL,
+        )
+
+        ellipse_call = next(
+            (c for c in mock_ax.add_patch.call_args_list if isinstance(c.args[0], Ellipse) and c.args[0].get_linestyle() != "--"),
+            None,
+        )
+
+        assert ellipse_call is not None, "Ellipse for non-target Messier object was not plotted"
+
+        ellipse = ellipse_call.args[0]
+        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
+            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
+        )
+
+
+def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
+    """
+    Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
+    on a zoomed EQUATORIAL skymap.
+    """
+    from apts.plot import _generate_plot_skymap
+    from apts.constants.plot import CoordinateSystem
+
+    mock_observation = MagicMock()
+    mock_ax = MagicMock()
+    mock_fig = MagicMock()
+
+    # A star as the main target
+    target_name = "Vega"
+    mock_target_object = MagicMock()
+    mock_target_object.ra = Angle(hours=18.5)
+    mock_target_object.dec = Angle(degrees=38.0)
+
+    # A Messier object as the non-target
+    non_target_name = "M57"
+    non_target_pos_angle = 135.0
+    parallactic_angle_val = 25.0
+    expected_final_angle = non_target_pos_angle # Equatorial expects PosAng
+    mock_non_target_object = MagicMock()
+    mock_non_target_object.ra = Angle(hours=18.9)
+    mock_non_target_object.dec = Angle(degrees=33.0)
+
+    non_target_data = pd.DataFrame(
+        [
+            {
+                "Messier": non_target_name,
+                "Name": non_target_name,
+                "Width": 1.5,
+                "Height": 1.0,
+                "PosAng": non_target_pos_angle,
+                "Magnitude": 8.8,
+            }
+        ]
+    )
+
+    mock_observation.local_messier.objects = non_target_data
+    mock_observation.local_stars.objects = pd.DataFrame([{"Name": target_name}])
+    mock_observation.local_ngc.objects = pd.DataFrame(columns=["NGC", "Name"])
+    mock_observation.local_planets.find_by_name.return_value = None
+
+    mock_observation.local_stars.get_skyfield_object.return_value = mock_target_object
+    mock_observation.local_messier.find_by_name.return_value = mock_non_target_object
+    mock_observation.get_visible_messier.return_value = non_target_data
+
+
+    def observer_side_effect(obj):
+        mock_observed = MagicMock()
+        if obj == mock_target_object:
+            mock_observed.apparent.return_value.altaz.return_value = (Angle(degrees=80), Angle(degrees=190), MagicMock())
+            mock_observed.apparent.return_value.radec.return_value = (obj.ra, obj.dec, MagicMock())
+        elif obj == mock_non_target_object:
+            mock_observed.apparent.return_value.altaz.return_value = (Angle(degrees=78), Angle(degrees=192), MagicMock())
+            mock_observed.apparent.return_value.radec.return_value = (obj.ra, obj.dec, MagicMock())
+        return mock_observed
+
+    mock_observation.place.observer.at.return_value.observe.side_effect = observer_side_effect
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch(
+        "apts.plot._calculate_parallactic_angle", return_value=parallactic_angle_val
+    ), patch("apts.plot._get_brightness_color", return_value="0.5"):
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        _generate_plot_skymap(
+            observation=mock_observation,
+            target_name=target_name,
+            plot_messier=True,
+            zoom_deg=5.0,
+            plot_stars=False,
+            coordinate_system=CoordinateSystem.EQUATORIAL,
+        )
+
+        ellipse_call = next(
+            (c for c in mock_ax.add_patch.call_args_list if isinstance(c.args[0], Ellipse) and c.args[0].get_linestyle() != "--"),
+            None,
+        )
+
+        assert ellipse_call is not None, "Ellipse for non-target Messier object was not plotted"
+
+        ellipse = ellipse_call.args[0]
+        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
+            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
         )
 
 

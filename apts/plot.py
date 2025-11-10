@@ -1173,10 +1173,13 @@ def _plot_messier_on_skymap(
                     pos_angle = float(pos_angle)
 
                     dec = messier_object.dec
-                    parallactic_angle = _calculate_parallactic_angle(
-                        observation.place.lat, dec, az
-                    )
-                    angle = pos_angle - parallactic_angle
+                    if coordinate_system == CoordinateSystem.HORIZONTAL:
+                        parallactic_angle = _calculate_parallactic_angle(
+                            observation.place.lat, dec, az
+                        )
+                        angle = pos_angle - parallactic_angle
+                    else:
+                        angle = pos_angle
                     if flipped_horizontally:
                         angle = -angle
                     if flipped_vertically:
@@ -1321,10 +1324,13 @@ def _plot_ngc_on_skymap(
                     pos_angle = float(pos_angle)
 
                     dec = ngc_object.dec
-                    parallactic_angle = _calculate_parallactic_angle(
-                        observation.place.lat, dec, az
-                    )
-                    angle = pos_angle - parallactic_angle
+                    if coordinate_system == CoordinateSystem.HORIZONTAL:
+                        parallactic_angle = _calculate_parallactic_angle(
+                            observation.place.lat, dec, az
+                        )
+                        angle = pos_angle - parallactic_angle
+                    else:
+                        angle = pos_angle
 
                     if flipped_horizontally:
                         angle = -angle
@@ -1734,10 +1740,13 @@ def _generate_plot_skymap(
                 _, dec, _ = observer.observe(target_object).apparent().radec()
 
             if dec:
-                parallactic_angle = _calculate_parallactic_angle(
-                    observation.place.lat, dec, target_az
-                )
-                angle = pos_angle - parallactic_angle
+                if coordinate_system == CoordinateSystem.HORIZONTAL:
+                    parallactic_angle = _calculate_parallactic_angle(
+                        observation.place.lat, dec, target_az
+                    )
+                    angle = pos_angle - parallactic_angle
+                else:
+                    angle = pos_angle
             else:
                 angle = pos_angle
 
