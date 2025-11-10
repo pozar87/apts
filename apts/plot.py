@@ -11,7 +11,6 @@ from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
 from skyfield.units import Angle
 
-from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
@@ -23,6 +22,22 @@ from apts.constants.graphconstants import (
 from apts.constants.plot import CoordinateSystem
 from .cache import get_hipparcos_data
 from apts.i18n import gettext_
+from apts.utils.plot import set_time_axis_label
+
+
+class Utils:
+    @staticmethod
+    def annotate_plot(ax: pyplot.Axes, y_label: str, dark_mode: bool, local_timezone: object):
+        style = get_plot_style(dark_mode)
+        ax.set_ylabel(y_label, color=style["TEXT_COLOR"])
+        ax.tick_params(axis="x", colors=style["TICK_COLOR"])
+        ax.tick_params(axis="y", colors=style["TICK_COLOR"])
+        ax.spines["bottom"].set_color(style["AXIS_COLOR"])
+        ax.spines["top"].set_color(style["AXIS_COLOR"])
+        ax.spines["right"].set_color(style["AXIS_COLOR"])
+        ax.spines["left"].set_color(style["AXIS_COLOR"])
+        ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
+        set_time_axis_label(ax, local_timezone)
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -253,7 +268,7 @@ def _generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
             ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
             logger.info(gettext_("Generated empty Messier plot as no objects are visible."))
             return fig
@@ -334,7 +349,7 @@ def _generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
 
         legend_handles = [
             lines.Line2D(
@@ -431,7 +446,7 @@ def _generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
         ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
         return fig
 
@@ -499,7 +514,7 @@ def _generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
     ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
 

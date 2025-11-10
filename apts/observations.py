@@ -184,13 +184,17 @@ class Observation:
         return self._local_stars
 
     def get_visible_messier(self, **args):
-        return self.local_messier.get_visible(
+        from apts.i18n import gettext_
+        visible = self.local_messier.get_visible(
             self.conditions,
             self.start,
             self.time_limit,
             limiting_magnitude=self.limiting_magnitude,
             **args,
         )
+        if 'Type' in visible.columns:
+            visible['Type'] = visible['Type'].apply(gettext_).astype('string')
+        return visible
 
     def get_visible_ngc(self, **args):
         return self.local_ngc.get_visible(

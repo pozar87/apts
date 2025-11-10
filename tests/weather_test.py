@@ -268,7 +268,7 @@ def test_plot_clouds_dark_mode_styles(
         mock_ax.get_legend.assert_called()
 
     mock_annotate_plot.assert_called_with(
-        mock_ax, "Cloud cover [%]", expected_effective_dark_mode
+        mock_ax, "Cloud cover [%]", expected_effective_dark_mode, pytz.utc
     )
 
     mock_df_plot.reset_mock()
@@ -448,7 +448,9 @@ def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_illumination()
         assert ax is not None
-        mock_annotate_plot.assert_called_once_with(ax, "Illumination [%]", False)
+        mock_annotate_plot.assert_called_once_with(
+            ax, "Illumination [%]", False, pytz.utc
+        )
 
 
 if __name__ == "__main__":

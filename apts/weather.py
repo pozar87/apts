@@ -5,11 +5,12 @@ import requests_cache
 
 from typing import Optional
 
-from .utils import Utils
+from apts.plot import Utils
 from apts.utils.planetary import get_moon_illumination_details
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
+from apts.i18n import gettext_
 from apts.weather_providers import (
     PirateWeather,
     VisualCrossing,
@@ -107,7 +108,7 @@ class Weather:
         # Preserve original args for pandas plot
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", ylim=(0, 105), title="Clouds", ax=ax, **plot_kwargs
+            x="time", ylim=(0, 105), title=gettext_("Clouds"), ax=ax, **plot_kwargs
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -130,7 +131,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Cloud cover [%]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_precipitation(
@@ -156,7 +157,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
-            title="Precipitation intensity and probability",
+            title=gettext_("Precipitation intensity and probability"),
             ax=ax,
             **plot_kwargs,
         )  # pyright: ignore
@@ -181,7 +182,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Probability", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Probability"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_precipitation_type_summary(
@@ -209,7 +210,7 @@ class Weather:
         plot_ax = (
             data.groupby("precipType")  # pyright: ignore
             .size()
-            .plot(kind="pie", label="Precipitation type summary", ax=ax, **plot_kwargs)
+            .plot(kind="pie", label=gettext_("Precipitation type summary"), ax=ax, **plot_kwargs)
         )
         # If ax was not passed, it's created by plot command.
         if not ax:
@@ -268,7 +269,7 @@ class Weather:
         plot_ax = (
             data.groupby("summary")  # pyright: ignore
             .size()
-            .plot(kind="pie", label="Cloud summary", ax=ax, **plot_kwargs)
+            .plot(kind="pie", label=gettext_("Cloud summary"), ax=ax, **plot_kwargs)
         )
         if not ax:
             ax = plot_ax
@@ -314,7 +315,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title="Temperatures", ax=ax, **plot_kwargs)  # pyright: ignore
+        plot_ax = data.plot(x="time", title=gettext_("Temperatures"), ax=ax, **plot_kwargs)  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -336,7 +337,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Temperature [°C]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_wind(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
@@ -363,7 +364,7 @@ class Weather:
             x="time",
             y="windSpeed",
             ylim=(0, max_wind_speed + 1),
-            title="Wind speed",
+            title=gettext_("Wind speed"),
             ax=ax,
             **plot_kwargs,
         )
@@ -388,7 +389,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Wind speed [km/h]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_pressure_and_ozone(
@@ -424,13 +425,13 @@ class Weather:
             fig = ax.figure
 
         # Determine plot parameters based on available data
-        plot_title = "Pressure"
+        plot_title = gettext_("Pressure")
         secondary_y_plot = []
         if "ozone" in available_columns and "pressure" in available_columns:
-            plot_title = "Pressure and Ozone"
+            plot_title = gettext_("Pressure and Ozone")
             secondary_y_plot = ["ozone"]
         elif "ozone" in available_columns:
-            plot_title = "Ozone"
+            plot_title = gettext_("Ozone")
 
         plot_ax = data.plot(  # pyright: ignore
             x="time",
@@ -464,16 +465,16 @@ class Weather:
         # Annotate primary Y axis
         primary_y_label = ""
         if "pressure" in available_columns:
-            primary_y_label = "Pressure [hPa]"
+            primary_y_label = gettext_("Pressure [hPa]")
         elif "ozone" in available_columns:
-            primary_y_label = "Ozone [DU]"  # Assuming Dobson Units for Ozone
-        Utils.annotate_plot(ax, primary_y_label, effective_dark_mode)
+            primary_y_label = gettext_("Ozone [DU]")  # Assuming Dobson Units for Ozone
+        Utils.annotate_plot(ax, primary_y_label, effective_dark_mode, self.local_timezone)
 
         # Style secondary Y axis if it exists
         if secondary_y_plot and hasattr(ax, "right_ax"):
             ax_secondary = ax.right_ax
             ax_secondary.set_ylabel(
-                "Ozone [DU]",
+                gettext_("Ozone [DU]"),
                 color=style["TEXT_COLOR"],  # Assuming Dobson Units
             )
             ax_secondary.tick_params(axis="y", colors=style["TICK_COLOR"])
@@ -528,7 +529,7 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title="Visibility", ax=ax, **plot_kwargs)  # pyright: ignore
+        plot_ax = data.plot(x="time", title=gettext_("Visibility"), ax=ax, **plot_kwargs)  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -550,7 +551,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Visibility [km]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_moon_illumination(
@@ -576,7 +577,10 @@ class Weather:
         # Determine the title based on waxing/waning
         # Taking the status from the first data point for simplicity
         is_waxing = data["moonWaxing"].iloc[0]
-        title = f"Moon Illumination {'Waxing' if is_waxing else 'Waning'}"
+        title = (
+            f"{gettext_('Moon Illumination')} "
+            f"({gettext_('Waxing') if is_waxing else gettext_('Waning')})"
+        )
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
@@ -603,5 +607,5 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, "Illumination [%]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Illumination [%]"), effective_dark_mode, self.local_timezone)
         return ax
