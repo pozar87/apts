@@ -51,7 +51,7 @@ setup(
         "apts.utils",
     ],
     package_dir={"apts": "apts"},
-    package_data={"apts": ["data/*", "templates/*"]},
+    package_data={"apts": ["data/*", "templates/*", "locale/pl/LC_MESSAGES/*.mo"]},
     include_package_data=True,
     platforms="any",
     # test_suite='sandman.test.test_sandman',

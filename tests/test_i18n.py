@@ -6,7 +6,7 @@ from apts.constants.event_types import EventType
 from apts.cache import clear_cache
 import pytest
 
-@pytest.mark.skip(reason="Failing due to caching issues with translations.")
+@pytest.mark.skip(reason="Failing in CI due to caching/initialization issues. To be fixed later.")
 def test_language_switching_for_events():
     """
     Tests that the language of events can be switched dynamically.
@@ -44,7 +44,7 @@ def test_language_switching_for_plots():
     fig_pl = observation_pl.plot_messier()
     assert fig_pl.axes[0].get_title() == "Wysokość obiektów Messiera"
 
-@pytest.mark.skip(reason="Failing due to caching issues with translations.")
+@pytest.mark.skip(reason="Failing in CI due to caching/initialization issues. To be fixed later.")
 def test_language_switching_for_messier_types():
     """
     Tests that the language of Messier object types can be switched dynamically.
