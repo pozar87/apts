@@ -724,3 +724,7 @@ msgstr "Iluminacja Księżyca"
 #: apts/weather.py:610
 msgid "Illumination [%]"
 msgstr "Iluminacja [%]"
+
+#: apts/utils/plot.py:15
+msgid "Time"
+msgstr "Czas"
