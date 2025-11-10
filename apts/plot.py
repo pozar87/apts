@@ -14,6 +14,7 @@ from skyfield.units import Angle
 from .utils import Utils
 from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
+from apts.utils.plot import set_time_axis_label
 from apts.constants.graphconstants import (
     get_plot_style,
     get_plot_colors,
@@ -325,6 +326,7 @@ def _generate_plot_messier(
             "%H:%M:%S %Z", tz=observation.place.local_timezone
         )
         ax.xaxis.set_major_formatter(date_format)
+        set_time_axis_label(ax)
         _mark_observation(observation, ax, effective_dark_mode, style)
         _mark_good_conditions(
             observation,
@@ -489,7 +491,7 @@ def _generate_plot_planets(
     ax.set_ylim(0, 90)
     date_format = mdates.DateFormatter("%H:%M", tz=observation.place.local_timezone)
     ax.xaxis.set_major_formatter(date_format)
-
+    set_time_axis_label(ax)
     _mark_observation(observation, ax, effective_dark_mode, style)
     _mark_good_conditions(
         observation,

@@ -7,6 +7,7 @@ from typing import Optional
 
 from .utils import Utils
 from apts.utils.planetary import get_moon_illumination_details
+from apts.utils.plot import set_time_axis_label
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
 from apts.constants.graphconstants import get_plot_style
@@ -131,6 +132,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Cloud cover [%]", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax
 
     def plot_precipitation(
@@ -182,6 +184,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Probability", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax
 
     def plot_precipitation_type_summary(
@@ -337,6 +340,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Temperature [°C]", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax
 
     def plot_wind(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
@@ -389,6 +393,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Wind speed [km/h]", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax
 
     def plot_pressure_and_ozone(
@@ -478,7 +483,7 @@ class Weather:
             )
             ax_secondary.tick_params(axis="y", colors=style["TICK_COLOR"])
             ax_secondary.spines["right"].set_color(style["AXIS_COLOR"])
-
+        set_time_axis_label(ax)
         return ax
 
     def get_critical_data(self, start, stop):
@@ -551,6 +556,7 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Visibility [km]", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax
 
     def plot_moon_illumination(
@@ -604,4 +610,5 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, "Illumination [%]", effective_dark_mode)
+        set_time_axis_label(ax)
         return ax

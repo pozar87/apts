@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-09 19:09+0000\n"
+"POT-Creation-Date: 2025-11-10 14:34+0000\n"
 "PO-Revision-Date: 2025-11-09 18:42+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pl\n"
@@ -371,260 +371,213 @@ msgstr "Ryba Latająca"
 msgid "Vulpecula"
 msgstr "Lisek"
 
-#: apts/events.py:129
-msgid "Space Launch"
-msgstr "Start rakiety"
+#: apts/utils/plot.py:6
+msgid "Time"
+msgstr "Czas"
 
-#: apts/events.py:152
-msgid "Space Event"
-msgstr "Wydarzenie kosmiczne"
+#~ msgid "Space Launch"
+#~ msgstr "Start rakiety"
 
-#: apts/events.py:194 apts/events.py:195
-msgid "Solar Eclipse"
-msgstr "Zaćmienie Słońca"
+#~ msgid "Space Event"
+#~ msgstr "Wydarzenie kosmiczne"
 
-#: apts/events.py:205 apts/events.py:206
-msgid "Lunar Eclipse"
-msgstr "Zaćmienie Księżyca"
+#~ msgid "Solar Eclipse"
+#~ msgstr "Zaćmienie Słońca"
 
-#: apts/events.py:222
-msgid "Moon Phase"
-msgstr "Faza Księżyca"
+#~ msgid "Lunar Eclipse"
+#~ msgstr "Zaćmienie Księżyca"
 
-#: apts/events.py:233 apts/events.py:577
-msgid "Moon"
-msgstr "Księżyc"
+#~ msgid "Moon Phase"
+#~ msgstr "Faza Księżyca"
 
-#: apts/events.py:265 apts/events.py:266 apts/events.py:576
-msgid "Conjunction"
-msgstr "Koniunkcja"
+#~ msgid "Moon"
+#~ msgstr "Księżyc"
 
-#: apts/events.py:291 apts/events.py:293
-msgid "Opposition"
-msgstr "Opozycja"
+#~ msgid "Conjunction"
+#~ msgstr "Koniunkcja"
 
-#: apts/events.py:304
-msgid "Quadrantids"
-msgstr "Kwadrantydy"
+#~ msgid "Opposition"
+#~ msgstr "Opozycja"
 
-#: apts/events.py:305
-msgid "Lyrids"
-msgstr "Lirydy"
+#~ msgid "Quadrantids"
+#~ msgstr "Kwadrantydy"
 
-#: apts/events.py:306
-msgid "Eta Aquarids"
-msgstr "Eta Akwarydy"
+#~ msgid "Lyrids"
+#~ msgstr "Lirydy"
 
-#: apts/events.py:307
-msgid "Delta Aquarids"
-msgstr "Delta Akwarydy"
+#~ msgid "Eta Aquarids"
+#~ msgstr "Eta Akwarydy"
 
-#: apts/events.py:308
-msgid "Perseids"
-msgstr "Perseidy"
+#~ msgid "Delta Aquarids"
+#~ msgstr "Delta Akwarydy"
 
-#: apts/events.py:309
-msgid "Orionids"
-msgstr "Orionidy"
+#~ msgid "Perseids"
+#~ msgstr "Perseidy"
 
-#: apts/events.py:310
-msgid "Leonids"
-msgstr "Leonidy"
+#~ msgid "Orionids"
+#~ msgstr "Orionidy"
 
-#: apts/events.py:311
-msgid "Geminids"
-msgstr "Geminidy"
+#~ msgid "Leonids"
+#~ msgstr "Leonidy"
 
-#: apts/events.py:312
-msgid "Ursids"
-msgstr "Ursydy"
+#~ msgid "Geminids"
+#~ msgstr "Geminidy"
 
-#: apts/events.py:330 apts/events.py:333 apts/events.py:340 apts/events.py:343
-#: apts/events.py:350 apts/events.py:353
-msgid "Meteor Shower"
-msgstr "Deszcz meteorów"
+#~ msgid "Ursids"
+#~ msgstr "Ursydy"
 
-#: apts/events.py:332
-msgid "Start"
-msgstr "Początek"
+#~ msgid "Meteor Shower"
+#~ msgstr "Deszcz meteorów"
 
-#: apts/events.py:342
-msgid "Peak"
-msgstr "Szczyt"
+#~ msgid "Start"
+#~ msgstr "Początek"
 
-#: apts/events.py:352
-msgid "End"
-msgstr "Koniec"
+#~ msgid "Peak"
+#~ msgstr "Szczyt"
 
-#: apts/events.py:381
-msgid "Highest altitude"
-msgstr "Najwyższa wysokość"
+#~ msgid "End"
+#~ msgstr "Koniec"
 
-#: apts/events.py:383
-msgid "Planet Altitude"
-msgstr "Wysokość planety"
+#~ msgid "Highest altitude"
+#~ msgstr "Najwyższa wysokość"
 
-#: apts/events.py:399 apts/events.py:400
-msgid "Lunar Occultation"
-msgstr "Okultacja księżycowa"
+#~ msgid "Planet Altitude"
+#~ msgstr "Wysokość planety"
 
-#: apts/events.py:427
-msgid "Aphelion/Perihelion"
-msgstr "Aphelium/Peryhelium"
+#~ msgid "Lunar Occultation"
+#~ msgstr "Okultacja księżycowa"
 
-#: apts/events.py:438
-msgid "Moon Apogee/Perigee"
-msgstr "Apogeum/Perygeum Księżyca"
+#~ msgid "Aphelion/Perihelion"
+#~ msgstr "Aphelium/Peryhelium"
 
-#: apts/events.py:448 apts/events.py:449
-msgid "Inferior Conjunction"
-msgstr "Koniunkcja dolna"
+#~ msgid "Moon Apogee/Perigee"
+#~ msgstr "Apogeum/Perygeum Księżyca"
 
-#: apts/events.py:450
-msgid "Mercury"
-msgstr "Merkury"
+#~ msgid "Inferior Conjunction"
+#~ msgstr "Koniunkcja dolna"
 
-#: apts/events.py:580
-msgid "Moon-Messier Conjunction"
-msgstr "Koniunkcja Księżyca z obiektem Messiera"
+#~ msgid "Mercury"
+#~ msgstr "Merkury"
 
-#: apts/events.py:616
-msgid "Comet"
-msgstr "Kometa"
+#~ msgid "Moon-Messier Conjunction"
+#~ msgstr "Koniunkcja Księżyca z obiektem Messiera"
 
-#: apts/plot.py:210
-msgid "You can plot images only in Ipython notebook!"
-msgstr "Możesz rysować obrazy tylko w notatniku Ipython!"
+#~ msgid "Comet"
+#~ msgstr "Kometa"
 
-#: apts/plot.py:256 apts/plot.py:337 apts/plot.py:434 apts/plot.py:502
-msgid "Altitude [°]"
-msgstr "Wysokość [°]"
+#~ msgid "You can plot images only in Ipython notebook!"
+#~ msgstr "Możesz rysować obrazy tylko w notatniku Ipython!"
 
-#: apts/plot.py:257 apts/plot.py:358
-msgid "Messier Objects Altitude"
-msgstr "Wysokość obiektów Messiera"
+#~ msgid "Altitude [°]"
+#~ msgstr "Wysokość [°]"
 
-#: apts/plot.py:258
-msgid "Generated empty Messier plot as no objects are visible."
-msgstr "Wygenerowano pusty wykres Messiera, ponieważ żadne obiekty nie są widoczne."
+#~ msgid "Messier Objects Altitude"
+#~ msgstr "Wysokość obiektów Messiera"
 
-#: apts/plot.py:262 apts/plot.py:271
-msgid "Galaxy"
-msgstr "Galaktyka"
+#~ msgid "Generated empty Messier plot as no objects are visible."
+#~ msgstr ""
+#~ "Wygenerowano pusty wykres Messiera, ponieważ"
+#~ " żadne obiekty nie są widoczne."
 
-#: apts/plot.py:263 apts/plot.py:272
-msgid "Globular Cluster"
-msgstr "Gromada kulista"
+#~ msgid "Galaxy"
+#~ msgstr "Galaktyka"
 
-#: apts/plot.py:264 apts/plot.py:273
-msgid "Open Cluster"
-msgstr "Gromada otwarta"
+#~ msgid "Globular Cluster"
+#~ msgstr "Gromada kulista"
 
-#: apts/plot.py:265 apts/plot.py:274
-msgid "Nebula"
-msgstr "Mgławica"
+#~ msgid "Open Cluster"
+#~ msgstr "Gromada otwarta"
 
-#: apts/plot.py:266 apts/plot.py:275
-msgid "Planetary Nebula"
-msgstr "Mgławica planetarna"
+#~ msgid "Nebula"
+#~ msgstr "Mgławica"
 
-#: apts/plot.py:267 apts/plot.py:276
-msgid "Supernova Remnant"
-msgstr "Pozostałość po supernowej"
+#~ msgid "Planetary Nebula"
+#~ msgstr "Mgławica planetarna"
 
-#: apts/plot.py:268 apts/plot.py:277 apts/plot.py:304
-msgid "Other"
-msgstr "Inne"
+#~ msgid "Supernova Remnant"
+#~ msgstr "Pozostałość po supernowej"
 
-#: apts/plot.py:351
-msgid "Object Types"
-msgstr "Typy obiektów"
+#~ msgid "Other"
+#~ msgstr "Inne"
 
-#: apts/plot.py:359
-msgid "Successfully generated Messier plot."
-msgstr "Pomyślnie wygenerowano wykres Messiera."
+#~ msgid "Object Types"
+#~ msgstr "Typy obiektów"
 
-#: apts/plot.py:372
-msgid "Error generating Messier plot.\nSee logs for details."
-msgstr "Błąd podczas generowania wykresu Messiera.\nZobacz szczegóły w logach."
+#~ msgid "Successfully generated Messier plot."
+#~ msgstr "Pomyślnie wygenerowano wykres Messiera."
 
-#: apts/plot.py:382
-msgid "Messier Plot Error"
-msgstr "Błąd wykresu Messiera"
+#~ msgid ""
+#~ "Error generating Messier plot.\n"
+#~ "See logs for details."
+#~ msgstr ""
+#~ "Błąd podczas generowania wykresu Messiera.\n"
+#~ "Zobacz szczegóły w logach."
 
-#: apts/plot.py:435 apts/plot.py:503
-msgid "Solar Objects Altitude"
-msgstr "Wysokość obiektów Układu Słonecznego"
+#~ msgid "Messier Plot Error"
+#~ msgstr "Błąd wykresu Messiera"
 
-#: apts/plot.py:545
-msgid "Weather data not available for plotting."
-msgstr "Dane pogodowe niedostępne do wykreślenia."
+#~ msgid "Solar Objects Altitude"
+#~ msgstr "Wysokość obiektów Układu Słonecznego"
 
-#: apts/plot.py:555
-msgid "Weather Plot Information"
-msgstr "Informacje o wykresie pogodowym"
+#~ msgid "Weather data not available for plotting."
+#~ msgstr "Dane pogodowe niedostępne do wykreślenia."
 
-#: apts/plot.py:683
-msgid "Error generating Weather plot details.\nSee logs for specifics."
-msgstr "Błąd podczas generowania szczegółów wykresu pogodowego.\nZobacz szczegóły w logach."
+#~ msgid "Weather Plot Information"
+#~ msgstr "Informacje o wykresie pogodowym"
 
-#: apts/plot.py:693
-msgid "Weather Plot Error"
-msgstr "Błąd wykresu pogodowego"
+#~ msgid ""
+#~ "Error generating Weather plot details.\n"
+#~ "See logs for specifics."
+#~ msgstr ""
+#~ "Błąd podczas generowania szczegółów wykresu pogodowego.\n"
+#~ "Zobacz szczegóły w logach."
 
-#: apts/plot.py:1554
-#, python-brace-format
-msgid "Object '{target_name}' not found."
-msgstr "Nie znaleziono obiektu „{target_name}”."
+#~ msgid "Weather Plot Error"
+#~ msgstr "Błąd wykresu pogodowego"
 
-#: apts/plot.py:1561
-#, python-brace-format
-msgid "Skymap (Generated: {generation_time_str})"
-msgstr "Mapa nieba (wygenerowano: {generation_time_str})"
+#~ msgid "Object '{target_name}' not found."
+#~ msgstr "Nie znaleziono obiektu „{target_name}”."
 
-#: apts/plot.py:1577
-#, python-brace-format
-msgid "Target '{target_name}' is below the horizon."
-msgstr "Cel „{target_name}” znajduje się poniżej horyzontu."
+#~ msgid "Skymap (Generated: {generation_time_str})"
+#~ msgstr "Mapa nieba (wygenerowano: {generation_time_str})"
 
-#: apts/plot.py:1584 apts/plot.py:2130
-#, python-brace-format
-msgid "Skymap for {target_name} (Generated: {generation_time_str})"
-msgstr "Mapa nieba dla {target_name} (wygenerowano: {generation_time_str})"
+#~ msgid "Target '{target_name}' is below the horizon."
+#~ msgstr "Cel „{target_name}” znajduje się poniżej horyzontu."
 
-#: apts/plot.py:1594
-msgid "Azimuth (°)"
-msgstr "Azymut (°)"
+#~ msgid "Skymap for {target_name} (Generated: {generation_time_str})"
+#~ msgstr "Mapa nieba dla {target_name} (wygenerowano: {generation_time_str})"
 
-#: apts/plot.py:1595
-msgid "Altitude (°)"
-msgstr "Wysokość (°)"
+#~ msgid "Azimuth (°)"
+#~ msgstr "Azymut (°)"
 
-#: apts/plot.py:1601
-msgid "Right Ascension (hours)"
-msgstr "Rektascensja (godziny)"
+#~ msgid "Altitude (°)"
+#~ msgstr "Wysokość (°)"
 
-#: apts/plot.py:1602
-msgid "Declination (°)"
-msgstr "Deklinacja (°)"
+#~ msgid "Right Ascension (hours)"
+#~ msgstr "Rektascensja (godziny)"
 
-#: apts/plot.py:1813
-#, python-brace-format
-msgid "Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})"
-msgstr "Mapa nieba dla {target_name} (widok {zoom_deg}°, wygenerowano: {generation_time_str})"
+#~ msgid "Declination (°)"
+#~ msgstr "Deklinacja (°)"
 
-#: apts/plot.py:1821
-msgid "Flipped"
-msgstr "Odwrócony"
+#~ msgid ""
+#~ "Skymap for {target_name} ({zoom_deg}° view,"
+#~ " Generated: {generation_time_str})"
+#~ msgstr ""
+#~ "Mapa nieba dla {target_name} (widok "
+#~ "{zoom_deg}°, wygenerowano: {generation_time_str})"
 
-msgid "New Moon"
-msgstr "Nów"
+#~ msgid "Flipped"
+#~ msgstr "Odwrócony"
 
-msgid "First Quarter"
-msgstr "Pierwsza kwadra"
+#~ msgid "New Moon"
+#~ msgstr "Nów"
 
-msgid "Full Moon"
-msgstr "Pełnia"
+#~ msgid "First Quarter"
+#~ msgstr "Pierwsza kwadra"
 
-msgid "Last Quarter"
-msgstr "Ostatnia kwadra"
+#~ msgid "Full Moon"
+#~ msgstr "Pełnia"
+
+#~ msgid "Last Quarter"
+#~ msgstr "Ostatnia kwadra"
+
