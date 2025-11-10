@@ -163,7 +163,7 @@ class EventsTest(unittest.TestCase):
 
         # Check if the events are translated
         self.assertEqual(translated_df.iloc[0]['event'], 'Nów')
-        self.assertEqual(translated_df.iloc[0]['type'], 'Faza księżyca')
+        self.assertEqual(translated_df.iloc[0]['type'], 'Faza Księżyca')
         self.assertEqual(translated_df.iloc[1]['event'], 'Pełnia')
 
 

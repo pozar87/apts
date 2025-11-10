@@ -616,3 +616,15 @@ msgstr "Mapa nieba dla {target_name} (widok {zoom_deg}°, wygenerowano: {generat
 #: apts/plot.py:1821
 msgid "Flipped"
 msgstr "Odwrócony"
+
+msgid "New Moon"
+msgstr "Nów"
+
+msgid "First Quarter"
+msgstr "Pierwsza kwadra"
+
+msgid "Full Moon"
+msgstr "Pełnia"
+
+msgid "Last Quarter"
+msgstr "Ostatnia kwadra"
