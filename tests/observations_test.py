@@ -558,6 +558,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     mock_ax,
                     "Altitude [°]",
                     scenario_data["expected_effective_dark_mode"],
+                    self.observation.place.local_timezone,
                 )
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()

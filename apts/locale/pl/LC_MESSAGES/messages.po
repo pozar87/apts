@@ -371,98 +371,98 @@ msgstr "Ryba Latająca"
 msgid "Vulpecula"
 msgstr "Lisek"
 
-#~ msgid "Space Launch"
-#~ msgstr "Start rakiety"
+msgid "Space Launch"
+msgstr "Start rakiety"
 
-#~ msgid "Space Event"
-#~ msgstr "Wydarzenie kosmiczne"
+msgid "Space Event"
+msgstr "Wydarzenie kosmiczne"
 
-#~ msgid "Solar Eclipse"
-#~ msgstr "Zaćmienie Słońca"
+msgid "Solar Eclipse"
+msgstr "Zaćmienie Słońca"
 
-#~ msgid "Lunar Eclipse"
-#~ msgstr "Zaćmienie Księżyca"
+msgid "Lunar Eclipse"
+msgstr "Zaćmienie Księżyca"
 
-#~ msgid "Moon Phase"
-#~ msgstr "Faza Księżyca"
+msgid "Moon Phase"
+msgstr "Faza Księżyca"
 
-#~ msgid "Moon"
-#~ msgstr "Księżyc"
+msgid "Moon"
+msgstr "Księżyc"
 
-#~ msgid "Conjunction"
-#~ msgstr "Koniunkcja"
+msgid "Conjunction"
+msgstr "Koniunkcja"
 
-#~ msgid "Opposition"
-#~ msgstr "Opozycja"
+msgid "Opposition"
+msgstr "Opozycja"
 
-#~ msgid "Quadrantids"
-#~ msgstr "Kwadrantydy"
+msgid "Quadrantids"
+msgstr "Kwadrantydy"
 
-#~ msgid "Lyrids"
-#~ msgstr "Lirydy"
+msgid "Lyrids"
+msgstr "Lirydy"
 
-#~ msgid "Eta Aquarids"
-#~ msgstr "Eta Akwarydy"
+msgid "Eta Aquarids"
+msgstr "Eta Akwarydy"
 
-#~ msgid "Delta Aquarids"
-#~ msgstr "Delta Akwarydy"
+msgid "Delta Aquarids"
+msgstr "Delta Akwarydy"
 
-#~ msgid "Perseids"
-#~ msgstr "Perseidy"
+msgid "Perseids"
+msgstr "Perseidy"
 
-#~ msgid "Orionids"
-#~ msgstr "Orionidy"
+msgid "Orionids"
+msgstr "Orionidy"
 
-#~ msgid "Leonids"
-#~ msgstr "Leonidy"
+msgid "Leonids"
+msgstr "Leonidy"
 
-#~ msgid "Geminids"
-#~ msgstr "Geminidy"
+msgid "Geminids"
+msgstr "Geminidy"
 
-#~ msgid "Ursids"
-#~ msgstr "Ursydy"
+msgid "Ursids"
+msgstr "Ursydy"
 
-#~ msgid "Meteor Shower"
-#~ msgstr "Deszcz meteorów"
+msgid "Meteor Shower"
+msgstr "Deszcz meteorów"
 
-#~ msgid "Start"
-#~ msgstr "Początek"
+msgid "Start"
+msgstr "Początek"
 
-#~ msgid "Peak"
-#~ msgstr "Szczyt"
+msgid "Peak"
+msgstr "Szczyt"
 
-#~ msgid "End"
-#~ msgstr "Koniec"
+msgid "End"
+msgstr "Koniec"
 
-#~ msgid "Highest altitude"
-#~ msgstr "Najwyższa wysokość"
+msgid "Highest altitude"
+msgstr "Najwyższa wysokość"
 
-#~ msgid "Planet Altitude"
-#~ msgstr "Wysokość planety"
+msgid "Planet Altitude"
+msgstr "Wysokość planety"
 
-#~ msgid "Lunar Occultation"
-#~ msgstr "Okultacja księżycowa"
+msgid "Lunar Occultation"
+msgstr "Okultacja księżycowa"
 
-#~ msgid "Aphelion/Perihelion"
-#~ msgstr "Aphelium/Peryhelium"
+msgid "Aphelion/Perihelion"
+msgstr "Aphelium/Peryhelium"
 
-#~ msgid "Moon Apogee/Perigee"
-#~ msgstr "Apogeum/Perygeum Księżyca"
+msgid "Moon Apogee/Perigee"
+msgstr "Apogeum/Perygeum Księżyca"
 
-#~ msgid "Inferior Conjunction"
-#~ msgstr "Koniunkcja dolna"
+msgid "Inferior Conjunction"
+msgstr "Koniunkcja dolna"
 
-#~ msgid "Mercury"
-#~ msgstr "Merkury"
+msgid "Mercury"
+msgstr "Merkury"
 
-#~ msgid "Moon-Messier Conjunction"
-#~ msgstr "Koniunkcja Księżyca z obiektem Messiera"
+msgid "Moon-Messier Conjunction"
+msgstr "Koniunkcja Księżyca z obiektem Messiera"
 
-#~ msgid "Comet"
-#~ msgstr "Kometa"
+msgid "Comet"
+msgstr "Kometa"
 
-#~ msgid "You can plot images only in Ipython notebook!"
-#~ msgstr "Możesz rysować obrazy tylko w notatniku Ipython!"
+msgid "You can plot images only in Ipython notebook!"
+msgstr "Możesz rysować obrazy tylko w notatniku Ipython!"
 
 msgid "Altitude [°]"
 msgstr "Wysokość [°]"
