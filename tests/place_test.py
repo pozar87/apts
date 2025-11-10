@@ -9,6 +9,7 @@ import pandas as pd
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
+from apts.i18n import gettext_
 
 
 from apts.place import Place
@@ -445,3 +446,63 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_fig_patch.reset_mock()
                 mock_line.reset_mock()
                 mock_get_dark_mode_place.reset_mock()  # Reset this as it's called in each loop
+
+@patch("apts.place.get_dark_mode")
+class TestDarkMode(unittest.TestCase):
+    def setUp(self):
+        self.place = setup_place()
+        # Ensure place.local_timezone is robust for tests
+        if (
+            not hasattr(self.place, "local_timezone")
+            or self.place.local_timezone is None
+        ):
+            self.place.local_timezone = dt_module.timezone.utc  # Use aliased dt_module
+        elif isinstance(self.place.local_timezone, str):
+            # Simplified: if it's a string, default to UTC for test consistency
+            self.place.local_timezone = dt_module.timezone.utc  # Use aliased dt_module
+
+        # Mock moon_path to return predictable data
+        mock_moon_path_data = pd.DataFrame(
+            {
+                "Time": [
+                    dt_module.time(hour=18, minute=0),
+                    dt_module.time(hour=19, minute=0),
+                    dt_module.time(hour=20, minute=0),
+                ],  # Use aliased dt_module
+                "Moon altitude": [10, 20, 30],
+                "Azimuth": [90, 100, 110],
+                "Local_time": ["18:00", "19:00", "20:00"],
+                "Phase": [0.5, 0.5, 0.5],
+                "Lunation": [0.5, 0.5, 0.5],
+            }
+        )
+        self.place.moon_path = MagicMock(return_value=mock_moon_path_data)
+        self.place._moon_phase_letter = MagicMock(return_value="M")
+        self.place.moon_illumination = MagicMock(return_value=71)
+
+        mock_sun_path_data = pd.DataFrame(
+            {
+                "Time": [
+                    dt_module.time(hour=18, minute=0),
+                    dt_module.time(hour=19, minute=0),
+                    dt_module.time(hour=20, minute=0),
+                ],
+                "Sun altitude": [10, 20, 30],
+                "Azimuth": [90, 100, 110],
+                "Local_time": ["18:00", "19:00", "20:00"],
+            }
+        )
+        self.place.sun_path = MagicMock(return_value=mock_sun_path_data)
+
+    @patch("pandas.DataFrame.plot")
+    def test_dark_mode_tick_colors(self, mock_df_plot, mock_get_dark_mode):
+        mock_get_dark_mode.return_value = True
+        mock_ax = MagicMock()
+        mock_df_plot.return_value = mock_ax
+        self.place.plot_moon_path()
+        style = get_plot_style(True)
+        mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
+        mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
+        self.place.plot_sun_path()
+        mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
+        mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])

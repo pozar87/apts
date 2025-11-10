@@ -5,7 +5,7 @@ import requests_cache
 
 from typing import Optional
 
-from apts.plot import Utils
+from apts.utils.plot import Utils
 from apts.utils.planetary import get_moon_illumination_details
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings

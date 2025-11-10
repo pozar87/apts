@@ -8,9 +8,12 @@ from importlib import resources
 import pytz
 from dateutil import tz
 from timezonefinder import TimezoneFinder
-from typing import Optional  # Added
-from apts.config import get_dark_mode  # Added
-from apts.constants.graphconstants import get_plot_style  # Added
+from typing import Optional
+
+from apts.utils.plot import Utils
+from apts.i18n import gettext_
+from apts.config import get_dark_mode
+from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
 
 from .weather import Weather
@@ -272,21 +275,14 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_xlabel("Azimuth [°]", color=style["TEXT_COLOR"])
-        ax.set_ylabel("Altitude [°]", color=style["TEXT_COLOR"])
         ax.set_title("Sun altitude", color=style["TEXT_COLOR"])
-
-        ax.tick_params(axis="x", colors=style["TICK_COLOR"])
-        ax.tick_params(axis="y", colors=style["TICK_COLOR"])
-
-        for spine_pos in ["top", "bottom", "left", "right"]:
-            ax.spines[spine_pos].set_color(style["AXIS_COLOR"])
 
         # Add cardinal direction
         add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
         ax.set_xlim(45, 315)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, self.local_timezone, x_label="Azimuth [°]")
 
         # Plot horizon
         ax.axhspan(0, -50, color=style["GRID_COLOR"], alpha=0.3)
@@ -379,21 +375,14 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_xlabel("Azimuth [°]", color=style["TEXT_COLOR"])
-        ax.set_ylabel("Altitude [°]", color=style["TEXT_COLOR"])
         ax.set_title("Moon altitude", color=style["TEXT_COLOR"])
-
-        ax.tick_params(axis="x", colors=style["TICK_COLOR"])
-        ax.tick_params(axis="y", colors=style["TICK_COLOR"])
-
-        for spine_pos in ["top", "bottom", "left", "right"]:
-            ax.spines[spine_pos].set_color(style["AXIS_COLOR"])
 
         # Add cardinal direction
         add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
         ax.set_xlim(45, 315)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, self.local_timezone, x_label="Azimuth [°]")
 
         # Plot horizon
         ax.axhspan(0, -50, color=style["GRID_COLOR"], alpha=0.3)
