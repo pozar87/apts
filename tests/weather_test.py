@@ -9,6 +9,7 @@ from requests_mock import ANY
 from apts.observations import Observation
 from apts.conditions import Conditions
 import pytz
+from apts.i18n import gettext_
 
 # MOCK DATA
 PIRATE_WEATHER_MOCK = {
@@ -268,7 +269,7 @@ def test_plot_clouds_dark_mode_styles(
         mock_ax.get_legend.assert_called()
 
     mock_annotate_plot.assert_called_with(
-        mock_ax, "Cloud cover [%]", expected_effective_dark_mode, pytz.utc
+        mock_ax, gettext_("Cloud cover [%]"), expected_effective_dark_mode, pytz.utc
     )
 
     mock_df_plot.reset_mock()
@@ -449,7 +450,7 @@ def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
         ax = weather.plot_moon_illumination()
         assert ax is not None
         mock_annotate_plot.assert_called_once_with(
-            ax, "Illumination [%]", False, pytz.utc
+            ax, gettext_("Illumination [%]"), False, pytz.utc
         )
 
 
