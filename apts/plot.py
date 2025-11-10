@@ -22,6 +22,7 @@ from apts.constants.graphconstants import (
 )
 from apts.constants.plot import CoordinateSystem
 from .cache import get_hipparcos_data
+from apts.i18n import gettext_
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -206,7 +207,7 @@ def plot_visible_planets(
     try:
         from IPython.display import SVG  # pyright: ignore
     except ImportError:
-        logger.warning("You can plot images only in Ipython notebook!")
+        logger.warning(gettext_("You can plot images only in Ipython notebook!"))
         return
     return SVG(plot_visible_planets_svg(observation, dark_mode_override, **args))
 
@@ -252,28 +253,28 @@ def _generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-            ax.set_title("Messier Objects Altitude", color=style["TEXT_COLOR"])
-            logger.info("Generated empty Messier plot as no objects are visible.")
+            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+            ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
+            logger.info(gettext_("Generated empty Messier plot as no objects are visible."))
             return fig
 
         LIGHT_MESSIER_TYPE_COLORS = {
-            "Galaxy": "#8CA2AD",
-            "Globular Cluster": "#A38F9B",
-            "Open Cluster": "#8EA397",
-            "Nebula": "#9B8FA3",
-            "Planetary Nebula": "#A39B8F",
-            "Supernova Remnant": "#AD9F9A",
-            "Other": "#A0A0A0",
+            gettext_("Galaxy"): "#8CA2AD",
+            gettext_("Globular Cluster"): "#A38F9B",
+            gettext_("Open Cluster"): "#8EA397",
+            gettext_("Nebula"): "#9B8FA3",
+            gettext_("Planetary Nebula"): "#A39B8F",
+            gettext_("Supernova Remnant"): "#AD9F9A",
+            gettext_("Other"): "#A0A0A0",
         }
         DARK_MESSIER_TYPE_COLORS = {
-            "Galaxy": "#5A1A75",
-            "Globular Cluster": "#CCCCCC",
-            "Open Cluster": "#FFFFFF",
-            "Nebula": "#5A1A75",
-            "Planetary Nebula": "#007447",
-            "Supernova Remnant": "#BBBBBB",
-            "Other": "#999999",
+            gettext_("Galaxy"): "#5A1A75",
+            gettext_("Globular Cluster"): "#CCCCCC",
+            gettext_("Open Cluster"): "#FFFFFF",
+            gettext_("Nebula"): "#5A1A75",
+            gettext_("Planetary Nebula"): "#007447",
+            gettext_("Supernova Remnant"): "#BBBBBB",
+            gettext_("Other"): "#999999",
         }
 
         if effective_dark_mode:
@@ -294,13 +295,13 @@ def _generate_plot_messier(
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
             altitude = obj[ObjectTableLabels.ALTITUDE]
-            obj_type = obj["Type"]
+            obj_type = gettext_(obj["Type"])
             width = obj[ObjectTableLabels.WIDTH]
             height = obj["Height"] if "Height" in obj else width
             messier_id = obj[ObjectTableLabels.MESSIER]
             marker_size = (width * height) ** 0.5
             color = current_messier_colors.get(
-                obj_type, current_messier_colors["Other"]
+                obj_type, current_messier_colors[gettext_("Other")]
             )
             plotted_types[obj_type] = color
             ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
@@ -333,7 +334,7 @@ def _generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
 
         legend_handles = [
             lines.Line2D(
@@ -347,15 +348,15 @@ def _generate_plot_messier(
             )
             for obj_type, color in plotted_types.items()
         ]
-        legend = ax.legend(handles=legend_handles, title="Object Types")
+        legend = ax.legend(handles=legend_handles, title=gettext_("Object Types"))
         legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
         legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
         legend.get_title().set_color(style["TEXT_COLOR"])
         for text in legend.get_texts():
             text.set_color(style["TEXT_COLOR"])
 
-        ax.set_title("Messier Objects Altitude", color=style["TEXT_COLOR"])
-        logger.info("Successfully generated Messier plot.")
+        ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
+        logger.info(gettext_("Successfully generated Messier plot."))
         return fig
 
     except Exception as e:
@@ -368,7 +369,7 @@ def _generate_plot_messier(
         ax.text(
             0.5,
             0.5,
-            "Error generating Messier plot.\nSee logs for details.",
+            gettext_("Error generating Messier plot.\nSee logs for details."),
             horizontalalignment="center",
             verticalalignment="center",
             fontsize=12,
@@ -378,7 +379,7 @@ def _generate_plot_messier(
         )
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title("Messier Plot Error", color=style["TEXT_COLOR"])
+        ax.set_title(gettext_("Messier Plot Error"), color=style["TEXT_COLOR"])
         return fig
 
 
@@ -430,8 +431,8 @@ def _generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-        ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+        ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
         return fig
 
     default_planet_color = plot_colors.get(OpticalType.GENERIC, "#888888")
@@ -498,8 +499,8 @@ def _generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(ax, "Altitude [°]", effective_dark_mode)
-    ax.set_title("Solar Objects Altitude", color=style["TEXT_COLOR"])
+    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+    ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
 
     return fig
@@ -541,7 +542,7 @@ def _generate_plot_weather(
         ax_err.text(
             0.5,
             0.5,
-            "Weather data not available for plotting.",
+            gettext_("Weather data not available for plotting."),
             horizontalalignment="center",
             verticalalignment="center",
             fontsize=12,
@@ -551,7 +552,7 @@ def _generate_plot_weather(
         )
         ax_err.set_xticks([])
         ax_err.set_yticks([])
-        ax_err.set_title("Weather Plot Information", color=style["TEXT_COLOR"])
+        ax_err.set_title(gettext_("Weather Plot Information"), color=style["TEXT_COLOR"])
         return fig_err
     try:
         axes_arg = args.pop("ax", None)
@@ -679,7 +680,7 @@ def _generate_plot_weather(
         ax_err.text(
             0.5,
             0.5,
-            "Error generating Weather plot details.\nSee logs for specifics.",
+            gettext_("Error generating Weather plot details.\nSee logs for specifics."),
             horizontalalignment="center",
             verticalalignment="center",
             fontsize=12,
@@ -689,7 +690,7 @@ def _generate_plot_weather(
         )
         ax_err.set_xticks([])
         ax_err.set_yticks([])
-        ax_err.set_title("Weather Plot Error", color=style["TEXT_COLOR"])
+        ax_err.set_title(gettext_("Weather Plot Error"), color=style["TEXT_COLOR"])
         return fig_err
 
 
@@ -1018,11 +1019,8 @@ def _plot_stars_on_skymap(
         ra_hours_apparent = ra.hours[visible]
         dec_degrees_apparent = dec.degrees[visible]
 
-        zoom_mask = (
-            (ra_hours_apparent >= xlim[0])
-            & (ra_hours_apparent <= xlim[1])
-            & (dec_degrees_apparent >= ylim[0])
-            & (dec_degrees_apparent <= ylim[1])
+        zoom_mask = _create_ra_zoom_mask(ra_hours_apparent, xlim) & (
+            (dec_degrees_apparent >= ylim[0]) & (dec_degrees_apparent <= ylim[1])
         )
 
         ra_plot = ra_hours_apparent[zoom_mask]
@@ -1569,14 +1567,14 @@ def _generate_plot_skymap(
         ax.text(
             0.5,
             0.5,
-            f"Object '{target_name}' not found.",
+            gettext_("Object '{target_name}' not found.").format(target_name=target_name),
             horizontalalignment="center",
             verticalalignment="center",
             transform=ax.transAxes,
             color=style["TEXT_COLOR"],
         )
         ax.set_title(
-            f"Skymap (Generated: {generation_time_str})",
+            gettext_("Skymap (Generated: {generation_time_str})").format(generation_time_str=generation_time_str),
             color=style["TEXT_COLOR"],
         )
         return fig
@@ -1592,14 +1590,14 @@ def _generate_plot_skymap(
             ax.text(
                 0.5,
                 0.5,
-                f"Target '{target_name}' is below the horizon.",
+                gettext_("Target '{target_name}' is below the horizon.").format(target_name=target_name),
                 horizontalalignment="center",
                 verticalalignment="center",
                 transform=ax.transAxes,
                 color=style["TEXT_COLOR"],
             )
             ax.set_title(
-                f"Skymap for {target_name} (Generated: {generation_time_str})",
+                gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
                 color=style["TEXT_COLOR"],
             )
             return fig
@@ -1609,15 +1607,15 @@ def _generate_plot_skymap(
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         if coordinate_system == CoordinateSystem.HORIZONTAL:
-            ax.set_xlabel("Azimuth (°)", color=style["TEXT_COLOR"])
-            ax.set_ylabel("Altitude (°)", color=style["TEXT_COLOR"])
+            ax.set_xlabel(gettext_("Azimuth (°)"), color=style["TEXT_COLOR"])
+            ax.set_ylabel(gettext_("Altitude (°)"), color=style["TEXT_COLOR"])
             half_zoom = zoom_deg / 2
             ax.set_xlim(target_az.degrees - half_zoom, target_az.degrees + half_zoom)
             ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
             ax.set_aspect("equal", adjustable="box")
         else:  # Equatorial
-            ax.set_xlabel("Right Ascension (hours)", color=style["TEXT_COLOR"])
-            ax.set_ylabel("Declination (°)", color=style["TEXT_COLOR"])
+            ax.set_xlabel(gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"])
+            ax.set_ylabel(gettext_("Declination (°)"), color=style["TEXT_COLOR"])
             dec_rad = numpy.deg2rad(target_dec.degrees)
             half_zoom_dec = zoom_deg / 2.0
             half_zoom_ra_hours = half_zoom_dec / (15.0 * numpy.cos(dec_rad))
@@ -1828,7 +1826,7 @@ def _generate_plot_skymap(
         )
 
         ax.set_title(
-            f"Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})",
+            gettext_("Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})").format(target_name=target_name, zoom_deg=zoom_deg, generation_time_str=generation_time_str),
             color=style["TEXT_COLOR"],
         )
         if flipped_horizontally:
@@ -1836,7 +1834,7 @@ def _generate_plot_skymap(
         if flipped_vertically:
             ax.invert_yaxis()
         if flipped_horizontally or flipped_vertically:
-            flip_str = "Flipped "
+            flip_str = gettext_("Flipped") + " "
             if flipped_horizontally:
                 flip_str += "H"
             if flipped_vertically:
@@ -2145,7 +2143,7 @@ def _generate_plot_skymap(
             )
 
         ax.set_title(
-            f"Skymap for {target_name} (Generated: {generation_time_str})",
+            gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
             color=style["TEXT_COLOR"],
         )
 

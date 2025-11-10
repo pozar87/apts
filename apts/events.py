@@ -18,6 +18,7 @@ from skyfield.api import Star, Topos
 from . import skyfield_searches, cache
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
+from .i18n import gettext_
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,19 @@ class AstronomicalEvents:
         if not self.events:
             return pd.DataFrame(self.events)
         df = pd.DataFrame(self.events).sort_values(by="date")
+        df = self.translate_events(df)
         logger.debug(f"--- get_events: {time.time() - start_time}s")
+        return df
+
+    def translate_events(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty:
+            return df
+
+        columns_to_translate = ["event", "type", "shower_name", "phase", "object", "object1", "object2"]
+        for col in columns_to_translate:
+            if col in df.columns:
+                df[col] = df[col].apply(lambda x: gettext_(x) if isinstance(x, str) else x)
+
         return df
 
     def calculate_space_launches(self):
