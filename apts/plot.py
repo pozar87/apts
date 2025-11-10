@@ -268,7 +268,7 @@ def _generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
             ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
             logger.info(gettext_("Generated empty Messier plot as no objects are visible."))
             return fig
@@ -349,7 +349,7 @@ def _generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
 
         legend_handles = [
             lines.Line2D(
@@ -446,7 +446,7 @@ def _generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
         ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
         return fig
 
@@ -514,7 +514,7 @@ def _generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode)
+    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
     ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
 
