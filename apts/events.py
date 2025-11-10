@@ -18,7 +18,7 @@ from skyfield.api import Star, Topos
 from . import skyfield_searches, cache
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
-from apts.i18n import gettext_
+from .i18n import gettext_
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,19 @@ class AstronomicalEvents:
         if not self.events:
             return pd.DataFrame(self.events)
         df = pd.DataFrame(self.events).sort_values(by="date")
+        df = self.translate_events(df)
         logger.debug(f"--- get_events: {time.time() - start_time}s")
+        return df
+
+    def translate_events(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty:
+            return df
+
+        columns_to_translate = ["event", "type", "shower_name", "phase", "object", "object1", "object2"]
+        for col in columns_to_translate:
+            if col in df.columns:
+                df[col] = df[col].apply(lambda x: gettext_(x) if isinstance(x, str) else x)
+
         return df
 
     def calculate_space_launches(self):
@@ -126,7 +138,7 @@ class AstronomicalEvents:
                     {
                         "date": parse_date(launch["window_start"]).astimezone(utc),
                         "event": launch["name"],
-                        "type": gettext_("Space Launch"),
+                        "type": "Space Launch",
                     }
                 )
         except requests.exceptions.RequestException as e:
@@ -149,7 +161,7 @@ class AstronomicalEvents:
                     {
                         "date": parse_date(event["date"]).astimezone(utc),
                         "event": event["name"],
-                        "type": gettext_("Space Event"),
+                        "type": "Space Event",
                     }
                 )
         except requests.exceptions.RequestException as e:
@@ -191,8 +203,8 @@ class AstronomicalEvents:
             self.observer, self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = gettext_("Solar Eclipse")
-            event["type"] = gettext_("Solar Eclipse")
+            event["event"] = "Solar Eclipse"
+            event["type"] = "Solar Eclipse"
         logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -202,8 +214,8 @@ class AstronomicalEvents:
             self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = gettext_("Lunar Eclipse")
-            event["type"] = gettext_("Lunar Eclipse")
+            event["event"] = "Lunar Eclipse"
+            event["type"] = "Lunar Eclipse"
         logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -218,8 +230,8 @@ class AstronomicalEvents:
             events.append(
                 {
                     "date": ti.utc_datetime().astimezone(utc),
-                    "event": gettext_(almanac.MOON_PHASES[yi]),
-                    "type": gettext_("Moon Phase"),
+                    "event": almanac.MOON_PHASES[yi],
+                    "type": "Moon Phase",
                 }
             )
         logger.debug(f"--- calculate_moon_phases: {time.time() - start_time}s")
@@ -230,7 +242,7 @@ class AstronomicalEvents:
         events = []
         planets = planetary.CONJUNCTION_PLANETS
         moon = "moon"
-        moon_display_name = gettext_("Moon")
+        moon_display_name = "Moon"
 
         executor = self.executor
         futures = {}
@@ -262,8 +274,8 @@ class AstronomicalEvents:
             p1_name, p2_name = futures[future]
             found_events = future.result()
             for event in found_events:
-                event["type"] = gettext_("Conjunction")
-                event["event"] = gettext_("Conjunction")
+                event["type"] = "Conjunction"
+                event["event"] = "Conjunction"
                 event["object1"] = p1_name
                 event["object2"] = p2_name
                 events.append(event)
@@ -288,9 +300,9 @@ class AstronomicalEvents:
         for future in as_completed(futures):
             found_events = future.result()
             for event in found_events:
-                event["type"] = gettext_("Opposition")
+                event["type"] = "Opposition"
                 simple_name = planetary.get_simple_name(event["planet"])
-                event["event"] = gettext_("Opposition")
+                event["event"] = "Opposition"
                 event["object"] = simple_name
                 del event["planet"]
             events.extend(found_events)
@@ -327,30 +339,30 @@ class AstronomicalEvents:
                     events.append(
                         {
                             "date": start_date.astimezone(utc),
-                            "event": gettext_("Meteor Shower"),
-                            "shower_name": gettext_(shower),
-                            "phase": gettext_("Start"),
-                            "type": gettext_("Meteor Shower"),
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "Start",
+                            "type": "Meteor Shower",
                         }
                     )
                 if self.start_date <= peak_date <= self.end_date:
                     events.append(
                         {
                             "date": peak_date.astimezone(utc),
-                            "event": gettext_("Meteor Shower"),
-                            "shower_name": gettext_(shower),
-                            "phase": gettext_("Peak"),
-                            "type": gettext_("Meteor Shower"),
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "Peak",
+                            "type": "Meteor Shower",
                         }
                     )
                 if self.start_date <= end_date <= self.end_date:
                     events.append(
                         {
                             "date": end_date.astimezone(utc),
-                            "event": gettext_("Meteor Shower"),
-                            "shower_name": gettext_(shower),
-                            "phase": gettext_("End"),
-                            "type": gettext_("Meteor Shower"),
+                            "event": "Meteor Shower",
+                            "shower_name": shower,
+                            "phase": "End",
+                            "type": "Meteor Shower",
                         }
                     )
         logger.debug(f"--- calculate_meteor_showers: {time.time() - start_time}s")
@@ -378,9 +390,9 @@ class AstronomicalEvents:
                 events.append(
                     {
                         "date": t.astimezone(utc),
-                        "event": gettext_("Highest altitude"),
+                        "event": "Highest altitude",
                         "object": simple_name,
-                        "type": gettext_("Planet Altitude"),
+                        "type": "Planet Altitude",
                         "altitude": alt,
                     }
                 )
@@ -396,8 +408,8 @@ class AstronomicalEvents:
             self.end_date,
         )
         for event in events:
-            event["type"] = gettext_("Lunar Occultation")
-            event["event"] = gettext_("Lunar Occultation")
+            event["type"] = "Lunar Occultation"
+            event["event"] = "Lunar Occultation"
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
         return events
 
@@ -424,7 +436,7 @@ class AstronomicalEvents:
                 del event_dict["planet"]
                 del event_dict["event_type"]
                 event_dict["date"] = event_dict["date"].astimezone(utc)
-                event_dict["type"] = gettext_("Aphelion/Perihelion")
+                event_dict["type"] = "Aphelion/Perihelion"
                 events.append(event_dict)
         logger.debug(f"--- calculate_aphelion_perihelion: {time.time() - start_time}s")
         return events
@@ -435,7 +447,7 @@ class AstronomicalEvents:
             self.start_date, self.end_date
         )
         for event in events:
-            event["type"] = gettext_("Moon Apogee/Perigee")
+            event["type"] = "Moon Apogee/Perigee"
         logger.debug(f"--- calculate_moon_apogee_perigee: {time.time() - start_time}s")
         return events
 
@@ -445,9 +457,9 @@ class AstronomicalEvents:
             self.observer, self.start_date, self.end_date
         )
         for event in events:
-            event["type"] = gettext_("Inferior Conjunction")
-            event["event"] = gettext_("Inferior Conjunction")
-            event["object"] = gettext_("Mercury")
+            event["type"] = "Inferior Conjunction"
+            event["event"] = "Inferior Conjunction"
+            event["object"] = "Mercury"
         logger.debug(
             f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
         )
@@ -573,11 +585,11 @@ class AstronomicalEvents:
                     all_events.append(
                         {
                             "date": conj["date"].astimezone(utc),
-                            "event": gettext_("Conjunction"),
-                            "object1": gettext_("Moon"),
+                            "event": "Conjunction",
+                            "object1": "Moon",
                             "object2": messier_name,
                             "separation_degrees": conj["separation_degrees"],
-                            "type": gettext_("Moon-Messier Conjunction"),
+                            "type": "Moon-Messier Conjunction",
                         }
                     )
             return all_events
@@ -613,7 +625,7 @@ class AstronomicalEvents:
                         comet["close_approach_data"][0]["close_approach_date_full"]
                     ).astimezone(utc),
                     "event": comet["name"],
-                    "type": gettext_("Comet"),
+                    "type": "Comet",
                 }
             )
         logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
