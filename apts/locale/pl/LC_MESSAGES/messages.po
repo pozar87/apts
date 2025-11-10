@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-10 20:36+0000\n"
-"PO-Revision-Date: 2025-11-09 18:42+0000\n"
+"POT-Creation-Date: 2025-11-10 20:53+0000\n"
+"PO-Revision-Date: 2025-11-10 20:54+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pl\n"
 "Language-Team: pl <LL@li.org>\n"
@@ -505,9 +505,7 @@ msgstr "Wysokość obiektów Messiera"
 
 #: apts/plot.py:302
 msgid "Generated empty Messier plot as no objects are visible."
-msgstr ""
-"Wygenerowano pusty wykres Messiera, ponieważ żadne obiekty nie są "
-"widoczne."
+msgstr "Wygenerowano pusty wykres Messiera, ponieważ żadne obiekty nie są widoczne."
 
 #: apts/plot.py:315
 msgid "Galaxy"
@@ -617,9 +615,7 @@ msgstr "Deklinacja (°)"
 msgid ""
 "Skymap for {target_name} ({zoom_deg}° view,"
 " Generated: {generation_time_str})"
-msgstr ""
-"Mapa nieba dla {target_name} (widok {zoom_deg}°, wygenerowano: "
-"{generation_time_str})"
+msgstr "Mapa nieba dla {target_name} (widok {zoom_deg}°, wygenerowano: {generation_time_str})"
 
 #: apts/plot.py:906
 msgid "Flipped"
@@ -640,6 +636,86 @@ msgstr "Pełnia"
 #: apts/utils/planetary.py:106
 msgid "Last Quarter"
 msgstr "Ostatnia kwadra"
+
+#: apts/weather.py:118
+msgid "Clouds"
+msgstr "Chmury"
+
+#: apts/weather.py:141
+msgid "Cloud cover [%]"
+msgstr "Zachmurzenie [%]"
+
+#: apts/weather.py:169
+msgid "Precipitation intensity and probability"
+msgstr "Intensywność i prawdopodobieństwo opadów"
+
+#: apts/weather.py:192
+msgid "Probability"
+msgstr "Prawdopodobieństwo"
+
+#: apts/weather.py:220
+msgid "Precipitation type summary"
+msgstr "Podsumowanie typu opadów"
+
+#: apts/weather.py:261
+msgid "Cloud summary"
+msgstr "Podsumowanie zachmurzenia"
+
+#: apts/weather.py:295
+msgid "Temperatures"
+msgstr "Temperatury"
+
+#: apts/weather.py:318
+msgid "Temperature [°C]"
+msgstr "Temperatura [°C]"
+
+#: apts/weather.py:348
+msgid "Wind speed"
+msgstr "Prędkość wiatru"
+
+#: apts/weather.py:371
+msgid "Wind speed [km/h]"
+msgstr "Prędkość wiatru [km/h]"
+
+#: apts/weather.py:408
+msgid "Pressure"
+msgstr "Ciśnienie"
+
+#: apts/weather.py:410
+msgid "Pressure and Ozone"
+msgstr "Ciśnienie i Ozon"
+
+#: apts/weather.py:412
+msgid "Ozone"
+msgstr "Ozon"
+
+#: apts/weather.py:441
+msgid "Pressure [hPa]"
+msgstr "Ciśnienie [hPa]"
+
+#: apts/weather.py:443
+msgid "Ozone [DU]"
+msgstr "Ozon [DU]"
+
+#: apts/weather.py:450
+msgid "Ozone [DU]"
+msgstr "Ozon [DU]"
+
+#: apts/weather.py:491
+msgid "Visibility"
+msgstr "Widoczność"
+
+#: apts/weather.py:514
+msgid "Visibility [km]"
+msgstr "Widoczność [km]"
+
+#: apts/weather.py:537
+msgid "Waxing"
+msgstr "Rosnący"
+
+#: apts/weather.py:537
+msgid "Waning"
+msgstr "Malejący"
 
 #: apts/weather.py:581
 msgid "Moon Illumination"
