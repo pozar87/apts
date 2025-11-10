@@ -1,12 +1,12 @@
 import apts
 from apts import Place, Observation, Equipment
+from apts.conditions import Conditions
 from apts.events import AstronomicalEvents
 from datetime import datetime, timedelta, timezone
 from apts.constants.event_types import EventType
 from apts.cache import clear_cache
 import pytest
 
-@pytest.mark.skip(reason="Failing in CI due to caching/initialization issues. To be fixed later.")
 def test_language_switching_for_events():
     """
     Tests that the language of events can be switched dynamically.
@@ -44,21 +44,35 @@ def test_language_switching_for_plots():
     fig_pl = observation_pl.plot_messier()
     assert fig_pl.axes[0].get_title() == "Wysokość obiektów Messiera"
 
-@pytest.mark.skip(reason="Failing in CI due to caching/initialization issues. To be fixed later.")
 def test_language_switching_for_messier_types():
     """
     Tests that the language of Messier object types can be switched dynamically.
     """
     clear_cache()
-    my_place = Place(lat=52.2297, lon=21.0122, name="Warsaw", date=datetime(2025, 1, 1, tzinfo=timezone.utc))
+    target_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    my_place = Place(lat=52.2297, lon=21.0122, name="Warsaw")
     equipment = Equipment()
 
-    apts.set_language('en')
-    observation_en = Observation(place=my_place, equipment=equipment, limiting_magnitude=10.0)
-    visible_messier_en = observation_en.get_visible_messier()
-    assert "Globular Cluster" in visible_messier_en['Type'].values
+    conditions = Conditions(max_return="04:00:00")
 
-    apts.set_language('pl')
-    observation_pl = Observation(place=my_place, equipment=equipment, limiting_magnitude=10.0)
+    apts.set_language('en')
+    observation_en = Observation(
+        place=my_place,
+        equipment=equipment,
+        limiting_magnitude=15.0,
+        conditions=conditions,
+        target_date=target_date,
+    )
+    visible_messier_en = observation_en.get_visible_messier()
+    assert "Globular Cluster" in visible_messier_en["Type"].values
+
+    apts.set_language("pl")
+    observation_pl = Observation(
+        place=my_place,
+        equipment=equipment,
+        limiting_magnitude=15.0,
+        conditions=conditions,
+        target_date=target_date,
+    )
     visible_messier_pl = observation_pl.get_visible_messier()
-    assert "Gromada kulista" in visible_messier_pl['Type'].values
+    assert "Gromada kulista" in visible_messier_pl["Type"].values
