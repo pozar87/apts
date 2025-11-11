@@ -535,6 +535,30 @@ msgstr "Pozostałość po supernowej"
 msgid "Other"
 msgstr "Inne"
 
+msgid "Diffuse Nebula"
+msgstr "Mgławica dyfuzyjna"
+
+msgid "Star Cloud"
+msgstr "Chmura gwiazd"
+
+msgid "Spiral Galaxy"
+msgstr "Galaktyka spiralna"
+
+msgid "Elliptical Galaxy"
+msgstr "Galaktyka eliptyczna"
+
+msgid "Double Star"
+msgstr "Gwiazda podwójna"
+
+msgid "Group/Asterism"
+msgstr "Grupa/Asteryzm"
+
+msgid "Irregular Galaxy"
+msgstr "Galaktyka nieregularna"
+
+msgid "Lenticular (S0) Galaxy"
+msgstr "Galaktyka soczewkowata (S0)"
+
 #: apts/plot.py:335
 msgid "Object Types"
 msgstr "Typy obiektów"

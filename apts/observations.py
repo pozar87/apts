@@ -197,6 +197,10 @@ class Observation:
             )
             if "Type" in visible.columns:
                 visible["Type"] = visible["Type"].apply(gettext_).astype("string")
+            if "Constellation" in visible.columns:
+                visible["Constellation"] = (
+                    visible["Constellation"].apply(gettext_).astype("string")
+                )
             return visible
 
     def get_visible_ngc(self, **args):

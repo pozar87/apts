@@ -61,6 +61,8 @@ def test_language_switching_for_messier_types():
     )
     visible_messier_en = observation.get_visible_messier(language='en')
     assert "Globular Cluster" in visible_messier_en["Type"].values
+    assert "Virgo" in visible_messier_en["Constellation"].values
 
     visible_messier_pl = observation.get_visible_messier(language='pl')
     assert "Gromada kulista" in visible_messier_pl["Type"].values
+    assert "Panna" in visible_messier_pl["Constellation"].values
