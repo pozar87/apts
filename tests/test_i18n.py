@@ -33,15 +33,12 @@ def test_language_switching_for_plots():
     clear_cache()
     my_place = Place(lat=52.2297, lon=21.0122, name="Warsaw", date=datetime(2025, 1, 1, tzinfo=timezone.utc))
     equipment = Equipment()
+    observation = Observation(place=my_place, equipment=equipment)
 
-    apts.set_language('en')
-    observation_en = Observation(place=my_place, equipment=equipment)
-    fig_en = observation_en.plot_messier()
+    fig_en = observation.plot_messier(language='en')
     assert fig_en.axes[0].get_title() == "Messier Objects Altitude"
 
-    apts.set_language('pl')
-    observation_pl = Observation(place=my_place, equipment=equipment)
-    fig_pl = observation_pl.plot_messier()
+    fig_pl = observation.plot_messier(language='pl')
     assert fig_pl.axes[0].get_title() == "Wysokość obiektów Messiera"
 
 def test_language_switching_for_messier_types():

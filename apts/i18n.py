@@ -2,6 +2,7 @@ import gettext
 import os
 import threading
 import logging
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +21,19 @@ def set_language(language='en'):
     # Use NullTranslations as a fallback for English (or if no language is provided)
     if language == 'en' or not language:
         translation = gettext.NullTranslations()
+        lang_code = 'en'
     else:
         try:
             translation = gettext.translation('messages', localedir, languages=[language])
+            lang_code = language
         except FileNotFoundError:
             # Fallback to English if a translation file for the given language is not found
             logger.warning(f"Translation file for language '{language}' not found. Falling back to English.")
             translation = gettext.NullTranslations()
+            lang_code = 'en'
 
     _thread_local.translation = translation
+    _thread_local.language = lang_code
 
 def gettext_(message):
     """
@@ -43,3 +48,16 @@ def gettext_(message):
 
 # Initialize with a default language for the main thread
 set_language('en')
+
+
+@contextmanager
+def language_context(language: str):
+    """
+    A context manager to temporarily set the language for the current thread.
+    """
+    original_language = getattr(_thread_local, "language", "en")
+    set_language(language)
+    try:
+        yield
+    finally:
+        set_language(original_language)

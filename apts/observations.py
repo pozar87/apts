@@ -17,6 +17,7 @@ from .utils import Utils
 from .events import AstronomicalEvents
 from .constants.event_types import EventType
 from . import plot as apts_plot
+from .i18n import language_context
 from apts.constants.plot import CoordinateSystem
 
 
@@ -236,12 +237,24 @@ class Observation:
         return events.get_events()
 
     def plot_visible_planets_svg(
-        self, dark_mode_override: Optional[bool] = None, **args
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
     ):
-        return apts_plot.plot_visible_planets_svg(self, dark_mode_override, **args)
+        with language_context(language):
+            return apts_plot.plot_visible_planets_svg(
+                self, dark_mode_override, **args
+            )
 
-    def plot_visible_planets(self, dark_mode_override: Optional[bool] = None, **args):
-        return apts_plot.plot_visible_planets(self, dark_mode_override, **args)
+    def plot_visible_planets(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return apts_plot.plot_visible_planets(self, dark_mode_override, **args)
 
     def _normalize_dates(self, start, stop):
         # If the stop time is earlier than the start time, it means the observation
@@ -250,11 +263,23 @@ class Observation:
             stop += timedelta(days=1)
         return (start, stop)
 
-    def plot_messier(self, dark_mode_override: Optional[bool] = None, **args):
-        return apts_plot.plot_messier(self, dark_mode_override, **args)
+    def plot_messier(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return apts_plot.plot_messier(self, dark_mode_override, **args)
 
-    def plot_planets(self, dark_mode_override: Optional[bool] = None, **args):
-        return apts_plot.plot_planets(self, dark_mode_override, **args)
+    def plot_planets(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return apts_plot.plot_planets(self, dark_mode_override, **args)
 
     def _compute_weather_goodness(self):
         analysis = self.get_weather_analysis()
@@ -279,8 +304,14 @@ class Observation:
             logger.info("is_weather_good: self.place.weather already exists.")
         return self._compute_weather_goodness() > self.conditions.min_weather_goodness
 
-    def plot_weather(self, dark_mode_override: Optional[bool] = None, **args):
-        return apts_plot.plot_weather(self, dark_mode_override, **args)
+    def plot_weather(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return apts_plot.plot_weather(self, dark_mode_override, **args)
 
     def to_html(self, custom_template=None, css=None):
         if custom_template:
@@ -322,8 +353,14 @@ class Observation:
         }
         return str(template.substitute(data))
 
-    def plot_sun_and_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
-        return apts_plot.plot_sun_and_moon_path(self, dark_mode_override, **args)
+    def plot_sun_and_moon_path(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return apts_plot.plot_sun_and_moon_path(self, dark_mode_override, **args)
 
     def plot_skymap(
         self,
@@ -339,6 +376,7 @@ class Observation:
         flip_horizontally: Optional[bool] = None,
         flip_vertically: Optional[bool] = None,
         coordinate_system: Optional[CoordinateSystem] = None,
+        language: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -368,22 +406,23 @@ class Observation:
         Returns:
             A matplotlib Figure object representing the skymap.
         """
-        return apts_plot.plot_skymap(
-            self,
-            target_name=target_name,
-            dark_mode_override=dark_mode_override,
-            zoom_deg=zoom_deg,
-            star_magnitude_limit=star_magnitude_limit,
-            plot_stars=plot_stars,
-            plot_messier=plot_messier,
-            plot_ngc=plot_ngc,
-            plot_planets=plot_planets,
-            plot_date=plot_date,
-            flip_horizontally=flip_horizontally,
-            flip_vertically=flip_vertically,
-            coordinate_system=coordinate_system,
-            **kwargs,
-        )
+        with language_context(language):
+            return apts_plot.plot_skymap(
+                self,
+                target_name=target_name,
+                dark_mode_override=dark_mode_override,
+                zoom_deg=zoom_deg,
+                star_magnitude_limit=star_magnitude_limit,
+                plot_stars=plot_stars,
+                plot_messier=plot_messier,
+                plot_ngc=plot_ngc,
+                plot_planets=plot_planets,
+                plot_date=plot_date,
+                flip_horizontally=flip_horizontally,
+                flip_vertically=flip_vertically,
+                coordinate_system=coordinate_system,
+                **kwargs,
+            )
 
     def __str__(self) -> str:
         return (
