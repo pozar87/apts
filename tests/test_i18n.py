@@ -52,24 +52,15 @@ def test_language_switching_for_messier_types():
 
     conditions = Conditions(max_return="04:00:00")
 
-    apts.set_language('en')
-    observation_en = Observation(
+    observation = Observation(
         place=my_place,
         equipment=equipment,
         limiting_magnitude=15.0,
         conditions=conditions,
         target_date=target_date,
     )
-    visible_messier_en = observation_en.get_visible_messier()
+    visible_messier_en = observation.get_visible_messier(language='en')
     assert "Globular Cluster" in visible_messier_en["Type"].values
 
-    apts.set_language("pl")
-    observation_pl = Observation(
-        place=my_place,
-        equipment=equipment,
-        limiting_magnitude=15.0,
-        conditions=conditions,
-        target_date=target_date,
-    )
-    visible_messier_pl = observation_pl.get_visible_messier()
+    visible_messier_pl = observation.get_visible_messier(language='pl')
     assert "Gromada kulista" in visible_messier_pl["Type"].values
