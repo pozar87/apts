@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-10 20:53+0000\n"
-"PO-Revision-Date: 2025-11-10 20:54+0000\n"
+"POT-Creation-Date: 2025-11-12 08:31+0100\n"
+"PO-Revision-Date: 2025-11-12 08:22+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pl\n"
 "Language-Team: pl <LL@li.org>\n"
@@ -323,6 +323,9 @@ msgstr "Tarcza"
 msgid "Serpens"
 msgstr "Wąż"
 
+msgid "Ophiucus"
+msgstr "Wężownik"
+
 #: apts/constants/constellations.py:80
 msgid "Sextans"
 msgstr "Sekstant"
@@ -387,17 +390,49 @@ msgstr "Zaćmienie Słońca"
 msgid "Lunar Eclipse"
 msgstr "Zaćmienie Księżyca"
 
+#: apts/observations.py:620
+msgid "Cloud cover %(cloud_cover)s%% exceeds limit"
+msgstr "Zachmurzenie %(cloud_cover)s%% przekracza limit"
+
+#: apts/observations.py:628
+msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
+msgstr "Prawdopodobieństwo opadów %(precip_prob)s%% przekracza limit"
+
+#: apts/observations.py:636
+msgid "Wind speed %(wind_speed) km/h exceeds limit"
+msgstr "Prędkość wiatru %(wind_speed) km/h przekracza limit"
+
+#: apts/observations.py:645
+msgid "Temperature {temp}°C out of range"
+msgstr "Temperatura {temp}°C poza zakresem"
+
 #: apts/constants/event_types.py:8
 msgid "Moon Phase"
 msgstr "Faza Księżyca"
+
+#: apts/constants/event_types.py:8
+msgid "Moon Path"
+msgstr "Ścieżka Księżyca"
+
+#: apts/observations.py:653
+msgid "Visibility {vis} km below limit"
+msgstr "Widoczność {vis} km poniżej limitu"
 
 #: apts/constants/event_types.py:9
 msgid "Moon"
 msgstr "Księżyc"
 
+#: apts/observations.py:662
+msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
+msgstr "Iluminacja Księżyca %(illum)s%% przekracza limit, gdy Księżyc jest na niebie"
+
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
 msgstr "Koniunkcja"
+
+#: apts/place.py:275
+msgid "Sun Path"
+msgstr "Ścieżka Słońca"
 
 #: apts/constants/event_types.py:11
 msgid "Opposition"
@@ -503,6 +538,10 @@ msgstr "Wysokość [°]"
 msgid "Messier Objects Altitude"
 msgstr "Wysokość obiektów Messiera"
 
+#: apts/place.py:287 apts/place.py:387
+msgid "Azimuth [°]"
+msgstr "Azymut [°]"
+
 #: apts/plot.py:302
 msgid "Generated empty Messier plot as no objects are visible."
 msgstr "Wygenerowano pusty wykres Messiera, ponieważ żadne obiekty nie są widoczne."
@@ -534,6 +573,30 @@ msgstr "Pozostałość po supernowej"
 #: apts/plot.py:327
 msgid "Other"
 msgstr "Inne"
+
+msgid "Diffuse Nebula"
+msgstr "Mgławica dyfuzyjna"
+
+msgid "Star Cloud"
+msgstr "Chmura gwiazd"
+
+msgid "Spiral Galaxy"
+msgstr "Galaktyka spiralna"
+
+msgid "Elliptical Galaxy"
+msgstr "Galaktyka eliptyczna"
+
+msgid "Double Star"
+msgstr "Gwiazda podwójna"
+
+msgid "Group/Asterism"
+msgstr "Grupa/Asteryzm"
+
+msgid "Irregular Galaxy"
+msgstr "Galaktyka nieregularna"
+
+msgid "Lenticular (S0) Galaxy"
+msgstr "Galaktyka soczewkowata (S0)"
 
 #: apts/plot.py:335
 msgid "Object Types"

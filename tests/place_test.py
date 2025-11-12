@@ -1,17 +1,16 @@
-import pytest
-from math import radians as rad
-from datetime import date, datetime, timedelta, timezone
 import datetime as dt_module  # Added alias
 import unittest
-from unittest.mock import patch, MagicMock, ANY
+from datetime import date, datetime, timedelta, timezone
+from math import radians as rad
+from unittest.mock import ANY, MagicMock, patch
+
 import pandas as pd
+import pytest
 
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
 from apts.i18n import gettext_
-
-
 from apts.place import Place
 
 # Assuming setup_place is a helper to create a Place instance for testing
@@ -206,9 +205,7 @@ class TestPlace:
         # Morning times
         sunrise = p.sunrise_time(target_date=target_d)
         civil_dawn = p.sunrise_time(target_date=target_d, twilight=Twilight.CIVIL)
-        nautical_dawn = p.sunrise_time(
-            target_date=target_d, twilight=Twilight.NAUTICAL
-        )
+        nautical_dawn = p.sunrise_time(target_date=target_d, twilight=Twilight.NAUTICAL)
         astronomical_dawn = p.sunrise_time(
             target_date=target_d, twilight=Twilight.ASTRONOMICAL
         )
@@ -226,16 +223,24 @@ class TestPlace:
         target_d = date(2024, 6, 21)  # Summer solstice
 
         # At the North Pole in summer, the sun is always up, so there should be no twilight.
-        assert p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
-        assert p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        assert (
+            p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        )
+        assert (
+            p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        )
 
     def test_twilight_polar_winter(self, north_pole_place):
         p = north_pole_place
         target_d = date(2024, 12, 21)  # Winter solstice
 
         # At the North Pole in winter, the sun is always down, so there should be no twilight.
-        assert p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
-        assert p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        assert (
+            p.sunset_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        )
+        assert (
+            p.sunrise_time(target_date=target_d, twilight=Twilight.ASTRONOMICAL) is None
+        )
 
     def test_place_setup_from_init(self):
         """Test the original setup_place function if it's still relevant"""
@@ -371,7 +376,7 @@ class TestPlacePlotting(unittest.TestCase):
                     "Altitude [°]", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.set_title.assert_called_with(
-                    "Moon altitude", color=expected_style["TEXT_COLOR"]
+                    "Moon Path", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
@@ -446,6 +451,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_fig_patch.reset_mock()
                 mock_line.reset_mock()
                 mock_get_dark_mode_place.reset_mock()  # Reset this as it's called in each loop
+
 
 @patch("apts.place.get_dark_mode")
 class TestDarkMode(unittest.TestCase):
