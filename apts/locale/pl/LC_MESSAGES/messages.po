@@ -388,16 +388,16 @@ msgid "Lunar Eclipse"
 msgstr "Zaćmienie Księżyca"
 
 #: apts/observations.py:620
-msgid "Cloud cover {cloud_cover}% exceeds limit"
-msgstr "Zachmurzenie {cloud_cover}% przekracza limit"
+msgid "Cloud cover %(cloud_cover)s%% exceeds limit"
+msgstr "Zachmurzenie %(cloud_cover)s%% przekracza limit"
 
 #: apts/observations.py:628
-msgid "Precipitation probability {precip_prob}% exceeds limit"
-msgstr "Prawdopodobieństwo opadów {precip_prob}% przekracza limit"
+msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
+msgstr "Prawdopodobieństwo opadów %(precip_prob)s%% przekracza limit"
 
 #: apts/observations.py:636
-msgid "Wind speed {wind_speed} km/h exceeds limit"
-msgstr "Prędkość wiatru {wind_speed} km/h przekracza limit"
+msgid "Wind speed %(wind_speed) km/h exceeds limit"
+msgstr "Prędkość wiatru %(wind_speed) km/h przekracza limit"
 
 #: apts/observations.py:645
 msgid "Temperature {temp}°C out of range"
@@ -416,8 +416,8 @@ msgid "Moon"
 msgstr "Księżyc"
 
 #: apts/observations.py:662
-msgid "Moon illumination {illum}% exceeds limit while moon is up"
-msgstr "Iluminacja Księżyca {illum}% przekracza limit, gdy Księżyc jest na niebie"
+msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
+msgstr "Iluminacja Księżyca %(illum)s%% przekracza limit, gdy Księżyc jest na niebie"
 
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
