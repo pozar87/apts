@@ -1,25 +1,25 @@
 import logging
 from datetime import datetime, timedelta
+from importlib import resources
 from string import Template
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy
 import pandas as pd
-from importlib import resources
 from skyfield.api import utc
 
-from .conditions import Conditions
-from .objects.messier import Messier
-from .objects.ngc import NGC
-from .objects.stars import Stars
-from .objects.solar_objects import SolarObjects
-from .utils import Utils
-from .events import AstronomicalEvents
-from .constants.event_types import EventType
-from . import plot as apts_plot
-from .i18n import language_context
 from apts.constants.plot import CoordinateSystem
 
+from . import plot as apts_plot
+from .conditions import Conditions
+from .constants.event_types import EventType
+from .events import AstronomicalEvents
+from .i18n import language_context
+from .objects.messier import Messier
+from .objects.ngc import NGC
+from .objects.solar_objects import SolarObjects
+from .objects.stars import Stars
+from .utils import Utils
 
 logger = logging.getLogger(__name__)
 
@@ -250,9 +250,7 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_visible_planets_svg(
-                self, dark_mode_override, **args
-            )
+            return apts_plot.plot_visible_planets_svg(self, dark_mode_override, **args)
 
     def plot_visible_planets(
         self,
@@ -320,45 +318,54 @@ class Observation:
         with language_context(language):
             return apts_plot.plot_weather(self, dark_mode_override, **args)
 
-    def to_html(self, custom_template=None, css=None):
-        if custom_template:
-            with open(custom_template, "r", encoding="utf-8") as f:
-                template_content = f.read()
-        else:
-            template_content = self.NOTIFICATION_TEMPLATE.read_text(encoding="utf-8")
-
-        if css:
-            style_end_pos = template_content.find("</style>")
-            if style_end_pos != -1:
-                template_content = (
-                    template_content[:style_end_pos]
-                    + css
-                    + template_content[style_end_pos:]
+    def to_html(
+        self,
+        custom_template=None,
+        css=None,
+        language: Optional[str] = None,
+    ):
+        with language_context(language):
+            if custom_template:
+                with open(custom_template, "r", encoding="utf-8") as f:
+                    template_content = f.read()
+            else:
+                template_content = self.NOTIFICATION_TEMPLATE.read_text(
+                    encoding="utf-8"
                 )
-        template = Template(template_content)
-        hourly_weather = self.get_hourly_weather_analysis()
-        visible_planets_df = self.get_visible_planets()
 
-        data = {
-            "title": "APTS",
-            "start": Utils.format_date(self.start),
-            "stop": Utils.format_date(self.stop),
-            "planets_count": len(visible_planets_df),
-            "messier_count": len(self.get_visible_messier()),
-            "planets_table": visible_planets_df.drop(
-                columns=["TechnicalName"]
-            ).to_html()
-            if "TechnicalName" in visible_planets_df.columns
-            else visible_planets_df.to_html(),
-            "messier_table": self.get_visible_messier().to_html(),
-            "equipment_table": self.equipment.data().to_html(),
-            "place_name": self.place.name,
-            "lat": numpy.rad2deg(self.place.lat),
-            "lon": numpy.rad2deg(self.place.lon),
-            "hourly_weather": hourly_weather,
-            "timezone": self.place.local_timezone,
-        }
-        return str(template.substitute(data))
+            if css:
+                style_end_pos = template_content.find("</style>")
+                if style_end_pos != -1:
+                    template_content = (
+                        template_content[:style_end_pos]
+                        + css
+                        + template_content[style_end_pos:]
+                    )
+            template = Template(template_content)
+            hourly_weather = self.get_hourly_weather_analysis(language=language)
+            visible_planets_df = self.get_visible_planets(language=language)
+            messier_df = self.get_visible_messier(language=language)
+
+            data = {
+                "title": "APTS",
+                "start": Utils.format_date(self.start),
+                "stop": Utils.format_date(self.stop),
+                "planets_count": len(visible_planets_df),
+                "messier_count": len(messier_df),
+                "planets_table": visible_planets_df.drop(
+                    columns=["TechnicalName"]
+                ).to_html()
+                if "TechnicalName" in visible_planets_df.columns
+                else visible_planets_df.to_html(),
+                "messier_table": messier_df.to_html(),
+                "equipment_table": self.equipment.data().to_html(),
+                "place_name": self.place.name,
+                "lat": numpy.rad2deg(self.place.lat),
+                "lon": numpy.rad2deg(self.place.lon),
+                "hourly_weather": hourly_weather,
+                "timezone": self.place.local_timezone,
+            }
+            return str(template.substitute(data))
 
     def plot_sun_and_moon_path(
         self,
@@ -436,7 +443,7 @@ class Observation:
             f"Observation at {self.place.name} from {self.start} to {self.time_limit}"
         )
 
-    def get_weather_analysis(self):
+    def get_weather_analysis(self, language: Optional[str] = None):
         if self._weather_analysis is not None:
             return self._weather_analysis
 
@@ -461,7 +468,9 @@ class Observation:
 
         if not moon_altitudes.empty:
             # First, convert Skyfield Time objects to timezone-aware datetimes
-            moon_altitudes["Time"] = moon_altitudes["Time"].apply(lambda t: t.utc_datetime())
+            moon_altitudes["Time"] = moon_altitudes["Time"].apply(
+                lambda t: t.utc_datetime()
+            )
             # Then, ensure the dtype (especially precision) matches the other dataframe's key
             moon_altitudes["Time"] = moon_altitudes["Time"].astype(
                 hourly_data["time"].dtype
@@ -488,64 +497,87 @@ class Observation:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
 
         analysis_results = []
-        for _, row in hourly_data.iterrows():
-            is_good_hour = True
-            reasons = []
+        with language_context(language):
+            from apts.i18n import gettext_
 
-            if pd.isna(row.cloudCover) or not (
-                row.cloudCover < self.conditions.max_clouds
-            ):
-                is_good_hour = False
-                reasons.append(f"Cloud cover {row.cloudCover:.1f}% exceeds limit")
-            if pd.isna(row.precipProbability) or not (
-                row.precipProbability
-                < self.conditions.max_precipitation_probability
-            ):
-                is_good_hour = False
-                reasons.append(
-                    f"Precipitation probability {row.precipProbability:.1f}% exceeds limit"
-                )
-            if pd.isna(row.windSpeed) or not (
-                row.windSpeed < self.conditions.max_wind
-            ):
-                is_good_hour = False
-                reasons.append(f"Wind speed {row.windSpeed:.1f} km/h exceeds limit")
-            if pd.isna(row.temperature) or not (
-                self.conditions.min_temperature
-                < row.temperature
-                < self.conditions.max_temperature
-            ):
-                is_good_hour = False
-                reasons.append(f"Temperature {row.temperature:.1f}°C out of range")
-            if pd.isna(row.visibility) or not (
-                row.visibility > self.conditions.min_visibility
-            ):
-                is_good_hour = False
-                reasons.append(f"Visibility {row.visibility:.1f} km below limit")
-            if (
-                row["Altitude"] > 0
-                and not row.moonIllumination < self.conditions.max_moon_illumination
-            ):
-                is_good_hour = False
-                reasons.append(
-                    f"Moon illumination {row.moonIllumination:.1f}% exceeds limit while moon is up"
-                )
+            for _, row in hourly_data.iterrows():
+                is_good_hour = True
+                reasons = []
 
-            analysis_results.append(
-                {
-                    "time": row.time,
-                    "is_good_hour": is_good_hour,
-                    "reasons": reasons,
-                    "temperature": row.temperature,
-                    "clouds": row.cloudCover,
-                    "precipitation": row.precipProbability,
-                    "wind_speed": row.windSpeed,
-                    "visibility": row.visibility,
-                    "moon_illumination": row.moonIllumination,
-                }
-            )
+                if pd.isna(row.cloudCover) or not (
+                    row.cloudCover < self.conditions.max_clouds
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Cloud cover {cloud_cover}% exceeds limit").format(
+                            cloud_cover=f"{row.cloudCover:.1f}"
+                        )
+                    )
+                if pd.isna(row.precipProbability) or not (
+                    row.precipProbability
+                    < self.conditions.max_precipitation_probability
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_(
+                            "Precipitation probability {precip_prob}% exceeds limit"
+                        ).format(precip_prob=f"{row.precipProbability:.1f}")
+                    )
+                if pd.isna(row.windSpeed) or not (
+                    row.windSpeed < self.conditions.max_wind
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Wind speed {wind_speed} km/h exceeds limit").format(
+                            wind_speed=f"{row.windSpeed:.1f}"
+                        )
+                    )
+                if pd.isna(row.temperature) or not (
+                    self.conditions.min_temperature
+                    < row.temperature
+                    < self.conditions.max_temperature
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Temperature {temp}°C out of range").format(
+                            temp=f"{row.temperature:.1f}"
+                        )
+                    )
+                if pd.isna(row.visibility) or not (
+                    row.visibility > self.conditions.min_visibility
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Visibility {vis} km below limit").format(
+                            vis=f"{row.visibility:.1f}"
+                        )
+                    )
+                if (
+                    row["Altitude"] > 0
+                    and not row.moonIllumination < self.conditions.max_moon_illumination
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_(
+                            "Moon illumination {illum}% exceeds limit while moon is up"
+                        ).format(illum=f"{row.moonIllumination:.1f}")
+                    )
+
+                analysis_results.append(
+                    {
+                        "time": row.time,
+                        "is_good_hour": is_good_hour,
+                        "reasons": reasons,
+                        "temperature": row.temperature,
+                        "clouds": row.cloudCover,
+                        "precipitation": row.precipProbability,
+                        "wind_speed": row.windSpeed,
+                        "visibility": row.visibility,
+                        "moon_illumination": row.moonIllumination,
+                    }
+                )
         self._weather_analysis = analysis_results
         return self._weather_analysis
 
-    def get_hourly_weather_analysis(self):
-        return self.get_weather_analysis()
+    def get_hourly_weather_analysis(self, language: Optional[str] = None):
+        return self.get_weather_analysis(language=language)

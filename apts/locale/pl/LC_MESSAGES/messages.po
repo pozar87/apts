@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-11-10 20:53+0000\n"
-"PO-Revision-Date: 2025-11-10 20:54+0000\n"
+"POT-Creation-Date: 2025-11-12 08:31+0100\n"
+"PO-Revision-Date: 2025-11-12 08:22+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: pl\n"
 "Language-Team: pl <LL@li.org>\n"
@@ -387,17 +387,45 @@ msgstr "Zaćmienie Słońca"
 msgid "Lunar Eclipse"
 msgstr "Zaćmienie Księżyca"
 
+#: apts/observations.py:620
+msgid "Cloud cover {cloud_cover}% exceeds limit"
+msgstr "Zachmurzenie {cloud_cover}% przekracza limit"
+
+#: apts/observations.py:628
+msgid "Precipitation probability {precip_prob}% exceeds limit"
+msgstr "Prawdopodobieństwo opadów {precip_prob}% przekracza limit"
+
+#: apts/observations.py:636
+msgid "Wind speed {wind_speed} km/h exceeds limit"
+msgstr "Prędkość wiatru {wind_speed} km/h przekracza limit"
+
+#: apts/observations.py:645
+msgid "Temperature {temp}°C out of range"
+msgstr "Temperatura {temp}°C poza zakresem"
+
 #: apts/constants/event_types.py:8
 msgid "Moon Phase"
 msgstr "Faza Księżyca"
+
+#: apts/observations.py:653
+msgid "Visibility {vis} km below limit"
+msgstr "Widoczność {vis} km poniżej limitu"
 
 #: apts/constants/event_types.py:9
 msgid "Moon"
 msgstr "Księżyc"
 
+#: apts/observations.py:662
+msgid "Moon illumination {illum}% exceeds limit while moon is up"
+msgstr "Iluminacja Księżyca {illum}% przekracza limit, gdy Księżyc jest na niebie"
+
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
 msgstr "Koniunkcja"
+
+#: apts/place.py:275
+msgid "Sun Path"
+msgstr "Ścieżka Słońca"
 
 #: apts/constants/event_types.py:11
 msgid "Opposition"
@@ -502,6 +530,10 @@ msgstr "Wysokość [°]"
 #: apts/plot.py:297
 msgid "Messier Objects Altitude"
 msgstr "Wysokość obiektów Messiera"
+
+#: apts/place.py:287 apts/place.py:387
+msgid "Azimuth [°]"
+msgstr "Azymut [°]"
 
 #: apts/plot.py:302
 msgid "Generated empty Messier plot as no objects are visible."

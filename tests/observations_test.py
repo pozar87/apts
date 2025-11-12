@@ -901,7 +901,10 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertTrue(results[0]["is_good_hour"])
         self.assertFalse(results[1]["is_good_hour"])
         self.assertEqual(len(results[1]["reasons"]), 1)
-        self.assertIn("Cloud cover", results[1]["reasons"][0])
+        expected_reason = "Cloud cover {cloud_cover}% exceeds limit".format(
+            cloud_cover=f"{(self.obs.conditions.max_clouds + 5):.1f}"
+        )
+        self.assertIn(expected_reason, results[1]["reasons"])
         self.assertTrue(results[2]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_one_hour_multiple_reasons(self):
@@ -911,13 +914,15 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         data_rows = []
         base_time = self.obs.start
         # Hour 0: Bad
+        cloud_bad = self.obs.conditions.max_clouds + 5
+        wind_bad = self.obs.conditions.max_wind + 5
         data_rows.append(
             {
                 "time": base_time,
-                "cloudCover": self.obs.conditions.max_clouds + 5,  # Bad
+                "cloudCover": cloud_bad,  # Bad
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,  # Good
-                "windSpeed": self.obs.conditions.max_wind + 5,  # Bad
+                "windSpeed": wind_bad,  # Bad
                 "temperature": (
                     self.obs.conditions.min_temperature
                     + self.obs.conditions.max_temperature
@@ -952,10 +957,14 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertEqual(len(results), num_hours)
         self.assertFalse(results[0]["is_good_hour"])
         self.assertEqual(len(results[0]["reasons"]), 2)
-        self.assertTrue(
-            any("Cloud cover" in reason for reason in results[0]["reasons"])
+        expected_cloud_reason = "Cloud cover {cloud_cover}% exceeds limit".format(
+            cloud_cover=f"{cloud_bad:.1f}"
         )
-        self.assertTrue(any("Wind speed" in reason for reason in results[0]["reasons"]))
+        expected_wind_reason = "Wind speed {wind_speed} km/h exceeds limit".format(
+            wind_speed=f"{wind_bad:.1f}"
+        )
+        self.assertIn(expected_cloud_reason, results[0]["reasons"])
+        self.assertIn(expected_wind_reason, results[0]["reasons"])
         self.assertTrue(results[1]["is_good_hour"])
 
     def test_get_hourly_weather_analysis_respects_time_limit(self):
@@ -1028,6 +1037,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
     def test_get_hourly_weather_analysis_bad_temperature_low(self):
         """Test bad weather due to low temperature."""
+        temp_bad = self.obs.conditions.min_temperature - 5
         data_rows = [
             {
                 "time": self.obs.start,
@@ -1035,7 +1045,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
-                "temperature": self.obs.conditions.min_temperature - 5,  # Too cold
+                "temperature": temp_bad,  # Too cold
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
             }
@@ -1045,11 +1055,14 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        self.assertIn("Temperature", results[0]["reasons"][0])
-        self.assertIn("out of range", results[0]["reasons"][0])
+        expected_reason = "Temperature {temp}°C out of range".format(
+            temp=f"{temp_bad:.1f}"
+        )
+        self.assertIn(expected_reason, results[0]["reasons"])
 
     def test_get_hourly_weather_analysis_bad_temperature_high(self):
         """Test bad weather due to high temperature."""
+        temp_bad = self.obs.conditions.max_temperature + 5
         data_rows = [
             {
                 "time": self.obs.start,
@@ -1057,7 +1070,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
-                "temperature": self.obs.conditions.max_temperature + 5,  # Too hot
+                "temperature": temp_bad,  # Too hot
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
             }
@@ -1067,17 +1080,19 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        self.assertIn("Temperature", results[0]["reasons"][0])
-        self.assertIn("out of range", results[0]["reasons"][0])
+        expected_reason = "Temperature {temp}°C out of range".format(
+            temp=f"{temp_bad:.1f}"
+        )
+        self.assertIn(expected_reason, results[0]["reasons"])
 
     def test_get_hourly_weather_analysis_bad_precipitation(self):
         """Test bad weather due to high precipitation probability."""
+        precip_bad = self.obs.conditions.max_precipitation_probability + 5
         data_rows = [
             {
                 "time": self.obs.start,
                 "cloudCover": self.obs.conditions.max_clouds - 1,
-                "precipProbability": self.obs.conditions.max_precipitation_probability
-                + 5,  # Too high
+                "precipProbability": precip_bad,  # Too high
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": (
                     self.obs.conditions.min_temperature
@@ -1093,7 +1108,10 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        self.assertIn("Precipitation probability", results[0]["reasons"][0])
+        expected_reason = "Precipitation probability {precip_prob}% exceeds limit".format(
+            precip_prob=f"{precip_bad:.1f}"
+        )
+        self.assertIn(expected_reason, results[0]["reasons"])
 
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
         """Test when get_critical_data returns an empty DataFrame."""

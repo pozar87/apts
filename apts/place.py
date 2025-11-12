@@ -1,25 +1,26 @@
 import datetime
 import logging
-from math import radians as rad, copysign as copysign
+from importlib import resources
+from math import copysign as copysign
+from math import radians as rad
+from typing import Optional
 
 import matplotlib.font_manager as font_manager
 import pandas as pd
-from importlib import resources
 import pytz
 from dateutil import tz
+from skyfield import almanac
+from skyfield.api import Topos, load
 from timezonefinder import TimezoneFinder
-from typing import Optional
 
-from apts.utils.plot import Utils
-from apts.i18n import gettext_
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
+from apts.i18n import gettext_
+from apts.utils.plot import Utils
 
-from .weather import Weather
 from .utils.planetary import get_moon_illumination
-from skyfield.api import load, Topos
-from skyfield import almanac
+from .weather import Weather
 
 logger = logging.getLogger(__name__)
 
@@ -121,17 +122,17 @@ class Place:
         times, events = almanac.find_discrete(t0, t1, f)
 
         # Define transitions for evening (set) and morning (rise)
-        if event == 'set':  # Evening: getting darker
+        if event == "set":  # Evening: getting darker
             transitions = {
                 Twilight.CIVIL: (4, 3),  # Day -> Civil
                 Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
-                Twilight.ASTRONOMICAL: (2, 1)  # Nautical -> Astronomical
+                Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
             }
         else:  # Morning: getting lighter
             transitions = {
                 Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
                 Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
-                Twilight.CIVIL: (2, 3)  # Nautical -> Civil
+                Twilight.CIVIL: (2, 3),  # Nautical -> Civil
             }
 
         prev_event, next_event = transitions.get(twilight)
@@ -140,25 +141,35 @@ class Place:
         previous_y = f(t0)
         for t, y in zip(times, events):
             if previous_y == prev_event and y == next_event:
-                return t.utc_datetime().replace(tzinfo=pytz.UTC).astimezone(self.local_timezone)
+                return (
+                    t.utc_datetime()
+                    .replace(tzinfo=pytz.UTC)
+                    .astimezone(self.local_timezone)
+                )
             previous_y = y
 
         return None
 
     def sunset_time(
-        self, target_date=None, start_search_from: Optional[datetime.datetime] = None, twilight: Optional[Twilight] = None
+        self,
+        target_date=None,
+        start_search_from: Optional[datetime.datetime] = None,
+        twilight: Optional[Twilight] = None,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
-            return self._get_twilight_time(start_date, twilight, 'set')
+            return self._get_twilight_time(start_date, twilight, "set")
         return self._next_setting_time(self.sun, start=start_date)
 
     def sunrise_time(
-        self, target_date=None, start_search_from: Optional[datetime.datetime] = None, twilight: Optional[Twilight] = None
+        self,
+        target_date=None,
+        start_search_from: Optional[datetime.datetime] = None,
+        twilight: Optional[Twilight] = None,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
-            return self._get_twilight_time(start_date, twilight, 'rise')
+            return self._get_twilight_time(start_date, twilight, "rise")
         return self._next_rising_time(self.sun, start=start_date)
 
     def moonset_time(self):
@@ -275,14 +286,20 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_title("Sun altitude", color=style["TEXT_COLOR"])
+        ax.set_title(gettext_("Sun Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
         add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
         ax.set_xlim(45, 315)
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, self.local_timezone, x_label="Azimuth [°]")
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            self.local_timezone,
+            x_label=gettext_("Azimuth [°]"),
+        )
 
         # Plot horizon
         ax.axhspan(0, -50, color=style["GRID_COLOR"], alpha=0.3)
@@ -375,14 +392,20 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_title("Moon altitude", color=style["TEXT_COLOR"])
+        ax.set_title(gettext_("Moon Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
         add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
         add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
         ax.set_xlim(45, 315)
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, self.local_timezone, x_label="Azimuth [°]")
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            self.local_timezone,
+            x_label=gettext_("Azimuth [°]"),
+        )
 
         # Plot horizon
         ax.axhspan(0, -50, color=style["GRID_COLOR"], alpha=0.3)
