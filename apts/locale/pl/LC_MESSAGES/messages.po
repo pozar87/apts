@@ -323,6 +323,9 @@ msgstr "Tarcza"
 msgid "Serpens"
 msgstr "Wąż"
 
+msgid "Ophiucus"
+msgstr "Wężownik"
+
 #: apts/constants/constellations.py:80
 msgid "Sextans"
 msgstr "Sekstant"
