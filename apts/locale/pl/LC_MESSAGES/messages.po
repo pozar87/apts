@@ -407,6 +407,10 @@ msgstr "Temperatura {temp}°C poza zakresem"
 msgid "Moon Phase"
 msgstr "Faza Księżyca"
 
+#: apts/constants/event_types.py:8
+msgid "Moon Path"
+msgstr "Ścieżka Księżyca"
+
 #: apts/observations.py:653
 msgid "Visibility {vis} km below limit"
 msgstr "Widoczność {vis} km poniżej limitu"

@@ -509,7 +509,8 @@ class Observation:
                 ):
                     is_good_hour = False
                     reasons.append(
-                        gettext_("Cloud cover %(cloud_cover)s%% exceeds limit") % {'cloud_cover': f"{row.cloudCover:.1f}"}
+                        gettext_("Cloud cover %(cloud_cover)s%% exceeds limit")
+                        % {"cloud_cover": f"{row.cloudCover:.1f}"}
                     )
                 if pd.isna(row.precipProbability) or not (
                     row.precipProbability
@@ -519,14 +520,16 @@ class Observation:
                     reasons.append(
                         gettext_(
                             "Precipitation probability %(precip_prob)s%% exceeds limit"
-                        ) % {'precip_prob': f"{row.precipProbability:.1f}"}
+                        )
+                        % {"precip_prob": f"{row.precipProbability:.1f}"}
                     )
                 if pd.isna(row.windSpeed) or not (
                     row.windSpeed < self.conditions.max_wind
                 ):
                     is_good_hour = False
                     reasons.append(
-                        gettext_("Wind speed %(wind_speed)s km/h exceeds limit") % {'wind_speed': f"{row.windSpeed:.1f}"}
+                        gettext_("Wind speed %(wind_speed)s km/h exceeds limit")
+                        % {"wind_speed": f"{row.windSpeed:.1f}"}
                     )
                 if pd.isna(row.temperature) or not (
                     self.conditions.min_temperature
@@ -535,14 +538,16 @@ class Observation:
                 ):
                     is_good_hour = False
                     reasons.append(
-                        gettext_("Temperature %(temp)s°C out of range") % {'temp': f"{row.temperature:.1f}"}
+                        gettext_("Temperature %(temp)s°C out of range")
+                        % {"temp": f"{row.temperature:.1f}"}
                     )
                 if pd.isna(row.visibility) or not (
                     row.visibility > self.conditions.min_visibility
                 ):
                     is_good_hour = False
                     reasons.append(
-                        gettext_("Visibility %(vis)s km below limit") % {'vis': f"{row.visibility:.1f}"}
+                        gettext_("Visibility %(vis)s km below limit")
+                        % {"vis": f"{row.visibility:.1f}"}
                     )
                 if (
                     row["Altitude"] > 0
@@ -551,8 +556,9 @@ class Observation:
                     is_good_hour = False
                     reasons.append(
                         gettext_(
-                            "Moon illumination {illum}% exceeds limit while moon is up"
-                        ).format(illum=f"{row.moonIllumination:.1f}")
+                            "Moon illumination %(illum)s%% exceeds limit while moon is up"
+                        )
+                        % {"illum": f"{row.moonIllumination:.1f}"}
                     )
 
                 analysis_results.append(
