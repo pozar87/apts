@@ -47,6 +47,27 @@ def _calculate_parallactic_angle(
     return numpy.rad2deg(q_rad)
 
 
+def _calculate_ellipse_angle(
+    pos_angle: float,
+    parallactic_angle: float,
+    coordinate_system: CoordinateSystem,
+    flipped_horizontally: bool,
+    flipped_vertically: bool,
+) -> float:
+    """Calculates the final rotation angle for a celestial object's ellipse."""
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
+        angle = pos_angle - parallactic_angle
+    else:  # EQUATORIAL
+        angle = pos_angle
+
+    if flipped_horizontally:
+        angle = -angle
+    if flipped_vertically:
+        angle = 180 - angle
+
+    return angle
+
+
 def _get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
     """Gets the angular size of a solar system object in degrees."""
     visible_planets = observation.get_visible_planets()
@@ -1171,18 +1192,16 @@ def _plot_messier_on_skymap(
                     pos_angle = float(pos_angle)
 
                     dec = messier_object.dec
-                    if coordinate_system == CoordinateSystem.HORIZONTAL:
-                        parallactic_angle = _calculate_parallactic_angle(
-                            observation.place.lat, dec, az
-                        )
-                        angle = pos_angle - parallactic_angle
-                    else:
-                        angle = pos_angle
-                    if flipped_horizontally:
-                        angle = -angle
-                    if flipped_vertically:
-                        angle = 180 - angle
-
+                    parallactic_angle = _calculate_parallactic_angle(
+                        observation.place.lat, dec, az
+                    )
+                    angle = _calculate_ellipse_angle(
+                        pos_angle,
+                        parallactic_angle,
+                        coordinate_system,
+                        flipped_horizontally,
+                        flipped_vertically,
+                    )
                     magnitude = m_obj.get("Magnitude")
                     face_color = _get_brightness_color(magnitude)
 
@@ -1322,19 +1341,16 @@ def _plot_ngc_on_skymap(
                     pos_angle = float(pos_angle)
 
                     dec = ngc_object.dec
-                    if coordinate_system == CoordinateSystem.HORIZONTAL:
-                        parallactic_angle = _calculate_parallactic_angle(
-                            observation.place.lat, dec, az
-                        )
-                        angle = pos_angle - parallactic_angle
-                    else:
-                        angle = pos_angle
-
-                    if flipped_horizontally:
-                        angle = -angle
-                    if flipped_vertically:
-                        angle = 180 - angle
-
+                    parallactic_angle = _calculate_parallactic_angle(
+                        observation.place.lat, dec, az
+                    )
+                    angle = _calculate_ellipse_angle(
+                        pos_angle,
+                        parallactic_angle,
+                        coordinate_system,
+                        flipped_horizontally,
+                        flipped_vertically,
+                    )
                     magnitude = n_obj.get("Mag")
                     face_color = _get_brightness_color(magnitude)
                     _plot_celestial_object(
@@ -1738,20 +1754,18 @@ def _generate_plot_skymap(
                 _, dec, _ = observer.observe(target_object).apparent().radec()
 
             if dec:
-                if coordinate_system == CoordinateSystem.HORIZONTAL:
-                    parallactic_angle = _calculate_parallactic_angle(
-                        observation.place.lat, dec, target_az
-                    )
-                    angle = pos_angle - parallactic_angle
-                else:
-                    angle = pos_angle
+                parallactic_angle = _calculate_parallactic_angle(
+                    observation.place.lat, dec, target_az
+                )
+                angle = _calculate_ellipse_angle(
+                    pos_angle,
+                    parallactic_angle,
+                    coordinate_system,
+                    flipped_horizontally,
+                    flipped_vertically,
+                )
             else:
                 angle = pos_angle
-
-            if flipped_horizontally:
-                angle = -angle
-            if flipped_vertically:
-                angle = 180 - angle
 
             magnitude = target_object_data.get("Magnitude")
             if pd.isna(magnitude) or magnitude is None:
