@@ -15,6 +15,60 @@ import pandas as pd
 from matplotlib.patches import Ellipse
 import pytz
 from skyfield.units import Angle
+from apts.plot import _calculate_ellipse_angle
+from apts.constants.plot import CoordinateSystem
+
+
+def test_calculate_ellipse_angle():
+    # Test case 1: HORIZONTAL, no flips
+    angle = _calculate_ellipse_angle(
+        pos_angle=45,
+        parallactic_angle=15,
+        coordinate_system=CoordinateSystem.HORIZONTAL,
+        flipped_horizontally=False,
+        flipped_vertically=False,
+    )
+    assert abs(angle - 30.0) < 0.01
+
+    # Test case 2: EQUATORIAL, no flips
+    angle = _calculate_ellipse_angle(
+        pos_angle=45,
+        parallactic_angle=15,
+        coordinate_system=CoordinateSystem.EQUATORIAL,
+        flipped_horizontally=False,
+        flipped_vertically=False,
+    )
+    assert abs(angle - 45.0) < 0.01
+
+    # Test case 3: HORIZONTAL, horizontal flip
+    angle = _calculate_ellipse_angle(
+        pos_angle=45,
+        parallactic_angle=15,
+        coordinate_system=CoordinateSystem.HORIZONTAL,
+        flipped_horizontally=True,
+        flipped_vertically=False,
+    )
+    assert abs(angle - (-30.0)) < 0.01
+
+    # Test case 4: HORIZONTAL, vertical flip
+    angle = _calculate_ellipse_angle(
+        pos_angle=45,
+        parallactic_angle=15,
+        coordinate_system=CoordinateSystem.HORIZONTAL,
+        flipped_horizontally=False,
+        flipped_vertically=True,
+    )
+    assert abs(angle - 150.0) < 0.01
+
+    # Test case 5: HORIZONTAL, both flips
+    angle = _calculate_ellipse_angle(
+        pos_angle=45,
+        parallactic_angle=15,
+        coordinate_system=CoordinateSystem.HORIZONTAL,
+        flipped_horizontally=True,
+        flipped_vertically=True,
+    )
+    assert abs(angle - 210.0) < 0.01
 
 
 @pytest.fixture
