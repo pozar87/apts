@@ -301,7 +301,7 @@ class Place:
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-            ax.set_xlim(0, 360)
+            ax.set_xlim(315, 45)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -326,12 +326,9 @@ class Place:
                     offset_direction = azimuth - 180
                 else:
                     # Southern Hemisphere: transit is North (0/360 deg)
-                    # We check which side of the North-South line the point is on
-                    if 90 < azimuth < 270:
-                        offset_direction = 1  # West side, offset towards North
-                    else:
-                        offset_direction = -1  # East side, offset towards North
-
+                    offset_direction = azimuth
+                    if azimuth > 180:
+                        offset_direction = azimuth - 360
                 ax.annotate(
                     obj_row[3],
                     (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
@@ -428,7 +425,7 @@ class Place:
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-            ax.set_xlim(0, 360)
+            ax.set_xlim(315, 45)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -496,12 +493,9 @@ class Place:
                     offset_direction = azimuth - 180
                 else:
                     # Southern Hemisphere: transit is North (0/360 deg)
-                    # We check which side of the North-South line the point is on
-                    if 90 < azimuth < 270:
-                        offset_direction = 1  # West side, offset towards North
-                    else:
-                        offset_direction = -1  # East side, offset towards North
-
+                    offset_direction = azimuth
+                    if azimuth > 180:
+                        offset_direction = azimuth - 360
                 ax.annotate(
                     obj_row[3],
                     (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
