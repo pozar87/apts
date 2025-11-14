@@ -43,7 +43,7 @@ class TestNotify(unittest.TestCase):
 
         # Verify to_html was called without custom template or CSS
         self.mock_observation.to_html.assert_called_once_with(
-            custom_template=None, css=None
+            custom_template=None, css=None, language=None
         )
 
         # Verify _send_email was called and capture the message object
@@ -113,7 +113,7 @@ class TestNotify(unittest.TestCase):
         self.notify.send(self.mock_observation, custom_template=custom_template)
 
         self.mock_observation.to_html.assert_called_once_with(
-            custom_template=custom_template, css=None
+            custom_template=custom_template, css=None, language=None
         )
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon, detailed checks in test_send_with_default_template
@@ -132,7 +132,7 @@ class TestNotify(unittest.TestCase):
         self.notify.send(self.mock_observation, css=custom_css)
 
         self.mock_observation.to_html.assert_called_once_with(
-            custom_template=None, css=custom_css
+            custom_template=None, css=custom_css, language=None
         )
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon
@@ -154,7 +154,7 @@ class TestNotify(unittest.TestCase):
         )
 
         self.mock_observation.to_html.assert_called_once_with(
-            custom_template=custom_template, css=custom_css
+            custom_template=custom_template, css=custom_css, language=None
         )
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon
