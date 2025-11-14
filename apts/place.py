@@ -289,10 +289,19 @@ class Place:
         ax.set_title(gettext_("Sun Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        if self.lat_decimal >= 0:
+            # Northern hemisphere: transit is in the South
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
+        else:
+            # Southern hemisphere: transit is in the North
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(0, 360)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -311,9 +320,21 @@ class Place:
             ::6, :
         ].values:  # Renamed obj to obj_row to avoid conflict
             if obj_row[1] > 0:  # Altitude is at index 1
+                azimuth = obj_row[2]
+                if self.lat_decimal >= 0:
+                    # Northern Hemisphere: transit is South (180 deg)
+                    offset_direction = azimuth - 180
+                else:
+                    # Southern Hemisphere: transit is North (0/360 deg)
+                    # We check which side of the North-South line the point is on
+                    if 90 < azimuth < 270:
+                        offset_direction = 1  # West side, offset towards North
+                    else:
+                        offset_direction = -1  # East side, offset towards North
+
                 ax.annotate(
                     obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
                     color=style["TEXT_COLOR"],
                 )
 
@@ -395,10 +416,19 @@ class Place:
         ax.set_title(gettext_("Moon Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        if self.lat_decimal >= 0:
+            # Northern hemisphere: transit is in the South
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
+        else:
+            # Southern hemisphere: transit is in the North
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(0, 360)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -460,9 +490,21 @@ class Place:
             ::6, :
         ].values:  # Renamed obj to obj_row to avoid conflict
             if obj_row[1] > 0:  # Altitude is at index 1
+                azimuth = obj_row[2]
+                if self.lat_decimal >= 0:
+                    # Northern Hemisphere: transit is South (180 deg)
+                    offset_direction = azimuth - 180
+                else:
+                    # Southern Hemisphere: transit is North (0/360 deg)
+                    # We check which side of the North-South line the point is on
+                    if 90 < azimuth < 270:
+                        offset_direction = 1  # West side, offset towards North
+                    else:
+                        offset_direction = -1  # East side, offset towards North
+
                 ax.annotate(
                     obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
                     color=style["TEXT_COLOR"],
                 )
 
