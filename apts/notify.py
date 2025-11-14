@@ -89,7 +89,15 @@ class Notify:
 
         return self._send_email(msg_root)  # Use the internal helper
 
-    def send(self, observations, custom_template=None, css=None, plain_text_fallback=None):
+    def send(
+        self,
+        observations,
+        custom_template=None,
+        css=None,
+        plain_text_fallback=None,
+        language: str | None = None,
+        dark_mode: bool | None = None,
+    ):
         """Sends a complex email notification with observation details and plots."""
         if not self.sender_email or not self.recipient_email:
             logger.error("Sender or recipient email not configured. Cannot send email.")
@@ -102,8 +110,8 @@ class Notify:
 
         # Fallback plain text message
         if plain_text_fallback is None:
-            num_planets = len(observations.get_visible_planets())
-            num_messier = len(observations.get_visible_messier())
+            num_planets = len(observations.get_visible_planets(language=language))
+            num_messier = len(observations.get_visible_messier(language=language))
             plain_text_fallback = (
                 f"Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
                 "Enable HTML to see the full content."
@@ -115,13 +123,17 @@ class Notify:
         msg_related = MIMEMultipart("related")
 
         # HTML message content
-        html_content = observations.to_html(custom_template=custom_template, css=css)
+        html_content = observations.to_html(
+            custom_template=custom_template, css=css, language=language
+        )
         html_part = MIMEText(html_content, "html")
         msg_related.attach(html_part)  # First part of related is the HTML
 
         # Add weather image (inline)
         logger.info("Generating weather plot for email...")
-        weather_plot_fig = observations.plot_weather()  # Call public method
+        weather_plot_fig = observations.plot_weather(
+            dark_mode_override=dark_mode, language=language
+        )  # Call public method
         if weather_plot_fig:
             self.attach_image(
                 msg_related, weather_plot_fig, filename="weather_plot.png"
@@ -133,7 +145,9 @@ class Notify:
 
         # Add planets image (inline)
         logger.info("Generating Solar Objects plot for email...")
-        planets_plot_fig = observations.plot_planets()  # Call public method
+        planets_plot_fig = observations.plot_planets(
+            dark_mode_override=dark_mode, language=language
+        )  # Call public method
         if planets_plot_fig:
             self.attach_image(
                 msg_related, planets_plot_fig, filename="planets_plot.png"
@@ -145,7 +159,9 @@ class Notify:
 
         # Add messier image (inline)
         logger.info("Generating messier plot for email...")
-        messier_plot_fig = observations.plot_messier()  # Call public method
+        messier_plot_fig = observations.plot_messier(
+            dark_mode_override=dark_mode, language=language
+        )  # Call public method
         if messier_plot_fig:
             self.attach_image(
                 msg_related, messier_plot_fig, filename="messier_plot.png"
