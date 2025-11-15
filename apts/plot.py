@@ -1871,7 +1871,10 @@ def _generate_plot_skymap(
 
         if coordinate_system == CoordinateSystem.HORIZONTAL:
             ax.set_rlim(0, 90)
-            ax.set_theta_zero_location("N")
+            if observation.place.lat_decimal >= 0:
+                ax.set_theta_zero_location("N")
+            else:
+                ax.set_theta_zero_location("S")
             ax.set_theta_direction(-1)
             ax.set_yticks([0, 30, 60, 90])
             ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])

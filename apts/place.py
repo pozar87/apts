@@ -4,7 +4,8 @@ from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
 from typing import Optional
-
+import numpy as np
+from matplotlib import pyplot
 import matplotlib.font_manager as font_manager
 import pandas as pd
 import pytz
@@ -272,13 +273,25 @@ class Place:
         }
 
         if passed_ax is not None:
-            plot_kwargs["ax"] = passed_ax  # Add 'ax' to kwargs only if it was provided
-            data.plot(**plot_kwargs)  # Plot on the provided ax
-            ax = passed_ax  # Use the axes that was passed in
-            fig = ax.figure  # Get figure from provided ax
+            ax = passed_ax
+            fig = ax.figure
         else:
-            ax = data.plot(**plot_kwargs)  # Let pandas create a new ax and figure
-            fig = ax.figure  # Get figure from newly created ax
+            fig, ax = pyplot.subplots()
+
+        if self.lat_decimal < 0:
+            # Southern Hemisphere: handle wrap-around by inserting NaN
+            azimuth = data["Azimuth"].values
+            altitude = data["Sun altitude"].values
+            diffs = np.diff(azimuth)
+            wrap_around_indices = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_indices) > 0:
+                wrap_point = wrap_around_indices[0] + 1
+                azimuth = np.insert(azimuth, wrap_point, np.nan)
+                altitude = np.insert(altitude, wrap_point, np.nan)
+            ax.plot(azimuth, altitude, **args)
+        else:
+            # Northern Hemisphere or no wrap-around
+            ax.plot(data["Azimuth"], data["Sun altitude"], **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -289,10 +302,19 @@ class Place:
         ax.set_title(gettext_("Sun Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        if self.lat_decimal >= 0:
+            # Northern hemisphere: transit is in the South
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
+        else:
+            # Southern hemisphere: transit is in the North
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(315, 45)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -311,9 +333,18 @@ class Place:
             ::6, :
         ].values:  # Renamed obj to obj_row to avoid conflict
             if obj_row[1] > 0:  # Altitude is at index 1
+                azimuth = obj_row[2]
+                if self.lat_decimal >= 0:
+                    # Northern Hemisphere: transit is South (180 deg)
+                    offset_direction = azimuth - 180
+                else:
+                    # Southern Hemisphere: transit is North (0/360 deg)
+                    offset_direction = azimuth
+                    if azimuth > 180:
+                        offset_direction = azimuth - 360
                 ax.annotate(
                     obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
                     color=style["TEXT_COLOR"],
                 )
 
@@ -378,13 +409,28 @@ class Place:
         }
 
         if passed_ax is not None:
-            plot_kwargs["ax"] = passed_ax  # Add 'ax' to kwargs only if it was provided
-            data.plot(**plot_kwargs)  # Plot on the provided ax
-            ax = passed_ax  # Use the axes that was passed in
-            fig = ax.figure  # Get figure from provided ax
+            ax = passed_ax
+            fig = ax.figure
         else:
-            ax = data.plot(**plot_kwargs)  # Let pandas create a new ax and figure
-            fig = ax.figure  # Get figure from newly created ax
+            fig, ax = pyplot.subplots()
+
+        if self.lat_decimal < 0:
+            # Southern Hemisphere: handle wrap-around by inserting NaN
+            azimuth = data["Azimuth"].values
+            altitude = data["Moon altitude"].values
+            diffs = np.diff(azimuth)
+            wrap_around_indices = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_indices) > 0:
+                wrap_point = wrap_around_indices[0] + 1
+                azimuth = np.insert(azimuth, wrap_point, np.nan)
+                altitude = np.insert(altitude, wrap_point, np.nan)
+            ax.plot(azimuth, altitude, **args)
+        else:
+            # Northern Hemisphere or no wrap-around
+            ax.plot(data["Azimuth"], data["Moon altitude"], **args)
+
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -395,10 +441,19 @@ class Place:
         ax.set_title(gettext_("Moon Path"), color=style["TEXT_COLOR"])
 
         # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        if self.lat_decimal >= 0:
+            # Northern hemisphere: transit is in the South
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
+        else:
+            # Southern hemisphere: transit is in the North
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(315, 45)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -413,20 +468,23 @@ class Place:
         ax.set_ylim(bottom=-10, top=90)
 
         # Plot Moon marker
+        moon_marker_x = 180 if self.lat_decimal >= 0 else 0
+        moon_marker_y = 15  # Increased y-coordinate
+        illumination_y_offset = -8  # Adjusted offset
         if effective_dark_mode:
             # In dark mode, we draw a solid light-colored circle first,
             # then draw the shadow part of the moon on top of it.
             ax.plot(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 marker="o",
                 markersize=45,
                 color=style["TEXT_COLOR"],
                 linestyle="None",
             )
             ax.text(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -436,8 +494,8 @@ class Place:
         else:
             # In light mode, we just draw the phase character.
             ax.text(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -445,8 +503,8 @@ class Place:
                 color=style["TEXT_COLOR"],
             )
         ax.text(
-            180,
-            -3,
+            moon_marker_x,
+            moon_marker_y + illumination_y_offset,
             f"{self.moon_illumination():.0f}%",
             color=style[
                 "TEXT_COLOR"
@@ -460,9 +518,18 @@ class Place:
             ::6, :
         ].values:  # Renamed obj to obj_row to avoid conflict
             if obj_row[1] > 0:  # Altitude is at index 1
+                azimuth = obj_row[2]
+                if self.lat_decimal >= 0:
+                    # Northern Hemisphere: transit is South (180 deg)
+                    offset_direction = azimuth - 180
+                else:
+                    # Southern Hemisphere: transit is North (0/360 deg)
+                    offset_direction = azimuth
+                    if azimuth > 180:
+                        offset_direction = azimuth - 360
                 ax.annotate(
                     obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    (azimuth + copysign(10, offset_direction) - 8, obj_row[1] + 1),
                     color=style["TEXT_COLOR"],
                 )
 
