@@ -279,20 +279,19 @@ class Place:
             fig, ax = pyplot.subplots()
 
         if self.lat_decimal < 0:
-            # Southern Hemisphere: handle wrap-around
-            diffs = np.diff(data["Azimuth"])
-            wrap_around_index = np.where(np.abs(diffs) > 180)[0]
-            if len(wrap_around_index) > 0:
-                split_point = wrap_around_index[0] + 1
-                segment1 = data.iloc[:split_point]
-                segment2 = data.iloc[split_point:]
-                ax.plot(segment1["Azimuth"], segment1["Sun altitude"], **args)
-                ax.plot(segment2["Azimuth"], segment2["Sun altitude"], **args)
-            else:
-                ax.plot(data["Azimuth"], data["Sun altitude"], **args)
+            # Southern Hemisphere: handle wrap-around by inserting NaN
+            azimuth = data["Azimuth"].values
+            altitude = data["Sun altitude"].values
+            diffs = np.diff(azimuth)
+            wrap_around_indices = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_indices) > 0:
+                wrap_point = wrap_around_indices[0] + 1
+                azimuth = np.insert(azimuth, wrap_point, np.nan)
+                altitude = np.insert(altitude, wrap_point, np.nan)
+            ax.plot(azimuth, altitude, **args)
         else:
             # Northern Hemisphere or no wrap-around
-            data.plot(x="Azimuth", y="Sun altitude", ax=ax, **args)
+            ax.plot(data["Azimuth"], data["Sun altitude"], **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -416,20 +415,19 @@ class Place:
             fig, ax = pyplot.subplots()
 
         if self.lat_decimal < 0:
-            # Southern Hemisphere: handle wrap-around
-            diffs = np.diff(data["Azimuth"])
-            wrap_around_index = np.where(np.abs(diffs) > 180)[0]
-            if len(wrap_around_index) > 0:
-                split_point = wrap_around_index[0] + 1
-                segment1 = data.iloc[:split_point]
-                segment2 = data.iloc[split_point:]
-                ax.plot(segment1["Azimuth"], segment1["Moon altitude"], **args)
-                ax.plot(segment2["Azimuth"], segment2["Moon altitude"], **args)
-            else:
-                ax.plot(data["Azimuth"], data["Moon altitude"], **args)
+            # Southern Hemisphere: handle wrap-around by inserting NaN
+            azimuth = data["Azimuth"].values
+            altitude = data["Moon altitude"].values
+            diffs = np.diff(azimuth)
+            wrap_around_indices = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_indices) > 0:
+                wrap_point = wrap_around_indices[0] + 1
+                azimuth = np.insert(azimuth, wrap_point, np.nan)
+                altitude = np.insert(altitude, wrap_point, np.nan)
+            ax.plot(azimuth, altitude, **args)
         else:
             # Northern Hemisphere or no wrap-around
-            data.plot(x="Azimuth", y="Moon altitude", ax=ax, **args)
+            ax.plot(data["Azimuth"], data["Moon altitude"], **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
