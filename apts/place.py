@@ -292,10 +292,7 @@ class Place:
                 ax.plot(data["Azimuth"], data["Sun altitude"], **args)
         else:
             # Northern Hemisphere or no wrap-around
-            ax.plot(data["Azimuth"], data["Sun altitude"], **args)
-
-        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-        ax.set_facecolor(style["AXES_FACE_COLOR"])
+            data.plot(x="Azimuth", y="Sun altitude", ax=ax, **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -432,7 +429,7 @@ class Place:
                 ax.plot(data["Azimuth"], data["Moon altitude"], **args)
         else:
             # Northern Hemisphere or no wrap-around
-            ax.plot(data["Azimuth"], data["Moon altitude"], **args)
+            data.plot(x="Azimuth", y="Moon altitude", ax=ax, **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -473,20 +470,23 @@ class Place:
         ax.set_ylim(bottom=-10, top=90)
 
         # Plot Moon marker
+        moon_marker_x = 180 if self.lat_decimal >= 0 else 0
+        moon_marker_y = 15  # Increased y-coordinate
+        illumination_y_offset = -8  # Adjusted offset
         if effective_dark_mode:
             # In dark mode, we draw a solid light-colored circle first,
             # then draw the shadow part of the moon on top of it.
             ax.plot(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 marker="o",
                 markersize=45,
                 color=style["TEXT_COLOR"],
                 linestyle="None",
             )
             ax.text(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -496,8 +496,8 @@ class Place:
         else:
             # In light mode, we just draw the phase character.
             ax.text(
-                180,
-                10,
+                moon_marker_x,
+                moon_marker_y,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -505,8 +505,8 @@ class Place:
                 color=style["TEXT_COLOR"],
             )
         ax.text(
-            180,
-            -3,
+            moon_marker_x,
+            moon_marker_y + illumination_y_offset,
             f"{self.moon_illumination():.0f}%",
             color=style[
                 "TEXT_COLOR"
