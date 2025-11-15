@@ -772,6 +772,14 @@ msgstr "Widoczność"
 msgid "Visibility [km]"
 msgstr "Widoczność [km]"
 
+#: apts/weather.py:579
+msgid "Fog"
+msgstr "Mgła"
+
+#: apts/weather.py:602
+msgid "Fog [%]"
+msgstr "Mgła [%]"
+
 #: apts/weather.py:537
 msgid "Waxing"
 msgstr "Rosnący"
