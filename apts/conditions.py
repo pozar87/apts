@@ -21,6 +21,8 @@ class DefaultConditions:
   MIN_WEATHER_GOODNESS = 80  # [%], range [0,100]
   # Minimal visibility
   MIN_VISIBILITY = 10  # [km], range [0,∞)
+  # Maximal fog
+  MAX_FOG = 0  # [%], range [0,100]
   # Max acceptable hour of return
   MAX_RETURN = "02:00:00"
   # Start time for observation
@@ -52,6 +54,7 @@ class Conditions:
                max_temperature=DefaultConditions.MAX_TEMPERATURE,
                min_weather_goodness=DefaultConditions.MIN_WEATHER_GOODNESS,
                min_visibility=DefaultConditions.MIN_VISIBILITY,
+               max_fog=DefaultConditions.MAX_FOG,
                max_return=DefaultConditions.MAX_RETURN,
                start_time=DefaultConditions.START_TIME,
                min_object_altitude=DefaultConditions.MIN_OBJECT_ALTITUDE,
@@ -69,6 +72,7 @@ class Conditions:
     self.max_temperature = max_temperature
     self.min_weather_goodness = min_weather_goodness
     self.min_visibility = min_visibility
+    self.max_fog = max_fog
     self.max_return = max_return
     self.start_time = start_time
     self.min_object_altitude = min_object_altitude

@@ -841,6 +841,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "temperature": temp,
                     "visibility": vis,
                     "moonIllumination": moonIllumination,
+                    "fog": 0,
                 }
             )
         return pd.DataFrame(data)
@@ -890,6 +891,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "temperature": temp,
                     "visibility": self.obs.conditions.min_visibility + 1,
                     "moonIllumination": moonIllumination,
+                    "fog": 0,
                 }
             )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -930,6 +932,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 / 2,  # Good
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
+                "fog": 0,
             }
         )
         # Hour 1: Good
@@ -947,6 +950,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 / 2,
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
+                "fog": 0,
             }
         )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -1048,6 +1052,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "temperature": temp_bad,  # Too cold
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
+                "fog": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -1073,6 +1078,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "temperature": temp_bad,  # Too hot
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
+                "fog": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
@@ -1101,6 +1107,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 / 2,
                 "visibility": self.obs.conditions.min_visibility + 1,
                 "moonIllumination": 0,
+                "fog": 0,
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)

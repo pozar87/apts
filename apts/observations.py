@@ -460,6 +460,8 @@ class Observation:
             return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
+        if "fog" not in hourly_data.columns:
+            hourly_data["fog"] = 100
         hourly_data = hourly_data[hourly_data.time <= self.time_limit]
 
         moon_altitudes = self.place.get_altaz_curve(
@@ -492,6 +494,7 @@ class Observation:
             "temperature",
             "visibility",
             "moonIllumination",
+            "fog",
         ]:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
@@ -549,6 +552,12 @@ class Observation:
                         gettext_("Visibility %(vis)s km below limit")
                         % {"vis": f"{row.visibility:.1f}"}
                     )
+                if pd.isna(row.fog) or not (row.fog <= self.conditions.max_fog):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Fog %(fog)s%% exceeds limit of %(max_fog)s%%")
+                        % {"fog": f"{row.fog:.1f}", "max_fog": self.conditions.max_fog}
+                    )
                 if (
                     row["Altitude"] > 0
                     and not row.moonIllumination < self.conditions.max_moon_illumination
@@ -572,6 +581,7 @@ class Observation:
                         "wind_speed": row.windSpeed,
                         "visibility": row.visibility,
                         "moon_illumination": row.moonIllumination,
+                        "fog": row.fog,
                     }
                 )
         self._weather_analysis = analysis_results

@@ -152,7 +152,12 @@ def test_weather_providers(
             {
                 "hourly": {
                     "data": [
-                        {"time": 1624000000, "cloudCover": 50, "summary": "Cloudy"}
+                        {
+                            "time": 1624000000,
+                            "cloudCover": 50,
+                            "summary": "Cloudy",
+                            "visibility": 10,
+                        }
                     ]
                 }
             },
@@ -167,6 +172,7 @@ def test_weather_providers(
                                 "datetimeEpoch": 1624000000,
                                 "cloudcover": 50,
                                 "conditions": "Cloudy",
+                                "visibility": 10,
                             }
                         ]
                     }
@@ -181,6 +187,7 @@ def test_weather_providers(
                         "dt": 1624000000,
                         "clouds": 50,
                         "weather": [{"main": "Clouds", "description": "Cloudy"}],
+                        "visibility": 10000,
                     }
                 ]
             },
@@ -289,6 +296,7 @@ def test_get_critical_data_all_hours(mock_get_weather_settings, requests_mock):
                     "precipProbability": 0.1,
                     "windSpeed": 10,
                     "temperature": 20,
+                    "visibility": 10,
                 }
                 for i in range(48)
             ]
