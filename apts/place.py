@@ -4,7 +4,8 @@ from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
 from typing import Optional
-
+import numpy as np
+from matplotlib import pyplot
 import matplotlib.font_manager as font_manager
 import pandas as pd
 import pytz
@@ -272,13 +273,29 @@ class Place:
         }
 
         if passed_ax is not None:
-            plot_kwargs["ax"] = passed_ax  # Add 'ax' to kwargs only if it was provided
-            data.plot(**plot_kwargs)  # Plot on the provided ax
-            ax = passed_ax  # Use the axes that was passed in
-            fig = ax.figure  # Get figure from provided ax
+            ax = passed_ax
+            fig = ax.figure
         else:
-            ax = data.plot(**plot_kwargs)  # Let pandas create a new ax and figure
-            fig = ax.figure  # Get figure from newly created ax
+            fig, ax = pyplot.subplots()
+
+        if self.lat_decimal < 0:
+            # Southern Hemisphere: handle wrap-around
+            diffs = np.diff(data["Azimuth"])
+            wrap_around_index = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_index) > 0:
+                split_point = wrap_around_index[0] + 1
+                segment1 = data.iloc[:split_point]
+                segment2 = data.iloc[split_point:]
+                ax.plot(segment1["Azimuth"], segment1["Sun altitude"], **args)
+                ax.plot(segment2["Azimuth"], segment2["Sun altitude"], **args)
+            else:
+                ax.plot(data["Azimuth"], data["Sun altitude"], **args)
+        else:
+            # Northern Hemisphere or no wrap-around
+            ax.plot(data["Azimuth"], data["Sun altitude"], **args)
+
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -396,13 +413,29 @@ class Place:
         }
 
         if passed_ax is not None:
-            plot_kwargs["ax"] = passed_ax  # Add 'ax' to kwargs only if it was provided
-            data.plot(**plot_kwargs)  # Plot on the provided ax
-            ax = passed_ax  # Use the axes that was passed in
-            fig = ax.figure  # Get figure from provided ax
+            ax = passed_ax
+            fig = ax.figure
         else:
-            ax = data.plot(**plot_kwargs)  # Let pandas create a new ax and figure
-            fig = ax.figure  # Get figure from newly created ax
+            fig, ax = pyplot.subplots()
+
+        if self.lat_decimal < 0:
+            # Southern Hemisphere: handle wrap-around
+            diffs = np.diff(data["Azimuth"])
+            wrap_around_index = np.where(np.abs(diffs) > 180)[0]
+            if len(wrap_around_index) > 0:
+                split_point = wrap_around_index[0] + 1
+                segment1 = data.iloc[:split_point]
+                segment2 = data.iloc[split_point:]
+                ax.plot(segment1["Azimuth"], segment1["Moon altitude"], **args)
+                ax.plot(segment2["Azimuth"], segment2["Moon altitude"], **args)
+            else:
+                ax.plot(data["Azimuth"], data["Moon altitude"], **args)
+        else:
+            # Northern Hemisphere or no wrap-around
+            ax.plot(data["Azimuth"], data["Moon altitude"], **args)
+
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
