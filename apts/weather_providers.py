@@ -76,6 +76,10 @@ class PirateWeather(WeatherProvider):
             # Convert units
             result["precipProbability"] *= 100
             result["cloudCover"] *= 100
+            result["visibility"] = pd.to_numeric(result["visibility"], errors="coerce")
+            result["fog"] = (
+                (10 - result["visibility"].clip(0, 10)) * 10
+            )  # Fog in [%]
             result.time = (
                 result.time.astype("datetime64[s]")
                 .dt.tz_localize("UTC")
@@ -133,6 +137,8 @@ class VisualCrossing(WeatherProvider):
             )
             if "precipProbability" in df.columns:
                 df["precipProbability"] *= 100
+            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce")
+            df["fog"] = ((10 - df["visibility"].clip(0, 10)) * 10)  # Fog in [%]
 
             # Ensure all required columns are present
             required_columns = [
@@ -192,6 +198,7 @@ class Meteoblue(WeatherProvider):
                 "visibility": "visibility",
                 "sealevelpressure": "pressure",
                 "ozone_concentration": "ozone",
+                "fog_probability": "fog",
             }
             df.rename(columns=rename_map, inplace=True)
 
@@ -207,7 +214,14 @@ class Meteoblue(WeatherProvider):
                 )
 
             if "visibility" in df.columns:
-                df["visibility"] /= 1000
+                df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce") / 1000
+
+            if "fog" in df.columns:
+                df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
+                
+            elif "visibility" in df.columns:
+                # Fallback to visibility if fog_probability is not available
+                df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
 
             # Ensure all required columns are present
             required_columns = [
@@ -225,6 +239,7 @@ class Meteoblue(WeatherProvider):
                 "visibility",
                 "pressure",
                 "ozone",
+                "fog",
             ]
             for col in required_columns:
                 if col not in df.columns:
@@ -305,6 +320,8 @@ class OpenWeatherMap(WeatherProvider):
             # Convert visibility from meters to km
             if "visibility" in df.columns:
                 df["visibility"] /= 1000
+            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce")
+            df["fog"] = ((10 - df["visibility"].clip(0, 10)) * 10)  # Fog in [%]
 
             # Ensure all required columns are present
             required_columns = [
