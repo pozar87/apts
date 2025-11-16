@@ -799,3 +799,39 @@ msgstr "Iluminacja [%]"
 #: apts/utils/plot.py:15
 msgid "Time"
 msgstr "Czas"
+
+#: apts/equipment.py:209
+msgid "Available zoom"
+msgstr "Dostępne powiększenie"
+
+#: apts/equipment.py:210
+msgid "Used equipment"
+msgstr "Użyty sprzęt"
+
+#: apts/equipment.py:211
+msgid "Magnification"
+msgstr "Powiększenie"
+
+#: apts/equipment.py:221
+msgid "Max useful zoom due to atmosphere"
+msgstr "Maksymalne użyteczne powiększenie ze względu na atmosferę"
+
+#: apts/equipment.py:264
+msgid "Available fields of view"
+msgstr "Dostępne pola widzenia"
+
+#: apts/equipment.py:266
+msgid "Field of view [°]"
+msgstr "Pole widzenia [°]"
+
+#: apts/equipment.py:274
+msgid "Pleiades size"
+msgstr "Rozmiar Plejad"
+
+#: apts/equipment.py:276
+msgid "Moon size"
+msgstr "Rozmiar Księżyca"
+
+#: apts/equipment.py:278
+msgid "M51 size"
+msgstr "Rozmiar M51"

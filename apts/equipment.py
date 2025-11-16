@@ -10,6 +10,7 @@ from typing import Optional
 from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
 from .config import get_dark_mode
 from .constants.graphconstants import get_plot_style, get_plot_colors
+from .i18n import gettext_
 from .opticalequipment import (
     OpticalEquipment,
     NakedEye,
@@ -209,9 +210,9 @@ class Equipment:
             effective_dark_mode = get_dark_mode()
         plot = self._plot(
             EquipmentTableLabels.ZOOM,
-            "Available zoom",
-            "Used equipment",
-            "Magnification",
+            gettext_("Available zoom"),
+            gettext_("Used equipment"),
+            gettext_("Magnification"),
             dark_mode_enabled=effective_dark_mode,
             include_naked_eye=include_naked_eye,
             **args,
@@ -221,7 +222,7 @@ class Equipment:
         max_zoom = self.max_zoom()
         plot.axhline(max_zoom, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
         plot.annotate(
-            "Max useful zoom due to atmosphere",
+            gettext_("Max useful zoom due to atmosphere"),
             (-0.4, max_zoom + 2),
             alpha=0.7,
             color=style["TEXT_COLOR"],
@@ -264,20 +265,20 @@ class Equipment:
 
         plot = self._plot(
             EquipmentTableLabels.FOV,
-            "Available fields of view",
-            "Used equipment",
-            "Field if view [°]",
+            gettext_("Available fields of view"),
+            gettext_("Used equipment"),
+            gettext_("Field of view [°]"),
             dark_mode_enabled=effective_dark_mode,
             include_naked_eye=include_naked_eye,
             **args,
         )
         plot.yaxis.set_major_formatter(FuncFormatter(formatter))
         # Pleiades width is 1°50'
-        add_line("Pleiades size", (1, 50, 0))
+        add_line(gettext_("Pleiades size"), (1, 50, 0))
         # Average moon size is 0°31'42"
-        add_line("Moon size", (0, 31, 42))
+        add_line(gettext_("Moon size"), (0, 31, 42))
         # M51 width is 0°11'
-        add_line("M51 size", (0, 11, 0))
+        add_line(gettext_("M51 size"), (0, 11, 0))
 
     def _plot(
         self,
