@@ -5,9 +5,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import requests
 import requests_cache
-
 from apts.config import get_cache_settings
-from apts.light_pollution import LightPollution as LightPollutionProvider
 
 logger = logging.getLogger(__name__)
 
@@ -248,34 +246,6 @@ class Meteoblue(WeatherProvider):
                     df[col] = "none"
 
             return df[required_columns]
-
-
-class LightPollution(WeatherProvider):
-    def download_data(self):
-        lp = LightPollutionProvider(self.lat, self.lon)
-        bortle_scale = lp.get_light_pollution()
-        columns = [
-            "time",
-            "summary",
-            "precipType",
-            "precipProbability",
-            "precipIntensity",
-            "temperature",
-            "apparentTemperature",
-            "dewPoint",
-            "humidity",
-            "windSpeed",
-            "cloudCover",
-            "visibility",
-            "pressure",
-            "ozone",
-            "bortle_scale",
-        ]
-        # Create a dummy dataframe with the bortle scale value
-        # The other values are not relevant for light pollution
-        df = pd.DataFrame(columns=columns, index=range(24))
-        df["bortle_scale"] = bortle_scale
-        return df
 
 
 class OpenWeatherMap(WeatherProvider):

@@ -5,7 +5,7 @@ class LightPollution:
     def __init__(self, lat, lon):
         self.lat = lat
         self.lon = lon
-        self.image_path = str(resources.files("apts").joinpath("data/world2024_low3.png"))
+        self.image_path = str(resources.files("apts").joinpath("data/world202t4_low3.png"))
         self.im = Image.open(self.image_path)
         self.pix = self.im.load()
 

@@ -16,7 +16,6 @@ from apts.weather_providers import (
     VisualCrossing,
     OpenWeatherMap,
     Meteoblue,
-    LightPollution,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,15 +63,13 @@ class Weather:
             provider = OpenWeatherMap(api_key, lat, lon, local_timezone)
         elif provider_name == "meteoblue":
             provider = Meteoblue(api_key, lat, lon, local_timezone)
-        elif provider_name == "lightpollution":
-            provider = LightPollution(api_key, lat, lon, local_timezone)
         else:
             logger.error(f"Unknown weather provider specified: {provider_name}")
             raise ValueError(f"Unknown weather provider: {provider_name}")
 
         logger.info(f"Attempting to download data from {provider_name}.")
         self.data = provider.download_data()
-        if self.data is not None and not self.data.empty and "time" in self.data.columns and self.data["time"].notna().any():
+        if self.data is not None and not self.data.empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
             moon_illumination_details = self.data["time"].apply(
@@ -659,61 +656,4 @@ class Weather:
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
         Utils.annotate_plot(ax, gettext_("Illumination [%]"), effective_dark_mode, self.local_timezone)
-        return ax
-
-    def plot_light_pollution(
-        self, dark_mode_override: Optional[bool] = None, **args
-    ):
-        if dark_mode_override is not None:
-            effective_dark_mode = dark_mode_override
-        else:
-            effective_dark_mode = get_dark_mode()
-
-        style = get_plot_style(effective_dark_mode)
-        data = self._filter_data(["bortle_scale"])
-        if data.empty:
-            return None
-
-        ax = args.pop("ax", None)
-        fig = None
-
-        if ax:
-            fig = ax.figure
-
-        plot_kwargs = args.copy()
-        plot_ax = data.plot(
-            kind="bar",
-            x="time",
-            y="bortle_scale",
-            title=gettext_("Light Pollution"),
-            ax=ax,
-            **plot_kwargs,
-        )
-
-        if not ax:
-            ax = plot_ax
-            fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-            ax.set_facecolor(style["AXES_FACE_COLOR"])
-        else:
-            ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-
-        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
-
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
-
-        Utils.annotate_plot(
-            ax,
-            gettext_("Bortle Scale"),
-            effective_dark_mode,
-            self.local_timezone,
-        )
         return ax
