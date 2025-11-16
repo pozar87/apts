@@ -19,6 +19,8 @@ from apts.constants.twilight import Twilight
 from apts.i18n import gettext_
 from apts.utils.plot import Utils
 
+from apts.light_pollution import LightPollution
+
 from .utils.planetary import get_moon_illumination
 from .weather import Weather
 
@@ -63,7 +65,15 @@ class Place:
             Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal)
         )
         self.weather = None
+        self.light_pollution = None
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
+
+    def get_light_pollution(self):
+        self.light_pollution = LightPollution(
+            self.lat_decimal,
+            self.lon_decimal,
+        )
+        return self.light_pollution.get_light_pollution()
 
     def get_weather(self, provider_name: Optional[str] = None):
         self.weather = Weather(
