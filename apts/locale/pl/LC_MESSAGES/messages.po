@@ -756,11 +756,7 @@ msgstr "Ozon"
 msgid "Pressure [hPa]"
 msgstr "Ciśnienie [hPa]"
 
-#: apts/weather.py:443
-msgid "Ozone [DU]"
-msgstr "Ozon [DU]"
-
-#: apts/weather.py:450
+#: apts/weather.py:443 apts/weather.py:450
 msgid "Ozone [DU]"
 msgstr "Ozon [DU]"
 
