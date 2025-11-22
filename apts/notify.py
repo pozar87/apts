@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 
 # Import the config object from the new config module
 from .config import config
+from .i18n import gettext_
 from .utils import Utils
 
 
@@ -104,7 +105,7 @@ class Notify:
             return False
         # Overall message container: multipart/alternative for text and HTML versions
         msg_root = MIMEMultipart("alternative")
-        msg_root["Subject"] = f"Good weather in {observations.place.name}"
+        msg_root["Subject"] = gettext_("Good weather in {}").format(observations.place.name)
         msg_root["From"] = self.sender_email
         msg_root["To"] = self.recipient_email
 
@@ -112,10 +113,10 @@ class Notify:
         if plain_text_fallback is None:
             num_planets = len(observations.get_visible_planets(language=language))
             num_messier = len(observations.get_visible_messier(language=language))
-            plain_text_fallback = (
-                f"Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
+            plain_text_fallback = gettext_(
+                "Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
                 "Enable HTML to see the full content."
-            )
+            ).format(num_planets=num_planets, num_messier=num_messier)
         text_part = MIMEText(plain_text_fallback, "plain")
         msg_root.attach(text_part)
 

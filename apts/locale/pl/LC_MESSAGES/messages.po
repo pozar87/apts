@@ -831,3 +831,13 @@ msgstr "Rozmiar Księżyca"
 #: apts/equipment.py:278
 msgid "M51 size"
 msgstr "Rozmiar M51"
+
+#: apts/notify.py:108
+msgid "Good weather in {}"
+msgstr ""
+
+#: apts/notify.py:115
+msgid ""
+"Tonight you can see {num_planets} planets and {num_messier} Messier "
+"objects. Enable HTML to see the full content."
+msgstr ""

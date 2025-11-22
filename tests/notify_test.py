@@ -259,5 +259,38 @@ class TestNotify(unittest.TestCase):
         mock_attach_image_spy.assert_not_called()
 
 
+    @patch("apts.notify.smtplib.SMTP")
+    @patch.object(Notify, "_send_email")
+    @patch("apts.notify.gettext_")
+    def test_send_with_translation(self, mock_gettext, mock_send_email, mock_smtp):
+        """Test that send uses the correct language."""
+
+        def side_effect(arg):
+            if arg == "Good weather in {}":
+                return "Dobra pogoda w {}"
+            elif arg == "Tonight you can see {num_planets} planets and {num_messier} Messier objects. Enable HTML to see the full content.":
+                return "Dziś w nocy możesz zobaczyć {num_planets} planet i {num_messier} obiektów Messiera. Włącz HTML, aby zobaczyć pełną treść."
+            return arg
+
+        mock_gettext.side_effect = side_effect
+
+        self.mock_observation.get_visible_planets.return_value = [1, 2, 3]
+        self.mock_observation.get_visible_messier.return_value = [1, 2, 3, 4, 5]
+
+        # Call send with Polish language
+        self.notify.send(self.mock_observation, language="pl")
+
+        # Verify that the subject and fallback text are translated
+        mock_send_email.assert_called_once()
+        sent_message_object = mock_send_email.call_args[0][0]
+        self.assertEqual(
+            sent_message_object["Subject"], "Dobra pogoda w Test Location"
+        )
+        self.assertIn(
+            "Dziś w nocy możesz zobaczyć 3 planet i 5 obiektów Messiera.",
+            sent_message_object.get_payload(0).get_payload(decode=True).decode("utf-8"),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
