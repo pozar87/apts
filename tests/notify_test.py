@@ -288,7 +288,7 @@ class TestNotify(unittest.TestCase):
         )
         self.assertIn(
             "Dziś w nocy możesz zobaczyć 3 planet i 5 obiektów Messiera.",
-            sent_message_object.get_payload(0).get_payload(),
+            sent_message_object.get_payload(0).get_payload(decode=True).decode("utf-8"),
         )
 
 
