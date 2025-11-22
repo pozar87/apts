@@ -592,8 +592,6 @@ def _generate_plot_weather(
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
-        axes[4, 1].axis("off")
-
         plt_clouds_ax = observation.place.weather.plot_clouds(
             ax=axes[0, 0], dark_mode_override=effective_dark_mode
         )
@@ -679,6 +677,12 @@ def _generate_plot_weather(
             _mark_observation(
                 observation, plt_moon_illumination_ax, effective_dark_mode, style
             )
+
+        plt_fog_ax = observation.place.weather.plot_fog(
+            ax=axes[4, 1], dark_mode_override=effective_dark_mode
+        )
+        if plt_fog_ax:
+            _mark_observation(observation, plt_fog_ax, effective_dark_mode, style)
 
         fig.tight_layout()
         return fig

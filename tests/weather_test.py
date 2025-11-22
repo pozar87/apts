@@ -398,12 +398,13 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
         patch(
             "apts.plot.pyplot.subplots",
-            return_value=(MagicMock(), MagicMock(shape=(4, 2))),
+            return_value=(MagicMock(), MagicMock(shape=(5, 2))),
         ) as mock_subplots,
         patch("apts.plot._mark_observation") as mock_mark_observation,
         patch("apts.plot._mark_good_conditions") as mock_mark_good_conditions,
         patch("apts.plot.plot_sun_and_moon_path"),
         patch.object(mock_weather_instance, "plot_moon_illumination") as mock_plot_moon_illumination,
+        patch.object(mock_weather_instance, "plot_fog") as mock_plot_fog,
     ):
         fig = obs.plot_weather()
 
@@ -418,6 +419,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         mock_plot_pressure_and_ozone.assert_called_once()
         mock_plot_visibility.assert_called_once()
         mock_plot_moon_illumination.assert_called_once()
+        mock_plot_fog.assert_called_once()
 
         assert mock_mark_observation.call_count >= 1
         assert mock_mark_good_conditions.call_count >= 1
