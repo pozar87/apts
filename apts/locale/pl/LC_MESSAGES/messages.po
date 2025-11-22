@@ -834,10 +834,12 @@ msgstr "Rozmiar M51"
 
 #: apts/notify.py:108
 msgid "Good weather in {}"
-msgstr ""
+msgstr "Dobra pogoda w {}"
 
 #: apts/notify.py:115
 msgid ""
 "Tonight you can see {num_planets} planets and {num_messier} Messier "
 "objects. Enable HTML to see the full content."
 msgstr ""
+"Dziś w nocy możesz zobaczyć {num_planets} planet oraz {num_messier} obiektów Messiera. "
+"Włącz HTML, aby zobaczyć pełną treść."
