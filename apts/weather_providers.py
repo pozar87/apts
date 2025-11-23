@@ -16,11 +16,13 @@ def get_session():
     global session
     if session is None:
         cache_settings = get_cache_settings()
-        session = requests_cache.CachedSession(
-            "weather_cache",
-            backend=cache_settings["backend"],
-            expire_after=cache_settings["expire_after"],
-        )
+        kwargs = {
+            "backend": cache_settings["backend"],
+            "expire_after": cache_settings["expire_after"],
+        }
+        if cache_settings["backend"] == "redis" and cache_settings["redis_location"]:
+            kwargs["url"] = cache_settings["redis_location"]
+        session = requests_cache.CachedSession("weather_cache", **kwargs)
     return session
 
 
