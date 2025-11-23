@@ -20,9 +20,34 @@ def get_session():
             "backend": cache_settings["backend"],
             "expire_after": cache_settings["expire_after"],
         }
+
         if cache_settings["backend"] == "redis" and cache_settings["redis_location"]:
-            kwargs["url"] = cache_settings["redis_location"]
-        session = requests_cache.CachedSession("weather_cache", **kwargs)
+            try:
+                # This import is here to avoid a hard dependency on redis
+                # if the user doesn't use the redis backend.
+                from redis.exceptions import ConnectionError as RedisConnectionError
+
+                kwargs["url"] = cache_settings["redis_location"]
+                # The connection is lazy, so we need to trigger it to test it.
+                # A full 'ping' is too slow, so we just initialize the session
+                # and let it fail on first use if it's going to. A try/except
+                # here on the constructor would be better, but the connection
+                # is lazy. Let's try to connect and fall back if it fails.
+                temp_session = requests_cache.CachedSession("weather_cache_test_connection", **kwargs)
+                temp_session.cache.get_response('test') # dummy call to force connection
+                session = temp_session
+
+            except (ImportError, RedisConnectionError, Exception) as e:
+                logger.warning(
+                    f"Redis connection failed with error: {e}. "
+                    "Falling back to in-memory cache for this session."
+                )
+                kwargs.pop("url", None)
+                kwargs["backend"] = "memory"
+                session = requests_cache.CachedSession("weather_cache", **kwargs)
+        else:
+            session = requests_cache.CachedSession("weather_cache", **kwargs)
+
     return session
 
 
