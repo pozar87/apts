@@ -161,6 +161,16 @@ class TestObservationInitialization(unittest.TestCase):
 
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
+        # Start patcher to avoid Redis connection errors in CI
+        self.get_cache_settings_patcher = patch('apts.config.get_cache_settings')
+        self.mock_get_cache_settings = self.get_cache_settings_patcher.start()
+        self.mock_get_cache_settings.return_value = {
+            'backend': 'memory',
+            'expire_after': 300,
+            'redis_location': None
+        }
+        self.addCleanup(self.get_cache_settings_patcher.stop)
+
         self.observation = setup_observation()
 
         # Ensure place.local_timezone is tz-aware for pd.Timestamp construction
@@ -763,6 +773,16 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
 class TestObservationWeatherAnalysis(unittest.TestCase):
     def setUp(self):
+        # Start patcher to avoid Redis connection errors in CI
+        self.get_cache_settings_patcher = patch('apts.config.get_cache_settings')
+        self.mock_get_cache_settings = self.get_cache_settings_patcher.start()
+        self.mock_get_cache_settings.return_value = {
+            'backend': 'memory',
+            'expire_after': 300,
+            'redis_location': None
+        }
+        self.addCleanup(self.get_cache_settings_patcher.stop)
+
         # Basic setup, will be customized in each test
         self.obs = setup_observation()
 
