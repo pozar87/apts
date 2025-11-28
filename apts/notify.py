@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 # Import the config object from the new config module
-from .config import config
+from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
 
@@ -137,7 +137,9 @@ class Notify:
         )  # Call public method
         if weather_plot_fig:
             self.attach_image(
-                msg_related, weather_plot_fig, filename="weather_plot.png"
+                msg_related,
+                weather_plot_fig,
+                filename=f"weather_plot.{get_plot_format()}",
             )
         else:
             logger.warning(
@@ -151,7 +153,9 @@ class Notify:
         )  # Call public method
         if planets_plot_fig:
             self.attach_image(
-                msg_related, planets_plot_fig, filename="planets_plot.png"
+                msg_related,
+                planets_plot_fig,
+                filename=f"planets_plot.{get_plot_format()}",
             )
         else:
             logger.warning(
@@ -165,7 +169,9 @@ class Notify:
         )  # Call public method
         if messier_plot_fig:
             self.attach_image(
-                msg_related, messier_plot_fig, filename="messier_plot.png"
+                msg_related,
+                messier_plot_fig,
+                filename=f"messier_plot.{get_plot_format()}",
             )
         else:
             logger.warning(
@@ -178,8 +184,11 @@ class Notify:
         return self._send_email(msg_root)  # Use the internal helper
 
     @staticmethod
-    def attach_image(message, plot, filename="image.png"):
-        """Attaches a plot image to the email message for inline display."""
+    def attach_image(message, plot, filename=None):
+        """
+        Attaches a plot image to the email message for inline display.
+        The image format is determined by the 'plot_format' setting in apts.ini.
+        """
         if plot is None:  # Check if plot object itself is None
             logger.warning(f"Plot object for {filename} is None. Skipping attachment.")
             return
@@ -207,7 +216,10 @@ class Notify:
                 )
                 return
 
-            image = MIMEImage(img_data, _subtype="png")  # Added _subtype
+            if filename is None:
+                filename = f"image.{get_plot_format()}"
+
+            image = MIMEImage(img_data, _subtype=get_plot_format())
             image.add_header("Content-ID", f"<{filename}>")
             image.add_header("Content-Disposition", "inline", filename=filename)
             message.attach(image)

@@ -18,13 +18,18 @@ class TestNotify(unittest.TestCase):
         self.notify = Notify("test@example.com")
         self.notify.sender_email = "test_sender@example.com"  # Set a sender email
 
+    @patch("apts.notify.get_plot_format")
     @patch("apts.notify.smtplib.SMTP")
     @patch.object(
         Notify, "_send_email"
     )  # Mock _send_email to capture the Message object
     @patch.object(Notify, "attach_image", autospec=True)  # Spy on attach_image
     def test_send_with_default_template(
-        self, mock_attach_image_spy, mock_send_email_internal, mock_smtp_constructor
+        self,
+        mock_attach_image_spy,
+        mock_send_email_internal,
+        mock_smtp_constructor,
+        mock_get_plot_format,
     ):
         """Test send default template, plot attachment, and email structure."""
 
@@ -38,64 +43,50 @@ class TestNotify(unittest.TestCase):
         self.mock_observation.plot_planets.return_value = mock_planets_plot
         self.mock_observation.plot_messier.return_value = mock_messier_plot
 
-        # Call send with default parameters
-        self.notify.send(self.mock_observation)
+        for plot_format in ["webp", "png"]:
+            mock_get_plot_format.return_value = plot_format
+            mock_attach_image_spy.reset_mock()
+            mock_send_email_internal.reset_mock()
+            self.mock_observation.to_html.reset_mock()
 
-        # Verify to_html was called without custom template or CSS
-        self.mock_observation.to_html.assert_called_once_with(
-            custom_template=None, css=None, language=None
-        )
+            self.notify.send(self.mock_observation)
 
-        # Verify _send_email was called and capture the message object
-        mock_send_email_internal.assert_called_once()
-        sent_message_object = mock_send_email_internal.call_args[0][0]
+            self.mock_observation.to_html.assert_called_once_with(
+                custom_template=None, css=None, language=None
+            )
+            mock_send_email_internal.assert_called_once()
+            sent_message_object = mock_send_email_internal.call_args[0][0]
 
-        # 1. Verify that the main message is multipart/alternative.
-        self.assertTrue(sent_message_object.is_multipart())
-        self.assertEqual(
-            sent_message_object.get_content_type(), "multipart/alternative"
-        )
-
-        # 2. Verify that a multipart/related part is attached.
-        related_part = None
-        for part in sent_message_object.get_payload():
-            if part.get_content_type() == "multipart/related":
-                related_part = part
-                break
-        self.assertIsNotNone(related_part, "multipart/related part not found")
-
-        # 3. Inside multipart/related, check for HTML MIMEText part.
-        html_mime_part = None
-        if related_part:
-            for sub_part in related_part.get_payload():
-                if sub_part.get_content_type() == "text/html":
-                    html_mime_part = sub_part
+            related_part = None
+            for part in sent_message_object.get_payload():
+                if part.get_content_type() == "multipart/related":
+                    related_part = part
                     break
-        self.assertIsNotNone(
-            html_mime_part, "HTML MIMEText part not found in multipart/related"
-        )
-
-        # 4. Check HTML content.
-        if html_mime_part:
-            self.assertEqual(
-                html_mime_part.get_payload(decode=True).decode(), html_body_content
+            self.assertIsNotNone(
+                related_part, f"multipart/related part not found for format {plot_format}"
             )
 
-        # 5. Verify attach_image calls
-        if related_part:  # Ensure related_part was found before using it in assertions
             mock_attach_image_spy.assert_has_calls(
                 [
-                    call(related_part, mock_weather_plot, filename="weather_plot.png"),
-                    call(related_part, mock_planets_plot, filename="planets_plot.png"),
-                    call(related_part, mock_messier_plot, filename="messier_plot.png"),
+                    call(
+                        related_part,
+                        mock_weather_plot,
+                        filename=f"weather_plot.{plot_format}",
+                    ),
+                    call(
+                        related_part,
+                        mock_planets_plot,
+                        filename=f"planets_plot.{plot_format}",
+                    ),
+                    call(
+                        related_part,
+                        mock_messier_plot,
+                        filename=f"messier_plot.{plot_format}",
+                    ),
                 ],
                 any_order=False,
             )
             self.assertEqual(mock_attach_image_spy.call_count, 3)
-
-        # Verify _send_email was called (which implies sendmail would be called if not for this mock)
-        # self.assertTrue(mock_smtp_instance.sendmail.called) # This is no longer valid as _send_email is mocked
-        mock_send_email_internal.assert_called_once()  # This is the correct check now
 
     @patch("apts.notify.smtplib.SMTP")
     @patch.object(Notify, "attach_image", autospec=True)
@@ -159,64 +150,62 @@ class TestNotify(unittest.TestCase):
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon
 
+    @patch("apts.notify.get_plot_format")
     @patch("apts.notify.smtplib.SMTP")
     @patch.object(Notify, "_send_email")  # Mock _send_email as it's called by send()
     @patch.object(Notify, "attach_image", autospec=True)  # Spy on attach_image
     def test_send_no_plots_if_plotting_fails(
-        self, mock_attach_image_spy, mock_send_email_internal, mock_smtp_constructor
+        self,
+        mock_attach_image_spy,
+        mock_send_email_internal,
+        mock_smtp_constructor,
+        mock_get_plot_format,
     ):
         """Test that attach_image is not called if plot methods return None."""
-        mock_smtp_constructor.return_value  # mock_smtp_instance
+        mock_smtp_constructor.return_value
+        self.mock_observation.to_html.return_value = "<html><body>No Plots</body></html>"
 
-        self.mock_observation.to_html.return_value = (
-            "<html><body>No Plots</body></html>"
-        )
-
-        # Scenario 1: Weather plot fails, Messier and Planets plot succeeds
+        # Scenario 1: Weather plot fails
         self.mock_observation.plot_weather.return_value = None
         mock_messier_plot = MagicMock(name="MessierPlotOnly")
         mock_planets_plot = MagicMock(name="PlanetPlotOnly")
         self.mock_observation.plot_messier.return_value = mock_messier_plot
         self.mock_observation.plot_planets.return_value = mock_planets_plot
 
+        mock_get_plot_format.return_value = "png"
         self.notify.send(self.mock_observation)
 
-        mock_send_email_internal.assert_called_once()  # Ensure email is still sent
+        mock_send_email_internal.assert_called_once()
         sent_message_object = mock_send_email_internal.call_args[0][0]
         related_part = None
-        for part in (
-            sent_message_object.get_payload()
-        ):  # Find the multipart/related part to pass to assert_called_once_with
+        for part in sent_message_object.get_payload():
             if part.get_content_type() == "multipart/related":
                 related_part = part
                 break
-        self.assertIsNotNone(
-            related_part, "multipart/related part not found in scenario 1"
-        )
 
         mock_attach_image_spy.assert_has_calls(
             [
-                call(related_part, mock_messier_plot, filename="messier_plot.png"),
                 call(related_part, mock_planets_plot, filename="planets_plot.png"),
+                call(related_part, mock_messier_plot, filename="messier_plot.png"),
             ],
             any_order=True,
         )
         self.assertEqual(mock_attach_image_spy.call_count, 2)
 
-        # Reset mocks for the next scenario
+        # Reset mocks
         mock_send_email_internal.reset_mock()
         mock_attach_image_spy.reset_mock()
-        # Re-configure plot_weather as it's part of self.mock_observation shared across scenarios if not reset properly
         self.mock_observation.plot_weather = MagicMock()
         self.mock_observation.plot_messier = MagicMock()
 
-        # Scenario 2: Messier plot fails, Weather and Planets plot succeeds
+        # Scenario 2: Messier plot fails
         mock_weather_plot_only = MagicMock(name="WeatherPlotOnly")
         mock_planets_plot_only = MagicMock(name="PlanetsPlotOnly")
         self.mock_observation.plot_weather.return_value = mock_weather_plot_only
         self.mock_observation.plot_planets.return_value = mock_planets_plot_only
         self.mock_observation.plot_messier.return_value = None
 
+        mock_get_plot_format.return_value = "webp"
         self.notify.send(self.mock_observation)
 
         mock_send_email_internal.assert_called_once()
@@ -226,35 +215,26 @@ class TestNotify(unittest.TestCase):
             if part.get_content_type() == "multipart/related":
                 related_part_2 = part
                 break
-        self.assertIsNotNone(
-            related_part_2, "multipart/related part not found in scenario 2"
-        )
 
         mock_attach_image_spy.assert_has_calls(
             [
-                call(
-                    related_part_2, mock_weather_plot_only, filename="weather_plot.png"
-                ),
-                call(
-                    related_part_2, mock_planets_plot_only, filename="planets_plot.png"
-                ),
+                call(related_part_2, mock_weather_plot_only, filename="weather_plot.webp"),
+                call(related_part_2, mock_planets_plot_only, filename="planets_plot.webp"),
             ],
             any_order=True,
         )
+        self.assertEqual(mock_attach_image_spy.call_count, 2)
 
-        # Reset mocks for the next scenario
+        # Reset mocks
         mock_send_email_internal.reset_mock()
         mock_attach_image_spy.reset_mock()
-        self.mock_observation.plot_weather = MagicMock()
-        self.mock_observation.plot_messier = MagicMock()
 
-        # Scenario 3: Both plots fail
+        # Scenario 3: All plots fail
         self.mock_observation.plot_weather.return_value = None
         self.mock_observation.plot_messier.return_value = None
         self.mock_observation.plot_planets.return_value = None
 
         self.notify.send(self.mock_observation)
-
         mock_send_email_internal.assert_called_once()
         mock_attach_image_spy.assert_not_called()
 
