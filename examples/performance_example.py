@@ -26,5 +26,5 @@ print(f"Sky map generation took: {execution_time:.2f} seconds")
 
 # Optionally, save the figure to visually inspect it
 if fig:
-    fig.savefig("performance_test_skymap.png")
-    print("Saved skymap to performance_test_skymap.png")
+    fig.savefig("performance_test_skymap.webp")
+    print("Saved skymap to performance_test_skymap.webp")

@@ -137,7 +137,7 @@ class Notify:
         )  # Call public method
         if weather_plot_fig:
             self.attach_image(
-                msg_related, weather_plot_fig, filename="weather_plot.png"
+                msg_related, weather_plot_fig, filename="weather_plot.webp"
             )
         else:
             logger.warning(
@@ -151,7 +151,7 @@ class Notify:
         )  # Call public method
         if planets_plot_fig:
             self.attach_image(
-                msg_related, planets_plot_fig, filename="planets_plot.png"
+                msg_related, planets_plot_fig, filename="planets_plot.webp"
             )
         else:
             logger.warning(
@@ -165,7 +165,7 @@ class Notify:
         )  # Call public method
         if messier_plot_fig:
             self.attach_image(
-                msg_related, messier_plot_fig, filename="messier_plot.png"
+                msg_related, messier_plot_fig, filename="messier_plot.webp"
             )
         else:
             logger.warning(
@@ -178,7 +178,7 @@ class Notify:
         return self._send_email(msg_root)  # Use the internal helper
 
     @staticmethod
-    def attach_image(message, plot, filename="image.png"):
+    def attach_image(message, plot, filename="image.webp"):
         """Attaches a plot image to the email message for inline display."""
         if plot is None:  # Check if plot object itself is None
             logger.warning(f"Plot object for {filename} is None. Skipping attachment.")
@@ -207,7 +207,7 @@ class Notify:
                 )
                 return
 
-            image = MIMEImage(img_data, _subtype="png")  # Added _subtype
+            image = MIMEImage(img_data, _subtype="webp")  # Added _subtype
             image.add_header("Content-ID", f"<{filename}>")
             image.add_header("Content-Disposition", "inline", filename=filename)
             message.attach(image)

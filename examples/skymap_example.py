@@ -25,24 +25,24 @@ target = "M13"
 print("Generating full sky skymap...")
 fig_full = my_observation.plot_skymap(target_name=target)
 if fig_full:
-    fig_full.savefig("test_plots/skymap_full.png")
+    fig_full.savefig("test_plots/skymap_full.webp")
     pyplot.close(fig_full)
-    print("Saved full sky skymap to test_plots/skymap_full.png")
+    print("Saved full sky skymap to test_plots/skymap_full.webp")
 
 # 2. Zoomed-in skymap (15 degrees)
 print("\nGenerating zoomed-in skymap (15 degrees)...")
 fig_zoom = my_observation.plot_skymap(target_name=target, zoom_deg=15)
 if fig_zoom:
-    fig_zoom.savefig("test_plots/skymap_zoom_15deg.png")
+    fig_zoom.savefig("test_plots/skymap_zoom_15deg.webp")
     pyplot.close(fig_zoom)
-    print("Saved zoomed-in skymap to test_plots/skymap_zoom_15deg.png")
+    print("Saved zoomed-in skymap to test_plots/skymap_zoom_15deg.webp")
 
 # 3. Zoomed-in skymap with custom magnitude limit
 print("\nGenerating zoomed-in skymap with custom magnitude limit...")
 fig_zoom_mag = my_observation.plot_skymap(target_name=target, zoom_deg=15, star_magnitude_limit=9)
 if fig_zoom_mag:
-    fig_zoom_mag.savefig("test_plots/skymap_zoom_mag9.png")
+    fig_zoom_mag.savefig("test_plots/skymap_zoom_mag9.webp")
     pyplot.close(fig_zoom_mag)
-    print("Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.png")
+    print("Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.webp")
 
 print("\nAll test plots generated.")

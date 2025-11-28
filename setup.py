@@ -28,6 +28,7 @@ setup(
         "matplotlib>=2.1.2",
         "numpy>=1.14.0",
         "pandas>=0.22.0",
+        "Pillow>=8.0.0",
         "pint>=0.8.1",
         "pycairo>=1.16.2",
         "python-igraph>=0.7.1.post6",

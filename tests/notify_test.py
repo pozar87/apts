@@ -85,9 +85,9 @@ class TestNotify(unittest.TestCase):
         if related_part:  # Ensure related_part was found before using it in assertions
             mock_attach_image_spy.assert_has_calls(
                 [
-                    call(related_part, mock_weather_plot, filename="weather_plot.png"),
-                    call(related_part, mock_planets_plot, filename="planets_plot.png"),
-                    call(related_part, mock_messier_plot, filename="messier_plot.png"),
+                    call(related_part, mock_weather_plot, filename="weather_plot.webp"),
+                    call(related_part, mock_planets_plot, filename="planets_plot.webp"),
+                    call(related_part, mock_messier_plot, filename="messier_plot.webp"),
                 ],
                 any_order=False,
             )
@@ -196,8 +196,8 @@ class TestNotify(unittest.TestCase):
 
         mock_attach_image_spy.assert_has_calls(
             [
-                call(related_part, mock_messier_plot, filename="messier_plot.png"),
-                call(related_part, mock_planets_plot, filename="planets_plot.png"),
+                call(related_part, mock_messier_plot, filename="messier_plot.webp"),
+                call(related_part, mock_planets_plot, filename="planets_plot.webp"),
             ],
             any_order=True,
         )
@@ -233,10 +233,10 @@ class TestNotify(unittest.TestCase):
         mock_attach_image_spy.assert_has_calls(
             [
                 call(
-                    related_part_2, mock_weather_plot_only, filename="weather_plot.png"
+                    related_part_2, mock_weather_plot_only, filename="weather_plot.webp"
                 ),
                 call(
-                    related_part_2, mock_planets_plot_only, filename="planets_plot.png"
+                    related_part_2, mock_planets_plot_only, filename="planets_plot.webp"
                 ),
             ],
             any_order=True,

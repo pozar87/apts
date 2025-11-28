@@ -75,7 +75,7 @@ class Utils:
     @staticmethod
     def plot_to_bytes(plot):
         plot_bytes = io.BytesIO()
-        plot.savefig(plot_bytes, format="png")
+        plot.savefig(plot_bytes, format="webp")
         # Prevent showing plot in ipython
         pyplot.close(plot)
         plot_bytes.seek(0)
