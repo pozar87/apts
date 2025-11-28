@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os
+
 from apts import Equipment, opticalequipment, observations, place
+from apts.config import get_plot_format
 from matplotlib import pyplot
 
 # Create an output directory if it doesn't exist
@@ -25,24 +27,27 @@ target = "M13"
 print("Generating full sky skymap...")
 fig_full = my_observation.plot_skymap(target_name=target)
 if fig_full:
-    fig_full.savefig("test_plots/skymap_full.png")
+    plot_format = get_plot_format()
+    fig_full.savefig(f"test_plots/skymap_full.{plot_format}")
     pyplot.close(fig_full)
-    print("Saved full sky skymap to test_plots/skymap_full.png")
+    print(f"Saved full sky skymap to test_plots/skymap_full.{plot_format}")
 
 # 2. Zoomed-in skymap (15 degrees)
 print("\nGenerating zoomed-in skymap (15 degrees)...")
 fig_zoom = my_observation.plot_skymap(target_name=target, zoom_deg=15)
 if fig_zoom:
-    fig_zoom.savefig("test_plots/skymap_zoom_15deg.png")
+    plot_format = get_plot_format()
+    fig_zoom.savefig(f"test_plots/skymap_zoom_15deg.{plot_format}")
     pyplot.close(fig_zoom)
-    print("Saved zoomed-in skymap to test_plots/skymap_zoom_15deg.png")
+    print(f"Saved zoomed-in skymap to test_plots/skymap_zoom_15deg.{plot_format}")
 
 # 3. Zoomed-in skymap with custom magnitude limit
 print("\nGenerating zoomed-in skymap with custom magnitude limit...")
 fig_zoom_mag = my_observation.plot_skymap(target_name=target, zoom_deg=15, star_magnitude_limit=9)
 if fig_zoom_mag:
-    fig_zoom_mag.savefig("test_plots/skymap_zoom_mag9.png")
+    plot_format = get_plot_format()
+    fig_zoom_mag.savefig(f"test_plots/skymap_zoom_mag9.{plot_format}")
     pyplot.close(fig_zoom_mag)
-    print("Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.png")
+    print(f"Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.{plot_format}")
 
 print("\nAll test plots generated.")

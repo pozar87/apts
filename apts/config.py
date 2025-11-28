@@ -86,6 +86,16 @@ def get_dark_mode() -> bool:
         return False
 
 
+def get_plot_format() -> str:
+    """
+    Reads the plot_format setting from the [Display] section.
+
+    Returns:
+        str: The value of plot_format, or "png" if not found.
+    """
+    return config.get("Display", "plot_format", fallback="png")
+
+
 def get_event_settings() -> dict:
     """
     Reads the event settings from the [events] section.
