@@ -398,8 +398,8 @@ msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
 msgstr "Probabilidad de precipitación %(precip_prob)s%% excede el límite"
 
 #: apts/observations.py:636
-msgid "Wind speed %(wind_speed) km/h exceeds limit"
-msgstr "Velocidad del viento %(wind_speed) km/h excede el límite"
+msgid "Wind speed %(wind_speed)s km/h exceeds limit"
+msgstr "Velocidad del viento %(wind_speed)s km/h excede el límite"
 
 #: apts/observations.py:645
 msgid "Temperature {temp}°C out of range"
@@ -414,8 +414,8 @@ msgid "Moon Path"
 msgstr "Ruta Lunar"
 
 #: apts/observations.py:653
-msgid "Visibility {vis} km below limit"
-msgstr "Visibilidad {vis} km por debajo del límite"
+msgid "Visibility %(vis)s km below limit"
+msgstr "Visibilidad %(vis)s km por debajo del límite"
 
 #: apts/constants/event_types.py:9
 msgid "Moon"
