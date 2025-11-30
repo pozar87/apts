@@ -9,7 +9,6 @@ from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -100,12 +99,19 @@ class Notify:
         dark_mode: bool | None = None,
     ):
         """Sends a complex email notification with observation details and plots."""
+        if language:
+            from .i18n import set_language
+
+            set_language(language)
+
         if not self.sender_email or not self.recipient_email:
             logger.error("Sender or recipient email not configured. Cannot send email.")
             return False
         # Overall message container: multipart/alternative for text and HTML versions
         msg_root = MIMEMultipart("alternative")
-        msg_root["Subject"] = gettext_("Good weather in {}").format(observations.place.name)
+        msg_root["Subject"] = gettext_("Good weather in {name}").format(
+            name=observations.place.name
+        )
         msg_root["From"] = self.sender_email
         msg_root["To"] = self.recipient_email
 
