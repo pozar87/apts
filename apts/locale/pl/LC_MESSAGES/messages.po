@@ -399,8 +399,8 @@ msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
 msgstr "Prawdopodobieństwo opadów %(precip_prob)s%% przekracza limit"
 
 #: apts/observations.py:636
-msgid "Wind speed %(wind_speed) km/h exceeds limit"
-msgstr "Prędkość wiatru %(wind_speed) km/h przekracza limit"
+msgid "Wind speed %(wind_speed)s km/h exceeds limit"
+msgstr "Prędkość wiatru %(wind_speed)s km/h przekracza limit"
 
 #: apts/observations.py:645
 msgid "Temperature {temp}°C out of range"
@@ -415,8 +415,8 @@ msgid "Moon Path"
 msgstr "Ścieżka Księżyca"
 
 #: apts/observations.py:653
-msgid "Visibility {vis} km below limit"
-msgstr "Widoczność {vis} km poniżej limitu"
+msgid "Visibility %(vis)s km below limit"
+msgstr "Widoczność %(vis)s km poniżej limitu"
 
 #: apts/constants/event_types.py:9
 msgid "Moon"
@@ -833,8 +833,8 @@ msgid "M51 size"
 msgstr "Rozmiar M51"
 
 #: apts/notify.py:108
-msgid "Good weather in {}"
-msgstr "Dobra pogoda w {}"
+msgid "Good weather in {name}"
+msgstr "Dobra pogoda w {name}"
 
 #: apts/notify.py:115
 msgid ""

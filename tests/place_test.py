@@ -370,13 +370,13 @@ class TestPlacePlotting(unittest.TestCase):
                 )
                 mock_line.set_color.assert_called_with(expected_style["TEXT_COLOR"])
                 mock_ax.set_xlabel.assert_called_with(
-                    "Azimuth [°]", color=expected_style["TEXT_COLOR"]
+                    "Azymut [°]", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.set_ylabel.assert_called_with(
-                    "Altitude [°]", color=expected_style["TEXT_COLOR"]
+                    "Wysokość [°]", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.set_title.assert_called_with(
-                    "Moon Path", color=expected_style["TEXT_COLOR"]
+                    "Ścieżka Księżyca", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
