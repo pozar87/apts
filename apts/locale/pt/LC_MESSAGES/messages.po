@@ -832,8 +832,8 @@ msgid "M51 size"
 msgstr "Tamanho de M51"
 
 #: apts/notify.py:108
-msgid "Good weather in {}"
-msgstr "Bom tempo em {}"
+msgid "Good weather in {name}"
+msgstr "Bom tempo em {name}"
 
 #: apts/notify.py:115
 msgid ""

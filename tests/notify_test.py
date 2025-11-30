@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import MagicMock, call, patch
+
 from apts.notify import Notify
 from tests import setup_observation
 
@@ -63,7 +64,8 @@ class TestNotify(unittest.TestCase):
                     related_part = part
                     break
             self.assertIsNotNone(
-                related_part, f"multipart/related part not found for format {plot_format}"
+                related_part,
+                f"multipart/related part not found for format {plot_format}",
             )
 
             mock_attach_image_spy.assert_has_calls(
@@ -163,7 +165,9 @@ class TestNotify(unittest.TestCase):
     ):
         """Test that attach_image is not called if plot methods return None."""
         mock_smtp_constructor.return_value
-        self.mock_observation.to_html.return_value = "<html><body>No Plots</body></html>"
+        self.mock_observation.to_html.return_value = (
+            "<html><body>No Plots</body></html>"
+        )
 
         # Scenario 1: Weather plot fails
         self.mock_observation.plot_weather.return_value = None
@@ -218,8 +222,12 @@ class TestNotify(unittest.TestCase):
 
         mock_attach_image_spy.assert_has_calls(
             [
-                call(related_part_2, mock_weather_plot_only, filename="weather_plot.webp"),
-                call(related_part_2, mock_planets_plot_only, filename="planets_plot.webp"),
+                call(
+                    related_part_2, mock_weather_plot_only, filename="weather_plot.webp"
+                ),
+                call(
+                    related_part_2, mock_planets_plot_only, filename="planets_plot.webp"
+                ),
             ],
             any_order=True,
         )
@@ -238,7 +246,6 @@ class TestNotify(unittest.TestCase):
         mock_send_email_internal.assert_called_once()
         mock_attach_image_spy.assert_not_called()
 
-
     @patch("apts.notify.smtplib.SMTP")
     @patch.object(Notify, "_send_email")
     @patch("apts.notify.gettext_")
@@ -246,9 +253,12 @@ class TestNotify(unittest.TestCase):
         """Test that send uses the correct language."""
 
         def side_effect(arg):
-            if arg == "Good weather in {}":
-                return "Dobra pogoda w {}"
-            elif arg == "Tonight you can see {num_planets} planets and {num_messier} Messier objects. Enable HTML to see the full content.":
+            if arg == "Good weather in {name}":
+                return "Dobra pogoda w {name}"
+            elif (
+                arg
+                == "Tonight you can see {num_planets} planets and {num_messier} Messier objects. Enable HTML to see the full content."
+            ):
                 return "Dziś w nocy możesz zobaczyć {num_planets} planet i {num_messier} obiektów Messiera. Włącz HTML, aby zobaczyć pełną treść."
             return arg
 
@@ -263,9 +273,7 @@ class TestNotify(unittest.TestCase):
         # Verify that the subject and fallback text are translated
         mock_send_email.assert_called_once()
         sent_message_object = mock_send_email.call_args[0][0]
-        self.assertEqual(
-            sent_message_object["Subject"], "Dobra pogoda w Test Location"
-        )
+        self.assertEqual(sent_message_object["Subject"], "Dobra pogoda w Test Location")
         self.assertIn(
             "Dziś w nocy możesz zobaczyć 3 planet i 5 obiektów Messiera.",
             sent_message_object.get_payload(0).get_payload(decode=True).decode("utf-8"),
