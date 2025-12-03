@@ -842,3 +842,6 @@ msgid ""
 msgstr ""
 "Esta noite você pode ver {num_planets} planetas e {num_messier} objetos Messier. "
 "Habilite o HTML para ver o conteúdo completo."
+
+msgid "No data to plot"
+msgstr "Sem dados para gerar gráfico"
