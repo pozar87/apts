@@ -297,19 +297,53 @@ class Equipment:
         data, legend_labels = self._filter_and_merge(
             to_plot, multiline_labels, include_naked_eye
         )
+
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
 
-        # Pass title as None initially, then set it with color
-        ax = data.plot(
-            kind="bar",
-            title=None,
-            stacked=True,
-            color=[colors.get(c, "#CCCCCC") for c in legend_labels],
-            **args,
-        )
+        try:
+            # Pass title as None initially, then set it with color
+            ax = data.plot(
+                kind="bar",
+                title=None,
+                stacked=True,
+                color=[colors.get(c, "#CCCCCC") for c in legend_labels],
+                **args,
+            )
+            fig = ax.figure  # Get the figure object
+        except TypeError:
+            # This handles cases where data is empty or contains no numeric columns
+            ax = args.get("ax")
+            if ax:
+                fig = ax.figure
+            else:
+                # If no axes are provided, create a new figure and axes.
+                # Ensure 'ax' is not passed to subplots.
+                subplot_args = {k: v for k, v in args.items() if k != "ax"}
+                fig, ax = plt.subplots(**subplot_args)
 
-        fig = ax.figure  # Get the figure object
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            ax.text(
+                0.5,
+                0.5,
+                gettext_("No data to plot"),
+                horizontalalignment="center",
+                verticalalignment="center",
+                transform=ax.transAxes,
+                color=style["TEXT_COLOR"],
+                fontsize=16,
+            )
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            # Apply styling to be consistent with other plots
+            ax.set_title(title, color=style["TEXT_COLOR"])
+            ax.spines["bottom"].set_color(style["AXIS_COLOR"])
+            ax.spines["top"].set_color(style["AXIS_COLOR"])
+            ax.spines["left"].set_color(style["AXIS_COLOR"])
+            ax.spines["right"].set_color(style["AXIS_COLOR"])
+            return ax
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
