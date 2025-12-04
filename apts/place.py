@@ -204,8 +204,10 @@ class Place:
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
 
+        time_list = [t for t in times]
+
         df = pd.DataFrame(
-            {"Time": times, "Altitude": alt.degrees, "Azimuth": az.degrees}
+            {"Time": time_list, "Altitude": alt.degrees, "Azimuth": az.degrees}
         )
 
         # For Southern Hemisphere, the transit is North (0/360 degrees).
@@ -498,7 +500,7 @@ class Place:
 
         # Plot time for altitudes, adjusting for hemisphere
         for _, obj_row in data.dropna().iloc[::6, :].iterrows():
-            altitude = obj_row["Altitude"]
+            altitude = obj_row["Moon altitude"]
             azimuth = obj_row["Azimuth"]
             local_time = obj_row["Local_time"]
 
