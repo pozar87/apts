@@ -311,7 +311,12 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_title(gettext_("Sun Path"), color=style["TEXT_COLOR"])
+        ax.set_title(
+            gettext_("Sun Path on {date}").format(
+                date=self.date.utc_datetime().strftime("%Y-%m-%d")
+            ),
+            color=style["TEXT_COLOR"],
+        )
 
         # Add cardinal direction and set x-axis limits based on hemisphere
         if self.lat_decimal < 0:  # Southern Hemisphere
@@ -521,7 +526,7 @@ class Place:
                 )
         ax.set_title(
             gettext_("Moon Path on {date}").format(
-                date=self.date.to_pydatetime().strftime("%Y-%m-%d")
+                date=self.date.utc_datetime().strftime("%Y-%m-%d")
             ),
             color=style["TEXT_COLOR"],
         )
