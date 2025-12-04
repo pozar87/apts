@@ -512,3 +512,25 @@ class TestDarkMode(unittest.TestCase):
         self.place.plot_sun_path()
         mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
         mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
+
+
+class TestPlaceSouthernHemisphere(unittest.TestCase):
+    def setUp(self):
+        # Sydney, Australia
+        self.place = Place(lat=-33.8688, lon=151.2093)
+
+    @patch("apts.place.get_dark_mode", return_value=False)
+    def test_plot_moon_path_southern_hemisphere_non_mocked(self, mock_get_dark_mode):
+        """
+        Non-mocked test to verify the southern hemisphere moon path plot.
+        This test generates a real plot and checks the x-axis limits.
+        """
+        ax = self.place.plot_moon_path()
+        self.assertIsNotNone(ax)
+
+        # Check that the x-axis is inverted for southern hemisphere
+        xlim = ax.get_xlim()
+        self.assertGreater(xlim[0], xlim[1])  # e.g., (315, 45)
+
+        # Check that the plot has lines
+        self.assertTrue(len(ax.get_lines()) > 0)

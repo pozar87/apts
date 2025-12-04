@@ -204,17 +204,30 @@ class Place:
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
 
-        time_list = [times[i] for i in range(len(times))]
-
         df = pd.DataFrame(
-            {
-                "Time": time_list,
-                "Altitude": alt.degrees,
-                "Azimuth": az.degrees,
-            }
+            {"Time": times, "Altitude": alt.degrees, "Azimuth": az.degrees}
         )
+
+        # For Southern Hemisphere, the transit is North (0/360 degrees).
+        # If the path crosses this point, matplotlib will draw a line across the plot.
+        # To prevent this, we find the wrap-around point and insert a NaN row.
+        if self.lat_decimal < 0:
+            diffs = df["Azimuth"].diff()
+            # A wrap-around is a large negative jump (e.g., from 359 to 1)
+            wrap_around_indices = diffs[diffs < -180].index
+            if not wrap_around_indices.empty:
+                # Create a new row with NaN values to break the line plot
+                nan_row = pd.DataFrame(
+                    [[pd.NaT, pd.NA, pd.NA]],
+                    columns=["Time", "Altitude", "Azimuth"],
+                    # Insert between the two points where the wrap happens
+                    index=[wrap_around_indices[0] - 0.5],
+                )
+                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
+
         df["Local_time"] = [
-            t.astimezone(self.local_timezone).strftime("%H:%M") for t in df["Time"]
+            t.astimezone(self.local_timezone).strftime("%H:%M") if pd.notna(t) else ""
+            for t in df["Time"]
         ]
         return df
 
@@ -298,11 +311,18 @@ class Place:
 
         ax.set_title(gettext_("Sun Path"), color=style["TEXT_COLOR"])
 
-        # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        # Add cardinal direction and set x-axis limits based on hemisphere
+        if self.lat_decimal < 0:  # Southern Hemisphere
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(315, 45)  # Inverted for South-up view
+        else:  # Northern Hemisphere
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
+
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -402,13 +422,17 @@ class Place:
         if ax.lines:  # Style the main moon path line
             ax.lines[0].set_color(style["TEXT_COLOR"])
 
-        ax.set_title(gettext_("Moon Path"), color=style["TEXT_COLOR"])
-
-        # Add cardinal direction
-        add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
-        add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
-        ax.set_xlim(45, 315)
+        # Add cardinal direction and set x-axis limits based on hemisphere
+        if self.lat_decimal < 0:  # Southern Hemisphere
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(315, 45)  # Inverted for South-up view
+        else:  # Northern Hemisphere
+            add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            ax.set_xlim(45, 315)
         Utils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
@@ -422,21 +446,30 @@ class Place:
         ax.locator_params(nbins=20)
         ax.set_ylim(bottom=-10, top=90)
 
-        # Plot Moon marker
+        # --- Plot Moon Phase Icon and Illumination Text ---
+        # Position icon differently based on hemisphere to avoid overlap with path
+        if self.lat_decimal < 0:  # Southern Hemisphere, transit is North
+            icon_x_position = 0
+            icon_y_position = 20
+            text_y_position = icon_y_position - 13
+        else:  # Northern Hemisphere, transit is South
+            icon_x_position = 180
+            icon_y_position = 10
+            text_y_position = -3
+
         if effective_dark_mode:
-            # In dark mode, we draw a solid light-colored circle first,
-            # then draw the shadow part of the moon on top of it.
+            # In dark mode, draw a solid circle first, then the shadow on top.
             ax.plot(
-                180,
-                10,
+                icon_x_position,
+                icon_y_position,
                 marker="o",
                 markersize=45,
                 color=style["TEXT_COLOR"],
                 linestyle="None",
             )
             ax.text(
-                180,
-                10,
+                icon_x_position,
+                icon_y_position,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -444,10 +477,10 @@ class Place:
                 color=style["AXES_FACE_COLOR"],
             )
         else:
-            # In light mode, we just draw the phase character.
+            # In light mode, just draw the phase character.
             ax.text(
-                180,
-                10,
+                icon_x_position,
+                icon_y_position,
                 self._moon_phase_letter(),
                 fontproperties=Place.MOON_FONT,
                 horizontalalignment="center",
@@ -455,25 +488,39 @@ class Place:
                 color=style["TEXT_COLOR"],
             )
         ax.text(
-            180,
-            -3,
+            icon_x_position,
+            text_y_position,
             f"{self.moon_illumination():.0f}%",
-            color=style[
-                "TEXT_COLOR"
-            ],  # Using main text color, adjust alpha for muted effect
+            color=style["TEXT_COLOR"],
             alpha=0.7,
             horizontalalignment="center",
         )
 
-        # Plot time for altitudes
-        for obj_row in data.iloc[
-            ::6, :
-        ].values:  # Renamed obj to obj_row to avoid conflict
-            if obj_row[1] > 0:  # Altitude is at index 1
+        # Plot time for altitudes, adjusting for hemisphere
+        for _, obj_row in data.dropna().iloc[::6, :].iterrows():
+            altitude = obj_row["Altitude"]
+            azimuth = obj_row["Azimuth"]
+            local_time = obj_row["Local_time"]
+
+            if altitude > 0:
+                if self.lat_decimal < 0:  # Southern Hemisphere
+                    # Adjust offset direction to avoid text crossing the plot edges
+                    offset_direction = azimuth
+                    if azimuth > 180:
+                        offset_direction = azimuth - 360
+                    x_offset = copysign(10, offset_direction) - 8
+                else:  # Northern Hemisphere
+                    x_offset = copysign(10, azimuth - 180) - 8
+
                 ax.annotate(
-                    obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    local_time,
+                    (azimuth + x_offset, altitude + 1),
                     color=style["TEXT_COLOR"],
                 )
-
+        ax.set_title(
+            gettext_("Moon Path on {date}").format(
+                date=self.date.to_pydatetime().strftime("%Y-%m-%d")
+            ),
+            color=style["TEXT_COLOR"],
+        )
         return ax
