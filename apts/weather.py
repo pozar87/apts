@@ -83,8 +83,11 @@ class Weather:
             )
 
     def _filter_data(self, rows):
-        # Always add time column
-        columns = list(set(["time"] + rows))
+        # Always add time column, ensuring it's first and all columns are unique.
+        columns = ["time"]
+        for col in rows:
+            if col not in columns:
+                columns.append(col)
         return self.data[columns]  # pyright: ignore
 
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
