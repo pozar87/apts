@@ -154,6 +154,7 @@ class TestSolarObjects(unittest.TestCase):
         transit_time = saturn_data[ObjectTableLabels.TRANSIT]
         setting_time = saturn_data[ObjectTableLabels.SETTING]
 
+
         # 1. Assert that all times were successfully calculated
         self.assertIsNotNone(rising_time, "Rising time should not be None.")
         self.assertIsNotNone(transit_time, "Transit time should not be None.")
