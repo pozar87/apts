@@ -426,6 +426,9 @@ msgstr "Księżyc"
 msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
 msgstr "Iluminacja Księżyca %(illum)s%% przekracza limit, gdy Księżyc jest na niebie"
 
+msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
+msgstr "Mgła %(fog)s%% przekracza limit %(max_fog)s%%"
+
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
 msgstr "Koniunkcja"
