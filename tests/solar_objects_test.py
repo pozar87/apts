@@ -136,5 +136,42 @@ class TestSolarObjects(unittest.TestCase):
         )
 
 
+    def test_rise_transit_set_chronology_for_saturn(self):
+        """
+        Test that rise, transit, and set times are in the correct chronological order
+        using the specific failing case for Saturn on 2025-12-05.
+        """
+        # This is the specific date that reproduces the bug reported by the user.
+        test_date = datetime(2025, 12, 5, 12, 0, 0, tzinfo=timezone.utc)
+        place = Place(lat=34.0, lon=-118.0, date=test_date)  # Los Angeles
+        solar_objects = SolarObjects(place, calculation_date=test_date)
+
+        saturn_data = solar_objects.objects[
+            solar_objects.objects[ObjectTableLabels.NAME] == "saturn barycenter"
+        ].iloc[0]
+
+        rising_time = saturn_data[ObjectTableLabels.RISING]
+        transit_time = saturn_data[ObjectTableLabels.TRANSIT]
+        setting_time = saturn_data[ObjectTableLabels.SETTING]
+
+
+        # 1. Assert that all times were successfully calculated
+        self.assertIsNotNone(rising_time, "Rising time should not be None.")
+        self.assertIsNotNone(transit_time, "Transit time should not be None.")
+        self.assertIsNotNone(setting_time, "Setting time should not be None.")
+
+        # 2. Assert the chronological order
+        self.assertLess(
+            rising_time,
+            transit_time,
+            "Expected rise time to be before transit time.",
+        )
+        self.assertLess(
+            transit_time,
+            setting_time,
+            "Expected transit time to be before setting time.",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
