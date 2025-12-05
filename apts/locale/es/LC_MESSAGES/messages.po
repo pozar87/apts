@@ -425,6 +425,9 @@ msgstr "Luna"
 msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
 msgstr "Iluminación lunar %(illum)s%% excede el límite mientras la luna está alta"
 
+msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
+msgstr "Niebla %(fog)s%% excede el límite de %(max_fog)s%%"
+
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
 msgstr "Conjunción"
