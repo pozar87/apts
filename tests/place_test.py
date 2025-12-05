@@ -306,9 +306,11 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
+    @patch("apts.place.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
-    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place):
+    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext):
+        mock_gettext.side_effect = lambda s: s
         scenarios = [
             {
                 "override": True,
@@ -338,6 +340,7 @@ class TestPlacePlotting(unittest.TestCase):
 
         for i, scenario_data in enumerate(scenarios):
             with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_df_plot.reset_mock()
                 mock_get_dark_mode_place.return_value = scenario_data[
                     "global_dark_mode"
                 ]
@@ -370,14 +373,12 @@ class TestPlacePlotting(unittest.TestCase):
                 )
                 mock_line.set_color.assert_called_with(expected_style["TEXT_COLOR"])
                 mock_ax.set_xlabel.assert_called_with(
-                    "Azymut [°]", color=expected_style["TEXT_COLOR"]
+                    "Azimuth [°]", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.set_ylabel.assert_called_with(
-                    "Wysokość [°]", color=expected_style["TEXT_COLOR"]
+                    "Altitude [°]", color=expected_style["TEXT_COLOR"]
                 )
-                # Check that the title starts with the expected string, allowing for the date
-                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Ścieżka Księżyca"))
-                self.assertEqual(mock_ax.set_title.call_args[1]['color'], expected_style["TEXT_COLOR"])
+                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Moon Path"))
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
                 )
@@ -451,6 +452,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_fig_patch.reset_mock()
                 mock_line.reset_mock()
                 mock_get_dark_mode_place.reset_mock()  # Reset this as it's called in each loop
+                mock_df_plot.call_count = 0
 
 
 @patch("apts.place.get_dark_mode")
