@@ -306,9 +306,13 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
+    @patch("apts.place.gettext_")
+    @patch("apts.utils.plot.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
-    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place):
+    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext):
+        mock_gettext.side_effect = lambda s: s
+        mock_place_gettext.side_effect = lambda s: s
         scenarios = [
             {
                 "override": True,
@@ -338,6 +342,7 @@ class TestPlacePlotting(unittest.TestCase):
 
         for i, scenario_data in enumerate(scenarios):
             with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_df_plot.reset_mock()
                 mock_get_dark_mode_place.return_value = scenario_data[
                     "global_dark_mode"
                 ]
@@ -370,14 +375,12 @@ class TestPlacePlotting(unittest.TestCase):
                 )
                 mock_line.set_color.assert_called_with(expected_style["TEXT_COLOR"])
                 mock_ax.set_xlabel.assert_called_with(
-                    "Azymut [°]", color=expected_style["TEXT_COLOR"]
+                    "Azimuth [°]", color=expected_style["TEXT_COLOR"]
                 )
                 mock_ax.set_ylabel.assert_called_with(
-                    "Wysokość [°]", color=expected_style["TEXT_COLOR"]
+                    "Altitude [°]", color=expected_style["TEXT_COLOR"]
                 )
-                mock_ax.set_title.assert_called_with(
-                    "Ścieżka Księżyca", color=expected_style["TEXT_COLOR"]
-                )
+                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Moon Path"))
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
                 )
@@ -451,6 +454,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_fig_patch.reset_mock()
                 mock_line.reset_mock()
                 mock_get_dark_mode_place.reset_mock()  # Reset this as it's called in each loop
+                mock_df_plot.call_count = 0
 
 
 @patch("apts.place.get_dark_mode")
@@ -512,3 +516,41 @@ class TestDarkMode(unittest.TestCase):
         self.place.plot_sun_path()
         mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
         mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
+
+
+class TestPlaceSouthernHemisphere(unittest.TestCase):
+    def setUp(self):
+        # Sydney, Australia
+        self.place = Place(lat=-33.8688, lon=151.2093)
+
+    @patch("apts.place.get_dark_mode", return_value=False)
+    def test_plot_moon_path_southern_hemisphere_non_mocked(self, mock_get_dark_mode):
+        """
+        Non-mocked test to verify the southern hemisphere moon path plot.
+        This test generates a real plot and checks the x-axis limits.
+        """
+        ax = self.place.plot_moon_path()
+        self.assertIsNotNone(ax)
+
+        # Check that the x-axis is inverted for southern hemisphere
+        xlim = ax.get_xlim()
+        self.assertGreater(xlim[0], xlim[1])  # e.g., (315, 45)
+
+        # Check that the plot has lines
+        self.assertTrue(len(ax.get_lines()) > 0)
+
+
+class TestPlaceTranslation(unittest.TestCase):
+    def setUp(self):
+        self.place = setup_place()
+
+    def test_plot_moon_path_translation(self):
+        """
+        Non-mocked test to verify the plot is translated.
+        """
+        import apts
+        apts.set_language('pl')
+        ax = self.place.plot_moon_path()
+        self.assertEqual(ax.get_xlabel(), "Azymut [°]")
+        self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
+        self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))
