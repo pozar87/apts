@@ -136,21 +136,24 @@ class TestSolarObjects(unittest.TestCase):
         )
 
 
-    def test_rise_transit_set_chronological_order(self):
-        """Test that rise, transit, and set times are in the correct chronological order."""
-        # This date is chosen because Mars transits shortly after midnight,
-        # which could expose the bug where the rise time is calculated *after* the transit.
-        test_date = datetime(2024, 12, 15, 12, 0, 0, tzinfo=timezone.utc)
+    def test_rise_transit_set_chronology_for_saturn(self):
+        """
+        Test that rise, transit, and set times are in the correct chronological order
+        using the specific failing case for Saturn on 2025-12-05.
+        """
+        # This is the specific date that reproduces the bug reported by the user.
+        test_date = datetime(2025, 12, 5, 12, 0, 0, tzinfo=timezone.utc)
         place = Place(lat=34.0, lon=-118.0, date=test_date)  # Los Angeles
         solar_objects = SolarObjects(place, calculation_date=test_date)
 
-        mars_data = solar_objects.objects[
-            solar_objects.objects[ObjectTableLabels.NAME] == "mars barycenter"
+        saturn_data = solar_objects.objects[
+            solar_objects.objects[ObjectTableLabels.NAME] == "saturn barycenter"
         ].iloc[0]
 
-        rising_time = mars_data[ObjectTableLabels.RISING]
-        transit_time = mars_data[ObjectTableLabels.TRANSIT]
-        setting_time = mars_data[ObjectTableLabels.SETTING]
+        rising_time = saturn_data[ObjectTableLabels.RISING]
+        transit_time = saturn_data[ObjectTableLabels.TRANSIT]
+        setting_time = saturn_data[ObjectTableLabels.SETTING]
+
 
         # 1. Assert that all times were successfully calculated
         self.assertIsNotNone(rising_time, "Rising time should not be None.")
