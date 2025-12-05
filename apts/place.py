@@ -17,9 +17,8 @@ from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
 from apts.i18n import gettext_
-from apts.utils.plot import Utils
-
 from apts.light_pollution import LightPollution
+from apts.utils.plot import Utils
 
 from .utils.planetary import get_moon_illumination
 from .weather import Weather
@@ -254,10 +253,11 @@ class Place:
                 phases.append(pd.NA)
                 lunations.append(pd.NA)
 
-
         df["Phase"] = phases
         df["Lunation"] = lunations
-        df["Time"] = [x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]]
+        df["Time"] = [
+            x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]
+        ]
         return df
 
     def sun_path(self):
@@ -267,7 +267,9 @@ class Place:
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
-        df["Time"] = [x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]]
+        df["Time"] = [
+            x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]
+        ]
         return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
@@ -360,10 +362,9 @@ class Place:
             if altitude > 0:
                 ax.annotate(
                     local_time,
-                    (azimuth + copysign(10, azimuth - 180) - 8, altitude + 1),
+                    (azimuth + copysign(10, azimuth - 180) + 10, altitude + 1),
                     color=style["TEXT_COLOR"],
                 )
-
         return ax
 
     def __getstate__(self):
@@ -525,7 +526,7 @@ class Place:
                 if self.lat_decimal < 0:  # Southern Hemisphere
                     # Adjust offset direction to avoid text crossing the plot edges
                     offset_direction = azimuth
-                    x_offset = copysign(10, offset_direction) - 8
+                    x_offset = copysign(10, offset_direction) + 10
                 else:  # Northern Hemisphere
                     x_offset = copysign(10, azimuth - 180) - 8
 
