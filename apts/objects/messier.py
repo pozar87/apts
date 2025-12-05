@@ -11,6 +11,8 @@ class Messier(Objects):
         super(Messier, self).__init__(place, calculation_date=calculation_date)
         self.objects = catalogs.MESSIER.copy()
         self.objects[ObjectTableLabels.TRANSIT] = None
+        self.objects[ObjectTableLabels.RISING] = None
+        self.objects[ObjectTableLabels.SETTING] = None
         self.objects[ObjectTableLabels.ALTITUDE] = pd.NA
         self.calculation_date = (
             calculation_date  # Store calculation_date for lazy computation
@@ -47,6 +49,17 @@ class Messier(Objects):
                 self.get_skyfield_object(body), observer_to_use
             ),
             axis=1,
+        )
+        # Compute rising and setting of planets at given place
+        computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
+            computed_df.apply(
+                lambda body: self._compute_rising_and_setting(
+                    self.get_skyfield_object(body),
+                    observer_to_use,
+                    body[ObjectTableLabels.TRANSIT],
+                ),
+                axis=1,
+            ).apply(pd.Series)
         )
         # Compute altitude of messier objects at transit (at given place)
         computed_df[ObjectTableLabels.ALTITUDE] = computed_df.apply(
