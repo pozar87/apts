@@ -228,7 +228,7 @@ class Place:
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
 
         df["Local_time"] = [
-            t.astimezone(self.local_timezone).strftime("%H:%M") if pd.notna(t) else ""
+            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M") if pd.notna(t) else ""
             for t in df["Time"]
         ]
         return df
@@ -244,13 +244,18 @@ class Place:
         phases = []
         lunations = []
         for t in df["Time"]:
-            moon_phase_angle = almanac.moon_phase(self.eph, t)
-            phases.append((moon_phase_angle.degrees / 360.0) * 100)
-            lunations.append(moon_phase_angle.degrees / 360.0)
+            if pd.notna(t):
+                moon_phase_angle = almanac.moon_phase(self.eph, t)
+                phases.append((moon_phase_angle.degrees / 360.0) * 100)
+                lunations.append(moon_phase_angle.degrees / 360.0)
+            else:
+                phases.append(pd.NA)
+                lunations.append(pd.NA)
+
 
         df["Phase"] = phases
         df["Lunation"] = lunations
-        df["Time"] = [x.utc_datetime().time() for x in df["Time"]]
+        df["Time"] = [x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]]
         return df
 
     def sun_path(self):
@@ -260,7 +265,7 @@ class Place:
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
-        df["Time"] = [x.utc_datetime().time() for x in df["Time"]]
+        df["Time"] = [x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]]
         return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
@@ -344,13 +349,14 @@ class Place:
         ax.set_ylim(bottom=-10, top=90)
 
         # Plot time for altitudes
-        for obj_row in data.iloc[
-            ::6, :
-        ].values:  # Renamed obj to obj_row to avoid conflict
-            if obj_row[1] > 0:  # Altitude is at index 1
+        for _, obj_row in data.dropna().iloc[::6, :].iterrows():
+            altitude = obj_row["Sun altitude"]
+            azimuth = obj_row["Azimuth"]
+            local_time = obj_row["Local_time"]
+            if altitude > 0:
                 ax.annotate(
-                    obj_row[3],
-                    (obj_row[2] + copysign(10, obj_row[2] - 180) - 8, obj_row[1] + 1),
+                    local_time,
+                    (azimuth + copysign(10, azimuth - 180) - 8, altitude + 1),
                     color=style["TEXT_COLOR"],
                 )
 

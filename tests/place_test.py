@@ -375,9 +375,9 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_ax.set_ylabel.assert_called_with(
                     "Wysokość [°]", color=expected_style["TEXT_COLOR"]
                 )
-                mock_ax.set_title.assert_called_with(
-                    "Ścieżka Księżyca", color=expected_style["TEXT_COLOR"]
-                )
+                # Check that the title starts with the expected string, allowing for the date
+                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Ścieżka Księżyca"))
+                self.assertEqual(mock_ax.set_title.call_args[1]['color'], expected_style["TEXT_COLOR"])
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
                 )
