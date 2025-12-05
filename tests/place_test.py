@@ -306,11 +306,13 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
+    @patch("apts.place.gettext_")
     @patch("apts.utils.plot.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
-    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext):
+    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext):
         mock_gettext.side_effect = lambda s: s
+        mock_place_gettext.side_effect = lambda s: s
         scenarios = [
             {
                 "override": True,
