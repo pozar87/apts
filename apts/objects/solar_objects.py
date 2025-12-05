@@ -95,14 +95,14 @@ class SolarObjects(Objects):
             axis=1,
         )
         # Compute rising and setting of planets at given place
-        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
-            self.objects.apply(
-                lambda body: self._compute_rising_and_setting(
-                    self.get_skyfield_object(body), observer_to_use
-                ),
-                axis=1,
-            ).apply(pd.Series)
-        )
+        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects.apply(
+            lambda body: self._compute_rising_and_setting(
+                self.get_skyfield_object(body),
+                observer_to_use,
+                body[ObjectTableLabels.TRANSIT],
+            ),
+            axis=1,
+        ).apply(pd.Series)
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.TRANSIT]
