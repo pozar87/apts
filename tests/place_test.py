@@ -306,7 +306,7 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
-    @patch("apts.place.gettext_")
+    @patch("apts.utils.plot.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
     def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext):
@@ -536,3 +536,19 @@ class TestPlaceSouthernHemisphere(unittest.TestCase):
 
         # Check that the plot has lines
         self.assertTrue(len(ax.get_lines()) > 0)
+
+
+class TestPlaceTranslation(unittest.TestCase):
+    def setUp(self):
+        self.place = setup_place()
+
+    def test_plot_moon_path_translation(self):
+        """
+        Non-mocked test to verify the plot is translated.
+        """
+        import apts
+        apts.set_language('pl')
+        ax = self.place.plot_moon_path()
+        self.assertEqual(ax.get_xlabel(), "Azymut [°]")
+        self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
+        self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))

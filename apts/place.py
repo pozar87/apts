@@ -531,9 +531,7 @@ class Place:
                     color=style["TEXT_COLOR"],
                 )
         ax.set_title(
-            gettext_("Moon Path on {date}").format(
-                date=self.date.utc_datetime().strftime("%Y-%m-%d")
-            ),
+            gettext_("Moon Path") + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",
             color=style["TEXT_COLOR"],
         )
         return ax
