@@ -215,8 +215,8 @@ class Place:
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
             diffs = df["Azimuth"].diff()
-            # A wrap-around is a large negative jump (e.g., from 359 to 1)
-            wrap_around_indices = diffs[diffs < -180].index
+            # A wrap-around is a large jump, positive or negative
+            wrap_around_indices = diffs[diffs.abs() > 180].index
             if not wrap_around_indices.empty:
                 # Create a new row with NaN values to break the line plot
                 nan_row = pd.DataFrame(
@@ -228,7 +228,9 @@ class Place:
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
 
         df["Local_time"] = [
-            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M") if pd.notna(t) else ""
+            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")
+            if pd.notna(t)
+            else ""
             for t in df["Time"]
         ]
         return df
@@ -290,6 +292,8 @@ class Place:
             )
 
         data = self.sun_path()
+        if self.lat_decimal < 0:
+            data["Azimuth"] = (data["Azimuth"] + 180) % 360 - 180
 
         passed_ax = args.pop("ax", None)  # Renamed to avoid confusion
 
@@ -325,10 +329,10 @@ class Place:
 
         # Add cardinal direction and set x-axis limits based on hemisphere
         if self.lat_decimal < 0:  # Southern Hemisphere
-            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", -90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-            ax.set_xlim(315, 45)  # Inverted for South-up view
+            ax.set_xlim(135, -135)  # Inverted for South-up view, SE to SW
         else:  # Northern Hemisphere
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
@@ -409,6 +413,8 @@ class Place:
             )
 
         data = self.moon_path()
+        if self.lat_decimal < 0:
+            data["Azimuth"] = (data["Azimuth"] + 180) % 360 - 180
 
         passed_ax = args.pop("ax", None)  # Renamed to avoid confusion
 
@@ -437,10 +443,10 @@ class Place:
 
         # Add cardinal direction and set x-axis limits based on hemisphere
         if self.lat_decimal < 0:  # Southern Hemisphere
-            add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
+            add_marker(ax, "W", -90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "N", 0, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
-            ax.set_xlim(315, 45)  # Inverted for South-up view
+            ax.set_xlim(135, -135)  # Inverted for South-up view
         else:  # Northern Hemisphere
             add_marker(ax, "E", 90, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
@@ -519,8 +525,6 @@ class Place:
                 if self.lat_decimal < 0:  # Southern Hemisphere
                     # Adjust offset direction to avoid text crossing the plot edges
                     offset_direction = azimuth
-                    if azimuth > 180:
-                        offset_direction = azimuth - 360
                     x_offset = copysign(10, offset_direction) - 8
                 else:  # Northern Hemisphere
                     x_offset = copysign(10, azimuth - 180) - 8
@@ -531,7 +535,8 @@ class Place:
                     color=style["TEXT_COLOR"],
                 )
         ax.set_title(
-            gettext_("Moon Path") + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",
+            gettext_("Moon Path")
+            + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",
             color=style["TEXT_COLOR"],
         )
         return ax
