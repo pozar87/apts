@@ -471,7 +471,9 @@ def _generate_plot_planets(
         )
 
         ax.plot(
-            curve_df["Time"].apply(lambda t: t.utc_datetime()),
+            curve_df["Time"].apply(
+                lambda t: t.utc_datetime() if pd.notna(t) else pd.NaT
+            ),
             curve_df["Altitude"],
             color=specific_planet_color,
             label=name,
