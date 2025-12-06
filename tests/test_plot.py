@@ -635,6 +635,70 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         )
 
 
+def test_plot_planets_southern_hemisphere():
+    """
+    Tests that plotting planets for a southern hemisphere location,
+    which may introduce NaNs in the time curve, does not raise an error.
+    """
+    # 1. Setup a southern hemisphere observation
+    # Sydney, Australia
+    place = Place(lat=-33.8688, lon=151.2093, name="Sydney")
+    equipment = Equipment()
+    conditions = Conditions(
+        start_time=datetime(2023, 8, 22, 10, 0, 0, tzinfo=pytz.utc)
+    )  # Corresponds to evening in Sydney
+    observation = Observation(place=place, equipment=equipment, conditions=conditions)
+
+    # 2. Mock the necessary data
+    # Mock get_visible_planets to return at least one planet
+    planets_data = {
+        "Name": ["Jupiter"],
+        "TechnicalName": ["jupiter"],
+        "Rising": [None],
+        "Setting": [None],
+    }
+    mock_visible_planets = pd.DataFrame(planets_data)
+
+    # Mock get_altaz_curve to return a DataFrame with a NaN row
+    # This simulates the azimuth wrap-around logic for the southern hemisphere
+    ts = place.ts
+    start_time = observation.start
+    end_time = observation.stop
+    t0 = ts.utc(start_time)
+    t1 = ts.utc(end_time)
+    times = ts.linspace(t0, t1, 5)
+
+    curve_data = {
+        "Time": [times[0], times[1], pd.NaT, times[3], times[4]],
+        "Altitude": [10, 20, pd.NA, 20, 10],
+        "Azimuth": [350, 355, pd.NA, 5, 10],
+    }
+    mock_curve_df = pd.DataFrame(curve_data)
+
+    with patch("apts.plot.pyplot") as mock_pyplot, patch.object(
+        observation, "get_visible_planets", return_value=mock_visible_planets
+    ), patch.object(
+        observation.place, "get_altaz_curve", return_value=mock_curve_df
+    ), patch.object(
+        observation.local_planets, "get_skyfield_object", return_value=MagicMock()
+    ):
+        mock_fig = MagicMock()
+        mock_ax = MagicMock()
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # 3. Call the plot_planets function
+        try:
+            observation.plot_planets()
+        except AttributeError as e:
+            pytest.fail(f"plot_planets raised an AttributeError: {e}")
+        except Exception as e:
+            pytest.fail(f"plot_planets raised an unexpected exception: {e}")
+
+        # 4. Assert that a plot was attempted
+        mock_pyplot.subplots.assert_called_once()
+        # The key check is that no exception was raised
+
+
 def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     """
     Tests that a Messier object ellipse is plotted with the correct angle on a zoomed equatorial skymap.
