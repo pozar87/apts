@@ -7,6 +7,7 @@ from typing import Optional
 
 import matplotlib.font_manager as font_manager
 import pandas as pd
+import numpy as np
 import pytz
 from dateutil import tz
 from skyfield import almanac
@@ -219,9 +220,11 @@ class Place:
             if not wrap_around_indices.empty:
                 # Create a new row with NaN values to break the line plot
                 nan_row = pd.DataFrame(
-                    [[pd.NaT, pd.NA, pd.NA]],
-                    columns=["Time", "Altitude", "Azimuth"],
-                    # Insert between the two points where the wrap happens
+                    {
+                        "Time": [pd.NaT],
+                        "Altitude": [np.nan],
+                        "Azimuth": [np.nan],
+                    },
                     index=[wrap_around_indices[0] - 0.5],
                 )
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
@@ -245,7 +248,7 @@ class Place:
         phases = []
         lunations = []
         for t in df["Time"]:
-            if pd.notna(t):
+            if hasattr(t, "utc_datetime"):
                 moon_phase_angle = almanac.moon_phase(self.eph, t)
                 phases.append((moon_phase_angle.degrees / 360.0) * 100)
                 lunations.append(moon_phase_angle.degrees / 360.0)
