@@ -209,23 +209,6 @@ class Place:
             {"Time": time_list, "Altitude": alt.degrees, "Azimuth": az.degrees}
         )
 
-        # For Southern Hemisphere, the transit is North (0/360 degrees).
-        # If the path crosses this point, matplotlib will draw a line across the plot.
-        # To prevent this, we find the wrap-around point and insert a NaN row.
-        if self.lat_decimal < 0:
-            diffs = df["Azimuth"].diff()
-            # A wrap-around is a large jump, positive or negative
-            wrap_around_indices = diffs[diffs.abs() > 180].index
-            if not wrap_around_indices.empty:
-                # Create a new row with NaN values to break the line plot
-                nan_row = pd.DataFrame(
-                    [[pd.NaT, pd.NA, pd.NA]],
-                    columns=["Time", "Altitude", "Azimuth"],
-                    # Insert between the two points where the wrap happens
-                    index=[wrap_around_indices[0] - 0.5],
-                )
-                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
-
         df["Local_time"] = [
             t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")
             if pd.notna(t)
