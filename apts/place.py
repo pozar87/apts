@@ -228,7 +228,7 @@ class Place:
 
         df["Local_time"] = [
             t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")
-            if pd.notna(t)
+            if hasattr(t, "utc_datetime")
             else ""
             for t in df["Time"]
         ]
@@ -256,7 +256,8 @@ class Place:
         df["Phase"] = phases
         df["Lunation"] = lunations
         df["Time"] = [
-            x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT
+            for x in df["Time"]
         ]
         return df
 
@@ -268,7 +269,8 @@ class Place:
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
         df["Time"] = [
-            x.utc_datetime().time() if pd.notna(x) else pd.NaT for x in df["Time"]
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT
+            for x in df["Time"]
         ]
         return df
 
