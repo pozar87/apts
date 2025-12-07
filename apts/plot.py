@@ -1,28 +1,29 @@
 import logging
-from datetime import timedelta, datetime
-from typing import Optional, TYPE_CHECKING
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Optional
 
 import matplotlib.dates as mdates
 import numpy
 import pandas as pd
 import svgwrite as svg
-from matplotlib import pyplot, lines
+from matplotlib import lines, pyplot
 from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
 from skyfield.units import Angle
 
-from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
-    get_plot_style,
-    get_plot_colors,
     OpticalType,
     get_planet_color,
+    get_plot_colors,
+    get_plot_style,
 )
 from apts.constants.plot import CoordinateSystem
-from .cache import get_hipparcos_data
 from apts.i18n import gettext_
 from apts.utils.plot import Utils
+
+from .cache import get_hipparcos_data
+from .constants import ObjectTableLabels
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -274,9 +275,18 @@ def _generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
-            ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
-            logger.info(gettext_("Generated empty Messier plot as no objects are visible."))
+            Utils.annotate_plot(
+                ax,
+                gettext_("Altitude [°]"),
+                effective_dark_mode,
+                observation.place.local_timezone,
+            )
+            ax.set_title(
+                gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"]
+            )
+            logger.info(
+                gettext_("Generated empty Messier plot as no objects are visible.")
+            )
             return fig
 
         LIGHT_MESSIER_TYPE_COLORS = {
@@ -355,7 +365,12 @@ def _generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            observation.place.local_timezone,
+        )
 
         legend_handles = [
             lines.Line2D(
@@ -452,7 +467,12 @@ def _generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            observation.place.local_timezone,
+        )
         ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
         return fig
 
@@ -472,7 +492,7 @@ def _generate_plot_planets(
 
         ax.plot(
             curve_df["Time"].apply(
-                lambda t: t.utc_datetime() if pd.notna(t) else pd.NaT
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
             ),
             curve_df["Altitude"],
             color=specific_planet_color,
@@ -496,16 +516,20 @@ def _generate_plot_planets(
                 s=100,
             )
 
+        print(f"curve_df for {name}:\n{curve_df}")
         peak_idx = curve_df["Altitude"].idxmax()
-        peak_time = curve_df["Time"].iloc[peak_idx].utc_datetime()
-        peak_alt = curve_df["Altitude"].iloc[peak_idx]
-        ax.annotate(
-            name,
-            (peak_time, peak_alt),
-            xytext=(5, 5),
-            textcoords="offset points",
-            color=style["TEXT_COLOR"],
-        )
+        peak_time_obj = curve_df["Time"].iloc[peak_idx]
+        logger.debug(f"peak_time_obj for {name}: {peak_time_obj} at index {peak_idx}")
+        if hasattr(peak_time_obj, "utc_datetime"):
+            peak_time = peak_time_obj.utc_datetime()
+            peak_alt = curve_df["Altitude"].iloc[peak_idx]
+            ax.annotate(
+                name,
+                (peak_time, peak_alt),
+                xytext=(5, 5),
+                textcoords="offset points",
+                color=style["TEXT_COLOR"],
+            )
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
@@ -522,7 +546,12 @@ def _generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+    Utils.annotate_plot(
+        ax,
+        gettext_("Altitude [°]"),
+        effective_dark_mode,
+        observation.place.local_timezone,
+    )
     ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
 
@@ -575,7 +604,9 @@ def _generate_plot_weather(
         )
         ax_err.set_xticks([])
         ax_err.set_yticks([])
-        ax_err.set_title(gettext_("Weather Plot Information"), color=style["TEXT_COLOR"])
+        ax_err.set_title(
+            gettext_("Weather Plot Information"), color=style["TEXT_COLOR"]
+        )
         return fig_err
     try:
         axes_arg = args.pop("ax", None)
@@ -1589,14 +1620,18 @@ def _generate_plot_skymap(
         ax.text(
             0.5,
             0.5,
-            gettext_("Object '{target_name}' not found.").format(target_name=target_name),
+            gettext_("Object '{target_name}' not found.").format(
+                target_name=target_name
+            ),
             horizontalalignment="center",
             verticalalignment="center",
             transform=ax.transAxes,
             color=style["TEXT_COLOR"],
         )
         ax.set_title(
-            gettext_("Skymap (Generated: {generation_time_str})").format(generation_time_str=generation_time_str),
+            gettext_("Skymap (Generated: {generation_time_str})").format(
+                generation_time_str=generation_time_str
+            ),
             color=style["TEXT_COLOR"],
         )
         return fig
@@ -1612,14 +1647,20 @@ def _generate_plot_skymap(
             ax.text(
                 0.5,
                 0.5,
-                gettext_("Target '{target_name}' is below the horizon.").format(target_name=target_name),
+                gettext_("Target '{target_name}' is below the horizon.").format(
+                    target_name=target_name
+                ),
                 horizontalalignment="center",
                 verticalalignment="center",
                 transform=ax.transAxes,
                 color=style["TEXT_COLOR"],
             )
             ax.set_title(
-                gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
+                gettext_(
+                    "Skymap for {target_name} (Generated: {generation_time_str})"
+                ).format(
+                    target_name=target_name, generation_time_str=generation_time_str
+                ),
                 color=style["TEXT_COLOR"],
             )
             return fig
@@ -1636,7 +1677,9 @@ def _generate_plot_skymap(
             ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
             ax.set_aspect("equal", adjustable="box")
         else:  # Equatorial
-            ax.set_xlabel(gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"])
+            ax.set_xlabel(
+                gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"]
+            )
             ax.set_ylabel(gettext_("Declination (°)"), color=style["TEXT_COLOR"])
             dec_rad = numpy.deg2rad(target_dec.degrees)
             half_zoom_dec = zoom_deg / 2.0
@@ -1846,7 +1889,13 @@ def _generate_plot_skymap(
         )
 
         ax.set_title(
-            gettext_("Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})").format(target_name=target_name, zoom_deg=zoom_deg, generation_time_str=generation_time_str),
+            gettext_(
+                "Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})"
+            ).format(
+                target_name=target_name,
+                zoom_deg=zoom_deg,
+                generation_time_str=generation_time_str,
+            ),
             color=style["TEXT_COLOR"],
         )
         if flipped_horizontally:
@@ -2163,7 +2212,9 @@ def _generate_plot_skymap(
             )
 
         ax.set_title(
-            gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
+            gettext_(
+                "Skymap for {target_name} (Generated: {generation_time_str})"
+            ).format(target_name=target_name, generation_time_str=generation_time_str),
             color=style["TEXT_COLOR"],
         )
 
