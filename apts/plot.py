@@ -499,17 +499,19 @@ def _generate_plot_planets(
             label=name,
         )
 
-        if planet[ObjectTableLabels.RISING] is not None:
+        rising_time = planet[ObjectTableLabels.RISING]
+        if pd.notna(rising_time):
             ax.scatter(
-                planet[ObjectTableLabels.RISING],
+                rising_time,
                 0,
                 marker="^",
                 color=specific_planet_color,
                 s=100,
             )
-        if planet[ObjectTableLabels.SETTING] is not None:
+        setting_time = planet[ObjectTableLabels.SETTING]
+        if pd.notna(setting_time):
             ax.scatter(
-                planet[ObjectTableLabels.SETTING],
+                setting_time,
                 0,
                 marker="v",
                 color=specific_planet_color,
@@ -517,19 +519,22 @@ def _generate_plot_planets(
             )
 
         print(f"curve_df for {name}:\n{curve_df}")
-        peak_idx = curve_df["Altitude"].idxmax()
-        peak_time_obj = curve_df["Time"].iloc[peak_idx]
-        logger.debug(f"peak_time_obj for {name}: {peak_time_obj} at index {peak_idx}")
-        if hasattr(peak_time_obj, "utc_datetime"):
-            peak_time = peak_time_obj.utc_datetime()
-            peak_alt = curve_df["Altitude"].iloc[peak_idx]
-            ax.annotate(
-                name,
-                (peak_time, peak_alt),
-                xytext=(5, 5),
-                textcoords="offset points",
-                color=style["TEXT_COLOR"],
+        if not curve_df.empty:
+            peak_idx = curve_df["Altitude"].idxmax()
+            peak_time_obj = curve_df["Time"].iloc[peak_idx]
+            logger.debug(
+                f"peak_time_obj for {name}: {peak_time_obj} at index {peak_idx}"
             )
+            if hasattr(peak_time_obj, "utc_datetime"):
+                peak_time = peak_time_obj.utc_datetime()
+                peak_alt = curve_df["Altitude"].iloc[peak_idx]
+                ax.annotate(
+                    name,
+                    (peak_time, peak_alt),
+                    xytext=(5, 5),
+                    textcoords="offset points",
+                    color=style["TEXT_COLOR"],
+                )
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
