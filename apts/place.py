@@ -242,7 +242,7 @@ class Place:
             hour=0, minute=0, second=0, microsecond=0
         )
         end_time = start_time + datetime.timedelta(days=1)
-        df = self.get_altaz_curve(self.moon, start_time, end_time, num_points=26 * 4)
+        df = self.get_altaz_curve(self.moon, start_time, end_time, num_points=26 * 8)
         df = df.rename(columns={"Altitude": "Moon altitude"})
 
         phases = []
