@@ -518,7 +518,6 @@ def _generate_plot_planets(
                 s=100,
             )
 
-        print(f"curve_df for {name}:\n{curve_df}")
         if not curve_df.empty:
             peak_idx = curve_df["Altitude"].idxmax()
             peak_time_obj = curve_df["Time"].iloc[peak_idx]

@@ -3,10 +3,10 @@ from typing import List, Optional
 
 from skyfield.api import utc
 
+from apts.constants.event_types import EventType
 from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
-from apts.constants.event_types import EventType
 
 
 def get_events(
@@ -41,4 +41,3 @@ if __name__ == "main":
         date.today() + timedelta(days=30), datetime.max.time()
     ).replace(tzinfo=utc)
     events_df = get_events(lat=52.2, lon=21.0, start_date=start, end_date=end)
-    print(events_df)
