@@ -29,9 +29,11 @@ def get_ephemeris():
         # In 'full' mode, this is a URL, so we use the default `load`.
         return load(path_or_url)
     else:
-        # In 'light' mode, this is an absolute path to a local file.
-        # We need a Loader configured for the file's directory.
+        # In 'light' mode, this might be a filename or an absolute path.
         directory, filename = os.path.split(path_or_url)
+        if not directory:
+            # If it's just a filename, use the default data directory for caching.
+            directory = data_loader.DATA_DIR
         local_loader = Loader(directory)
         return local_loader(filename)
 
