@@ -513,20 +513,24 @@ def _generate_plot_planets(
                 setting_time, 0, marker="v", color=specific_planet_color, s=100
             )
 
-        if not curve_df.empty and curve_df["Altitude"].notna().any():
-            peak_idx = curve_df["Altitude"].idxmax()
-            peak_time_obj = curve_df["Time"].iloc[peak_idx]
-            if hasattr(peak_time_obj, "utc_datetime"):
-                peak_time = peak_time_obj.utc_datetime()
-                peak_alt = curve_df["Altitude"].iloc[peak_idx]
-                if pd.notna(peak_time) and pd.notna(peak_alt):
-                    ax.annotate(
-                        name,
-                        (peak_time, peak_alt),
-                        xytext=(5, 5),
-                        textcoords="offset points",
-                        color=style["TEXT_COLOR"],
-                    )
+        if not curve_df.empty:
+            try:
+                peak_idx = curve_df["Altitude"].idxmax()
+                peak_time_obj = curve_df["Time"].iloc[peak_idx]
+                if hasattr(peak_time_obj, "utc_datetime"):
+                    peak_time = peak_time_obj.utc_datetime()
+                    peak_alt = curve_df["Altitude"].iloc[peak_idx]
+                    if pd.notna(peak_time) and pd.notna(peak_alt):
+                        ax.annotate(
+                            name,
+                            (peak_time, peak_alt),
+                            xytext=(5, 5),
+                            textcoords="offset points",
+                            color=style["TEXT_COLOR"],
+                        )
+            except ValueError:
+                # This can happen if 'Altitude' column is all NaN
+                logger.debug(f"Could not find peak for {name} as all altitudes are NaN.")
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
