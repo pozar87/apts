@@ -22,20 +22,10 @@ def get_timescale():
 def get_ephemeris():
     """
     Returns an ephemeris object, loading from a URL or local file.
-    This ensures that the file is downloaded if not present in full mode.
+    This ensures that the file is downloaded if not present.
     """
     path_or_url = data_loader.get_ephemeris_path()
-    if '://' in path_or_url:
-        # In 'full' mode, this is a URL, so we use the default `load`.
-        return load(path_or_url)
-    else:
-        # In 'light' mode, this might be a filename or an absolute path.
-        directory, filename = os.path.split(path_or_url)
-        if not directory:
-            # If it's just a filename, use the default data directory for caching.
-            directory = data_loader.DATA_DIR
-        local_loader = Loader(directory)
-        return local_loader(filename)
+    return load(path_or_url)
 
 
 @functools.lru_cache(maxsize=None)
