@@ -273,6 +273,56 @@ class TestPlace:
         assert "Azimuth" in moon_df.columns
         assert "Local_time" in moon_df.columns
 
+    def test_moon_path_accuracy(self, mid_latitude_place):
+        """
+        Test the moon_path calculation against a direct skyfield calculation
+        for a specific point in time.
+        """
+        p = mid_latitude_place
+
+        # 1. Define the specific time for verification
+        # The moon_path method calculates for the whole day of p.date
+        # p.date is 2023-01-01 12:00:00 UTC. The path is from 00:00 to 24:00.
+        # Let's check for a specific time on that day, e.g., 18:00 UTC.
+        target_time_utc = datetime(2023, 1, 1, 18, 0, 0, tzinfo=timezone.utc)
+        target_skyfield_time = p.ts.utc(target_time_utc)
+
+        # 2. Calculate ground truth with skyfield directly
+        observer = p.eph["earth"] + p.location
+        moon = p.eph["moon"]
+        apparent = observer.at(target_skyfield_time).observe(moon).apparent()
+        alt, az, _ = apparent.altaz()
+
+        expected_altitude = alt.degrees
+        expected_azimuth = az.degrees
+
+        # 3. Get the calculated path from the method under test
+        moon_df = p.moon_path()
+
+        # 4. Find the closest calculated point to our target time.
+        # The 'Time' column in the DataFrame is datetime.time, so we need to convert it
+        # back to a full datetime object for comparison.
+        df_times = [
+            dt_module.datetime.combine(p.date.utc_datetime().date(), t, tzinfo=timezone.utc)
+            if t is not pd.NaT else pd.NaT
+            for t in moon_df["Time"]
+        ]
+        moon_df["datetime"] = pd.to_datetime(df_times, utc=True)
+
+        # Find the index of the row with the minimum time difference
+        closest_row_index = (moon_df["datetime"] - target_time_utc).abs().idxmin()
+        closest_row = moon_df.loc[closest_row_index]
+
+        # 5. Assert that the values are close
+        actual_altitude = closest_row["Moon altitude"]
+        actual_azimuth = closest_row["Azimuth"]
+
+        # Use pytest.approx for floating point comparison with a tolerance.
+        # A tolerance of 0.5 degrees should be safe enough to account for
+        # interpolation differences between the sampled points in the path.
+        assert actual_altitude == pytest.approx(expected_altitude, abs=0.5)
+        assert actual_azimuth == pytest.approx(expected_azimuth, abs=0.5)
+
 
 class TestPlacePlotting(unittest.TestCase):
     def setUp(self):
