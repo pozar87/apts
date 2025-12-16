@@ -11,7 +11,7 @@ def get_ephemeris_path():
     """
     mode = get_data_settings()
     if mode == "light":
-        return os.path.join(DATA_DIR, "de421.bsp")
+        return "de421.bsp"
     else:
         return "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp"
 
