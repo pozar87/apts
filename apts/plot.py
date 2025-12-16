@@ -325,24 +325,25 @@ def _generate_plot_messier(
 
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
-            altitude = obj[ObjectTableLabels.ALTITUDE]
-            obj_type = gettext_(obj["Type"])
-            width = obj[ObjectTableLabels.WIDTH]
-            height = obj["Height"] if "Height" in obj else width
-            messier_id = obj[ObjectTableLabels.MESSIER]
-            marker_size = (width * height) ** 0.5
-            color = current_messier_colors.get(
-                obj_type, current_messier_colors[gettext_("Other")]
-            )
-            plotted_types[obj_type] = color
-            ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
-            ax.annotate(
-                messier_id,
-                (transit, altitude),
-                xytext=(5, 5),
-                textcoords="offset points",
-                color=style["TEXT_COLOR"],
-            )
+            if pd.notna(transit):
+                altitude = obj[ObjectTableLabels.ALTITUDE]
+                obj_type = gettext_(obj["Type"])
+                width = obj[ObjectTableLabels.WIDTH]
+                height = obj["Height"] if "Height" in obj else width
+                messier_id = obj[ObjectTableLabels.MESSIER]
+                marker_size = (width * height) ** 0.5
+                color = current_messier_colors.get(
+                    obj_type, current_messier_colors[gettext_("Other")]
+                )
+                plotted_types[obj_type] = color
+                ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
+                ax.annotate(
+                    messier_id,
+                    (transit, altitude),
+                    xytext=(5, 5),
+                    textcoords="offset points",
+                    color=style["TEXT_COLOR"],
+                )
 
         if observation.start is not None and observation.time_limit is not None:
             ax.set_xlim(
@@ -490,11 +491,13 @@ def _generate_plot_planets(
             name, effective_dark_mode, default_planet_color
         )
 
+        time_series = curve_df["Time"].apply(
+            lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+        )
+        valid_times = pd.notna(time_series)
         ax.plot(
-            curve_df["Time"].apply(
-                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-            ),
-            curve_df["Altitude"],
+            time_series[valid_times],
+            curve_df["Altitude"][valid_times],
             color=specific_planet_color,
             label=name,
         )
@@ -502,38 +505,28 @@ def _generate_plot_planets(
         rising_time = planet[ObjectTableLabels.RISING]
         if pd.notna(rising_time):
             ax.scatter(
-                rising_time,
-                0,
-                marker="^",
-                color=specific_planet_color,
-                s=100,
+                rising_time, 0, marker="^", color=specific_planet_color, s=100
             )
         setting_time = planet[ObjectTableLabels.SETTING]
         if pd.notna(setting_time):
             ax.scatter(
-                setting_time,
-                0,
-                marker="v",
-                color=specific_planet_color,
-                s=100,
+                setting_time, 0, marker="v", color=specific_planet_color, s=100
             )
 
-        if not curve_df.empty:
+        if not curve_df.empty and curve_df["Altitude"].notna().any():
             peak_idx = curve_df["Altitude"].idxmax()
             peak_time_obj = curve_df["Time"].iloc[peak_idx]
-            logger.debug(
-                f"peak_time_obj for {name}: {peak_time_obj} at index {peak_idx}"
-            )
             if hasattr(peak_time_obj, "utc_datetime"):
                 peak_time = peak_time_obj.utc_datetime()
                 peak_alt = curve_df["Altitude"].iloc[peak_idx]
-                ax.annotate(
-                    name,
-                    (peak_time, peak_alt),
-                    xytext=(5, 5),
-                    textcoords="offset points",
-                    color=style["TEXT_COLOR"],
-                )
+                if pd.notna(peak_time) and pd.notna(peak_alt):
+                    ax.annotate(
+                        name,
+                        (peak_time, peak_alt),
+                        xytext=(5, 5),
+                        textcoords="offset points",
+                        color=style["TEXT_COLOR"],
+                    )
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
