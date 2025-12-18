@@ -99,4 +99,4 @@ if should_auto_preload_data():
         preload_data()
 
 
-__version__ = "0.8.7"
+__version__ = "0.8.8"
