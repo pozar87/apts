@@ -15,8 +15,12 @@ class Utils:
         x_label: str = "Time",
     ):
         style = get_plot_style(dark_mode)
-        ax.set_ylabel(gettext_(y_label), color=style["TEXT_COLOR"])
-        ax.set_xlabel(gettext_(x_label), color=style["TEXT_COLOR"])
+        ax.set_ylabel(
+            gettext_(y_label), color=style["TEXT_COLOR"], fontfamily="sans-serif"
+        )
+        ax.set_xlabel(
+            gettext_(x_label), color=style["TEXT_COLOR"], fontfamily="sans-serif"
+        )
         ax.tick_params(axis="x", colors=style["TICK_COLOR"])
         ax.tick_params(axis="y", colors=style["TICK_COLOR"])
         ax.spines["bottom"].set_color(style["AXIS_COLOR"])
