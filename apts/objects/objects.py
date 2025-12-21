@@ -144,38 +144,40 @@ class Objects(ABC):
             )
         return None
 
-    def _compute_rising_and_setting(self, skyfield_object, observer, transit_time):
-        if skyfield_object is None or transit_time is None or pandas.isna(transit_time):
+    def _compute_rising_and_setting(self, skyfield_object, observer):
+        if skyfield_object is None:
             return None, None
 
         f = almanac.risings_and_settings(
             self.place.eph, skyfield_object, self.place.location
         )
 
-        # Find the latest rise time in the 24 hours before the transit
-        t_transit = self.ts.utc(transit_time)
-        t0_rise = self.ts.utc(transit_time - timedelta(days=1))
-        t_rise, y_rise = find_discrete(t0_rise, t_transit, f)
+        # Current time from observer
+        t0 = self.ts.utc(observer.date.utc_datetime())
+
+        # Find the next rise time in the 24 hours after current time
+        t1_rise = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
+        t_rise, y_rise = find_discrete(t0, t1_rise, f)
 
         rising_time = None
         rise_events = [t for t, y in zip(t_rise, y_rise) if y == 1]
         if rise_events:
             rising_time = (
-                rise_events[-1]
+                rise_events[0]
                 .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
             )
 
-        # Find the earliest set time in the 24 hours after the transit
-        t1_set = self.ts.utc(transit_time + timedelta(days=1))
-        t_set, y_set = find_discrete(t_transit, t1_set, f)
+        # Find the previous set time in the 24 hours before current time
+        t0_set = self.ts.utc(observer.date.utc_datetime() - timedelta(days=1))
+        t_set, y_set = find_discrete(t0_set, t0, f)
 
         setting_time = None
         set_events = [t for t, y in zip(t_set, y_set) if y == 0]
         if set_events:
             setting_time = (
-                set_events[0]
+                set_events[-1]
                 .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
