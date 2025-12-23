@@ -160,18 +160,16 @@ class TestSolarObjects(unittest.TestCase):
         self.assertIsNotNone(transit_time, "Transit time should not be None.")
         self.assertIsNotNone(setting_time, "Setting time should not be None.")
 
-        # 2. Assert the chronological order relative to the calculation date
-        # The new logic is: previous setting < calculation_date < next rising
-        calculation_datetime_local = test_date.astimezone(place.local_timezone)
+        # 2. Assert the chronological order
         self.assertLess(
-            setting_time,
-            calculation_datetime_local,
-            "Expected previous set time to be before calculation date.",
-        )
-        self.assertGreater(
             rising_time,
-            calculation_datetime_local,
-            "Expected next rise time to be after calculation date.",
+            transit_time,
+            "Expected rise time to be before transit time.",
+        )
+        self.assertLess(
+            transit_time,
+            setting_time,
+            "Expected transit time to be before setting time.",
         )
 
 

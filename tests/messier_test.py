@@ -51,6 +51,7 @@ def test_visiable_messier():
 def test_visible_planets():
     o = setup_observation()
     p = o.get_visible_planets()
+    assert len(p) >= 8  # Allow for 8 or 9, depending on ephemeris
 
     # Check that Name is string type
     assert p["Name"].dtype == "string"

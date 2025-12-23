@@ -83,19 +83,24 @@ class Place:
             provider_name=provider_name,
         )
 
-    def _next_setting_time(self, obj, start):
-        t0 = self.ts.utc(start)
-        t1 = self.ts.utc(start + datetime.timedelta(days=2))
+    def _previous_setting_time(self, obj, start):
+        t0 = self.ts.utc(start - datetime.timedelta(days=2))
+        t1 = self.ts.utc(start)
         f = almanac.risings_and_settings(self.eph, obj, self.location)
         t, y = almanac.find_discrete(t0, t1, f)
 
-        for ti, yi in zip(t, y):
-            if yi == 0:  # Setting
-                return (
-                    ti.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(self.local_timezone)
-                )
+        settings = [
+            ti
+            for ti, yi in zip(t, y)
+            if yi == 0
+        ]
+        if settings:
+            return (
+                settings[-1]
+                .utc_datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(self.local_timezone)
+            )
         return None
 
     def _next_rising_time(self, obj, start):
@@ -169,7 +174,7 @@ class Place:
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "set")
-        return self._next_setting_time(self.sun, start=start_date)
+        return self._previous_setting_time(self.sun, start=start_date)
 
     def sunrise_time(
         self,
@@ -183,7 +188,7 @@ class Place:
         return self._next_rising_time(self.sun, start=start_date)
 
     def moonset_time(self):
-        return self._next_setting_time(self.moon, start=self.date.utc_datetime())
+        return self._previous_setting_time(self.moon, start=self.date.utc_datetime())
 
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date.utc_datetime())

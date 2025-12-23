@@ -56,6 +56,7 @@ class Messier(Objects):
                 lambda body: self._compute_rising_and_setting(
                     self.get_skyfield_object(body),
                     observer_to_use,
+                    body[ObjectTableLabels.TRANSIT],
                 ),
                 axis=1,
             ).apply(pd.Series)

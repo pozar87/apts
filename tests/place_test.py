@@ -142,10 +142,8 @@ class TestPlace:
     def test_sunset_sunrise_without_target_date_legacy(self, mid_latitude_place):
         p = mid_latitude_place  # Uses DEFAULT_INIT_DATE_UTC (2023-01-01 12:00 UTC)
 
-        # For Golden, CO on 2023-01-01 (MST, UTC-7)
-        # init_date is Jan 1, 2023, 12:00 PM UTC, which is 5:00 AM MST.
-        # Sunset should be around 4:45 PM MST on Jan 1.
-        # Sunrise should be around 7:20 AM MST on Jan 1.
+        # init_date is Jan 1, 2023, 12:00 PM UTC, which is 5:00 AM MST in Golden, CO.
+        # The logic should find the PREVIOUS sunset (Dec 31, 2022) and NEXT sunrise (Jan 1, 2023).
 
         sunset_dt = p.sunset_time()  # No target_date
         sunrise_dt = p.sunrise_time()  # No target_date
@@ -153,16 +151,23 @@ class TestPlace:
         assert sunset_dt is not None
         assert isinstance(sunset_dt, datetime)
         assert sunset_dt.tzinfo == p.local_timezone
-        # Check if sunset is on Jan 1, 2023 in local time
-        assert sunset_dt.year == 2023 and sunset_dt.month == 1 and sunset_dt.day == 1
+
+        # Check that the sunset is the PREVIOUS one (on Dec 31, 2022)
+        assert sunset_dt.year == 2022 and sunset_dt.month == 12 and sunset_dt.day == 31
         assert 16 <= sunset_dt.hour <= 17  # Around 4-5 PM for sunset in winter
 
         assert sunrise_dt is not None
         assert isinstance(sunrise_dt, datetime)
         assert sunrise_dt.tzinfo == p.local_timezone
-        # Check if sunrise is on Jan 1, 2023 in local time
+
+        # Check that the sunrise is the NEXT one (on Jan 1, 2023)
         assert sunrise_dt.year == 2023 and sunrise_dt.month == 1 and sunrise_dt.day == 1
         assert 7 <= sunrise_dt.hour <= 8  # Around 7-8 AM for sunrise in winter
+
+        # Also assert the chronological order relative to the place's date
+        place_date_local = p.date.utc_datetime().astimezone(p.local_timezone)
+        assert sunset_dt < place_date_local
+        assert sunrise_dt > place_date_local
 
     def test_sun_always_up_polar(self, north_pole_place):
         p = north_pole_place
