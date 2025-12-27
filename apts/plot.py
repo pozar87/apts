@@ -948,70 +948,42 @@ def _plot_stars_on_skymap(
     target_object=None,
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
-    stars = get_hipparcos_data()
+    stars_df = get_hipparcos_data()
 
     if zoom_deg is not None and target_object is not None:
-        # Optimization: pre-filter stars to a bounding box before expensive separation calculation
+        # Optimization: pre-filter stars using a simple bounding box
         if hasattr(target_object, "ra"):
             ra_center_hours = target_object.ra.hours
             dec_center_degrees = target_object.dec.degrees
         else:
-            # It's a planet or other solar system body
-            ra, dec, _ = observer.observe(target_object).radec()
+            # It's a planet or other solar system body, get its current coordinates
+            ra, dec, _ = observer.observe(target_object).apparent().radec()
             ra_center_hours = ra.hours
             dec_center_degrees = dec.degrees
 
-        # Create a generous bounding box around the target
-        # The conversion from degrees to RA hours depends on declination,
-        # but for a rough filter, a fixed factor is acceptable.
-        deg_margin = zoom_deg * 2  # A larger margin to be safe
-        ra_margin_hours = deg_margin / 15.0
+        # Create a bounding box around the target.
+        # This uses a rectangular filter for performance, which is much faster than
+        # calculating the precise angular separation for every star. The trade-off is
+        # that stars in the "corners" of the zoom box may be slightly farther away
+        # than the zoom_deg radius.
+        # A 1.5x margin is a good balance to ensure the circular area is well-contained
+        # without fetching excessive data.
+        deg_margin = zoom_deg * 1.5
+        ra_margin_hours = deg_margin / (
+            15.0 * numpy.cos(numpy.deg2rad(dec_center_degrees))
+        )
 
         ra_min = ra_center_hours - ra_margin_hours
         ra_max = ra_center_hours + ra_margin_hours
         dec_min = dec_center_degrees - deg_margin
         dec_max = dec_center_degrees + deg_margin
 
-        # Simple bounding box filter
-        stars_in_box = stars[
-            (stars["ra_hours"] >= ra_min)
-            & (stars["ra_hours"] <= ra_max)
-            & (stars["dec_degrees"] >= dec_min)
-            & (stars["dec_degrees"] <= dec_max)
-        ]
-
-        # Now perform the precise separation calculation on the much smaller subset
-        if not stars_in_box.empty:
-            if hasattr(target_object, "ra"):
-                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-            else:
-                ra, dec, _ = observer.observe(target_object).radec()
-                center = SkyfieldStar(ra_hours=ra.hours, dec_degrees=dec.degrees)
-            observed_center = observer.observe(center)
-
-            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
-            observed_all_stars = observer.observe(all_stars_vectors)
-
-            dist_center = observed_center.position.au
-            dist_all_stars = observed_all_stars.position.au
-
-            vec_center_np = dist_center
-            vec_all_stars_np = dist_all_stars
-
-            dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
-
-            len_center = numpy.linalg.norm(vec_center_np, axis=0)
-            len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
-
-            cosine_angle = dot_product / (len_center * len_all_stars)
-            cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
-
-            separation_radians = numpy.arccos(cosine_angle)
-            separation = numpy.degrees(separation_radians)
-            nearby_mask = separation < zoom_deg
-            stars = stars_in_box[nearby_mask]
-        else:
-            stars = stars_in_box  # empty dataframe
+        stars = stars_df[
+            (stars_df["ra_hours"].between(ra_min, ra_max))
+            & (stars_df["dec_degrees"].between(dec_min, dec_max))
+        ].copy()
+    else:
+        stars = stars_df.copy()
 
     if mag_limit is not None:
         limit = mag_limit
@@ -1291,60 +1263,44 @@ def _plot_ngc_on_skymap(
     coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
 ):
     if zoom_deg is not None and target_object is not None:
-        visible_ngc = observation.local_ngc.objects.copy()
+        # For zoomed view, start with the full catalog and filter it down.
+        ngc_df = observation.local_ngc.objects.copy()
+
+        # Optimization: pre-filter using a simple bounding box
+        if hasattr(target_object, "ra"):
+            ra_center_hours = target_object.ra.hours
+            dec_center_degrees = target_object.dec.degrees
+        else:
+            # It's a planet or other solar system body, get its current coordinates
+            ra, dec, _ = observer.observe(target_object).apparent().radec()
+            ra_center_hours = ra.hours
+            dec_center_degrees = dec.degrees
+
+        # Create a generous bounding box to ensure we don't clip objects at the edge.
+        # This uses a rectangular filter for performance, trading precision for speed.
+        # A 1.5x margin ensures the circular zoom area is well-contained.
+        deg_margin = zoom_deg * 1.5
+        ra_margin_hours = deg_margin / (
+            15.0 * numpy.cos(numpy.deg2rad(dec_center_degrees))
+        )
+
+        ra_min = ra_center_hours - ra_margin_hours
+        ra_max = ra_center_hours + ra_margin_hours
+        dec_min = dec_center_degrees - deg_margin
+        dec_max = dec_center_degrees + deg_margin
+
+        ngc_df["RA_parsed"] = ngc_df["RA"].apply(_parse_ra)
+        ngc_df["Dec_parsed"] = ngc_df["Dec"].apply(_parse_dec)
+
+        visible_ngc = ngc_df[
+            (ngc_df["RA_parsed"].between(ra_min, ra_max))
+            & (ngc_df["Dec_parsed"].between(dec_min, dec_max))
+        ].copy()
     else:
+        # For polar view, get pre-filtered visible objects
         visible_ngc = observation.get_visible_ngc(
             star_magnitude_limit=star_magnitude_limit
         )
-
-    if not visible_ngc.empty:
-        if zoom_deg is not None and target_object is not None:
-            ra_center_hours = target_object.ra.hours
-            dec_center_degrees = target_object.dec.degrees
-            deg_margin = zoom_deg * 2
-            ra_margin_hours = deg_margin / 15.0
-            ra_min = ra_center_hours - ra_margin_hours
-            ra_max = ra_center_hours + ra_margin_hours
-            dec_min = dec_center_degrees - deg_margin
-            dec_max = dec_center_degrees + deg_margin
-
-            visible_ngc["RA_parsed"] = visible_ngc["RA"].apply(_parse_ra)
-            visible_ngc["Dec_parsed"] = visible_ngc["Dec"].apply(_parse_dec)
-
-            ngc_in_box = visible_ngc[
-                (visible_ngc["RA_parsed"] >= ra_min)
-                & (visible_ngc["RA_parsed"] <= ra_max)
-                & (visible_ngc["Dec_parsed"] >= dec_min)
-                & (visible_ngc["Dec_parsed"] <= dec_max)
-            ]
-
-            if not ngc_in_box.empty:
-                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-                observed_center = observer.observe(center)
-
-                all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
-                observed_all_ngc = all_ngc_vectors.apply(observer.observe)
-
-                dist_center = observed_center.position.au
-                vec_all_ngc = observed_all_ngc.apply(lambda x: x.xyz.au)
-
-                vec_center_np = dist_center
-                vec_all_ngc_np = numpy.array(vec_all_ngc.tolist()).T
-
-                dot_product = numpy.dot(vec_center_np, vec_all_ngc_np)
-
-                len_center = numpy.linalg.norm(vec_center_np)
-                len_all_ngc = numpy.linalg.norm(vec_all_ngc_np, axis=0)
-
-                cosine_angle = dot_product / (len_center * len_all_ngc)
-                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
-
-                separation_radians = numpy.arccos(cosine_angle)
-                separation = numpy.degrees(separation_radians)
-                nearby_mask = separation < zoom_deg
-                visible_ngc = ngc_in_box[nearby_mask]
-            else:
-                visible_ngc = ngc_in_box
 
     if not visible_ngc.empty:
         for _, n_obj in visible_ngc.iterrows():
