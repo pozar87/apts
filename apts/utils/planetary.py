@@ -177,3 +177,17 @@ def get_moon_illumination(time):
     """
     illumination, _ = get_moon_illumination_details(time)
     return illumination
+
+
+def get_reverse_translated_planet_names(language: str) -> dict:
+    """
+    Returns a dictionary mapping translated planet names back to their English originals.
+    """
+    from apts.i18n import language_context, gettext_
+
+    reverse_map = {}
+    with language_context(language):
+        for name in SIMPLE_NAMES:
+            translated_name = gettext_(name)
+            reverse_map[translated_name] = name
+    return reverse_map

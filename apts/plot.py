@@ -19,7 +19,8 @@ from apts.constants.graphconstants import (
     get_plot_style,
 )
 from apts.constants.plot import CoordinateSystem
-from apts.i18n import gettext_
+from apts.i18n import _thread_local, gettext_
+from apts.utils.planetary import get_reverse_translated_planet_names
 from apts.utils.plot import Utils
 
 from .cache import get_hipparcos_data
@@ -1547,6 +1548,11 @@ def _generate_plot_skymap(
     Generates a skymap for a given time and location, highlighting a target object.
     Can generate a full polar skymap or a zoomed-in Cartesian skymap.
     """
+    current_language = getattr(_thread_local, "language", "en")
+    if current_language != "en":
+        reverse_map = get_reverse_translated_planet_names(current_language)
+        target_name = reverse_map.get(target_name, target_name)
+
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
     else:
