@@ -33,7 +33,14 @@ def get_hipparcos_data() -> pd.DataFrame:
     """
     Returns a cached Hipparcos catalog as a pandas DataFrame.
     """
-    with load.open(hipparcos.URL) as f:
+    # Ensure the 'data' directory exists
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # Use the skyfield loader to cache the file to disk
+    loader = Loader(data_dir)
+    with loader.open(hipparcos.URL) as f:
         return hipparcos.load_dataframe(f)
 
 
