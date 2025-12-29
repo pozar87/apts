@@ -81,7 +81,7 @@ class EquatorialOverlayTest(unittest.TestCase):
         # Mock the catalog lookups to return a valid target
         mock_target = Mock()
         mock_observation.local_messier.objects = Mock(**{'[].empty': True})
-        mock_observation.local_ngc.objects = Mock(**{'[].empty': true})
+        mock_observation.local_ngc.objects = Mock(**{'[].empty': True})
         mock_observation.local_stars.objects = Mock(**{'[].empty': True})
         mock_observation.local_planets.find_by_name.return_value = mock_target
 
