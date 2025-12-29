@@ -53,22 +53,36 @@ class EquatorialOverlayTest(unittest.TestCase):
         # Mocks for the single target object
         mock_target_alt = Mock(degrees=45.0)
         mock_target_az = Mock(degrees=90.0)
-        mock_target_ra = Mock(hours=6.0, radians=np.pi/2)
+        mock_target_ra = Mock(hours=6.0, radians=np.pi / 2)
         mock_target_dec = Mock(degrees=30.0)
 
-        def observe_side_effect(target):
-            # Returns different coordinates depending on whether we are observing
-            # the grid of stars or the single target object.
-            mock_apparent = Mock()
-            if hasattr(target, 'ra_hours'): # This is the grid
-                mock_apparent.altaz.return_value = (mock_alt, mock_az, Mock())
-            else: # This is the target
-                mock_apparent.altaz.return_value = (mock_target_alt, mock_target_az, Mock())
-                mock_apparent.radec.return_value = (mock_target_ra, mock_target_dec, Mock())
+        # Pre-configure the full mock chain for the grid observation
+        mock_grid_apparent = Mock()
+        mock_grid_apparent.altaz.return_value = (mock_alt, mock_az, Mock())
+        mock_grid_observed = Mock()
+        mock_grid_observed.apparent.return_value = mock_grid_apparent
 
-            mock_observed = Mock()
-            mock_observed.apparent.return_value = mock_apparent
-            return mock_observed
+        # Pre-configure the full mock chain for the target observation
+        mock_target_apparent = Mock()
+        mock_target_apparent.altaz.return_value = (
+            mock_target_alt,
+            mock_target_az,
+            Mock(),
+        )
+        mock_target_apparent.radec.return_value = (
+            mock_target_ra,
+            mock_target_dec,
+            Mock(),
+        )
+        mock_target_observed = Mock()
+        mock_target_observed.apparent.return_value = mock_target_apparent
+
+        def observe_side_effect(target):
+            # Now, the side effect just returns the correct pre-built mock
+            if hasattr(target, "ra_hours"):  # This is the grid
+                return mock_grid_observed
+            else:  # This is the target
+                return mock_target_observed
 
         mock_observer = Mock()
         mock_observer.at.return_value.observe.side_effect = observe_side_effect
