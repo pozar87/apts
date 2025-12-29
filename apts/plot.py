@@ -2068,8 +2068,14 @@ def _generate_plot_skymap(
             ra_hours = ra_rad * 12 / numpy.pi
 
             # Create Skyfield Star objects for the entire grid
-            grid_stars = SkyfieldStar(ra_hours=ra_hours, dec_degrees=dec_deg)
+            grid_stars = SkyfieldStar(
+                ra_hours=ra_hours.flatten(), dec_degrees=dec_deg.flatten()
+            )
             alt, az, _ = observer.observe(grid_stars).apparent().altaz()
+
+            # Reshape the results back to the grid shape
+            alt_deg_grid = alt.degrees.reshape(theta_grid.shape)
+            az_deg_grid = az.degrees.reshape(theta_grid.shape)
 
             # Check conditions
             min_alt = float(observation.conditions.min_object_altitude)
@@ -2077,11 +2083,11 @@ def _generate_plot_skymap(
             max_az = float(observation.conditions.max_object_azimuth)
 
             # Create a mask for "good" conditions
-            alt_mask = alt.degrees >= min_alt
+            alt_mask = alt_deg_grid >= min_alt
             if min_az <= max_az:
-                az_mask = (az.degrees >= min_az) & (az.degrees <= max_az)
+                az_mask = (az_deg_grid >= min_az) & (az_deg_grid <= max_az)
             else:  # Azimuth range crosses 0/360
-                az_mask = (az.degrees >= min_az) | (az.degrees <= max_az)
+                az_mask = (az_deg_grid >= min_az) | (az_deg_grid <= max_az)
             good_mask = alt_mask & az_mask
 
             # Use contourf to shade the "good" area

@@ -29,7 +29,9 @@ class EquatorialOverlayTest(unittest.TestCase):
         # Mock place and time attributes
         mock_ts = Mock()
         # The internal logic needs a valid Time object to do comparisons
-        mock_ts.now.return_value = Time(2451545.0, scale='tt') # J2000.0
+        mock_ts.tt = 2451545.0  # J2000.0
+        mock_time = Time(mock_ts)
+        mock_ts.now.return_value = mock_time
         mock_observation.place = Mock()
         mock_observation.place.local_timezone = 'UTC'
         mock_observation.place.lat = 50.0
