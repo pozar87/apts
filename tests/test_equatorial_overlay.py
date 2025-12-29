@@ -7,9 +7,13 @@ from dateutil.tz import gettz
 from skyfield.units import Angle
 from apts.plot import _generate_plot_skymap
 from apts.conditions import Conditions
+import pytz
+import pandas as pd
 from apts.constants.plot import CoordinateSystem
 from skyfield.api import Star as SkyfieldStar, load
 from skyfield.timelib import Time
+from apts.cache import get_timescale
+from apts.constants import ObjectTableLabels
 
 
 class EquatorialOverlayTest(unittest.TestCase):
@@ -31,6 +35,9 @@ class EquatorialOverlayTest(unittest.TestCase):
         mock_subplots.return_value = (mock_fig, mock_ax)
 
         mock_observation = Mock()
+        ts = get_timescale()
+        mock_time = ts.tt(jd=2451545.0) # J2000.0
+
 
         # Mock place and time attributes
         mock_ts = Mock()
@@ -40,10 +47,10 @@ class EquatorialOverlayTest(unittest.TestCase):
         mock_observation.place = Mock()
         mock_observation.place.local_timezone = gettz('UTC')
         mock_observation.place.lat = 50.0
-        mock_observation.place.ts = mock_ts
+        mock_observation.place.ts = ts
         mock_observation.start = None
         mock_observation.stop = None
-        mock_observation.effective_date = mock_ts.now.return_value
+        mock_observation.effective_date = mock_time
 
 
         # Mock the observer chain to return mock coordinates
@@ -67,9 +74,27 @@ class EquatorialOverlayTest(unittest.TestCase):
                 mock_apparent.altaz.return_value = (mock_target_alt, mock_target_az, Mock())
                 mock_apparent.radec.return_value = (mock_target_ra, mock_target_dec, Mock())
 
-            mock_observed = Mock()
-            mock_observed.apparent.return_value = mock_apparent
-            return mock_observed
+        # Pre-configure the full mock chain for the target observation
+        mock_target_apparent = Mock()
+        mock_target_apparent.altaz.return_value = (
+            mock_target_alt,
+            mock_target_az,
+            Mock(),
+        )
+        mock_target_apparent.radec.return_value = (
+            mock_target_ra,
+            mock_target_dec,
+            Mock(),
+        )
+        mock_target_observed = Mock()
+        mock_target_observed.apparent.return_value = mock_target_apparent
+
+        def observe_side_effect(target):
+            # Now, the side effect just returns the correct pre-built mock
+            if hasattr(target, "ra_hours"):  # This is the grid
+                return mock_grid_observed
+            else:  # This is the target
+                return mock_target_observed
 
         mock_observer = Mock()
         mock_observer.at.return_value.observe.side_effect = observe_side_effect
