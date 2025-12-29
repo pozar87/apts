@@ -140,6 +140,15 @@ def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
                 records.append(comet)
     return pd.DataFrame(records)
 
+def download_all_data():
+    """
+    Downloads all the necessary data files.
+    """
+    get_ephemeris()
+    get_hipparcos_data()
+    get_mpcorb_data()
+
+
 def clear_cache():
     """
     Clears all the caches.

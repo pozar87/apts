@@ -11,7 +11,7 @@ import pytest
 from apts.units import ureg
 from apts import catalogs
 from unittest.mock import patch
-from apts.cache import get_mpcorb_data
+from apts.cache import get_mpcorb_data, download_all_data
 
 
 class CacheTest(unittest.TestCase):
@@ -86,3 +86,14 @@ class CacheTest(unittest.TestCase):
         self.assertEqual(len(df), 2)
         self.assertIn("(1) Ceres", df.index)
         self.assertIn("(2) Pallas", df.index)
+
+    @patch("apts.cache.get_ephemeris")
+    @patch("apts.cache.get_hipparcos_data")
+    @patch("apts.cache.get_mpcorb_data")
+    def test_download_all_data(
+        self, mock_get_mpcorb_data, mock_get_hipparcos_data, mock_get_ephemeris
+    ):
+        download_all_data()
+        mock_get_ephemeris.assert_called_once()
+        mock_get_hipparcos_data.assert_called_once()
+        mock_get_mpcorb_data.assert_called_once()

@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 
 from . import cache
+from .cache import download_all_data
 from .catalogs import Catalogs, initialize_catalogs
 
 # Import the config object from the new config module
@@ -30,6 +31,7 @@ __all__ = [
     "preload_data",
     "preload_essential_data",
     "set_language",
+    "download_all_data",
 ]
 
 logger = logging.getLogger(__name__)
