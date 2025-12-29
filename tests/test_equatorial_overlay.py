@@ -5,9 +5,11 @@ import numpy as np
 from apts.plot import _generate_plot_skymap
 from apts.conditions import Conditions
 import pytz
+import pandas as pd
 from apts.constants.plot import CoordinateSystem
 from skyfield.timelib import Time
 from apts.cache import get_timescale
+from apts.constants import ObjectTableLabels
 
 class EquatorialOverlayTest(unittest.TestCase):
     @patch('matplotlib.pyplot.subplots')
@@ -82,9 +84,9 @@ class EquatorialOverlayTest(unittest.TestCase):
 
         # Mock the catalog lookups to return a valid target
         mock_target = Mock()
-        mock_observation.local_messier.objects = Mock(**{'[].empty': True})
-        mock_observation.local_ngc.objects = Mock(**{'[].empty': True})
-        mock_observation.local_stars.objects = Mock(**{'[].empty': True})
+        mock_observation.local_messier.objects = pd.DataFrame(columns=[ObjectTableLabels.MESSIER])
+        mock_observation.local_ngc.objects = pd.DataFrame(columns=[ObjectTableLabels.NGC, ObjectTableLabels.NAME])
+        mock_observation.local_stars.objects = pd.DataFrame(columns=[ObjectTableLabels.NAME])
         mock_observation.local_planets.find_by_name.return_value = mock_target
 
         # 2. Call the function under test
