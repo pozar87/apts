@@ -1569,7 +1569,7 @@ def _generate_plot_skymap(
         stop_ts = observation.place.ts.utc(observation.stop)
         middle_julian_date = (start_ts.tt + stop_ts.tt) / 2
         t = observation.place.ts.tt_jd(middle_julian_date)
-    elif observation.effective_date:
+    elif observation.effective_date is not None:
         # Fallback to effective_date if start/stop are not available
         t = observation.effective_date
     else:
