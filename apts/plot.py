@@ -1455,7 +1455,8 @@ def _plot_solar_system_object_on_skymap(
     alt, az, _ = observer.observe(obj).apparent().altaz()
     ra, dec, _ = observer.observe(obj).apparent().radec()
 
-    if alt.degrees <= 0 and coordinate_system == CoordinateSystem.HORIZONTAL:
+    is_below_horizon = numpy.all(numpy.asarray(alt.degrees) <= 0)
+    if is_below_horizon and coordinate_system == CoordinateSystem.HORIZONTAL:
         return
 
     size_deg = _get_object_angular_size_deg(observation, object_name)
@@ -1569,7 +1570,7 @@ def _generate_plot_skymap(
         stop_ts = observation.place.ts.utc(observation.stop)
         middle_julian_date = (start_ts.tt + stop_ts.tt) / 2
         t = observation.place.ts.tt_jd(middle_julian_date)
-    elif observation.effective_date:
+    elif observation.effective_date is not None:
         # Fallback to effective_date if start/stop are not available
         t = observation.effective_date
     else:
@@ -2068,8 +2069,12 @@ def _generate_plot_skymap(
             ra_hours = ra_rad * 12 / numpy.pi
 
             # Create Skyfield Star objects for the entire grid
-            grid_stars = SkyfieldStar(ra_hours=ra_hours, dec_degrees=dec_deg)
-            alt, az, _ = observer.observe(grid_stars).apparent().altaz()
+            grid_stars = SkyfieldStar(
+                ra_hours=ra_hours.ravel(), dec_degrees=dec_deg.ravel()
+            )
+            alt_flat, az_flat, _ = observer.observe(grid_stars).apparent().altaz()
+            alt = Angle(degrees=alt_flat.degrees.reshape(ra_hours.shape))
+            az = Angle(degrees=az_flat.degrees.reshape(ra_hours.shape))
 
             # Check conditions
             min_alt = float(observation.conditions.min_object_altitude)

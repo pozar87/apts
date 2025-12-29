@@ -2,10 +2,15 @@ import unittest
 from unittest.mock import Mock, patch
 import numpy as np
 
+import pandas as pd
+from dateutil.tz import gettz
+from skyfield.units import Angle
 from apts.plot import _generate_plot_skymap
 from apts.conditions import Conditions
 from apts.constants.plot import CoordinateSystem
+from skyfield.api import Star as SkyfieldStar, load
 from skyfield.timelib import Time
+
 
 class EquatorialOverlayTest(unittest.TestCase):
     @patch('matplotlib.pyplot.subplots')
@@ -19,7 +24,8 @@ class EquatorialOverlayTest(unittest.TestCase):
             'contourf', 'set_rlim', 'set_theta_zero_location',
             'set_theta_direction', 'set_yticks', 'set_yticklabels',
             'set_rlabel_position', 'set_xticklabels', 'grid', 'text',
-            'scatter', 'annotate', 'set_title', 'get_facecolor'
+            'scatter', 'annotate', 'set_title', 'get_facecolor',
+            'set_facecolor', 'fill_between'
         ])
         mock_fig = Mock()
         mock_subplots.return_value = (mock_fig, mock_ax)
@@ -28,10 +34,11 @@ class EquatorialOverlayTest(unittest.TestCase):
 
         # Mock place and time attributes
         mock_ts = Mock()
+        ts = load.timescale()
         # The internal logic needs a valid Time object to do comparisons
-        mock_ts.now.return_value = Time(2451545.0, scale='tt') # J2000.0
+        mock_ts.now.return_value = ts.tt(jd=2451545.0)  # J2000.0
         mock_observation.place = Mock()
-        mock_observation.place.local_timezone = 'UTC'
+        mock_observation.place.local_timezone = gettz('UTC')
         mock_observation.place.lat = 50.0
         mock_observation.place.ts = mock_ts
         mock_observation.start = None
@@ -40,25 +47,23 @@ class EquatorialOverlayTest(unittest.TestCase):
 
 
         # Mock the observer chain to return mock coordinates
-        # The grid created inside the function is 30x120
-        mock_alt = Mock()
-        mock_alt.degrees = np.full((30, 120), 45.0)
-        mock_az = Mock()
-        mock_az.degrees = np.full((30, 120), 90.0)
+        # The grid created inside the function is 30x120, so 3600 elements
+        mock_alt = Angle(degrees=np.full(3600, 45.0))
+        mock_az = Angle(degrees=np.full(3600, 90.0))
 
         # Mocks for the single target object
-        mock_target_alt = Mock(degrees=45.0)
-        mock_target_az = Mock(degrees=90.0)
-        mock_target_ra = Mock(hours=6.0, radians=np.pi/2)
-        mock_target_dec = Mock(degrees=30.0)
+        mock_target_alt = Angle(degrees=45.0)
+        mock_target_az = Angle(degrees=90.0)
+        mock_target_ra = Angle(hours=6.0)
+        mock_target_dec = Angle(degrees=30.0)
 
         def observe_side_effect(target):
             # Returns different coordinates depending on whether we are observing
             # the grid of stars or the single target object.
             mock_apparent = Mock()
-            if hasattr(target, 'ra_hours'): # This is the grid
+            if isinstance(target, SkyfieldStar):  # This is the grid
                 mock_apparent.altaz.return_value = (mock_alt, mock_az, Mock())
-            else: # This is the target
+            else:  # This is the target
                 mock_apparent.altaz.return_value = (mock_target_alt, mock_target_az, Mock())
                 mock_apparent.radec.return_value = (mock_target_ra, mock_target_dec, Mock())
 
@@ -80,10 +85,11 @@ class EquatorialOverlayTest(unittest.TestCase):
 
         # Mock the catalog lookups to return a valid target
         mock_target = Mock()
-        mock_observation.local_messier.objects = Mock(**{'[].empty': True})
-        mock_observation.local_ngc.objects = Mock(**{'[].empty': True})
-        mock_observation.local_stars.objects = Mock(**{'[].empty': True})
+        mock_observation.local_messier.objects = pd.DataFrame(columns=['Messier'])
+        mock_observation.local_ngc.objects = pd.DataFrame(columns=['NGC', 'Name'])
+        mock_observation.local_stars.objects = pd.DataFrame(columns=['Name'])
         mock_observation.local_planets.find_by_name.return_value = mock_target
+        mock_observation.get_visible_planets.return_value = pd.DataFrame(columns=['Name', 'Size'])
 
         # 2. Call the function under test
         _generate_plot_skymap(
