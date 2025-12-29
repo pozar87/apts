@@ -1455,7 +1455,8 @@ def _plot_solar_system_object_on_skymap(
     alt, az, _ = observer.observe(obj).apparent().altaz()
     ra, dec, _ = observer.observe(obj).apparent().radec()
 
-    if alt.degrees <= 0 and coordinate_system == CoordinateSystem.HORIZONTAL:
+    is_below_horizon = numpy.all(numpy.asarray(alt.degrees) <= 0)
+    if is_below_horizon and coordinate_system == CoordinateSystem.HORIZONTAL:
         return
 
     size_deg = _get_object_angular_size_deg(observation, object_name)
@@ -1569,7 +1570,7 @@ def _generate_plot_skymap(
         stop_ts = observation.place.ts.utc(observation.stop)
         middle_julian_date = (start_ts.tt + stop_ts.tt) / 2
         t = observation.place.ts.tt_jd(middle_julian_date)
-    elif observation.effective_date:
+    elif observation.effective_date is not None:
         # Fallback to effective_date if start/stop are not available
         t = observation.effective_date
     else:
@@ -1971,83 +1972,136 @@ def _generate_plot_skymap(
             "#90EE90" if not effective_dark_mode else "#007447",
         )
 
-        r_inner_good = 0
-        r_outer_good = 90 - observation.conditions.min_object_altitude
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            r_inner_good = 0
+            r_outer_good = 90 - observation.conditions.min_object_altitude
 
-        min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
-        max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
-
-        if (r_outer_good > 0) or not (
-            float(observation.conditions.min_object_azimuth) == 0.0
-            and float(observation.conditions.max_object_azimuth) == 360.0
-        ):
-            if min_az_rad > max_az_rad:  # Crosses North
-                theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
-                ax.fill_between(
-                    theta1,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-                theta2 = numpy.linspace(0, max_az_rad, 50)
-                ax.fill_between(
-                    theta2,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-            else:
-                theta = numpy.linspace(min_az_rad, max_az_rad, 100)
-                ax.fill_between(
-                    theta,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-
-        if r_outer_good > 0:
-            ax.plot(
-                numpy.linspace(0, 2 * numpy.pi, 100),
-                [90 - observation.conditions.min_object_altitude] * 100,
-                color=style["GRID_COLOR"],
-                linestyle="--",
-                linewidth=1,
+            min_az_rad = numpy.deg2rad(
+                float(observation.conditions.min_object_azimuth)
             )
-            ax.text(
-                numpy.deg2rad(90),
-                90 - observation.conditions.min_object_altitude,
-                f"{observation.conditions.min_object_altitude}°",
-                ha="center",
-                va="bottom",
-                color=style["TEXT_COLOR"],
-                fontsize=10,
-                bbox=dict(
-                    facecolor=style["AXES_FACE_COLOR"],
-                    edgecolor="none",
-                    boxstyle="round,pad=0.2",
-                ),
+            max_az_rad = numpy.deg2rad(
+                float(observation.conditions.max_object_azimuth)
             )
 
-        if not (
-            float(observation.conditions.min_object_azimuth) == 0.0
-            and float(observation.conditions.max_object_azimuth) == 360.0
-        ):
-            ax.plot(
-                [min_az_rad, min_az_rad],
-                [0, 90],
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
+            if (r_outer_good > 0) or not (
+                float(observation.conditions.min_object_azimuth) == 0.0
+                and float(observation.conditions.max_object_azimuth) == 360.0
+            ):
+                if min_az_rad > max_az_rad:  # Crosses North
+                    theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
+                    ax.fill_between(
+                        theta1,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                    theta2 = numpy.linspace(0, max_az_rad, 50)
+                    ax.fill_between(
+                        theta2,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                else:
+                    theta = numpy.linspace(min_az_rad, max_az_rad, 100)
+                    ax.fill_between(
+                        theta,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+
+            if r_outer_good > 0:
+                ax.plot(
+                    numpy.linspace(0, 2 * numpy.pi, 100),
+                    [90 - observation.conditions.min_object_altitude] * 100,
+                    color=style["GRID_COLOR"],
+                    linestyle="--",
+                    linewidth=1,
+                )
+                ax.text(
+                    numpy.deg2rad(90),
+                    90 - observation.conditions.min_object_altitude,
+                    f"{observation.conditions.min_object_altitude}°",
+                    ha="center",
+                    va="bottom",
+                    color=style["TEXT_COLOR"],
+                    fontsize=10,
+                    bbox=dict(
+                        facecolor=style["AXES_FACE_COLOR"],
+                        edgecolor="none",
+                        boxstyle="round,pad=0.2",
+                    ),
+                )
+
+            if not (
+                float(observation.conditions.min_object_azimuth) == 0.0
+                and float(observation.conditions.max_object_azimuth) == 360.0
+            ):
+                ax.plot(
+                    [min_az_rad, min_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+                ax.plot(
+                    [max_az_rad, max_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+        else:  # Equatorial
+            # Create a grid in polar coordinates (RA, Dec)
+            num_ra = 120  # ~3 degree resolution
+            num_dec = 30  # ~3 degree resolution
+            theta = numpy.linspace(0, 2 * numpy.pi, num_ra)  # RA
+            r = numpy.linspace(0, 90, num_dec)  # Radius (90-Dec)
+            theta_grid, r_grid = numpy.meshgrid(theta, r)
+
+            # Convert polar grid to RA/Dec
+            ra_rad = theta_grid
+            dec_deg = 90 - r_grid
+            ra_hours = ra_rad * 12 / numpy.pi
+
+            # Create Skyfield Star objects for the entire grid
+            grid_stars = SkyfieldStar(
+                ra_hours=ra_hours.ravel(), dec_degrees=dec_deg.ravel()
             )
-            ax.plot(
-                [max_az_rad, max_az_rad],
-                [0, 90],
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
+            alt_flat, az_flat, _ = observer.observe(grid_stars).apparent().altaz()
+            alt = Angle(degrees=alt_flat.degrees.reshape(ra_hours.shape))
+            az = Angle(degrees=az_flat.degrees.reshape(ra_hours.shape))
+
+            # Reshape the results back to the grid shape
+            alt_deg_grid = alt.degrees.reshape(theta_grid.shape)
+            az_deg_grid = az.degrees.reshape(theta_grid.shape)
+
+            # Check conditions
+            min_alt = float(observation.conditions.min_object_altitude)
+            min_az = float(observation.conditions.min_object_azimuth)
+            max_az = float(observation.conditions.max_object_azimuth)
+
+            # Create a mask for "good" conditions
+            alt_mask = alt_deg_grid >= min_alt
+            if min_az <= max_az:
+                az_mask = (az_deg_grid >= min_az) & (az_deg_grid <= max_az)
+            else:  # Azimuth range crosses 0/360
+                az_mask = (az_deg_grid >= min_az) | (az_deg_grid <= max_az)
+            good_mask = alt_mask & az_mask
+
+            # Use contourf to shade the "good" area
+            # We plot where the mask is True (1)
+            ax.contourf(
+                theta_grid,
+                r_grid,
+                good_mask.astype(int),
+                levels=[0.5, 1.5],
+                colors=[good_condition_color],
+                alpha=0.1,
             )
 
         if plot_stars:
