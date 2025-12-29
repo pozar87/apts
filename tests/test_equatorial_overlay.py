@@ -4,6 +4,7 @@ import numpy as np
 
 from apts.plot import _generate_plot_skymap
 from apts.conditions import Conditions
+import pytz
 from apts.constants.plot import CoordinateSystem
 from skyfield.timelib import Time
 from apts.cache import get_timescale
@@ -32,7 +33,7 @@ class EquatorialOverlayTest(unittest.TestCase):
 
         # Mock place and time attributes
         mock_observation.place = Mock()
-        mock_observation.place.local_timezone = 'UTC'
+        mock_observation.place.local_timezone = pytz.utc
         mock_observation.place.lat = 50.0
         mock_observation.place.ts = ts
         mock_observation.start = None
