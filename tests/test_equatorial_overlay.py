@@ -6,6 +6,7 @@ from apts.plot import _generate_plot_skymap
 from apts.conditions import Conditions
 from apts.constants.plot import CoordinateSystem
 from skyfield.timelib import Time
+from apts.cache import get_timescale
 
 class EquatorialOverlayTest(unittest.TestCase):
     @patch('matplotlib.pyplot.subplots')
@@ -25,20 +26,18 @@ class EquatorialOverlayTest(unittest.TestCase):
         mock_subplots.return_value = (mock_fig, mock_ax)
 
         mock_observation = Mock()
+        ts = get_timescale()
+        mock_time = ts.tt(jd=2451545.0) # J2000.0
+
 
         # Mock place and time attributes
-        mock_ts = Mock()
-        # The internal logic needs a valid Time object to do comparisons
-        mock_ts.tt = 2451545.0  # J2000.0
-        mock_time = Time(mock_ts)
-        mock_ts.now.return_value = mock_time
         mock_observation.place = Mock()
         mock_observation.place.local_timezone = 'UTC'
         mock_observation.place.lat = 50.0
-        mock_observation.place.ts = mock_ts
+        mock_observation.place.ts = ts
         mock_observation.start = None
         mock_observation.stop = None
-        mock_observation.effective_date = mock_ts.now.return_value
+        mock_observation.effective_date = mock_time
 
 
         # Mock the observer chain to return mock coordinates
