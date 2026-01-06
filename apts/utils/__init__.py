@@ -4,6 +4,7 @@ from aenum import Enum, auto
 
 from matplotlib import pyplot
 
+from apts.config import get_plot_format
 from apts.constants.graphconstants import get_plot_style
 from apts.units import ureg as ureg
 from .planetary import MINOR_PLANET_NAMES
@@ -75,7 +76,7 @@ class Utils:
     @staticmethod
     def plot_to_bytes(plot):
         plot_bytes = io.BytesIO()
-        plot.savefig(plot_bytes, format="png")
+        plot.savefig(plot_bytes, format=get_plot_format())
         # Prevent showing plot in ipython
         pyplot.close(plot)
         plot_bytes.seek(0)

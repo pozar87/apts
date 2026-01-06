@@ -142,10 +142,8 @@ class TestPlace:
     def test_sunset_sunrise_without_target_date_legacy(self, mid_latitude_place):
         p = mid_latitude_place  # Uses DEFAULT_INIT_DATE_UTC (2023-01-01 12:00 UTC)
 
-        # For Golden, CO on 2023-01-01 (MST, UTC-7)
-        # init_date is Jan 1, 2023, 12:00 PM UTC, which is 5:00 AM MST.
-        # Sunset should be around 4:45 PM MST on Jan 1.
-        # Sunrise should be around 7:20 AM MST on Jan 1.
+        # init_date is Jan 1, 2023, 12:00 PM UTC, which is 5:00 AM MST in Golden, CO.
+        # The logic should find the PREVIOUS sunset (Dec 31, 2022) and NEXT sunrise (Jan 1, 2023).
 
         sunset_dt = p.sunset_time()  # No target_date
         sunrise_dt = p.sunrise_time()  # No target_date
@@ -153,16 +151,23 @@ class TestPlace:
         assert sunset_dt is not None
         assert isinstance(sunset_dt, datetime)
         assert sunset_dt.tzinfo == p.local_timezone
-        # Check if sunset is on Jan 1, 2023 in local time
-        assert sunset_dt.year == 2023 and sunset_dt.month == 1 and sunset_dt.day == 1
+
+        # Check that the sunset is the PREVIOUS one (on Dec 31, 2022)
+        assert sunset_dt.year == 2022 and sunset_dt.month == 12 and sunset_dt.day == 31
         assert 16 <= sunset_dt.hour <= 17  # Around 4-5 PM for sunset in winter
 
         assert sunrise_dt is not None
         assert isinstance(sunrise_dt, datetime)
         assert sunrise_dt.tzinfo == p.local_timezone
-        # Check if sunrise is on Jan 1, 2023 in local time
+
+        # Check that the sunrise is the NEXT one (on Jan 1, 2023)
         assert sunrise_dt.year == 2023 and sunrise_dt.month == 1 and sunrise_dt.day == 1
         assert 7 <= sunrise_dt.hour <= 8  # Around 7-8 AM for sunrise in winter
+
+        # Also assert the chronological order relative to the place's date
+        place_date_local = p.date.utc_datetime().astimezone(p.local_timezone)
+        assert sunset_dt < place_date_local
+        assert sunrise_dt > place_date_local
 
     def test_sun_always_up_polar(self, north_pole_place):
         p = north_pole_place
@@ -273,6 +278,56 @@ class TestPlace:
         assert "Azimuth" in moon_df.columns
         assert "Local_time" in moon_df.columns
 
+    def test_moon_path_accuracy(self, mid_latitude_place):
+        """
+        Test the moon_path calculation against a direct skyfield calculation
+        for a specific point in time.
+        """
+        p = mid_latitude_place
+
+        # 1. Define the specific time for verification
+        # The moon_path method calculates for the whole day of p.date
+        # p.date is 2023-01-01 12:00:00 UTC. The path is from 00:00 to 24:00.
+        # Let's check for a specific time on that day, e.g., 18:00 UTC.
+        target_time_utc = datetime(2023, 1, 1, 18, 0, 0, tzinfo=timezone.utc)
+        target_skyfield_time = p.ts.utc(target_time_utc)
+
+        # 2. Calculate ground truth with skyfield directly
+        observer = p.eph["earth"] + p.location
+        moon = p.eph["moon"]
+        apparent = observer.at(target_skyfield_time).observe(moon).apparent()
+        alt, az, _ = apparent.altaz()
+
+        expected_altitude = alt.degrees
+        expected_azimuth = az.degrees
+
+        # 3. Get the calculated path from the method under test
+        moon_df = p.moon_path()
+
+        # 4. Find the closest calculated point to our target time.
+        # The 'Time' column in the DataFrame is datetime.time, so we need to convert it
+        # back to a full datetime object for comparison.
+        df_times = [
+            dt_module.datetime.combine(p.date.utc_datetime().date(), t, tzinfo=timezone.utc)
+            if t is not pd.NaT else pd.NaT
+            for t in moon_df["Time"]
+        ]
+        moon_df["datetime"] = pd.to_datetime(df_times, utc=True)
+
+        # Find the index of the row with the minimum time difference
+        closest_row_index = (moon_df["datetime"] - target_time_utc).abs().idxmin()
+        closest_row = moon_df.loc[closest_row_index]
+
+        # 5. Assert that the values are close
+        actual_altitude = closest_row["Moon altitude"]
+        actual_azimuth = closest_row["Azimuth"]
+
+        # Use pytest.approx for floating point comparison with a tolerance.
+        # A tolerance of 0.5 degrees should be safe enough to account for
+        # interpolation differences between the sampled points in the path.
+        assert actual_altitude == pytest.approx(expected_altitude, abs=0.5)
+        assert actual_azimuth == pytest.approx(expected_azimuth, abs=0.5)
+
 
 class TestPlacePlotting(unittest.TestCase):
     def setUp(self):
@@ -306,9 +361,13 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
+    @patch("apts.place.gettext_")
+    @patch("apts.utils.plot.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
-    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place):
+    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext):
+        mock_gettext.side_effect = lambda s: s
+        mock_place_gettext.side_effect = lambda s: s
         scenarios = [
             {
                 "override": True,
@@ -338,6 +397,7 @@ class TestPlacePlotting(unittest.TestCase):
 
         for i, scenario_data in enumerate(scenarios):
             with self.subTest(msg=scenario_data["desc"], i=i):
+                mock_df_plot.reset_mock()
                 mock_get_dark_mode_place.return_value = scenario_data[
                     "global_dark_mode"
                 ]
@@ -375,9 +435,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_ax.set_ylabel.assert_called_with(
                     "Altitude [°]", color=expected_style["TEXT_COLOR"]
                 )
-                mock_ax.set_title.assert_called_with(
-                    "Moon Path", color=expected_style["TEXT_COLOR"]
-                )
+                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Moon Path"))
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
                 )
@@ -451,6 +509,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_fig_patch.reset_mock()
                 mock_line.reset_mock()
                 mock_get_dark_mode_place.reset_mock()  # Reset this as it's called in each loop
+                mock_df_plot.call_count = 0
 
 
 @patch("apts.place.get_dark_mode")
@@ -512,3 +571,41 @@ class TestDarkMode(unittest.TestCase):
         self.place.plot_sun_path()
         mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
         mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
+
+
+class TestPlaceSouthernHemisphere(unittest.TestCase):
+    def setUp(self):
+        # Sydney, Australia
+        self.place = Place(lat=-33.8688, lon=151.2093)
+
+    @patch("apts.place.get_dark_mode", return_value=False)
+    def test_plot_moon_path_southern_hemisphere_non_mocked(self, mock_get_dark_mode):
+        """
+        Non-mocked test to verify the southern hemisphere moon path plot.
+        This test generates a real plot and checks the x-axis limits.
+        """
+        ax = self.place.plot_moon_path()
+        self.assertIsNotNone(ax)
+
+        # Check that the x-axis is inverted for southern hemisphere
+        xlim = ax.get_xlim()
+        self.assertGreater(xlim[0], xlim[1])  # e.g., (315, 45)
+
+        # Check that the plot has lines
+        self.assertTrue(len(ax.get_lines()) > 0)
+
+
+class TestPlaceTranslation(unittest.TestCase):
+    def setUp(self):
+        self.place = setup_place()
+
+    def test_plot_moon_path_translation(self):
+        """
+        Non-mocked test to verify the plot is translated.
+        """
+        import apts
+        apts.set_language('pl')
+        ax = self.place.plot_moon_path()
+        self.assertEqual(ax.get_xlabel(), "Azymut [°]")
+        self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
+        self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))

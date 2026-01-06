@@ -1,8 +1,9 @@
 import unittest
-from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone
-from apts.events import AstronomicalEvents
+from unittest.mock import MagicMock, patch
+
 from apts.constants.event_types import EventType
+from apts.events import AstronomicalEvents
 from apts.place import Place
 
 utc = timezone.utc
@@ -44,9 +45,13 @@ class SpaceEventsTest(unittest.TestCase):
 
         events_df = self.events.get_events()
         self.assertEqual(len(events_df), 1)
-        self.assertEqual(events_df.iloc[0]["event"], "Falcon 9 Block 5 | Starlink Group 5-2")
-        self.assertEqual(events_df.iloc[0]["type"], "Space Launch")
-        self.assertEqual(events_df.iloc[0]["date"], datetime(2023, 1, 26, 14, 22, tzinfo=utc))
+        self.assertEqual(
+            events_df.iloc[0]["event"], "Falcon 9 Block 5 | Starlink Group 5-2"
+        )
+        self.assertEqual(events_df.iloc[0]["type"], "Start rakiety")
+        self.assertEqual(
+            events_df.iloc[0]["date"], datetime(2023, 1, 26, 14, 22, tzinfo=utc)
+        )
 
     @patch("apts.events.requests.get")
     def test_calculate_space_events(self, mock_get):
@@ -73,8 +78,10 @@ class SpaceEventsTest(unittest.TestCase):
         events_df = self.events.get_events()
         self.assertEqual(len(events_df), 1)
         self.assertEqual(events_df.iloc[0]["event"], "ISS Resupply Mission (CRS-27)")
-        self.assertEqual(events_df.iloc[0]["type"], "Space Event")
-        self.assertEqual(events_df.iloc[0]["date"], datetime(2023, 1, 15, 10, 0, tzinfo=utc))
+        self.assertEqual(events_df.iloc[0]["type"], "Wydarzenie kosmiczne")
+        self.assertEqual(
+            events_df.iloc[0]["date"], datetime(2023, 1, 15, 10, 0, tzinfo=utc)
+        )
 
 
 if __name__ == "__main__":

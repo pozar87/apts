@@ -1,4 +1,4 @@
-# Polish translations for apts.
+# Portuguese translations for apts.
 # Copyright (C) 2025 Lukasz Pozarlik
 # This file is distributed under the same license as the apts project.
 # Jules, 2025.
@@ -8,12 +8,11 @@ msgstr ""
 "Project-Id-Version: apts 0.8.5\n"
 "Report-Msgid-Bugs-To: lpozarlik@gmail.com\n"
 "POT-Creation-Date: 2025-11-12 08:31+0100\n"
-"PO-Revision-Date: 2025-11-30 02:22+0000\n"
+"PO-Revision-Date: 2025-11-30 02:21+0000\n"
 "Last-Translator: Jules\n"
-"Language: pl\n"
-"Language-Team: pl <LL@li.org>\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && "
-"(n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: pt\n"
+"Language-Team: pt <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,207 +20,207 @@ msgstr ""
 
 #: apts/constants/constellations.py:4
 msgid "Andromeda"
-msgstr "Andromeda"
+msgstr "Andrômeda"
 
 #: apts/constants/constellations.py:5
 msgid "Antlia"
-msgstr "Pompa"
+msgstr "Máquina Pneumática"
 
 #: apts/constants/constellations.py:6
 msgid "Apus"
-msgstr "Ptak Rajski"
+msgstr "Ave do Paraíso"
 
 #: apts/constants/constellations.py:7
 msgid "Aquarius"
-msgstr "Wodnik"
+msgstr "Aquário"
 
 #: apts/constants/constellations.py:8
 msgid "Aquila"
-msgstr "Orzeł"
+msgstr "Águia"
 
 #: apts/constants/constellations.py:9
 msgid "Ara"
-msgstr "Ołtarz"
+msgstr "Altar"
 
 #: apts/constants/constellations.py:10
 msgid "Aries"
-msgstr "Baran"
+msgstr "Áries"
 
 #: apts/constants/constellations.py:11
 msgid "Auriga"
-msgstr "Woźnica"
+msgstr "Cocheiro"
 
 #: apts/constants/constellations.py:12
 msgid "Boötes"
-msgstr "Wolarz"
+msgstr "Boieiro"
 
 #: apts/constants/constellations.py:13
 msgid "Caelum"
-msgstr "Rylec"
+msgstr "Cinzel"
 
 #: apts/constants/constellations.py:14
 msgid "Camelopardalis"
-msgstr "Żyrafa"
+msgstr "Girafa"
 
 #: apts/constants/constellations.py:15
 msgid "Cancer"
-msgstr "Rak"
+msgstr "Câncer"
 
 #: apts/constants/constellations.py:16
 msgid "Canes Venatici"
-msgstr "Psy Gończe"
+msgstr "Cães de Caça"
 
 #: apts/constants/constellations.py:17
 msgid "Canis Major"
-msgstr "Wielki Pies"
+msgstr "Cão Maior"
 
 #: apts/constants/constellations.py:18
 msgid "Canis Minor"
-msgstr "Mały Pies"
+msgstr "Cão Menor"
 
 #: apts/constants/constellations.py:19
 msgid "Capricornus"
-msgstr "Koziorożec"
+msgstr "Capricórnio"
 
 #: apts/constants/constellations.py:20
 msgid "Carina"
-msgstr "Kil"
+msgstr "Quilha"
 
 #: apts/constants/constellations.py:21
 msgid "Cassiopeia"
-msgstr "Kasjopea"
+msgstr "Cassiopeia"
 
 #: apts/constants/constellations.py:22
 msgid "Centaurus"
-msgstr "Centaur"
+msgstr "Centauro"
 
 #: apts/constants/constellations.py:23
 msgid "Cepheus"
-msgstr "Cefeusz"
+msgstr "Cefeu"
 
 #: apts/constants/constellations.py:24
 msgid "Cetus"
-msgstr "Wieloryb"
+msgstr "Baleia"
 
 #: apts/constants/constellations.py:25
 msgid "Chamaeleon"
-msgstr "Kameleon"
+msgstr "Camaleão"
 
 #: apts/constants/constellations.py:26
 msgid "Circinus"
-msgstr "Cyrkiel"
+msgstr "Compasso"
 
 #: apts/constants/constellations.py:27
 msgid "Columba"
-msgstr "Gołąb"
+msgstr "Pomba"
 
 #: apts/constants/constellations.py:28
 msgid "Coma Berenices"
-msgstr "Warkocz Bereniki"
+msgstr "Cabeleira de Berenice"
 
 #: apts/constants/constellations.py:29
 msgid "Corona Australis"
-msgstr "Korona Południowa"
+msgstr "Coroa Austral"
 
 #: apts/constants/constellations.py:30
 msgid "Corona Borealis"
-msgstr "Korona Północna"
+msgstr "Coroa Boreal"
 
 #: apts/constants/constellations.py:31
 msgid "Corvus"
-msgstr "Kruk"
+msgstr "Corvo"
 
 #: apts/constants/constellations.py:32
 msgid "Crater"
-msgstr "Puchar"
+msgstr "Taça"
 
 #: apts/constants/constellations.py:33
 msgid "Crux"
-msgstr "Krzyż Południa"
+msgstr "Cruzeiro do Sul"
 
 #: apts/constants/constellations.py:34
 msgid "Cygnus"
-msgstr "Łabędź"
+msgstr "Cisne"
 
 #: apts/constants/constellations.py:35
 msgid "Delphinus"
-msgstr "Delfin"
+msgstr "Golfinho"
 
 #: apts/constants/constellations.py:36
 msgid "Dorado"
-msgstr "Złota Ryba"
+msgstr "Dourado"
 
 #: apts/constants/constellations.py:37
 msgid "Draco"
-msgstr "Smok"
+msgstr "Dragão"
 
 #: apts/constants/constellations.py:38
 msgid "Equuleus"
-msgstr "Źrebię"
+msgstr "Cavalo Menor"
 
 #: apts/constants/constellations.py:39
 msgid "Eridanus"
-msgstr "Erydan"
+msgstr "Erídano"
 
 #: apts/constants/constellations.py:40
 msgid "Fornax"
-msgstr "Piec"
+msgstr "Fornalha"
 
 #: apts/constants/constellations.py:41
 msgid "Gemini"
-msgstr "Bliźnięta"
+msgstr "Gêmeos"
 
 #: apts/constants/constellations.py:42
 msgid "Grus"
-msgstr "Żuraw"
+msgstr "Grou"
 
 #: apts/constants/constellations.py:43
 msgid "Hercules"
-msgstr "Herkules"
+msgstr "Hércules"
 
 #: apts/constants/constellations.py:44
 msgid "Horologium"
-msgstr "Zegar"
+msgstr "Relógio"
 
 #: apts/constants/constellations.py:45
 msgid "Hydra"
-msgstr "Hydra"
+msgstr "Hidra"
 
 #: apts/constants/constellations.py:46
 msgid "Hydrus"
-msgstr "Wąż Morski"
+msgstr "Hidra Macho"
 
 #: apts/constants/constellations.py:47
 msgid "Indus"
-msgstr "Indianin"
+msgstr "Índio"
 
 #: apts/constants/constellations.py:48
 msgid "Lacerta"
-msgstr "Jaszczurka"
+msgstr "Lagarto"
 
 #: apts/constants/constellations.py:49
 msgid "Leo"
-msgstr "Lew"
+msgstr "Leão"
 
 #: apts/constants/constellations.py:50
 msgid "Leo Minor"
-msgstr "Mały Lew"
+msgstr "Leão Menor"
 
 #: apts/constants/constellations.py:51
 msgid "Lepus"
-msgstr "Zając"
+msgstr "Lebre"
 
 #: apts/constants/constellations.py:52
 msgid "Libra"
-msgstr "Waga"
+msgstr "Balança"
 
 #: apts/constants/constellations.py:53
 msgid "Lupus"
-msgstr "Wilk"
+msgstr "Lobo"
 
 #: apts/constants/constellations.py:54
 msgid "Lynx"
-msgstr "Ryś"
+msgstr "Lince"
 
 #: apts/constants/constellations.py:55
 msgid "Lyra"
@@ -229,507 +228,507 @@ msgstr "Lira"
 
 #: apts/constants/constellations.py:56
 msgid "Mensa"
-msgstr "Góra Stołowa"
+msgstr "Mesa"
 
 #: apts/constants/constellations.py:57
 msgid "Microscopium"
-msgstr "Mikroskop"
+msgstr "Microscópio"
 
 #: apts/constants/constellations.py:58
 msgid "Monoceros"
-msgstr "Jednorożec"
+msgstr "Unicórnio"
 
 #: apts/constants/constellations.py:59
 msgid "Musca"
-msgstr "Mucha"
+msgstr "Mosca"
 
 #: apts/constants/constellations.py:60
 msgid "Norma"
-msgstr "Węgielnica"
+msgstr "Esquadro"
 
 #: apts/constants/constellations.py:61
 msgid "Octans"
-msgstr "Oktant"
+msgstr "Oitante"
 
 #: apts/constants/constellations.py:62
 msgid "Ophiuchus"
-msgstr "Wężownik"
+msgstr "Ofiúco"
 
 #: apts/constants/constellations.py:63
 msgid "Orion"
-msgstr "Orion"
+msgstr "Órion"
 
 #: apts/constants/constellations.py:64
 msgid "Pavo"
-msgstr "Paw"
+msgstr "Pavão"
 
 #: apts/constants/constellations.py:65
 msgid "Pegasus"
-msgstr "Pegaz"
+msgstr "Pégaso"
 
 #: apts/constants/constellations.py:66
 msgid "Perseus"
-msgstr "Perseusz"
+msgstr "Perseu"
 
 #: apts/constants/constellations.py:67
 msgid "Phoenix"
-msgstr "Feniks"
+msgstr "Fênix"
 
 #: apts/constants/constellations.py:68
 msgid "Pictor"
-msgstr "Malarz"
+msgstr "Pintor"
 
 #: apts/constants/constellations.py:69
 msgid "Pisces"
-msgstr "Ryby"
+msgstr "Peixes"
 
 #: apts/constants/constellations.py:70
 msgid "Piscis Austrinus"
-msgstr "Ryba Południowa"
+msgstr "Peixe Austral"
 
 #: apts/constants/constellations.py:71
 msgid "Puppis"
-msgstr "Rufa"
+msgstr "Popa"
 
 #: apts/constants/constellations.py:72
 msgid "Pyxis"
-msgstr "Kompas"
+msgstr "Bússola"
 
 #: apts/constants/constellations.py:73
 msgid "Reticulum"
-msgstr "Siatka"
+msgstr "Retículo"
 
 #: apts/constants/constellations.py:74
 msgid "Sagitta"
-msgstr "Strzała"
+msgstr "Flecha"
 
 #: apts/constants/constellations.py:75
 msgid "Sagittarius"
-msgstr "Strzelec"
+msgstr "Sagitário"
 
 #: apts/constants/constellations.py:76
 msgid "Scorpius"
-msgstr "Skorpion"
+msgstr "Escorpião"
 
 #: apts/constants/constellations.py:77
 msgid "Sculptor"
-msgstr "Rzeźbiarz"
+msgstr "Escultor"
 
 #: apts/constants/constellations.py:78
 msgid "Scutum"
-msgstr "Tarcza"
+msgstr "Escudo"
 
 #: apts/constants/constellations.py:79
 msgid "Serpens"
-msgstr "Wąż"
+msgstr "Serpente"
 
 msgid "Ophiucus"
-msgstr "Wężownik"
+msgstr "Ofiúco"
 
 #: apts/constants/constellations.py:80
 msgid "Sextans"
-msgstr "Sekstant"
+msgstr "Sextante"
 
 #: apts/constants/constellations.py:81
 msgid "Taurus"
-msgstr "Byk"
+msgstr "Touro"
 
 #: apts/constants/constellations.py:82
 msgid "Telescopium"
-msgstr "Teleskop"
+msgstr "Telescópio"
 
 #: apts/constants/constellations.py:83
 msgid "Triangulum"
-msgstr "Trójkąt"
+msgstr "Triângulo"
 
 #: apts/constants/constellations.py:84
 msgid "Triangulum Australe"
-msgstr "Trójkąt Południowy"
+msgstr "Triângulo Austral"
 
 #: apts/constants/constellations.py:85
 msgid "Tucana"
-msgstr "Tukan"
+msgstr "Tucano"
 
 #: apts/constants/constellations.py:86
 msgid "Ursa Major"
-msgstr "Wielka Niedźwiedzica"
+msgstr "Ursa Maior"
 
 #: apts/constants/constellations.py:87
 msgid "Ursa Minor"
-msgstr "Mała Niedźwiedzica"
+msgstr "Ursa Menor"
 
 #: apts/constants/constellations.py:88
 msgid "Vela"
-msgstr "Żagiel"
+msgstr "Vela"
 
 #: apts/constants/constellations.py:89
 msgid "Virgo"
-msgstr "Panna"
+msgstr "Virgem"
 
 #: apts/constants/constellations.py:90
 msgid "Volans"
-msgstr "Ryba Latająca"
+msgstr "Peixe Voador"
 
 #: apts/constants/constellations.py:91
 msgid "Vulpecula"
-msgstr "Lisek"
+msgstr "Raposa"
 
 #: apts/constants/event_types.py:4
 msgid "Space Launch"
-msgstr "Start rakiety"
+msgstr "Lançamento Espacial"
 
 #: apts/constants/event_types.py:5
 msgid "Space Event"
-msgstr "Wydarzenie kosmiczne"
+msgstr "Evento Espacial"
 
 #: apts/constants/event_types.py:6
 msgid "Solar Eclipse"
-msgstr "Zaćmienie Słońca"
+msgstr "Eclipse Solar"
 
 #: apts/constants/event_types.py:7
 msgid "Lunar Eclipse"
-msgstr "Zaćmienie Księżyca"
+msgstr "Eclipse Lunar"
 
 #: apts/observations.py:620
 msgid "Cloud cover %(cloud_cover)s%% exceeds limit"
-msgstr "Zachmurzenie %(cloud_cover)s%% przekracza limit"
+msgstr "Cobertura de nuvens %(cloud_cover)s%% excede o limite"
 
 #: apts/observations.py:628
 msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
-msgstr "Prawdopodobieństwo opadów %(precip_prob)s%% przekracza limit"
+msgstr "Probabilidade de precipitação %(precip_prob)s%% excede o limite"
 
 #: apts/observations.py:636
 msgid "Wind speed %(wind_speed)s km/h exceeds limit"
-msgstr "Prędkość wiatru %(wind_speed)s km/h przekracza limit"
+msgstr "Velocidade do vento %(wind_speed)s km/h excede o limite"
 
 #: apts/observations.py:645
 msgid "Temperature {temp}°C out of range"
-msgstr "Temperatura {temp}°C poza zakresem"
+msgstr "Temperatura {temp}°C fora do intervalo"
 
 #: apts/constants/event_types.py:8
 msgid "Moon Phase"
-msgstr "Faza Księżyca"
+msgstr "Fase da Lua"
 
 #: apts/constants/event_types.py:8
 msgid "Moon Path"
-msgstr "Ścieżka Księżyca"
+msgstr "Caminho da Lua"
 
 #: apts/observations.py:653
 msgid "Visibility %(vis)s km below limit"
-msgstr "Widoczność %(vis)s km poniżej limitu"
+msgstr "Visibilidade %(vis)s km abaixo do limite"
 
 #: apts/constants/event_types.py:9
 msgid "Moon"
-msgstr "Księżyc"
+msgstr "Lua"
 
 #: apts/observations.py:662
 msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
-msgstr "Iluminacja Księżyca %(illum)s%% przekracza limit, gdy Księżyc jest na niebie"
+msgstr "Iluminação da lua %(illum)s%% excede o limite enquanto a lua está alta"
 
 msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
-msgstr "Mgła %(fog)s%% przekracza limit %(max_fog)s%%"
+msgstr "Nebulosa %(fog)s%% excede o limite de %(max_fog)s%%"
 
 #: apts/constants/event_types.py:10
 msgid "Conjunction"
-msgstr "Koniunkcja"
+msgstr "Conjunção"
 
 #: apts/place.py:275
 msgid "Sun Path"
-msgstr "Ścieżka Słońca"
+msgstr "Caminho do Sol"
 
 #: apts/constants/event_types.py:11
 msgid "Opposition"
-msgstr "Opozycja"
+msgstr "Oposição"
 
 #: apts/constants/event_types.py:12
 msgid "Quadrantids"
-msgstr "Kwadrantydy"
+msgstr "Quadrantídeos"
 
 #: apts/constants/event_types.py:13
 msgid "Lyrids"
-msgstr "Lirydy"
+msgstr "Lirídeos"
 
 #: apts/constants/event_types.py:14
 msgid "Eta Aquarids"
-msgstr "Eta Akwarydy"
+msgstr "Eta Aquarídeos"
 
 #: apts/constants/event_types.py:15
 msgid "Delta Aquarids"
-msgstr "Delta Akwarydy"
+msgstr "Delta Aquarídeos"
 
 #: apts/constants/event_types.py:16
 msgid "Perseids"
-msgstr "Perseidy"
+msgstr "Perseidas"
 
 #: apts/constants/event_types.py:17
 msgid "Orionids"
-msgstr "Orionidy"
+msgstr "Orionídeos"
 
 #: apts/constants/event_types.py:18
 msgid "Leonids"
-msgstr "Leonidy"
+msgstr "Leonídeos"
 
 #: apts/constants/event_types.py:19
 msgid "Geminids"
-msgstr "Geminidy"
+msgstr "Geminídeos"
 
 #: apts/constants/event_types.py:20
 msgid "Ursids"
-msgstr "Ursydy"
+msgstr "Ursídeos"
 
 #: apts/constants/event_types.py:21
 msgid "Meteor Shower"
-msgstr "Deszcz meteorów"
+msgstr "Chuva de Meteoros"
 
 #: apts/constants/event_types.py:22
 msgid "Start"
-msgstr "Początek"
+msgstr "Início"
 
 #: apts/constants/event_types.py:23
 msgid "Peak"
-msgstr "Szczyt"
+msgstr "Pico"
 
 #: apts/constants/event_types.py:24
 msgid "End"
-msgstr "Koniec"
+msgstr "Fim"
 
 #: apts/constants/event_types.py:25
 msgid "Highest altitude"
-msgstr "Najwyższa wysokość"
+msgstr "Altitude máxima"
 
 #: apts/constants/event_types.py:26
 msgid "Planet Altitude"
-msgstr "Wysokość planety"
+msgstr "Altitude do Planeta"
 
 #: apts/constants/event_types.py:27
 msgid "Lunar Occultation"
-msgstr "Okultacja księżycowa"
+msgstr "Ocultação Lunar"
 
 #: apts/constants/event_types.py:28
 msgid "Aphelion/Perihelion"
-msgstr "Aphelium/Peryhelium"
+msgstr "Afélio/Periélio"
 
 #: apts/constants/event_types.py:29
 msgid "Moon Apogee/Perigee"
-msgstr "Apogeum/Perygeum Księżyca"
+msgstr "Apogeu/Perigeu Lunar"
 
 #: apts/constants/event_types.py:30
 msgid "Inferior Conjunction"
-msgstr "Koniunkcja dolna"
+msgstr "Conjunção Inferior"
 
 #: apts/constants/event_types.py:31
 msgid "Mercury"
-msgstr "Merkury"
+msgstr "Mercúrio"
 
 #: apts/constants/event_types.py:32
 msgid "Moon-Messier Conjunction"
-msgstr "Koniunkcja Księżyca z obiektem Messiera"
+msgstr "Conjunção Lua-Messier"
 
 #: apts/constants/event_types.py:33
 msgid "Comet"
-msgstr "Kometa"
+msgstr "Cometa"
 
 #: apts/plot.py:165
 msgid "You can plot images only in Ipython notebook!"
-msgstr "Możesz rysować obrazy tylko w notatniku Ipython!"
+msgstr "Você só pode plotar imagens em um notebook Ipython!"
 
 #: apts/plot.py:294
 msgid "Altitude [°]"
-msgstr "Wysokość [°]"
+msgstr "Altitude [°]"
 
 #: apts/plot.py:297
 msgid "Messier Objects Altitude"
-msgstr "Wysokość obiektów Messiera"
+msgstr "Altitude dos Objetos Messier"
 
 #: apts/place.py:287 apts/place.py:387
 msgid "Azimuth [°]"
-msgstr "Azymut [°]"
+msgstr "Azimute [°]"
 
 #: apts/plot.py:302
 msgid "Generated empty Messier plot as no objects are visible."
-msgstr "Wygenerowano pusty wykres Messiera, ponieważ żadne obiekty nie są widoczne."
+msgstr "Gráfico de Messier vazio gerado, pois nenhum objeto está visível."
 
 #: apts/plot.py:315
 msgid "Galaxy"
-msgstr "Galaktyka"
+msgstr "Galáxia"
 
 #: apts/plot.py:317
 msgid "Globular Cluster"
-msgstr "Gromada kulista"
+msgstr "Aglomerado Globular"
 
 #: apts/plot.py:319
 msgid "Open Cluster"
-msgstr "Gromada otwarta"
+msgstr "Aglomerado Aberto"
 
 #: apts/plot.py:321
 msgid "Nebula"
-msgstr "Mgławica"
+msgstr "Nebulosa"
 
 #: apts/plot.py:323
 msgid "Planetary Nebula"
-msgstr "Mgławica planetarna"
+msgstr "Nebulosa Planetária"
 
 #: apts/plot.py:325
 msgid "Supernova Remnant"
-msgstr "Pozostałość po supernowej"
+msgstr "Remanescente de Supernova"
 
 #: apts/plot.py:327
 msgid "Other"
-msgstr "Inne"
+msgstr "Outro"
 
 msgid "Diffuse Nebula"
-msgstr "Mgławica dyfuzyjna"
+msgstr "Nebulosa Difusa"
 
 msgid "Star Cloud"
-msgstr "Chmura gwiazd"
+msgstr "Nuvem Estelar"
 
 msgid "Spiral Galaxy"
-msgstr "Galaktyka spiralna"
+msgstr "Galáxia Espiral"
 
 msgid "Elliptical Galaxy"
-msgstr "Galaktyka eliptyczna"
+msgstr "Galáxia Elíptica"
 
 msgid "Double Star"
-msgstr "Gwiazda podwójna"
+msgstr "Estrela Dupla"
 
 msgid "Group/Asterism"
-msgstr "Grupa/Asteryzm"
+msgstr "Grupo/Asterismo"
 
 msgid "Irregular Galaxy"
-msgstr "Galaktyka nieregularna"
+msgstr "Galáxia Irregular"
 
 msgid "Lenticular (S0) Galaxy"
-msgstr "Galaktyka soczewkowata (S0)"
+msgstr "Galáxia Lenticular (S0)"
 
 #: apts/plot.py:335
 msgid "Object Types"
-msgstr "Typy obiektów"
+msgstr "Tipos de Objeto"
 
 #: apts/plot.py:343
 msgid "Successfully generated Messier plot."
-msgstr "Pomyślnie wygenerowano wykres Messiera."
+msgstr "Gráfico de Messier gerado com sucesso."
 
 #: apts/plot.py:347
 msgid ""
 "Error generating Messier plot.\n"
 "See logs for details."
 msgstr ""
-"Błąd podczas generowania wykresu Messiera.\n"
-"Zobacz szczegóły w logach."
+"Erro ao gerar o gráfico de Messier.\n"
+"Consulte os logs para obter detalhes."
 
 #: apts/plot.py:348
 msgid "Messier Plot Error"
-msgstr "Błąd wykresu Messiera"
+msgstr "Erro no Gráfico de Messier"
 
 #: apts/plot.py:365
 msgid "Solar Objects Altitude"
-msgstr "Wysokość obiektów Układu Słonecznego"
+msgstr "Altitude dos Objetos Solares"
 
 #: apts/plot.py:397
 msgid "Weather data not available for plotting."
-msgstr "Dane pogodowe niedostępne do wykreślenia."
+msgstr "Dados meteorológicos não disponíveis para plotagem."
 
 #: apts/plot.py:398
 msgid "Weather Plot Information"
-msgstr "Informacje o wykresie pogodowym"
+msgstr "Informações do Gráfico Meteorológico"
 
 #: apts/plot.py:402
 msgid ""
 "Error generating Weather plot details.\n"
 "See logs for specifics."
 msgstr ""
-"Błąd podczas generowania szczegółów wykresu pogodowego.\n"
-"Zobacz szczegóły w logach."
+"Erro ao gerar os detalhes do gráfico meteorológico.\n"
+"Consulte os logs para obter detalhes específicos."
 
 #: apts/plot.py:403
 msgid "Weather Plot Error"
-msgstr "Błąd wykresu pogodowego"
+msgstr "Erro no Gráfico Meteorológico"
 
 #: apts/plot.py:539
 msgid "Object '{target_name}' not found."
-msgstr "Nie znaleziono obiektu „{target_name}”."
+msgstr "Objeto '{target_name}' não encontrado."
 
 #: apts/plot.py:575
 msgid "Skymap (Generated: {generation_time_str})"
-msgstr "Mapa nieba (wygenerowano: {generation_time_str})"
+msgstr "Mapa do Céu (Gerado: {generation_time_str})"
 
 #: apts/plot.py:579
 msgid "Target '{target_name}' is below the horizon."
-msgstr "Cel „{target_name}” znajduje się poniżej horyzontu."
+msgstr "O alvo '{target_name}' está abaixo do horizonte."
 
 #: apts/plot.py:641
 msgid "Skymap for {target_name} (Generated: {generation_time_str})"
-msgstr "Mapa nieba dla {target_name} (wygenerowano: {generation_time_str})"
+msgstr "Mapa do Céu para {target_name} (Gerado: {generation_time_str})"
 
 #: apts/plot.py:832 apts/utils/plot.py:33
 msgid "Azimuth (°)"
-msgstr "Azymut (°)"
+msgstr "Azimute (°)"
 
 #: apts/plot.py:834 apts/utils/plot.py:35
 msgid "Altitude (°)"
-msgstr "Wysokość (°)"
+msgstr "Altitude (°)"
 
 #: apts/plot.py:843 apts/utils/plot.py:41
 msgid "Right Ascension (hours)"
-msgstr "Rektascensja (godziny)"
+msgstr "Ascensão Reta (horas)"
 
 #: apts/plot.py:845 apts/utils/plot.py:43
 msgid "Declination (°)"
-msgstr "Deklinacja (°)"
+msgstr "Declinação (°)"
 
 #: apts/plot.py:853
 msgid ""
 "Skymap for {target_name} ({zoom_deg}° view,"
 " Generated: {generation_time_str})"
-msgstr "Mapa nieba dla {target_name} (widok {zoom_deg}°, wygenerowano: {generation_time_str})"
+msgstr "Mapa do Céu para {target_name} (visão de {zoom_deg}°, Gerado: {generation_time_str})"
 
 #: apts/plot.py:906
 msgid "Flipped"
-msgstr "Odwrócony"
+msgstr "Invertido"
 
 #: apts/utils/planetary.py:100
 msgid "New Moon"
-msgstr "Nów"
+msgstr "Lua Nova"
 
 #: apts/utils/planetary.py:102
 msgid "First Quarter"
-msgstr "Pierwsza kwadra"
+msgstr "Quarto Crescente"
 
 #: apts/utils/planetary.py:104
 msgid "Full Moon"
-msgstr "Pełnia"
+msgstr "Lua Cheia"
 
 #: apts/utils/planetary.py:106
 msgid "Last Quarter"
-msgstr "Ostatnia kwadra"
+msgstr "Quarto Minguante"
 
 #: apts/weather.py:118
 msgid "Clouds"
-msgstr "Chmury"
+msgstr "Nuvens"
 
 #: apts/weather.py:141
 msgid "Cloud cover [%]"
-msgstr "Zachmurzenie [%]"
+msgstr "Cobertura de nuvens [%]"
 
 #: apts/weather.py:169
 msgid "Precipitation intensity and probability"
-msgstr "Intensywność i prawdopodobieństwo opadów"
+msgstr "Intensidade e probabilidade de precipitação"
 
 #: apts/weather.py:192
 msgid "Probability"
-msgstr "Prawdopodobieństwo"
+msgstr "Probabilidade"
 
 #: apts/weather.py:220
 msgid "Precipitation type summary"
-msgstr "Podsumowanie typu opadów"
+msgstr "Resumo do tipo de precipitação"
 
 #: apts/weather.py:261
 msgid "Cloud summary"
-msgstr "Podsumowanie zachmurzenia"
+msgstr "Resumo de nuvens"
 
 #: apts/weather.py:295
 msgid "Temperatures"
-msgstr "Temperatury"
+msgstr "Temperaturas"
 
 #: apts/weather.py:318
 msgid "Temperature [°C]"
@@ -737,115 +736,115 @@ msgstr "Temperatura [°C]"
 
 #: apts/weather.py:348
 msgid "Wind speed"
-msgstr "Prędkość wiatru"
+msgstr "Velocidade do vento"
 
 #: apts/weather.py:371
 msgid "Wind speed [km/h]"
-msgstr "Prędkość wiatru [km/h]"
+msgstr "Velocidade do vento [km/h]"
 
 #: apts/weather.py:408
 msgid "Pressure"
-msgstr "Ciśnienie"
+msgstr "Pressão"
 
 #: apts/weather.py:410
 msgid "Pressure and Ozone"
-msgstr "Ciśnienie i Ozon"
+msgstr "Pressão e Ozônio"
 
 #: apts/weather.py:412
 msgid "Ozone"
-msgstr "Ozon"
+msgstr "Ozônio"
 
 #: apts/weather.py:441
 msgid "Pressure [hPa]"
-msgstr "Ciśnienie [hPa]"
+msgstr "Pressão [hPa]"
 
 #: apts/weather.py:443 apts/weather.py:450
 msgid "Ozone [DU]"
-msgstr "Ozon [DU]"
+msgstr "Ozônio [DU]"
 
 #: apts/weather.py:491
 msgid "Visibility"
-msgstr "Widoczność"
+msgstr "Visibilidade"
 
 #: apts/weather.py:514
 msgid "Visibility [km]"
-msgstr "Widoczność [km]"
+msgstr "Visibilidade [km]"
 
 #: apts/weather.py:579
 msgid "Fog"
-msgstr "Mgła"
+msgstr "Nevoeiro"
 
 #: apts/weather.py:602
 msgid "Fog [%]"
-msgstr "Mgła [%]"
+msgstr "Nevoeiro [%]"
 
 #: apts/weather.py:537
 msgid "Waxing"
-msgstr "Rosnący"
+msgstr "Crescente"
 
 #: apts/weather.py:537
 msgid "Waning"
-msgstr "Malejący"
+msgstr "Minguante"
 
 #: apts/weather.py:581
 msgid "Moon Illumination"
-msgstr "Iluminacja Księżyca"
+msgstr "Iluminação da Lua"
 
 #: apts/weather.py:610
 msgid "Illumination [%]"
-msgstr "Iluminacja [%]"
+msgstr "Iluminação [%]"
 
 #: apts/utils/plot.py:15
 msgid "Time"
-msgstr "Czas"
+msgstr "Hora"
 
 #: apts/equipment.py:209
 msgid "Available zoom"
-msgstr "Dostępne powiększenie"
+msgstr "Zoom disponível"
 
 #: apts/equipment.py:210
 msgid "Used equipment"
-msgstr "Użyty sprzęt"
+msgstr "Equipamento usado"
 
 #: apts/equipment.py:211
 msgid "Magnification"
-msgstr "Powiększenie"
+msgstr "Ampliação"
 
 #: apts/equipment.py:221
 msgid "Max useful zoom due to atmosphere"
-msgstr "Maksymalne użyteczne powiększenie ze względu na atmosferę"
+msgstr "Zoom máximo útil devido à atmosfera"
 
 #: apts/equipment.py:264
 msgid "Available fields of view"
-msgstr "Dostępne pola widzenia"
+msgstr "Campos de visão disponíveis"
 
 #: apts/equipment.py:266
 msgid "Field of view [°]"
-msgstr "Pole widzenia [°]"
+msgstr "Campo de visão [°]"
 
 #: apts/equipment.py:274
 msgid "Pleiades size"
-msgstr "Rozmiar Plejad"
+msgstr "Tamanho das Plêiades"
 
 #: apts/equipment.py:276
 msgid "Moon size"
-msgstr "Rozmiar Księżyca"
+msgstr "Tamanho da Lua"
 
 #: apts/equipment.py:278
 msgid "M51 size"
-msgstr "Rozmiar M51"
+msgstr "Tamanho de M51"
 
 #: apts/notify.py:108
 msgid "Good weather in {name}"
-msgstr "Dobra pogoda w {name}"
+msgstr "Bom tempo em {name}"
 
 #: apts/notify.py:115
 msgid ""
 "Tonight you can see {num_planets} planets and {num_messier} Messier "
 "objects. Enable HTML to see the full content."
 msgstr ""
-"Dziś w nocy możesz zobaczyć {num_planets} planet oraz {num_messier} obiektów Messiera. "
-"Włącz HTML, aby zobaczyć pełną treść."
+"Esta noite você pode ver {num_planets} planetas e {num_messier} objetos Messier. "
+"Habilite o HTML para ver o conteúdo completo."
 
 msgid "No data to plot"
-msgstr "Brak danych do wykresu"
+msgstr "Sem dados para gerar gráfico"

@@ -144,28 +144,43 @@ class Objects(ABC):
             )
         return None
 
-    def _compute_rising_and_setting(self, skyfield_object, observer):
-        if skyfield_object is None:
+    def _compute_rising_and_setting(self, skyfield_object, observer, transit_time):
+        if skyfield_object is None or transit_time is None or pandas.isna(transit_time):
             return None, None
-        # Return rising and setting time in local time
-        t0 = self.ts.utc(observer.date.utc_datetime())
-        t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
-        f = almanac.risings_and_settings(self.place.eph, skyfield_object, self.place.location)
-        t, y = find_discrete(t0, t1, f)
+
+        f = almanac.risings_and_settings(
+            self.place.eph, skyfield_object, self.place.location
+        )
+
+        # Find the latest rise time in the 24 hours before the transit
+        t_transit = self.ts.utc(transit_time)
+        t0_rise = self.ts.utc(transit_time - timedelta(days=1))
+        t_rise, y_rise = find_discrete(t0_rise, t_transit, f)
 
         rising_time = None
-        setting_time = None
-
-        for ti, yi in zip(t, y):
-            local_time = (
-                ti.utc_datetime()
+        rise_events = [t for t, y in zip(t_rise, y_rise) if y == 1]
+        if rise_events:
+            rising_time = (
+                rise_events[-1]
+                .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
             )
-            if yi == 1:  # Rising
-                rising_time = local_time
-            elif yi == 0:  # Setting
-                setting_time = local_time
+
+        # Find the earliest set time in the 24 hours after the transit
+        t1_set = self.ts.utc(transit_time + timedelta(days=1))
+        t_set, y_set = find_discrete(t_transit, t1_set, f)
+
+        setting_time = None
+        set_events = [t for t, y in zip(t_set, y_set) if y == 0]
+        if set_events:
+            setting_time = (
+                set_events[0]
+                .utc_datetime()
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(observer.local_timezone)
+            )
+
         return rising_time, setting_time
 
     def _altitude_at_transit(self, skyfield_object, transit, observer):

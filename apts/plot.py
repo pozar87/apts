@@ -1,28 +1,30 @@
 import logging
-from datetime import timedelta, datetime
-from typing import Optional, TYPE_CHECKING
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Optional
 
 import matplotlib.dates as mdates
 import numpy
 import pandas as pd
 import svgwrite as svg
-from matplotlib import pyplot, lines
+from matplotlib import lines, pyplot
 from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
 from skyfield.units import Angle
 
-from .constants import ObjectTableLabels
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
-    get_plot_style,
-    get_plot_colors,
     OpticalType,
     get_planet_color,
+    get_plot_colors,
+    get_plot_style,
 )
 from apts.constants.plot import CoordinateSystem
-from .cache import get_hipparcos_data
-from apts.i18n import gettext_
+from apts.i18n import _thread_local, gettext_
+from apts.utils.planetary import get_reverse_translated_planet_names
 from apts.utils.plot import Utils
+
+from .cache import get_hipparcos_data
+from .constants import ObjectTableLabels
 
 if TYPE_CHECKING:
     from .observations import Observation
@@ -274,9 +276,18 @@ def _generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
-            ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
-            logger.info(gettext_("Generated empty Messier plot as no objects are visible."))
+            Utils.annotate_plot(
+                ax,
+                gettext_("Altitude [°]"),
+                effective_dark_mode,
+                observation.place.local_timezone,
+            )
+            ax.set_title(
+                gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"]
+            )
+            logger.info(
+                gettext_("Generated empty Messier plot as no objects are visible.")
+            )
             return fig
 
         LIGHT_MESSIER_TYPE_COLORS = {
@@ -315,24 +326,25 @@ def _generate_plot_messier(
 
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
-            altitude = obj[ObjectTableLabels.ALTITUDE]
-            obj_type = gettext_(obj["Type"])
-            width = obj[ObjectTableLabels.WIDTH]
-            height = obj["Height"] if "Height" in obj else width
-            messier_id = obj[ObjectTableLabels.MESSIER]
-            marker_size = (width * height) ** 0.5
-            color = current_messier_colors.get(
-                obj_type, current_messier_colors[gettext_("Other")]
-            )
-            plotted_types[obj_type] = color
-            ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
-            ax.annotate(
-                messier_id,
-                (transit, altitude),
-                xytext=(5, 5),
-                textcoords="offset points",
-                color=style["TEXT_COLOR"],
-            )
+            if pd.notna(transit):
+                altitude = obj[ObjectTableLabels.ALTITUDE]
+                obj_type = gettext_(obj["Type"])
+                width = obj[ObjectTableLabels.WIDTH]
+                height = obj["Height"] if "Height" in obj else width
+                messier_id = obj[ObjectTableLabels.MESSIER]
+                marker_size = (width * height) ** 0.5
+                color = current_messier_colors.get(
+                    obj_type, current_messier_colors[gettext_("Other")]
+                )
+                plotted_types[obj_type] = color
+                ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
+                ax.annotate(
+                    messier_id,
+                    (transit, altitude),
+                    xytext=(5, 5),
+                    textcoords="offset points",
+                    color=style["TEXT_COLOR"],
+                )
 
         if observation.start is not None and observation.time_limit is not None:
             ax.set_xlim(
@@ -355,7 +367,12 @@ def _generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            observation.place.local_timezone,
+        )
 
         legend_handles = [
             lines.Line2D(
@@ -452,7 +469,12 @@ def _generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+        Utils.annotate_plot(
+            ax,
+            gettext_("Altitude [°]"),
+            effective_dark_mode,
+            observation.place.local_timezone,
+        )
         ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
         return fig
 
@@ -470,40 +492,46 @@ def _generate_plot_planets(
             name, effective_dark_mode, default_planet_color
         )
 
+        time_series = curve_df["Time"].apply(
+            lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+        )
+        valid_times = pd.notna(time_series)
         ax.plot(
-            curve_df["Time"].apply(lambda t: t.utc_datetime()),
-            curve_df["Altitude"],
+            time_series[valid_times],
+            curve_df["Altitude"][valid_times],
             color=specific_planet_color,
             label=name,
         )
 
-        if planet[ObjectTableLabels.RISING] is not None:
+        rising_time = planet[ObjectTableLabels.RISING]
+        if pd.notna(rising_time):
             ax.scatter(
-                planet[ObjectTableLabels.RISING],
-                0,
-                marker="^",
-                color=specific_planet_color,
-                s=100,
+                rising_time, 0, marker="^", color=specific_planet_color, s=100
             )
-        if planet[ObjectTableLabels.SETTING] is not None:
+        setting_time = planet[ObjectTableLabels.SETTING]
+        if pd.notna(setting_time):
             ax.scatter(
-                planet[ObjectTableLabels.SETTING],
-                0,
-                marker="v",
-                color=specific_planet_color,
-                s=100,
+                setting_time, 0, marker="v", color=specific_planet_color, s=100
             )
 
-        peak_idx = curve_df["Altitude"].idxmax()
-        peak_time = curve_df["Time"].iloc[peak_idx].utc_datetime()
-        peak_alt = curve_df["Altitude"].iloc[peak_idx]
-        ax.annotate(
-            name,
-            (peak_time, peak_alt),
-            xytext=(5, 5),
-            textcoords="offset points",
-            color=style["TEXT_COLOR"],
-        )
+        if not curve_df.empty:
+            try:
+                peak_idx = curve_df["Altitude"].idxmax()
+                peak_time_obj = curve_df["Time"].iloc[peak_idx]
+                if hasattr(peak_time_obj, "utc_datetime"):
+                    peak_time = peak_time_obj.utc_datetime()
+                    peak_alt = curve_df["Altitude"].iloc[peak_idx]
+                    if pd.notna(peak_time) and pd.notna(peak_alt):
+                        ax.annotate(
+                            name,
+                            (peak_time, peak_alt),
+                            xytext=(5, 5),
+                            textcoords="offset points",
+                            color=style["TEXT_COLOR"],
+                        )
+            except ValueError:
+                # This can happen if 'Altitude' column is all NaN
+                logger.debug(f"Could not find peak for {name} as all altitudes are NaN.")
 
     if observation.start is not None and observation.stop is not None:
         ax.set_xlim([observation.start, observation.stop])
@@ -520,7 +548,12 @@ def _generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(ax, gettext_("Altitude [°]"), effective_dark_mode, observation.place.local_timezone)
+    Utils.annotate_plot(
+        ax,
+        gettext_("Altitude [°]"),
+        effective_dark_mode,
+        observation.place.local_timezone,
+    )
     ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
 
@@ -573,7 +606,9 @@ def _generate_plot_weather(
         )
         ax_err.set_xticks([])
         ax_err.set_yticks([])
-        ax_err.set_title(gettext_("Weather Plot Information"), color=style["TEXT_COLOR"])
+        ax_err.set_title(
+            gettext_("Weather Plot Information"), color=style["TEXT_COLOR"]
+        )
         return fig_err
     try:
         axes_arg = args.pop("ax", None)
@@ -1420,7 +1455,8 @@ def _plot_solar_system_object_on_skymap(
     alt, az, _ = observer.observe(obj).apparent().altaz()
     ra, dec, _ = observer.observe(obj).apparent().radec()
 
-    if alt.degrees <= 0 and coordinate_system == CoordinateSystem.HORIZONTAL:
+    is_below_horizon = numpy.all(numpy.asarray(alt.degrees) <= 0)
+    if is_below_horizon and coordinate_system == CoordinateSystem.HORIZONTAL:
         return
 
     size_deg = _get_object_angular_size_deg(observation, object_name)
@@ -1513,6 +1549,11 @@ def _generate_plot_skymap(
     Generates a skymap for a given time and location, highlighting a target object.
     Can generate a full polar skymap or a zoomed-in Cartesian skymap.
     """
+    current_language = getattr(_thread_local, "language", "en")
+    if current_language != "en":
+        reverse_map = get_reverse_translated_planet_names(current_language)
+        target_name = reverse_map.get(target_name, target_name)
+
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
     else:
@@ -1529,7 +1570,7 @@ def _generate_plot_skymap(
         stop_ts = observation.place.ts.utc(observation.stop)
         middle_julian_date = (start_ts.tt + stop_ts.tt) / 2
         t = observation.place.ts.tt_jd(middle_julian_date)
-    elif observation.effective_date:
+    elif observation.effective_date is not None:
         # Fallback to effective_date if start/stop are not available
         t = observation.effective_date
     else:
@@ -1587,14 +1628,18 @@ def _generate_plot_skymap(
         ax.text(
             0.5,
             0.5,
-            gettext_("Object '{target_name}' not found.").format(target_name=target_name),
+            gettext_("Object '{target_name}' not found.").format(
+                target_name=target_name
+            ),
             horizontalalignment="center",
             verticalalignment="center",
             transform=ax.transAxes,
             color=style["TEXT_COLOR"],
         )
         ax.set_title(
-            gettext_("Skymap (Generated: {generation_time_str})").format(generation_time_str=generation_time_str),
+            gettext_("Skymap (Generated: {generation_time_str})").format(
+                generation_time_str=generation_time_str
+            ),
             color=style["TEXT_COLOR"],
         )
         return fig
@@ -1610,14 +1655,20 @@ def _generate_plot_skymap(
             ax.text(
                 0.5,
                 0.5,
-                gettext_("Target '{target_name}' is below the horizon.").format(target_name=target_name),
+                gettext_("Target '{target_name}' is below the horizon.").format(
+                    target_name=target_name
+                ),
                 horizontalalignment="center",
                 verticalalignment="center",
                 transform=ax.transAxes,
                 color=style["TEXT_COLOR"],
             )
             ax.set_title(
-                gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
+                gettext_(
+                    "Skymap for {target_name} (Generated: {generation_time_str})"
+                ).format(
+                    target_name=target_name, generation_time_str=generation_time_str
+                ),
                 color=style["TEXT_COLOR"],
             )
             return fig
@@ -1634,7 +1685,9 @@ def _generate_plot_skymap(
             ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
             ax.set_aspect("equal", adjustable="box")
         else:  # Equatorial
-            ax.set_xlabel(gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"])
+            ax.set_xlabel(
+                gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"]
+            )
             ax.set_ylabel(gettext_("Declination (°)"), color=style["TEXT_COLOR"])
             dec_rad = numpy.deg2rad(target_dec.degrees)
             half_zoom_dec = zoom_deg / 2.0
@@ -1844,7 +1897,13 @@ def _generate_plot_skymap(
         )
 
         ax.set_title(
-            gettext_("Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})").format(target_name=target_name, zoom_deg=zoom_deg, generation_time_str=generation_time_str),
+            gettext_(
+                "Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})"
+            ).format(
+                target_name=target_name,
+                zoom_deg=zoom_deg,
+                generation_time_str=generation_time_str,
+            ),
             color=style["TEXT_COLOR"],
         )
         if flipped_horizontally:
@@ -1913,83 +1972,136 @@ def _generate_plot_skymap(
             "#90EE90" if not effective_dark_mode else "#007447",
         )
 
-        r_inner_good = 0
-        r_outer_good = 90 - observation.conditions.min_object_altitude
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            r_inner_good = 0
+            r_outer_good = 90 - observation.conditions.min_object_altitude
 
-        min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
-        max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
-
-        if (r_outer_good > 0) or not (
-            float(observation.conditions.min_object_azimuth) == 0.0
-            and float(observation.conditions.max_object_azimuth) == 360.0
-        ):
-            if min_az_rad > max_az_rad:  # Crosses North
-                theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
-                ax.fill_between(
-                    theta1,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-                theta2 = numpy.linspace(0, max_az_rad, 50)
-                ax.fill_between(
-                    theta2,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-            else:
-                theta = numpy.linspace(min_az_rad, max_az_rad, 100)
-                ax.fill_between(
-                    theta,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-
-        if r_outer_good > 0:
-            ax.plot(
-                numpy.linspace(0, 2 * numpy.pi, 100),
-                [90 - observation.conditions.min_object_altitude] * 100,
-                color=style["GRID_COLOR"],
-                linestyle="--",
-                linewidth=1,
+            min_az_rad = numpy.deg2rad(
+                float(observation.conditions.min_object_azimuth)
             )
-            ax.text(
-                numpy.deg2rad(90),
-                90 - observation.conditions.min_object_altitude,
-                f"{observation.conditions.min_object_altitude}°",
-                ha="center",
-                va="bottom",
-                color=style["TEXT_COLOR"],
-                fontsize=10,
-                bbox=dict(
-                    facecolor=style["AXES_FACE_COLOR"],
-                    edgecolor="none",
-                    boxstyle="round,pad=0.2",
-                ),
+            max_az_rad = numpy.deg2rad(
+                float(observation.conditions.max_object_azimuth)
             )
 
-        if not (
-            float(observation.conditions.min_object_azimuth) == 0.0
-            and float(observation.conditions.max_object_azimuth) == 360.0
-        ):
-            ax.plot(
-                [min_az_rad, min_az_rad],
-                [0, 90],
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
+            if (r_outer_good > 0) or not (
+                float(observation.conditions.min_object_azimuth) == 0.0
+                and float(observation.conditions.max_object_azimuth) == 360.0
+            ):
+                if min_az_rad > max_az_rad:  # Crosses North
+                    theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
+                    ax.fill_between(
+                        theta1,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                    theta2 = numpy.linspace(0, max_az_rad, 50)
+                    ax.fill_between(
+                        theta2,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                else:
+                    theta = numpy.linspace(min_az_rad, max_az_rad, 100)
+                    ax.fill_between(
+                        theta,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+
+            if r_outer_good > 0:
+                ax.plot(
+                    numpy.linspace(0, 2 * numpy.pi, 100),
+                    [90 - observation.conditions.min_object_altitude] * 100,
+                    color=style["GRID_COLOR"],
+                    linestyle="--",
+                    linewidth=1,
+                )
+                ax.text(
+                    numpy.deg2rad(90),
+                    90 - observation.conditions.min_object_altitude,
+                    f"{observation.conditions.min_object_altitude}°",
+                    ha="center",
+                    va="bottom",
+                    color=style["TEXT_COLOR"],
+                    fontsize=10,
+                    bbox=dict(
+                        facecolor=style["AXES_FACE_COLOR"],
+                        edgecolor="none",
+                        boxstyle="round,pad=0.2",
+                    ),
+                )
+
+            if not (
+                float(observation.conditions.min_object_azimuth) == 0.0
+                and float(observation.conditions.max_object_azimuth) == 360.0
+            ):
+                ax.plot(
+                    [min_az_rad, min_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+                ax.plot(
+                    [max_az_rad, max_az_rad],
+                    [0, 90],
+                    color=style["GRID_COLOR"],
+                    linestyle=":",
+                    linewidth=1,
+                )
+        else:  # Equatorial
+            # Create a grid in polar coordinates (RA, Dec)
+            num_ra = 120  # ~3 degree resolution
+            num_dec = 30  # ~3 degree resolution
+            theta = numpy.linspace(0, 2 * numpy.pi, num_ra)  # RA
+            r = numpy.linspace(0, 90, num_dec)  # Radius (90-Dec)
+            theta_grid, r_grid = numpy.meshgrid(theta, r)
+
+            # Convert polar grid to RA/Dec
+            ra_rad = theta_grid
+            dec_deg = 90 - r_grid
+            ra_hours = ra_rad * 12 / numpy.pi
+
+            # Create Skyfield Star objects for the entire grid
+            grid_stars = SkyfieldStar(
+                ra_hours=ra_hours.ravel(), dec_degrees=dec_deg.ravel()
             )
-            ax.plot(
-                [max_az_rad, max_az_rad],
-                [0, 90],
-                color=style["GRID_COLOR"],
-                linestyle=":",
-                linewidth=1,
+            alt_flat, az_flat, _ = observer.observe(grid_stars).apparent().altaz()
+            alt = Angle(degrees=alt_flat.degrees.reshape(ra_hours.shape))
+            az = Angle(degrees=az_flat.degrees.reshape(ra_hours.shape))
+
+            # Reshape the results back to the grid shape
+            alt_deg_grid = alt.degrees.reshape(theta_grid.shape)
+            az_deg_grid = az.degrees.reshape(theta_grid.shape)
+
+            # Check conditions
+            min_alt = float(observation.conditions.min_object_altitude)
+            min_az = float(observation.conditions.min_object_azimuth)
+            max_az = float(observation.conditions.max_object_azimuth)
+
+            # Create a mask for "good" conditions
+            alt_mask = alt_deg_grid >= min_alt
+            if min_az <= max_az:
+                az_mask = (az_deg_grid >= min_az) & (az_deg_grid <= max_az)
+            else:  # Azimuth range crosses 0/360
+                az_mask = (az_deg_grid >= min_az) | (az_deg_grid <= max_az)
+            good_mask = alt_mask & az_mask
+
+            # Use contourf to shade the "good" area
+            # We plot where the mask is True (1)
+            ax.contourf(
+                theta_grid,
+                r_grid,
+                good_mask.astype(int),
+                levels=[0.5, 1.5],
+                colors=[good_condition_color],
+                alpha=0.1,
             )
 
         if plot_stars:
@@ -2161,7 +2273,9 @@ def _generate_plot_skymap(
             )
 
         ax.set_title(
-            gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(target_name=target_name, generation_time_str=generation_time_str),
+            gettext_(
+                "Skymap for {target_name} (Generated: {generation_time_str})"
+            ).format(target_name=target_name, generation_time_str=generation_time_str),
             color=style["TEXT_COLOR"],
         )
 

@@ -1,21 +1,22 @@
 import logging.config
+
 import pandas as pd
 import seaborn as sns
 
+from . import cache
+from .cache import download_all_data
+from .catalogs import Catalogs, initialize_catalogs
+
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only
-from . import cache
-
-
-from .catalogs import Catalogs, initialize_catalogs
+from .constants.event_types import EventType
 from .equipment import Equipment
+from .i18n import set_language
 from .notify import Notify
 from .observations import Observation
 from .place import Place
 from .utils import Utils
 from .weather import Weather
-from .constants.event_types import EventType
-from .i18n import set_language
 
 __all__ = [
     "Catalogs",
@@ -30,6 +31,7 @@ __all__ = [
     "preload_data",
     "preload_essential_data",
     "set_language",
+    "download_all_data",
 ]
 
 logger = logging.getLogger(__name__)
@@ -99,4 +101,4 @@ if should_auto_preload_data():
         preload_data()
 
 
-__version__ = "0.8.5"
+__version__ = "0.8.8"

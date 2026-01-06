@@ -22,18 +22,10 @@ def get_timescale():
 def get_ephemeris():
     """
     Returns an ephemeris object, loading from a URL or local file.
-    This ensures that the file is downloaded if not present in full mode.
+    This ensures that the file is downloaded if not present.
     """
     path_or_url = data_loader.get_ephemeris_path()
-    if '://' in path_or_url:
-        # In 'full' mode, this is a URL, so we use the default `load`.
-        return load(path_or_url)
-    else:
-        # In 'light' mode, this is an absolute path to a local file.
-        # We need a Loader configured for the file's directory.
-        directory, filename = os.path.split(path_or_url)
-        local_loader = Loader(directory)
-        return local_loader(filename)
+    return load(path_or_url)
 
 
 @functools.lru_cache(maxsize=None)
@@ -41,7 +33,14 @@ def get_hipparcos_data() -> pd.DataFrame:
     """
     Returns a cached Hipparcos catalog as a pandas DataFrame.
     """
-    with load.open(hipparcos.URL) as f:
+    # Ensure the 'data' directory exists
+    data_dir = 'data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # Use the skyfield loader to cache the file to disk
+    loader = Loader(data_dir)
+    with loader.open(hipparcos.URL) as f:
         return hipparcos.load_dataframe(f)
 
 
@@ -140,6 +139,15 @@ def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
             if "comet" in comet["name"].lower():
                 records.append(comet)
     return pd.DataFrame(records)
+
+def download_all_data():
+    """
+    Downloads all the necessary data files.
+    """
+    get_ephemeris()
+    get_hipparcos_data()
+    get_mpcorb_data()
+
 
 def clear_cache():
     """
