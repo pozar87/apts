@@ -7,6 +7,7 @@ from .binoculars import Binoculars
 from .naked_eye import NakedEye
 from .diagonal import Diagonal
 from .smart_telescope import SmartTelescope
+from .filter import Filter
 
 __all__ = [
     "Barlow",
@@ -18,6 +19,7 @@ __all__ = [
     "NakedEye",
     "Diagonal",
     "SmartTelescope",
+    "Filter",
 ]
 
 __version__ = "0.2.0"

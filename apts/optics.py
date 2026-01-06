@@ -1,5 +1,6 @@
 import functools
 import operator
+
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
 from .units import get_unit_registry
@@ -8,25 +9,27 @@ from .units import get_unit_registry
 class OpticsUtils:
     @staticmethod
     def expand(path):
-        from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.barlow import Barlow
+        from .opticalequipment.diagonal import Diagonal
+        from .opticalequipment.filter import Filter
         from .opticalequipment.smart_telescope import SmartTelescope
 
         # First item in the path should be the telescope or binoculars
         main_optic = path[0]
         if isinstance(main_optic, (Binoculars, NakedEye, SmartTelescope)):
             # Treat binoculars as the 'output' as well for path structure consistency
-            return (main_optic, [], [], main_optic)
+            return (main_optic, [], [], [], main_optic)
 
         # Original logic for telescopes
         telescope = main_optic
         # Last item in the path is output
         output = path[-1]
-        # Barlow lenses are in the middle
+        # Intermediate elements
         intermediate = path[1:-1]
         barlows = [item for item in intermediate if isinstance(item, Barlow)]
         diagonals = [item for item in intermediate if isinstance(item, Diagonal)]
-        return (telescope, barlows, diagonals, output)
+        filters = [item for item in intermediate if isinstance(item, Filter)]
+        return (telescope, barlows, diagonals, filters, output)
 
     @staticmethod
     def barlows_multiplications(barlows_list):
@@ -64,16 +67,17 @@ class OpticalPath:
     Class representing an optical path in a telescope setup.
     """
 
-    def __init__(self, telescope, barlows, diagonals, output):
+    def __init__(self, telescope, barlows, diagonals, filters, output):
         self.telescope = telescope
         self.barlows = barlows
         self.diagonals = diagonals
+        self.filters = filters
         self.output = output
 
     @classmethod
     def from_path(cls, path):
-        telescope, barlows, diagonals, output = OpticsUtils.expand(path)
-        return cls(telescope, barlows, diagonals, output)
+        telescope, barlows, diagonals, filters, output = OpticsUtils.expand(path)
+        return cls(telescope, barlows, diagonals, filters, output)
 
     def zoom(self):
         return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
@@ -90,6 +94,7 @@ class OpticalPath:
             [str(self.telescope)]
             + [str(item) for item in self.barlows]
             + [str(item) for item in self.diagonals]
+            + [str(item) for item in self.filters]
             + [str(self.output)]
         )
 
@@ -101,7 +106,7 @@ class OpticalPath:
         # Original: return 2 + len(self.barlows) (Telescope + Output + Barlows)
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
             return 1  # Just the binoculars itself
-        return 2 + len(self.barlows) + len(self.diagonals)
+        return 2 + len(self.barlows) + len(self.diagonals) + len(self.filters)
 
     def fov(self):
         return OpticsUtils.compute_field_of_view(
@@ -115,9 +120,16 @@ class OpticalPath:
             # self.telescope.brightness() returns a float like 75.0 (for 75%)
             # OutputOpticalEquipment.brightness returns a value like <Quantity(75.0, 'dimensionless')>
             # To be consistent so that .magnitude can be called later:
-            return self.telescope.brightness() * get_unit_registry().dimensionless
-        # This already returns a pint Quantity from OutputOpticalEquipment's method
-        return self.output.brightness(self.telescope, self.zoom())
+            brightness = self.telescope.brightness() * get_unit_registry().dimensionless
+        else:
+            # This already returns a pint Quantity from OutputOpticalEquipment's method
+            brightness = self.output.brightness(self.telescope, self.zoom())
+
+        # Account for filters transmission
+        for f in self.filters:
+            brightness *= f.transmission
+
+        return brightness
 
     def exit_pupil(self):
         from .opticalequipment.smart_telescope import SmartTelescope
@@ -146,6 +158,7 @@ class OpticalPath:
         elements = set((self.telescope, self.output))
         elements |= set(self.barlows)
         elements |= set(self.diagonals)
+        elements |= set(self.filters)
         return frozenset(elements)
 
     def get_image_orientation(self):
