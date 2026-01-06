@@ -1,19 +1,19 @@
 import logging
+from typing import Optional
 
 import cairo as ca
 import igraph as ig
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
-from typing import Optional
 
-from .constants import EquipmentTableLabels, OpticalType, GraphConstants, NodeLabels
 from .config import get_dark_mode
-from .constants.graphconstants import get_plot_style, get_plot_colors
+from .constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
+from .constants.graphconstants import get_plot_colors, get_plot_style
 from .i18n import gettext_
 from .opticalequipment import (
-    OpticalEquipment,
     NakedEye,
+    OpticalEquipment,
 )
 from .optics import OpticalPath, OpticsUtils
 from .utils import Utils
