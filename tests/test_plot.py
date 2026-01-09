@@ -158,7 +158,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         patch("apts.plot.pyplot") as mock_pyplot,
         patch(
             "apts.plot._get_brightness_color", return_value="0.5"
-        ) as mock_get_brightness_color,
+        ),
     ):
         # Mock the figure and axes objects
         mock_fig = MagicMock()
@@ -622,7 +622,7 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         # Verify the scatter contains the correct stars (2 stars in zoom window)
         # Verify only the 2 stars in the zoom window were plotted
         args, kwargs = equatorial_scatter
-        ra_values, dec_values = args[0], args[1]
+        ra_values, _ = args[0], args[1]
         assert len(ra_values) == 2, (
             f"Expected 2 stars in zoom window, got {len(ra_values)}"
         )
@@ -1233,7 +1233,6 @@ def test_plot_stars_ra_wrapping_equatorial():
     mock_az = MagicMock()
     mock_altaz.degrees = np.array([45.0, 50.0, 55.0, 60.0, 65.0])
     mock_az.degrees = np.array([180.0, 200.0, 220.0, 240.0, 260.0])  # Azimuth values
-    mock_radec = MagicMock()
 
     # Create proper mock arrays that support boolean indexing
     ra_hours_array = np.array([0.5, 1.2, 1.8, 2.5, 3.0])
@@ -1362,7 +1361,7 @@ def test_plot_stars_ra_wrapping_equatorial():
         for call in scatter_calls:
             args, kwargs = call
             if len(args) >= 2:
-                ra_values, dec_values = args[0], args[1]
+                ra_values, _ = args[0], args[1]
                 if hasattr(ra_values, "__len__") and len(ra_values) > 0:
                     if 0 <= min(ra_values) <= 24:
                         equatorial_scatter = call
@@ -1374,7 +1373,7 @@ def test_plot_stars_ra_wrapping_equatorial():
 
         # Verify only the 2 stars in the zoom window were plotted
         args, kwargs = equatorial_scatter
-        ra_values, dec_values = args[0], args[1]
+        ra_values, _ = args[0], args[1]
         assert len(ra_values) == 2, (
             f"Expected 2 stars in wrapped zoom window, got {len(ra_values)}"
         )

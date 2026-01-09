@@ -1,4 +1,10 @@
 import re
+from types import SimpleNamespace
+
+from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
+from skyfield.data import mpc
+
+from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
 
 
 MINOR_PLANET_NAMES = {
@@ -99,12 +105,6 @@ def get_technical_name(simple_name: str) -> str:
     return simple_name.lower()
 
 
-from skyfield.data import mpc
-from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
-from types import SimpleNamespace
-from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
-
-
 def get_skyfield_obj(planet_name: str):
     """
     Returns a Skyfield object for a given planet name.
@@ -157,8 +157,6 @@ def get_moon_illumination_details(time):
     import numpy as np
 
     eph = get_ephemeris()
-    moon = eph['moon']
-    sun = eph['sun']
 
     # Get the phase angle
     phase_angle = almanac.moon_phase(eph, time).degrees

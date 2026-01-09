@@ -48,7 +48,6 @@ class TestObservationInitialization(unittest.TestCase):
             target_date=self.target_date,
             sun_observation=True,
         )
-
         # Assert
         self.assertEqual(observation.start, self.place.sunrise_time.return_value)
         self.assertEqual(observation.stop, self.place.sunset_time.return_value)
@@ -85,7 +84,7 @@ class TestObservationInitialization(unittest.TestCase):
         conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
 
         # Act
-        observation = Observation(
+        Observation(
             place=self.place,
             equipment=self.equipment,
             conditions=conditions,
