@@ -1,7 +1,6 @@
 import logging
 
 import pandas as pd
-import requests_cache
 
 from typing import Optional
 
