@@ -85,7 +85,7 @@ class TestObservationInitialization(unittest.TestCase):
         conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
 
         # Act
-        observation = Observation(
+        Observation(
             place=self.place,
             equipment=self.equipment,
             conditions=conditions,

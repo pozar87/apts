@@ -3,7 +3,6 @@ import logging
 from abc import ABC, abstractmethod
 
 import pandas as pd
-import requests
 import requests_cache
 from apts.config import get_cache_settings
 

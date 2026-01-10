@@ -10,7 +10,6 @@ import pytest
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
-from apts.i18n import gettext_
 from apts.place import Place
 
 # Assuming setup_place is a helper to create a Place instance for testing

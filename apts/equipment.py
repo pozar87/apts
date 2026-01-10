@@ -49,7 +49,7 @@ class Equipment:
             self.connection_garph, space_node.index, output_node.index
         ):
             logger.debug(f"Optical Path: {optical_path}")
-            result = [
+            result: list[Optional[OpticalEquipment]] = [
                 self.connection_garph.vs[id][NodeLabels.EQUIPMENT]
                 for id in optical_path
             ]

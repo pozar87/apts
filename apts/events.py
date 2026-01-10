@@ -66,41 +66,41 @@ class AstronomicalEvents:
         start_time = time.time()
         executor = self.executor
         futures = []
-        if self.event_settings.get("moon_phases", False):
+        if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
-        if self.event_settings.get("conjunctions", False):
+        if self.event_settings.get("conjunctions"):
             futures.append(executor.submit(self.calculate_conjunctions))
-        if self.event_settings.get("oppositions", False):
+        if self.event_settings.get("oppositions"):
             futures.append(executor.submit(self.calculate_oppositions))
-        if self.event_settings.get("meteor_showers", False):
+        if self.event_settings.get("meteor_showers"):
             futures.append(executor.submit(self.calculate_meteor_showers))
-        if self.event_settings.get("highest_altitudes", False):
+        if self.event_settings.get("highest_altitudes"):
             futures.append(executor.submit(self.calculate_highest_altitudes))
-        if self.event_settings.get("lunar_occultations", False):
+        if self.event_settings.get("lunar_occultations"):
             futures.append(executor.submit(self.calculate_lunar_occultations))
-        if self.event_settings.get("aphelion_perihelion", False):
+        if self.event_settings.get("aphelion_perihelion"):
             futures.append(executor.submit(self.calculate_aphelion_perihelion))
-        if self.event_settings.get("moon_apogee_perigee", False):
+        if self.event_settings.get("moon_apogee_perigee"):
             futures.append(executor.submit(self.calculate_moon_apogee_perigee))
-        if self.event_settings.get("mercury_inferior_conjunctions", False):
+        if self.event_settings.get("mercury_inferior_conjunctions"):
             futures.append(
                 executor.submit(self.calculate_mercury_inferior_conjunctions)
             )
-        if self.event_settings.get("moon_messier_conjunctions", False):
+        if self.event_settings.get("moon_messier_conjunctions"):
             futures.append(executor.submit(self.calculate_moon_messier_conjunctions))
-        if self.event_settings.get("space_launches", False):
+        if self.event_settings.get("space_launches"):
             futures.append(executor.submit(self.calculate_space_launches))
-        if self.event_settings.get("space_events", False):
+        if self.event_settings.get("space_events"):
             futures.append(executor.submit(self.calculate_space_events))
-        if self.event_settings.get("iss_flybys", False):
+        if self.event_settings.get("iss_flybys"):
             futures.append(executor.submit(self.calculate_iss_flybys))
-        if self.event_settings.get("tiangong_flybys", False):
+        if self.event_settings.get("tiangong_flybys"):
             futures.append(executor.submit(self.calculate_tiangong_flybys))
-        if self.event_settings.get("solar_eclipses", False):
+        if self.event_settings.get("solar_eclipses"):
             futures.append(executor.submit(self.calculate_solar_eclipses))
-        if self.event_settings.get("lunar_eclipses", False):
+        if self.event_settings.get("lunar_eclipses"):
             futures.append(executor.submit(self.calculate_lunar_eclipses))
-        if self.event_settings.get("nasa_comets", False):
+        if self.event_settings.get("nasa_comets"):
             futures.append(executor.submit(self.calculate_nasa_comets))
 
         for future in as_completed(futures):

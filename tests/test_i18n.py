@@ -5,7 +5,6 @@ from apts.events import AstronomicalEvents
 from datetime import datetime, timedelta, timezone
 from apts.constants.event_types import EventType
 from apts.cache import clear_cache
-import pytest
 
 def test_language_switching_for_events():
     """

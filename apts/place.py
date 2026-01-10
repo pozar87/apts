@@ -89,11 +89,10 @@ class Place:
         f = almanac.risings_and_settings(self.eph, obj, self.location)
         t, y = almanac.find_discrete(t0, t1, f)
 
-        settings = [
-            ti
-            for ti, yi in zip(t, y)
-            if yi == 0
-        ]
+        if t is None:
+            return None
+
+        settings = [ti for ti, yi in zip(t, y) if yi == 0]
         if settings:
             return (
                 settings[-1]
@@ -109,13 +108,14 @@ class Place:
         f = almanac.risings_and_settings(self.eph, obj, self.location)
         t, y = almanac.find_discrete(t0, t1, f)
 
-        for ti, yi in zip(t, y):
-            if yi == 1:  # Rising
-                return (
-                    ti.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(self.local_timezone)
-                )
+        if t is not None:
+            for ti, yi in zip(t, y):
+                if yi == 1:  # Rising
+                    return (
+                        ti.utc_datetime()
+                        .replace(tzinfo=pytz.UTC)
+                        .astimezone(self.local_timezone)
+                    )
         return None
 
     def _get_start_date(self, target_date, start_search_from):
@@ -154,14 +154,15 @@ class Place:
 
         # The first event is the state at t0
         previous_y = f(t0)
-        for t, y in zip(times, events):
-            if previous_y == prev_event and y == next_event:
-                return (
-                    t.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(self.local_timezone)
-                )
-            previous_y = y
+        if times is not None and events is not None:
+            for t, y in zip(times, events):
+                if previous_y == prev_event and y == next_event:
+                    return (
+                        t.utc_datetime()
+                        .replace(tzinfo=pytz.UTC)
+                        .astimezone(self.local_timezone)
+                    )
+                previous_y = y
 
         return None
 
@@ -193,9 +194,13 @@ class Place:
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date.utc_datetime())
 
-    def _moon_phase_letter(self):
-        moon_phase_angle = almanac.moon_phase(self.eph, self.date).degrees
-        lunation = moon_phase_angle / 360.0
+    def _moon_phase_letter(self) -> str:
+        phase_angle = almanac.moon_phase(self.eph, self.date)
+        if hasattr(phase_angle, "degrees"):
+            phase_angle_deg = phase_angle.degrees
+        else:
+            phase_angle_deg = float(phase_angle)
+        lunation = phase_angle_deg / 360.0
         letter = chr(ord("A") + int(round(lunation * 26)))
         return letter
 
@@ -220,17 +225,13 @@ class Place:
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
             diffs = df["Azimuth"].diff()
-            # A wrap-around is a large jump, positive or negative
             wrap_around_indices = diffs[diffs.abs() > 180].index
             if not wrap_around_indices.empty:
-                # Create a new row with NaN values to break the line plot
+                idx = wrap_around_indices[0]
+                new_index = idx - 0.5
                 nan_row = pd.DataFrame(
-                    {
-                        "Time": [pd.NaT],
-                        "Altitude": [np.nan],
-                        "Azimuth": [np.nan],
-                    },
-                    index=[wrap_around_indices[0] - 0.5],
+                    {"Time": [pd.NaT], "Altitude": [np.nan], "Azimuth": [np.nan]},
+                    index=[new_index],
                 )
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
 
@@ -242,7 +243,7 @@ class Place:
         ]
         return df
 
-    def moon_path(self):
+    def moon_path(self) -> pd.DataFrame:
         start_time = self.date.utc_datetime().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -255,8 +256,13 @@ class Place:
         for t in df["Time"]:
             if hasattr(t, "utc_datetime"):
                 moon_phase_angle = almanac.moon_phase(self.eph, t)
-                phases.append((moon_phase_angle.degrees / 360.0) * 100)
-                lunations.append(moon_phase_angle.degrees / 360.0)
+                phase_angle_deg = (
+                    moon_phase_angle.degrees
+                    if hasattr(moon_phase_angle, "degrees")
+                    else float(moon_phase_angle)
+                )
+                phases.append((phase_angle_deg / 360.0) * 100)
+                lunations.append(phase_angle_deg / 360.0)
             else:
                 phases.append(pd.NA)
                 lunations.append(pd.NA)
@@ -269,7 +275,7 @@ class Place:
         ]
         return df
 
-    def sun_path(self):
+    def sun_path(self) -> pd.DataFrame:
         start_time = self.date.utc_datetime().replace(
             hour=0, minute=0, second=0, microsecond=0
         )

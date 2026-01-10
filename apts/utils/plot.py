@@ -1,14 +1,16 @@
+import matplotlib.axes
 import matplotlib.dates as mdates
-from matplotlib import pyplot
 
 from apts.constants.graphconstants import get_plot_style
 from apts.i18n import gettext_
+
+__all__ = ["Utils"]
 
 
 class Utils:
     @staticmethod
     def annotate_plot(
-        ax: pyplot.Axes,
+        ax: matplotlib.axes.Axes,
         y_label: str,
         dark_mode: bool,
         local_timezone: object,

@@ -157,8 +157,8 @@ def get_moon_illumination_details(time):
     import numpy as np
 
     eph = get_ephemeris()
-    moon = eph['moon']
-    sun = eph['sun']
+    eph['moon']
+    eph['sun']
 
     # Get the phase angle
     phase_angle = almanac.moon_phase(eph, time).degrees
