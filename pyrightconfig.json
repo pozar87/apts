@@ -1,4 +1,0 @@
-{
-  "include": ["apts"],
-  "exclude": ["tests"]
-}

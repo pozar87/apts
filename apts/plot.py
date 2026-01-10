@@ -91,7 +91,7 @@ def _get_brightness_color(magnitude: Optional[float]) -> str:
     Calculates a grayscale color based on the magnitude of a celestial object.
     Dimmer objects get a color closer to the background.
     """
-    if pd.notna(magnitude) and hasattr(magnitude, "magnitude"):
+    if hasattr(magnitude, "magnitude"):
         magnitude = magnitude.magnitude
     if magnitude is None or pd.isna(magnitude):
         return "none"
@@ -1212,21 +1212,21 @@ def _plot_messier_on_skymap(
                     width_arcmin = m_obj.get(ObjectTableLabels.WIDTH)
                     if pd.isna(width_arcmin):
                         width_arcmin = 1.0  # Default to 1 arcmin if missing
-                    if pd.notna(width_arcmin) and hasattr(width_arcmin, "magnitude"):
+                    if hasattr(width_arcmin, "magnitude"):
                         width_arcmin = width_arcmin.magnitude
                     width_deg = float(width_arcmin) / 60.0
 
                     height_arcmin = m_obj.get("Height")
                     if pd.isna(height_arcmin):
                         height_arcmin = width_arcmin
-                    if pd.notna(height_arcmin) and hasattr(height_arcmin, "magnitude"):
+                    if hasattr(height_arcmin, "magnitude"):
                         height_arcmin = height_arcmin.magnitude
                     height_deg = float(height_arcmin) / 60.0
 
                     pos_angle = m_obj.get("PosAng", 0.0)
                     if pd.isna(pos_angle):
                         pos_angle = 0.0
-                    if pd.notna(pos_angle) and hasattr(pos_angle, "magnitude"):
+                    if hasattr(pos_angle, "magnitude"):
                         pos_angle = pos_angle.magnitude
                     pos_angle = float(pos_angle)
 
@@ -1361,21 +1361,21 @@ def _plot_ngc_on_skymap(
                     width_arcmin = n_obj.get("Size")
                     if pd.isna(width_arcmin):
                         width_arcmin = n_obj.get("MajAx", 1.0)
-                    if pd.notna(width_arcmin) and hasattr(width_arcmin, "magnitude"):
+                    if hasattr(width_arcmin, "magnitude"):
                         width_arcmin = width_arcmin.magnitude
                     width_deg = float(width_arcmin) / 60.0
 
                     height_arcmin = n_obj.get("MinAx")
                     if pd.isna(height_arcmin):
                         height_arcmin = width_arcmin
-                    if pd.notna(height_arcmin) and hasattr(height_arcmin, "magnitude"):
+                    if hasattr(height_arcmin, "magnitude"):
                         height_arcmin = height_arcmin.magnitude
                     height_deg = float(height_arcmin) / 60.0
 
                     pos_angle = n_obj.get("PosAng")
                     if pd.isna(pos_angle):
                         pos_angle = 0.0
-                    if pd.notna(pos_angle) and hasattr(pos_angle, "magnitude"):
+                    if hasattr(pos_angle, "magnitude"):
                         pos_angle = pos_angle.magnitude
                     pos_angle = float(pos_angle)
 
@@ -1788,19 +1788,19 @@ def _generate_plot_skymap(
             )
         if target_object_data is not None:
             width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-            if pd.notna(width_arcmin) and hasattr(width_arcmin, "magnitude"):
+            if hasattr(width_arcmin, "magnitude"):
                 width_arcmin = width_arcmin.magnitude
             width_deg = width_arcmin / 60.0
 
             height_arcmin = target_object_data.get("Height", width_arcmin)
-            if pd.notna(height_arcmin) and hasattr(height_arcmin, "magnitude"):
+            if hasattr(height_arcmin, "magnitude"):
                 height_arcmin = height_arcmin.magnitude
             height_deg = height_arcmin / 60.0
 
             pos_angle = target_object_data.get("PosAng", 0.0)
             if pd.isna(pos_angle):
                 pos_angle = 0.0
-            if pd.notna(pos_angle) and hasattr(pos_angle, "magnitude"):
+            if hasattr(pos_angle, "magnitude"):
                 pos_angle = pos_angle.magnitude
             pos_angle = float(pos_angle)
 
@@ -2196,12 +2196,12 @@ def _generate_plot_skymap(
         if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees > 0:
             if target_object_data is not None:
                 width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-                if pd.notna(width_arcmin) and hasattr(width_arcmin, "magnitude"):
+                if hasattr(width_arcmin, "magnitude"):
                     width_arcmin = width_arcmin.magnitude
                 width_deg = width_arcmin / 60.0
 
                 height_arcmin = target_object_data.get("Height", width_arcmin)
-                if pd.notna(height_arcmin) and hasattr(height_arcmin, "magnitude"):
+                if hasattr(height_arcmin, "magnitude"):
                     height_arcmin = height_arcmin.magnitude
                 height_deg = height_arcmin / 60.0
 
@@ -2235,12 +2235,12 @@ def _generate_plot_skymap(
         elif coordinate_system == CoordinateSystem.EQUATORIAL:
             if target_object_data is not None:
                 width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-                if pd.notna(width_arcmin) and hasattr(width_arcmin, "magnitude"):
+                if hasattr(width_arcmin, "magnitude"):
                     width_arcmin = width_arcmin.magnitude
                 width_deg = width_arcmin / 60.0
 
                 height_arcmin = target_object_data.get("Height", width_arcmin)
-                if pd.notna(height_arcmin) and hasattr(height_arcmin, "magnitude"):
+                if hasattr(height_arcmin, "magnitude"):
                     height_arcmin = height_arcmin.magnitude
                 height_deg = height_arcmin / 60.0
 

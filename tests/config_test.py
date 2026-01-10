@@ -95,7 +95,7 @@ class ConfigTest(unittest.TestCase):
 
                     # This call should now trigger the fallback logic
                     with self.assertLogs('apts.weather_providers', level='WARNING') as cm:
-                        apts.weather_providers.get_session()
+                        session = apts.weather_providers.get_session()
                         self.assertIn("Redis connection failed", cm.output[0])
                         self.assertIn("Falling back to in-memory cache", cm.output[0])
 
