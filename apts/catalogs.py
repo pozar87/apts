@@ -77,7 +77,7 @@ def _load_ngc_with_units():
     }, inplace=True)
 
     # Map constellation abbreviations to full names
-    ngc_df['Constellation'] = ngc_df['Constellation'].map(constellation_map)
+    ngc_df['Constellation'] = ngc_df['Constellation'].map(constellation_map)  # type: ignore
 
     # Set proper dtypes for string columns
     string_columns = ["Name", "Type", "Constellation", "NGC"]
@@ -87,7 +87,7 @@ def _load_ngc_with_units():
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    ngc_df["Magnitude"] = pd.to_numeric(ngc_df["Magnitude"], errors='coerce').fillna(99).apply(lambda x: x * ureg.mag)
+    ngc_df["Magnitude"] = pd.to_numeric(ngc_df["Magnitude"], errors='coerce').fillna(99).apply(lambda x: x * ureg.mag) # type: ignore
     ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute if pd.notna(x) else None)
 
     # Pre-calculate Skyfield objects

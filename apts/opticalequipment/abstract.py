@@ -73,7 +73,7 @@ class IntermediateOpticalEquipment(OpticalEquipment):
     def __init__(self, vendor):
         super(IntermediateOpticalEquipment, self).__init__(focal_length=0, vendor=vendor)
 
-    def _register(self, equipment, in_connection_type, out_connection_type):
+    def _register(self, equipment, in_connection_type, out_connection_type): # type: ignore
         super(IntermediateOpticalEquipment, self)._register(equipment)
         self._register_input(equipment, in_connection_type)
         self._register_output(equipment, out_connection_type)
@@ -84,7 +84,7 @@ class OutputOpticalEqipment(OpticalEquipment):
   def __init__(self, focal_length, vendor):
     super(OutputOpticalEqipment, self).__init__(focal_length, vendor)
 
-  def is_visual_output(self):
+  def is_visual_output(self) -> bool:
     """Indicates if the output is primarily for visual observation."""
     return True # Default for eyepieces etc.
 
@@ -96,17 +96,17 @@ class OutputOpticalEqipment(OpticalEquipment):
       # Validate telescop.aperture
       if not hasattr(telescop, 'aperture') or \
          not hasattr(telescop.aperture, 'units') or \
-         (hasattr(telescop.aperture, 'magnitude') and np.isnan(telescop.aperture.magnitude)):
+         (hasattr(telescop.aperture, 'magnitude') and np.isnan(telescop.aperture.magnitude)): # pyright: ignore
           return np.nan * default_mm_unit # Aperture is invalid
 
-      aperture_units = telescop.aperture.units
+      aperture_units = telescop.aperture.units # pyright: ignore
 
       # Validate zoom
       if not hasattr(zoom, 'magnitude') or \
          not hasattr(zoom, 'units') or \
          np.isnan(zoom.magnitude) or \
          zoom.magnitude == 0:
-          return np.nan * aperture_units # Zoom is invalid or zero, use aperture's units for consistency
+          return np.nan * aperture_units # type: ignore
 
       # If zoom is not dimensionless, Pint's division rules will typically handle it
       # by raising a DimensionalityError or producing a result with unexpected units.
@@ -142,31 +142,31 @@ class OutputOpticalEqipment(OpticalEquipment):
     # After calling exit_pupil, ep_val should always be a Quantity.
     # Check if its magnitude is NaN (this means exit_pupil determined a NaN result).
     if not hasattr(ep_val, 'units') or \
-       (hasattr(ep_val, 'magnitude') and np.isnan(ep_val.magnitude)):
+       (hasattr(ep_val, 'magnitude') and np.isnan(ep_val.magnitude)): # pyright: ignore
         return np.nan * ureg.dimensionless
 
     try:
         # ep_val should have length units (e.g., mm, inch) from robust exit_pupil.
-        ep_mm = ep_val.to(ureg.mm)
+        ep_mm = ep_val.to(ureg.mm) # pyright: ignore
     except Exception: # Catch Pint conversion errors (e.g., DimensionalityError if ep_val wasn't length)
         return np.nan * ureg.dimensionless
 
     # Check if ep_mm.magnitude became NaN after conversion or if units are missing
     if not hasattr(ep_mm, 'units') or \
-       (hasattr(ep_mm, 'magnitude') and np.isnan(ep_mm.magnitude)):
+       (hasattr(ep_mm, 'magnitude') and np.isnan(ep_mm.magnitude)): # pyright: ignore
         return np.nan * ureg.dimensionless
 
     seven_mm = 7 * ureg.mm
 
     # Avoid division by zero if seven_mm is somehow misconfigured
-    if not hasattr(seven_mm, 'magnitude') or seven_mm.magnitude == 0: # Added hasattr check for magnitude
+    if not hasattr(seven_mm, 'magnitude') or seven_mm.magnitude == 0: # pyright: ignore
         return np.nan * ureg.dimensionless
 
     ratio = ep_mm / seven_mm # ep_mm and seven_mm are both mm, ratio is dimensionless Q
 
     # Check if ratio.magnitude is NaN or if units are unexpectedly missing
     if not hasattr(ratio, 'units') or \
-       (hasattr(ratio, 'magnitude') and np.isnan(ratio.magnitude)):
+       (hasattr(ratio, 'magnitude') and np.isnan(ratio.magnitude)): # pyright: ignore
         return np.nan * ureg.dimensionless
 
     # Final calculation. Result should be a dimensionless Quantity.

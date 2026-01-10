@@ -17,6 +17,10 @@ class Objects(ABC):
     def get_skyfield_object(self, obj) -> object:
         pass
 
+    @abstractmethod
+    def compute(self, calculation_date=None, df_to_compute=None):
+        pass
+
     def __init__(self, place, calculation_date=None):
         self.place = place
         self.objects: pandas.DataFrame = pandas.DataFrame()
@@ -49,16 +53,16 @@ class Objects(ABC):
 
         if (
             ObjectTableLabels.TRANSIT not in candidate_objects.columns
-            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any()
+            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any() # pyright: ignore
         ):
             df_to_compute = (
                 candidate_objects
                 if ObjectTableLabels.TRANSIT not in self.objects.columns
                 else candidate_objects[
-                    candidate_objects[ObjectTableLabels.TRANSIT].isnull()
+                    candidate_objects[ObjectTableLabels.TRANSIT].isnull() # pyright: ignore
                 ]
             )
-            if not df_to_compute.empty:
+            if not df_to_compute.empty: # pyright: ignore
                 self.compute(
                     calculation_date=self.calculation_date, df_to_compute=df_to_compute
                 )
@@ -72,7 +76,7 @@ class Objects(ABC):
 
         # Filter by transit time, ensuring Transit is not NaT
         visible = visible.loc[
-            (visible[ObjectTableLabels.TRANSIT].notna())
+            (visible[ObjectTableLabels.TRANSIT].notna()) # pyright: ignore
             & (
                 visible[ObjectTableLabels.TRANSIT]
                 > start - timedelta(hours=hours_margin)
@@ -105,7 +109,7 @@ class Objects(ABC):
             azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
 
             # Check if any time satisfies both conditions
-            if (altitude_condition & azimuth_condition).any():
+            if (altitude_condition & azimuth_condition).any(): # pyright: ignore
                 visible_objects_indices.append(index)
 
         visible = self.objects.loc[visible_objects_indices]

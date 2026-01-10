@@ -1,6 +1,7 @@
 import configparser
 import logging
 import os
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +113,7 @@ def get_event_settings() -> dict:
     return event_settings
 
 
-def get_weather_settings(provider: str = None) -> tuple[str, str]:
+def get_weather_settings(provider: Optional[str] = None) -> tuple[str, str]:
     """
     Reads the weather settings from the [weather] section.
 

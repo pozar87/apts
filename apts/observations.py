@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class Observation:
-    NOTIFICATION_TEMPLATE = str(
-        resources.files("apts").joinpath("templates/notification.html.template")
+    NOTIFICATION_TEMPLATE = resources.files("apts").joinpath(
+        "templates/notification.html.template"
     )
 
     def __init__(

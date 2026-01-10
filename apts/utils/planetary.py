@@ -1,5 +1,13 @@
 import re
+import numpy as np
+from types import SimpleNamespace
 
+from skyfield.data import mpc
+from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
+from skyfield import almanac
+
+from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
+from apts.i18n import language_context, gettext_
 
 MINOR_PLANET_NAMES = {
     "ceres": "(1) Ceres",
@@ -99,12 +107,6 @@ def get_technical_name(simple_name: str) -> str:
     return simple_name.lower()
 
 
-from skyfield.data import mpc
-from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
-from types import SimpleNamespace
-from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
-
-
 def get_skyfield_obj(planet_name: str):
     """
     Returns a Skyfield object for a given planet name.
@@ -152,20 +154,13 @@ def get_moon_illumination_details(time):
     """
     Returns the moon illumination percentage and waxing/waning status for a given time.
     """
-    from apts.cache import get_ephemeris
-    from skyfield import almanac
-    import numpy as np
-
     eph = get_ephemeris()
-    eph['moon']
-    eph['sun']
 
     # Get the phase angle
-    phase_angle = almanac.moon_phase(eph, time).degrees
+    phase_angle = float(getattr(almanac.moon_phase(eph, time), "degrees"))
 
     # Determine if waxing or waning
     is_waxing = 0 < phase_angle < 180
-
 
     illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2
     return illumination * 100, is_waxing
@@ -183,8 +178,6 @@ def get_reverse_translated_planet_names(language: str) -> dict:
     """
     Returns a dictionary mapping translated planet names back to their English originals.
     """
-    from apts.i18n import language_context, gettext_
-
     reverse_map = {}
     with language_context(language):
         for name in SIMPLE_NAMES:

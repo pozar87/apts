@@ -36,14 +36,14 @@ def _calculate_parallactic_angle(
     latitude_deg: float, declination: "Angle", azimuth: "Angle"
 ) -> float:
     """Calculates the parallactic angle in degrees."""
-    if abs(declination.degrees) > 89.99:
+    if abs(declination.degrees) > 89.99: # type: ignore
         return 0.0
 
     lat_rad = numpy.deg2rad(latitude_deg)
-    dec_rad = declination.radians
-    az_rad = azimuth.radians
+    dec_rad = declination.radians # type: ignore
+    az_rad = azimuth.radians # type: ignore
 
-    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
+    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad) # type: ignore
     sin_q = numpy.clip(sin_q, -1.0, 1.0)
     q_rad = numpy.arcsin(sin_q)
     return numpy.rad2deg(q_rad)
@@ -92,7 +92,7 @@ def _get_brightness_color(magnitude: Optional[float]) -> str:
     Dimmer objects get a color closer to the background.
     """
     if hasattr(magnitude, "magnitude"):
-        magnitude = magnitude.magnitude
+        magnitude = getattr(magnitude, "magnitude") # type: ignore
     if magnitude is None or pd.isna(magnitude):
         return "none"
 
@@ -489,7 +489,7 @@ def _generate_plot_planets(
         )
 
         specific_planet_color = get_planet_color(
-            name, effective_dark_mode, default_planet_color
+            name, effective_dark_mode, default_planet_color # type: ignore
         )
 
         time_series = curve_df["Time"].apply(
@@ -504,12 +504,12 @@ def _generate_plot_planets(
         )
 
         rising_time = planet[ObjectTableLabels.RISING]
-        if pd.notna(rising_time):
+        if pd.notna(rising_time): # type: ignore
             ax.scatter(
                 rising_time, 0, marker="^", color=specific_planet_color, s=100
             )
         setting_time = planet[ObjectTableLabels.SETTING]
-        if pd.notna(setting_time):
+        if pd.notna(setting_time): # type: ignore
             ax.scatter(
                 setting_time, 0, marker="v", color=specific_planet_color, s=100
             )
@@ -770,7 +770,7 @@ def _plot_bright_stars_on_skymap(
     is_polar,
     style: dict,
     zoom_deg: Optional[float] = None,
-    coordinate_system: CoordinateSystem = None,
+    coordinate_system: Optional[CoordinateSystem] = None,
 ):
     bright_stars_df = observation.local_stars.objects.copy()
     if bright_stars_df.empty:
@@ -831,13 +831,13 @@ def _plot_bright_stars_on_skymap(
         alt_zoomed_deg = alt_visible_deg[zoom_mask]
         az_zoomed_deg = az_visible_deg[zoom_mask]
 
-        if df_zoomed.empty:
+        if df_zoomed.empty: # type: ignore
             return
 
         ax.scatter(az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*")
 
         for i in range(len(df_zoomed)):
-            star = df_zoomed.iloc[i]
+            star = df_zoomed.iloc[i] # type: ignore
             ax.annotate(
                 star["Name"],
                 (az_zoomed_deg[i], alt_zoomed_deg[i]),
@@ -858,7 +858,7 @@ def _plot_bright_stars_on_skymap(
         )
 
         df_zoomed = df_visible[zoom_mask]
-        if df_zoomed.empty:
+        if df_zoomed.empty: # type: ignore
             return
 
         ra_zoomed = ra_hours_apparent[zoom_mask]
@@ -867,7 +867,7 @@ def _plot_bright_stars_on_skymap(
         ax.scatter(ra_zoomed, dec_zoomed, s=40, color=star_color, marker="*")
 
         for i in range(len(df_zoomed)):
-            star = df_zoomed.iloc[i]
+            star = df_zoomed.iloc[i] # type: ignore
             ax.annotate(
                 star["Name"],
                 (ra_zoomed[i], dec_zoomed[i]),
@@ -1024,7 +1024,7 @@ def _plot_stars_on_skymap(
 
     bright_stars = stars[stars["magnitude"] <= limit]
 
-    if bright_stars.empty:
+    if bright_stars.empty: # type: ignore
         return
 
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))

@@ -391,7 +391,7 @@ class AstronomicalEvents:
                 simple_name = planetary.get_simple_name(planet_name)
                 events.append(
                     {
-                        "date": t.astimezone(utc),
+                        "date": t.astimezone(utc),  # type: ignore
                         "event": "Highest altitude",
                         "object": simple_name,
                         "type": "Planet Altitude",
@@ -437,7 +437,7 @@ class AstronomicalEvents:
                 event_dict["object"] = simple_name
                 del event_dict["planet"]
                 del event_dict["event_type"]
-                event_dict["date"] = event_dict["date"].astimezone(utc)
+                event_dict["date"] = event_dict["date"].astimezone(utc)  # type: ignore
                 event_dict["type"] = "Aphelion/Perihelion"
                 events.append(event_dict)
         logger.debug(f"--- calculate_aphelion_perihelion: {time.time() - start_time}s")
@@ -550,8 +550,8 @@ class AstronomicalEvents:
             "M107",
         ]
 
-        messier_df = self.catalogs.MESSIER[
-            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
+        messier_df = self.catalogs.MESSIER[ # type: ignore
+            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check) # type: ignore
         ]
 
         # Pre-create Star objects outside the loop
@@ -624,7 +624,7 @@ class AstronomicalEvents:
             events.append(
                 {
                     "date": parse_date(
-                        comet["close_approach_data"][0]["close_approach_date_full"]
+                        comet["close_approach_data"][0]["close_approach_date_full"] # type: ignore
                     ).astimezone(utc),
                     "event": comet["name"],
                     "type": "Comet",

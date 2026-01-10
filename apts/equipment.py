@@ -15,7 +15,7 @@ from .opticalequipment import (
     NakedEye,
     OpticalEquipment,
 )
-from .optics import OpticalPath, OpticsUtils
+from .optics import OpticalPath
 from .utils import Utils
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class Equipment:
         :param node_id:
         :return: sorted list of zooms
         """
-        result = [OpticsUtils.compute_zoom(path) for path in self._get_paths(node_id)]
+        result = [path.zoom().magnitude for path in self._get_paths(node_id)]
         result.sort()
         return result
 
@@ -193,7 +193,7 @@ class Equipment:
             ] = []  # Initialize with empty list or appropriate empty type for ID
             result = result[["ID"] + columns]
 
-        return result
+        return result  # pyright: ignore
 
     def plot_zoom(
         self,
@@ -403,7 +403,7 @@ class Equipment:
 
         # Merge Image and Visual series together
         return pd.DataFrame(
-            [{row[1]: row[0]} for row in data.values], index=labels
+            [{row[1]: row[0]} for row in data.values], index=labels # type: ignore
         ), legend_labels
 
     def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):

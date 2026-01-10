@@ -9,7 +9,7 @@ from apts.place import Place
 class Messier(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Messier, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.MESSIER.copy()
+        self.objects = catalogs.MESSIER.copy() # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.RISING] = None
         self.objects[ObjectTableLabels.SETTING] = None

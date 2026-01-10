@@ -8,7 +8,7 @@ from apts.place import Place
 class Stars(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Stars, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.BRIGHT_STARS.copy()
+        self.objects = catalogs.BRIGHT_STARS.copy() # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.ALTITUDE] = pd.NA
         self.calculation_date = calculation_date # Store calculation_date for lazy computation
