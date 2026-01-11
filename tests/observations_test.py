@@ -3,10 +3,11 @@ import unittest
 import tempfile
 import datetime  # Added
 from datetime import timedelta
+from typing import cast, Any # Added Any
 from unittest.mock import patch
 from skyfield.api import Star
 import pandas as pd
-from unittest.mock import MagicMock  # Added MagicMock and call
+from unittest.mock import MagicMock, ANY  # Added MagicMock and call
 from apts.observations import Observation
 from apts.constants.graphconstants import (
     get_plot_style,
@@ -205,7 +206,7 @@ class TestObservationTemplate(unittest.TestCase):
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 max_return_values = [
                     int(value)
-                    for value in self.observation.conditions.max_return.split(":")
+                    for value in cast(str, self.observation.conditions.max_return).split(":")
                 ]
                 time_limit_dt = self.observation.start.replace(
                     hour=max_return_values[0],
@@ -214,7 +215,7 @@ class TestObservationTemplate(unittest.TestCase):
                 )
                 self.observation.time_limit = (
                     time_limit_dt
-                    if time_limit_dt > self.observation.start
+                    if cast(Any, time_limit_dt) > cast(Any, self.observation.start)
                     else time_limit_dt + pd.Timedelta(days=1)
                 )
             else:
@@ -392,7 +393,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 max_return_values = [
                     int(value)
-                    for value in self.observation.conditions.max_return.split(":")
+                    for value in cast(str, self.observation.conditions.max_return).split(":")
                 ]
                 time_limit_dt = self.observation.start.replace(
                     hour=max_return_values[0],
@@ -401,7 +402,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 )
                 self.observation.time_limit = (
                     time_limit_dt
-                    if time_limit_dt > self.observation.start
+                    if cast(Any, time_limit_dt) > cast(Any, self.observation.start)
                     else time_limit_dt + pd.Timedelta(days=1)
                 )
             else:
@@ -645,8 +646,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     )
                     # Check one text call for color
                     mock_dwg_instance.text.assert_any_call(
-                        unittest.mock.ANY,
-                        insert=(unittest.mock.ANY, unittest.mock.ANY),
+                        ANY,
+                        insert=(ANY, ANY),
                         text_anchor="middle",
                         fill="#FFFFFF",
                     )
@@ -662,8 +663,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         fills_called,
                     )
                     mock_dwg_instance.text.assert_any_call(
-                        unittest.mock.ANY,
-                        insert=(unittest.mock.ANY, unittest.mock.ANY),
+                        ANY,
+                        insert=(ANY, ANY),
                         text_anchor="middle",
                         fill=expected_style["TEXT_COLOR"],
                     )
@@ -806,12 +807,12 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         # Mock conditions
         self.obs.conditions = Conditions()  # Use default conditions or mock as needed
-        self.obs.conditions.max_clouds = 20.0
-        self.obs.conditions.max_precipitation_probability = 10.0
-        self.obs.conditions.max_wind = 15.0
-        self.obs.conditions.min_temperature = 0.0
-        self.obs.conditions.max_temperature = 25.0
-        self.obs.conditions.max_moon_illumination = 50.0
+        self.obs.conditions.max_clouds = int(20.0)
+        self.obs.conditions.max_precipitation_probability = int(10.0)
+        self.obs.conditions.max_wind = int(15.0)
+        self.obs.conditions.min_temperature = int(0.0)
+        self.obs.conditions.max_temperature = int(25.0)
+        self.obs.conditions.max_moon_illumination = int(50.0)
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
@@ -828,9 +829,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         data = []
         base_time = self.obs.start
         for i in range(num_hours):
-            hour_time = base_time + datetime.timedelta(hours=i)
+            hour_time = cast(Any, base_time) + datetime.timedelta(hours=i)
             if (
-                hour_time > self.obs.time_limit
+                cast(Any, hour_time) > cast(Any, self.obs.time_limit)
             ):  # Ensure we don't generate data beyond time_limit
                 break
 
@@ -889,7 +890,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         data_rows = []
         base_time = self.obs.start
         for i in range(num_hours):
-            hour_time = base_time + datetime.timedelta(hours=i)
+            hour_time = cast(Any, base_time) + datetime.timedelta(hours=i)
             cloud = self.obs.conditions.max_clouds - 1
             precip = self.obs.conditions.max_precipitation_probability - 1
             wind = self.obs.conditions.max_wind - 1
@@ -958,7 +959,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Hour 1: Good
         data_rows.append(
             {
-                "time": base_time + datetime.timedelta(hours=1),
+                "time": cast(Any, base_time) + datetime.timedelta(hours=1),
                 "cloudCover": self.obs.conditions.max_clouds - 1,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
@@ -1143,7 +1144,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
         """Test when get_critical_data returns an empty DataFrame."""
         self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
-            columns=[
+            columns=pd.Index([
                 "time",
                 "cloudCover",
                 "precipProbability",
@@ -1151,7 +1152,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "temperature",
                 "visibility",
                 "moonIllumination",
-            ]
+            ])
         )
         results = self.obs.get_hourly_weather_analysis()
 
@@ -1496,7 +1497,7 @@ class TestObservationSkymap(unittest.TestCase):
             horizontalalignment="center",
             verticalalignment="center",
             transform=mock_ax.transAxes,
-            color=unittest.mock.ANY,
+            color=ANY,
         )
 
 
@@ -1533,7 +1534,7 @@ class TestObservationSkymapFlipped(TestObservationSkymap):
             transform=mock_ax.transAxes,
             fontsize=12,
             verticalalignment="top",
-            color=unittest.mock.ANY,
+            color=ANY,
         )
 
     @patch("apts.plot.pyplot")

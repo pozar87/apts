@@ -1,11 +1,12 @@
 import logging
 from importlib import resources
+from typing import Any, cast
+
 import pandas as pd
 from skyfield.api import Star
 
-from .units import get_unit_registry
 from .constants.constellations import constellation_map
-
+from .units import get_unit_registry
 
 _messier_df = None
 _bright_stars_df = None
@@ -34,24 +35,30 @@ def _load_messier_with_units():
 
     # Pre-calculate Skyfield objects
     messier_df["skyfield_object"] = messier_df.apply(
-        lambda row: Star(ra_hours=row.RA.to('hour').magnitude, dec_degrees=row.Dec.to('degree').magnitude), axis=1
+        lambda row: Star(
+            ra_hours=row.RA.to("hour").magnitude,
+            dec_degrees=row.Dec.to("degree").magnitude,
+        ),
+        axis=1,
     )
 
     return messier_df
 
 
 def _parse_ra(ra_str):
-    if isinstance(ra_str, str) and ra_str.count(':') == 2:
-        parts = ra_str.split(':')
-        return float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600
+    if isinstance(ra_str, str) and ra_str.count(":") == 2:
+        parts = ra_str.split(":")
+        return float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600
     return None
 
+
 def _parse_dec(dec_str):
-    if isinstance(dec_str, str) and dec_str.count(':') == 2:
-        sign = -1 if dec_str.startswith('-') else 1
-        parts = dec_str.lstrip('+-').split(':')
-        return sign * (float(parts[0]) + float(parts[1])/60 + float(parts[2])/3600)
+    if isinstance(dec_str, str) and dec_str.count(":") == 2:
+        sign = -1 if dec_str.startswith("-") else 1
+        parts = dec_str.lstrip("+-").split(":")
+        return sign * (float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600)
     return None
+
 
 def _create_ngc_star(obj):
     ra = _parse_ra(obj.RA)
@@ -64,20 +71,17 @@ def _create_ngc_star(obj):
 def _load_ngc_with_units():
     # Load NGC catalogue data
     ngc_df = pd.read_csv(
-        str(resources.files("apts").joinpath("data/ngc.csv")),
-        sep=';',
-        na_values=['']
+        str(resources.files("apts").joinpath("data/ngc.csv")), sep=";", na_values=[""]
     )
 
     # Rename columns for consistency
-    ngc_df.rename(columns={
-        'Const': 'Constellation',
-        'V-Mag': 'Magnitude',
-        'MajAx': 'Size'
-    }, inplace=True)
+    ngc_df.rename(
+        columns={"Const": "Constellation", "V-Mag": "Magnitude", "MajAx": "Size"},
+        inplace=True,
+    )
 
     # Map constellation abbreviations to full names
-    ngc_df['Constellation'] = ngc_df['Constellation'].map(constellation_map)  # type: ignore
+    ngc_df["Constellation"] = ngc_df["Constellation"].map(constellation_map)  # type: ignore
 
     # Set proper dtypes for string columns
     string_columns = ["Name", "Type", "Constellation", "NGC"]
@@ -87,8 +91,14 @@ def _load_ngc_with_units():
 
     # Convert columns to quantities with units
     ureg = get_unit_registry()
-    ngc_df["Magnitude"] = pd.to_numeric(ngc_df["Magnitude"], errors='coerce').fillna(99).apply(lambda x: x * ureg.mag) # type: ignore
-    ngc_df["Size"] = ngc_df["Size"].apply(lambda x: x * ureg.arcminute if pd.notna(x) else None)
+    ngc_df["Magnitude"] = (
+        cast(Any, pd.to_numeric(ngc_df["Magnitude"], errors="coerce"))
+        .fillna(99)
+        .apply(lambda x: x * ureg.mag)
+    )
+    ngc_df["Size"] = ngc_df["Size"].apply(
+        lambda x: x * ureg.arcminute if pd.notna(x) else None
+    )
 
     # Pre-calculate Skyfield objects
     ngc_df["skyfield_object"] = ngc_df.apply(_create_ngc_star, axis=1)
@@ -117,7 +127,11 @@ def _load_bright_stars_with_units():
 
     # Pre-calculate Skyfield objects
     bright_stars_df["skyfield_object"] = bright_stars_df.apply(
-        lambda row: Star(ra_hours=row.RA.to('hour').magnitude, dec_degrees=row.Dec.to('degree').magnitude), axis=1
+        lambda row: Star(
+            ra_hours=row.RA.to("hour").magnitude,
+            dec_degrees=row.Dec.to("degree").magnitude,
+        ),
+        axis=1,
     )
 
     return bright_stars_df
@@ -137,16 +151,16 @@ class Catalogs:
             _bright_stars_df = _load_bright_stars_with_units()
 
     @property
-    def MESSIER(self):
-        return _messier_df
+    def MESSIER(self) -> pd.DataFrame:
+        return _messier_df  # type: ignore
 
     @property
-    def NGC(self):
-        return _ngc_df
+    def NGC(self) -> pd.DataFrame:
+        return _ngc_df  # type: ignore
 
     @property
-    def BRIGHT_STARS(self):
-        return _bright_stars_df
+    def BRIGHT_STARS(self) -> pd.DataFrame:
+        return _bright_stars_df  # type: ignore
 
 
 def initialize_catalogs():

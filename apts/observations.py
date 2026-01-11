@@ -85,14 +85,22 @@ class Observation:
                 )
             else:
                 if self.conditions.start_time:
-                    start_time_values = [
-                        int(v) for v in self.conditions.start_time.split(":")
-                    ]
-                    override_start_dt = self.start.replace(
-                        hour=start_time_values[0],
-                        minute=start_time_values[1],
-                        second=start_time_values[2],
-                    )
+                    if isinstance(self.conditions.start_time, str):
+                        start_time_values = [
+                            int(v) for v in self.conditions.start_time.split(":")
+                        ]
+                        override_start_dt = self.start.replace(
+                            hour=start_time_values[0],
+                            minute=start_time_values[1],
+                            second=start_time_values[2],
+                        )
+                    else:
+                        # Assume it's a datetime/time object and take its time components
+                        override_start_dt = self.start.replace(
+                            hour=self.conditions.start_time.hour,
+                            minute=self.conditions.start_time.minute,
+                            second=self.conditions.start_time.second,
+                        )
                     self.start = override_start_dt
 
                 self.effective_date = self.place.ts.utc(self.start)
@@ -184,7 +192,9 @@ class Observation:
             )
         return self._local_stars
 
-    def get_visible_messier(self, language: Optional[str] = None, **args) -> pd.DataFrame:
+    def get_visible_messier(
+        self, language: Optional[str] = None, **args
+    ) -> pd.DataFrame:
         with language_context(language):
             from apts.i18n import gettext_
 
@@ -212,7 +222,9 @@ class Observation:
             **args,
         )
 
-    def get_visible_planets(self, language: Optional[str] = None, **args) -> pd.DataFrame:
+    def get_visible_planets(
+        self, language: Optional[str] = None, **args
+    ) -> pd.DataFrame:
         with language_context(language):
             return self.local_planets.get_visible(
                 self.conditions,

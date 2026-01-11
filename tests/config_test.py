@@ -56,7 +56,7 @@ class ConfigTest(unittest.TestCase):
     def test_redis_connection_fallback(self, mock_cached_session):
         # Import redis and its exception class for mocking
         try:
-            from redis.exceptions import ConnectionError as RedisConnectionError
+            from redis.exceptions import ConnectionError as RedisConnectionError # pyright: ignore[reportMissingImports]
         except ImportError:
             self.skipTest("redis library not installed")
 

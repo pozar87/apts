@@ -1,15 +1,17 @@
 import unittest
+from typing import Any, cast
+
+from apts.constants import EquipmentTableLabels, GraphConstants
 from apts.equipment import Equipment
 from apts.opticalequipment import NakedEye
-from apts.constants import GraphConstants, EquipmentTableLabels
+
 
 class TestNakedEye(unittest.TestCase):
-
     def test_naked_eye_init(self):
         """Test that NakedEye is initialized with correct default values."""
         ne = NakedEye()
         self.assertEqual(ne.magnification, 1)
-        self.assertEqual(ne.objective_diameter.magnitude, 7)
+        self.assertEqual(cast(Any, ne.objective_diameter).magnitude, 7)
         self.assertEqual(ne.vendor, "Naked Eye")
 
     def test_naked_eye_in_equipment(self):
@@ -24,7 +26,10 @@ class TestNakedEye(unittest.TestCase):
                 naked_eye_path_found = True
                 break
 
-        self.assertTrue(naked_eye_path_found, "A direct path for NakedEye should exist in Equipment.")
+        self.assertTrue(
+            naked_eye_path_found,
+            "A direct path for NakedEye should exist in Equipment.",
+        )
 
     def test_naked_eye_data(self):
         """Test that the data() method includes an entry for NakedEye."""
@@ -32,9 +37,13 @@ class TestNakedEye(unittest.TestCase):
         df = eq.data()
 
         # Find the row corresponding to NakedEye
-        naked_eye_rows = df[df[EquipmentTableLabels.LABEL].str.contains('Naked Eye', na=False)]
+        naked_eye_rows = df[
+            df[EquipmentTableLabels.LABEL].str.contains("Naked Eye", na=False)
+        ]
 
-        self.assertEqual(len(naked_eye_rows), 1, "There should be exactly one entry for NakedEye.")
+        self.assertEqual(
+            len(naked_eye_rows), 1, "There should be exactly one entry for NakedEye."
+        )
 
         # Verify some properties of the NakedEye entry
         naked_eye_data = naked_eye_rows.iloc[0]
@@ -42,5 +51,6 @@ class TestNakedEye(unittest.TestCase):
         self.assertEqual(naked_eye_data[EquipmentTableLabels.EXIT_PUPIL], 7)
         self.assertTrue(naked_eye_data[EquipmentTableLabels.USEFUL_ZOOM])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
