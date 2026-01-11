@@ -1,4 +1,5 @@
-from typing import Optional
+from datetime import datetime
+from typing import Optional, Union
 
 from apts.constants.twilight import Twilight
 
@@ -48,22 +49,22 @@ class Conditions:
 
     def __init__(
         self,
-        max_clouds=DefaultConditions.MAX_CLOUDS,
-        max_precipitation_probability=DefaultConditions.MAX_PRECIPITATION_PROBABILITY,
-        max_precipitation_intensity=DefaultConditions.MAX_PRECIPITATION_INTENSITY,
-        max_wind=DefaultConditions.MAX_WIND,
-        min_temperature=DefaultConditions.MIN_TEMPERATURE,
-        max_temperature=DefaultConditions.MAX_TEMPERATURE,
-        min_weather_goodness=DefaultConditions.MIN_WEATHER_GOODNESS,
-        min_visibility=DefaultConditions.MIN_VISIBILITY,
-        max_fog=DefaultConditions.MAX_FOG,
-        max_return=DefaultConditions.MAX_RETURN,
-        start_time=DefaultConditions.START_TIME,
-        min_object_altitude=DefaultConditions.MIN_OBJECT_ALTITUDE,
-        max_object_magnitude=DefaultConditions.MAX_OBJECT_MAGNITUDE,
-        min_object_azimuth=DefaultConditions.MIN_OBJECT_AZIMUTH,
-        max_object_azimuth=DefaultConditions.MAX_OBJECT_AZIMUTH,
-        max_moon_illumination=DefaultConditions.MAX_MOON_ILLUMINATION,
+        max_clouds: float = DefaultConditions.MAX_CLOUDS,
+        max_precipitation_probability: float = DefaultConditions.MAX_PRECIPITATION_PROBABILITY,
+        max_precipitation_intensity: float = DefaultConditions.MAX_PRECIPITATION_INTENSITY,
+        max_wind: float = DefaultConditions.MAX_WIND,
+        min_temperature: float = DefaultConditions.MIN_TEMPERATURE,
+        max_temperature: float = DefaultConditions.MAX_TEMPERATURE,
+        min_weather_goodness: float = DefaultConditions.MIN_WEATHER_GOODNESS,
+        min_visibility: float = DefaultConditions.MIN_VISIBILITY,
+        max_fog: float = DefaultConditions.MAX_FOG,
+        max_return: Optional[str] = DefaultConditions.MAX_RETURN,
+        start_time: Optional[Union[str, datetime]] = DefaultConditions.START_TIME,
+        min_object_altitude: float = DefaultConditions.MIN_OBJECT_ALTITUDE,
+        max_object_magnitude: float = DefaultConditions.MAX_OBJECT_MAGNITUDE,
+        min_object_azimuth: float = DefaultConditions.MIN_OBJECT_AZIMUTH,
+        max_object_azimuth: float = DefaultConditions.MAX_OBJECT_AZIMUTH,
+        max_moon_illumination: float = DefaultConditions.MAX_MOON_ILLUMINATION,
         twilight: Twilight = DefaultConditions.TWILIGHT,
     ):
         self.max_clouds = max_clouds

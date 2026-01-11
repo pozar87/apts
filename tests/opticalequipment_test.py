@@ -1,13 +1,13 @@
 import unittest
+from typing import Any, cast
 
-from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.barlow import Barlow
 from apts.opticalequipment.eyepiece import Eyepiece
+from apts.opticalequipment.telescope import Telescope
 from apts.optics import OpticsUtils
 
 
 class OpticalEquipmentTest(unittest.TestCase):
-
     def test_telescope(self):
         t = Telescope(aperture=150, focal_length=750)
         self.assertEqual(t.focal_ratio(), 5.0)
@@ -28,4 +28,4 @@ class OpticalEquipmentTest(unittest.TestCase):
         zoom = OpticsUtils.compute_zoom(t, [], e)
         self.assertEqual(zoom, 75)
         fov = e.field_of_view(t, zoom, 1)
-        self.assertAlmostEqual(fov.magnitude, 0.67, 2)
+        self.assertAlmostEqual(cast(Any, fov).magnitude, 0.67, 2)

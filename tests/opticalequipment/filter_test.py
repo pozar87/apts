@@ -1,10 +1,10 @@
 import unittest
 
+from apts.constants import GraphConstants
 from apts.equipment import Equipment
+from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.filter import Filter
 from apts.opticalequipment.telescope import Telescope
-from apts.opticalequipment.eyepiece import Eyepiece
-from apts.constants import GraphConstants
 
 
 class FilterTest(unittest.TestCase):
@@ -34,6 +34,7 @@ class FilterTest(unittest.TestCase):
                 break
 
         self.assertIsNotNone(filtered_path, "Could not find a path with the filter.")
+        assert filtered_path is not None
         self.assertIn(f, filtered_path.elements())
         self.assertIn(t, filtered_path.elements())
         self.assertIn(e, filtered_path.elements())

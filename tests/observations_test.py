@@ -647,7 +647,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     # Check one text call for color
                     mock_dwg_instance.text.assert_any_call(
                         ANY,
-                        insert=(ANY, unittest.mock.ANY),
+                        insert=(ANY, ANY),
                         text_anchor="middle",
                         fill="#FFFFFF",
                     )
@@ -664,7 +664,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     )
                     mock_dwg_instance.text.assert_any_call(
                         ANY,
-                        insert=(ANY, unittest.mock.ANY),
+                        insert=(ANY, ANY),
                         text_anchor="middle",
                         fill=expected_style["TEXT_COLOR"],
                     )

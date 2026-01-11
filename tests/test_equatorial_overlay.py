@@ -1,26 +1,37 @@
-import pytest
-from unittest.mock import patch, MagicMock, PropertyMock
+from typing import Any, cast
+from unittest.mock import MagicMock, PropertyMock, patch
+
 import numpy as np
 import pandas as pd
+import pytest
 from skyfield.api import Star as SkyfieldStar
 from skyfield.units import Angle
 
-from apts.observations import Observation
-from apts.place import Place
-from apts.equipment import Equipment
 from apts.conditions import Conditions
 from apts.constants.plot import CoordinateSystem
+from apts.equipment import Equipment
+from apts.observations import Observation
+from apts.place import Place
 from apts.plot import _generate_plot_skymap
 
 
 @pytest.fixture
 def mock_obs_and_target():
     """Fixture to create a mock observation and target object."""
-    with patch.object(Observation, 'local_stars', new_callable=PropertyMock) as mock_local_stars, \
-         patch.object(Observation, 'local_messier', new_callable=PropertyMock) as mock_local_messier, \
-         patch.object(Observation, 'local_ngc', new_callable=PropertyMock) as mock_local_ngc, \
-         patch.object(Observation, 'local_planets', new_callable=PropertyMock) as mock_local_planets:
-
+    with (
+        patch.object(
+            Observation, "local_stars", new_callable=PropertyMock
+        ) as mock_local_stars,
+        patch.object(
+            Observation, "local_messier", new_callable=PropertyMock
+        ) as mock_local_messier,
+        patch.object(
+            Observation, "local_ngc", new_callable=PropertyMock
+        ) as mock_local_ngc,
+        patch.object(
+            Observation, "local_planets", new_callable=PropertyMock
+        ) as mock_local_planets,
+    ):
         place = Place(lat=34.0, lon=-118.0, elevation=0, name="LA")
         equipment = Equipment()
         conditions = Conditions(
@@ -43,11 +54,13 @@ def mock_obs_and_target():
         mock_local_stars.return_value = mock_stars_instance
 
         mock_messier_instance = MagicMock()
-        mock_messier_instance.objects = pd.DataFrame(columns=["Messier", "Name"])
+        mock_messier_instance.objects = pd.DataFrame(
+            columns=cast(Any, ["Messier", "Name"])
+        )
         mock_local_messier.return_value = mock_messier_instance
 
         mock_ngc_instance = MagicMock()
-        mock_ngc_instance.objects = pd.DataFrame(columns=["NGC", "Name"])
+        mock_ngc_instance.objects = pd.DataFrame(columns=cast(Any, ["NGC", "Name"]))
         mock_local_ngc.return_value = mock_ngc_instance
 
         mock_planets_instance = MagicMock()
@@ -68,7 +81,6 @@ def test_equatorial_skymap_overlay_normal_azimuth(mock_obs_and_target):
     # Mock the observer and coordinate transformation
     mock_observer = MagicMock()
     obs.place.observer.at = MagicMock(return_value=mock_observer)
-
 
     # Create a predictable alt/az grid to be returned by the mocked observer
     # Grid shape is (num_dec, num_ra) = (30, 120)
@@ -108,7 +120,7 @@ def test_equatorial_skymap_overlay_normal_azimuth(mock_obs_and_target):
         if isinstance(target, SkyfieldStar):
             # Check if it's the grid by looking at the number of stars
             if isinstance(target.ra.hours, np.ndarray) and len(target.ra.hours) > 1:
-                 return mock_grid_observation
+                return mock_grid_observation
         return mock_target_observation  # The single target object or other types
 
     mock_observer.observe.side_effect = observe_side_effect
@@ -121,7 +133,7 @@ def test_equatorial_skymap_overlay_normal_azimuth(mock_obs_and_target):
         _generate_plot_skymap(
             observation=obs,
             target_name=target_name,
-            coordinate_system=CoordinateSystem.EQUATORIAL,
+            coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
             plot_stars=False,
         )
 
@@ -201,7 +213,7 @@ def test_equatorial_skymap_overlay_wrapping_azimuth(mock_obs_and_target):
         _generate_plot_skymap(
             observation=obs,
             target_name=target_name,
-            coordinate_system=CoordinateSystem.EQUATORIAL,
+            coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
             plot_stars=False,
         )
 
