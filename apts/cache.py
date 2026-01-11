@@ -75,6 +75,7 @@ def get_mpcorb_data() -> pd.DataFrame:
     # Post-processing to ensure data types are correct and index is set
     if df.empty:
         df = pd.DataFrame(
+            data=None,
             columns=[
                 "designation_packed",
                 "magnitude_H",
@@ -99,7 +100,7 @@ def get_mpcorb_data() -> pd.DataFrame:
                 "hex_flags",
                 "designation",
                 "last_observation_date",
-            ]
+            ]  # type: ignore
         )
         return df.set_index("designation")
 

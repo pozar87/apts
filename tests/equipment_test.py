@@ -1,5 +1,7 @@
 import pytest
 import numpy as np  # Added for np.log10
+import pandas as pd
+from typing import Any, cast
 from unittest.mock import patch, MagicMock, ANY
 
 from apts.equipment import Equipment
@@ -17,8 +19,8 @@ def test_flipped_view():
     e.register(Telescope(150, 750))
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 2].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Telescope with star diagonal is flipped horizontally, but not flipped vertically
     e = Equipment()
@@ -26,8 +28,8 @@ def test_flipped_view():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Telescope with two star diagonals is flipped horizontally and vertically
     e = Equipment()
@@ -36,8 +38,8 @@ def test_flipped_view():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 4].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Telescope with erecting diagonal is not flipped
     e = Equipment()
@@ -45,8 +47,8 @@ def test_flipped_view():
     e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == False
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert not row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
 
 def test_zoom():
@@ -636,6 +638,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
     direct_connection_found = False
+    row = None
     for _, row in image_paths.iterrows():
         if (
             tele_no_t2.vendor in row[EquipmentTableLabels.LABEL]
@@ -645,7 +648,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
             direct_connection_found = True
             break
     assert not direct_connection_found, (
-        f"Unexpected direct path found between Telescope (no T2 out) and Camera (T2 in): {row[EquipmentTableLabels.LABEL] if direct_connection_found else ''}"
+        f"Unexpected direct path found between Telescope (no T2 out) and Camera (T2 in): {cast(Any, row)[EquipmentTableLabels.LABEL] if direct_connection_found else ''}"
     )
 
 
@@ -673,6 +676,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     problematic_path_found = False
+    row = None
     for _, row in image_paths.iterrows():
         is_problem_path = (
             tele.vendor in row[EquipmentTableLabels.LABEL]
@@ -686,7 +690,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
             break
 
     assert not problematic_path_found, (
-        f"Path formed with Barlow (no T2 out) to Camera (T2 in): {row[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"
+        f"Path formed with Barlow (no T2 out) to Camera (T2 in): {cast(Any, row)[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"
     )
 
 
@@ -719,8 +723,8 @@ def test_camera_path_brightness_is_nan():
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
-    assert camera_rows[EquipmentTableLabels.BRIGHTNESS].isnull().all(), (
-        f"Brightness for camera paths should be NaN. Got: {camera_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool(cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).isnull().all()), (
+        f"Brightness for camera paths should be NaN. Got: {cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
 
@@ -747,13 +751,13 @@ def test_eyepiece_path_brightness_is_numeric():
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
-    assert eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].notnull().all(), (
-        f"Brightness for eyepiece paths should be a number. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool(cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).notnull().all()), (
+        f"Brightness for eyepiece paths should be a number. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
     # Check that all brightness values are non-negative
-    assert (eyepiece_rows[EquipmentTableLabels.BRIGHTNESS] >= 0).all(), (
-        f"Brightness for eyepiece paths should be non-negative. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool((cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]) >= 0).all()), (
+        f"Brightness for eyepiece paths should be non-negative. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
 
@@ -978,7 +982,7 @@ def test_plot_connection_graph_svg_override_dark(
     mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
-    assert called_kwargs.get("dark_mode_override") is True
+    assert called_kwargs.get("dark_mode_override")
     assert "target" in called_kwargs
     assert called_kwargs["target"] == mock_cairo_surface.return_value
 
@@ -989,8 +993,8 @@ def test_flipped_view_with_different_telescopes():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR))
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 2].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Newtonian reflector with star diagonal should be flipped horizontally, but not vertically
     e = Equipment()
@@ -998,8 +1002,10 @@ def test_flipped_view_with_different_telescopes():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Schmidt-Cassegrain with star diagonal is flipped horizontally, but not flipped vertically
     e = Equipment()
@@ -1007,8 +1013,8 @@ def test_flipped_view_with_different_telescopes():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Maksutov-Cassegrain with erecting diagonal is not flipped
     e = Equipment()
@@ -1016,8 +1022,8 @@ def test_flipped_view_with_different_telescopes():
     e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
     row = e.data()[e.data()['Elements'] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == False
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert not row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
 
 def test_flipped_view_with_camera():
@@ -1028,8 +1034,8 @@ def test_flipped_view_with_camera():
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
     row = image_paths.iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Refractor with star diagonal and camera is flipped horizontally, but not vertically
     e = Equipment()
@@ -1039,8 +1045,8 @@ def test_flipped_view_with_camera():
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
     row = image_paths.iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == False
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
     # Newtonian with camera (no diagonal) is flipped horizontally and vertically
     e = Equipment()
@@ -1049,8 +1055,8 @@ def test_flipped_view_with_camera():
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
     row = image_paths.iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY] == True
-    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY] == True
+    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
+    assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
 
 @patch("apts.equipment.ca.ImageSurface")
@@ -1068,7 +1074,7 @@ def test_plot_connection_graph_svg_override_light(
     mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
-    assert called_kwargs.get("dark_mode_override") is False
+    assert not called_kwargs.get("dark_mode_override")
     assert "target" in called_kwargs
     assert called_kwargs["target"] == mock_cairo_surface.return_value
 

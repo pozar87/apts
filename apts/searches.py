@@ -24,14 +24,26 @@ def find_extrema(f, t0, t1, num_points=1000):
     for i in root_indices:
         try:
             # Refine root location
-            t_root = brentq(lambda t: np.gradient(f(ts.tt(jd=[t-0.01, t, t+0.01])), 0.01)[1],
-                             times[i].tt, times[i+1].tt)
+            def deriv_at(t):
+                # Ensure t is float
+                t_val = float(t)
+                return np.gradient(f(ts.tt(jd=[t_val - 0.01, t_val, t_val + 0.01])), 0.01)[1]
+
+            t_root = brentq(
+                deriv_at, float(times[i].tt), float(times[i + 1].tt)
+            )
             t_extremum = ts.tt(jd=t_root)
             v_extremum = f(t_extremum)
 
             # Check second derivative to determine if max or min
-            second_deriv = np.gradient(np.gradient(f(ts.tt(jd=[t_root-0.01, t_root, t_root+0.01])), 0.01), 0.01)[1]
-            is_max = second_deriv < 0
+            def second_deriv_at(t):
+                t_val = float(t)
+                return np.gradient(
+                    np.gradient(f(ts.tt(jd=[t_val - 0.01, t_val, t_val + 0.01])), 0.01),
+                    0.01,
+                )[1]
+
+            is_max = second_deriv_at(t_root) < 0
 
             extrema.append((t_extremum, v_extremum, is_max))
         except (RuntimeError, ValueError):
@@ -149,7 +161,7 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
             'parallax_mas': [0],
             'radial_km_per_s': [0],
             'epoch_year': [2000.0]
-        }, index=[0])
+        }, index=pd.Index([0]))
         star = Star.from_dataframe(star_df)
 
         times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check

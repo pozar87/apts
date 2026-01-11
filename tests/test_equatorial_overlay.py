@@ -107,7 +107,7 @@ def test_equatorial_skymap_overlay_normal_azimuth(mock_obs_and_target):
         # SkyfieldStar is used for both single stars and grids of stars
         if isinstance(target, SkyfieldStar):
             # Check if it's the grid by looking at the number of stars
-            if len(target.ra.hours) > 1:
+            if isinstance(target.ra.hours, np.ndarray) and len(target.ra.hours) > 1:
                  return mock_grid_observation
         return mock_target_observation  # The single target object or other types
 
@@ -187,7 +187,7 @@ def test_equatorial_skymap_overlay_wrapping_azimuth(mock_obs_and_target):
 
     def observe_side_effect(target):
         if isinstance(target, SkyfieldStar):
-            if len(target.ra.hours) > 1:
+            if isinstance(target.ra.hours, np.ndarray) and len(target.ra.hours) > 1:
                 return mock_grid_observation
         return mock_target_observation
 

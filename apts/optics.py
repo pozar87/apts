@@ -143,7 +143,7 @@ class OpticalPath:
         # The result will be in units of aperture (e.g., mm)
         if hasattr(self.telescope, "aperture"):
             zoom_value = self.zoom()
-            if zoom_value.magnitude == 0:  # Avoid division by zero
+            if zoom_value.magnitude == 0:  # pyright: ignore
                 return 0 * get_unit_registry().mm
             return self.telescope.aperture / zoom_value
 

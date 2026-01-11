@@ -87,13 +87,12 @@ class Place:
         t0 = self.ts.utc(start - datetime.timedelta(days=2))
         t1 = self.ts.utc(start)
         f = almanac.risings_and_settings(self.eph, obj, self.location)
-        t, y = almanac.find_discrete(t0, t1, f)
+        t, y = almanac.find_discrete(t0, t1, f) # type: ignore
 
-        settings = [
-            ti
-            for ti, yi in zip(t, y)
-            if yi == 0
-        ]
+        if t is None:
+            return None
+
+        settings = [ti for ti, yi in zip(t, y) if yi == 0] # type: ignore
         if settings:
             return (
                 settings[-1]
@@ -109,13 +108,14 @@ class Place:
         f = almanac.risings_and_settings(self.eph, obj, self.location)
         t, y = almanac.find_discrete(t0, t1, f)
 
-        for ti, yi in zip(t, y):
-            if yi == 1:  # Rising
-                return (
-                    ti.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(self.local_timezone)
-                )
+        if t is not None:
+            for ti, yi in zip(t, y): # type: ignore
+                if yi == 1:  # Rising
+                    return (
+                        ti.utc_datetime()
+                        .replace(tzinfo=pytz.UTC) # type: ignore
+                        .astimezone(self.local_timezone)
+                    )
         return None
 
     def _get_start_date(self, target_date, start_search_from):
@@ -134,7 +134,7 @@ class Place:
         t1 = self.ts.utc(start_date + datetime.timedelta(days=2))
 
         f = almanac.dark_twilight_day(self.eph, self.location)
-        times, events = almanac.find_discrete(t0, t1, f)
+        times, events = almanac.find_discrete(t0, t1, f) # type: ignore
 
         # Define transitions for evening (set) and morning (rise)
         if event == "set":  # Evening: getting darker
@@ -150,18 +150,19 @@ class Place:
                 Twilight.CIVIL: (2, 3),  # Nautical -> Civil
             }
 
-        prev_event, next_event = transitions.get(twilight)
+        prev_event, next_event = transitions.get(twilight) # type: ignore
 
         # The first event is the state at t0
         previous_y = f(t0)
-        for t, y in zip(times, events):
-            if previous_y == prev_event and y == next_event:
-                return (
-                    t.utc_datetime()
-                    .replace(tzinfo=pytz.UTC)
-                    .astimezone(self.local_timezone)
-                )
-            previous_y = y
+        if times is not None and events is not None:
+            for t, y in zip(times, events): # type: ignore
+                if previous_y == prev_event and y == next_event:
+                    return (
+                        t.utc_datetime()
+                        .replace(tzinfo=pytz.UTC) # type: ignore
+                        .astimezone(self.local_timezone)
+                    )
+                previous_y = y
 
         return None
 
@@ -193,10 +194,14 @@ class Place:
     def moonrise_time(self):
         return self._next_rising_time(self.moon, start=self.date.utc_datetime())
 
-    def _moon_phase_letter(self):
-        moon_phase_angle = almanac.moon_phase(self.eph, self.date).degrees
-        lunation = moon_phase_angle / 360.0
-        letter = chr(ord("A") + int(round(lunation * 26)))
+    def _moon_phase_letter(self) -> str:
+        phase_angle = almanac.moon_phase(self.eph, self.date)
+        if hasattr(phase_angle, "degrees"):
+            phase_angle_deg = phase_angle.degrees
+        else:
+            phase_angle_deg = float(phase_angle) # type: ignore
+        lunation = phase_angle_deg / 360.0 # type: ignore
+        letter = chr(ord("A") + int(round(lunation * 26))) # type: ignore
         return letter
 
     def moon_illumination(self):
@@ -220,30 +225,26 @@ class Place:
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
             diffs = df["Azimuth"].diff()
-            # A wrap-around is a large jump, positive or negative
-            wrap_around_indices = diffs[diffs.abs() > 180].index
-            if not wrap_around_indices.empty:
-                # Create a new row with NaN values to break the line plot
+            wrap_around_indices = diffs[diffs.abs() > 180].index # type: ignore
+            if not wrap_around_indices.empty: # type: ignore
+                idx = wrap_around_indices[0] # type: ignore
+                new_index = idx - 0.5 # type: ignore
                 nan_row = pd.DataFrame(
-                    {
-                        "Time": [pd.NaT],
-                        "Altitude": [np.nan],
-                        "Azimuth": [np.nan],
-                    },
-                    index=[wrap_around_indices[0] - 0.5],
+                    {"Time": [pd.NaT], "Altitude": [np.nan], "Azimuth": [np.nan]},
+                    index=[new_index], # type: ignore
                 )
-                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)
+                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True) # type: ignore
 
         df["Local_time"] = [
-            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")
+            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M") # type: ignore
             if hasattr(t, "utc_datetime")
             else ""
             for t in df["Time"]
         ]
         return df
 
-    def moon_path(self):
-        start_time = self.date.utc_datetime().replace(
+    def moon_path(self) -> pd.DataFrame:
+        start_time = self.date.utc_datetime().replace( # type: ignore
             hour=0, minute=0, second=0, microsecond=0
         )
         end_time = start_time + datetime.timedelta(days=1)
@@ -255,8 +256,13 @@ class Place:
         for t in df["Time"]:
             if hasattr(t, "utc_datetime"):
                 moon_phase_angle = almanac.moon_phase(self.eph, t)
-                phases.append((moon_phase_angle.degrees / 360.0) * 100)
-                lunations.append(moon_phase_angle.degrees / 360.0)
+                phase_angle_deg = (
+                    moon_phase_angle.degrees
+                    if hasattr(moon_phase_angle, "degrees")
+                    else float(moon_phase_angle) # type: ignore
+                )
+                phases.append((phase_angle_deg / 360.0) * 100) # type: ignore
+                lunations.append(phase_angle_deg / 360.0) # type: ignore
             else:
                 phases.append(pd.NA)
                 lunations.append(pd.NA)
@@ -264,20 +270,20 @@ class Place:
         df["Phase"] = phases
         df["Lunation"] = lunations
         df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT # type: ignore
             for x in df["Time"]
         ]
         return df
 
-    def sun_path(self):
-        start_time = self.date.utc_datetime().replace(
+    def sun_path(self) -> pd.DataFrame:
+        start_time = self.date.utc_datetime().replace( # type: ignore
             hour=0, minute=0, second=0, microsecond=0
         )
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
         df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT # type: ignore
             for x in df["Time"]
         ]
         return df
@@ -334,7 +340,7 @@ class Place:
 
         ax.set_title(
             gettext_("Sun Path on {date}").format(
-                date=self.date.utc_datetime().strftime("%Y-%m-%d")
+                date=self.date.utc_datetime().strftime("%Y-%m-%d") # type: ignore
             ),
             color=style["TEXT_COLOR"],
         )
@@ -547,7 +553,7 @@ class Place:
                 )
         ax.set_title(
             gettext_("Moon Path")
-            + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",
+            + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}", # type: ignore
             color=style["TEXT_COLOR"],
         )
         return ax

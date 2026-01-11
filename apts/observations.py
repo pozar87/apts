@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class Observation:
-    NOTIFICATION_TEMPLATE = str(
-        resources.files("apts").joinpath("templates/notification.html.template")
+    NOTIFICATION_TEMPLATE = resources.files("apts").joinpath(
+        "templates/notification.html.template"
     )
 
     def __init__(
@@ -184,7 +184,7 @@ class Observation:
             )
         return self._local_stars
 
-    def get_visible_messier(self, language: Optional[str] = None, **args):
+    def get_visible_messier(self, language: Optional[str] = None, **args) -> pd.DataFrame:
         with language_context(language):
             from apts.i18n import gettext_
 
@@ -203,7 +203,7 @@ class Observation:
                 )
             return visible
 
-    def get_visible_ngc(self, **args):
+    def get_visible_ngc(self, **args) -> pd.DataFrame:
         return self.local_ngc.get_visible(
             self.conditions,
             self.start,
@@ -212,7 +212,7 @@ class Observation:
             **args,
         )
 
-    def get_visible_planets(self, language: Optional[str] = None, **args):
+    def get_visible_planets(self, language: Optional[str] = None, **args) -> pd.DataFrame:
         with language_context(language):
             return self.local_planets.get_visible(
                 self.conditions,

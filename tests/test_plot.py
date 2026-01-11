@@ -158,7 +158,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         patch("apts.plot.pyplot") as mock_pyplot,
         patch(
             "apts.plot._get_brightness_color", return_value="0.5"
-        ) as mock_get_brightness_color,
+        ),
     ):
         # Mock the figure and axes objects
         mock_fig = MagicMock()
@@ -426,7 +426,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
     """Test that stars are plotted correctly in equatorial coordinates with zoom."""
     from apts.plot import (
         _plot_stars_on_skymap,
-        _plot_bright_stars_on_skymap,
         CoordinateSystem,
     )
 
@@ -507,7 +506,7 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
     with patch("apts.plot.get_hipparcos_data", return_value=mock_stars_data):
         # Test _plot_stars_on_skymap
         print("=== DEBUG: About to call _plot_stars_on_skymap ===")
-        print(f"is_polar: False, zoom_deg: 2.0, coordinate_system: EQUATORIAL")
+        print("is_polar: False, zoom_deg: 2.0, coordinate_system: EQUATORIAL")
         print(f"Mock dec_degrees_array: {dec_degrees_array}")
         print(f"Mock dec_degrees_array type: {type(dec_degrees_array)}")
 
@@ -527,7 +526,7 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         )
 
         # Test the actual property access and indexing
-        print(f"DEBUG: Testing property access...")
+        print("DEBUG: Testing property access...")
         print(f"DEBUG: mock_ra.hours: {mock_ra.hours}")
         print(f"DEBUG: type(mock_ra.hours): {type(mock_ra.hours)}")
         print(f"DEBUG: mock_dec.degrees: {mock_dec.degrees}")
@@ -611,10 +610,10 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
                     )
                     if 0 <= min(ra_values) <= 24 and 0 <= min(dec_values) <= 90:
                         equatorial_scatter = call
-                        print(f"Found equatorial scatter call!")
+                        print("Found equatorial scatter call!")
                         break
                 else:
-                    print(f"Skipping scatter call - not iterable or empty")
+                    print("Skipping scatter call - not iterable or empty")
 
         assert equatorial_scatter is not None, (
             "No equatorial coordinate scatter plot found"
@@ -1234,7 +1233,6 @@ def test_plot_stars_ra_wrapping_equatorial():
     mock_az = MagicMock()
     mock_altaz.degrees = np.array([45.0, 50.0, 55.0, 60.0, 65.0])
     mock_az.degrees = np.array([180.0, 200.0, 220.0, 240.0, 260.0])  # Azimuth values
-    mock_radec = MagicMock()
 
     # Create proper mock arrays that support boolean indexing
     ra_hours_array = np.array([0.5, 1.2, 1.8, 2.5, 3.0])
@@ -1281,10 +1279,10 @@ def test_plot_stars_ra_wrapping_equatorial():
         print(f"RA values: {[0.5, 1.2, 1.8, 2.5, 3.0]}")
         print(f"Expected RA in zoom (1.0-2.0): {[1.2, 1.8]}")
         print(f"Dec values: {[25.0, 35.0, 38.0, 45.0, 50.0]}")
-        print(f"Expected Dec in zoom (30.0-40.0): 2 stars (35.0, 38.0)")
+        print("Expected Dec in zoom (30.0-40.0): 2 stars (35.0, 38.0)")
 
         # Debug the mock data setup
-        print(f"=== DEBUG: Mock data sizes ===")
+        print("=== DEBUG: Mock data sizes ===")
         print(f"  alt.degrees: {len(mock_altaz.degrees)} items")
         print(f"  az.degrees: {len(mock_az.degrees)} items")
         print(f"  ra.hours: {len(mock_ra.hours)} items")
@@ -1295,7 +1293,7 @@ def test_plot_stars_ra_wrapping_equatorial():
         print(f"  ylim: {mock_ax.get_ylim.return_value}")
 
         # Update debug info for new expected values
-        print(f"  Expected stars in zoom: RA 1.2, 1.8 and Dec 35.0, 38.0")
+        print("  Expected stars in zoom: RA 1.2, 1.8 and Dec 35.0, 38.0")
 
         _plot_stars_on_skymap(
             mock_observation,
@@ -1338,7 +1336,7 @@ def test_plot_stars_ra_wrapping_equatorial():
                 print(
                     f"  az.degrees size: {len(az.degrees) if hasattr(az.degrees, '__len__') else 'N/A'}"
                 )
-            except:
+            except Exception:
                 print("  Could not get alt/az data")
 
             # Check the mock ra/dec data
@@ -1352,7 +1350,7 @@ def test_plot_stars_ra_wrapping_equatorial():
                 )
                 print(f"  ra.hours: {ra.hours}")
                 print(f"  dec.degrees: {dec.degrees}")
-            except:
+            except Exception:
                 print("  Could not get ra/dec data")
 
         mock_ax.scatter.assert_called()
@@ -1363,7 +1361,7 @@ def test_plot_stars_ra_wrapping_equatorial():
         for call in scatter_calls:
             args, kwargs = call
             if len(args) >= 2:
-                ra_values, dec_values = args[0], args[1]
+                ra_values, _ = args[0], args[1]
                 if hasattr(ra_values, "__len__") and len(ra_values) > 0:
                     if 0 <= min(ra_values) <= 24:
                         equatorial_scatter = call
@@ -1375,7 +1373,7 @@ def test_plot_stars_ra_wrapping_equatorial():
 
         # Verify only the 2 stars in the zoom window were plotted
         args, kwargs = equatorial_scatter
-        ra_values, dec_values = args[0], args[1]
+        ra_values, _ = args[0], args[1]
         assert len(ra_values) == 2, (
             f"Expected 2 stars in wrapped zoom window, got {len(ra_values)}"
         )

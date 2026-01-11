@@ -1,9 +1,9 @@
 import json
 import logging
 from abc import ABC, abstractmethod
+from typing import cast
 
 import pandas as pd
-import requests
 import requests_cache
 from apts.config import get_cache_settings
 
@@ -25,7 +25,7 @@ def get_session():
             try:
                 # This import is here to avoid a hard dependency on redis
                 # if the user doesn't use the redis backend.
-                from redis.exceptions import ConnectionError as RedisConnectionError
+                from redis.exceptions import ConnectionError as RedisConnectionError # pyright: ignore[reportMissingImports] # noqa: F401
 
                 kwargs["url"] = cache_settings["redis_location"]
                 # The connection is lazy, so we need to trigger it to test it.
@@ -37,7 +37,7 @@ def get_session():
                 temp_session.cache.get_response('test') # dummy call to force connection
                 session = temp_session
 
-            except (ImportError, RedisConnectionError, Exception) as e:
+            except (ImportError, Exception) as e:
                 logger.warning(
                     f"Redis connection failed with error: {e}. "
                     "Falling back to in-memory cache for this session."
@@ -59,14 +59,14 @@ class WeatherProvider(ABC):
         self.local_timezone = local_timezone
 
     @abstractmethod
-    def download_data(self):
+    def download_data(self) -> pd.DataFrame:
         pass
 
 
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self):  # pyright: ignore
+    def download_data(self) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -98,8 +98,8 @@ class PirateWeather(WeatherProvider):
                 ]
             else:
                 logger.error(f"KeyError in weather data. Full response: {json_data}")
-                return pd.DataFrame(columns=columns)
-            result = pd.DataFrame(raw_data, columns=columns)
+                return pd.DataFrame(columns=pd.Index(columns))
+            result = pd.DataFrame(raw_data, columns=pd.Index(columns))
             # Convert units
             result["precipProbability"] *= 100
             result["cloudCover"] *= 100
@@ -118,7 +118,7 @@ class PirateWeather(WeatherProvider):
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self):  # pyright: ignore
+    def download_data(self) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -188,13 +188,13 @@ class VisualCrossing(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"  # or pd.NA
 
-            return df[required_columns]
+            return cast(pd.DataFrame, df[required_columns])
 
 
 class Meteoblue(WeatherProvider):
     API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
 
-    def download_data(self):  # pyright: ignore
+    def download_data(self) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -241,7 +241,7 @@ class Meteoblue(WeatherProvider):
                 )
 
             if "visibility" in df.columns:
-                df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce") / 1000
+                df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce") / 1000  # type: ignore
 
             if "fog" in df.columns:
                 df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
@@ -272,13 +272,13 @@ class Meteoblue(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
-            return df[required_columns]
+            return cast(pd.DataFrame, df[required_columns])
 
 
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self):  # pyright: ignore
+    def download_data(self) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -371,4 +371,4 @@ class OpenWeatherMap(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
-            return df[required_columns]
+            return cast(pd.DataFrame, df[required_columns])

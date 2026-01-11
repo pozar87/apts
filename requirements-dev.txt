@@ -1,2 +1,6 @@
 pytest==9.0.2
 requests-mock==1.12.1
+ruff
+pyright
+ruff
+pyright

@@ -1,8 +1,10 @@
+import pandas as pd
+from typing import cast
 from apts.catalogs import Catalogs
 
 
 def test_messier_catalog():
-    c = Catalogs().MESSIER
+    c = cast(pd.DataFrame, Catalogs().MESSIER)
     # Messier catalog contains 110 objects
     assert len(c) == 110
     # M13 is  Hercules Globular Cluster - NGC 6205 (index starts from 0)
@@ -18,7 +20,7 @@ def test_messier_catalog():
     # Sort using magnitude value of Width
     largest_objects = c.sort_values(
         by="Width",
-        key=lambda x: x.apply(lambda y: y.magnitude if hasattr(y, "magnitude") else y),
+        key=lambda x: cast(pd.Series, x.apply(lambda y: getattr(y, "magnitude", y))),
         ascending=False,
     )
     assert largest_objects.iloc[0]["Name"] == "Andromeda Galaxy"

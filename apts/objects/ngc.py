@@ -8,7 +8,7 @@ from apts.place import Place
 class NGC(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.NGC.copy()
+        self.objects = catalogs.NGC.copy() # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.ALTITUDE] = pd.NA
         self.calculation_date = calculation_date # Store calculation_date for lazy computation

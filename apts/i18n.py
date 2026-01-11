@@ -4,6 +4,8 @@ import threading
 import logging
 from contextlib import contextmanager
 
+from typing import Optional
+
 logger = logging.getLogger(__name__)
 
 # Use thread-local data to store the translation object for the current thread
@@ -11,7 +13,7 @@ _thread_local = threading.local()
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locale')
 
-def set_language(language='en'):
+def set_language(language: Optional[str] = 'en'):
     """
     Sets the language for the current user/thread.
     Supported languages can be passed (e.g., 'pl').
@@ -51,7 +53,7 @@ set_language('en')
 
 
 @contextmanager
-def language_context(language: str):
+def language_context(language: Optional[str]):
     """
     A context manager to temporarily set the language for the current thread.
     """

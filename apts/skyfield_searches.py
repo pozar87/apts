@@ -3,6 +3,7 @@ from skyfield import eclipselib
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
 import pandas as pd
+from typing import Any, cast
 from .cache import get_timescale, get_ephemeris
 from .utils import planetary
 
@@ -15,7 +16,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     def altitude(t):
         return observer.at(t).observe(planet).apparent().altaz()[0].degrees
 
-    altitude.step_days = 0.1
+    setattr(altitude, "step_days", 0.1)
     times, altitudes = find_maxima(t0, t1, altitude)
 
     if len(times) == 0:
@@ -36,9 +37,9 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     sun = planetary.get_skyfield_obj("sun")
 
     def distance_to_sun(t):
-        return body.at(t).observe(sun).distance().km
+        return cast(Any, body).at(t).observe(sun).distance().km
 
-    distance_to_sun.step_days = 180
+    setattr(distance_to_sun, "step_days", 180)
 
     max_times, _ = find_maxima(t0, t1, distance_to_sun)
     min_times, _ = find_minima(t0, t1, distance_to_sun)
@@ -68,9 +69,9 @@ def find_moon_apogee_perigee(start_date, end_date):
     earth = planetary.get_skyfield_obj("earth")
 
     def distance_to_earth(t):
-        return earth.at(t).observe(moon).distance().km
+        return cast(Any, earth).at(t).observe(moon).distance().km
 
-    distance_to_earth.step_days = 13
+    setattr(distance_to_earth, "step_days", 13)
 
     max_times, _ = find_maxima(t0, t1, distance_to_earth)
     min_times, _ = find_minima(t0, t1, distance_to_earth)
@@ -107,7 +108,7 @@ def find_conjunctions(
             .degrees
         )
 
-    separation.step_days = 1.0
+    setattr(separation, "step_days", 1.0)
 
     times, separations = find_minima(t0, t1, separation)
 
@@ -138,7 +139,7 @@ def find_oppositions(observer, planet_name, start_date, end_date):
     def opposition_angle_difference(t):
         return abs(abs(ecliptic_longitude_difference(t)) - 180)
 
-    opposition_angle_difference.step_days = 180
+    setattr(opposition_angle_difference, "step_days", 180)
 
     times, _ = find_minima(t0, t1, opposition_angle_difference)
 
@@ -247,7 +248,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
                 "radial_km_per_s": [0],
                 "epoch_year": [2000.0],
             },
-            index=[0],
+            index=pd.Index([0]),
         )
         star_objects.append((star_data["Name"], Star.from_dataframe(star_df)))
 
@@ -255,9 +256,9 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
 
     for t in times:
-        mpos = earth.at(t).observe(moon)
+        mpos = cast(Any, earth).at(t).observe(moon)
         for star_name, star in star_objects:
-            spos = earth.at(t).observe(star)
+            spos = cast(Any, earth).at(t).observe(star)
 
             if mpos.separation_from(spos).degrees < 0.5:
                 events.append(
@@ -320,8 +321,8 @@ def _find_satellite_flybys(
             continue
 
         # Topocentric satellite position
-        sat = satellite.at(culmination_time)
-        obs = topos_observer.at(culmination_time)
+        sat = cast(Any, satellite).at(culmination_time)
+        obs = cast(Any, topos_observer).at(culmination_time)
         topocentric = sat - obs
 
         # Altitude, azimuth, distance
@@ -440,15 +441,15 @@ def find_solar_eclipses(observer, start_date, end_date):
     re = 6378  # km
 
     def eclipse_separation(t):
-        s = earth.at(t).observe(sun)
-        m = earth.at(t).observe(moon)
+        s = cast(Any, earth).at(t).observe(sun)
+        m = cast(Any, earth).at(t).observe(moon)
         Ds = s.distance().km
         dm = m.distance().km
         mu = s.separation_from(m).radians
         threshold = np.arcsin((rm + re) / dm) + np.arcsin((Rs - re) / Ds)
         return mu - threshold
 
-    eclipse_separation.step_days = 0.1
+    setattr(eclipse_separation, "step_days", 0.1)
     times, separations = find_minima(t0, t1, eclipse_separation)
     events = []
     for t, sep in zip(times, separations):

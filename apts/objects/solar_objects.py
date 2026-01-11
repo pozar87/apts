@@ -45,8 +45,8 @@ class SolarObjects(Objects):
         )
         self.objects = pd.DataFrame(
             all_solar_system_bodies,
-            columns=[ObjectTableLabels.NAME],
-        )  # pyright: ignore
+            columns=[ObjectTableLabels.NAME], # pyright: ignore
+        )
 
         # Set proper dtype for string columns
         self.objects[ObjectTableLabels.NAME] = self.objects[
@@ -72,7 +72,7 @@ class SolarObjects(Objects):
         name_to_use = obj.get("TechnicalName", obj.Name)
         return self._get_skyfield_object_cached(name_to_use)
 
-    def compute(self, calculation_date=None):
+    def compute(self, calculation_date=None, df_to_compute=None):
         if calculation_date is not None:
             # Instantiate as Place object
             temp_observer = Place(
@@ -86,6 +86,10 @@ class SolarObjects(Objects):
             observer_to_use = temp_observer
         else:
             observer_to_use = self.place
+
+        # If df_to_compute is provided, we should ideally use it, but SolarObjects
+        # currently recomputes everything in self.objects.
+        # For compatibility with the base class, we accept the parameter.
 
         # Compute transit of planets at given place
         self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
@@ -241,14 +245,14 @@ class SolarObjects(Objects):
         # Calculate planets RA, Dec, Distance, and Elongation
         # Batch compute positions for better performance
         def compute_position(row):
-            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row))
+            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row)) # pyright: ignore
             return pd.Series(
                 {
                     ObjectTableLabels.RA: pos.radec()[0].hours,
                     ObjectTableLabels.DEC: pos.radec()[1].degrees,
                     ObjectTableLabels.DISTANCE: pos.distance().au,
                     ObjectTableLabels.ELONGATION: pos.separation_from(
-                        observer_to_use.sun.at(t)
+                        observer_to_use.sun.at(t) # pyright: ignore
                     ).degrees,
                 }
             )
@@ -269,6 +273,7 @@ class SolarObjects(Objects):
         stop,
         hours_margin=0,
         sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
         limiting_magnitude=None,
     ):
         visible = self.objects.copy()
@@ -331,7 +336,7 @@ class SolarObjects(Objects):
                 az_conditions_met = self._is_azimuth_in_range(
                     above_horizon_df["Azimuth"], conditions
                 )
-                if az_conditions_met.any():
+                if az_conditions_met.any(): # pyright: ignore
                     visible_objects_indices.append(index)
 
         visible = self.objects.loc[visible_objects_indices]
