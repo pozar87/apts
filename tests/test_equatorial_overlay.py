@@ -12,7 +12,7 @@ from apts.constants.plot import CoordinateSystem
 from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
-from apts.plot import _generate_plot_skymap
+from apts.plotting.skymap import _generate_plot_skymap
 
 
 @pytest.fixture
