@@ -125,7 +125,7 @@ def test_equatorial_skymap_overlay_normal_azimuth(mock_obs_and_target):
 
     mock_observer.observe.side_effect = observe_side_effect
 
-    with patch("apts.plot.pyplot") as mock_pyplot:
+    with patch("apts.plotting.skymap.pyplot") as mock_pyplot:
         mock_fig, mock_ax = MagicMock(), MagicMock()
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -205,7 +205,7 @@ def test_equatorial_skymap_overlay_wrapping_azimuth(mock_obs_and_target):
 
     mock_observer.observe.side_effect = observe_side_effect
 
-    with patch("apts.plot.pyplot") as mock_pyplot:
+    with patch("apts.plotting.skymap.pyplot") as mock_pyplot:
         mock_fig, mock_ax = MagicMock(), MagicMock()
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 

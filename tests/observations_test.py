@@ -454,9 +454,9 @@ class TestObservationPlottingStyles(unittest.TestCase):
             }
         )
 
-    @patch("apts.plot.Utils.annotate_plot")
-    @patch("apts.plot.pyplot")
-    @patch("apts.plot.get_dark_mode")
+    @patch("apts.plotting.altitude.Utils.annotate_plot")
+    @patch("apts.plotting.altitude.pyplot")
+    @patch("apts.plotting.altitude.get_dark_mode")
     def test_generate_plot_messier_dark_mode_styles(
         self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
     ):
@@ -574,8 +574,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()
 
-    @patch("apts.plot.svg.Drawing")
-    @patch("apts.plot.get_dark_mode")
+    @patch("apts.plotting.planets.svg.Drawing")
+    @patch("apts.plotting.planets.get_dark_mode")
     def test_plot_visible_planets_svg_dark_mode_styles(
         self, mock_get_dark_mode, mock_svg_drawing
     ):
@@ -669,9 +669,9 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         fill=expected_style["TEXT_COLOR"],
                     )
 
-    @patch("apts.plot.Utils.annotate_plot")
-    @patch("apts.plot.pyplot")
-    @patch("apts.plot.get_dark_mode")
+    @patch("apts.plotting.altitude.Utils.annotate_plot")
+    @patch("apts.plotting.altitude.pyplot")
+    @patch("apts.plotting.altitude.get_dark_mode")
     @patch("apts.place.Place.get_altaz_curve")
     def test_generate_plot_planets_specific_colors(
         self,
@@ -1428,7 +1428,7 @@ class TestObservationSkymap(unittest.TestCase):
         self.observation.local_messier.objects = self.messier_df
         self.observation.get_visible_messier = MagicMock(return_value=self.messier_df)
 
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_messier(self, mock_pyplot):
         """Test that plot_skymap generates a plot for a Messier object without errors."""
         mock_ax = MagicMock()
@@ -1442,7 +1442,7 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for M31"))
 
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_planet(self, mock_pyplot):
         """Test that plot_skymap generates a plot for a planet without errors."""
         mock_ax = MagicMock()
@@ -1456,8 +1456,8 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
 
-    @patch("apts.plot._get_brightness_color", return_value="0.5")
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_messier_zoomed(self, mock_pyplot, mock_get_brightness_color):
         """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
         mock_ax = MagicMock()
@@ -1478,7 +1478,7 @@ class TestObservationSkymap(unittest.TestCase):
         mock_ax.set_xlim.assert_called_once()
         mock_ax.set_ylim.assert_called_once()
 
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_object_not_found(self, mock_pyplot):
         """Test that plot_skymap handles object not found gracefully."""
         mock_ax = MagicMock()
@@ -1503,8 +1503,8 @@ class TestObservationSkymap(unittest.TestCase):
 
 class TestObservationSkymapFlipped(TestObservationSkymap):
 
-    @patch("apts.plot._get_brightness_color", return_value="0.5")
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_flipped(self, mock_pyplot, mock_get_brightness_color):
         """Test that plot_skymap generates a flipped plot."""
         mock_ax = MagicMock()
@@ -1537,7 +1537,7 @@ class TestObservationSkymapFlipped(TestObservationSkymap):
             color=ANY,
         )
 
-    @patch("apts.plot.pyplot")
+    @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_planet_zoomed(self, mock_pyplot):
         """Test that plot_skymap generates a zoomed plot for a planet without errors."""
         mock_ax = MagicMock()
