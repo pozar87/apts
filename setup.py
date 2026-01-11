@@ -8,7 +8,10 @@ import os
 
 def get_version():
     with open(os.path.join(os.path.dirname(__file__), "apts", "__init__.py")) as f:
-        return re.search(r"__version__ = [\'\"]([^\'\"]+)[\'\"]", f.read()).group(1)
+        match = re.search(r"__version__ = [\'\"]([^\'\"]+)[\'\"]", f.read())
+        if match:
+            return match.group(1)
+    return "0.0.0"
 
 
 # long_description = read('README.txt', 'CHANGES.txt')

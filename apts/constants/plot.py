@@ -1,6 +1,6 @@
 from aenum import Enum
 
 
-class CoordinateSystem(Enum):  # pyright: ignore
+class CoordinateSystem(str, Enum):  # pyright: ignore
     HORIZONTAL = "Horizontal"
     EQUATORIAL = "Equatorial"

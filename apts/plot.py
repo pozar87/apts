@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any, cast
 
 import matplotlib.dates as mdates
 import numpy
@@ -326,7 +326,7 @@ def _generate_plot_messier(
 
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
-            if pd.notna(transit):
+            if bool(pd.notna(transit)):
                 altitude = obj[ObjectTableLabels.ALTITUDE]
                 obj_type = gettext_(obj["Type"])
                 width = obj[ObjectTableLabels.WIDTH]
@@ -946,7 +946,7 @@ def _plot_stars_on_skymap(
     style: dict,
     zoom_deg: Optional[float] = None,
     target_object=None,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     stars = get_hipparcos_data()
 
@@ -1142,7 +1142,7 @@ def _plot_celestial_object(
     edge_color: str,
     is_polar: bool,
     ra_rad: float,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     """Helper function to plot a celestial object on a skymap."""
     angle = angle % 360
@@ -1196,7 +1196,7 @@ def _plot_messier_on_skymap(
     target_name: str,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     visible_messier = observation.get_visible_messier()
     if not visible_messier.empty:
@@ -1208,27 +1208,24 @@ def _plot_messier_on_skymap(
             if messier_object:
                 alt, az, _ = observer.observe(messier_object).apparent().altaz()
                 ra, dec, _ = observer.observe(messier_object).apparent().radec()
-                if alt.degrees > 0:
+                if bool(numpy.any(alt.degrees > 0)):
                     width_arcmin = m_obj.get(ObjectTableLabels.WIDTH)
-                    if pd.isna(width_arcmin):
+                    if bool(pd.isna(width_arcmin)):
                         width_arcmin = 1.0  # Default to 1 arcmin if missing
-                    if hasattr(width_arcmin, "magnitude"):
-                        width_arcmin = width_arcmin.magnitude
-                    width_deg = float(width_arcmin) / 60.0
+                    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
+                    width_deg = float(width_arcmin or 1.0) / 60.0
 
                     height_arcmin = m_obj.get("Height")
-                    if pd.isna(height_arcmin):
+                    if bool(pd.isna(height_arcmin)):
                         height_arcmin = width_arcmin
-                    if hasattr(height_arcmin, "magnitude"):
-                        height_arcmin = height_arcmin.magnitude
-                    height_deg = float(height_arcmin) / 60.0
+                    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
+                    height_deg = float(height_arcmin or 1.0) / 60.0
 
                     pos_angle = m_obj.get("PosAng", 0.0)
-                    if pd.isna(pos_angle):
+                    if bool(pd.isna(pos_angle)):
                         pos_angle = 0.0
-                    if hasattr(pos_angle, "magnitude"):
-                        pos_angle = pos_angle.magnitude
-                    pos_angle = float(pos_angle)
+                    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
+                    pos_angle = float(pos_angle or 0.0)
 
                     dec = messier_object.dec
                     parallactic_angle = _calculate_parallactic_angle(
@@ -1246,7 +1243,7 @@ def _plot_messier_on_skymap(
 
                     _plot_celestial_object(
                         ax,
-                        name=messier_name,
+                        name=cast(str, messier_name),
                         alt_deg=alt.degrees,
                         az_deg=az.degrees,
                         ra_hours=ra.hours,
@@ -1288,7 +1285,7 @@ def _plot_ngc_on_skymap(
     target_object=None,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     if zoom_deg is not None and target_object is not None:
         visible_ngc = observation.local_ngc.objects.copy()
@@ -1297,7 +1294,7 @@ def _plot_ngc_on_skymap(
             star_magnitude_limit=star_magnitude_limit
         )
 
-    if not visible_ngc.empty:
+    if not cast(pd.DataFrame, visible_ngc).empty:
         if zoom_deg is not None and target_object is not None:
             ra_center_hours = target_object.ra.hours
             dec_center_degrees = target_object.dec.degrees
@@ -1346,10 +1343,10 @@ def _plot_ngc_on_skymap(
             else:
                 visible_ngc = ngc_in_box
 
-    if not visible_ngc.empty:
-        for _, n_obj in visible_ngc.iterrows():
+    if not cast(pd.DataFrame, visible_ngc).empty:
+        for _, n_obj in cast(pd.DataFrame, visible_ngc).iterrows():
             ngc_name = n_obj[ObjectTableLabels.NGC]
-            if pd.isna(ngc_name):
+            if bool(pd.isna(ngc_name)):
                 ngc_name = n_obj[ObjectTableLabels.NAME]
             if ngc_name == target_name:
                 continue
@@ -1357,27 +1354,24 @@ def _plot_ngc_on_skymap(
             if ngc_object:
                 alt, az, _ = observer.observe(ngc_object).apparent().altaz()
                 ra, dec, _ = observer.observe(ngc_object).apparent().radec()
-                if alt.degrees > 0:
+                if bool(numpy.any(alt.degrees > 0)):
                     width_arcmin = n_obj.get("Size")
-                    if pd.isna(width_arcmin):
+                    if bool(pd.isna(width_arcmin)):
                         width_arcmin = n_obj.get("MajAx", 1.0)
-                    if hasattr(width_arcmin, "magnitude"):
-                        width_arcmin = width_arcmin.magnitude
-                    width_deg = float(width_arcmin) / 60.0
+                    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
+                    width_deg = float(width_arcmin or 1.0) / 60.0
 
                     height_arcmin = n_obj.get("MinAx")
-                    if pd.isna(height_arcmin):
+                    if bool(pd.isna(height_arcmin)):
                         height_arcmin = width_arcmin
-                    if hasattr(height_arcmin, "magnitude"):
-                        height_arcmin = height_arcmin.magnitude
-                    height_deg = float(height_arcmin) / 60.0
+                    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
+                    height_deg = float(height_arcmin or 1.0) / 60.0
 
                     pos_angle = n_obj.get("PosAng")
-                    if pd.isna(pos_angle):
+                    if bool(pd.isna(pos_angle)):
                         pos_angle = 0.0
-                    if hasattr(pos_angle, "magnitude"):
-                        pos_angle = pos_angle.magnitude
-                    pos_angle = float(pos_angle)
+                    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
+                    pos_angle = float(pos_angle or 0.0)
 
                     dec = ngc_object.dec
                     parallactic_angle = _calculate_parallactic_angle(
@@ -1394,7 +1388,7 @@ def _plot_ngc_on_skymap(
                     face_color = _get_brightness_color(magnitude)
                     _plot_celestial_object(
                         ax,
-                        name=ngc_name,
+                        name=cast(str, ngc_name),
                         alt_deg=alt.degrees,
                         az_deg=az.degrees,
                         ra_hours=ra.hours,
@@ -1418,7 +1412,7 @@ def _plot_planets_on_skymap(
     effective_dark_mode,
     style,
     target_name: str,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     visible_planets = observation.get_visible_planets()
     if not visible_planets.empty:
@@ -1432,7 +1426,7 @@ def _plot_planets_on_skymap(
                 observer,
                 is_polar,
                 style,
-                planet_name,
+                cast(str, planet_name),
                 coordinate_system=coordinate_system,
             )
 
@@ -1445,7 +1439,7 @@ def _plot_solar_system_object_on_skymap(
     style,
     object_name: str,
     is_target: bool = False,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
 ):
     """Helper to plot a solar system object, handling regular and target styles."""
     obj = observation.local_planets.find_by_name(object_name)
@@ -1542,7 +1536,7 @@ def _generate_plot_skymap(
     plot_date: Optional[datetime] = None,
     flipped_horizontally: bool = False,
     flipped_vertically: bool = False,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
     **kwargs,
 ):
     """
@@ -1788,29 +1782,29 @@ def _generate_plot_skymap(
             )
         if target_object_data is not None:
             width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-            if hasattr(width_arcmin, "magnitude"):
-                width_arcmin = width_arcmin.magnitude
+            width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
             width_deg = width_arcmin / 60.0
 
             height_arcmin = target_object_data.get("Height", width_arcmin)
-            if hasattr(height_arcmin, "magnitude"):
-                height_arcmin = height_arcmin.magnitude
+            height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
             height_deg = height_arcmin / 60.0
 
             pos_angle = target_object_data.get("PosAng", 0.0)
             if pd.isna(pos_angle):
                 pos_angle = 0.0
-            if hasattr(pos_angle, "magnitude"):
-                pos_angle = pos_angle.magnitude
+            pos_angle = getattr(pos_angle, "magnitude", pos_angle)
             pos_angle = float(pos_angle)
 
             dec = None
             if hasattr(target_object, "dec"):
-                dec = target_object.dec
+                dec = getattr(target_object, "dec", None)
             else:
-                _, dec, _ = observer.observe(target_object).apparent().radec()
+                try:
+                    _, dec, _ = observer.observe(target_object).apparent().radec()
+                except Exception:
+                    dec = None
 
-            if dec:
+            if dec is not None:
                 parallactic_angle = _calculate_parallactic_angle(
                     observation.place.lat, dec, target_az
                 )
@@ -1932,13 +1926,14 @@ def _generate_plot_skymap(
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
+        polar_ax = cast(Any, ax)
         if coordinate_system == CoordinateSystem.HORIZONTAL:
-            ax.set_rlim(0, 90)
-            ax.set_theta_zero_location("N")
-            ax.set_theta_direction(-1)
-            ax.set_yticks([0, 30, 60, 90])
-            ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
-            ax.set_rlabel_position(22.5)
+            polar_ax.set_rlim(0, 90)
+            polar_ax.set_theta_zero_location("N")
+            polar_ax.set_theta_direction(-1)
+            polar_ax.set_yticks([0, 30, 60, 90])
+            polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
+            polar_ax.set_rlabel_position(22.5)
             cardinal_directions = {
                 "N": 0,
                 "E": numpy.pi / 2,
@@ -1946,7 +1941,7 @@ def _generate_plot_skymap(
                 "W": 3 * numpy.pi / 2,
             }
             for direction, angle in cardinal_directions.items():
-                ax.text(
+                polar_ax.text(
                     angle,
                     95,
                     direction,
@@ -1956,14 +1951,14 @@ def _generate_plot_skymap(
                     fontsize=12,
                 )
         else:  # Equatorial
-            ax.set_rlim(0, 90)
-            ax.set_theta_zero_location("N")
-            ax.set_theta_direction(1)  # RA increases eastward
-            ax.set_yticks([0, 30, 60, 90])
-            ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
-            ax.set_rlabel_position(22.5)
+            polar_ax.set_rlim(0, 90)
+            polar_ax.set_theta_zero_location("N")
+            polar_ax.set_theta_direction(1)  # RA increases eastward
+            polar_ax.set_yticks([0, 30, 60, 90])
+            polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
+            polar_ax.set_rlabel_position(22.5)
             ra_labels = [f"{h}h" for h in range(0, 24, 3)]
-            ax.set_xticklabels(ra_labels, color=style["TEXT_COLOR"])
+            polar_ax.set_xticklabels(ra_labels, color=style["TEXT_COLOR"])
 
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
@@ -2077,8 +2072,8 @@ def _generate_plot_skymap(
             az = Angle(degrees=az_flat.degrees.reshape(ra_hours.shape))
 
             # Reshape the results back to the grid shape
-            alt_deg_grid = alt.degrees.reshape(theta_grid.shape)
-            az_deg_grid = az.degrees.reshape(theta_grid.shape)
+            alt_deg_grid = cast(Any, alt.degrees).reshape(theta_grid.shape)
+            az_deg_grid = cast(Any, az.degrees).reshape(theta_grid.shape)
 
             # Check conditions
             min_alt = float(observation.conditions.min_object_altitude)
@@ -2193,20 +2188,18 @@ def _generate_plot_skymap(
                 coordinate_system=coordinate_system,
             )
 
-        if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees > 0:
+        if coordinate_system == CoordinateSystem.HORIZONTAL and bool(numpy.any(target_alt.degrees > 0)):
             if target_object_data is not None:
                 width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-                if hasattr(width_arcmin, "magnitude"):
-                    width_arcmin = width_arcmin.magnitude
+                width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
                 width_deg = width_arcmin / 60.0
 
                 height_arcmin = target_object_data.get("Height", width_arcmin)
-                if hasattr(height_arcmin, "magnitude"):
-                    height_arcmin = height_arcmin.magnitude
+                height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
                 height_deg = height_arcmin / 60.0
 
                 size = (width_deg + height_deg) / 2 * 100
-                ax.scatter(
+                polar_ax.scatter(
                     target_az.radians,
                     90 - target_alt.degrees,
                     s=size,
@@ -2214,7 +2207,7 @@ def _generate_plot_skymap(
                     marker="+",
                 )
             else:
-                ax.scatter(
+                polar_ax.scatter(
                     target_az.radians,
                     90 - target_alt.degrees,
                     s=200,
@@ -2223,7 +2216,7 @@ def _generate_plot_skymap(
                     marker="o",
                     linewidths=2,
                 )
-            ax.annotate(
+            polar_ax.annotate(
                 target_name,
                 (target_az.radians, 90 - target_alt.degrees),
                 textcoords="offset points",
@@ -2235,17 +2228,15 @@ def _generate_plot_skymap(
         elif coordinate_system == CoordinateSystem.EQUATORIAL:
             if target_object_data is not None:
                 width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
-                if hasattr(width_arcmin, "magnitude"):
-                    width_arcmin = width_arcmin.magnitude
+                width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
                 width_deg = width_arcmin / 60.0
 
                 height_arcmin = target_object_data.get("Height", width_arcmin)
-                if hasattr(height_arcmin, "magnitude"):
-                    height_arcmin = height_arcmin.magnitude
+                height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
                 height_deg = height_arcmin / 60.0
 
                 size = (width_deg + height_deg) / 2 * 100
-                ax.scatter(
+                polar_ax.scatter(
                     target_ra.radians,
                     90 - target_dec.degrees,
                     s=size,
@@ -2253,7 +2244,7 @@ def _generate_plot_skymap(
                     marker="+",
                 )
             else:
-                ax.scatter(
+                polar_ax.scatter(
                     target_ra.radians,
                     90 - target_dec.degrees,
                     s=200,
@@ -2262,7 +2253,7 @@ def _generate_plot_skymap(
                     marker="o",
                     linewidths=2,
                 )
-            ax.annotate(
+            polar_ax.annotate(
                 target_name,
                 (target_ra.radians, 90 - target_dec.degrees),
                 textcoords="offset points",
@@ -2298,7 +2289,7 @@ def plot_skymap(
     equipment_id: Optional[int] = None,
     flip_horizontally: Optional[bool] = None,
     flip_vertically: Optional[bool] = None,
-    coordinate_system: CoordinateSystem = CoordinateSystem.HORIZONTAL,
+    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
     **kwargs,
 ):
     flipped_horizontally = False

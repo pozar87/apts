@@ -1,5 +1,5 @@
 import io
-from typing import overload, Literal, Tuple, Union
+from typing import overload, Literal, Tuple, Union, Any
 from enum import Enum
 
 from matplotlib import pyplot
@@ -47,12 +47,12 @@ class Utils:
 
     @staticmethod
     @overload
-    def decdeg2dms(dd: float, pretty: Literal[True]) -> str: ...
+    def decdeg2dms(dd: Any, pretty: Literal[True]) -> str: ...
     @staticmethod
     @overload
-    def decdeg2dms(dd: float, pretty: Literal[False] = False) -> Tuple[float, float, float]: ...
+    def decdeg2dms(dd: Any, pretty: Literal[False] = False) -> Tuple[float, float, float]: ...
     @staticmethod
-    def decdeg2dms(dd: float, pretty: bool = False) -> Union[str, Tuple[float, float, float]]:
+    def decdeg2dms(dd: Any, pretty: bool = False) -> Union[str, Tuple[float, float, float]]:
         is_pandas_series = hasattr(dd, "iloc")
         dd_val = dd.iloc[0] if is_pandas_series else dd
         mnt, sec = divmod(dd_val * 3600, 60)

@@ -18,7 +18,7 @@ class Objects(ABC):
         pass
 
     @abstractmethod
-    def compute(self, calculation_date=None, df_to_compute=None):
+    def compute(self, calculation_date=None, df_to_compute=None) -> pandas.DataFrame | None:
         pass
 
     def __init__(self, place, calculation_date=None):
@@ -36,7 +36,7 @@ class Objects(ABC):
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
-    ):
+    ) -> pandas.DataFrame:
         max_magnitude = (
             limiting_magnitude
             if limiting_magnitude is not None

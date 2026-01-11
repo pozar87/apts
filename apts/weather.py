@@ -2,7 +2,7 @@ import logging
 
 import pandas as pd
 
-from typing import Optional
+from typing import Optional, Any, cast
 
 from apts.utils.plot import Utils
 from apts.utils.planetary import get_moon_illumination_details
@@ -68,10 +68,10 @@ class Weather:
 
         logger.info(f"Attempting to download data from {provider_name}.")
         self.data = provider.download_data()
-        if self.data is not None and not self.data.empty:
+        if self.data is not None and not cast(pd.DataFrame, self.data).empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
-            moon_illumination_details = self.data["time"].apply(
+            moon_illumination_details = cast(pd.DataFrame, self.data)["time"].apply(
                 lambda x: get_moon_illumination_details(ts.from_datetime(x))
             )
             self.data["moonIllumination"] = [item[0] for item in moon_illumination_details]
@@ -81,7 +81,7 @@ class Weather:
                 f"Failed to download or received empty data from {provider_name}."
             )
 
-    def _filter_data(self, rows):
+    def _filter_data(self, rows) -> pd.DataFrame:
         # Always add time column, ensuring it's first and all columns are unique.
         columns = ["time"]
         for col in rows:
@@ -116,11 +116,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -167,11 +167,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -218,12 +218,12 @@ class Weather:
         if not ax:
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             # For pie charts, explicitly set AXES_FACE_COLOR, as it might not have other elements like grids
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         # Style title and ylabel (pie charts often use ylabel for the 'label' arg)
         title_text = ax.get_title()
@@ -276,11 +276,11 @@ class Weather:
         if not ax:
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         title_text = ax.get_title()
         if not title_text and "label" in plot_kwargs:
@@ -322,11 +322,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -374,11 +374,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -408,9 +408,9 @@ class Weather:
         available_columns = [
             col
             for col in ["pressure", "ozone"]
-            if col in self.data.columns
-            and self.data[col].astype(str).str.lower().nunique() > 1
-            and self.data[col].notna().any()
+            if col in cast(pd.DataFrame, self.data).columns
+            and bool(cast(pd.DataFrame, self.data)[col].astype(str).str.lower().nunique() > 1)
+            and bool(cast(pd.DataFrame, self.data)[col].notna().any())
         ]
         if not available_columns:
             return None  # Nothing to plot
@@ -446,11 +446,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -485,9 +485,9 @@ class Weather:
         return ax
 
     def get_critical_data(self, start, stop):
-        if self.data.empty:
+        if cast(pd.DataFrame, self.data).empty:
             return pd.DataFrame(
-                columns=[
+                columns=pd.Index([
                     "time",
                     "cloudCover",
                     "precipProbability",
@@ -496,7 +496,7 @@ class Weather:
                     "visibility",
                     "moonIllumination",
                     "fog",
-                ]
+                ])
             )
         data = self._filter_data(
             [
@@ -538,11 +538,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -584,11 +584,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
@@ -640,11 +640,11 @@ class Weather:
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
             fig = ax.figure
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
             ax.set_facecolor(style["AXES_FACE_COLOR"])
         else:  # ax was passed in, plot_ax is the same as ax. Apply facecolor after plot.
             ax.set_facecolor(style["AXES_FACE_COLOR"])
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 

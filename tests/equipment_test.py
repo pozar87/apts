@@ -1,5 +1,7 @@
 import pytest
 import numpy as np  # Added for np.log10
+import pandas as pd
+from typing import Any, cast
 from unittest.mock import patch, MagicMock, ANY
 
 from apts.equipment import Equipment
@@ -636,6 +638,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
     direct_connection_found = False
+    row = None
     for _, row in image_paths.iterrows():
         if (
             tele_no_t2.vendor in row[EquipmentTableLabels.LABEL]
@@ -645,7 +648,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
             direct_connection_found = True
             break
     assert not direct_connection_found, (
-        f"Unexpected direct path found between Telescope (no T2 out) and Camera (T2 in): {row[EquipmentTableLabels.LABEL] if direct_connection_found else ''}"
+        f"Unexpected direct path found between Telescope (no T2 out) and Camera (T2 in): {cast(Any, row)[EquipmentTableLabels.LABEL] if direct_connection_found else ''}"
     )
 
 
@@ -673,6 +676,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
 
     problematic_path_found = False
+    row = None
     for _, row in image_paths.iterrows():
         is_problem_path = (
             tele.vendor in row[EquipmentTableLabels.LABEL]
@@ -686,7 +690,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
             break
 
     assert not problematic_path_found, (
-        f"Path formed with Barlow (no T2 out) to Camera (T2 in): {row[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"
+        f"Path formed with Barlow (no T2 out) to Camera (T2 in): {cast(Any, row)[EquipmentTableLabels.LABEL] if problematic_path_found else ''}"
     )
 
 
@@ -719,8 +723,8 @@ def test_camera_path_brightness_is_nan():
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
-    assert camera_rows[EquipmentTableLabels.BRIGHTNESS].isnull().all(), (
-        f"Brightness for camera paths should be NaN. Got: {camera_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool(cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).isnull().all()), (
+        f"Brightness for camera paths should be NaN. Got: {cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
 
@@ -747,13 +751,13 @@ def test_eyepiece_path_brightness_is_numeric():
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
-    assert eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].notnull().all(), (
-        f"Brightness for eyepiece paths should be a number. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool(cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).notnull().all()), (
+        f"Brightness for eyepiece paths should be a number. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
     # Check that all brightness values are non-negative
-    assert (eyepiece_rows[EquipmentTableLabels.BRIGHTNESS] >= 0).all(), (
-        f"Brightness for eyepiece paths should be non-negative. Got: {eyepiece_rows[EquipmentTableLabels.BRIGHTNESS].values}"
+    assert bool((cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]) >= 0).all()), (
+        f"Brightness for eyepiece paths should be non-negative. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
 

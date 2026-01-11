@@ -13,7 +13,7 @@ _thread_local = threading.local()
 
 localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'locale')
 
-def set_language(language='en'):
+def set_language(language: Optional[str] = 'en'):
     """
     Sets the language for the current user/thread.
     Supported languages can be passed (e.g., 'pl').
