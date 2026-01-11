@@ -64,6 +64,7 @@ class EventsTest(unittest.TestCase):
 
         # Find the event for Venus
         venus_event = next((e for e in events if e.get("object") == "Venus"), None)
+        assert venus_event is not None
         self.assertIsNotNone(venus_event)
 
         # Check if the event description is correct

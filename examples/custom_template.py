@@ -3,16 +3,20 @@
 
 # Example showing how to use custom template and CSS with notifications
 from apts import Place, Equipment, Observation, Notify
+from apts.opticalequipment import Telescope, Eyepiece, Barlow
 
 # Create a place for observation
-place = Place("Example Location", 52.229, 21.012)
+place = Place(52.229, 21.012, "Example Location")
 place.get_weather()
 
 # Create equipment
 equipment = Equipment()
-telescope = equipment.add_telescope("Celestron", "C8", 200, 2032)
-eyepiece = equipment.add_eyepiece("Example", "EP", 25)
-equipment.add_barlow("Example", "Barlow", 2.0)
+telescope = Telescope(200, 2032, vendor="Celestron")
+equipment.register(telescope)
+eyepiece = Eyepiece(25, vendor="Example")
+equipment.register(eyepiece)
+barlow = Barlow(2.0, vendor="Example")
+equipment.register(barlow)
 
 # Create observation
 observation = Observation(place, equipment)

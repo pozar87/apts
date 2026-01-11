@@ -246,7 +246,7 @@ def benchmark_astronomical_operations():
     from apts.place import Place
     from apts.objects.solar_objects import SolarObjects
     from apts.objects.messier import Messier
-    from apts import catalogs
+    from apts.catalogs import Catalogs
 
     profiler = PerformanceProfiler()
 
@@ -265,7 +265,7 @@ def benchmark_astronomical_operations():
 
     # Benchmark Messier objects
     with profiler.time_block("messier_init"):
-        messier = Messier(place, catalogs.catalogs)
+        messier = Messier(place, Catalogs())
 
     with profiler.time_block("messier_compute"):
         messier.compute()
