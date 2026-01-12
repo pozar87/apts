@@ -42,7 +42,10 @@ def calculate_ellipse_angle(
 ) -> float:
     """Calculates the final rotation angle for a celestial object's ellipse."""
     if coordinate_system == CoordinateSystem.HORIZONTAL:
-        angle = pos_angle - parallactic_angle
+        if hasattr(parallactic_angle, "degrees"):
+            angle = pos_angle - parallactic_angle.degrees
+        else:
+            angle = pos_angle - parallactic_angle
     else:  # EQUATORIAL
         angle = pos_angle
 
