@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy
 import pandas as pd
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
-from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
@@ -24,6 +23,8 @@ from apts.plotting.utils import (
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+
     from ..observations import Observation
 
 
@@ -75,7 +76,8 @@ def _generate_zoom_skymap(
         return fig
 
     fig = ax.get_figure()
-    fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+    if fig:
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     if coordinate_system == CoordinateSystem.HORIZONTAL:

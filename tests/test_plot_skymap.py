@@ -714,7 +714,6 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     Tests that a Messier object ellipse is plotted with the correct angle on a zoomed equatorial skymap.
     The angle should be based on PosAng only.
     """
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -816,7 +815,6 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     Tests that a TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed HORIZONTAL skymap.
     """
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -920,7 +918,6 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed HORIZONTAL skymap.
     """
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -1038,7 +1035,6 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed EQUATORIAL skymap.
     """
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()

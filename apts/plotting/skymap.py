@@ -1,35 +1,16 @@
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
-import numpy
-import pandas as pd
 from matplotlib import pyplot
-from matplotlib.patches import Ellipse
-from skyfield.api import Star as SkyfieldStar
-from skyfield.units import Angle
 
 from apts.config import get_dark_mode
-from apts.constants.graphconstants import get_planet_color, get_plot_style
+from apts.constants.graphconstants import get_plot_style
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import _thread_local, gettext_
-from apts.plotting.skymap_objects import (
-    _plot_bright_stars_on_skymap,
-    _plot_messier_on_skymap,
-    _plot_ngc_on_skymap,
-    _plot_planets_on_skymap,
-    _plot_solar_system_object_on_skymap,
-    _plot_stars_on_skymap,
-)
 from apts.plotting.skymap_polar import _generate_polar_skymap
 from apts.plotting.skymap_zoom import _generate_zoom_skymap
-from apts.plotting.utils import (
-    calculate_ellipse_angle,
-    calculate_parallactic_angle,
-    get_brightness_color,
-)
 from apts.utils.planetary import get_reverse_translated_planet_names
-from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
     from ..observations import Observation

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy
 import pandas as pd
@@ -15,7 +15,6 @@ from apts.plotting.utils import (
     get_brightness_color,
     get_object_angular_size_deg,
 )
-from apts.utils.planetary import get_reverse_translated_planet_names
 from ..cache import get_hipparcos_data
 from ..constants import ObjectTableLabels
 

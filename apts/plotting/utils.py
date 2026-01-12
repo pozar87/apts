@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
 import pandas as pd
@@ -35,7 +35,7 @@ def calculate_parallactic_angle(
 
 def calculate_ellipse_angle(
     pos_angle: float,
-    parallactic_angle: float,
+    parallactic_angle: float | Angle,
     coordinate_system: CoordinateSystem,
     flipped_horizontally: bool,
     flipped_vertically: bool,
@@ -43,9 +43,9 @@ def calculate_ellipse_angle(
     """Calculates the final rotation angle for a celestial object's ellipse."""
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         if hasattr(parallactic_angle, "degrees"):
-            angle = pos_angle - parallactic_angle.degrees
+            angle = pos_angle - cast(Any, parallactic_angle).degrees
         else:
-            angle = pos_angle - parallactic_angle
+            angle = pos_angle - cast(float, parallactic_angle)
     else:  # EQUATORIAL
         angle = pos_angle
 

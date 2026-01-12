@@ -18,6 +18,8 @@ from apts.plotting.skymap_objects import (
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+
     from ..observations import Observation
 
 
@@ -43,7 +45,8 @@ def _generate_polar_skymap(
     coordinate_system: CoordinateSystem,
 ):
     fig = ax.get_figure()
-    fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+    if fig:
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     polar_ax = cast(Any, ax)
