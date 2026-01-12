@@ -14,7 +14,7 @@ from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
 from apts.plot import plot_skymap
-from apts.plotting.skymap import (
+from apts.plotting.skymap_objects import (
     _plot_messier_on_skymap,
     _plot_planets_on_skymap,
     _plot_solar_system_object_on_skymap,
@@ -159,9 +159,11 @@ def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
-        patch("apts.plotting.skymap.get_brightness_color") as mock_get_brightness_color,
+        patch("apts.plotting.skymap_zoom.get_brightness_color") as mock_get_brightness_color,
+        patch("apts.plotting.skymap_objects.get_brightness_color") as mock_get_brightness_color_obj,
     ):
         mock_get_brightness_color.return_value = "0.5"
+        mock_get_brightness_color_obj.return_value = "0.5"
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
@@ -426,10 +428,8 @@ def test_plot_planet_with_no_size_polar(mock_observation):
 
 def test_plot_stars_on_skymap_equatorial_with_zoom():
     """Test that stars are plotted correctly in equatorial coordinates with zoom."""
-    from apts.plotting.skymap import (
-        CoordinateSystem,
-        _plot_stars_on_skymap,
-    )
+    from apts.constants.plot import CoordinateSystem
+    from apts.plotting.skymap_objects import _plot_stars_on_skymap
 
     # Create mock objects
     mock_observation = MagicMock()
@@ -506,7 +506,7 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
 
     # Mock get_hipparcos_data to return our test data
     with patch(
-        "apts.plotting.skymap.get_hipparcos_data", return_value=mock_stars_data
+        "apts.plotting.skymap_objects.get_hipparcos_data", return_value=mock_stars_data
     ):
         # Test _plot_stars_on_skymap
         print("=== DEBUG: About to call _plot_stars_on_skymap ===")
@@ -772,11 +772,22 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap.calculate_parallactic_angle",
+            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap.get_brightness_color", return_value="0.5"
+            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+        ),
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
+        patch(
+            "apts.plotting.skymap_objects.calculate_parallactic_angle",
+            return_value=parallactic_angle_val,
+        ),
+        patch(
+            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -877,11 +888,22 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap.calculate_parallactic_angle",
+            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap.get_brightness_color", return_value="0.5"
+            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+        ),
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
+        patch(
+            "apts.plotting.skymap_objects.calculate_parallactic_angle",
+            return_value=parallactic_angle_val,
+        ),
+        patch(
+            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -999,11 +1021,22 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap.calculate_parallactic_angle",
+            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap.get_brightness_color", return_value="0.5"
+            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+        ),
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
+        patch(
+            "apts.plotting.skymap_objects.calculate_parallactic_angle",
+            return_value=parallactic_angle_val,
+        ),
+        patch(
+            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -1120,11 +1153,22 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap.calculate_parallactic_angle",
+            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap.get_brightness_color", return_value="0.5"
+            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+        ),
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
+        patch(
+            "apts.plotting.skymap_objects.calculate_parallactic_angle",
+            return_value=parallactic_angle_val,
+        ),
+        patch(
+            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -1159,7 +1203,8 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
 
 def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
     """Test that bright stars are plotted correctly in equatorial coordinates with zoom."""
-    from apts.plotting.skymap import CoordinateSystem, _plot_bright_stars_on_skymap
+    from apts.constants.plot import CoordinateSystem
+    from apts.plotting.skymap_objects import _plot_bright_stars_on_skymap
 
     # Create mock objects
     mock_observation = MagicMock()
@@ -1288,10 +1333,10 @@ def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
 
 def test_plot_stars_ra_wrapping_equatorial():
     """Test that RA coordinate wrapping works correctly in equatorial plots."""
-    from apts.plotting.skymap import (
+    from apts.constants.plot import (
         CoordinateSystem,
-        _plot_stars_on_skymap,
     )
+    from apts.plotting.skymap_objects import _plot_stars_on_skymap
     from apts.plotting.utils import create_ra_zoom_mask as _create_ra_zoom_mask
 
     # Create mock objects
@@ -1381,7 +1426,7 @@ def test_plot_stars_ra_wrapping_equatorial():
 
     # Now test the full function with RA wrapping
     with patch(
-        "apts.plotting.skymap.get_hipparcos_data", return_value=mock_stars_data
+        "apts.plotting.skymap_objects.get_hipparcos_data", return_value=mock_stars_data
     ):
         print("=== DEBUG: About to call _plot_stars_on_skymap ===")
         print(f"RA values: {[0.5, 1.2, 1.8, 2.5, 3.0]}")
