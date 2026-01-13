@@ -1578,18 +1578,6 @@ class TestObservationSkymapFlipped(TestObservationSkymap):
             color=ANY,
         )
 
-    @patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5")
-    @patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5")
-    @patch("apts.plotting.skymap.pyplot")
-    def test_plot_skymap_messier_zoomed(
-        self, mock_pyplot, mock_get_brightness_color_obj, mock_get_brightness_color_zoom
-    ):
-        """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
-        # Use super() but handle the extra arguments
-        return super().test_plot_skymap_messier_zoomed(
-            mock_pyplot, mock_get_brightness_color_obj, mock_get_brightness_color_zoom
-        )
-
     @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_planet_zoomed(self, mock_pyplot):
         """Test that plot_skymap generates a zoomed plot for a planet without errors."""
