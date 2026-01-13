@@ -156,12 +156,35 @@ class Objects(ABC):
         current_dt = observer.date.utc_datetime()
         t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         
+        # Search window extended to 2 days to catch transits happening next morning or late in the current day
         t0 = self.ts.utc(t0_dt)
-        t1 = self.ts.utc(t0_dt + timedelta(days=1))
+        t1 = self.ts.utc(t0_dt + timedelta(days=2))
         f = almanac.meridian_transits(self.place.eph, skyfield_object, self.place.location)
         t, y = almanac.find_discrete(t0, t1, f)
 
-        # Prefer upper culmination (y=1)
+        # Filter for upper culmination (y=1) AND relevant timing
+        # We want a transit that results in the object being visible during the observation window (starting at observer.date).
+        # A rough heuristic: Transit should be no earlier than 12 hours before observer.date.
+        # (If it transited >12h ago, it likely set >6h ago and is gone).
+        
+        cutoff_time = current_dt - timedelta(hours=12)
+        
+        valid_transits = []
+        for i, event in enumerate(y):
+            if event == 1: # Upper
+                transit_dt = t[i].utc_datetime()
+                if transit_dt > cutoff_time:
+                    valid_transits.append(transit_dt)
+
+        if valid_transits:
+             # Return the first valid transit found
+             return (
+                valid_transits[0]
+                .replace(tzinfo=pytz.UTC)
+                .astimezone(observer.local_timezone)
+            )
+
+        return None
         upper_indices = [i for i, event in enumerate(y) if event == 1]
 
         if upper_indices:

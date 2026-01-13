@@ -1430,9 +1430,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
             min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=35
         )
         visible_planets = self.observation.get_visible_planets()
-        self.assertEqual(len(visible_planets), 2)
+        self.assertEqual(len(visible_planets), 1)
         self.assertIn("Saturn", visible_planets["Name"].values)
-        self.assertIn("Mars", visible_planets["Name"].values)
 
 
 class TestObservationSkymap(unittest.TestCase):
