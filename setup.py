@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import re
 import os
 
@@ -46,13 +46,7 @@ setup(
     author_email="lpozarlik@gmail.com",
     description="Set of tools for automatic astrofotography images aqquisition and processing.",
     # long_description=long_description,
-    packages=[
-        "apts",
-        "apts.opticalequipment",
-        "apts.objects",
-        "apts.constants",
-        "apts.utils",
-    ],
+    packages=find_packages(),
     package_dir={"apts": "apts"},
     package_data={"apts": ["data/*", "templates/*", "locale/pl/LC_MESSAGES/*.mo"]},
     include_package_data=True,
