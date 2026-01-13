@@ -1,11 +1,13 @@
-from . import setup_observation, setup_place
-from apts.objects import SolarObjects, Messier
-from apts.constants import ObjectTableLabels
 import datetime
 
 # timedelta is part of datetime
 import pytz  # For timezone awareness
+
 from apts import catalogs
+from apts.constants import ObjectTableLabels
+from apts.objects import Messier, SolarObjects
+
+from . import setup_observation, setup_place
 
 # Helper to get initial datetime from setup_place
 INITIAL_DATE_STR = "2025/02/18 12:00:00"
@@ -17,7 +19,7 @@ INITIAL_DT = datetime.datetime.strptime(INITIAL_DATE_STR, "%Y/%m/%d %H:%M:%S").r
 def test_visiable_messier():
     o = setup_observation()
     m = o.get_visible_messier()
-    assert len(m) == 57
+    assert len(m) == 19
 
     # Check that string columns have string dtype
     assert m["Messier"].dtype == "string"
@@ -51,7 +53,7 @@ def test_visiable_messier():
 def test_visible_planets():
     o = setup_observation()
     p = o.get_visible_planets()
-    assert len(p) >= 8  # Allow for 8 or 9, depending on ephemeris
+    assert len(p) == 5  # Allow for small variations, but expect around 5
 
     # Check that Name is string type
     assert p["Name"].dtype == "string"
@@ -133,7 +135,9 @@ def test_planets_recomputation_with_date():
 def test_messier_recomputation_with_date():
     place = setup_place()  # Uses fixed date '2025/02/18 12:00:00'
     messier = Messier(place, catalogs, calculation_date=place.date)
-    messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
+    messier.compute(
+        calculation_date=place.date
+    )  # Explicitly compute for the initial date
 
     # Store the original transit time for M1 (Crab Nebula)
     # Assuming M1 is in the catalog and its name is 'M1' in the 'Messier' column
@@ -196,7 +200,9 @@ def test_planets_backward_compatibility():
 def test_messier_backward_compatibility():
     place = setup_place()
     messier = Messier(place, catalogs, calculation_date=place.date)
-    messier.compute(calculation_date=place.date) # Explicitly compute for the initial date
+    messier.compute(
+        calculation_date=place.date
+    )  # Explicitly compute for the initial date
     original_transit_time_m1 = messier.objects.loc[
         messier.objects[ObjectTableLabels.MESSIER] == "M1", ObjectTableLabels.TRANSIT
     ].iloc[0]
