@@ -74,18 +74,37 @@ class Objects(ABC):
         visible = self.objects[magnitude_values < max_magnitude].copy()
         visible["ID"] = visible.index
 
-        # Filter by transit time, ensuring Transit is not NaT
-        visible = visible.loc[
-            (visible[ObjectTableLabels.TRANSIT].notna()) # pyright: ignore
-            & (
-                visible[ObjectTableLabels.TRANSIT]
-                > start - timedelta(hours=hours_margin)
-            )
-            & (
-                visible[ObjectTableLabels.TRANSIT]
-                < stop + timedelta(hours=hours_margin)
-            )
-        ]
+        # Filter objects based on visibility window (Rising/Setting) intersection with observation window
+        # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
+        
+        # Helper boolean for existence of Rise/Set times
+        has_rise_set = (visible[ObjectTableLabels.RISING].notna()) & (visible[ObjectTableLabels.SETTING].notna())
+        
+        # Case A: Rise < Set (Simple interval)
+        # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
+        # Note: We apply hours_margin to be safe, though overlap logic usually suffices.
+        cond_A = (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING]) & \
+                 (visible[ObjectTableLabels.RISING] <= stop + timedelta(hours=hours_margin)) & \
+                 (visible[ObjectTableLabels.SETTING] >= start - timedelta(hours=hours_margin))
+                 
+        # Case B: Set < Rise (Crosses midnight/wrap-around)
+        # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
+        # i.e. It is NOT the case that the "down time" covers the whole "observation time"
+        cond_B = (visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]) & \
+                 ~((visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin)) & \
+                   (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin)))
+
+        # Case C: No Rise/Set (Circumpolar or Always Down)
+        # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
+        if ObjectTableLabels.ALTITUDE in visible.columns:
+             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+        else:
+             alt_values = pandas.Series([0] * len(visible), index=visible.index)
+
+        cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
+        
+        # Apply filter
+        visible = visible[ (has_rise_set & (cond_A | cond_B)) | cond_always_up ]
 
         # Filter by altitude at transit (if available) to reject impossible objects early
         if ObjectTableLabels.ALTITUDE in visible.columns and not visible[ObjectTableLabels.ALTITUDE].isnull().all():
@@ -132,8 +151,13 @@ class Objects(ABC):
         if skyfield_object is None:
             return None
         # Return transit time in local time
-        t0 = self.ts.utc(observer.date.utc_datetime())
-        t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
+        
+        # Start search from the beginning of the UTC day to catch earlier transits
+        current_dt = observer.date.utc_datetime()
+        t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        t0 = self.ts.utc(t0_dt)
+        t1 = self.ts.utc(t0_dt + timedelta(days=1))
         f = almanac.meridian_transits(self.place.eph, skyfield_object, self.place.location)
         t, y = almanac.find_discrete(t0, t1, f)
 

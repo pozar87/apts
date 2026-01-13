@@ -2,6 +2,7 @@ import functools
 import numpy
 import pandas as pd
 import ephem
+from datetime import timedelta
 
 from .objects import Objects
 from ..constants import ObjectTableLabels
@@ -290,24 +291,43 @@ class SolarObjects(Objects):
         )
 
         visible = visible[
-            # Filter objects by they rising and setting within the time window, handling wrap-around
-            (
-                (
-                    (visible.Rising <= visible.Setting)
-                    & (visible.Rising <= stop)
-                    & (visible.Setting >= start)
-                )
-                | (
-                    (visible.Setting < visible.Rising)
-                    & ~((visible.Setting < start) & (stop < visible.Rising))
-                )
-            )
-            &
-            # Filter object by they magnitude
-            # Allow objects with NA magnitude to pass through,
-            # or filter by magnitude for others.
             (pd.isna(visible.MagnitudeFloat) | (visible.MagnitudeFloat < float(max_magnitude)))
         ]
+
+        # Filter objects based on visibility window (Rising/Setting) intersection with observation window
+        # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
+        
+        # Helper boolean for existence of Rise/Set times
+        has_rise_set = (visible[ObjectTableLabels.RISING].notna()) & (visible[ObjectTableLabels.SETTING].notna())
+        
+        # Case A: Rise < Set (Simple interval)
+        # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
+        cond_A = (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING]) & \
+                 (visible[ObjectTableLabels.RISING] <= stop + timedelta(hours=hours_margin)) & \
+                 (visible[ObjectTableLabels.SETTING] >= start - timedelta(hours=hours_margin))
+                 
+        # Case B: Set < Rise (Crosses midnight/wrap-around)
+        # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
+        cond_B = (visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]) & \
+                 ~((visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin)) & \
+                   (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin)))
+
+        # Case C: No Rise/Set (Circumpolar or Always Down)
+        # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
+        if ObjectTableLabels.ALTITUDE in visible.columns:
+             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+        else:
+             alt_values = pd.Series([0] * len(visible), index=visible.index)
+
+        cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
+        
+        # Apply filter
+        visible = visible[ (has_rise_set & (cond_A | cond_B)) | cond_always_up ]
+
+        # Filter by altitude at transit (if available) to reject impossible objects early
+        if ObjectTableLabels.ALTITUDE in visible.columns and not visible[ObjectTableLabels.ALTITUDE].isnull().all():
+             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+             visible = visible[alt_values > conditions.min_object_altitude]
 
 
 

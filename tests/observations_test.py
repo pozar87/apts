@@ -1311,6 +1311,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
+            "Rising": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
+            "Setting": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
             "ID": [0, 1, 2],
             "skyfield_object": [
                 Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
@@ -1453,6 +1455,8 @@ class TestObservationSkymap(unittest.TestCase):
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
+            "Rising": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
+            "Setting": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
             "ID": [0, 1, 2],
             "skyfield_object": [
                 Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
