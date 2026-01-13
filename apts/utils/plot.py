@@ -9,6 +9,33 @@ __all__ = ["Utils"]
 
 class Utils:
     @staticmethod
+    def plot_no_data(ax, title, dark_mode_enabled):
+        style = get_plot_style(dark_mode_enabled)
+        fig = ax.figure
+        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        ax.set_facecolor(style["AXES_FACE_COLOR"])
+        ax.text(
+            0.5,
+            0.5,
+            gettext_("No data to plot"),
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            color=style["TEXT_COLOR"],
+            fontsize=16,
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        # Apply styling to be consistent with other plots
+        ax.set_title(title, color=style["TEXT_COLOR"])
+        ax.spines["bottom"].set_color(style["AXIS_COLOR"])
+        ax.spines["top"].set_color(style["AXIS_COLOR"])
+        ax.spines["left"].set_color(style["AXIS_COLOR"])
+        ax.spines["right"].set_color(style["AXIS_COLOR"])
+        return ax
+
+    @staticmethod
     def annotate_plot(
         ax: matplotlib.axes.Axes,
         y_label: str,
