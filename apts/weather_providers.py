@@ -102,6 +102,7 @@ class WeatherProvider(ABC):
         """
         aurora_df = _get_aurora_df(self.lat, self.lon, self.local_timezone)
         if not aurora_df.empty:
+            aurora_df["time"] = aurora_df["time"].astype(df["time"].dtype)
             df = pd.merge_asof(
                 df.sort_values("time"),
                 aurora_df.sort_values("time"),

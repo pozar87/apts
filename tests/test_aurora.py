@@ -1,7 +1,8 @@
 import pandas as pd
-from apts.weather_providers import _get_aurora_df
+from apts.weather_providers import _get_aurora_df, PirateWeather
 from unittest.mock import patch, MagicMock
 import json
+import pytz
 
 
 @patch("apts.weather_providers.get_session")
@@ -36,3 +37,33 @@ def test_get_aurora_df(mock_get_session):
     assert aurora_df["time"].iloc[0].strftime(
         "%Y-%m-%d %H:%M:%S"
     ) == "2024-01-01 04:00:00"  # Check timezone conversion
+
+
+def test_enrich_with_aurora_data_handles_dtype_mismatch():
+    # Create a sample weather DataFrame with second precision, which mimics the original bug scenario
+    weather_data = {
+        "time": pd.to_datetime(["2024-01-01 12:00:00", "2024-01-01 13:00:00"]).tz_localize("UTC")
+    }
+    weather_df = pd.DataFrame(weather_data)
+    weather_df['time'] = weather_df['time'].astype("datetime64[s, UTC]")
+
+    # Create a mock aurora DataFrame, which defaults to nanosecond precision
+    aurora_data = {
+        "time": pd.to_datetime(["2024-01-01 12:30:00"]).tz_localize("UTC"),
+        "aurora": [75],
+    }
+    aurora_df_mock = pd.DataFrame(aurora_data)
+
+    # Patch the function that fetches aurora data to return our mock DataFrame
+    with patch("apts.weather_providers._get_aurora_df", return_value=aurora_df_mock):
+        # Instantiate a concrete WeatherProvider
+        provider = PirateWeather(api_key="dummy", lat=0, lon=0, local_timezone=pytz.utc)
+
+        # Call the method that performs the merge
+        enriched_df = provider._enrich_with_aurora_data(weather_df)
+
+        # Assert that the 'aurora' column was successfully added and filled
+        assert "aurora" in enriched_df.columns
+        assert not enriched_df["aurora"].isna().all()
+        assert enriched_df["aurora"].iloc[0] == 75
+        assert enriched_df["aurora"].iloc[1] == 75
