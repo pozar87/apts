@@ -292,9 +292,13 @@ def generate_plot_planets(
             label=None # Don't duplicate legend
         )
         
-        # Plot observation window as solid
+        # Plot observation window as solid (only when above min altitude)
         if observation.start and observation.stop:
-            in_window_mask = (time_series >= observation.start) & (time_series <= observation.stop)
+            in_window_mask = (
+                (time_series >= observation.start)
+                & (time_series <= observation.stop)
+                & (curve_df["Altitude"] >= observation.conditions.min_object_altitude)
+            )
             ax.plot(
                 time_series[valid_times & in_window_mask],
                 curve_df["Altitude"][valid_times & in_window_mask],
@@ -304,9 +308,11 @@ def generate_plot_planets(
             )
         else:
             # Fallback if no start/stop defined (unlikely for valid observation)
+            # Still apply altitude check if possible
+            in_window_mask = curve_df["Altitude"] >= observation.conditions.min_object_altitude
             ax.plot(
-                time_series[valid_times],
-                curve_df["Altitude"][valid_times],
+                time_series[valid_times & in_window_mask],
+                curve_df["Altitude"][valid_times & in_window_mask],
                 color=specific_planet_color,
                 linestyle="-",
                 label=name,

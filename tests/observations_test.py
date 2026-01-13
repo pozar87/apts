@@ -776,7 +776,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 )
 
                 mock_ax.plot.assert_called()
-                self.assertEqual(mock_ax.plot.call_count, 2)
+                self.assertEqual(mock_ax.plot.call_count, 4)
 
                 mock_ax.scatter.assert_called()
                 self.assertEqual(mock_ax.scatter.call_count, 4)
