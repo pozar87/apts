@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, cast
 
-from matplotlib import pyplot
+from matplotlib import figure, pyplot
 
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
@@ -16,8 +16,6 @@ if TYPE_CHECKING:
     from ..observations import Observation
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def _generate_plot_skymap(
@@ -39,7 +37,7 @@ def _generate_plot_skymap(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
     ),
     **kwargs,
-):
+) -> figure.Figure:
     """
     Generates a skymap for a given time and location, highlighting a target object.
     Can generate a full polar skymap or a zoomed-in Cartesian skymap.
@@ -137,58 +135,65 @@ def _generate_plot_skymap(
             ),
             color=style["TEXT_COLOR"],
         )
-        return fig
+        return cast(figure.Figure, fig)
 
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
     target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
 
     if zoom_deg is not None:
-        fig, ax = pyplot.subplots(figsize=(10, 10))
-        return _generate_zoom_skymap(
-            observation,
-            ax,
-            style,
-            target_name,
-            target_object,
-            target_object_data,
-            observer,
-            generation_time_str,
-            effective_dark_mode,
-            zoom_deg,
-            star_magnitude_limit,
-            plot_stars,
-            plot_messier,
-            plot_ngc,
-            plot_planets,
-            plot_sun,
-            plot_moon,
-            flipped_horizontally,
-            flipped_vertically,
-            coordinate_system,
+        _, ax = pyplot.subplots(figsize=(10, 10))
+        return cast(
+            figure.Figure,
+            _generate_zoom_skymap(
+                observation,
+                ax,
+                style,
+                target_name,
+                target_object,
+                target_object_data,
+                observer,
+                generation_time_str,
+                effective_dark_mode,
+                zoom_deg,
+                star_magnitude_limit,
+                plot_stars,
+                plot_messier,
+                plot_ngc,
+                plot_planets,
+                plot_sun,
+                plot_moon,
+                flipped_horizontally,
+                flipped_vertically,
+                coordinate_system,
+            ),
         )
     else:
-        fig, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
-        return _generate_polar_skymap(
-            observation,
-            ax,
-            style,
-            target_name,
-            target_object,
-            target_object_data,
-            observer,
-            generation_time_str,
-            effective_dark_mode,
-            star_magnitude_limit,
-            plot_stars,
-            plot_messier,
-            plot_ngc,
-            plot_planets,
-            plot_sun,
-            plot_moon,
-            flipped_horizontally,
-            flipped_vertically,
-            coordinate_system,
+        _, ax = pyplot.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
+        return cast(
+            figure.Figure,
+            _generate_polar_skymap(
+                observation,
+                ax,
+                style,
+                target_name,
+                target_object,
+                target_object_data,
+                observer,
+                generation_time_str,
+                effective_dark_mode,
+                star_magnitude_limit,
+                plot_stars,
+                plot_messier,
+                plot_ngc,
+                plot_planets,
+                plot_sun,
+                plot_moon,
+                flipped_horizontally,
+                flipped_vertically,
+                coordinate_system,
+            ),
         )
+
 
 def plot_skymap(
     observation: "Observation",
@@ -206,9 +211,11 @@ def plot_skymap(
     equipment_id: Optional[int] = None,
     flip_horizontally: Optional[bool] = None,
     flip_vertically: Optional[bool] = None,
-    coordinate_system: CoordinateSystem = cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
+    coordinate_system: CoordinateSystem = cast(
+        CoordinateSystem, CoordinateSystem.HORIZONTAL
+    ),
     **kwargs,
-):
+) -> figure.Figure:
     flipped_horizontally = False
     flipped_vertically = False
     if flip_horizontally is not None:

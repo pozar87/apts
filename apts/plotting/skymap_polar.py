@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
-from matplotlib import pyplot
+from matplotlib import axes
 from skyfield.api import Star as SkyfieldStar
 from skyfield.units import Angle
 
@@ -15,17 +15,16 @@ from apts.plotting.skymap_objects import (
     _plot_solar_system_object_on_skymap,
     _plot_stars_on_skymap,
 )
+
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
-    from matplotlib.axes import Axes
-
     from ..observations import Observation
 
 
 def _generate_polar_skymap(
     observation: "Observation",
-    ax: pyplot.Axes,
+    ax: axes.Axes,
     style: dict,
     target_name: str,
     target_object: Any,
@@ -55,9 +54,7 @@ def _generate_polar_skymap(
         polar_ax.set_theta_zero_location("N")
         polar_ax.set_theta_direction(-1)
         polar_ax.set_yticks([0, 30, 60, 90])
-        polar_ax.set_yticklabels(
-            ["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"]
-        )
+        polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
         polar_ax.set_rlabel_position(22.5)
         cardinal_directions = {
             "N": 0,
@@ -80,9 +77,7 @@ def _generate_polar_skymap(
         polar_ax.set_theta_zero_location("N")
         polar_ax.set_theta_direction(1)  # RA increases eastward
         polar_ax.set_yticks([0, 30, 60, 90])
-        polar_ax.set_yticklabels(
-            ["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"]
-        )
+        polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
         polar_ax.set_rlabel_position(22.5)
         ra_labels = [f"{h}h" for h in range(0, 24, 3)]
         polar_ax.set_xticklabels(ra_labels, color=style["TEXT_COLOR"])
@@ -98,12 +93,8 @@ def _generate_polar_skymap(
         r_inner_good = 0
         r_outer_good = 90 - observation.conditions.min_object_altitude
 
-        min_az_rad = numpy.deg2rad(
-            float(observation.conditions.min_object_azimuth)
-        )
-        max_az_rad = numpy.deg2rad(
-            float(observation.conditions.max_object_azimuth)
-        )
+        min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
+        max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
 
         if (r_outer_good > 0) or not (
             float(observation.conditions.min_object_azimuth) == 0.0
@@ -395,9 +386,9 @@ def _generate_polar_skymap(
         )
 
     ax.set_title(
-        gettext_(
-            "Skymap for {target_name} (Generated: {generation_time_str})"
-        ).format(target_name=target_name, generation_time_str=generation_time_str),
+        gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(
+            target_name=target_name, generation_time_str=generation_time_str
+        ),
         color=style["TEXT_COLOR"],
     )
 

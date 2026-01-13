@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import numpy
 import pandas as pd
-from matplotlib import pyplot
+from matplotlib import axes, pyplot
 from matplotlib.patches import Ellipse
 
 from apts.constants.plot import CoordinateSystem
@@ -20,17 +20,16 @@ from apts.plotting.utils import (
     calculate_parallactic_angle,
     get_brightness_color,
 )
+
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
-    from matplotlib.axes import Axes
-
     from ..observations import Observation
 
 
 def _generate_zoom_skymap(
     observation: "Observation",
-    ax: pyplot.Axes,
+    ax: axes.Axes,
     style: dict,
     target_name: str,
     target_object: Any,
