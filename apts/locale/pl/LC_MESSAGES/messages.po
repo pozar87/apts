@@ -849,3 +849,6 @@ msgstr ""
 
 msgid "No data to plot"
 msgstr "Brak danych do wykresu"
+
+msgid "Aurora"
+msgstr "Zorza polarna"

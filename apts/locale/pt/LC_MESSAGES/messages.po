@@ -848,3 +848,6 @@ msgstr ""
 
 msgid "No data to plot"
 msgstr "Sem dados para gerar gráfico"
+
+msgid "Aurora"
+msgstr "Aurora"
