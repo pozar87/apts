@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional
 
-from apts.plotting.altitude import generate_plot_messier, generate_plot_planets
-from apts.plotting.planets import plot_visible_planets, plot_visible_planets_svg
-from apts.plotting.path import plot_sun_and_moon_path
-from apts.plotting.skymap import plot_skymap
-from apts.plotting.weather import generate_plot_weather
+from .plotting.altitude import generate_plot_messier, generate_plot_planets
+from .plotting.planets import plot_visible_planets, plot_visible_planets_svg
+from .plotting.path import plot_sun_and_moon_path
+from .plotting.skymap import plot_skymap
+from .plotting.weather import generate_plot_weather
 
 if TYPE_CHECKING:
     from .observations import Observation
