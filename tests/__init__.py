@@ -24,3 +24,20 @@ def setup_observation():
   e = setup_equipment()
   o = observations.Observation(p, e)
   return o
+
+
+def setup_southern_place():
+  p = place.Place(
+      name='Sydney',
+      lat=-33.8688,
+      lon=151.2093,
+      date = datetime.datetime(2025, 2, 18, 22, 0, 0, tzinfo=datetime.timezone.utc))
+  return p
+
+
+def setup_southern_observation():
+  # Setup basic observations
+  p = setup_southern_place()
+  e = setup_equipment()
+  o = observations.Observation(p, e)
+  return o
