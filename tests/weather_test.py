@@ -203,7 +203,7 @@ def test_weather_providers(
         (None, False, False),
     ],
 )
-@patch("apts.weather.Utils.annotate_plot")
+@patch("apts.weather.PlotUtils.annotate_plot")
 @patch("pandas.DataFrame.plot")
 @patch("apts.weather.get_dark_mode")
 @patch("apts.weather.get_weather_settings")
@@ -457,7 +457,7 @@ def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     requests_mock.get(ANY, json=mock_api_response)
 
     weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
-    with patch("apts.weather.Utils.annotate_plot") as mock_annotate_plot:
+    with patch("apts.weather.PlotUtils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_illumination()
         assert ax is not None
         mock_annotate_plot.assert_called_once_with(

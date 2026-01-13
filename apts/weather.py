@@ -4,7 +4,8 @@ import pandas as pd
 
 from typing import Optional, Any, cast
 
-from apts.utils.plot import Utils
+from apts.utils import Utils as GenericUtils
+from apts.utils.plot import Utils as PlotUtils
 from apts.utils.planetary import get_moon_illumination_details
 from apts.cache import get_timescale
 from apts.config import get_dark_mode, get_weather_settings
@@ -97,10 +98,10 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["cloudCover"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Clouds"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -133,7 +134,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Cloud cover [%]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Cloud cover [%]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_precipitation(
@@ -146,10 +147,14 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["precipIntensity", "precipProbability"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(
+                ax,
+                gettext_("Precipitation intensity and probability"),
+                effective_dark_mode,
+            )
+
         fig = None
 
         if ax:
@@ -184,7 +189,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Probability"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Probability"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_precipitation_type_summary(
@@ -197,10 +202,12 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
         data = self._filter_data(["precipType"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(
+                ax, gettext_("Precipitation type summary"), effective_dark_mode
+            )
+
         fig = None
         plot_kwargs = args.copy()  # Preserve original args
 
@@ -257,10 +264,10 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)  # Use effective_dark_mode
         data = self._filter_data(["summary"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Cloud summary"), effective_dark_mode)
+
         fig = None
         plot_kwargs = args.copy()
 
@@ -306,10 +313,10 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["temperature", "apparentTemperature", "dewPoint"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Temperatures"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -339,7 +346,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Temperature [°C]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Temperature [°C]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_wind(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
@@ -351,10 +358,10 @@ class Weather:
         style = get_plot_style(effective_dark_mode)
         max_wind_speed = self.data[["windSpeed"]].max().max()
         data = self._filter_data(["windSpeed"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Wind speed"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -391,7 +398,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Wind speed [km/h]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Wind speed [km/h]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_pressure_and_ozone(
@@ -412,14 +419,14 @@ class Weather:
             and bool(cast(pd.DataFrame, self.data)[col].astype(str).str.lower().nunique() > 1)
             and bool(cast(pd.DataFrame, self.data)[col].notna().any())
         ]
+        ax = args.pop("ax", None)
         if not available_columns:
-            return None  # Nothing to plot
+            return PlotUtils.plot_no_data(ax, gettext_("Pressure and Ozone"), effective_dark_mode)
 
         data = self._filter_data(available_columns)
         if data.empty:
-            return None
+            return PlotUtils.plot_no_data(ax, gettext_("Pressure and Ozone"), effective_dark_mode)
 
-        ax = args.pop("ax", None)
         fig = None
         plot_kwargs = args.copy()
 
@@ -470,7 +477,7 @@ class Weather:
             primary_y_label = gettext_("Pressure [hPa]")
         elif "ozone" in available_columns:
             primary_y_label = gettext_("Ozone [DU]")  # Assuming Dobson Units for Ozone
-        Utils.annotate_plot(ax, primary_y_label, effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, primary_y_label, effective_dark_mode, self.local_timezone)
 
         # Style secondary Y axis if it exists
         if secondary_y_plot and hasattr(ax, "right_ax"):
@@ -522,10 +529,10 @@ class Weather:
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["visibility"])
         data = data.query("visibility != 'none'")  # pyright: ignore
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Visibility"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -555,7 +562,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Visibility [km]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Visibility [km]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_fog(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
@@ -566,10 +573,10 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["fog"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Fog"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -601,7 +608,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Fog [%]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Fog [%]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_moon_illumination(
@@ -614,10 +621,10 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["moonIllumination", "moonWaxing"])
-        if data.empty:
-            return None
-
         ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Moon Illumination"), effective_dark_mode)
+
         fig = None
 
         if ax:
@@ -657,7 +664,7 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Illumination [%]"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Illumination [%]"), effective_dark_mode, self.local_timezone)
         return ax
 
     def plot_aurora(
@@ -668,12 +675,15 @@ class Weather:
         else:
             effective_dark_mode = get_dark_mode()
 
+        ax = args.pop("ax", None)
+        if "aurora" not in self.data.columns:
+            return PlotUtils.plot_no_data(ax, gettext_("Aurora"), effective_dark_mode)
+
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["aurora"])
         if data.empty:
-            return None
+            return PlotUtils.plot_no_data(ax, gettext_("Aurora"), effective_dark_mode)
 
-        ax = args.pop("ax", None)
         fig = None
 
         if ax:
@@ -710,5 +720,5 @@ class Weather:
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
 
-        Utils.annotate_plot(ax, gettext_("Aurora"), effective_dark_mode, self.local_timezone)
+        PlotUtils.annotate_plot(ax, gettext_("Aurora"), effective_dark_mode, self.local_timezone)
         return ax
