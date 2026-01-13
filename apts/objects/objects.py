@@ -87,13 +87,10 @@ class Objects(ABC):
             )
         ]
 
-        if (
-            conditions.min_object_azimuth == 0
-            and conditions.max_object_azimuth == 360
-        ):
-            # Sort objects by given order
-            visible = visible.sort_values(by=sort_by, ascending=True)  # pyright: ignore
-            return visible
+        # Filter by altitude at transit (if available) to reject impossible objects early
+        if ObjectTableLabels.ALTITUDE in visible.columns and not visible[ObjectTableLabels.ALTITUDE].isnull().all():
+             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+             visible = visible[alt_values > conditions.min_object_altitude]
 
         visible_objects_indices = []
         for index, row in visible.iterrows():
@@ -139,13 +136,19 @@ class Objects(ABC):
         t1 = self.ts.utc(observer.date.utc_datetime() + timedelta(days=1))
         f = almanac.meridian_transits(self.place.eph, skyfield_object, self.place.location)
         t, y = almanac.find_discrete(t0, t1, f)
-        if len(t) > 0:
-            return (
-                t[0]
+
+        # Prefer upper culmination (y=1)
+        upper_indices = [i for i, event in enumerate(y) if event == 1]
+
+        if upper_indices:
+             idx = upper_indices[0]
+             return (
+                t[idx]
                 .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
             )
+
         return None
 
     def _compute_rising_and_setting(self, skyfield_object, observer, transit_time):

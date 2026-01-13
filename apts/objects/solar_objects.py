@@ -309,17 +309,7 @@ class SolarObjects(Objects):
             (pd.isna(visible.MagnitudeFloat) | (visible.MagnitudeFloat < float(max_magnitude)))
         ]
 
-        if conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
-            # Sort objects by given order
-            visible = visible.sort_values(by=sort_by, ascending=True)  # pyright: ignore
-            if not visible.empty:
-                visible["TechnicalName"] = visible["Name"]
-                visible["Name"] = (
-                    visible["TechnicalName"]
-                    .apply(planetary.get_simple_name)
-                    .astype("string")
-                )
-            return visible
+
 
         visible_objects_indices = []
         for index, row in visible.iterrows():
