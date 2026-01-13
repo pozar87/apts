@@ -1,19 +1,18 @@
 import functools
+from datetime import timedelta
+from decimal import Decimal
+from typing import cast
+
+import ephem
 import numpy
 import pandas as pd
-import ephem
-from datetime import timedelta
 
-from .objects import Objects
-from ..constants import ObjectTableLabels
-from ..utils import planetary, MINOR_PLANET_NAMES
 from apts.place import Place
 
-
 from ..cache import get_mpcorb_data
-
-
-from decimal import Decimal
+from ..constants import ObjectTableLabels
+from ..utils import MINOR_PLANET_NAMES, planetary
+from .objects import Objects
 
 
 def _to_float(value):
@@ -46,7 +45,7 @@ class SolarObjects(Objects):
         )
         self.objects = pd.DataFrame(
             all_solar_system_bodies,
-            columns=[ObjectTableLabels.NAME], # pyright: ignore
+            columns=[ObjectTableLabels.NAME],  # pyright: ignore
         )
 
         # Set proper dtype for string columns
@@ -100,14 +99,16 @@ class SolarObjects(Objects):
             axis=1,
         )
         # Compute rising and setting of planets at given place
-        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = self.objects.apply(
-            lambda body: self._compute_rising_and_setting(
-                self.get_skyfield_object(body),
-                observer_to_use,
-                body[ObjectTableLabels.TRANSIT],
-            ),
-            axis=1,
-        ).apply(pd.Series)
+        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
+            self.objects.apply(
+                lambda body: self._compute_rising_and_setting(
+                    self.get_skyfield_object(body),
+                    observer_to_use,
+                    body[ObjectTableLabels.TRANSIT],
+                ),
+                axis=1,
+            ).apply(pd.Series)
+        )
         # Compute altitude of planets at transit (at given place)
         self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
             [ObjectTableLabels.TRANSIT]
@@ -246,14 +247,14 @@ class SolarObjects(Objects):
         # Calculate planets RA, Dec, Distance, and Elongation
         # Batch compute positions for better performance
         def compute_position(row):
-            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row)) # pyright: ignore
+            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row))  # pyright: ignore
             return pd.Series(
                 {
                     ObjectTableLabels.RA: pos.radec()[0].hours,
                     ObjectTableLabels.DEC: pos.radec()[1].degrees,
                     ObjectTableLabels.DISTANCE: pos.distance().au,
                     ObjectTableLabels.ELONGATION: pos.separation_from(
-                        observer_to_use.sun.at(t) # pyright: ignore
+                        observer_to_use.sun.at(t)  # pyright: ignore
                     ).degrees,
                 }
             )
@@ -291,48 +292,73 @@ class SolarObjects(Objects):
         )
 
         visible = visible[
-            (pd.isna(visible.MagnitudeFloat) | (visible.MagnitudeFloat < float(max_magnitude)))
+            (
+                pd.isna(visible.MagnitudeFloat)
+                | (visible.MagnitudeFloat < float(max_magnitude))
+            )
         ]
 
         # Filter objects based on visibility window (Rising/Setting) intersection with observation window
         # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
-        
+
         # Helper boolean for existence of Rise/Set times
-        has_rise_set = (visible[ObjectTableLabels.RISING].notna()) & (visible[ObjectTableLabels.SETTING].notna())
-        
+        has_rise_set = (
+            cast(pd.Series, visible[ObjectTableLabels.RISING]).notna()
+            & cast(pd.Series, visible[ObjectTableLabels.SETTING]).notna()
+        )
+
         # Case A: Rise < Set (Simple interval)
         # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
-        cond_A = (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING]) & \
-                 (visible[ObjectTableLabels.RISING] <= stop + timedelta(hours=hours_margin)) & \
-                 (visible[ObjectTableLabels.SETTING] >= start - timedelta(hours=hours_margin))
-                 
+        cond_A = (
+            (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING])
+            & (
+                visible[ObjectTableLabels.RISING]
+                <= stop + timedelta(hours=hours_margin)
+            )
+            & (
+                visible[ObjectTableLabels.SETTING]
+                >= start - timedelta(hours=hours_margin)
+            )
+        )
+
         # Case B: Set < Rise (Crosses midnight/wrap-around)
         # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
-        cond_B = (visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]) & \
-                 ~((visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin)) & \
-                   (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin)))
+        cond_B = (
+            visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]
+        ) & ~(
+            (visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin))
+            & (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin))
+        )
 
         # Case C: No Rise/Set (Circumpolar or Always Down)
         # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
         if ObjectTableLabels.ALTITUDE in visible.columns:
-             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+            alt_values = cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
         else:
-             alt_values = pd.Series([0] * len(visible), index=visible.index)
+            alt_values = pd.Series([0] * len(visible), index=visible.index)
 
         cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
-        
+
         # Apply filter
-        visible = visible[ (has_rise_set & (cond_A | cond_B)) | cond_always_up ]
+        visible = cast(
+            pd.DataFrame, visible[(has_rise_set & (cond_A | cond_B)) | cond_always_up]
+        )
 
         # Filter by altitude at transit (if available) to reject impossible objects early
-        if ObjectTableLabels.ALTITUDE in visible.columns and not visible[ObjectTableLabels.ALTITUDE].isnull().all():
-             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
-             visible = visible[alt_values > conditions.min_object_altitude]
-
-
+        if ObjectTableLabels.ALTITUDE in visible.columns and not bool(
+            cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).isnull().all()
+        ):
+            alt_values = cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
+            visible = cast(
+                pd.DataFrame, visible[alt_values > conditions.min_object_altitude]
+            )
 
         visible_objects_indices = []
-        for index, row in visible.iterrows():
+        for index, row in cast(pd.DataFrame, visible).iterrows():
             skyfield_object = self.get_skyfield_object(row)
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
 
@@ -346,7 +372,7 @@ class SolarObjects(Objects):
                 az_conditions_met = self._is_azimuth_in_range(
                     above_horizon_df["Azimuth"], conditions
                 )
-                if az_conditions_met.any(): # pyright: ignore
+                if az_conditions_met.any():  # pyright: ignore
                     visible_objects_indices.append(index)
 
         visible = self.objects.loc[visible_objects_indices]

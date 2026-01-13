@@ -1,13 +1,15 @@
 import logging
-import pytz
-import pandas
 from abc import ABC, abstractmethod
-
 from datetime import timedelta
-from ..constants import ObjectTableLabels
-from skyfield.api import Star, load
+from typing import cast
+
+import pandas
+import pytz
 from skyfield import almanac
+from skyfield.api import Star, load
 from skyfield.searchlib import find_discrete
+
+from ..constants import ObjectTableLabels
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +20,16 @@ class Objects(ABC):
         pass
 
     @abstractmethod
-    def compute(self, calculation_date=None, df_to_compute=None) -> pandas.DataFrame | None:
+    def compute(
+        self, calculation_date=None, df_to_compute=None
+    ) -> pandas.DataFrame | None:
         pass
 
     def __init__(self, place, calculation_date=None):
         self.place = place
         self.objects: pandas.DataFrame = pandas.DataFrame()
         self.ts = load.timescale()
-        self.calculation_date = calculation_date # Store it here
+        self.calculation_date = calculation_date  # Store it here
 
     def get_visible(
         self,
@@ -53,16 +57,16 @@ class Objects(ABC):
 
         if (
             ObjectTableLabels.TRANSIT not in candidate_objects.columns
-            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any() # pyright: ignore
+            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any()  # pyright: ignore
         ):
             df_to_compute = (
                 candidate_objects
                 if ObjectTableLabels.TRANSIT not in self.objects.columns
                 else candidate_objects[
-                    candidate_objects[ObjectTableLabels.TRANSIT].isnull() # pyright: ignore
+                    candidate_objects[ObjectTableLabels.TRANSIT].isnull()  # pyright: ignore
                 ]
             )
-            if not df_to_compute.empty: # pyright: ignore
+            if not df_to_compute.empty:  # pyright: ignore
                 self.compute(
                     calculation_date=self.calculation_date, df_to_compute=df_to_compute
                 )
@@ -71,45 +75,70 @@ class Objects(ABC):
         magnitude_values = self.objects["Magnitude"].apply(
             lambda x: x.magnitude if hasattr(x, "magnitude") else x
         )
-        visible = self.objects[magnitude_values < max_magnitude].copy()
-        visible["ID"] = visible.index
+        visible = cast(
+            pandas.DataFrame, self.objects[magnitude_values < max_magnitude].copy()
+        )
 
         # Filter objects based on visibility window (Rising/Setting) intersection with observation window
         # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
-        
+
         # Helper boolean for existence of Rise/Set times
-        has_rise_set = (visible[ObjectTableLabels.RISING].notna()) & (visible[ObjectTableLabels.SETTING].notna())
-        
+        has_rise_set = cast(
+            pandas.Series, visible[ObjectTableLabels.RISING].notna()
+        ) & cast(pandas.Series, visible[ObjectTableLabels.SETTING].notna())
+
         # Case A: Rise < Set (Simple interval)
         # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
         # Note: We apply hours_margin to be safe, though overlap logic usually suffices.
-        cond_A = (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING]) & \
-                 (visible[ObjectTableLabels.RISING] <= stop + timedelta(hours=hours_margin)) & \
-                 (visible[ObjectTableLabels.SETTING] >= start - timedelta(hours=hours_margin))
-                 
+        cond_A = (
+            (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING])
+            & (
+                visible[ObjectTableLabels.RISING]
+                <= stop + timedelta(hours=hours_margin)
+            )
+            & (
+                visible[ObjectTableLabels.SETTING]
+                >= start - timedelta(hours=hours_margin)
+            )
+        )
+
         # Case B: Set < Rise (Crosses midnight/wrap-around)
         # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
         # i.e. It is NOT the case that the "down time" covers the whole "observation time"
-        cond_B = (visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]) & \
-                 ~((visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin)) & \
-                   (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin)))
+        cond_B = (
+            visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]
+        ) & ~(
+            (visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin))
+            & (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin))
+        )
 
         # Case C: No Rise/Set (Circumpolar or Always Down)
         # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
         if ObjectTableLabels.ALTITUDE in visible.columns:
-             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
+            alt_values = cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
         else:
-             alt_values = pandas.Series([0] * len(visible), index=visible.index)
+            alt_values = pandas.Series([0] * len(visible), index=visible.index)
 
         cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
-        
+
         # Apply filter
-        visible = visible[ (has_rise_set & (cond_A | cond_B)) | cond_always_up ]
+        visible = cast(
+            pandas.DataFrame,
+            visible[(has_rise_set & (cond_A | cond_B)) | cond_always_up],
+        )
 
         # Filter by altitude at transit (if available) to reject impossible objects early
-        if ObjectTableLabels.ALTITUDE in visible.columns and not visible[ObjectTableLabels.ALTITUDE].isnull().all():
-             alt_values = visible[ObjectTableLabels.ALTITUDE].apply(lambda x: x.magnitude if hasattr(x, "magnitude") else x)
-             visible = visible[alt_values > conditions.min_object_altitude]
+        if ObjectTableLabels.ALTITUDE in visible.columns and not bool(
+            cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).isnull().all()
+        ):
+            alt_values = cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
+            visible = cast(
+                pandas.DataFrame, visible[alt_values > conditions.min_object_altitude]
+            )
 
         visible_objects_indices = []
         for index, row in visible.iterrows():
@@ -117,15 +146,19 @@ class Objects(ABC):
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
 
             # Extract magnitude from Altitude and Azimuth Quantity objects
-            altitude_values = altaz_df['Altitude'].apply(lambda x: x.magnitude if hasattr(x, 'magnitude') else x)
-            azimuth_values = altaz_df['Azimuth'].apply(lambda x: x.magnitude if hasattr(x, 'magnitude') else x)
+            altitude_values = altaz_df["Altitude"].apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
+            azimuth_values = altaz_df["Azimuth"].apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
 
             # Combine altitude and azimuth conditions
             altitude_condition = altitude_values > conditions.min_object_altitude
             azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
 
             # Check if any time satisfies both conditions
-            if (altitude_condition & azimuth_condition).any(): # pyright: ignore
+            if (altitude_condition & azimuth_condition).any():  # pyright: ignore
                 visible_objects_indices.append(index)
 
         visible = self.objects.loc[visible_objects_indices]
@@ -134,8 +167,16 @@ class Objects(ABC):
         return visible
 
     def _is_azimuth_in_range(self, azimuth_series, conditions):
-        min_az = conditions.min_object_azimuth.magnitude if hasattr(conditions.min_object_azimuth, 'magnitude') else conditions.min_object_azimuth
-        max_az = conditions.max_object_azimuth.magnitude if hasattr(conditions.max_object_azimuth, 'magnitude') else conditions.max_object_azimuth
+        min_az = (
+            conditions.min_object_azimuth.magnitude
+            if hasattr(conditions.min_object_azimuth, "magnitude")
+            else conditions.min_object_azimuth
+        )
+        max_az = (
+            conditions.max_object_azimuth.magnitude
+            if hasattr(conditions.max_object_azimuth, "magnitude")
+            else conditions.max_object_azimuth
+        )
 
         if min_az > max_az:
             return (azimuth_series >= min_az) | (azimuth_series <= max_az)
@@ -151,34 +192,36 @@ class Objects(ABC):
         if skyfield_object is None:
             return None
         # Return transit time in local time
-        
+
         # Start search from the beginning of the UTC day to catch earlier transits
         current_dt = observer.date.utc_datetime()
         t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-        
+
         # Search window extended to 2 days to catch transits happening next morning or late in the current day
         t0 = self.ts.utc(t0_dt)
         t1 = self.ts.utc(t0_dt + timedelta(days=2))
-        f = almanac.meridian_transits(self.place.eph, skyfield_object, self.place.location)
+        f = almanac.meridian_transits(
+            self.place.eph, skyfield_object, self.place.location
+        )
         t, y = almanac.find_discrete(t0, t1, f)
 
         # Filter for upper culmination (y=1) AND relevant timing
         # We want a transit that results in the object being visible during the observation window (starting at observer.date).
         # A rough heuristic: Transit should be no earlier than 12 hours before observer.date.
         # (If it transited >12h ago, it likely set >6h ago and is gone).
-        
+
         cutoff_time = current_dt - timedelta(hours=12)
-        
+
         valid_transits = []
         for i, event in enumerate(y):
-            if event == 1: # Upper
+            if event == 1:  # Upper
                 transit_dt = t[i].utc_datetime()
                 if transit_dt > cutoff_time:
                     valid_transits.append(transit_dt)
 
         if valid_transits:
-             # Return the first valid transit found
-             return (
+            # Return the first valid transit found
+            return (
                 valid_transits[0]
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
@@ -188,8 +231,8 @@ class Objects(ABC):
         upper_indices = [i for i, event in enumerate(y) if event == 1]
 
         if upper_indices:
-             idx = upper_indices[0]
-             return (
+            idx = upper_indices[0]
+            return (
                 t[idx]
                 .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
@@ -242,5 +285,7 @@ class Objects(ABC):
         if transit is None or pandas.isna(transit):
             return 0
         t = self.ts.utc(transit)
-        alt, _, _ = self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
+        alt, _, _ = (
+            self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
+        )
         return alt.degrees
