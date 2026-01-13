@@ -722,7 +722,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         t1 = self.observation.place.ts.utc(self.observation.stop)
         mock_curve_df = pd.DataFrame(
             {
-                "Time": self.observation.place.ts.linspace(t0, t1, 10),
+                "Time": list(self.observation.place.ts.linspace(t0, t1, 10)),
                 "Altitude": [10, 20, 30, 40, 50, 40, 30, 20, 10, 0],
             }
         )

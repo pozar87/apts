@@ -232,14 +232,17 @@ def generate_plot_planets(
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     planets_df = observation.get_visible_planets().copy()
+    
+    # Extended range for plotting context (+/- 30 mins)
+    plot_start = observation.start - timedelta(minutes=30) if observation.start else None
+    plot_end = observation.stop + timedelta(minutes=30) if observation.stop else None
+
     if len(planets_df) == 0:
-        if observation.start is not None and observation.time_limit is not None:
-            ax.set_xlim(
-                [
-                    observation.start - timedelta(minutes=15),
-                    observation.time_limit + timedelta(minutes=15),
-                ]
-            )
+        if plot_start is not None and observation.time_limit is not None:
+            # Also extend empty plot
+            plot_limit = observation.time_limit + timedelta(minutes=30)
+            ax.set_xlim([plot_start, plot_limit])
+            
         ax.set_ylim(0, 90)
         mark_observation(observation, ax, effective_dark_mode, style)
         mark_good_conditions(
@@ -265,8 +268,9 @@ def generate_plot_planets(
         name = planet[ObjectTableLabels.NAME]
         skyfield_object = observation.local_planets.get_skyfield_object(planet)
 
+        # Get curve for extended range
         curve_df = observation.place.get_altaz_curve(
-            skyfield_object, observation.start, observation.stop
+            skyfield_object, plot_start, plot_end
         )
 
         specific_planet_color = get_planet_color(
@@ -277,12 +281,36 @@ def generate_plot_planets(
             lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
         )
         valid_times = pd.notna(time_series)
+        
+        # Plot full range as dotted
         ax.plot(
             time_series[valid_times],
             curve_df["Altitude"][valid_times],
             color=specific_planet_color,
-            label=name,
+            linestyle=":",
+            alpha=0.6,
+            label=None # Don't duplicate legend
         )
+        
+        # Plot observation window as solid
+        if observation.start and observation.stop:
+            in_window_mask = (time_series >= observation.start) & (time_series <= observation.stop)
+            ax.plot(
+                time_series[valid_times & in_window_mask],
+                curve_df["Altitude"][valid_times & in_window_mask],
+                color=specific_planet_color,
+                linestyle="-",
+                label=name,
+            )
+        else:
+            # Fallback if no start/stop defined (unlikely for valid observation)
+            ax.plot(
+                time_series[valid_times],
+                curve_df["Altitude"][valid_times],
+                color=specific_planet_color,
+                linestyle="-",
+                label=name,
+            )
 
         rising_time = planet[ObjectTableLabels.RISING]
         if pd.notna(rising_time):  # type: ignore
@@ -297,6 +325,7 @@ def generate_plot_planets(
 
         if not curve_df.empty:
             try:
+                # Find peak within the curve (now extended range)
                 peak_idx = curve_df["Altitude"].idxmax()
                 peak_time_obj = curve_df["Time"].iloc[peak_idx]
                 if hasattr(peak_time_obj, "utc_datetime"):
@@ -316,8 +345,9 @@ def generate_plot_planets(
                     f"Could not find peak for {name} as all altitudes are NaN."
                 )
 
-    if observation.start is not None and observation.stop is not None:
-        ax.set_xlim([observation.start, observation.stop])
+    if plot_start is not None and plot_end is not None:
+        ax.set_xlim([plot_start, plot_end])
+        
     ax.set_ylim(0, 90)
     date_format = mdates.DateFormatter("%H:%M", tz=observation.place.local_timezone)
     ax.xaxis.set_major_formatter(date_format)
