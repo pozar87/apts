@@ -2,7 +2,10 @@ import logging
 from datetime import datetime, timedelta
 from importlib import resources
 from string import Template
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
+
+if TYPE_CHECKING:
+    import matplotlib.figure
 
 import numpy
 import pandas as pd
@@ -404,7 +407,7 @@ class Observation:
         coordinate_system: Optional[CoordinateSystem] = None,
         language: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> "matplotlib.figure.Figure":
         """
         Generates and displays a skymap for a specified celestial object.
 

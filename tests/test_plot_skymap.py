@@ -14,6 +14,9 @@ from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
 from apts.plot import plot_skymap
+from apts.plotting.skymap import (
+    _generate_plot_skymap,
+)
 from apts.plotting.skymap_objects import (
     _plot_messier_on_skymap,
     _plot_planets_on_skymap,
@@ -26,7 +29,7 @@ def test_calculate_ellipse_angle():
     # Test case 1: HORIZONTAL, no flips
     angle = _calculate_ellipse_angle(
         pos_angle=45,
-        parallactic_angle=15,
+        parallactic_angle=Angle(degrees=15),
         coordinate_system=cast(Any, CoordinateSystem.HORIZONTAL),
         flipped_horizontally=False,
         flipped_vertically=False,
@@ -36,7 +39,7 @@ def test_calculate_ellipse_angle():
     # Test case 2: EQUATORIAL, no flips
     angle = _calculate_ellipse_angle(
         pos_angle=45,
-        parallactic_angle=15,
+        parallactic_angle=Angle(degrees=15),
         coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
         flipped_horizontally=False,
         flipped_vertically=False,
@@ -46,7 +49,7 @@ def test_calculate_ellipse_angle():
     # Test case 3: HORIZONTAL, horizontal flip
     angle = _calculate_ellipse_angle(
         pos_angle=45,
-        parallactic_angle=15,
+        parallactic_angle=Angle(degrees=15),
         coordinate_system=cast(Any, CoordinateSystem.HORIZONTAL),
         flipped_horizontally=True,
         flipped_vertically=False,
@@ -56,7 +59,7 @@ def test_calculate_ellipse_angle():
     # Test case 4: HORIZONTAL, vertical flip
     angle = _calculate_ellipse_angle(
         pos_angle=45,
-        parallactic_angle=15,
+        parallactic_angle=Angle(degrees=15),
         coordinate_system=cast(Any, CoordinateSystem.HORIZONTAL),
         flipped_horizontally=False,
         flipped_vertically=True,
@@ -66,7 +69,7 @@ def test_calculate_ellipse_angle():
     # Test case 5: HORIZONTAL, both flips
     angle = _calculate_ellipse_angle(
         pos_angle=45,
-        parallactic_angle=15,
+        parallactic_angle=Angle(degrees=15),
         coordinate_system=cast(Any, CoordinateSystem.HORIZONTAL),
         flipped_horizontally=True,
         flipped_vertically=True,
@@ -159,11 +162,11 @@ def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
-        patch("apts.plotting.skymap_zoom.get_brightness_color") as mock_get_brightness_color,
-        patch("apts.plotting.skymap_objects.get_brightness_color") as mock_get_brightness_color_obj,
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color"
+        ) as mock_get_brightness_color,
     ):
         mock_get_brightness_color.return_value = "0.5"
-        mock_get_brightness_color_obj.return_value = "0.5"
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
@@ -428,8 +431,9 @@ def test_plot_planet_with_no_size_polar(mock_observation):
 
 def test_plot_stars_on_skymap_equatorial_with_zoom():
     """Test that stars are plotted correctly in equatorial coordinates with zoom."""
-    from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap_objects import _plot_stars_on_skymap
+    from apts.plotting.skymap_objects import (
+        _plot_stars_on_skymap,
+    )
 
     # Create mock objects
     mock_observation = MagicMock()
@@ -710,8 +714,6 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     Tests that a Messier object ellipse is plotted with the correct angle on a zoomed equatorial skymap.
     The angle should be based on PosAng only.
     """
-    from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -776,18 +778,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
-        ),
-        patch(
             "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
-        patch(
-            "apts.plotting.skymap_objects.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
-        ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -824,8 +815,6 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     Tests that a TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed HORIZONTAL skymap.
     """
-    from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -889,21 +878,10 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymap_zoom.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
-        ),
-        patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+            return_value=Angle(degrees=parallactic_angle_val),
         ),
         patch(
             "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
-        patch(
-            "apts.plotting.skymap_objects.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
-        ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
         ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
@@ -932,9 +910,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
         ellipse = ellipse_call.args[0]
         assert abs(ellipse.center[0] - target_az_val.degrees) < 0.01
         assert abs(ellipse.center[1] - target_alt_val.degrees) < 0.01
-        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
-            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
-        )
+        assert abs(float(ellipse.angle) - expected_final_angle) < 0.01
 
 
 def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
@@ -942,8 +918,6 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed HORIZONTAL skymap.
     """
-    from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -1021,19 +995,8 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
-        ),
-        patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
-        ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
-        patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
+            return_value=Angle(degrees=parallactic_angle_val),
         ),
         patch(
             "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
@@ -1064,9 +1027,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
         )
 
         ellipse = ellipse_call.args[0]
-        assert abs(ellipse.angle - expected_final_angle) < 0.01, (
-            f"Expected angle {expected_final_angle}, but got {ellipse.angle}"
-        )
+        assert abs(float(ellipse.angle) - expected_final_angle) < 0.01
 
 
 def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
@@ -1074,8 +1035,6 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     Tests that a NON-TARGET Messier object ellipse is plotted with the correct angle
     on a zoomed EQUATORIAL skymap.
     """
-    from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_ax = MagicMock()
@@ -1153,19 +1112,8 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
-        ),
-        patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
-        ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
-        patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
-            return_value=parallactic_angle_val,
+            return_value=Angle(degrees=parallactic_angle_val),
         ),
         patch(
             "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
@@ -1203,7 +1151,6 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
 
 def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
     """Test that bright stars are plotted correctly in equatorial coordinates with zoom."""
-    from apts.constants.plot import CoordinateSystem
     from apts.plotting.skymap_objects import _plot_bright_stars_on_skymap
 
     # Create mock objects
@@ -1333,10 +1280,9 @@ def test_plot_bright_stars_on_skymap_equatorial_with_zoom():
 
 def test_plot_stars_ra_wrapping_equatorial():
     """Test that RA coordinate wrapping works correctly in equatorial plots."""
-    from apts.constants.plot import (
-        CoordinateSystem,
+    from apts.plotting.skymap_objects import (
+        _plot_stars_on_skymap,
     )
-    from apts.plotting.skymap_objects import _plot_stars_on_skymap
     from apts.plotting.utils import create_ra_zoom_mask as _create_ra_zoom_mask
 
     # Create mock objects

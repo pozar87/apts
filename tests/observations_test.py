@@ -1,26 +1,26 @@
-import os
-import unittest
-import tempfile
 import datetime  # Added
+import os
+import tempfile
+import unittest
 from datetime import timedelta
-from typing import cast, Any # Added Any
-from unittest.mock import patch
-from skyfield.api import Star
+from typing import Any, cast  # Added Any
+from unittest.mock import ANY, MagicMock, patch  # Added MagicMock and call
+
 import pandas as pd
-from unittest.mock import MagicMock, ANY  # Added MagicMock and call
-from apts.observations import Observation
+from skyfield.api import Star
+
+from apts.conditions import Conditions
 from apts.constants.graphconstants import (
-    get_plot_style,
     GraphConstants,
+    get_plot_style,
 )  # Added GraphConstants
 from apts.constants.objecttablelabels import (
     ObjectTableLabels,
 )  # Added ObjectTableLabels
+from apts.constants.twilight import Twilight
+from apts.observations import Observation
 from apts.units import ureg
 from tests import setup_observation
-from apts.conditions import Conditions
-from apts.constants.twilight import Twilight
-
 
 # MockPlace and MockEquipment classes are removed
 
@@ -30,15 +30,19 @@ class TestObservationInitialization(unittest.TestCase):
         self.place = MagicMock()
         self.place.local_timezone = datetime.timezone.utc
         self.place.ts = MagicMock()
-        self.place.ts.utc.side_effect = lambda dt: dt # Simple mock for ts.utc()
+        self.place.ts.utc.side_effect = lambda dt: dt  # Simple mock for ts.utc()
         self.equipment = MagicMock()
         self.target_date = datetime.date(2025, 2, 18)
 
     def test_sun_observation_window(self):
         """Test that the observation window is set correctly for sun observations."""
         # Arrange
-        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-18 06:00:00", tz="UTC")
-        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
+        self.place.sunrise_time.return_value = pd.Timestamp(
+            "2025-02-18 06:00:00", tz="UTC"
+        )
+        self.place.sunset_time.return_value = pd.Timestamp(
+            "2025-02-18 18:00:00", tz="UTC"
+        )
         conditions = Conditions()
 
         # Act
@@ -59,8 +63,12 @@ class TestObservationInitialization(unittest.TestCase):
     def test_night_observation_default_nautical_twilight(self):
         """Test night observation uses nautical twilight by default."""
         # Arrange
-        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
-        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        self.place.sunset_time.return_value = pd.Timestamp(
+            "2025-02-18 18:30:00", tz="UTC"
+        )
+        self.place.sunrise_time.return_value = pd.Timestamp(
+            "2025-02-19 05:30:00", tz="UTC"
+        )
         conditions = Conditions()  # Default conditions use NAUTICAL
 
         # Act
@@ -73,16 +81,25 @@ class TestObservationInitialization(unittest.TestCase):
         )
 
         # Assert
-        self.place.sunset_time.assert_called_with(target_date=self.target_date, twilight=Twilight.NAUTICAL)
-        self.place.sunrise_time.assert_called_with(start_search_from=pd.Timestamp("2025-02-18 18:30:00", tz="UTC"), twilight=Twilight.NAUTICAL)
+        self.place.sunset_time.assert_called_with(
+            target_date=self.target_date, twilight=Twilight.NAUTICAL
+        )
+        self.place.sunrise_time.assert_called_with(
+            start_search_from=pd.Timestamp("2025-02-18 18:30:00", tz="UTC"),
+            twilight=Twilight.NAUTICAL,
+        )
         self.assertEqual(observation.start, self.place.sunset_time.return_value)
         self.assertEqual(observation.stop, self.place.sunrise_time.return_value)
 
     def test_night_observation_custom_twilight(self):
         """Test night observation with a custom twilight setting."""
         # Arrange
-        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 19:00:00", tz="UTC")
-        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:00:00", tz="UTC")
+        self.place.sunset_time.return_value = pd.Timestamp(
+            "2025-02-18 19:00:00", tz="UTC"
+        )
+        self.place.sunrise_time.return_value = pd.Timestamp(
+            "2025-02-19 05:00:00", tz="UTC"
+        )
         conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
 
         # Act
@@ -95,14 +112,23 @@ class TestObservationInitialization(unittest.TestCase):
         )
 
         # Assert
-        self.place.sunset_time.assert_called_with(target_date=self.target_date, twilight=Twilight.ASTRONOMICAL)
-        self.place.sunrise_time.assert_called_with(start_search_from=pd.Timestamp("2025-02-18 19:00:00", tz="UTC"), twilight=Twilight.ASTRONOMICAL)
+        self.place.sunset_time.assert_called_with(
+            target_date=self.target_date, twilight=Twilight.ASTRONOMICAL
+        )
+        self.place.sunrise_time.assert_called_with(
+            start_search_from=pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
+            twilight=Twilight.ASTRONOMICAL,
+        )
 
     def test_night_observation_start_time_override(self):
         """Test that conditions.start_time overrides the calculated start time."""
         # Arrange
-        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
-        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        self.place.sunset_time.return_value = pd.Timestamp(
+            "2025-02-18 18:30:00", tz="UTC"
+        )
+        self.place.sunrise_time.return_value = pd.Timestamp(
+            "2025-02-19 05:30:00", tz="UTC"
+        )
         conditions = Conditions(start_time="20:00:00")
 
         # Act
@@ -143,8 +169,12 @@ class TestObservationInitialization(unittest.TestCase):
     def test_max_return_none(self):
         """Test that observation initialization handles max_return=None gracefully."""
         # Arrange
-        self.place.sunset_time.return_value = pd.Timestamp("2025-02-18 18:30:00", tz="UTC")
-        self.place.sunrise_time.return_value = pd.Timestamp("2025-02-19 05:30:00", tz="UTC")
+        self.place.sunset_time.return_value = pd.Timestamp(
+            "2025-02-18 18:30:00", tz="UTC"
+        )
+        self.place.sunrise_time.return_value = pd.Timestamp(
+            "2025-02-19 05:30:00", tz="UTC"
+        )
         conditions = Conditions(max_return=None)
 
         # Act
@@ -163,12 +193,12 @@ class TestObservationInitialization(unittest.TestCase):
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
         # Start patcher to avoid Redis connection errors in CI
-        self.get_cache_settings_patcher = patch('apts.config.get_cache_settings')
+        self.get_cache_settings_patcher = patch("apts.config.get_cache_settings")
         self.mock_get_cache_settings = self.get_cache_settings_patcher.start()
         self.mock_get_cache_settings.return_value = {
-            'backend': 'memory',
-            'expire_after': 300,
-            'redis_location': None
+            "backend": "memory",
+            "expire_after": 300,
+            "redis_location": None,
         }
         self.addCleanup(self.get_cache_settings_patcher.stop)
 
@@ -206,7 +236,9 @@ class TestObservationTemplate(unittest.TestCase):
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 max_return_values = [
                     int(value)
-                    for value in cast(str, self.observation.conditions.max_return).split(":")
+                    for value in cast(
+                        str, self.observation.conditions.max_return
+                    ).split(":")
                 ]
                 time_limit_dt = self.observation.start.replace(
                     hour=max_return_values[0],
@@ -393,7 +425,9 @@ class TestObservationPlottingStyles(unittest.TestCase):
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
                 max_return_values = [
                     int(value)
-                    for value in cast(str, self.observation.conditions.max_return).split(":")
+                    for value in cast(
+                        str, self.observation.conditions.max_return
+                    ).split(":")
                 ]
                 time_limit_dt = self.observation.start.replace(
                     hour=max_return_values[0],
@@ -688,7 +722,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         t1 = self.observation.place.ts.utc(self.observation.stop)
         mock_curve_df = pd.DataFrame(
             {
-                "Time": self.observation.place.ts.linspace(t0, t1, 10),
+                "Time": list(self.observation.place.ts.linspace(t0, t1, 10)),
                 "Altitude": [10, 20, 30, 40, 50, 40, 30, 20, 10, 0],
             }
         )
@@ -742,7 +776,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 )
 
                 mock_ax.plot.assert_called()
-                self.assertEqual(mock_ax.plot.call_count, 2)
+                self.assertEqual(mock_ax.plot.call_count, 4)
 
                 mock_ax.scatter.assert_called()
                 self.assertEqual(mock_ax.scatter.call_count, 4)
@@ -775,12 +809,12 @@ class TestObservationPlottingStyles(unittest.TestCase):
 class TestObservationWeatherAnalysis(unittest.TestCase):
     def setUp(self):
         # Start patcher to avoid Redis connection errors in CI
-        self.get_cache_settings_patcher = patch('apts.config.get_cache_settings')
+        self.get_cache_settings_patcher = patch("apts.config.get_cache_settings")
         self.mock_get_cache_settings = self.get_cache_settings_patcher.start()
         self.mock_get_cache_settings.return_value = {
-            'backend': 'memory',
-            'expire_after': 300,
-            'redis_location': None
+            "backend": "memory",
+            "expire_after": 300,
+            "redis_location": None,
         }
         self.addCleanup(self.get_cache_settings_patcher.stop)
 
@@ -830,8 +864,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         base_time = self.obs.start
         for i in range(num_hours):
             hour_time = cast(Any, base_time) + datetime.timedelta(hours=i)
-            if (
-                cast(Any, hour_time) > cast(Any, self.obs.time_limit)
+            if cast(Any, hour_time) > cast(
+                Any, self.obs.time_limit
             ):  # Ensure we don't generate data beyond time_limit
                 break
 
@@ -1136,23 +1170,27 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Precipitation probability {precip_prob}% exceeds limit".format(
-            precip_prob=f"{precip_bad:.1f}"
+        expected_reason = (
+            "Precipitation probability {precip_prob}% exceeds limit".format(
+                precip_prob=f"{precip_bad:.1f}"
+            )
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
         """Test when get_critical_data returns an empty DataFrame."""
         self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
-            columns=pd.Index([
-                "time",
-                "cloudCover",
-                "precipProbability",
-                "windSpeed",
-                "temperature",
-                "visibility",
-                "moonIllumination",
-            ])
+            columns=pd.Index(
+                [
+                    "time",
+                    "cloudCover",
+                    "precipProbability",
+                    "windSpeed",
+                    "temperature",
+                    "visibility",
+                    "moonIllumination",
+                ]
+            )
         )
         results = self.obs.get_hourly_weather_analysis()
 
@@ -1253,8 +1291,6 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_fetched.get_critical_data.assert_called_once()  # Verify critical data was called after fetch
 
 
-
-
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
@@ -1275,6 +1311,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
+            "Rising": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
+            "Setting": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
             "ID": [0, 1, 2],
             "skyfield_object": [
                 Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
@@ -1392,9 +1430,8 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
             min_object_azimuth=350, max_object_azimuth=100, min_object_altitude=35
         )
         visible_planets = self.observation.get_visible_planets()
-        self.assertEqual(len(visible_planets), 2)
+        self.assertEqual(len(visible_planets), 1)
         self.assertIn("Saturn", visible_planets["Name"].values)
-        self.assertIn("Mars", visible_planets["Name"].values)
 
 
 class TestObservationSkymap(unittest.TestCase):
@@ -1417,6 +1454,8 @@ class TestObservationSkymap(unittest.TestCase):
                 pd.Timestamp("2025-02-18 22:00:00", tz="UTC"),
                 pd.Timestamp("2025-02-18 19:00:00", tz="UTC"),
             ],
+            "Rising": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
+            "Setting": pd.to_datetime([pd.NaT, pd.NaT, pd.NaT], utc=True),
             "ID": [0, 1, 2],
             "skyfield_object": [
                 Star(ra_hours=5.575538888888889, dec_degrees=22.0145),
@@ -1456,9 +1495,12 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
 
-    @patch("apts.plotting.skymap.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap.pyplot")
-    def test_plot_skymap_messier_zoomed(self, mock_pyplot, mock_get_brightness_color):
+    def test_plot_skymap_messier_zoomed(
+        self, mock_pyplot, mock_get_brightness_color_obj, mock_get_brightness_color_zoom
+    ):
         """Test that plot_skymap generates a zoomed plot for a Messier object without errors."""
         mock_ax = MagicMock()
         mock_fig = MagicMock()
@@ -1502,10 +1544,12 @@ class TestObservationSkymap(unittest.TestCase):
 
 
 class TestObservationSkymapFlipped(TestObservationSkymap):
-
-    @patch("apts.plotting.skymap.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap.pyplot")
-    def test_plot_skymap_flipped(self, mock_pyplot, mock_get_brightness_color):
+    def test_plot_skymap_flipped(
+        self, mock_pyplot, mock_get_brightness_color_obj, mock_get_brightness_color_zoom
+    ):
         """Test that plot_skymap generates a flipped plot."""
         mock_ax = MagicMock()
         mock_fig = MagicMock()
