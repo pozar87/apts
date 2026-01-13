@@ -663,6 +663,9 @@ class Weather:
     def plot_aurora(
         self, hours=24, dark_mode_override: Optional[bool] = None, **args
     ):
+        if "aurora" not in self.data.columns:
+            return None
+
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override
         else:
