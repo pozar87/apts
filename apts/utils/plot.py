@@ -1,5 +1,6 @@
 import matplotlib.axes
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 
 from apts.constants.graphconstants import get_plot_style
 from apts.i18n import gettext_
@@ -11,7 +12,10 @@ class Utils:
     @staticmethod
     def plot_no_data(ax, title, dark_mode_enabled):
         style = get_plot_style(dark_mode_enabled)
-        fig = ax.figure
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.figure
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
         ax.text(

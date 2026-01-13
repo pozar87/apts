@@ -16,7 +16,8 @@ from .opticalequipment import (
     OpticalEquipment,
 )
 from .optics import OpticalPath
-from .utils import Utils
+from .utils import Utils as GenericUtils
+from .utils.plot import Utils as PlotUtils
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class Equipment:
         results = []
         results_set = set()
         logger.debug(f"Space {space_node}, Output {output_node}")
-        for optical_path in Utils.find_all_paths(
+        for optical_path in GenericUtils.find_all_paths(
             self.connection_garph, space_node.index, output_node.index
         ):
             logger.debug(f"Optical Path: {optical_path}")
@@ -251,10 +252,10 @@ class Equipment:
         style = get_plot_style(effective_dark_mode)
 
         def formatter(tick, pos):
-            return Utils.decdeg2dms(tick, pretty=True)
+            return GenericUtils.decdeg2dms(tick, pretty=True)
 
         def add_line(description, position):
-            position = Utils.dms2decdeg(position)
+            position = GenericUtils.dms2decdeg(position)
             plot.axhline(position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
             plot.annotate(
                 description,
@@ -301,49 +302,22 @@ class Equipment:
         if autolayout:
             plt.rcParams.update({"figure.autolayout": True})
 
-        try:
-            # Pass title as None initially, then set it with color
-            ax = data.plot(
-                kind="bar",
-                title=None,
-                stacked=True,
-                color=[colors.get(c, "#CCCCCC") for c in legend_labels],
-                **args,
-            )
-            fig = ax.figure  # Get the figure object
-        except TypeError:
-            # This handles cases where data is empty or contains no numeric columns
-            ax = args.get("ax")
-            if ax:
-                fig = ax.figure
-            else:
-                # If no axes are provided, create a new figure and axes.
-                # Ensure 'ax' is not passed to subplots.
+        ax = args.get("ax")
+        if data.empty:
+            if not ax:
                 subplot_args = {k: v for k, v in args.items() if k != "ax"}
-                fig, ax = plt.subplots(**subplot_args)
+                _, ax = plt.subplots(**subplot_args)
+            return PlotUtils.plot_no_data(ax, title, dark_mode_enabled)
 
-            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-            ax.set_facecolor(style["AXES_FACE_COLOR"])
-            ax.text(
-                0.5,
-                0.5,
-                gettext_("No data to plot"),
-                horizontalalignment="center",
-                verticalalignment="center",
-                transform=ax.transAxes,
-                color=style["TEXT_COLOR"],
-                fontsize=16,
-            )
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-            # Apply styling to be consistent with other plots
-            ax.set_title(title, color=style["TEXT_COLOR"])
-            ax.spines["bottom"].set_color(style["AXIS_COLOR"])
-            ax.spines["top"].set_color(style["AXIS_COLOR"])
-            ax.spines["left"].set_color(style["AXIS_COLOR"])
-            ax.spines["right"].set_color(style["AXIS_COLOR"])
-            return ax
+        # Pass title as None initially, then set it with color
+        ax = data.plot(
+            kind="bar",
+            title=None,
+            stacked=True,
+            color=[colors.get(c, "#CCCCCC") for c in legend_labels],
+            **args,
+        )
+        fig = ax.figure  # Get the figure object
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
 
