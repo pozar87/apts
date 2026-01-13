@@ -396,9 +396,10 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             mock_weather_instance, "plot_pressure_and_ozone"
         ) as mock_plot_pressure_and_ozone,
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
+        patch.object(mock_weather_instance, "plot_aurora") as mock_plot_aurora,
         patch(
             "apts.plotting.weather.pyplot.subplots",
-            return_value=(MagicMock(), MagicMock(shape=(5, 2))),
+            return_value=(MagicMock(), MagicMock(shape=(6, 2))),
         ) as mock_subplots,
         patch("apts.plotting.weather.mark_observation") as mock_mark_observation,
         patch("apts.plotting.weather.mark_good_conditions") as mock_mark_good_conditions,
@@ -408,7 +409,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
     ):
         fig = obs.plot_weather()
 
-        mock_subplots.assert_called_once_with(nrows=5, ncols=2, figsize=(13, 22))
+        mock_subplots.assert_called_once_with(nrows=6, ncols=2, figsize=(13, 25))
 
         mock_plot_clouds.assert_called_once()
         mock_plot_clouds_summary.assert_called_once()
