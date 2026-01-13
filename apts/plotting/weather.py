@@ -55,12 +55,12 @@ def generate_plot_weather(
         if (
             axes_arg is not None
             and isinstance(axes_arg, numpy.ndarray)
-            and axes_arg.shape == (5, 2)
+            and axes_arg.shape == (6, 2)
         ):
             axes = axes_arg
             fig = axes[0, 0].figure
         else:
-            fig, axes = pyplot.subplots(nrows=5, ncols=2, figsize=(13, 22), **args)
+            fig, axes = pyplot.subplots(nrows=6, ncols=2, figsize=(13, 25), **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
@@ -155,6 +155,19 @@ def generate_plot_weather(
         )
         if plt_fog_ax:
             mark_observation(observation, plt_fog_ax, effective_dark_mode, style)
+
+        if "aurora" in observation.place.weather.data.columns:
+            plt_aurora_ax = observation.place.weather.plot_aurora(
+                ax=axes[5, 0], dark_mode_override=effective_dark_mode
+            )
+            if plt_aurora_ax:
+                mark_observation(observation, plt_aurora_ax, effective_dark_mode, style)
+        else:
+            # If the aurora column doesn't exist, you can hide the subplot
+            axes[5, 0].set_visible(False)
+
+        # Hide the unused subplot
+        axes[5, 1].set_visible(False)
 
         fig.tight_layout()
         return fig

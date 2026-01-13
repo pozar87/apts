@@ -51,6 +51,40 @@ def get_session():
     return session
 
 
+def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
+    """
+    Fetches aurora forecast data from NOAA and returns it as a pandas DataFrame.
+    """
+    url = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json"
+    logger.debug("Download aurora data from: {}".format(url))
+    try:
+        with get_session().get(url) as data:
+            data.raise_for_status()
+            json_data = json.loads(data.text)
+            if "coordinates" not in json_data:
+                logger.error(
+                    f"KeyError 'coordinates' in aurora data. Full response: {json_data}"
+                )
+                return pd.DataFrame(columns=["time", "aurora"])
+
+            df = pd.DataFrame(
+                json_data["coordinates"], columns=["lon", "lat", "aurora"]
+            )
+            df["dist"] = (df["lat"] - lat) ** 2 + (df["lon"] - lon) ** 2
+            closest = df.loc[df["dist"].idxmin()]
+            aurora_val = closest["aurora"]
+
+            aurora_df = pd.DataFrame(
+                [[json_data["Forecast Time"], aurora_val]],
+                columns=["time", "aurora"],
+            )
+            aurora_df["time"] = pd.to_datetime(aurora_df["time"]).dt.tz_convert(local_timezone)
+            return aurora_df
+    except (requests_cache.requests.exceptions.RequestException, json.JSONDecodeError) as e:
+        logger.error(f"Failed to download or parse aurora data: {e}")
+        return pd.DataFrame(columns=["time", "aurora"])
+
+
 class WeatherProvider(ABC):
     def __init__(self, api_key, lat, lon, local_timezone):
         self.api_key = api_key
@@ -61,6 +95,21 @@ class WeatherProvider(ABC):
     @abstractmethod
     def download_data(self) -> pd.DataFrame:
         pass
+
+    def _enrich_with_aurora_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Enriches the weather data with aurora forecast data.
+        """
+        aurora_df = _get_aurora_df(self.lat, self.lon, self.local_timezone)
+        if not aurora_df.empty:
+            df = pd.merge_asof(
+                df.sort_values("time"),
+                aurora_df.sort_values("time"),
+                on="time",
+                direction="nearest",
+            )
+            df["aurora"] = df["aurora"].ffill().bfill()
+        return df
 
 
 class PirateWeather(WeatherProvider):
@@ -112,7 +161,7 @@ class PirateWeather(WeatherProvider):
                 .dt.tz_localize("UTC")
                 .dt.tz_convert(self.local_timezone)
             )
-            return result
+        return self._enrich_with_aurora_data(result)
 
 
 class VisualCrossing(WeatherProvider):
@@ -188,6 +237,9 @@ class VisualCrossing(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"  # or pd.NA
 
+            df = self._enrich_with_aurora_data(df)
+            if "aurora" in df.columns:
+                required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
 
 
@@ -272,6 +324,9 @@ class Meteoblue(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
+            df = self._enrich_with_aurora_data(df)
+            if "aurora" in df.columns:
+                required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
 
 
@@ -371,4 +426,7 @@ class OpenWeatherMap(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
+            df = self._enrich_with_aurora_data(df)
+            if "aurora" in df.columns:
+                required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
