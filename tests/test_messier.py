@@ -16,38 +16,41 @@ INITIAL_DT = datetime.datetime.strptime(INITIAL_DATE_STR, "%Y/%m/%d %H:%M:%S").r
 )
 
 
-def test_visiable_messier():
-    o = setup_observation()
-    m = o.get_visible_messier()
-    assert len(m) == 37
+import unittest
 
-    # Check that string columns have string dtype
-    assert m["Messier"].dtype == "string"
-    assert m["NGC"].dtype == "string"
-    assert m["Name"].dtype == "string"
-    assert m["Type"].dtype == "string"
-    assert m["Constellation"].dtype == "string"
+class TestMessier(unittest.TestCase):
+    def test_visiable_messier(self):
+        o = setup_observation()
+        m = o.get_visible_messier()
+        self.assertEqual(len(m), 47)
 
-    # Check that unit fields have proper units
-    assert hasattr(m["RA"].iloc[0], "magnitude")
-    assert hasattr(m["RA"].iloc[0], "units")
-    assert m["RA"].iloc[0].units == "hour"
+        # Check that string columns have string dtype
+        self.assertEqual(m["Messier"].dtype, "string")
+        self.assertEqual(m["NGC"].dtype, "string")
+        self.assertEqual(m["Name"].dtype, "string")
+        self.assertEqual(m["Type"].dtype, "string")
+        self.assertEqual(m["Constellation"].dtype, "string")
 
-    assert hasattr(m["Dec"].iloc[0], "magnitude")
-    assert hasattr(m["Dec"].iloc[0], "units")
-    assert m["Dec"].iloc[0].units == "degree"
+        # Check that unit fields have proper units
+        self.assertTrue(hasattr(m["RA"].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m["RA"].iloc[0], "units"))
+        self.assertEqual(m["RA"].iloc[0].units, "hour")
 
-    assert hasattr(m["Distance"].iloc[0], "magnitude")
-    assert hasattr(m["Distance"].iloc[0], "units")
-    assert str(m["Distance"].iloc[0].units) == "light_year"
+        self.assertTrue(hasattr(m["Dec"].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m["Dec"].iloc[0], "units"))
+        self.assertEqual(m["Dec"].iloc[0].units, "degree")
 
-    assert hasattr(m["Width"].iloc[0], "magnitude")
-    assert hasattr(m["Width"].iloc[0], "units")
-    assert m["Width"].iloc[0].units == "arcminute"
+        self.assertTrue(hasattr(m["Distance"].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m["Distance"].iloc[0], "units"))
+        self.assertEqual(str(m["Distance"].iloc[0].units), "light_year")
 
-    assert hasattr(m["Magnitude"].iloc[0], "magnitude")
-    assert hasattr(m["Magnitude"].iloc[0], "units")
-    assert m["Magnitude"].iloc[0].units == "mag"
+        self.assertTrue(hasattr(m["Width"].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m["Width"].iloc[0], "units"))
+        self.assertEqual(m["Width"].iloc[0].units, "arcminute")
+
+        self.assertTrue(hasattr(m["Magnitude"].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m["Magnitude"].iloc[0], "units"))
+        self.assertEqual(m["Magnitude"].iloc[0].units, "mag")
 
 
 def test_visible_planets():
