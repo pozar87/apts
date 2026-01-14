@@ -70,7 +70,10 @@ class SolarObjects(Objects):
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
         name_to_use = obj.get("TechnicalName", obj.Name)
-        return self._get_skyfield_object_cached(name_to_use)
+        try:
+            return self._get_skyfield_object_cached(name_to_use)
+        except (ValueError, KeyError):
+            return None
 
     def compute(self, calculation_date=None, df_to_compute=None):
         if calculation_date is not None:
@@ -278,107 +281,16 @@ class SolarObjects(Objects):
         star_magnitude_limit=None,
         limiting_magnitude=None,
     ):
-        visible = self.objects.copy()
-        # Add ID collumn
-        visible["ID"] = visible.index
-
-        # Safely convert Magnitude to float before filtering
-        visible["MagnitudeFloat"] = visible.Magnitude.apply(_to_float)
-
-        max_magnitude = (
-            limiting_magnitude
-            if limiting_magnitude is not None
-            else conditions.max_object_magnitude
+        # First, call the parent's get_visible method
+        visible = super().get_visible(
+            conditions,
+            start,
+            stop,
+            hours_margin,
+            sort_by,
+            star_magnitude_limit,
+            limiting_magnitude,
         )
-
-        visible = visible[
-            (
-                pd.isna(visible.MagnitudeFloat)
-                | (visible.MagnitudeFloat < float(max_magnitude))
-            )
-        ]
-
-        # Filter objects based on visibility window (Rising/Setting) intersection with observation window
-        # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
-
-        # Helper boolean for existence of Rise/Set times
-        has_rise_set = (
-            cast(pd.Series, visible[ObjectTableLabels.RISING]).notna()
-            & cast(pd.Series, visible[ObjectTableLabels.SETTING]).notna()
-        )
-
-        # Case A: Rise < Set (Simple interval)
-        # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
-        cond_A = (
-            (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING])
-            & (
-                visible[ObjectTableLabels.RISING]
-                <= stop + timedelta(hours=hours_margin)
-            )
-            & (
-                visible[ObjectTableLabels.SETTING]
-                >= start - timedelta(hours=hours_margin)
-            )
-        )
-
-        # Case B: Set < Rise (Crosses midnight/wrap-around)
-        # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
-        cond_B = (
-            visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]
-        ) & ~(
-            (visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin))
-            & (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin))
-        )
-
-        # Case C: No Rise/Set (Circumpolar or Always Down)
-        # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
-        if ObjectTableLabels.ALTITUDE in visible.columns:
-            alt_values = cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-        else:
-            alt_values = pd.Series([0] * len(visible), index=visible.index)
-
-        cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
-
-        # Apply filter
-        visible = cast(
-            pd.DataFrame, visible[(has_rise_set & (cond_A | cond_B)) | cond_always_up]
-        )
-
-        # Filter by altitude at transit (if available) to reject impossible objects early
-        if ObjectTableLabels.ALTITUDE in visible.columns and not bool(
-            cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).isnull().all()
-        ):
-            alt_values = cast(pd.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-            visible = cast(
-                pd.DataFrame, visible[alt_values > conditions.min_object_altitude]
-            )
-
-        visible_objects_indices = []
-        for index, row in cast(pd.DataFrame, visible).iterrows():
-            skyfield_object = self.get_skyfield_object(row)
-            altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
-
-            # Filter for times when altitude is sufficient
-            above_horizon_df = altaz_df[
-                altaz_df["Altitude"] > conditions.min_object_altitude
-            ]
-
-            if not above_horizon_df.empty:
-                # Check if azimuth is within range for any of these times
-                az_conditions_met = self._is_azimuth_in_range(
-                    above_horizon_df["Azimuth"], conditions
-                )
-                if az_conditions_met.any():  # pyright: ignore
-                    visible_objects_indices.append(index)
-
-        visible = self.objects.loc[visible_objects_indices]
-
-        # Sort objects by given order
-        visible = visible.sort_values(by=sort_by, ascending=True)
 
         if not visible.empty:
             visible["TechnicalName"] = visible["Name"]
