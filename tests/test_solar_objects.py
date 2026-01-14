@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels
+from . import setup_southern_observation, setup_southern_place
 
 
 class TestSolarObjects(unittest.TestCase):
@@ -175,3 +176,11 @@ class TestSolarObjects(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestSolarObjectsSouthernHemisphere(unittest.TestCase):
+    def test_visible_planets_southern_hemisphere(self):
+        """Test that visible planets are returned for a southern hemisphere location."""
+        o = setup_southern_observation()
+        p = o.get_visible_planets()
+        self.assertTrue(len(p) > 0)

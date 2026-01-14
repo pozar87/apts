@@ -7,7 +7,7 @@ from apts import catalogs
 from apts.constants import ObjectTableLabels
 from apts.objects import Messier, SolarObjects
 
-from . import setup_observation, setup_place
+from . import setup_observation, setup_place, setup_southern_observation
 
 # Helper to get initial datetime from setup_place
 INITIAL_DATE_STR = "2025/02/18 12:00:00"
@@ -215,3 +215,9 @@ def test_messier_backward_compatibility():
 
     # Assert that the transit time has not changed
     assert new_transit_time_m1 == original_transit_time_m1
+
+
+def test_visible_messier_southern_hemisphere():
+    o = setup_southern_observation()
+    m = o.get_visible_messier()
+    assert len(m) > 0
