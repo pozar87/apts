@@ -1,4 +1,5 @@
 import datetime
+import unittest
 
 # timedelta is part of datetime
 import pytz  # For timezone awareness
@@ -15,8 +16,6 @@ INITIAL_DT = datetime.datetime.strptime(INITIAL_DATE_STR, "%Y/%m/%d %H:%M:%S").r
     tzinfo=pytz.UTC
 )
 
-
-import unittest
 
 class TestMessier(unittest.TestCase):
     def test_visiable_messier(self):

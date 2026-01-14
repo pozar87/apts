@@ -1,6 +1,7 @@
 import pandas as pd
 from apts.weather_providers import _get_aurora_df, PirateWeather
 from unittest.mock import patch, MagicMock
+from typing import cast
 import json
 import pytz
 
@@ -64,6 +65,6 @@ def test_enrich_with_aurora_data_handles_dtype_mismatch():
 
         # Assert that the 'aurora' column was successfully added and filled
         assert "aurora" in enriched_df.columns
-        assert not enriched_df["aurora"].isna().all()
+        assert not cast(bool, enriched_df["aurora"].isna().all())
         assert enriched_df["aurora"].iloc[0] == 75
         assert enriched_df["aurora"].iloc[1] == 75

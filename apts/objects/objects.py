@@ -76,12 +76,12 @@ class Objects(ABC):
                 if sort_by in candidate_objects.columns
                 else candidate_objects
             )
-            if not df_to_compute.empty:
+            if not cast(pandas.DataFrame, df_to_compute).empty:
                 self.compute(
                     calculation_date=self.calculation_date, df_to_compute=df_to_compute
                 )
                 # Update candidate_objects with the new computed values
-                candidate_objects.update(self.objects.loc[df_to_compute.index])
+                candidate_objects.update(self.objects.loc[cast(pandas.DataFrame, df_to_compute).index])
 
         visible_objects_indices = []
         for index, row in candidate_objects.iterrows():
