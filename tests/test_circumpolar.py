@@ -1,13 +1,10 @@
 
 import unittest
 from datetime import datetime, timezone
-from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.conditions import Conditions
 from apts.observations import Observation
 from apts.equipment import Equipment
-from apts.catalogs import Catalogs
-from apts.objects import Messier
 
 class TestCircumpolarObjects(unittest.TestCase):
     def test_circumpolar_messier_object_visibility(self):

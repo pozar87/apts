@@ -4,7 +4,6 @@ import pandas as pd
 
 from typing import Optional, Any, cast
 
-from apts.utils import Utils as GenericUtils
 from apts.utils.plot import Utils as PlotUtils
 from apts.utils.planetary import get_moon_illumination_details
 from apts.cache import get_timescale

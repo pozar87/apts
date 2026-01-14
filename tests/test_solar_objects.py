@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels
-from . import setup_southern_observation, setup_southern_place
+from . import setup_southern_observation
 
 
 class TestSolarObjects(unittest.TestCase):
