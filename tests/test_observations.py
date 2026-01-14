@@ -1433,6 +1433,16 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
         self.assertEqual(len(visible_planets), 2)
         self.assertIn("Saturn", visible_planets["Name"].values)
 
+    def test_messier_small_azimuth_filter_south(self):
+        # Test with a small azimuth range on the southern horizon
+        self.observation.conditions = Conditions(
+            min_object_azimuth=170, max_object_azimuth=210, min_object_altitude=15
+        )
+        visible_messier = self.observation.get_visible_messier()
+        self.assertEqual(len(visible_messier), 2)
+        self.assertIn("M1", visible_messier["Messier"].values)
+        self.assertIn("M42", visible_messier["Messier"].values)
+
 
 class TestObservationSkymap(unittest.TestCase):
     def setUp(self):
