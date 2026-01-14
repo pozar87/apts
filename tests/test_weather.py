@@ -396,7 +396,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             mock_weather_instance, "plot_pressure_and_ozone"
         ) as mock_plot_pressure_and_ozone,
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
-        patch.object(mock_weather_instance, "plot_aurora") as mock_plot_aurora,
+        patch.object(mock_weather_instance, "plot_aurora"),
         patch(
             "apts.plotting.weather.pyplot.subplots",
             return_value=(MagicMock(), MagicMock(shape=(6, 2))),

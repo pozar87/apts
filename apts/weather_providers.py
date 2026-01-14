@@ -65,10 +65,10 @@ def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
                 logger.error(
                     f"KeyError 'coordinates' in aurora data. Full response: {json_data}"
                 )
-                return pd.DataFrame(columns=["time", "aurora"])
+                return pd.DataFrame(columns=pd.Index(["time", "aurora"]))
 
             df = pd.DataFrame(
-                json_data["coordinates"], columns=["lon", "lat", "aurora"]
+                json_data["coordinates"], columns=pd.Index(["lon", "lat", "aurora"])
             )
             df["dist"] = (df["lat"] - lat) ** 2 + (df["lon"] - lon) ** 2
             closest = df.loc[df["dist"].idxmin()]
@@ -76,13 +76,13 @@ def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
 
             aurora_df = pd.DataFrame(
                 [[json_data["Forecast Time"], aurora_val]],
-                columns=["time", "aurora"],
+                columns=pd.Index(["time", "aurora"]),
             )
             aurora_df["time"] = pd.to_datetime(aurora_df["time"]).dt.tz_convert(local_timezone)
             return aurora_df
     except (requests_cache.requests.exceptions.RequestException, json.JSONDecodeError) as e:
         logger.error(f"Failed to download or parse aurora data: {e}")
-        return pd.DataFrame(columns=["time", "aurora"])
+        return pd.DataFrame(columns=pd.Index(["time", "aurora"]))
 
 
 class WeatherProvider(ABC):

@@ -41,6 +41,9 @@ class Objects(ABC):
         star_magnitude_limit=None,
         limiting_magnitude=None,
     ) -> pandas.DataFrame:
+        if not start or not stop:
+            return pandas.DataFrame(columns=self.objects.columns)
+
         max_magnitude = (
             limiting_magnitude
             if limiting_magnitude is not None
@@ -53,99 +56,40 @@ class Objects(ABC):
         magnitude_values = self.objects["Magnitude"].apply(
             lambda x: x.magnitude if hasattr(x, "magnitude") else x
         )
-        candidate_objects = self.objects[magnitude_values < max_magnitude]
+        candidate_objects = self.objects[magnitude_values < max_magnitude].copy()
 
+        # Compute transit/rise/set if they haven't been already for sorting purposes
         if (
-            ObjectTableLabels.TRANSIT not in candidate_objects.columns
-            or candidate_objects[ObjectTableLabels.TRANSIT].isnull().any()  # pyright: ignore
+            sort_by
+            in [
+                ObjectTableLabels.TRANSIT,
+                ObjectTableLabels.RISING,
+                ObjectTableLabels.SETTING,
+            ]
+            and (
+                sort_by not in candidate_objects.columns
+                or cast(pandas.Series, candidate_objects[sort_by]).isnull().any()
+            )
         ):
             df_to_compute = (
-                candidate_objects
-                if ObjectTableLabels.TRANSIT not in self.objects.columns
-                else candidate_objects[
-                    candidate_objects[ObjectTableLabels.TRANSIT].isnull()  # pyright: ignore
-                ]
+                candidate_objects[cast(pandas.Series, candidate_objects[sort_by]).isnull()]
+                if sort_by in candidate_objects.columns
+                else candidate_objects
             )
-            if not df_to_compute.empty:  # pyright: ignore
+            if not cast(pandas.DataFrame, df_to_compute).empty:
                 self.compute(
                     calculation_date=self.calculation_date, df_to_compute=df_to_compute
                 )
-
-        # Now that computations are done, filter from the updated self.objects
-        magnitude_values = self.objects["Magnitude"].apply(
-            lambda x: x.magnitude if hasattr(x, "magnitude") else x
-        )
-        visible = cast(
-            pandas.DataFrame, self.objects[magnitude_values < max_magnitude].copy()
-        )
-
-        # Filter objects based on visibility window (Rising/Setting) intersection with observation window
-        # or Altitude at Transit if Rising/Setting are not available (e.g. circumpolar)
-
-        # Helper boolean for existence of Rise/Set times
-        has_rise_set = cast(
-            pandas.Series, visible[ObjectTableLabels.RISING].notna()
-        ) & cast(pandas.Series, visible[ObjectTableLabels.SETTING].notna())
-
-        # Case A: Rise < Set (Simple interval)
-        # Visible if: (Rise <= Stop + margin) AND (Set >= Start - margin)
-        # Note: We apply hours_margin to be safe, though overlap logic usually suffices.
-        cond_A = (
-            (visible[ObjectTableLabels.RISING] <= visible[ObjectTableLabels.SETTING])
-            & (
-                visible[ObjectTableLabels.RISING]
-                <= stop + timedelta(hours=hours_margin)
-            )
-            & (
-                visible[ObjectTableLabels.SETTING]
-                >= start - timedelta(hours=hours_margin)
-            )
-        )
-
-        # Case B: Set < Rise (Crosses midnight/wrap-around)
-        # Visible if: NOT (Set < Start - margin AND Rise > Stop + margin)
-        # i.e. It is NOT the case that the "down time" covers the whole "observation time"
-        cond_B = (
-            visible[ObjectTableLabels.SETTING] < visible[ObjectTableLabels.RISING]
-        ) & ~(
-            (visible[ObjectTableLabels.SETTING] < start - timedelta(hours=hours_margin))
-            & (visible[ObjectTableLabels.RISING] > stop + timedelta(hours=hours_margin))
-        )
-
-        # Case C: No Rise/Set (Circumpolar or Always Down)
-        # Check Altitude at Transit. If > min_alt, assume always visible (or at least up).
-        if ObjectTableLabels.ALTITUDE in visible.columns:
-            alt_values = cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-        else:
-            alt_values = pandas.Series([0] * len(visible), index=visible.index)
-
-        cond_always_up = (~has_rise_set) & (alt_values > conditions.min_object_altitude)
-
-        # Apply filter
-        visible = cast(
-            pandas.DataFrame,
-            visible[(has_rise_set & (cond_A | cond_B)) | cond_always_up],
-        )
-
-        # Filter by altitude at transit (if available) to reject impossible objects early
-        if ObjectTableLabels.ALTITUDE in visible.columns and not bool(
-            cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).isnull().all()
-        ):
-            alt_values = cast(pandas.Series, visible[ObjectTableLabels.ALTITUDE]).apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-            visible = cast(
-                pandas.DataFrame, visible[alt_values > conditions.min_object_altitude]
-            )
+                # Update candidate_objects with the new computed values
+                candidate_objects.update(self.objects.loc[cast(pandas.DataFrame, df_to_compute).index])
 
         visible_objects_indices = []
-        for index, row in visible.iterrows():
+        for index, row in candidate_objects.iterrows():
             skyfield_object = self.get_skyfield_object(row)
+            if skyfield_object is None:
+                continue
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
 
-            # Extract magnitude from Altitude and Azimuth Quantity objects
             altitude_values = altaz_df["Altitude"].apply(
                 lambda x: x.magnitude if hasattr(x, "magnitude") else x
             )
@@ -153,17 +97,21 @@ class Objects(ABC):
                 lambda x: x.magnitude if hasattr(x, "magnitude") else x
             )
 
-            # Combine altitude and azimuth conditions
             altitude_condition = altitude_values > conditions.min_object_altitude
             azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
 
-            # Check if any time satisfies both conditions
-            if (altitude_condition & azimuth_condition).any():  # pyright: ignore
+            if (altitude_condition & azimuth_condition).any():
                 visible_objects_indices.append(index)
 
-        visible = self.objects.loc[visible_objects_indices]
-        # Sort objects by given order
-        visible = visible.sort_values(by=sort_by, ascending=True)
+        if not visible_objects_indices:
+            return pandas.DataFrame(columns=self.objects.columns)
+
+        visible = self.objects.loc[visible_objects_indices].copy()
+
+        # Sort objects by given order, handling potential NaNs
+        if sort_by in visible.columns and not cast(pandas.Series, visible[sort_by]).isnull().all():
+            visible = visible.sort_values(by=sort_by, ascending=True)
+
         return visible
 
     def _is_azimuth_in_range(self, azimuth_series, conditions):
