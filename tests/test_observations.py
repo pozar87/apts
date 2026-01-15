@@ -1267,7 +1267,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertFalse(self.obs.is_weather_good())
         self.obs.place.weather.get_critical_data.assert_called_once()
 
-        # Test Case 4: No weather data initially (self.obs.place.weather is None)
+    def test_is_weather_good_fetches_weather_if_needed(self):
+        """Test that is_weather_good fetches weather data if it's not already available."""
         self.obs._weather_analysis = None  # Reset cache
         self.obs.place.weather = None  # Simulate no weather data initially
         self.obs.place.get_weather.reset_mock()  # Reset mock to count calls for this specific case
@@ -1289,6 +1290,37 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertTrue(self.obs.is_weather_good())
         self.obs.place.get_weather.assert_called_once()
         mock_weather_fetched.get_critical_data.assert_called_once()  # Verify critical data was called after fetch
+
+    def test_get_hourly_weather_analysis_aurora_condition(self):
+        """Test the aurora condition in get_hourly_weather_analysis."""
+        # Scenario 1: Aurora value is above the minimum threshold (good weather)
+        self.obs.conditions.min_aurora = 10
+        mock_weather_df_good = self._generate_weather_data(1, [True])
+        mock_weather_df_good["aurora"] = 15
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_good
+
+        results_good = self.obs.get_hourly_weather_analysis()
+        self.assertTrue(results_good[0]["is_good_hour"])
+
+        # Scenario 2: Aurora value is below the minimum threshold (bad weather)
+        self.obs._weather_analysis = None  # Reset cache
+        mock_weather_df_bad = self._generate_weather_data(1, [True])
+        mock_weather_df_bad["aurora"] = 5
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_bad
+
+        results_bad = self.obs.get_hourly_weather_analysis()
+        self.assertFalse(results_bad[0]["is_good_hour"])
+        self.assertIn("Aurora 5.0% below limit of 10%", results_bad[0]["reasons"])
+
+        # Scenario 3: Aurora data is missing (should be treated as 0, bad weather)
+        self.obs._weather_analysis = None  # Reset cache
+        mock_weather_df_missing = self._generate_weather_data(1, [True])
+        # The 'aurora' column is missing in this DataFrame by default
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_missing
+
+        results_missing = self.obs.get_hourly_weather_analysis()
+        self.assertFalse(results_missing[0]["is_good_hour"])
+        self.assertIn("Aurora 0.0% below limit of 10%", results_missing[0]["reasons"])
 
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
