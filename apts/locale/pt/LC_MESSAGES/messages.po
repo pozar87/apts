@@ -834,6 +834,10 @@ msgstr "Tamanho da Lua"
 msgid "M51 size"
 msgstr "Tamanho de M51"
 
+#: apts/opticalequipment/naked_eye.py:22
+msgid "Naked Eye"
+msgstr "Olho nu"
+
 #: apts/notify.py:108
 msgid "Good weather in {name}"
 msgstr "Bom tempo em {name}"

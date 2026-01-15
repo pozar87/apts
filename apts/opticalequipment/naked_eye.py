@@ -1,6 +1,7 @@
 from ..constants import OpticalType, GraphConstants
 from ..units import get_unit_registry
 from .abstract import OpticalEquipment
+from ..i18n import gettext_ as _
 
 class NakedEye(OpticalEquipment):
     """
@@ -16,7 +17,7 @@ class NakedEye(OpticalEquipment):
         self._type = OpticalType.VISUAL
 
     def get_name(self):
-        return "NakedEye"
+        return _("Naked Eye")
 
     def __str__(self):
         return f"{self.vendor} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}" # pyright: ignore

@@ -835,6 +835,10 @@ msgstr "Rozmiar Księżyca"
 msgid "M51 size"
 msgstr "Rozmiar M51"
 
+#: apts/opticalequipment/naked_eye.py:22
+msgid "Naked Eye"
+msgstr "Gołe oko"
+
 #: apts/notify.py:108
 msgid "Good weather in {name}"
 msgstr "Dobra pogoda w {name}"
