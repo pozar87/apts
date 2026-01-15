@@ -855,3 +855,6 @@ msgstr "Sem dados para gerar gráfico"
 
 msgid "Aurora"
 msgstr "Aurora"
+
+msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
+msgstr "Aurora %(aurora)s%% abaixo do limite de %(min_aurora)s%%"
