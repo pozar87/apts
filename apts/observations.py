@@ -477,6 +477,8 @@ class Observation:
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
         if "fog" not in hourly_data.columns:
             hourly_data["fog"] = 100
+        if "aurora" not in hourly_data.columns:
+            hourly_data["aurora"] = 0
         hourly_data = hourly_data[hourly_data.time <= self.time_limit]
 
         moon_altitudes = self.place.get_altaz_curve(
@@ -511,6 +513,7 @@ class Observation:
             "visibility",
             "moonIllumination",
             "fog",
+            "aurora",
         ]:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
@@ -585,6 +588,17 @@ class Observation:
                         )
                         % {"illum": f"{row.moonIllumination:.1f}"}
                     )
+                if pd.isna(row.aurora) or not (
+                    row.aurora >= self.conditions.min_aurora
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_("Aurora %(aurora)s%% below limit of %(min_aurora)s%%")
+                        % {
+                            "aurora": f"{row.aurora:.1f}",
+                            "min_aurora": self.conditions.min_aurora,
+                        }
+                    )
 
                 analysis_results.append(
                     {
@@ -598,6 +612,7 @@ class Observation:
                         "visibility": row.visibility,
                         "moon_illumination": row.moonIllumination,
                         "fog": row.fog,
+                        "aurora": row.aurora,
                     }
                 )
         self._weather_analysis = analysis_results

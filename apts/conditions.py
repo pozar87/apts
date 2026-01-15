@@ -40,6 +40,8 @@ class DefaultConditions:
     MAX_MOON_ILLUMINATION = 50  # [%], range [0,100]
     # Twilight setting for observation start
     TWILIGHT = Twilight.NAUTICAL
+    # Minimal aurora
+    MIN_AURORA = 0  # [%], range [0,100]
 
 
 class Conditions:
@@ -66,6 +68,7 @@ class Conditions:
         max_object_azimuth: float = DefaultConditions.MAX_OBJECT_AZIMUTH,
         max_moon_illumination: float = DefaultConditions.MAX_MOON_ILLUMINATION,
         twilight: Twilight = DefaultConditions.TWILIGHT,
+        min_aurora: float = DefaultConditions.MIN_AURORA,
     ):
         self.max_clouds = max_clouds
         self.max_precipitation_probability = max_precipitation_probability
@@ -84,3 +87,4 @@ class Conditions:
         self.max_object_azimuth = max_object_azimuth
         self.max_moon_illumination = max_moon_illumination
         self.twilight = twilight
+        self.min_aurora = min_aurora

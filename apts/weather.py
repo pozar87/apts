@@ -502,18 +502,22 @@ class Weather:
                     "visibility",
                     "moonIllumination",
                     "fog",
+                    "aurora",
                 ])
             )
+
+        critical_data_columns = [
+            "cloudCover",
+            "precipProbability",
+            "windSpeed",
+            "temperature",
+            "visibility",
+            "moonIllumination",
+            "fog",
+            "aurora",
+        ]
         data = self._filter_data(
-            [
-                "cloudCover",
-                "precipProbability",
-                "windSpeed",
-                "temperature",
-                "visibility",
-                "moonIllumination",
-                "fog",
-            ]
+            [c for c in critical_data_columns if c in self.data.columns]
         )
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
 
