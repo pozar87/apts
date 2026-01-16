@@ -859,3 +859,6 @@ msgstr "Zorza polarna"
 
 msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
 msgstr "Zorza polarna %(aurora)s%% poniżej limitu %(min_aurora)s%%"
+
+msgid "Binoculars"
+msgstr "Lornetka"
