@@ -36,6 +36,8 @@ class TestNakedEye(unittest.TestCase):
         eq = Equipment()
         df = eq.data()
 
+        print(f"DEBUG: Labels in dataframe: {df[EquipmentTableLabels.LABEL].tolist()}")
+
         # Find the row corresponding to NakedEye
         naked_eye_rows = df[
             df[EquipmentTableLabels.LABEL].str.contains("Naked Eye", na=False)

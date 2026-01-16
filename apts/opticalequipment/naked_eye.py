@@ -1,14 +1,24 @@
-from ..constants import OpticalType, GraphConstants
+from ..constants import GraphConstants, OpticalType
+from ..i18n import gettext_ as _
 from ..units import get_unit_registry
 from .abstract import OpticalEquipment
-from ..i18n import gettext_ as _
+
 
 class NakedEye(OpticalEquipment):
     """
     Class representing the naked eye
     """
 
-    def __init__(self, magnification=1, objective_diameter=7, vendor="Naked Eye", apparent_fov_deg=180, focal_length=1):
+    def __init__(
+        self,
+        magnification=1,
+        objective_diameter=7,
+        vendor=None,
+        apparent_fov_deg=180,
+        focal_length=1,
+    ):
+        if vendor is None:
+            vendor = "Naked Eye"
         super().__init__(focal_length=focal_length, vendor=vendor)
 
         self.magnification = magnification
@@ -20,7 +30,7 @@ class NakedEye(OpticalEquipment):
         return _("Naked Eye")
 
     def __str__(self):
-        return f"{self.vendor} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}" # pyright: ignore
+        return f"{self.get_vendor()} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}"  # pyright: ignore
 
     def fov(self):
         return self.apparent_fov_deg / self.magnification
@@ -29,17 +39,24 @@ class NakedEye(OpticalEquipment):
         return self.objective_diameter / self.magnification
 
     def dawes_limit(self):
-        return round((11.6 / self.objective_diameter.to('cm')).magnitude, 3) * get_unit_registry().arcsecond # pyright: ignore
+        return (
+            round((11.6 / self.objective_diameter.to("cm")).magnitude, 3)  # pyright: ignore
+            * get_unit_registry().arcsecond
+        )
 
     def rayleigh_limit(self):
-        return round((13.8 / self.objective_diameter.to('cm')).magnitude, 3) * get_unit_registry().arcsecond # pyright: ignore
+        return (
+            round((13.8 / self.objective_diameter.to("cm")).magnitude, 3)  # pyright: ignore
+            * get_unit_registry().arcsecond
+        )
 
     def limiting_magnitude(self):
         import numpy
-        return 7.7 + 5 * numpy.log10(self.objective_diameter.to('cm').magnitude) # pyright: ignore
+
+        return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)  # pyright: ignore
 
     def brightness(self):
-        return (self.exit_pupil().to('mm').magnitude / 7) ** 2 * 100 # pyright: ignore
+        return (self.exit_pupil().to("mm").magnitude / 7) ** 2 * 100  # pyright: ignore
 
     def register(self, equipment):
         super()._register(equipment)

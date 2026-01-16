@@ -70,7 +70,7 @@ class SmartTelescope(Telescope):
     def __str__(self):
         # Format: <vendor> <aperture>/<focal length>
         return "{} {}/{} ({}x{})".format(
-            self.vendor,
+            self.get_vendor(),
             self.aperture.magnitude,
             self.focal_length.magnitude,
             self.width,

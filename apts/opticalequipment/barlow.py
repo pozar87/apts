@@ -30,4 +30,4 @@ class Barlow(OpticalEquipment):
 
   def __str__(self):
     # Format: <vendor> x<magnification>
-    return "{} x{}".format(self.vendor, self.magnification)
+    return "{} x{}".format(self.get_vendor(), self.magnification)

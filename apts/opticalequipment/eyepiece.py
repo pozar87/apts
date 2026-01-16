@@ -36,5 +36,5 @@ class Eyepiece(OutputOpticalEqipment):
     equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
   def __str__(self):
-    return "{} f={}".format(self.vendor, self.focal_length.magnitude)
+    return "{} f={}".format(self.get_vendor(), self.focal_length.magnitude)
     # Format: <vendor> f=<focal_length>

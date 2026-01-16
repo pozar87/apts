@@ -2,6 +2,7 @@ import uuid
 import numpy as np # For np.nan
 
 from ..constants import OpticalType
+from ..i18n import gettext_
 from ..units import get_unit_registry
 from ..utils import ConnectionType
 
@@ -24,8 +25,11 @@ class OpticalEquipment:
     self.focal_length = focal_length * get_unit_registry().mm
     self.vendor = vendor
 
+  def get_vendor(self):
+    return gettext_(self.vendor)
+
   def get_name(self):
-    return str(self.__class__.__name__)
+    return gettext_(str(self.__class__.__name__))
 
   def type(self):
     return self._type
@@ -66,7 +70,7 @@ class OpticalEquipment:
 
   def __str__(self):
     # Format: <vendor>
-    return "{} f={}".format(self.vendor, self.focal_length)
+    return "{} f={}".format(self.get_vendor(), self.focal_length)
 
 
 class IntermediateOpticalEquipment(OpticalEquipment):
