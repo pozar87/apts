@@ -373,9 +373,6 @@ class Equipment:
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
 
-        # Keep the enum type for the legend (for color lookup)
-        legend_enums = data[EquipmentTableLabels.TYPE].unique()
-
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
             labels = [
@@ -389,7 +386,7 @@ class Equipment:
         # Prepare rows where keys are Enums
         rows_list = [{row[1]: row[0]} for row in data.values]
         # Create DataFrame with Enums as columns
-        result_df = pd.DataFrame(rows_list, index=labels)
+        result_df = pd.DataFrame(rows_list, index=labels)  # pyright: ignore
 
         # Get the columns (Enums) to return for color mapping
         # Note: result_df.columns will be unique and sorted/ordered by pandas based on insertion
