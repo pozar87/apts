@@ -10,6 +10,7 @@ import pytest
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
+from apts.i18n import language_context
 from apts.place import Place
 
 # Assuming setup_place is a helper to create a Place instance for testing
@@ -307,8 +308,11 @@ class TestPlace:
         # The 'Time' column in the DataFrame is datetime.time, so we need to convert it
         # back to a full datetime object for comparison.
         df_times = [
-            dt_module.datetime.combine(p.date.utc_datetime().date(), t, tzinfo=timezone.utc)
-            if t is not pd.NaT else pd.NaT
+            dt_module.datetime.combine(
+                p.date.utc_datetime().date(), t, tzinfo=timezone.utc
+            )
+            if t is not pd.NaT
+            else pd.NaT
             for t in moon_df["Time"]
         ]
         moon_df["datetime"] = pd.to_datetime(df_times, utc=True)
@@ -364,7 +368,9 @@ class TestPlacePlotting(unittest.TestCase):
     @patch("apts.utils.plot.gettext_")
     @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
-    def test_plot_moon_path_styling(self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext):
+    def test_plot_moon_path_styling(
+        self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext
+    ):
         mock_gettext.side_effect = lambda s: s
         mock_place_gettext.side_effect = lambda s: s
         scenarios = [
@@ -434,7 +440,9 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_ax.set_ylabel.assert_called_with(
                     "Altitude [°]", color=expected_style["TEXT_COLOR"]
                 )
-                self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Moon Path"))
+                self.assertTrue(
+                    mock_ax.set_title.call_args[0][0].startswith("Moon Path")
+                )
                 mock_ax.tick_params.assert_any_call(
                     axis="x", colors=expected_style["TICK_COLOR"]
                 )
@@ -602,9 +610,8 @@ class TestPlaceTranslation(unittest.TestCase):
         """
         Non-mocked test to verify the plot is translated.
         """
-        import apts
-        apts.set_language('pl')
-        ax = self.place.plot_moon_path()
-        self.assertEqual(ax.get_xlabel(), "Azymut [°]")
-        self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
-        self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))
+        with language_context("pl"):
+            ax = self.place.plot_moon_path()
+            self.assertEqual(ax.get_xlabel(), "Azymut [°]")
+            self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
+            self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))

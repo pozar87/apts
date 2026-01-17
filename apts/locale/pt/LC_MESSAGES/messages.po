@@ -858,3 +858,48 @@ msgstr "Aurora"
 
 msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
 msgstr "Aurora %(aurora)s%% abaixo do limite de %(min_aurora)s%%"
+
+msgid "Binoculars"
+msgstr "Binóculos"
+
+msgid "IMAGE"
+msgstr "IMAGEM"
+
+msgid "VISUAL"
+msgstr "VISUAL"
+
+#: stargazer/templatetags/stargazer_tags.py:12
+msgid "Mars"
+msgstr "Marte"
+
+#: stargazer/templatetags/stargazer_tags.py:13
+msgid "Jupiter"
+msgstr "Júpiter"
+
+#: stargazer/templatetags/stargazer_tags.py:14
+msgid "Saturn"
+msgstr "Saturno"
+
+#: stargazer/templatetags/stargazer_tags.py:15
+msgid "Venus"
+msgstr "Vênus"
+
+#: stargazer/templatetags/stargazer_tags.py:16
+msgid "Mercury"
+msgstr "Mercúrio"
+
+#: stargazer/templatetags/stargazer_tags.py:17
+msgid "Uranus"
+msgstr "Urano"
+
+#: stargazer/templatetags/stargazer_tags.py:18
+msgid "Neptune"
+msgstr "Netuno"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Pluto"
+msgstr "Plutão"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Sun"
+msgstr "Sol"

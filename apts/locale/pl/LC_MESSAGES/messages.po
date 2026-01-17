@@ -859,3 +859,48 @@ msgstr "Zorza polarna"
 
 msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
 msgstr "Zorza polarna %(aurora)s%% poniżej limitu %(min_aurora)s%%"
+
+msgid "Binoculars"
+msgstr "Lornetka"
+
+msgid "IMAGE"
+msgstr "OBRAZ"
+
+msgid "VISUAL"
+msgstr "WIZUALNE"
+
+#: stargazer/templatetags/stargazer_tags.py:12
+msgid "Mars"
+msgstr "Mars"
+
+#: stargazer/templatetags/stargazer_tags.py:13
+msgid "Jupiter"
+msgstr "Jowisz"
+
+#: stargazer/templatetags/stargazer_tags.py:14
+msgid "Saturn"
+msgstr "Saturn"
+
+#: stargazer/templatetags/stargazer_tags.py:15
+msgid "Venus"
+msgstr "Wenus"
+
+#: stargazer/templatetags/stargazer_tags.py:16
+msgid "Mercury"
+msgstr "Merkury"
+
+#: stargazer/templatetags/stargazer_tags.py:17
+msgid "Uranus"
+msgstr "Uran"
+
+#: stargazer/templatetags/stargazer_tags.py:18
+msgid "Neptune"
+msgstr "Neptun"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Pluto"
+msgstr "Pluton"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Sun"
+msgstr "Słońce"

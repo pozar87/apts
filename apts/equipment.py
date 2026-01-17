@@ -204,9 +204,7 @@ class Equipment:
             result["ID"] = result.index
             result = result[["ID"] + columns]
         else:  # If empty, ensure ID column exists for consistency if expected by other code
-            result[
-                "ID"
-            ] = []  # Initialize with empty list or appropriate empty type for ID
+            result["ID"] = []  # Initialize with empty list or appropriate empty type for ID
             result = result[["ID"] + columns]
 
         return result  # pyright: ignore
