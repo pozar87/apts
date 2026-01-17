@@ -21,6 +21,7 @@ class NakedEye(OpticalEquipment):
             vendor = "Naked Eye"
         super().__init__(focal_length=focal_length, vendor=vendor)
 
+        self.is_naked_eye = True
         self.magnification = magnification
         self.objective_diameter = objective_diameter * get_unit_registry().mm
         self.apparent_fov_deg = apparent_fov_deg * get_unit_registry().deg

@@ -3,6 +3,7 @@ import unittest
 import apts
 from apts.constants import EquipmentTableLabels
 from apts.equipment import Equipment
+from apts.i18n import language_context
 
 
 class TestEquipmentTranslation(unittest.TestCase):
@@ -61,6 +62,18 @@ class TestEquipmentTranslation(unittest.TestCase):
         df_pl = eq.data(language="pl")
         labels_pl = df_pl[EquipmentTableLabels.LABEL].tolist()
         self.assertTrue(any("Gołe oko" in label for label in labels_pl))
+
+    def test_plot_zoom_filtering_translation_pl(self):
+        """Test that plot_zoom correctly filters out Naked Eye in Polish."""
+        eq = Equipment()
+        # Default eq has only Naked Eye
+        data, _ = eq._filter_and_merge(EquipmentTableLabels.ZOOM, False, include_naked_eye=False)
+        self.assertTrue(data.empty, "Naked eye should be filtered out in English")
+
+        # Test in Polish
+        with language_context("pl"):
+            data_pl, _ = eq._filter_and_merge(EquipmentTableLabels.ZOOM, False, include_naked_eye=False)
+            self.assertTrue(data_pl.empty, f"Naked eye should be filtered out in Polish, but got: {data_pl}")
 
 
 if __name__ == "__main__":

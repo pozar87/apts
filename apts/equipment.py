@@ -77,6 +77,9 @@ class Equipment:
             result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
                 lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
             )
+            # Remove internal columns
+            if EquipmentTableLabels._IS_NAKED_EYE in result.columns:
+                result = result.drop(columns=[EquipmentTableLabels._IS_NAKED_EYE])
         return result
 
     def _generate_data(self) -> pd.DataFrame:
@@ -93,6 +96,7 @@ class Equipment:
             EquipmentTableLabels.ELEMENTS,
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
+            EquipmentTableLabels._IS_NAKED_EYE,
         ]
 
         # Import Binoculars here to keep it local to where it's used for isinstance
@@ -147,6 +151,7 @@ class Equipment:
                         path.length(),  # length() in OpticalPath returns int
                         flipped_horizontally,
                         flipped_vertically,
+                        getattr(path.telescope, "is_naked_eye", False),
                     ]
                 )
 
@@ -365,7 +370,7 @@ class Equipment:
         # Filter only relevant data - by to_plot key
         all_data = self._generate_data()
         if not include_naked_eye:
-            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != "Naked Eye 1x7"]
+            all_data = all_data[~all_data[EquipmentTableLabels._IS_NAKED_EYE]]
 
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
