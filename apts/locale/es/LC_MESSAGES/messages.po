@@ -861,3 +861,9 @@ msgstr "Aurora %(aurora)s%% por debajo del límite de %(min_aurora)s%%"
 
 msgid "Binoculars"
 msgstr "Prismáticos"
+
+msgid "IMAGE"
+msgstr "IMAGEN"
+
+msgid "VISUAL"
+msgstr "VISUAL"
