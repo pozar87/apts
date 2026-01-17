@@ -613,6 +613,53 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()
 
+    @patch("apts.utils.plot.Utils.annotate_plot")
+    @patch("apts.plotting.altitude.pyplot")
+    @patch("apts.plotting.altitude.get_dark_mode")
+    def test_generate_plot_messier_translation_pl(
+        self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
+    ):
+        """Test that Messier plot labels are correctly translated to Polish."""
+        # Mock get_visible_messier to control its output
+        self.observation.get_visible_messier = MagicMock(
+            return_value=self.mock_messier_df
+        )
+
+        mock_get_dark_mode.return_value = False
+
+        # Mock the subplots call and the returned axes object
+        mock_ax = MagicMock()
+        mock_fig = MagicMock()
+        mock_ax.figure = mock_fig
+        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+        # Mock legend calls
+        mock_legend = MagicMock()
+        mock_ax.legend.return_value = mock_legend
+        mock_legend.get_frame.return_value = MagicMock()
+        mock_legend.get_title.return_value = MagicMock()
+        mock_legend.get_texts.return_value = [MagicMock()]
+
+        # Call with Polish language
+        self.observation.plot_messier(language="pl")
+
+        # Assertions for Polish translation
+        # Title: "Messier Objects Altitude" -> "Wysokość obiektów Messiera"
+        mock_ax.set_title.assert_any_call("Wysokość obiektów Messiera", color="#000000")
+
+        # Annotation: "Altitude [°]" -> "Wysokość [°]"
+        mock_annotate_plot.assert_called_with(
+            mock_ax,
+            "Wysokość [°]",
+            False,
+            self.observation.place.local_timezone,
+        )
+
+        if not self.mock_messier_df.empty:
+            # Legend Title: "Object Types" -> "Typy obiektów"
+            mock_ax.legend.assert_called()
+            mock_legend.get_title().set_color.assert_called()
+
     @patch("apts.plotting.planets.svg.Drawing")
     @patch("apts.plotting.planets.get_dark_mode")
     def test_plot_visible_planets_svg_dark_mode_styles(
