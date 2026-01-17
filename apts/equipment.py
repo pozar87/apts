@@ -71,15 +71,21 @@ class Equipment:
         return result
 
     def data(self, language: Optional[str] = None) -> pd.DataFrame:
-        with language_context(language):
-            result = self._generate_data()
-            # Translate Type column
+        result = self._generate_data()
+        if language is not None:
+            with language_context(language):
+                # Translate Type column
+                result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
+                    lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
+                )
+        else:
+            # Default behavior (English/current context) - translate if needed or just convert to string
             result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
                 lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
             )
-            return result
+        return result
 
-    def _generate_data(self, include_naked_eye: bool = True) -> pd.DataFrame:
+    def _generate_data(self) -> pd.DataFrame:
         columns = [
             EquipmentTableLabels.LABEL,
             EquipmentTableLabels.TYPE,
@@ -191,12 +197,6 @@ class Equipment:
                 seen_elements.add(path.elements())
                 all_paths.append(path)
 
-        # Filter Naked Eye paths before label generation/translation
-        if not include_naked_eye:
-            all_paths = [
-                path for path in all_paths if not isinstance(path.telescope, NakedEye)
-            ]
-
         result = append(result, all_paths)
 
         # Add ID column as first
@@ -204,9 +204,7 @@ class Equipment:
             result["ID"] = result.index
             result = result[["ID"] + columns]
         else:  # If empty, ensure ID column exists for consistency if expected by other code
-            result[
-                "ID"
-            ] = []  # Initialize with empty list or appropriate empty type for ID
+            result["ID"] = []  # Initialize with empty list or appropriate empty type for ID
             result = result[["ID"] + columns]
 
         return result  # pyright: ignore
@@ -275,9 +273,7 @@ class Equipment:
 
             def add_line(description, position):
                 position = GenericUtils.dms2decdeg(position)
-                plot.axhline(
-                    position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7
-                )
+                plot.axhline(position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
                 plot.annotate(
                     description,
                     (-0.4, position + 0.03),
@@ -369,11 +365,16 @@ class Equipment:
         This methods filter data to plot and merge Visual and Image series together
         """
         # Filter only relevant data - by to_plot key
-        all_data = self._generate_data(include_naked_eye=include_naked_eye)
+        all_data = self._generate_data()
+        if not include_naked_eye:
+            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != "Naked Eye 1x7"]
 
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
+
+        # Keep the enum type for the legend (for color lookup)
+        legend_enums = data[EquipmentTableLabels.TYPE].unique()
 
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
@@ -388,7 +389,7 @@ class Equipment:
         # Prepare rows where keys are Enums
         rows_list = [{row[1]: row[0]} for row in data.values]
         # Create DataFrame with Enums as columns
-        result_df = pd.DataFrame(rows_list, index=labels)  # pyright: ignore
+        result_df = pd.DataFrame(rows_list, index=labels)
 
         # Get the columns (Enums) to return for color mapping
         # Note: result_df.columns will be unique and sorted/ordered by pandas based on insertion
@@ -431,9 +432,7 @@ class Equipment:
                 f"plot_connection_graph: current_node_colors = {current_node_colors}"
             )
 
-            vertex_types = list(
-                self.connection_garph.vs[NodeLabels.TYPE]
-            )  # Collect to log
+            vertex_types = list(self.connection_garph.vs[NodeLabels.TYPE])  # Collect to log
             logger.debug(f"plot_connection_graph: Vertex NodeTypes = {vertex_types}")
 
             # Calculate vertex colors with a default for missing types (e.g., red to see if it's hit)
@@ -469,9 +468,7 @@ class Equipment:
             background_color = current_plot_style.get(
                 "BACKGROUND_COLOR", "#D3D3D3"
             )  # Light gray default for debugging background
-            logger.debug(
-                f"plot_connection_graph: background_color = {background_color}"
-            )
+            logger.debug(f"plot_connection_graph: background_color = {background_color}")
 
             edge_color_val = current_plot_style.get(
                 "AXIS_COLOR", "#A9A9A9"
