@@ -77,6 +77,9 @@ class Equipment:
             result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
                 lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
             )
+            # Remove internal columns
+            if EquipmentTableLabels.IS_NAKED_EYE in result.columns:
+                result = result.drop(columns=[EquipmentTableLabels.IS_NAKED_EYE])
         return result
 
     def _generate_data(self) -> pd.DataFrame:
@@ -93,6 +96,7 @@ class Equipment:
             EquipmentTableLabels.ELEMENTS,
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
+            EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
         # Import Binoculars here to keep it local to where it's used for isinstance
@@ -107,7 +111,8 @@ class Equipment:
                 # path.output is the final element (eyepiece, camera, or binoculars itself)
 
                 # Determine if the main optic is Binoculars or NakedEye
-                is_binoculars = isinstance(path.telescope, (Binoculars, NakedEye))
+                is_naked_eye = isinstance(path.telescope, NakedEye)
+                is_binoculars = isinstance(path.telescope, Binoculars) or is_naked_eye
 
                 # Calculate useful_zoom
                 useful_zoom_value = True  # Default for binoculars and naked eye
@@ -147,6 +152,7 @@ class Equipment:
                         path.length(),  # length() in OpticalPath returns int
                         flipped_horizontally,
                         flipped_vertically,
+                        is_naked_eye,
                     ]
                 )
 
@@ -365,7 +371,7 @@ class Equipment:
         # Filter only relevant data - by to_plot key
         all_data = self._generate_data()
         if not include_naked_eye:
-            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != "Naked Eye 1x7"]
+            all_data = all_data[all_data[EquipmentTableLabels.IS_NAKED_EYE] == False]
 
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]

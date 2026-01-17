@@ -62,6 +62,21 @@ class TestEquipmentTranslation(unittest.TestCase):
         labels_pl = df_pl[EquipmentTableLabels.LABEL].tolist()
         self.assertTrue(any("Gołe oko" in label for label in labels_pl))
 
+    def test_naked_eye_filtering_pl(self):
+        """Test that Naked Eye is correctly filtered out in Polish context when include_naked_eye=False."""
+        eq = Equipment()
+        from apts.i18n import language_context
+
+        with language_context("pl"):
+            # _filter_and_merge returns (result_df, columns_enums)
+            # We check the index of result_df which contains the labels
+            df, _ = eq._filter_and_merge("Zoom", True, include_naked_eye=False)
+            self.assertFalse(any("Gołe oko" in str(label) for label in df.index))
+
+            # Now check that it IS included when requested
+            df_with, _ = eq._filter_and_merge("Zoom", True, include_naked_eye=True)
+            self.assertTrue(any("Gołe oko" in str(label) for label in df_with.index))
+
 
 if __name__ == "__main__":
     unittest.main()
