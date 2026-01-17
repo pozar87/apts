@@ -111,26 +111,25 @@ class OutputOpticalEqipment(OpticalEquipment):
         default_mm_unit = ureg.mm
 
         # Validate telescop.aperture
+        aperture = getattr(telescop, "aperture", None)
         if (
-            not hasattr(telescop, "aperture")
-            or not hasattr(telescop.aperture, "units")
-            or (
-                hasattr(telescop.aperture, "magnitude")
-                and np.isnan(telescop.aperture.magnitude)
-            )
-        ):  # pyright: ignore
+            aperture is None
+            or not hasattr(aperture, "units")
+            or not hasattr(aperture, "magnitude")
+            or np.isnan(float(aperture.magnitude))
+        ):
             return np.nan * default_mm_unit  # Aperture is invalid
 
-        aperture_units = telescop.aperture.units  # pyright: ignore
+        aperture_units = aperture.units
 
         # Validate zoom
+        zoom_magnitude = getattr(zoom, "magnitude", np.nan)
         if (
-            not hasattr(zoom, "magnitude")
-            or not hasattr(zoom, "units")
-            or np.isnan(zoom.magnitude)
-            or zoom.magnitude == 0
+            not hasattr(zoom, "units")
+            or np.isnan(float(zoom_magnitude))
+            or zoom_magnitude == 0
         ):
-            return np.nan * aperture_units  # type: ignore
+            return np.nan * aperture_units
 
         # If zoom is not dimensionless, Pint's division rules will typically handle it
         # by raising a DimensionalityError or producing a result with unexpected units.
@@ -154,11 +153,11 @@ class OutputOpticalEqipment(OpticalEquipment):
             return np.nan * ureg.dimensionless
 
         # Validate zoom (early exit if zoom is fundamentally bad or NaN)
+        zoom_magnitude = getattr(zoom, "magnitude", np.nan)
         if (
-            not hasattr(zoom, "magnitude")
-            or not hasattr(zoom, "units")
-            or np.isnan(zoom.magnitude)
-            or zoom.magnitude == 0
+            not hasattr(zoom, "units")
+            or np.isnan(float(zoom_magnitude))
+            or zoom_magnitude == 0
         ):
             # If zoom is 0, exit pupil is infinite/undefined. NaN is appropriate.
             return np.nan * ureg.dimensionless
@@ -167,9 +166,8 @@ class OutputOpticalEqipment(OpticalEquipment):
 
         # After calling exit_pupil, ep_val should always be a Quantity.
         # Check if its magnitude is NaN (this means exit_pupil determined a NaN result).
-        if not hasattr(ep_val, "units") or (
-            hasattr(ep_val, "magnitude") and np.isnan(ep_val.magnitude)
-        ):  # pyright: ignore
+        ep_magnitude = getattr(ep_val, "magnitude", np.nan)
+        if not hasattr(ep_val, "units") or np.isnan(float(ep_magnitude)):
             return np.nan * ureg.dimensionless
 
         try:
@@ -179,15 +177,15 @@ class OutputOpticalEqipment(OpticalEquipment):
             return np.nan * ureg.dimensionless
 
         # Check if ep_mm.magnitude became NaN after conversion or if units are missing
-        if not hasattr(ep_mm, "units") or (
-            hasattr(ep_mm, "magnitude") and np.isnan(ep_mm.magnitude)
-        ):  # pyright: ignore
+        ep_mm_magnitude = getattr(ep_mm, "magnitude", np.nan)
+        if not hasattr(ep_mm, "units") or np.isnan(float(ep_mm_magnitude)):
             return np.nan * ureg.dimensionless
 
         seven_mm = 7 * ureg.mm
 
         # Avoid division by zero if seven_mm is somehow misconfigured
-        if not hasattr(seven_mm, "magnitude") or seven_mm.magnitude == 0:  # pyright: ignore
+        seven_mm_magnitude = getattr(seven_mm, "magnitude", 0)
+        if seven_mm_magnitude == 0:
             return np.nan * ureg.dimensionless
 
         ratio = (
@@ -195,9 +193,8 @@ class OutputOpticalEqipment(OpticalEquipment):
         )  # ep_mm and seven_mm are both mm, ratio is dimensionless Q
 
         # Check if ratio.magnitude is NaN or if units are unexpectedly missing
-        if not hasattr(ratio, "units") or (
-            hasattr(ratio, "magnitude") and np.isnan(ratio.magnitude)
-        ):  # pyright: ignore
+        ratio_magnitude = getattr(ratio, "magnitude", np.nan)
+        if not hasattr(ratio, "units") or np.isnan(float(ratio_magnitude)):
             return np.nan * ureg.dimensionless
 
         # Final calculation. Result should be a dimensionless Quantity.
