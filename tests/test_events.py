@@ -6,7 +6,7 @@ import pandas as pd
 
 from apts.constants.event_types import EventType
 from apts.events import AstronomicalEvents
-from apts.i18n import language_context, set_language
+from apts.i18n import language_context
 from apts.place import Place
 
 utc = timezone.utc
