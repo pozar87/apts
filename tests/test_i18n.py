@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-import apts
-from apts import Equipment, Observation, Place, language_context
+from apts import Equipment, Observation, Place
 from apts.cache import clear_cache
 from apts.conditions import Conditions
 from apts.constants.event_types import EventType
 from apts.events import AstronomicalEvents
+from apts.i18n import language_context
 
 
 def test_language_switching_for_events():
