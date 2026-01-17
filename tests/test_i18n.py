@@ -84,3 +84,16 @@ def test_language_switching_for_messier_types():
     visible_messier_pl = observation.get_visible_messier(language="pl")
     assert "Gromada otwarta" in visible_messier_pl["Type"].values
     assert "Woźnica" in visible_messier_pl["Constellation"].values
+
+
+def test_language_context_none():
+    """
+    Tests that language_context(None) does not change the current language.
+    """
+    with language_context("pl"):
+        with language_context(None):
+            # Should still be Polish
+            fig = Observation(
+                place=Place(lat=52.2, lon=21.0), equipment=Equipment()
+            ).plot_messier()
+            assert fig.axes[0].get_title() == "Wysokość obiektów Messiera"
