@@ -1,15 +1,25 @@
-import pytest
+from typing import Any, cast
+from unittest.mock import ANY, MagicMock, patch
+
 import numpy as np  # Added for np.log10
 import pandas as pd
-from typing import Any, cast
-from unittest.mock import patch, MagicMock, ANY
+import pytest
 
-from apts.equipment import Equipment
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
-from apts.opticalequipment import Barlow, Binoculars, Telescope, Camera, Eyepiece, Diagonal
+from apts.equipment import Equipment
+from apts.i18n import language_context
+from apts.opticalequipment import (
+    Barlow,
+    Binoculars,
+    Camera,
+    Diagonal,
+    Eyepiece,
+    Telescope,
+)
 from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
 from apts.utils import ConnectionType
+
 from . import setup_equipment
 
 
@@ -18,7 +28,7 @@ def test_flipped_view():
     e = Equipment()
     e.register(Telescope(150, 750))
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 2].iloc[0]
+    row = e.data()[e.data()["Elements"] == 2].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -27,7 +37,7 @@ def test_flipped_view():
     e.register(Telescope(150, 750))
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    row = e.data()[e.data()["Elements"] == 3].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -37,7 +47,7 @@ def test_flipped_view():
     e.register(Diagonal())
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 4].iloc[0]
+    row = e.data()[e.data()["Elements"] == 4].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -46,7 +56,7 @@ def test_flipped_view():
     e.register(Telescope(150, 750))
     e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    row = e.data()[e.data()["Elements"] == 3].iloc[0]
     assert not row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -167,7 +177,9 @@ def test_camera_path_with_setup_equipment():  # Renamed
 
     # Verify the original DataFrame check for completeness, though target_op checks are more robust
     data_df = e.data()
-    image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
+    image_paths_df = data_df[
+        data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name
+    ]
 
     # Find the row corresponding to target_op for DataFrame value check
     found_in_df = False
@@ -354,7 +366,11 @@ def test_binoculars_do_not_connect_with_telescope_equipment():
                 "Binocular path should not include Eyepiece parts"
             )
             found_bino_only_path = True
-        elif "unknown telescope" in label and "150/750" in label and "unknown ocular f=25" in label:
+        elif (
+            "unknown telescope" in label
+            and "150/750" in label
+            and "unknown ocular f=25" in label
+        ):
             # Assuming a telescope path will have more than 1 element (telescope + eyepiece/camera)
             assert elements > 1, (
                 f"Telescope path '{label}' should have more than 1 element, got {elements}"
@@ -723,7 +739,9 @@ def test_camera_path_brightness_is_nan():
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
-    assert bool(cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).isnull().all()), (
+    assert bool(
+        cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).isnull().all()
+    ), (
         f"Brightness for camera paths should be NaN. Got: {cast(pd.Series, camera_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
@@ -751,12 +769,16 @@ def test_eyepiece_path_brightness_is_numeric():
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
-    assert bool(cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).notnull().all()), (
+    assert bool(
+        cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).notnull().all()
+    ), (
         f"Brightness for eyepiece paths should be a number. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
     # Check that all brightness values are non-negative
-    assert bool((cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]) >= 0).all()), (
+    assert bool(
+        (cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]) >= 0).all()
+    ), (
         f"Brightness for eyepiece paths should be non-negative. Got: {cast(pd.Series, eyepiece_rows[EquipmentTableLabels.BRIGHTNESS]).values}"
     )
 
@@ -792,8 +814,9 @@ def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):
     # This requires inspecting the call to _filter_and_merge, which is internal.
     # A better approach is to mock _filter_and_merge or check the resulting plot data.
     # Let's check the data that would be plotted.
-    data_for_plot, _ = eq._filter_and_merge("Zoom", True, False)
-    assert "Naked Eye 1x7" not in data_for_plot.index
+    with language_context("en"):
+        data_for_plot, _ = eq._filter_and_merge("Zoom", True, False)
+        assert "Naked Eye 1x7" not in data_for_plot.index
 
 
 @patch("apts.equipment.plt")
@@ -801,8 +824,9 @@ def test_plot_zoom_includes_naked_eye_when_flagged(mock_plt):
     eq = setup_equipment()
     eq.plot_zoom(include_naked_eye=True)
 
-    data_for_plot, _ = eq._filter_and_merge("Zoom", True, True)
-    assert "Naked Eye 1x7" in data_for_plot.index
+    with language_context("en"):
+        data_for_plot, _ = eq._filter_and_merge("Zoom", True, True)
+        assert "Naked Eye 1x7" in data_for_plot.index
 
 
 @patch("apts.equipment.get_dark_mode")
@@ -992,7 +1016,7 @@ def test_flipped_view_with_different_telescopes():
     e = Equipment()
     e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR))
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 2].iloc[0]
+    row = e.data()[e.data()["Elements"] == 2].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -1001,7 +1025,7 @@ def test_flipped_view_with_different_telescopes():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR))
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    row = e.data()[e.data()["Elements"] == 3].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
@@ -1012,7 +1036,7 @@ def test_flipped_view_with_different_telescopes():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.SCHMIDT_CASSEGRAIN))
     e.register(Diagonal())
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    row = e.data()[e.data()["Elements"] == 3].iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -1021,7 +1045,7 @@ def test_flipped_view_with_different_telescopes():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.MAKSTUTOV_CASSEGRAIN))
     e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
-    row = e.data()[e.data()['Elements'] == 3].iloc[0]
+    row = e.data()[e.data()["Elements"] == 3].iloc[0]
     assert not row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
@@ -1029,7 +1053,9 @@ def test_flipped_view_with_different_telescopes():
 def test_flipped_view_with_camera():
     # Refractor with camera (no diagonal) is flipped horizontally and vertically
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, t2_output=True))
+    e.register(
+        Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, t2_output=True)
+    )
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
@@ -1050,7 +1076,11 @@ def test_flipped_view_with_camera():
 
     # Newtonian with camera (no diagonal) is flipped horizontally and vertically
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR, t2_output=True))
+    e.register(
+        Telescope(
+            150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR, t2_output=True
+        )
+    )
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
