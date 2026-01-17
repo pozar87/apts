@@ -371,7 +371,7 @@ class Equipment:
         # Filter only relevant data - by to_plot key
         all_data = self._generate_data()
         if not include_naked_eye:
-            all_data = all_data[all_data[EquipmentTableLabels.IS_NAKED_EYE] == False]
+            all_data = all_data[not all_data[EquipmentTableLabels.IS_NAKED_EYE]]
 
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]

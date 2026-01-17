@@ -7,6 +7,7 @@ import pytest
 
 from apts.constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from apts.equipment import Equipment
+from apts.i18n import language_context
 from apts.opticalequipment import (
     Barlow,
     Binoculars,
@@ -802,8 +803,6 @@ def _create_custom_equipment_for_plotting():
 
 
 patch("apts.equipment.plt")
-
-from apts.i18n import language_context
 
 
 @patch("apts.equipment.plt")
