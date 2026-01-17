@@ -313,6 +313,7 @@ def test_plot_planets_on_skymap_renders_planets_as_ellipses():
     # Mock the visible planets data
     planets_data = {
         "Name": ["Mars"],
+        "TechnicalName": ["Mars"],
         "Size": [14.5],
     }
     mock_visible_planets = pd.DataFrame(planets_data)
