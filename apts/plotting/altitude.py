@@ -15,6 +15,7 @@ from apts.constants.graphconstants import (
 )
 from apts.i18n import gettext_
 from apts.plotting.utils import mark_good_conditions, mark_observation
+from apts.utils import planetary
 from apts.utils.plot import Utils
 from ..constants import ObjectTableLabels
 
@@ -274,7 +275,9 @@ def generate_plot_planets(
         )
 
         specific_planet_color = get_planet_color(
-            name, effective_dark_mode, default_planet_color  # type: ignore
+            planetary.get_simple_name(planet["TechnicalName"]),
+            effective_dark_mode,
+            default_planet_color,  # type: ignore
         )
 
         time_series = curve_df["Time"].apply(

@@ -867,3 +867,39 @@ msgstr "IMAGEN"
 
 msgid "VISUAL"
 msgstr "VISUAL"
+
+#: stargazer/templatetags/stargazer_tags.py:12
+msgid "Mars"
+msgstr "Marte"
+
+#: stargazer/templatetags/stargazer_tags.py:13
+msgid "Jupiter"
+msgstr "Júpiter"
+
+#: stargazer/templatetags/stargazer_tags.py:14
+msgid "Saturn"
+msgstr "Saturno"
+
+#: stargazer/templatetags/stargazer_tags.py:15
+msgid "Venus"
+msgstr "Venus"
+
+#: stargazer/templatetags/stargazer_tags.py:16
+msgid "Mercury"
+msgstr "Mercurio"
+
+#: stargazer/templatetags/stargazer_tags.py:17
+msgid "Uranus"
+msgstr "Urano"
+
+#: stargazer/templatetags/stargazer_tags.py:18
+msgid "Neptune"
+msgstr "Neptuno"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Pluto"
+msgstr "Plutón"
+
+#: stargazer/templatetags/stargazer_tags.py:19
+msgid "Sun"
+msgstr "Sol"

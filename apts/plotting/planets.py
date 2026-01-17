@@ -6,6 +6,7 @@ import svgwrite as svg
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_planet_color, get_plot_style
 from apts.i18n import gettext_
+from apts.utils import planetary
 
 if TYPE_CHECKING:
     from apts.observations import Observation
@@ -65,7 +66,11 @@ def plot_visible_planets_svg(
                 r=radius,
                 stroke=style["AXIS_COLOR"],
                 stroke_width="1",
-                fill=get_planet_color(name, effective_dark_mode, default_fill_color),
+                fill=get_planet_color(
+                    planetary.get_simple_name(planet[3]),
+                    effective_dark_mode,
+                    default_fill_color,
+                ),
             )
         )
         dwg.add(
