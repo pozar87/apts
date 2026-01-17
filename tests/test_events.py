@@ -1,11 +1,13 @@
 import unittest
-from unittest.mock import patch
 from datetime import datetime, timezone
+from unittest.mock import patch
+
 import pandas as pd
-from apts.events import AstronomicalEvents
+
 from apts.constants.event_types import EventType
+from apts.events import AstronomicalEvents
+from apts.i18n import language_context, set_language
 from apts.place import Place
-from apts.i18n import set_language
 
 utc = timezone.utc
 
@@ -16,10 +18,9 @@ class EventsTest(unittest.TestCase):
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
         self.end_date = datetime(2023, 3, 15, tzinfo=utc)
         self.events = AstronomicalEvents(self.place, self.start_date, self.end_date)
-        set_language('en')
 
     def tearDown(self):
-        set_language('en')
+        pass
 
     def test_moon_phases(self):
         # Disable all event calculations by default for this test
@@ -152,20 +153,20 @@ class EventsTest(unittest.TestCase):
 
     def test_translate_events(self):
         # Create a sample DataFrame
-        data = {'event': ['New Moon', 'Full Moon'],
-                'type': ['Moon Phase', 'Moon Phase']}
+        data = {
+            "event": ["New Moon", "Full Moon"],
+            "type": ["Moon Phase", "Moon Phase"],
+        }
         events_df = pd.DataFrame(data)
 
-        # Set language to Polish
-        set_language('pl')
-
-        # Translate the events
-        translated_df = self.events.translate_events(events_df)
+        # Translate the events in Polish context
+        with language_context("pl"):
+            translated_df = self.events.translate_events(events_df)
 
         # Check if the events are translated
-        self.assertEqual(translated_df.iloc[0]['event'], 'Nów')
-        self.assertEqual(translated_df.iloc[0]['type'], 'Faza Księżyca')
-        self.assertEqual(translated_df.iloc[1]['event'], 'Pełnia')
+        self.assertEqual(translated_df.iloc[0]["event"], "Nów")
+        self.assertEqual(translated_df.iloc[0]["type"], "Faza Księżyca")
+        self.assertEqual(translated_df.iloc[1]["event"], "Pełnia")
 
 
 if __name__ == "__main__":

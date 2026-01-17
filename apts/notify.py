@@ -99,95 +99,95 @@ class Notify:
         dark_mode: bool | None = None,
     ):
         """Sends a complex email notification with observation details and plots."""
-        if language:
-            from .i18n import set_language
+        from .i18n import language_context
 
-            set_language(language)
-
-        if not self.sender_email or not self.recipient_email:
-            logger.error("Sender or recipient email not configured. Cannot send email.")
-            return False
-        # Overall message container: multipart/alternative for text and HTML versions
-        msg_root = MIMEMultipart("alternative")
-        msg_root["Subject"] = gettext_("Good weather in {name}").format(
-            name=observations.place.name
-        )
-        msg_root["From"] = self.sender_email
-        msg_root["To"] = self.recipient_email
-
-        # Fallback plain text message
-        if plain_text_fallback is None:
-            num_planets = len(observations.get_visible_planets(language=language))
-            num_messier = len(observations.get_visible_messier(language=language))
-            plain_text_fallback = gettext_(
-                "Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
-                "Enable HTML to see the full content."
-            ).format(num_planets=num_planets, num_messier=num_messier)
-        text_part = MIMEText(plain_text_fallback, "plain")
-        msg_root.attach(text_part)
-
-        # Create multipart/related for HTML and inline images
-        msg_related = MIMEMultipart("related")
-
-        # HTML message content
-        html_content = observations.to_html(
-            custom_template=custom_template, css=css, language=language
-        )
-        html_part = MIMEText(html_content, "html")
-        msg_related.attach(html_part)  # First part of related is the HTML
-
-        # Add weather image (inline)
-        logger.info("Generating weather plot for email...")
-        weather_plot_fig = observations.plot_weather(
-            dark_mode_override=dark_mode, language=language
-        )  # Call public method
-        if weather_plot_fig:
-            self.attach_image(
-                msg_related,
-                weather_plot_fig,
-                filename=f"weather_plot.{get_plot_format()}",
+        with language_context(language):
+            if not self.sender_email or not self.recipient_email:
+                logger.error(
+                    "Sender or recipient email not configured. Cannot send email."
+                )
+                return False
+            # Overall message container: multipart/alternative for text and HTML versions
+            msg_root = MIMEMultipart("alternative")
+            msg_root["Subject"] = gettext_("Good weather in {name}").format(
+                name=observations.place.name
             )
-        else:
-            logger.warning(
-                "observations.plot_weather() returned None or an invalid plot object, not attaching weather plot."
-            )
+            msg_root["From"] = self.sender_email
+            msg_root["To"] = self.recipient_email
 
-        # Add planets image (inline)
-        logger.info("Generating Solar Objects plot for email...")
-        planets_plot_fig = observations.plot_planets(
-            dark_mode_override=dark_mode, language=language
-        )  # Call public method
-        if planets_plot_fig:
-            self.attach_image(
-                msg_related,
-                planets_plot_fig,
-                filename=f"planets_plot.{get_plot_format()}",
-            )
-        else:
-            logger.warning(
-                "observations.plot_planets() returned None or an invalid plot object, not attaching planets plot."
-            )
+            # Fallback plain text message
+            if plain_text_fallback is None:
+                num_planets = len(observations.get_visible_planets(language=language))
+                num_messier = len(observations.get_visible_messier(language=language))
+                plain_text_fallback = gettext_(
+                    "Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
+                    "Enable HTML to see the full content."
+                ).format(num_planets=num_planets, num_messier=num_messier)
+            text_part = MIMEText(plain_text_fallback, "plain")
+            msg_root.attach(text_part)
 
-        # Add messier image (inline)
-        logger.info("Generating messier plot for email...")
-        messier_plot_fig = observations.plot_messier(
-            dark_mode_override=dark_mode, language=language
-        )  # Call public method
-        if messier_plot_fig:
-            self.attach_image(
-                msg_related,
-                messier_plot_fig,
-                filename=f"messier_plot.{get_plot_format()}",
-            )
-        else:
-            logger.warning(
-                "observations.plot_messier() returned None or an invalid plot object, not attaching messier plot."
-            )
+            # Create multipart/related for HTML and inline images
+            msg_related = MIMEMultipart("related")
 
-        # Attach the multipart/related part to the multipart/alternative part
-        msg_root.attach(msg_related)
+            # HTML message content
+            html_content = observations.to_html(
+                custom_template=custom_template, css=css, language=language
+            )
+            html_part = MIMEText(html_content, "html")
+            msg_related.attach(html_part)  # First part of related is the HTML
 
-        return self._send_email(msg_root)  # Use the internal helper
+            # Add weather image (inline)
+            logger.info("Generating weather plot for email...")
+            weather_plot_fig = observations.plot_weather(
+                dark_mode_override=dark_mode, language=language
+            )  # Call public method
+            if weather_plot_fig:
+                self.attach_image(
+                    msg_related,
+                    weather_plot_fig,
+                    filename=f"weather_plot.{get_plot_format()}",
+                )
+            else:
+                logger.warning(
+                    "observations.plot_weather() returned None or an invalid plot object, not attaching weather plot."
+                )
+
+            # Add planets image (inline)
+            logger.info("Generating Solar Objects plot for email...")
+            planets_plot_fig = observations.plot_planets(
+                dark_mode_override=dark_mode, language=language
+            )  # Call public method
+            if planets_plot_fig:
+                self.attach_image(
+                    msg_related,
+                    planets_plot_fig,
+                    filename=f"planets_plot.{get_plot_format()}",
+                )
+            else:
+                logger.warning(
+                    "observations.plot_planets() returned None or an invalid plot object, not attaching planets plot."
+                )
+
+            # Add messier image (inline)
+            logger.info("Generating messier plot for email...")
+            messier_plot_fig = observations.plot_messier(
+                dark_mode_override=dark_mode, language=language
+            )  # Call public method
+            if messier_plot_fig:
+                self.attach_image(
+                    msg_related,
+                    messier_plot_fig,
+                    filename=f"messier_plot.{get_plot_format()}",
+                )
+            else:
+                logger.warning(
+                    "observations.plot_messier() returned None or an invalid plot object, not attaching messier plot."
+                )
+
+            # Attach the multipart/related part to the multipart/alternative part
+            msg_root.attach(msg_related)
+
+            return self._send_email(msg_root)  # Use the internal helper
 
     @staticmethod
     def attach_image(message, plot, filename=None):

@@ -375,9 +375,6 @@ class Equipment:
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
 
-        # Keep the enum type for the legend (for color lookup)
-        legend_enums = data[EquipmentTableLabels.TYPE].unique()
-
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
             labels = [

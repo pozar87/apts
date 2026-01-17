@@ -18,6 +18,7 @@ from apts.constants.objecttablelabels import (
     ObjectTableLabels,
 )  # Added ObjectTableLabels
 from apts.constants.twilight import Twilight
+from apts.i18n import language_context
 from apts.observations import Observation
 from apts.units import ureg
 from tests import setup_observation
@@ -526,64 +527,68 @@ class TestObservationPlottingStyles(unittest.TestCase):
             return_value=self.mock_messier_df
         )
 
-        for i, scenario_data in enumerate(scenarios):
-            with self.subTest(msg=scenario_data["desc"], i=i):
-                mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
-                expected_style = get_plot_style(
-                    scenario_data["expected_effective_dark_mode"]
-                )
-
-                # Reset mocks that accumulate calls for each subtest
-                mock_pyplot.reset_mock()
-                mock_annotate_plot.reset_mock()
-
-                # Mock the subplots call and the returned axes object for this subtest run
-                mock_ax = MagicMock()
-                mock_fig = MagicMock()
-                mock_ax.figure = mock_fig
-                mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
-
-                # Mock legend calls for this subtest run
-                mock_legend = MagicMock()
-                mock_ax.legend.return_value = mock_legend
-                mock_legend.get_frame.return_value = MagicMock()
-                mock_legend.get_title.return_value = MagicMock()
-                mock_legend.get_texts.return_value = [
-                    MagicMock()
-                ]  # Assume at least one text item for simplicity
-
-                returned_fig = self.observation.plot_messier(
-                    dark_mode_override=scenario_data["override"]
-                )
-
-                self.assertEqual(returned_fig, mock_fig)
-                mock_pyplot.subplots.assert_called_once()
-                if scenario_data["expected_effective_dark_mode"]:
-                    mock_fig.patch.set_facecolor.assert_called_with("#1C1C3A")
-                    mock_ax.set_facecolor.assert_called_with("#2A004F")
-                    mock_ax.set_title.assert_any_call(
-                        "Messier Objects Altitude", color="#FFFFFF"
+        with language_context("en"):
+            for i, scenario_data in enumerate(scenarios):
+                with self.subTest(msg=scenario_data["desc"], i=i):
+                    mock_get_dark_mode.return_value = scenario_data["global_dark_mode"]
+                    expected_style = get_plot_style(
+                        scenario_data["expected_effective_dark_mode"]
                     )
-                    if not self.mock_messier_df.empty:
-                        mock_legend.get_frame().set_facecolor.assert_called_with(
-                            "#2A004F"
+
+                    # Reset mocks that accumulate calls for each subtest
+                    mock_pyplot.reset_mock()
+                    mock_annotate_plot.reset_mock()
+
+                    # Mock the subplots call and the returned axes object for this subtest run
+                    mock_ax = MagicMock()
+                    mock_fig = MagicMock()
+                    mock_ax.figure = mock_fig
+                    mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+
+                    # Mock legend calls for this subtest run
+                    mock_legend = MagicMock()
+                    mock_ax.legend.return_value = mock_legend
+                    mock_legend.get_frame.return_value = MagicMock()
+                    mock_legend.get_title.return_value = MagicMock()
+                    mock_legend.get_texts.return_value = [
+                        MagicMock()
+                    ]  # Assume at least one text item for simplicity
+
+                    returned_fig = self.observation.plot_messier(
+                        dark_mode_override=scenario_data["override"]
+                    )
+
+                    self.assertEqual(returned_fig, mock_fig)
+                    mock_pyplot.subplots.assert_called_once()
+                    if scenario_data["expected_effective_dark_mode"]:
+                        mock_fig.patch.set_facecolor.assert_called_with("#1C1C3A")
+                        mock_ax.set_facecolor.assert_called_with("#2A004F")
+                        mock_ax.set_title.assert_any_call(
+                            "Messier Objects Altitude", color="#FFFFFF"
                         )
-                        mock_legend.get_frame().set_edgecolor.assert_called_with(
-                            "#CCCCCC"
+                        if not self.mock_messier_df.empty:
+                            mock_legend.get_frame().set_facecolor.assert_called_with(
+                                "#2A004F"
+                            )
+                            mock_legend.get_frame().set_edgecolor.assert_called_with(
+                                "#CCCCCC"
+                            )
+                            mock_legend.get_title().set_color.assert_called_with(
+                                "#FFFFFF"
+                            )
+                            for text_mock in mock_legend.get_texts():
+                                text_mock.set_color.assert_called_with("#FFFFFF")
+                    else:  # Light mode assertions remain using expected_style from get_plot_style(False)
+                        mock_fig.patch.set_facecolor.assert_called_with(
+                            expected_style["FIGURE_FACE_COLOR"]
                         )
-                        mock_legend.get_title().set_color.assert_called_with("#FFFFFF")
-                        for text_mock in mock_legend.get_texts():
-                            text_mock.set_color.assert_called_with("#FFFFFF")
-                else:  # Light mode assertions remain using expected_style from get_plot_style(False)
-                    mock_fig.patch.set_facecolor.assert_called_with(
-                        expected_style["FIGURE_FACE_COLOR"]
-                    )
-                    mock_ax.set_facecolor.assert_called_with(
-                        expected_style["AXES_FACE_COLOR"]
-                    )
-                    mock_ax.set_title.assert_any_call(
-                        "Messier Objects Altitude", color=expected_style["TEXT_COLOR"]
-                    )
+                        mock_ax.set_facecolor.assert_called_with(
+                            expected_style["AXES_FACE_COLOR"]
+                        )
+                        mock_ax.set_title.assert_any_call(
+                            "Messier Objects Altitude",
+                            color=expected_style["TEXT_COLOR"],
+                        )
                     if not self.mock_messier_df.empty:
                         mock_legend.get_frame().set_facecolor.assert_called_with(
                             expected_style["AXES_FACE_COLOR"]
