@@ -167,7 +167,7 @@ def test_camera_path_with_setup_equipment():  # Renamed
 
     # Verify the original DataFrame check for completeness, though target_op checks are more robust
     data_df = e.data()
-    image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths_df = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     # Find the row corresponding to target_op for DataFrame value check
     found_in_df = False
@@ -295,7 +295,7 @@ def test_binoculars_in_equipment_data():
     assert not bino_row_df.empty, "Could not find the binocular path in the data"
     bino_row = bino_row_df.iloc[0]
 
-    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL
+    assert bino_row[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name
     assert bino_row[EquipmentTableLabels.ZOOM] == pytest.approx(8)
     assert bino_row[EquipmentTableLabels.USEFUL_ZOOM]
     assert bino_row[EquipmentTableLabels.FOV] == pytest.approx(60 / 8)  # 7.5
@@ -397,7 +397,7 @@ def test_telescope_to_camera_direct_t2():
     data_df = eq.data()
 
     # Filter for paths that result in an "Image" type output
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, (
         "No image paths found for Telescope direct to Camera (T2)"
@@ -478,7 +478,7 @@ def test_telescope_barlow_t2_camera():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, (
         "No image paths found for Telescope -> Barlow (T2) -> Camera"
@@ -554,7 +554,7 @@ def test_telescope_std_barlow_t2_camera_variation():
     eq.register(cam)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     assert not image_paths.empty, (
         "No image paths found for Telescope (std) -> Barlow (T2 out) -> Camera"
@@ -633,7 +633,7 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     # We expect NO paths that are just these two items.
     # If any image path exists, it must not be a direct connection of these two.
@@ -673,7 +673,7 @@ def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
     eq.register(cam_t2_only)
 
     data_df = eq.data()
-    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = data_df[data_df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
 
     problematic_path_found = False
     row = None
@@ -719,7 +719,7 @@ def test_camera_path_brightness_is_nan():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    camera_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     assert not camera_rows.empty, "No camera output paths found in DataFrame."
 
     # Check if all brightness values in camera_rows are NaN
@@ -747,7 +747,7 @@ def test_eyepiece_path_brightness_is_numeric():
     df = eq.data()
     assert not df.empty, "Equipment data frame is empty"
 
-    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL]
+    eyepiece_rows = df[df[EquipmentTableLabels.TYPE] == OpticalType.VISUAL.name]
     assert not eyepiece_rows.empty, "No eyepiece output paths found in DataFrame."
 
     # Check that all brightness values are not NaN (i.e., they are numbers)
@@ -1032,7 +1032,7 @@ def test_flipped_view_with_camera():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, t2_output=True))
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
-    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     row = image_paths.iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
@@ -1043,7 +1043,7 @@ def test_flipped_view_with_camera():
     e.register(Diagonal(t2_output=True))
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
-    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     row = image_paths.iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
@@ -1053,7 +1053,7 @@ def test_flipped_view_with_camera():
     e.register(Telescope(150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR, t2_output=True))
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
-    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE]
+    image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     row = image_paths.iloc[0]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]

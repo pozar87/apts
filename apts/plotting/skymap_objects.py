@@ -8,6 +8,7 @@ from skyfield.api import Star as SkyfieldStar
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_planet_color
 from apts.constants.plot import CoordinateSystem
+from apts.i18n import gettext_
 from apts.plotting.utils import (
     calculate_ellipse_angle,
     calculate_parallactic_angle,
@@ -15,6 +16,7 @@ from apts.plotting.utils import (
     get_brightness_color,
     get_object_angular_size_deg,
 )
+from apts.utils import planetary
 from ..cache import get_hipparcos_data
 from ..constants import ObjectTableLabels
 
@@ -687,7 +689,8 @@ def _plot_planets_on_skymap(
     if not visible_planets.empty:
         for _, p_obj in visible_planets.iterrows():
             planet_name = p_obj[ObjectTableLabels.NAME]
-            if planet_name == target_name:
+            technical_name = p_obj["TechnicalName"]
+            if planet_name == target_name or technical_name == target_name:
                 continue  # Skip the target object, it will be plotted separately
             _plot_solar_system_object_on_skymap(
                 observation,
@@ -695,7 +698,8 @@ def _plot_planets_on_skymap(
                 observer,
                 is_polar,
                 style,
-                cast(str, planet_name),
+                str(technical_name),
+                display_name=cast(str, planet_name),
                 coordinate_system=coordinate_system,
             )
 
@@ -707,6 +711,7 @@ def _plot_solar_system_object_on_skymap(
     is_polar,
     style,
     object_name: str,
+    display_name: Optional[str] = None,
     is_target: bool = False,
     coordinate_system: CoordinateSystem = cast(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
@@ -716,6 +721,9 @@ def _plot_solar_system_object_on_skymap(
     obj = observation.local_planets.find_by_name(object_name)
     if not obj:
         return  # Object not found
+
+    if display_name is None:
+        display_name = gettext_(planetary.get_simple_name(object_name))
 
     alt, az, _ = observer.observe(obj).apparent().altaz()
     ra, dec, _ = observer.observe(obj).apparent().radec()
@@ -729,7 +737,9 @@ def _plot_solar_system_object_on_skymap(
     # Determine colors and markers
     effective_dark_mode = get_dark_mode()
     default_color = style.get("EMPHASIS_COLOR", "yellow")
-    edge_color = get_planet_color(object_name, effective_dark_mode, default_color)
+    edge_color = get_planet_color(
+        planetary.get_simple_name(object_name), effective_dark_mode, default_color
+    )
     face_color = edge_color
     marker = "o"
     if object_name == "Sun":
@@ -752,7 +762,7 @@ def _plot_solar_system_object_on_skymap(
         ax.scatter(x, y, s=size, color=edge_color, marker=marker)
         if not is_target:
             ax.annotate(
-                object_name,
+                display_name,
                 (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
@@ -784,7 +794,7 @@ def _plot_solar_system_object_on_skymap(
         ax.add_patch(ellipse)
         if not is_target:
             ax.annotate(
-                object_name,
+                display_name,
                 (x_coord, y_coord),
                 textcoords="offset points",
                 xytext=(5, 5),

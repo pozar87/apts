@@ -229,13 +229,18 @@ class Observation:
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         with language_context(language):
-            return self.local_planets.get_visible(
+            from apts.i18n import gettext_
+
+            visible = self.local_planets.get_visible(
                 self.conditions,
                 self.start,
                 self.time_limit,
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+            if "Name" in visible.columns:
+                visible["Name"] = visible["Name"].apply(gettext_).astype("string")
+            return visible
 
     def get_astronomical_events(
         self,

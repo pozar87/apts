@@ -4,6 +4,7 @@ from typing import Any, cast
 from apts.constants import EquipmentTableLabels, GraphConstants
 from apts.equipment import Equipment
 from apts.opticalequipment import NakedEye
+from apts.i18n import language_context
 
 
 class TestNakedEye(unittest.TestCase):
@@ -33,23 +34,26 @@ class TestNakedEye(unittest.TestCase):
 
     def test_naked_eye_data(self):
         """Test that the data() method includes an entry for NakedEye."""
-        eq = Equipment()
-        df = eq.data()
+        with language_context('en'):
+            eq = Equipment()
+            df = eq.data()
 
-        # Find the row corresponding to NakedEye
-        naked_eye_rows = df[
-            df[EquipmentTableLabels.LABEL].str.contains("Naked Eye", na=False)
-        ]
+            print(f"DEBUG: Labels in dataframe: {df[EquipmentTableLabels.LABEL].tolist()}")
 
-        self.assertEqual(
-            len(naked_eye_rows), 1, "There should be exactly one entry for NakedEye."
-        )
+            # Find the row corresponding to NakedEye
+            naked_eye_rows = df[
+                df[EquipmentTableLabels.LABEL].str.contains("Naked Eye", na=False)
+            ]
 
-        # Verify some properties of the NakedEye entry
-        naked_eye_data = naked_eye_rows.iloc[0]
-        self.assertEqual(naked_eye_data[EquipmentTableLabels.ZOOM], 1)
-        self.assertEqual(naked_eye_data[EquipmentTableLabels.EXIT_PUPIL], 7)
-        self.assertTrue(naked_eye_data[EquipmentTableLabels.USEFUL_ZOOM])
+            self.assertEqual(
+                len(naked_eye_rows), 1, "There should be exactly one entry for NakedEye."
+            )
+
+            # Verify some properties of the NakedEye entry
+            naked_eye_data = naked_eye_rows.iloc[0]
+            self.assertEqual(naked_eye_data[EquipmentTableLabels.ZOOM], 1)
+            self.assertEqual(naked_eye_data[EquipmentTableLabels.EXIT_PUPIL], 7)
+            self.assertTrue(naked_eye_data[EquipmentTableLabels.USEFUL_ZOOM])
 
 
 if __name__ == "__main__":

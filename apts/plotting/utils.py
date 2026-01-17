@@ -60,7 +60,11 @@ def calculate_ellipse_angle(
 def get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
     """Gets the angular size of a solar system object in degrees."""
     visible_planets = observation.get_visible_planets()
-    object_data = visible_planets[visible_planets["Name"] == object_name]
+    # Try matching by TechnicalName first, then by Name
+    object_data = visible_planets[
+        (visible_planets["TechnicalName"] == object_name)
+        | (visible_planets["Name"] == object_name)
+    ]
     if not object_data.empty:
         size_arcsec = object_data.iloc[0].get(ObjectTableLabels.SIZE)
         if pd.notna(size_arcsec):

@@ -10,7 +10,7 @@ from matplotlib.ticker import FuncFormatter
 from .config import get_dark_mode
 from .constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from .constants.graphconstants import get_plot_colors, get_plot_style
-from .i18n import gettext_
+from .i18n import gettext_, language_context
 from .opticalequipment import (
     NakedEye,
     OpticalEquipment,
@@ -70,7 +70,16 @@ class Equipment:
         result.sort()
         return result
 
-    def data(self) -> pd.DataFrame:
+    def data(self, language: Optional[str] = None) -> pd.DataFrame:
+        with language_context(language):
+            result = self._generate_data()
+            # Translate Type column
+            result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
+                lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
+            )
+            return result
+
+    def _generate_data(self, include_naked_eye: bool = True) -> pd.DataFrame:
         columns = [
             EquipmentTableLabels.LABEL,
             EquipmentTableLabels.TYPE,
@@ -182,6 +191,12 @@ class Equipment:
                 seen_elements.add(path.elements())
                 all_paths.append(path)
 
+        # Filter Naked Eye paths before label generation/translation
+        if not include_naked_eye:
+            all_paths = [
+                path for path in all_paths if not isinstance(path.telescope, NakedEye)
+            ]
+
         result = append(result, all_paths)
 
         # Add ID column as first
@@ -200,34 +215,36 @@ class Equipment:
         self,
         dark_mode_override: Optional[bool] = None,
         include_naked_eye: bool = False,
+        language: Optional[str] = None,
         **args,
     ):
         """
         Plot available magnification
         """
-        if dark_mode_override is not None:
-            effective_dark_mode = dark_mode_override
-        else:
-            effective_dark_mode = get_dark_mode()
-        plot = self._plot(
-            EquipmentTableLabels.ZOOM,
-            gettext_("Available zoom"),
-            gettext_("Used equipment"),
-            gettext_("Magnification"),
-            dark_mode_enabled=effective_dark_mode,
-            include_naked_eye=include_naked_eye,
-            **args,
-        )
-        # Add marker for maximal useful zoom
-        style = get_plot_style(effective_dark_mode)  # Get style for the annotations
-        max_zoom = self.max_zoom()
-        plot.axhline(max_zoom, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
-        plot.annotate(
-            gettext_("Max useful zoom due to atmosphere"),
-            (-0.4, max_zoom + 2),
-            alpha=0.7,
-            color=style["TEXT_COLOR"],
-        )
+        with language_context(language):
+            if dark_mode_override is not None:
+                effective_dark_mode = dark_mode_override
+            else:
+                effective_dark_mode = get_dark_mode()
+            plot = self._plot(
+                EquipmentTableLabels.ZOOM,
+                gettext_("Available zoom"),
+                gettext_("Used equipment"),
+                gettext_("Magnification"),
+                dark_mode_enabled=effective_dark_mode,
+                include_naked_eye=include_naked_eye,
+                **args,
+            )
+            # Add marker for maximal useful zoom
+            style = get_plot_style(effective_dark_mode)  # Get style for the annotations
+            max_zoom = self.max_zoom()
+            plot.axhline(max_zoom, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
+            plot.annotate(
+                gettext_("Max useful zoom due to atmosphere"),
+                (-0.4, max_zoom + 2),
+                alpha=0.7,
+                color=style["TEXT_COLOR"],
+            )
 
     def max_zoom(self):
         """
@@ -239,47 +256,51 @@ class Equipment:
         self,
         dark_mode_override: Optional[bool] = None,
         include_naked_eye: bool = False,
+        language: Optional[str] = None,
         **args,
     ):
         """
         Plot available fields of view
         """
-        if dark_mode_override is not None:
-            effective_dark_mode = dark_mode_override
-        else:
-            effective_dark_mode = get_dark_mode()
+        with language_context(language):
+            if dark_mode_override is not None:
+                effective_dark_mode = dark_mode_override
+            else:
+                effective_dark_mode = get_dark_mode()
 
-        style = get_plot_style(effective_dark_mode)
+            style = get_plot_style(effective_dark_mode)
 
-        def formatter(tick, pos):
-            return GenericUtils.decdeg2dms(tick, pretty=True)
+            def formatter(tick, pos):
+                return GenericUtils.decdeg2dms(tick, pretty=True)
 
-        def add_line(description, position):
-            position = GenericUtils.dms2decdeg(position)
-            plot.axhline(position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7)
-            plot.annotate(
-                description,
-                (-0.4, position + 0.03),
-                alpha=0.7,
-                color=style["TEXT_COLOR"],
+            def add_line(description, position):
+                position = GenericUtils.dms2decdeg(position)
+                plot.axhline(
+                    position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7
+                )
+                plot.annotate(
+                    description,
+                    (-0.4, position + 0.03),
+                    alpha=0.7,
+                    color=style["TEXT_COLOR"],
+                )
+
+            plot = self._plot(
+                EquipmentTableLabels.FOV,
+                gettext_("Available fields of view"),
+                gettext_("Used equipment"),
+                gettext_("Field of view [°]"),
+                dark_mode_enabled=effective_dark_mode,
+                include_naked_eye=include_naked_eye,
+                **args,
             )
-
-        plot = self._plot(
-            EquipmentTableLabels.FOV,
-            gettext_("Available fields of view"),
-            gettext_("Used equipment"),
-            gettext_("Field of view [°]"),
-            dark_mode_enabled=effective_dark_mode,
-            include_naked_eye=include_naked_eye,
-            **args,
-        )
-        plot.yaxis.set_major_formatter(FuncFormatter(formatter))
-        # Pleiades width is 1°50'
-        add_line(gettext_("Pleiades size"), (1, 50, 0))
-        # Average moon size is 0°31'42"
-        add_line(gettext_("Moon size"), (0, 31, 42))
-        # M51 width is 0°11'
-        add_line(gettext_("M51 size"), (0, 11, 0))
+            plot.yaxis.set_major_formatter(FuncFormatter(formatter))
+            # Pleiades width is 1°50'
+            add_line(gettext_("Pleiades size"), (1, 50, 0))
+            # Average moon size is 0°31'42"
+            add_line(gettext_("Moon size"), (0, 31, 42))
+            # M51 width is 0°11'
+            add_line(gettext_("M51 size"), (0, 11, 0))
 
     def _plot(
         self,
@@ -340,7 +361,6 @@ class Equipment:
             if legend.get_title():  # Check if legend has a title
                 legend.get_title().set_color(style["TEXT_COLOR"])
             for text, col in zip(legend.get_texts(), legend_labels):
-                text.set_text(col.name)
                 text.set_color(style["TEXT_COLOR"])
         return ax
 
@@ -349,16 +369,11 @@ class Equipment:
         This methods filter data to plot and merge Visual and Image series together
         """
         # Filter only relevant data - by to_plot key
-        all_data = self.data()
-        if not include_naked_eye:
-            all_data = all_data[all_data[EquipmentTableLabels.LABEL] != "Naked Eye 1x7"]
+        all_data = self._generate_data(include_naked_eye=include_naked_eye)
 
         data = all_data[
             [to_plot, EquipmentTableLabels.TYPE, EquipmentTableLabels.LABEL]
         ].sort_values(by=to_plot)  # pyright: ignore
-
-        # Keep the enum type for the legend
-        legend_labels = data[EquipmentTableLabels.TYPE].unique()
 
         if len(data) <= 8:
             # Split label by ',' if multiline_labels is set to true
@@ -370,100 +385,124 @@ class Equipment:
             # For more than 8 option display only ids
             labels = data.index
 
-        # Convert the 'Type' column to string names for the DataFrame
-        data[EquipmentTableLabels.TYPE] = data[EquipmentTableLabels.TYPE].apply(
-            lambda x: x.name if isinstance(x, OpticalType) else x
-        )
+        # Prepare rows where keys are Enums
+        rows_list = [{row[1]: row[0]} for row in data.values]
+        # Create DataFrame with Enums as columns
+        result_df = pd.DataFrame(rows_list, index=labels)  # pyright: ignore
 
-        # Merge Image and Visual series together
-        return pd.DataFrame(
-            [{row[1]: row[0]} for row in data.values], index=labels # type: ignore
-        ), legend_labels
+        # Get the columns (Enums) to return for color mapping
+        # Note: result_df.columns will be unique and sorted/ordered by pandas based on insertion
+        columns_enums = result_df.columns.tolist()
 
-    def plot_connection_graph(self, dark_mode_override: Optional[bool] = None, **args):
-        # Connect all outputs with inputs
-        self._connect()
+        # Translate columns for display
+        new_columns = [
+            gettext_(c.name) if isinstance(c, OpticalType) else str(c)
+            for c in columns_enums
+        ]
+        result_df.columns = new_columns  # pyright: ignore
 
-        if dark_mode_override is not None:
-            effective_dark_mode = dark_mode_override
-        else:
-            effective_dark_mode = get_dark_mode()
+        return result_df, columns_enums
 
-        current_plot_style = get_plot_style(effective_dark_mode)
-        current_node_colors = get_plot_colors(effective_dark_mode)
+    def plot_connection_graph(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            # Connect all outputs with inputs
+            self._connect()
 
-        logger.debug(
-            f"plot_connection_graph: effective_dark_mode = {effective_dark_mode}"
-        )
-        logger.debug(
-            f"plot_connection_graph: current_plot_style = {current_plot_style}"
-        )
-        logger.debug(
-            f"plot_connection_graph: current_node_colors = {current_node_colors}"
-        )
+            if dark_mode_override is not None:
+                effective_dark_mode = dark_mode_override
+            else:
+                effective_dark_mode = get_dark_mode()
 
-        vertex_types = list(self.connection_garph.vs[NodeLabels.TYPE])  # Collect to log
-        logger.debug(f"plot_connection_graph: Vertex NodeTypes = {vertex_types}")
+            current_plot_style = get_plot_style(effective_dark_mode)
+            current_node_colors = get_plot_colors(effective_dark_mode)
 
-        # Calculate vertex colors with a default for missing types (e.g., red to see if it's hit)
-        # Using a distinct default like bright green (#00FF00) for debugging this specific issue
-        # if the user reported "all red", this helps see if the default is hit.
-        # The previous default was black. The user saw red. Let's use a new color for the default.
-        vertex_colors_list = [
-            current_node_colors.get(v_type, "#FF00FF") for v_type in vertex_types
-        ]  # Magenta default
-        logger.debug(
-            f"plot_connection_graph: Calculated vertex_colors_list for direct assignment = {vertex_colors_list}"
-        )
-
-        # Determine general text color for labels
-        text_color = current_plot_style.get(
-            "TEXT_COLOR", "#000000"
-        )  # Black default for text
-        logger.debug(f"plot_connection_graph: text_color for labels = {text_color}")
-
-        if len(self.connection_garph.vs) == len(vertex_colors_list):
-            for i, color_val in enumerate(vertex_colors_list):
-                self.connection_garph.vs[i]["color"] = color_val
-                self.connection_garph.vs[i]["label_color"] = text_color
-                self.connection_garph.vs[i]["size"] = 20  # Default size
-                self.connection_garph.vs[i]["label_dist"] = (
-                    1.5  # Default label distance
-                )
-        else:
-            logger.error(
-                "Mismatch between number of vertices and calculated colors. Skipping direct vertex property assignment."
+            logger.debug(
+                f"plot_connection_graph: effective_dark_mode = {effective_dark_mode}"
+            )
+            logger.debug(
+                f"plot_connection_graph: current_plot_style = {current_plot_style}"
+            )
+            logger.debug(
+                f"plot_connection_graph: current_node_colors = {current_node_colors}"
             )
 
-        background_color = current_plot_style.get(
-            "BACKGROUND_COLOR", "#D3D3D3"
-        )  # Light gray default for debugging background
-        logger.debug(f"plot_connection_graph: background_color = {background_color}")
+            vertex_types = list(
+                self.connection_garph.vs[NodeLabels.TYPE]
+            )  # Collect to log
+            logger.debug(f"plot_connection_graph: Vertex NodeTypes = {vertex_types}")
 
-        edge_color_val = current_plot_style.get(
-            "AXIS_COLOR", "#A9A9A9"
-        )  # DarkGray default for debugging edges
-        logger.debug(f"plot_connection_graph: edge_color_val = {edge_color_val}")
+            # Calculate vertex colors with a default for missing types (e.g., red to see if it's hit)
+            # Using a distinct default like bright green (#00FF00) for debugging this specific issue
+            # if the user reported "all red", this helps see if the default is hit.
+            # The previous default was black. The user saw red. Let's use a new color for the default.
+            vertex_colors_list = [
+                current_node_colors.get(v_type, "#FF00FF") for v_type in vertex_types
+            ]  # Magenta default
+            logger.debug(
+                f"plot_connection_graph: Calculated vertex_colors_list for direct assignment = {vertex_colors_list}"
+            )
 
-        # Call ig.plot(). Vertex-specific properties are now set on the graph itself.
-        # Pass general styling for background and edges.
-        return ig.plot(
-            self.connection_garph,
-            margin=80,
-            background=background_color,
-            edge_color=edge_color_val,
-            # vertex_color, vertex_label_color, vertex_size, vertex_label_dist
-            # are now set directly on graph.vs attributes.
-            **args,
-        )
+            # Determine general text color for labels
+            text_color = current_plot_style.get(
+                "TEXT_COLOR", "#000000"
+            )  # Black default for text
+            logger.debug(f"plot_connection_graph: text_color for labels = {text_color}")
+
+            if len(self.connection_garph.vs) == len(vertex_colors_list):
+                for i, color_val in enumerate(vertex_colors_list):
+                    self.connection_garph.vs[i]["color"] = color_val
+                    self.connection_garph.vs[i]["label_color"] = text_color
+                    self.connection_garph.vs[i]["size"] = 20  # Default size
+                    self.connection_garph.vs[i]["label_dist"] = (
+                        1.5  # Default label distance
+                    )
+            else:
+                logger.error(
+                    "Mismatch between number of vertices and calculated colors. Skipping direct vertex property assignment."
+                )
+
+            background_color = current_plot_style.get(
+                "BACKGROUND_COLOR", "#D3D3D3"
+            )  # Light gray default for debugging background
+            logger.debug(
+                f"plot_connection_graph: background_color = {background_color}"
+            )
+
+            edge_color_val = current_plot_style.get(
+                "AXIS_COLOR", "#A9A9A9"
+            )  # DarkGray default for debugging edges
+            logger.debug(f"plot_connection_graph: edge_color_val = {edge_color_val}")
+
+            # Call ig.plot(). Vertex-specific properties are now set on the graph itself.
+            # Pass general styling for background and edges.
+            return ig.plot(
+                self.connection_garph,
+                margin=80,
+                background=background_color,
+                edge_color=edge_color_val,
+                # vertex_color, vertex_label_color, vertex_size, vertex_label_dist
+                # are now set directly on graph.vs attributes.
+                **args,
+            )
 
     def plot_connection_graph_svg(
-        self, dark_mode_override: Optional[bool] = None, **args
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
     ):
         surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
         # Pass dark_mode_override to the plot_connection_graph call
         plot = self.plot_connection_graph(
-            target=surface, dark_mode_override=dark_mode_override, **args
+            target=surface,
+            dark_mode_override=dark_mode_override,
+            language=language,
+            **args,
         )
         return plot._repr_svg_()[0]  # SVG string is first in tuple
 
