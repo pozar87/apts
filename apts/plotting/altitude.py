@@ -275,7 +275,7 @@ def generate_plot_planets(
         )
 
         specific_planet_color = get_planet_color(
-            planetary.get_simple_name(planet["TechnicalName"]),
+            planetary.get_simple_name(str(planet["TechnicalName"])),
             effective_dark_mode,
             default_planet_color,  # type: ignore
         )

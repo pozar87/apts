@@ -698,7 +698,7 @@ def _plot_planets_on_skymap(
                 observer,
                 is_polar,
                 style,
-                cast(str, technical_name),
+                str(technical_name),
                 display_name=cast(str, planet_name),
                 coordinate_system=coordinate_system,
             )
