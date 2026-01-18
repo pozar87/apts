@@ -1,6 +1,7 @@
 import matplotlib.axes
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 
 from apts.constants.graphconstants import get_plot_style
 from apts.i18n import gettext_
@@ -58,5 +59,16 @@ class Utils:
         ax.spines["left"].set_color(style["AXIS_COLOR"])
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
         if x_label == "Time":
-            date_format = mdates.DateFormatter("%H:%M", tz=local_timezone)
-            ax.xaxis.set_major_formatter(date_format)
+            # Use AutoDateLocator with hints for tick density
+            locator = mdates.AutoDateLocator(
+                tz=local_timezone, minticks=8, maxticks=12
+            )
+            ax.xaxis.set_major_locator(locator)
+            # Only set formatter if one hasn't been set by the caller
+            # (i.e., it's still the default AutoDateFormatter or ScalarFormatter)
+            if isinstance(
+                ax.xaxis.get_major_formatter(),
+                (mdates.AutoDateFormatter, matplotlib.ticker.ScalarFormatter),
+            ):
+                date_format = mdates.DateFormatter("%H:%M", tz=local_timezone)
+                ax.xaxis.set_major_formatter(date_format)

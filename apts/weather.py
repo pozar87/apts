@@ -110,7 +110,12 @@ class Weather:
         # Preserve original args for pandas plot
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", ylim=(0, 105), title=gettext_("Clouds"), ax=ax, **plot_kwargs
+            x="time",
+            ylim=(0, 105),
+            title=gettext_("Clouds"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -165,6 +170,7 @@ class Weather:
             x="time",
             title=gettext_("Precipitation intensity and probability"),
             ax=ax,
+            x_compat=True,
             **plot_kwargs,
         )  # pyright: ignore
 
@@ -323,7 +329,13 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title=gettext_("Temperatures"), ax=ax, **plot_kwargs)  # pyright: ignore
+        plot_ax = data.plot(
+            x="time",
+            title=gettext_("Temperatures"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
+        )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -374,6 +386,7 @@ class Weather:
             ylim=(0, max_wind_speed + 1),
             title=gettext_("Wind speed"),
             ax=ax,
+            x_compat=True,
             **plot_kwargs,
         )
 
@@ -446,6 +459,7 @@ class Weather:
             title=plot_title,
             secondary_y=secondary_y_plot,
             ax=ax,
+            x_compat=True,
             **plot_kwargs,
         )
 
@@ -543,7 +557,13 @@ class Weather:
             # ax.set_facecolor(style['AXES_FACE_COLOR']) # Moved after pandas plot call
 
         plot_kwargs = args.copy()
-        plot_ax = data.plot(x="time", title=gettext_("Visibility"), ax=ax, **plot_kwargs)  # pyright: ignore
+        plot_ax = data.plot(
+            x="time",
+            title=gettext_("Visibility"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
+        )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
             ax = plot_ax
@@ -588,7 +608,12 @@ class Weather:
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", ylim=(0, 105), title=gettext_("Fog"), ax=ax, **plot_kwargs
+            x="time",
+            ylim=(0, 105),
+            title=gettext_("Fog"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -644,7 +669,13 @@ class Weather:
 
         plot_kwargs = args.copy()
         plot_ax = data.plot(
-            x="time", y="moonIllumination", ylim=(0, 105), title=title, ax=ax, **plot_kwargs
+            x="time",
+            y="moonIllumination",
+            ylim=(0, 105),
+            title=title,
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
         )  # pyright: ignore
 
         if not ax:  # ax was created by data.plot()
@@ -700,6 +731,7 @@ class Weather:
             ylim=(0, 105),
             title=gettext_("Aurora"),
             ax=ax,
+            x_compat=True,
             **plot_kwargs,
         )  # pyright: ignore
 
