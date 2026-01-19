@@ -403,8 +403,8 @@ msgid "Wind speed %(wind_speed)s km/h exceeds limit"
 msgstr "Prędkość wiatru %(wind_speed)s km/h przekracza limit"
 
 #: apts/observations.py:645
-msgid "Temperature {temp}°C out of range"
-msgstr "Temperatura {temp}°C poza zakresem"
+msgid "Temperature %(temp)s°C out of range"
+msgstr "Temperatura %(temp)s°C poza zakresem"
 
 #: apts/constants/event_types.py:8
 msgid "Moon Phase"
