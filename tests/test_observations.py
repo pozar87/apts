@@ -1167,7 +1167,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Temperature {temp}°C out of range".format(
+        expected_reason = "Temperature %(temp)s°C out of range".format(
             temp=f"{temp_bad:.1f}"
         )
         self.assertIn(expected_reason, results[0]["reasons"])
