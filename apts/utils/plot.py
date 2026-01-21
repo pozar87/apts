@@ -2,9 +2,10 @@ import matplotlib.axes
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+from babel.dates import format_datetime
 
 from apts.constants.graphconstants import get_plot_style
-from apts.i18n import gettext_
+from apts.i18n import get_language, gettext_
 
 __all__ = ["Utils"]
 
@@ -70,5 +71,11 @@ class Utils:
                 ax.xaxis.get_major_formatter(),
                 (mdates.AutoDateFormatter, matplotlib.ticker.ScalarFormatter),
             ):
-                date_format = mdates.DateFormatter("%d %b %H:%M", tz=local_timezone)
-                ax.xaxis.set_major_formatter(date_format)
+
+                def babel_formatter(x, pos):
+                    dt = mdates.num2date(x, tz=local_timezone)
+                    return format_datetime(dt, "d MMM HH:mm", locale=get_language())
+
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(babel_formatter)
+                )

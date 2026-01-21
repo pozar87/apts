@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING, Optional
 
-import matplotlib.dates as mdates
 import pandas as pd
 from matplotlib import lines, pyplot
 
