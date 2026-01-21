@@ -444,7 +444,7 @@ class TestPlacePlotting(unittest.TestCase):
                     mock_ax.set_title.call_args[0][0].startswith("Moon Path")
                 )
                 mock_ax.tick_params.assert_any_call(
-                    axis="x", colors=expected_style["TICK_COLOR"]
+                    axis="x", colors=expected_style["TICK_COLOR"], labelrotation=30
                 )
                 mock_ax.tick_params.assert_any_call(
                     axis="y", colors=expected_style["TICK_COLOR"]
@@ -573,10 +573,14 @@ class TestDarkMode(unittest.TestCase):
         mock_df_plot.return_value = mock_ax
         self.place.plot_moon_path()
         style = get_plot_style(True)
-        mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
+        mock_ax.tick_params.assert_any_call(
+            axis="x", colors=style["TICK_COLOR"], labelrotation=30
+        )
         mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
         self.place.plot_sun_path()
-        mock_ax.tick_params.assert_any_call(axis="x", colors=style["TICK_COLOR"])
+        mock_ax.tick_params.assert_any_call(
+            axis="x", colors=style["TICK_COLOR"], labelrotation=30
+        )
         mock_ax.tick_params.assert_any_call(axis="y", colors=style["TICK_COLOR"])
 
 

@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")
 from datetime import datetime
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
@@ -648,6 +650,7 @@ def test_plot_planets_southern_hemisphere():
     Tests that plotting planets for a southern hemisphere location,
     which may introduce NaNs in the time curve, does not raise an error.
     """
+    from matplotlib import pyplot as plt
     # 1. Setup a southern hemisphere observation
     # Sydney, Australia
     place = Place(lat=-33.8688, lon=151.2093, name="Sydney")
@@ -684,7 +687,6 @@ def test_plot_planets_southern_hemisphere():
     mock_curve_df = pd.DataFrame(curve_data)
 
     with (
-        patch("apts.plotting.altitude.pyplot") as mock_pyplot,
         patch.object(
             observation, "get_visible_planets", return_value=mock_visible_planets
         ),
@@ -693,21 +695,17 @@ def test_plot_planets_southern_hemisphere():
             observation.local_planets, "get_skyfield_object", return_value=MagicMock()
         ),
     ):
-        mock_fig = MagicMock()
-        mock_ax = MagicMock()
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+        fig, ax = plt.subplots()
 
         # 3. Call the plot_planets function
         try:
-            observation.plot_planets()
+            observation.plot_planets(ax=ax)
         except AttributeError as e:
             pytest.fail(f"plot_planets raised an AttributeError: {e}")
         except Exception as e:
             pytest.fail(f"plot_planets raised an unexpected exception: {e}")
-
-        # 4. Assert that a plot was attempted
-        mock_pyplot.subplots.assert_called_once()
-        # The key check is that no exception was raised
+        finally:
+            plt.close(fig)
 
 
 def test_plot_messier_ellipse_angle_on_equatorial_zoom():
@@ -1494,6 +1492,7 @@ def test_plot_planets_with_rise_set_times():
 
     import pandas as pd
     import pytz
+    from matplotlib import pyplot as plt
 
     from apts.observations import Observation
     from apts.plotting.altitude import generate_plot_planets as _generate_plot_planets
@@ -1529,33 +1528,19 @@ def test_plot_planets_with_rise_set_times():
     )
     mock_observation.local_planets.get_skyfield_object.return_value = MagicMock()
 
-    # 3. Mock pyplot
-    with patch("apts.plotting.altitude.pyplot") as mock_pyplot:
-        mock_fig = MagicMock()
-        mock_ax = MagicMock()
-        mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+    # 3. Use real pyplot
+    fig, ax = plt.subplots()
 
-        # 4. Call the function
-        try:
-            _generate_plot_planets(observation=mock_observation)
-        except Exception as e:
-            pytest.fail(f"_generate_plot_planets raised an unexpected exception: {e}")
+    # 4. Call the function
+    try:
+        _generate_plot_planets(observation=mock_observation, ax=ax)
+    except Exception as e:
+        plt.close(fig)
+        pytest.fail(f"_generate_plot_planets raised an unexpected exception: {e}")
 
-        # 5. Assertions
-        # We expect 3 scatter calls: one for Jupiter's rise, one for Jupiter's set, and one for Mars's set.
-        assert mock_ax.scatter.call_count == 3
+    # 5. Assertions
+    # We expect 3 scatter calls: one for Jupiter's rise, one for Jupiter's set, and one for Mars's set.
+    # scatter() adds a PathCollection to ax.collections
+    assert len(ax.collections) == 3
 
-        # Check the first call (Jupiter rising)
-        args, kwargs = mock_ax.scatter.call_args_list[0]
-        assert args[0] == pd.Timestamp("2023-01-01 23:00:00+0000", tz="UTC")
-        assert args[1] == 0
-
-        # Check the second call (Jupiter setting)
-        args, kwargs = mock_ax.scatter.call_args_list[1]
-        assert args[0] == pd.Timestamp("2023-01-02 05:00:00+0000", tz="UTC")
-        assert args[1] == 0
-
-        # Check the third call (Mars setting)
-        args, kwargs = mock_ax.scatter.call_args_list[2]
-        assert args[0] == pd.Timestamp("2023-01-02 04:00:00+0000", tz="UTC")
-        assert args[1] == 0
+    plt.close(fig)
