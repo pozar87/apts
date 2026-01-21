@@ -71,10 +71,13 @@ class Utils:
                 ax.xaxis.get_major_formatter(),
                 (mdates.AutoDateFormatter, matplotlib.ticker.ScalarFormatter),
             ):
+                # Capture the current language to ensure it's used when the plot is rendered,
+                # even if the language context has changed or ended.
+                current_lang = get_language()
 
                 def babel_formatter(x, pos):
                     dt = mdates.num2date(x, tz=local_timezone)
-                    return format_datetime(dt, "d MMM HH:mm", locale=get_language())
+                    return format_datetime(dt, "d MMM HH:mm", locale=current_lang)
 
                 ax.xaxis.set_major_formatter(
                     matplotlib.ticker.FuncFormatter(babel_formatter)
