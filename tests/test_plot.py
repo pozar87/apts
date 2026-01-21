@@ -159,8 +159,12 @@ def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
-        patch("apts.plotting.skymap_zoom.get_brightness_color") as mock_get_brightness_color,
-        patch("apts.plotting.skymap_objects.get_brightness_color") as mock_get_brightness_color_obj,
+        patch(
+            "apts.plotting.skymap_zoom.get_brightness_color"
+        ) as mock_get_brightness_color,
+        patch(
+            "apts.plotting.skymap_objects.get_brightness_color"
+        ) as mock_get_brightness_color_obj,
     ):
         mock_get_brightness_color.return_value = "0.5"
         mock_get_brightness_color_obj.return_value = "0.5"
@@ -638,7 +642,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             f"Star at RA=1.8 not found in plotted stars: {ra_values}"
         )
 
-
     def test_plot_planets_southern_hemisphere():
         """
         Tests that plotting planets for a southern hemisphere location,
@@ -653,8 +656,10 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         conditions = Conditions(
             start_time=datetime(2023, 8, 22, 10, 0, 0, tzinfo=pytz.utc)
         )  # Corresponds to evening in Sydney
-        observation = Observation(place=place, equipment=equipment, conditions=conditions)
-    
+        observation = Observation(
+            place=place, equipment=equipment, conditions=conditions
+        )
+
         # 2. Mock the necessary data
         # Mock get_visible_planets to return at least one planet
         planets_data = {
@@ -664,7 +669,7 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             "Setting": [None],
         }
         mock_visible_planets = pd.DataFrame(planets_data)
-    
+
         # Mock get_altaz_curve to return a DataFrame with a NaN row
         # This simulates the azimuth wrap-around logic for the southern hemisphere
         ts = place.ts
@@ -673,25 +678,29 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         t0 = ts.utc(start_time)
         t1 = ts.utc(end_time)
         times = ts.linspace(t0, t1, 5)
-    
+
         curve_data = {
             "Time": [times[0], times[1], pd.NaT, times[3], times[4]],
             "Altitude": [10, 20, pd.NA, 20, 10],
             "Azimuth": [350, 355, pd.NA, 5, 10],
         }
         mock_curve_df = pd.DataFrame(curve_data)
-    
+
         with (
             patch.object(
                 observation, "get_visible_planets", return_value=mock_visible_planets
             ),
-            patch.object(observation.place, "get_altaz_curve", return_value=mock_curve_df),
             patch.object(
-                observation.local_planets, "get_skyfield_object", return_value=MagicMock()
+                observation.place, "get_altaz_curve", return_value=mock_curve_df
+            ),
+            patch.object(
+                observation.local_planets,
+                "get_skyfield_object",
+                return_value=MagicMock(),
             ),
         ):
             fig, ax = plt.subplots()
-    
+
             # 3. Call the plot_planets function
             try:
                 observation.plot_planets(ax=ax)
@@ -701,9 +710,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
                 pytest.fail(f"plot_planets raised an unexpected exception: {e}")
             finally:
                 plt.close(fig)
-        # 4. Assert that a plot was attempted
-        mock_pyplot.subplots.assert_called_once()
-        # The key check is that no exception was raised
 
 
 def test_plot_messier_ellipse_angle_on_equatorial_zoom():
@@ -778,18 +784,16 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
         ),
         patch(
             "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
+                pa, p_angle, cs, fh, fv
+            ),
         ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -894,18 +898,16 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
         ),
         patch(
             "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
+                pa, p_angle, cs, fh, fv
+            ),
         ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -1027,18 +1029,16 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
         ),
         patch(
             "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
+                pa, p_angle, cs, fh, fv
+            ),
         ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -1159,18 +1159,16 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
         ),
         patch(
             "apts.plotting.skymap_zoom.calculate_ellipse_angle",
-            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(pa, p_angle, cs, fh, fv)
+            side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
+                pa, p_angle, cs, fh, fv
+            ),
         ),
-        patch(
-            "apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch(
-            "apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"
-        ),
+        patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -1538,21 +1536,22 @@ def test_plot_stars_ra_wrapping_equatorial():
             f"Star at RA=1.8 not found in plotted stars: {ra_values}"
         )
 
-
     def test_plot_planets_with_rise_set_times():
         """
         Tests that plotting planets with valid rise/set Timestamp objects does not raise a ConversionError.
         """
         from datetime import datetime
         from unittest.mock import MagicMock, patch
-    
+
         import pandas as pd
         import pytz
         from matplotlib import pyplot as plt
-    
+
         from apts.observations import Observation
-        from apts.plotting.altitude import generate_plot_planets as _generate_plot_planets
-    
+        from apts.plotting.altitude import (
+            generate_plot_planets as _generate_plot_planets,
+        )
+
         # 1. Setup mock observation
         mock_observation = MagicMock(spec=Observation)
         mock_observation.place = MagicMock()
@@ -1564,7 +1563,7 @@ def test_plot_stars_ra_wrapping_equatorial():
         mock_observation.time_limit = mock_observation.stop
         mock_observation.conditions = MagicMock()
         mock_observation.conditions.min_object_altitude = 10
-    
+
         # 2. Mock visible planets DataFrame with Timestamp objects
         planets_data = {
             "Name": ["Jupiter", "Mars"],
@@ -1577,16 +1576,16 @@ def test_plot_stars_ra_wrapping_equatorial():
         }
         mock_visible_planets = pd.DataFrame(planets_data)
         mock_observation.get_visible_planets.return_value = mock_visible_planets
-    
+
         # Mock the get_altaz_curve to return an empty df to simplify the test
         mock_observation.place.get_altaz_curve.return_value = pd.DataFrame(
             {"Time": [], "Altitude": []}
         )
         mock_observation.local_planets.get_skyfield_object.return_value = MagicMock()
-    
+
         # 3. Use real pyplot
         fig, ax = plt.subplots()
-        
+
         # 4. Call the function
         try:
             _generate_plot_planets(observation=mock_observation, ax=ax)
