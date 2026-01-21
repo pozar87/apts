@@ -863,10 +863,10 @@ msgid "Binoculars"
 msgstr "Binóculos"
 
 msgid "IMAGE"
-msgstr "IMAGEM"
+msgstr "Imagem"
 
 msgid "VISUAL"
-msgstr "VISUAL"
+msgstr "Visual"
 
 #: stargazer/templatetags/stargazer_tags.py:12
 msgid "Mars"
