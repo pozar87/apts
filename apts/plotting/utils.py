@@ -47,14 +47,14 @@ def calculate_ellipse_angle(
         else:
             angle = pos_angle - cast(float, parallactic_angle)
     else:  # EQUATORIAL
-        angle = pos_angle
+        angle = -pos_angle
 
     if flipped_horizontally:
         angle = -angle
     if flipped_vertically:
         angle = 180 - angle
 
-    return angle
+    return angle % 360
 
 
 def get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
@@ -122,23 +122,33 @@ def normalize_dates(start, stop):
 def create_ra_zoom_mask(ra_hours, xlim):
     """
     Create a mask for RA values that fall within the zoom window,
-    handling the case where the window crosses the RA = 0/24 boundary.
+    handling both the case where the window crosses the RA = 0/24 boundary
+    and the case where the RA axis is inverted.
 
     Args:
         ra_hours: array of RA values in hours
-        xlim: tuple of (xmin, xmax) RA values in hours
+        xlim: tuple of (x_left, x_right) RA values in hours
 
     Returns:
         boolean array mask indicating which RA values are in the zoom window
     """
-    ra_min, ra_max = xlim
+    ra_1, ra_2 = xlim
+    # Normalize to [0, 24]
+    ra_1 %= 24
+    ra_2 %= 24
 
-    if ra_min <= ra_max:
-        # Normal case: no wrapping
-        return (ra_hours >= ra_min) & (ra_hours <= ra_max)
-    else:
-        # Wrapping case: window crosses RA = 0/24 boundary
+    # We assume the window is the shorter arc between ra_1 and ra_2
+    dist = abs(ra_1 - ra_2)
+    if dist > 12:
+        # Shorter arc is the one that wraps around 24
+        ra_min = max(ra_1, ra_2)
+        ra_max = min(ra_1, ra_2)
         return (ra_hours >= ra_min) | (ra_hours <= ra_max)
+    else:
+        # Shorter arc doesn't wrap
+        ra_min = min(ra_1, ra_2)
+        ra_max = max(ra_1, ra_2)
+        return (ra_hours >= ra_min) & (ra_hours <= ra_max)
 
 
 def mark_observation(

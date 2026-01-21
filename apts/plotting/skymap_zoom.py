@@ -93,8 +93,8 @@ def _generate_zoom_skymap(
         half_zoom_dec = zoom_deg / 2.0
         half_zoom_ra_hours = half_zoom_dec / (15.0 * numpy.cos(dec_rad))
         ax.set_xlim(
-            target_ra.hours - half_zoom_ra_hours,
             target_ra.hours + half_zoom_ra_hours,
+            target_ra.hours - half_zoom_ra_hours,
         )
         ax.set_ylim(
             target_dec.degrees - half_zoom_dec, target_dec.degrees + half_zoom_dec

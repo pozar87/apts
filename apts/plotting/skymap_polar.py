@@ -52,7 +52,7 @@ def _generate_polar_skymap(
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         polar_ax.set_rlim(0, 90)
         polar_ax.set_theta_zero_location("N")
-        polar_ax.set_theta_direction(-1)
+        polar_ax.set_theta_direction(1)
         polar_ax.set_yticks([0, 30, 60, 90])
         polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
         polar_ax.set_rlabel_position(22.5)

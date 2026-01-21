@@ -44,7 +44,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=False,
         flipped_vertically=False,
     )
-    assert abs(angle - 45.0) < 0.01
+    assert abs(angle - 315.0) < 0.01
 
     # Test case 3: HORIZONTAL, horizontal flip
     angle = _calculate_ellipse_angle(
@@ -54,7 +54,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=True,
         flipped_vertically=False,
     )
-    assert abs(angle - (-30.0)) < 0.01
+    assert abs(angle - 330.0) < 0.01
 
     # Test case 4: HORIZONTAL, vertical flip
     angle = _calculate_ellipse_angle(
@@ -723,7 +723,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     target_name = "M13"
     target_pos_angle = 45.0
     parallactic_angle_val = 20.0
-    expected_final_angle = target_pos_angle  # Equatorial does not use parallactic
+    expected_final_angle = (-target_pos_angle) % 360  # Equatorial does not use parallactic
 
     mock_target_object = MagicMock()
     mock_target_object.ra = Angle(hours=16.6)
@@ -1051,7 +1051,7 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     non_target_name = "M57"
     non_target_pos_angle = 135.0
     parallactic_angle_val = 25.0
-    expected_final_angle = non_target_pos_angle  # Equatorial expects PosAng
+    expected_final_angle = (-non_target_pos_angle) % 360  # Equatorial expects PosAng
     mock_non_target_object = MagicMock()
     mock_non_target_object.ra = Angle(hours=18.9)
     mock_non_target_object.dec = Angle(degrees=33.0)

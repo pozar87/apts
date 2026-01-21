@@ -410,7 +410,6 @@ def _plot_celestial_object(
     ),
 ):
     """Helper function to plot a celestial object on a skymap."""
-    angle = angle % 360
     if is_polar:
         size = (width_deg + height_deg) / 2 * 100
         if coordinate_system == CoordinateSystem.HORIZONTAL:
