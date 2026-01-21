@@ -1541,7 +1541,7 @@ def test_plot_stars_ra_wrapping_equatorial():
         Tests that plotting planets with valid rise/set Timestamp objects does not raise a ConversionError.
         """
         from datetime import datetime
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         import pandas as pd
         import pytz
