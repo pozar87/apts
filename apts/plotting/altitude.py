@@ -144,10 +144,6 @@ def generate_plot_messier(
                 ]
             )
         ax.set_ylim(0, 90)
-        date_format = mdates.DateFormatter(
-            "%H:%M:%S %Z", tz=observation.place.local_timezone
-        )
-        ax.xaxis.set_major_formatter(date_format)
         mark_observation(observation, ax, effective_dark_mode, style)
         mark_good_conditions(
             observation,
@@ -370,8 +366,6 @@ def generate_plot_planets(
         ax.set_xlim([plot_start, plot_end])
 
     ax.set_ylim(0, 90)
-    date_format = mdates.DateFormatter("%H:%M", tz=observation.place.local_timezone)
-    ax.xaxis.set_major_formatter(date_format)
 
     mark_observation(observation, ax, effective_dark_mode, style)
     mark_good_conditions(

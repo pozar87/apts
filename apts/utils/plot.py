@@ -51,7 +51,7 @@ class Utils:
         style = get_plot_style(dark_mode)
         ax.set_ylabel(gettext_(y_label), color=style["TEXT_COLOR"])
         ax.set_xlabel(gettext_(x_label), color=style["TEXT_COLOR"])
-        ax.tick_params(axis="x", colors=style["TICK_COLOR"])
+        ax.tick_params(axis="x", colors=style["TICK_COLOR"], labelrotation=30)
         ax.tick_params(axis="y", colors=style["TICK_COLOR"])
         ax.spines["bottom"].set_color(style["AXIS_COLOR"])
         ax.spines["top"].set_color(style["AXIS_COLOR"])
@@ -70,5 +70,5 @@ class Utils:
                 ax.xaxis.get_major_formatter(),
                 (mdates.AutoDateFormatter, matplotlib.ticker.ScalarFormatter),
             ):
-                date_format = mdates.DateFormatter("%H:%M", tz=local_timezone)
+                date_format = mdates.DateFormatter("%d %b %H:%M", tz=local_timezone)
                 ax.xaxis.set_major_formatter(date_format)
