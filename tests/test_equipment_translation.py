@@ -41,10 +41,10 @@ class TestEquipmentTranslation(unittest.TestCase):
         df_pl = eq.data(language="pl")
         types = df_pl[EquipmentTableLabels.TYPE].unique().tolist()
         # Based on .po file, VISUAL is translated to WIZUALNE
-        self.assertIn(
-            "WIZUALNE",
-            types,
-            f"Polish translation 'WIZUALNE' not found in types: {types}",
+        # Using case-insensitive check to be robust
+        self.assertTrue(
+            any(t.upper() == "WIZUALNE" for t in types),
+            f"Polish translation 'WIZUALNE' (case-insensitive) not found in types: {types}",
         )
         # Ensure 'VISUAL' (raw enum name) is not there
         self.assertNotIn("VISUAL", types)

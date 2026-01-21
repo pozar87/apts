@@ -46,6 +46,7 @@ def calculate_ellipse_angle(
             angle = pos_angle - cast(Any, parallactic_angle).degrees
         else:
             angle = pos_angle - cast(float, parallactic_angle)
+        angle = -angle
     else:  # EQUATORIAL
         angle = -pos_angle
 

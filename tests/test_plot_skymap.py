@@ -34,7 +34,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=False,
         flipped_vertically=False,
     )
-    assert abs(angle - 30.0) < 0.01
+    assert abs(angle - 330.0) < 0.01
 
     # Test case 2: EQUATORIAL, no flips
     angle = _calculate_ellipse_angle(
@@ -54,7 +54,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=True,
         flipped_vertically=False,
     )
-    assert abs(angle - 330.0) < 0.01
+    assert abs(angle - 30.0) < 0.01
 
     # Test case 4: HORIZONTAL, vertical flip
     angle = _calculate_ellipse_angle(
@@ -64,7 +64,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=False,
         flipped_vertically=True,
     )
-    assert abs(angle - 150.0) < 0.01
+    assert abs(angle - 210.0) < 0.01
 
     # Test case 5: HORIZONTAL, both flips
     angle = _calculate_ellipse_angle(
@@ -74,7 +74,7 @@ def test_calculate_ellipse_angle():
         flipped_horizontally=True,
         flipped_vertically=True,
     )
-    assert abs(angle - 210.0) < 0.01
+    assert abs(angle - 150.0) < 0.01
 
 
 @pytest.fixture
@@ -270,7 +270,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     args, kwargs = mock_ax.add_patch.call_args
     ellipse = args[0]
     assert isinstance(ellipse, Ellipse)
-    assert abs(ellipse.angle - 325.0) < 0.1
+    assert abs(ellipse.angle - 35.0) < 0.1
 
     # Call the function with vertical flip
     _plot_messier_on_skymap(
@@ -287,7 +287,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     args, kwargs = mock_ax.add_patch.call_args
     ellipse = args[0]
     assert isinstance(ellipse, Ellipse)
-    assert abs(ellipse.angle - 145.0) < 0.1
+    assert abs(ellipse.angle - 215.0) < 0.1
 
     # Call the function with both flips
     _plot_messier_on_skymap(
@@ -304,7 +304,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     args, kwargs = mock_ax.add_patch.call_args
     ellipse = args[0]
     assert isinstance(ellipse, Ellipse)
-    assert abs(ellipse.angle - 215.0) < 0.1
+    assert abs(ellipse.angle - 145.0) < 0.1
 
 
 def test_plot_planets_on_skymap_renders_planets_as_ellipses():
@@ -824,7 +824,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     target_name = "M13"
     target_pos_angle = 60.0
     parallactic_angle_val = 15.0
-    expected_final_angle = target_pos_angle - parallactic_angle_val
+    expected_final_angle = (-(target_pos_angle - parallactic_angle_val)) % 360
 
     mock_target_object = MagicMock()
     mock_target_object.ra = Angle(hours=16.6)
@@ -934,7 +934,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     non_target_name = "M57"
     non_target_pos_angle = 135.0
     parallactic_angle_val = 25.0
-    expected_final_angle = non_target_pos_angle - parallactic_angle_val
+    expected_final_angle = (-(non_target_pos_angle - parallactic_angle_val)) % 360
     mock_non_target_object = MagicMock()
     mock_non_target_object.ra = Angle(hours=18.9)
     mock_non_target_object.dec = Angle(degrees=33.0)
