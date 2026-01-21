@@ -19,7 +19,7 @@ from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
 from apts.i18n import gettext_
 from apts.light_pollution import LightPollution
-from apts.utils.plot import Utils
+from apts.utils.plot import Utils as PlotUtils
 
 from .utils.planetary import get_moon_illumination
 from .weather import Weather
@@ -357,7 +357,7 @@ class Place:
             add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
             ax.set_xlim(45, 315)
 
-        Utils.annotate_plot(
+        PlotUtils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
             effective_dark_mode,
@@ -469,7 +469,7 @@ class Place:
             add_marker(ax, "S", 180, style["TEXT_COLOR"], style["GRID_COLOR"])
             add_marker(ax, "W", 270, style["TEXT_COLOR"], style["GRID_COLOR"])
             ax.set_xlim(45, 315)
-        Utils.annotate_plot(
+        PlotUtils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
             effective_dark_mode,

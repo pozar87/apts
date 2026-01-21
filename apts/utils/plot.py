@@ -2,9 +2,10 @@ import matplotlib.axes
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+from babel.dates import format_datetime
 
 from apts.constants.graphconstants import get_plot_style
-from apts.i18n import gettext_
+from apts.i18n import get_language, gettext_
 
 __all__ = ["Utils"]
 
@@ -51,7 +52,7 @@ class Utils:
         style = get_plot_style(dark_mode)
         ax.set_ylabel(gettext_(y_label), color=style["TEXT_COLOR"])
         ax.set_xlabel(gettext_(x_label), color=style["TEXT_COLOR"])
-        ax.tick_params(axis="x", colors=style["TICK_COLOR"])
+        ax.tick_params(axis="x", colors=style["TICK_COLOR"], labelrotation=30)
         ax.tick_params(axis="y", colors=style["TICK_COLOR"])
         ax.spines["bottom"].set_color(style["AXIS_COLOR"])
         ax.spines["top"].set_color(style["AXIS_COLOR"])
@@ -70,5 +71,14 @@ class Utils:
                 ax.xaxis.get_major_formatter(),
                 (mdates.AutoDateFormatter, matplotlib.ticker.ScalarFormatter),
             ):
-                date_format = mdates.DateFormatter("%H:%M", tz=local_timezone)
-                ax.xaxis.set_major_formatter(date_format)
+                # Capture the current language to ensure it's used when the plot is rendered,
+                # even if the language context has changed or ended.
+                current_lang = get_language()
+
+                def babel_formatter(x, pos):
+                    dt = mdates.num2date(x, tz=local_timezone)
+                    return format_datetime(dt, "d MMM HH:mm", locale=current_lang)
+
+                ax.xaxis.set_major_formatter(
+                    matplotlib.ticker.FuncFormatter(babel_formatter)
+                )

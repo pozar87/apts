@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING, Optional
 
-import matplotlib.dates as mdates
 import pandas as pd
 from matplotlib import lines, pyplot
 
@@ -16,7 +15,7 @@ from apts.constants.graphconstants import (
 from apts.i18n import gettext_
 from apts.plotting.utils import mark_good_conditions, mark_observation
 from apts.utils import planetary
-from apts.utils.plot import Utils
+from apts.utils.plot import Utils as PlotUtils
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
@@ -66,7 +65,7 @@ def generate_plot_messier(
                 effective_dark_mode,
                 style,
             )
-            Utils.annotate_plot(
+            PlotUtils.annotate_plot(
                 ax,
                 gettext_("Altitude [°]"),
                 effective_dark_mode,
@@ -144,10 +143,6 @@ def generate_plot_messier(
                 ]
             )
         ax.set_ylim(0, 90)
-        date_format = mdates.DateFormatter(
-            "%H:%M:%S %Z", tz=observation.place.local_timezone
-        )
-        ax.xaxis.set_major_formatter(date_format)
         mark_observation(observation, ax, effective_dark_mode, style)
         mark_good_conditions(
             observation,
@@ -157,7 +152,7 @@ def generate_plot_messier(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(
+        PlotUtils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
             effective_dark_mode,
@@ -254,7 +249,7 @@ def generate_plot_planets(
             effective_dark_mode,
             style,
         )
-        Utils.annotate_plot(
+        PlotUtils.annotate_plot(
             ax,
             gettext_("Altitude [°]"),
             effective_dark_mode,
@@ -284,17 +279,23 @@ def generate_plot_planets(
             lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
         )
         valid_times = pd.notna(time_series)
-        
-        # Plot full range as dotted
-        ax.plot(
-            time_series[valid_times],
-            curve_df["Altitude"][valid_times],
+
+        # Add Matplotlib-compatible time column for pandas plotting
+        curve_df["Time_dt"] = time_series
+
+        # Plot full range as dotted using pandas for x_compat
+        curve_df[valid_times].plot(
+            x="Time_dt",
+            y="Altitude",
+            ax=ax,
+            x_compat=True,
             color=specific_planet_color,
             linestyle=":",
             alpha=0.6,
-            label=None # Don't duplicate legend
+            label=None,
+            legend=False,
         )
-        
+
         # Plot observation window as solid (only when above min altitude)
         if observation.start and observation.stop:
             in_window_mask = (
@@ -302,9 +303,11 @@ def generate_plot_planets(
                 & (time_series <= observation.stop)
                 & (curve_df["Altitude"] >= observation.conditions.min_object_altitude)
             )
-            ax.plot(
-                time_series[valid_times & in_window_mask],
-                curve_df["Altitude"][valid_times & in_window_mask],
+            curve_df[valid_times & in_window_mask].plot(
+                x="Time_dt",
+                y="Altitude",
+                ax=ax,
+                x_compat=True,
                 color=specific_planet_color,
                 linestyle="-",
                 label=name,
@@ -312,10 +315,14 @@ def generate_plot_planets(
         else:
             # Fallback if no start/stop defined (unlikely for valid observation)
             # Still apply altitude check if possible
-            in_window_mask = curve_df["Altitude"] >= observation.conditions.min_object_altitude
-            ax.plot(
-                time_series[valid_times & in_window_mask],
-                curve_df["Altitude"][valid_times & in_window_mask],
+            in_window_mask = (
+                curve_df["Altitude"] >= observation.conditions.min_object_altitude
+            )
+            curve_df[valid_times & in_window_mask].plot(
+                x="Time_dt",
+                y="Altitude",
+                ax=ax,
+                x_compat=True,
                 color=specific_planet_color,
                 linestyle="-",
                 label=name,
@@ -356,10 +363,8 @@ def generate_plot_planets(
 
     if plot_start is not None and plot_end is not None:
         ax.set_xlim([plot_start, plot_end])
-        
+
     ax.set_ylim(0, 90)
-    date_format = mdates.DateFormatter("%H:%M", tz=observation.place.local_timezone)
-    ax.xaxis.set_major_formatter(date_format)
 
     mark_observation(observation, ax, effective_dark_mode, style)
     mark_good_conditions(
@@ -370,7 +375,7 @@ def generate_plot_planets(
         effective_dark_mode,
         style,
     )
-    Utils.annotate_plot(
+    PlotUtils.annotate_plot(
         ax,
         gettext_("Altitude [°]"),
         effective_dark_mode,

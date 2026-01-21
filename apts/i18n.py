@@ -42,6 +42,15 @@ def set_language(language: Optional[str] = "en"):
     _thread_local.language = lang_code
 
 
+def get_language() -> str:
+    """
+    Returns the current language set for the thread.
+    """
+    if not hasattr(_thread_local, "language"):
+        return "en"
+    return _thread_local.language
+
+
 def gettext_(message):
     """
     Translates the given message using the language set for the current thread.
