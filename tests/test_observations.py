@@ -489,7 +489,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
             }
         )
 
-    @patch("apts.plotting.altitude.Utils.annotate_plot")
+    @patch("apts.plotting.altitude.PlotUtils.annotate_plot")
     @patch("apts.plotting.altitude.pyplot")
     @patch("apts.plotting.altitude.get_dark_mode")
     def test_generate_plot_messier_dark_mode_styles(
@@ -755,7 +755,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                         fill=expected_style["TEXT_COLOR"],
                     )
 
-    @patch("apts.plotting.altitude.Utils.annotate_plot")
+    @patch("pandas.DataFrame.plot")
+    @patch("apts.plotting.altitude.PlotUtils.annotate_plot")
     @patch("apts.plotting.altitude.pyplot")
     @patch("apts.plotting.altitude.get_dark_mode")
     @patch("apts.place.Place.get_altaz_curve")
@@ -765,6 +766,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         mock_get_dark_mode,
         mock_pyplot,
         mock_annotate_plot,
+        mock_df_plot,
     ):
         self.observation.get_visible_planets = MagicMock(
             return_value=self.mock_planets_data_for_color_test
@@ -818,23 +820,26 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
                 mock_pyplot.reset_mock()
                 mock_annotate_plot.reset_mock()
+                mock_df_plot.reset_mock()
                 mock_ax = MagicMock()
                 mock_fig = MagicMock()
                 mock_ax.figure = mock_fig
                 mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+                mock_df_plot.return_value = mock_ax
 
                 self.observation.plot_planets(
                     dark_mode_override=scenario_data["override"]
                 )
 
-                mock_ax.plot.assert_called()
-                self.assertEqual(mock_ax.plot.call_count, 4)
+                # Each planet has 2 calls to plot (dotted and solid)
+                # 2 planets * 2 = 4 calls total.
+                self.assertEqual(mock_df_plot.call_count, 4)
 
                 mock_ax.scatter.assert_called()
                 self.assertEqual(mock_ax.scatter.call_count, 4)
 
                 plot_colors_called = [
-                    call.kwargs["color"] for call in mock_ax.plot.call_args_list
+                    call.kwargs["color"] for call in mock_df_plot.call_args_list
                 ]
                 scatter_colors_called = [
                     call.kwargs["color"] for call in mock_ax.scatter.call_args_list
