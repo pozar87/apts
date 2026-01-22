@@ -292,7 +292,7 @@ def generate_plot_planets(
             color=specific_planet_color,
             linestyle=":",
             alpha=0.6,
-            label=None,
+            label="_nolegend_",
             legend=False,
         )
 
