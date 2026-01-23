@@ -92,13 +92,28 @@ def _generate_zoom_skymap(
         dec_rad = numpy.deg2rad(target_dec.degrees)
         half_zoom_dec = zoom_deg / 2.0
         half_zoom_ra_hours = half_zoom_dec / (15.0 * numpy.cos(dec_rad))
-        ax.set_xlim(
-            target_ra.hours + half_zoom_ra_hours,
-            target_ra.hours - half_zoom_ra_hours,
-        )
-        ax.set_ylim(
-            target_dec.degrees - half_zoom_dec, target_dec.degrees + half_zoom_dec
-        )
+        is_sh = observation.place.lat_decimal < 0
+        if is_sh:
+            # For Southern Hemisphere, North should be on the bottom.
+            # Facing North in SH, Dec decreases as you go UP towards Zenith.
+            # RA increases eastward, which is to the RIGHT when facing North.
+            ax.set_xlim(
+                target_ra.hours - half_zoom_ra_hours,
+                target_ra.hours + half_zoom_ra_hours,
+            )
+            ax.set_ylim(
+                target_dec.degrees + half_zoom_dec,
+                target_dec.degrees - half_zoom_dec,
+            )
+        else:
+            ax.set_xlim(
+                target_ra.hours + half_zoom_ra_hours,
+                target_ra.hours - half_zoom_ra_hours,
+            )
+            ax.set_ylim(
+                target_dec.degrees - half_zoom_dec,
+                target_dec.degrees + half_zoom_dec,
+            )
         ax.set_aspect(1.0 / (15.0 * numpy.cos(dec_rad)))
 
     ax.tick_params(axis="x", colors=style["TEXT_COLOR"])

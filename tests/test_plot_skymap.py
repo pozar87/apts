@@ -242,6 +242,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     mock_messier_object.ra = Angle(hours=1.0)
     mock_messier_object.dec = Angle(degrees=40.0)
     mock_observation.place.lat = 34.0
+    mock_observation.place.lat_decimal = 34.0
     # Correctly mock the observer chain
     mock_observer.target.latitude.degrees = 34.0
     mock_observer.ts.now.return_value.gast = 15.0
@@ -715,6 +716,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     """
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -739,6 +741,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     )
     target_data_df = pd.DataFrame([target_data_row])
 
+    mock_observation.place.lat_decimal = 34.0
     mock_observation.local_messier.objects = target_data_df
     mock_observation.local_ngc.objects = pd.DataFrame(
         columns=cast(Any, ["NGC", "Name"])
@@ -816,6 +819,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     """
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -919,6 +923,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     """
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -950,6 +955,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
         ]
     )
 
+    mock_observation.place.lat_decimal = 34.0
     mock_observation.local_messier.objects = non_target_data
     mock_observation.local_stars.objects = pd.DataFrame([{"Name": target_name}])
     mock_observation.local_ngc.objects = pd.DataFrame(
@@ -1036,6 +1042,7 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     """
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -1544,3 +1551,195 @@ def test_plot_planets_with_rise_set_times():
     assert len(ax.collections) == 3
 
     plt.close(fig)
+
+
+def test_sh_polar_orientation():
+    """
+    Verifies that for Southern Hemisphere observations, the polar skymap uses 'S'
+    as the zero location and correctly adjusts radius calculations.
+    """
+    from apts.plotting.skymap_polar import _generate_polar_skymap
+    from skyfield.units import Angle
+
+    # 1. Setup a southern hemisphere observation
+    # Sydney, Australia (lat -33.8688)
+    place = Place(lat=-33.8688, lon=151.2093, name="Sydney")
+    observation = Observation(place=place, equipment=Equipment())
+
+    # Mock necessary objects for _generate_polar_skymap
+    # Patch the observer.observe call to return arrays of correct size for reshapes
+    import numpy as np
+    mock_ax = MagicMock()
+    # Mock figure and patch to avoid errors during style application
+    mock_fig = MagicMock()
+    mock_ax.get_figure.return_value = mock_fig
+
+    style = {
+        "FIGURE_FACE_COLOR": "black",
+        "AXES_FACE_COLOR": "black",
+        "TEXT_COLOR": "white",
+        "GRID_COLOR": "gray"
+    }
+
+    # Mock target object and its observation
+    mock_target = MagicMock()
+    mock_observer = MagicMock()
+
+    # Target at Dec -45, RA 12h
+    mock_observed = MagicMock()
+    mock_observed.apparent.return_value.altaz.return_value = (
+        Angle(degrees=np.array([60])), Angle(degrees=np.array([180])), Angle(degrees=np.array([0]))
+    )
+    mock_observed.apparent.return_value.radec.return_value = (
+        Angle(hours=np.array([12.0])), Angle(degrees=np.array([-45.0])), Angle(degrees=np.array([0]))
+    )
+
+    # For the grid observation (30 * 120 = 3600 points)
+    mock_grid_observed = MagicMock()
+    mock_grid_observed.apparent.return_value.altaz.return_value = (
+        Angle(degrees=np.zeros(3600)), Angle(degrees=np.zeros(3600)), Angle(degrees=np.zeros(3600))
+    )
+
+    def observe_side_effect(obj):
+        from skyfield.api import Star
+        if isinstance(obj, Star):
+            return mock_grid_observed
+        return mock_observed
+
+    mock_observer.observe.side_effect = observe_side_effect
+
+    # 2. Test Horizontal Projection
+    _generate_polar_skymap(
+        observation=observation,
+        ax=mock_ax,
+        style=style,
+        target_name="TestTarget",
+        target_object=mock_target,
+        target_object_data=None,
+        observer=mock_observer,
+        generation_time_str="2023-01-01",
+        effective_dark_mode=True,
+        star_magnitude_limit=6.0,
+        plot_stars=False,
+        plot_messier=False,
+        plot_ngc=False,
+        plot_planets=False,
+        plot_sun=False,
+        plot_moon=False,
+        flipped_horizontally=False,
+        flipped_vertically=False,
+        coordinate_system=CoordinateSystem.HORIZONTAL
+    )
+
+    # Check that theta_zero_location was set to 'S'
+    mock_ax.set_theta_zero_location.assert_called_with("S")
+
+    # 3. Test Equatorial Projection
+    mock_ax.reset_mock()
+    _generate_polar_skymap(
+        observation=observation,
+        ax=mock_ax,
+        style=style,
+        target_name="TestTarget",
+        target_object=mock_target,
+        target_object_data=None,
+        observer=mock_observer,
+        generation_time_str="2023-01-01",
+        effective_dark_mode=True,
+        star_magnitude_limit=6.0,
+        plot_stars=False,
+        plot_messier=False,
+        plot_ngc=False,
+        plot_planets=False,
+        plot_sun=False,
+        plot_moon=False,
+        flipped_horizontally=False,
+        flipped_vertically=False,
+        coordinate_system=CoordinateSystem.EQUATORIAL
+    )
+
+    # Check that theta_zero_location was set to 'S'
+    mock_ax.set_theta_zero_location.assert_called_with("S")
+
+    # Check that yticklabels are for Southern Hemisphere (-90 to 0)
+    # The call is polar_ax.set_yticklabels(["-90°", "-60°", "-30°", "0°"], ...)
+    found_yticklabels = False
+    for call in mock_ax.set_yticklabels.call_args_list:
+        if "-90°" in call.args[0]:
+            found_yticklabels = True
+            break
+    assert found_yticklabels, "yticklabels should be for SH (-90 to 0)"
+
+    # Check that the target was plotted with the correct radius (90 + Dec)
+    # Dec is -45, so radius should be 90 + (-45) = 45.
+    # The call is polar_ax.scatter(target_ra.radians, target_radius, ...)
+    target_ra_rad = Angle(hours=12.0).radians
+    expected_radius = 45.0
+
+    found_scatter = False
+    for call in mock_ax.scatter.call_args_list:
+        if abs(call.args[0] - target_ra_rad) < 1e-5 and abs(call.args[1] - expected_radius) < 1e-5:
+            found_scatter = True
+            break
+    assert found_scatter, f"Target should be plotted at radius {expected_radius} for Dec -45"
+
+
+def test_sh_zoom_orientation():
+    """
+    Verifies that for Southern Hemisphere observations, the zoomed equatorial skymap
+    correctly inverts axes.
+    """
+    from apts.plotting.skymap_zoom import _generate_zoom_skymap
+    from skyfield.units import Angle
+
+    place = Place(lat=-33.8688, lon=151.2093, name="Sydney")
+    observation = Observation(place=place, equipment=Equipment())
+    mock_ax = MagicMock()
+    mock_ax.get_figure.return_value = MagicMock()
+    style = {"FIGURE_FACE_COLOR": "black", "AXES_FACE_COLOR": "black", "TEXT_COLOR": "white", "AXIS_COLOR": "gray", "GRID_COLOR": "gray"}
+    mock_target = MagicMock()
+    mock_observer = MagicMock()
+
+    # Target at Dec -45, RA 12h
+    mock_observed = MagicMock()
+    mock_observed.apparent.return_value.altaz.return_value = (Angle(degrees=60), Angle(degrees=180), Angle(degrees=0))
+    mock_observed.apparent.return_value.radec.return_value = (Angle(hours=12.0), Angle(degrees=-45.0), Angle(degrees=0))
+    mock_observer.observe.return_value = mock_observed
+
+    _generate_zoom_skymap(
+        observation=observation,
+        ax=mock_ax,
+        style=style,
+        target_name="TestTarget",
+        target_object=mock_target,
+        target_object_data=None,
+        observer=mock_observer,
+        generation_time_str="2023-01-01",
+        effective_dark_mode=True,
+        zoom_deg=10.0,
+        star_magnitude_limit=6.0,
+        plot_stars=False,
+        plot_messier=False,
+        plot_ngc=False,
+        plot_planets=False,
+        plot_sun=False,
+        plot_moon=False,
+        flipped_horizontally=False,
+        flipped_vertically=False,
+        coordinate_system=CoordinateSystem.EQUATORIAL
+    )
+
+    # Check RA (X) orientation for SH: RA increases from Left to Right
+    # xlim should be (target_ra - half, target_ra + half)
+    # 12 - (10/2/15/cos(-45)) , 12 + ...
+    # Dec_rad = -pi/4, cos = 0.707. half_zoom_ra = 5 / (15 * 0.707) = 5 / 10.605 = 0.471
+    # expected xlim = (11.529, 12.471)
+    # NH would be (12.471, 11.529)
+    xlim = mock_ax.set_xlim.call_args[0]
+    assert xlim[0] < xlim[1], "RA should increase from Left to Right in SH Zoom Equatorial"
+
+    # Check Dec (Y) orientation for SH: North (higher Dec) at bottom
+    # ylim should be (target_dec + half, target_dec - half)
+    # -45 + 5 , -45 - 5 = (-40, -50)
+    ylim = mock_ax.set_ylim.call_args[0]
+    assert ylim[0] > ylim[1], "Dec should decrease from Bottom to Top in SH Zoom Equatorial (North at bottom)"
