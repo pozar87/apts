@@ -49,9 +49,10 @@ def _generate_polar_skymap(
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     polar_ax = cast(Any, ax)
+    is_sh = observation.place.lat_decimal < 0
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         polar_ax.set_rlim(0, 90)
-        polar_ax.set_theta_zero_location("N")
+        polar_ax.set_theta_zero_location("S" if is_sh else "N")
         polar_ax.set_theta_direction(1)
         polar_ax.set_yticks([0, 30, 60, 90])
         polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
@@ -74,10 +75,17 @@ def _generate_polar_skymap(
             )
     else:  # Equatorial
         polar_ax.set_rlim(0, 90)
-        polar_ax.set_theta_zero_location("N")
+        polar_ax.set_theta_zero_location("S" if is_sh else "N")
         polar_ax.set_theta_direction(1)  # RA increases eastward
         polar_ax.set_yticks([0, 30, 60, 90])
-        polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
+        if is_sh:
+            polar_ax.set_yticklabels(
+                ["-90°", "-60°", "-30°", "0°"], color=style["TEXT_COLOR"]
+            )
+        else:
+            polar_ax.set_yticklabels(
+                ["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"]
+            )
         polar_ax.set_rlabel_position(22.5)
         ra_labels = [f"{h}h" for h in range(0, 24, 3)]
         polar_ax.set_xticklabels(ra_labels, color=style["TEXT_COLOR"])
@@ -178,7 +186,10 @@ def _generate_polar_skymap(
 
         # Convert polar grid to RA/Dec
         ra_rad = theta_grid
-        dec_deg = 90 - r_grid
+        if is_sh:
+            dec_deg = r_grid - 90
+        else:
+            dec_deg = 90 - r_grid
         ra_hours = ra_rad * 12 / numpy.pi
 
         # Create Skyfield Star objects for the entire grid
@@ -348,6 +359,7 @@ def _generate_polar_skymap(
             fontsize=12,
         )
     elif coordinate_system == CoordinateSystem.EQUATORIAL:
+        target_radius = 90 + target_dec.degrees if is_sh else 90 - target_dec.degrees
         if target_object_data is not None:
             width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
             width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
@@ -360,7 +372,7 @@ def _generate_polar_skymap(
             size = (width_deg + height_deg) / 2 * 100
             polar_ax.scatter(
                 target_ra.radians,
-                90 - target_dec.degrees,
+                target_radius,
                 s=size,
                 color="yellow",
                 marker="+",
@@ -368,7 +380,7 @@ def _generate_polar_skymap(
         else:
             polar_ax.scatter(
                 target_ra.radians,
-                90 - target_dec.degrees,
+                target_radius,
                 s=200,
                 facecolors="none",
                 edgecolors="yellow",
@@ -377,7 +389,7 @@ def _generate_polar_skymap(
             )
         polar_ax.annotate(
             target_name,
-            (target_ra.radians, 90 - target_dec.degrees),
+            (target_ra.radians, target_radius),
             textcoords="offset points",
             xytext=(0, 15),
             color="yellow",

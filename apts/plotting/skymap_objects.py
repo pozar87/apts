@@ -158,9 +158,15 @@ def _plot_bright_stars_on_skymap(
                         fontsize=8,
                     )
             else:
+                is_sh = observation.place.lat_decimal < 0
+                radius = (
+                    90 + dec.degrees[visible_mask]
+                    if is_sh
+                    else 90 - dec.degrees[visible_mask]
+                )
                 ax.scatter(
                     ra.radians[visible_mask],
-                    90 - dec.degrees[visible_mask],
+                    radius,
                     s=40,
                     color=star_color,
                     marker="*",
@@ -171,7 +177,7 @@ def _plot_bright_stars_on_skymap(
                         star["Name"],
                         (
                             ra.radians[visible_mask][i],
-                            90 - dec.degrees[visible_mask][i],
+                            radius[i],
                         ),
                         textcoords="offset points",
                         xytext=(5, 5),
@@ -373,9 +379,13 @@ def _plot_stars_on_skymap(
                     edgecolors=style["TEXT_COLOR"],
                 )
             else:
+                is_sh = observation.place.lat_decimal < 0
+                radius = (
+                    90 + dec.degrees[visible] if is_sh else 90 - dec.degrees[visible]
+                )
                 ax.scatter(
                     ra.radians[visible],
-                    90 - dec.degrees[visible],
+                    radius,
                     s=sizes,
                     color=ax.get_facecolor(),
                     marker=".",
@@ -408,6 +418,7 @@ def _plot_celestial_object(
     coordinate_system: CoordinateSystem = cast(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
     ),
+    is_sh: bool = False,
 ):
     """Helper function to plot a celestial object on a skymap."""
     if is_polar:
@@ -415,7 +426,7 @@ def _plot_celestial_object(
         if coordinate_system == CoordinateSystem.HORIZONTAL:
             x, y = numpy.deg2rad(az_deg), 90 - alt_deg
         else:
-            x, y = ra_rad, 90 - dec_deg
+            x, y = ra_rad, 90 + dec_deg if is_sh else 90 - dec_deg
 
         ax.scatter(x, y, s=size, color=edge_color, marker="+")
         ax.annotate(
@@ -522,6 +533,7 @@ def _plot_messier_on_skymap(
                         is_polar=is_polar,
                         ra_rad=ra.radians,
                         coordinate_system=coordinate_system,
+                        is_sh=observation.place.lat_decimal < 0,
                     )
 
 
@@ -669,6 +681,7 @@ def _plot_ngc_on_skymap(
                         is_polar=is_polar,
                         ra_rad=ra.radians,
                         coordinate_system=coordinate_system,
+                        is_sh=observation.place.lat_decimal < 0,
                     )
 
 
@@ -757,7 +770,8 @@ def _plot_solar_system_object_on_skymap(
         if coordinate_system == CoordinateSystem.HORIZONTAL:
             x, y = az.radians, 90 - alt.degrees
         else:
-            x, y = ra.radians, 90 - dec.degrees
+            is_sh = observation.place.lat_decimal < 0
+            x, y = ra.radians, 90 + dec.degrees if is_sh else 90 - dec.degrees
         ax.scatter(x, y, s=size, color=edge_color, marker=marker)
         if not is_target:
             ax.annotate(
