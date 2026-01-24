@@ -53,9 +53,11 @@ def test_language_switching_for_plots():
     observation = Observation(place=my_place, equipment=equipment)
 
     fig_en = observation.plot_messier(language="en")
+    assert fig_en is not None
     assert fig_en.axes[0].get_title() == "Messier Objects Altitude"
 
     fig_pl = observation.plot_messier(language="pl")
+    assert fig_pl is not None
     assert fig_pl.axes[0].get_title() == "Wysokość obiektów Messiera"
 
 
@@ -96,4 +98,5 @@ def test_language_context_none():
             fig = Observation(
                 place=Place(lat=52.2, lon=21.0), equipment=Equipment()
             ).plot_messier()
+            assert fig is not None
             assert fig.axes[0].get_title() == "Wysokość obiektów Messiera"

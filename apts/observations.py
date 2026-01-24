@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from importlib import resources
 from string import Template
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -457,20 +457,23 @@ class Observation:
             A matplotlib Figure object representing the skymap.
         """
         with language_context(language):
-            return self.plot.skymap(
-                target_name=target_name,
-                dark_mode_override=dark_mode_override,
-                zoom_deg=zoom_deg,
-                star_magnitude_limit=star_magnitude_limit,
-                plot_stars=plot_stars,
-                plot_messier=plot_messier,
-                plot_ngc=plot_ngc,
-                plot_planets=plot_planets,
-                plot_date=plot_date,
-                flip_horizontally=flip_horizontally,
-                flip_vertically=flip_vertically,
-                coordinate_system=coordinate_system,
-                **kwargs,
+            return cast(
+                "matplotlib.figure.Figure",
+                self.plot.skymap(
+                    target_name=target_name,
+                    dark_mode_override=dark_mode_override,
+                    zoom_deg=zoom_deg,
+                    star_magnitude_limit=star_magnitude_limit,
+                    plot_stars=plot_stars,
+                    plot_messier=plot_messier,
+                    plot_ngc=plot_ngc,
+                    plot_planets=plot_planets,
+                    plot_date=plot_date,
+                    flip_horizontally=flip_horizontally,
+                    flip_vertically=flip_vertically,
+                    coordinate_system=coordinate_system,
+                    **kwargs,
+                ),
             )
 
     def __str__(self) -> str:
