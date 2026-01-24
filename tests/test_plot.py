@@ -241,6 +241,7 @@ def test_plot_messier_on_skymap_flips_orientation_correctly():
     mock_messier_object.ra = Angle(hours=1.0)
     mock_messier_object.dec = Angle(degrees=40.0)
     mock_observation.place.lat = 34.0
+    mock_observation.place.lat_decimal = 34.0
     # Correctly mock the observer chain
     mock_observer.target.latitude.degrees = 34.0
     mock_observer.ts.now.return_value.gast = 15.0
@@ -721,6 +722,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -745,6 +747,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     )
     target_data_df = pd.DataFrame([target_data_row])
 
+    mock_observation.place.lat_decimal = 34.0
     mock_observation.local_messier.objects = target_data_df
     mock_observation.local_ngc.objects = pd.DataFrame(
         columns=cast(Any, ["NGC", "Name"])
@@ -833,6 +836,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -949,6 +953,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -980,6 +985,9 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
         ]
     )
 
+    mock_observation.place.lat_decimal = 34.0
+    mock_observation.place.lat_decimal = 34.0
+    mock_observation.place.lat_decimal = 34.0
     mock_observation.local_messier.objects = non_target_data
     mock_observation.local_stars.objects = pd.DataFrame([{"Name": target_name}])
     mock_observation.local_ngc.objects = pd.DataFrame(
@@ -1079,6 +1087,7 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     from apts.plotting.skymap import _generate_plot_skymap
 
     mock_observation = MagicMock()
+    mock_observation.place.lat_decimal = 34.0
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
