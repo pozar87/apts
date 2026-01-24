@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from importlib import resources
 from string import Template
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -157,6 +157,16 @@ class Observation:
                 self.time_limit = self.stop
         # If self.start is None, self.time_limit remains None.
 
+        try:
+            self.plot = apts_plot.Plotter(self)
+        except ImportError:
+            # Fallback if dependencies are missing or plotting is disabled
+            self.plot = apts_plot.NullPlotter()
+        except Exception as e:
+            # Fallback for any other initialization error
+            logger.warning(f"Failed to initialize plotter: {e}")
+            self.plot = apts_plot.NullPlotter()
+
     @property
     def local_messier(self):
         if self._local_messier is None:
@@ -270,7 +280,9 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_visible_planets_svg(self, dark_mode_override, **args)
+            return self.plot.visible_planets_svg(
+                dark_mode_override=dark_mode_override, **args
+            )
 
     def plot_visible_planets(
         self,
@@ -279,7 +291,9 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_visible_planets(self, dark_mode_override, **args)
+            return self.plot.visible_planets(
+                dark_mode_override=dark_mode_override, **args
+            )
 
     def _normalize_dates(self, start, stop):
         # If the stop time is earlier than the start time, it means the observation
@@ -295,7 +309,7 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_messier(self, dark_mode_override, **args)
+            return self.plot.messier(dark_mode_override=dark_mode_override, **args)
 
     def plot_planets(
         self,
@@ -304,7 +318,7 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_planets(self, dark_mode_override, **args)
+            return self.plot.planets(dark_mode_override=dark_mode_override, **args)
 
     def _compute_weather_goodness(self):
         analysis = self.get_weather_analysis()
@@ -336,7 +350,7 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_weather(self, dark_mode_override, **args)
+            return self.plot.weather(dark_mode_override=dark_mode_override, **args)
 
     def to_html(
         self,
@@ -394,7 +408,9 @@ class Observation:
         **args,
     ):
         with language_context(language):
-            return apts_plot.plot_sun_and_moon_path(self, dark_mode_override, **args)
+            return self.plot.sun_and_moon_path(
+                dark_mode_override=dark_mode_override, **args
+            )
 
     def plot_skymap(
         self,
@@ -441,21 +457,23 @@ class Observation:
             A matplotlib Figure object representing the skymap.
         """
         with language_context(language):
-            return apts_plot.plot_skymap(
-                self,
-                target_name=target_name,
-                dark_mode_override=dark_mode_override,
-                zoom_deg=zoom_deg,
-                star_magnitude_limit=star_magnitude_limit,
-                plot_stars=plot_stars,
-                plot_messier=plot_messier,
-                plot_ngc=plot_ngc,
-                plot_planets=plot_planets,
-                plot_date=plot_date,
-                flip_horizontally=flip_horizontally,
-                flip_vertically=flip_vertically,
-                coordinate_system=coordinate_system,
-                **kwargs,
+            return cast(
+                "matplotlib.figure.Figure",
+                self.plot.skymap(
+                    target_name=target_name,
+                    dark_mode_override=dark_mode_override,
+                    zoom_deg=zoom_deg,
+                    star_magnitude_limit=star_magnitude_limit,
+                    plot_stars=plot_stars,
+                    plot_messier=plot_messier,
+                    plot_ngc=plot_ngc,
+                    plot_planets=plot_planets,
+                    plot_date=plot_date,
+                    flip_horizontally=flip_horizontally,
+                    flip_vertically=flip_vertically,
+                    coordinate_system=coordinate_system,
+                    **kwargs,
+                ),
             )
 
     def __str__(self) -> str:
