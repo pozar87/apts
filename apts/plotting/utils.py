@@ -8,6 +8,8 @@ from matplotlib import pyplot
 from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
+from apts.i18n import get_language
+from apts.utils import planetary
 from ..constants import ObjectTableLabels
 
 if TYPE_CHECKING:
@@ -60,8 +62,31 @@ def calculate_ellipse_angle(
 
 def get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
     """Gets the angular size of a solar system object in degrees."""
-    visible_planets = observation.get_visible_planets()
-    # Try matching by TechnicalName first, then by Name
+    # Handle translated names by reverse-translating if necessary
+    current_lang = get_language()
+    if current_lang != "en":
+        reverse_map = planetary.get_reverse_translated_planet_names(current_lang)
+        object_name = reverse_map.get(object_name, object_name)
+
+    # Use the technical name for consistent matching regardless of language
+    technical_name = planetary.get_technical_name(object_name)
+
+    # Search in all computed planets (language-independent)
+    planets_df = observation.local_planets.objects
+    object_data = planets_df[
+        (planets_df[ObjectTableLabels.NAME] == technical_name)
+        | (planets_df[ObjectTableLabels.NAME] == object_name)
+    ]
+
+    if not object_data.empty:
+        size_arcsec = object_data.iloc[0].get(ObjectTableLabels.SIZE)
+        if pd.notna(size_arcsec):
+            if hasattr(size_arcsec, "magnitude"):
+                size_arcsec = size_arcsec.magnitude
+            return float(size_arcsec) / 3600.0
+
+    # Fallback to English-named visible planets
+    visible_planets = observation.get_visible_planets(language="en")
     object_data = visible_planets[
         (visible_planets["TechnicalName"] == object_name)
         | (visible_planets["Name"] == object_name)
@@ -72,8 +97,9 @@ def get_object_angular_size_deg(observation: "Observation", object_name: str) ->
             if hasattr(size_arcsec, "magnitude"):
                 size_arcsec = size_arcsec.magnitude
             return float(size_arcsec) / 3600.0
-    # Default size if not found or NaN
-    if object_name in ["Sun", "Moon"]:
+
+    # Final fallback for Sun/Moon if not found above
+    if technical_name in ["sun", "moon"]:
         return 0.5
     return 0.0
 

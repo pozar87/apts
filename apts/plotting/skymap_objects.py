@@ -766,7 +766,31 @@ def _plot_solar_system_object_on_skymap(
         linewidth = 2
 
     if is_polar:
-        size = size_deg * 200
+        # Use a combination of actual angular size and visual size based on magnitude
+        # just like stars, but only as a minimum for visibility on the whole sky map.
+        visual_size = 0
+        if not is_target:
+            try:
+                # Find the planet data to get its magnitude
+                technical_name = planetary.get_technical_name(object_name)
+                planets_df = observation.local_planets.objects
+                object_data = planets_df[
+                    planets_df[ObjectTableLabels.NAME] == technical_name
+                ]
+                if not object_data.empty:
+                    magnitude = object_data.iloc[0].get(ObjectTableLabels.MAGNITUDE)
+                    if hasattr(magnitude, "magnitude"):
+                        magnitude = magnitude.magnitude
+                    if pd.notna(magnitude):
+                        # Default limit for polar skymaps is 4.5
+                        limit = 4.5
+                        visual_size = (limit + 1 - float(magnitude)) * 5
+            except Exception:
+                # Fallback to a sensible default if magnitude calculation fails
+                visual_size = 20
+
+        size = max(size_deg * 200, visual_size)
+
         if coordinate_system == CoordinateSystem.HORIZONTAL:
             x, y = az.radians, 90 - alt.degrees
         else:
