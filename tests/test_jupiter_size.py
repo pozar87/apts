@@ -1,6 +1,5 @@
 
 import pytest
-import pandas as pd
 from datetime import datetime
 import pytz
 from unittest.mock import MagicMock, patch
