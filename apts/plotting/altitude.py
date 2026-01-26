@@ -8,6 +8,7 @@ from matplotlib import lines, pyplot
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import (
     OpticalType,
+    get_messier_color,
     get_planet_color,
     get_plot_colors,
     get_plot_style,
@@ -79,30 +80,6 @@ def generate_plot_messier(
             )
             return fig
 
-        LIGHT_MESSIER_TYPE_COLORS = {
-            gettext_("Galaxy"): "#8CA2AD",
-            gettext_("Globular Cluster"): "#A38F9B",
-            gettext_("Open Cluster"): "#8EA397",
-            gettext_("Nebula"): "#9B8FA3",
-            gettext_("Planetary Nebula"): "#A39B8F",
-            gettext_("Supernova Remnant"): "#AD9F9A",
-            gettext_("Other"): "#A0A0A0",
-        }
-        DARK_MESSIER_TYPE_COLORS = {
-            gettext_("Galaxy"): "#5A1A75",
-            gettext_("Globular Cluster"): "#CCCCCC",
-            gettext_("Open Cluster"): "#FFFFFF",
-            gettext_("Nebula"): "#5A1A75",
-            gettext_("Planetary Nebula"): "#007447",
-            gettext_("Supernova Remnant"): "#BBBBBB",
-            gettext_("Other"): "#999999",
-        }
-
-        if effective_dark_mode:
-            current_messier_colors = DARK_MESSIER_TYPE_COLORS
-        else:
-            current_messier_colors = LIGHT_MESSIER_TYPE_COLORS
-
         plotted_types = {}
 
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, "Height"]:
@@ -117,14 +94,12 @@ def generate_plot_messier(
             transit = obj[ObjectTableLabels.TRANSIT]
             if bool(pd.notna(transit)):
                 altitude = obj[ObjectTableLabels.ALTITUDE]
-                obj_type = gettext_(obj["Type"])
+                obj_type = gettext_(obj.get("Type", "Other"))
                 width = obj[ObjectTableLabels.WIDTH]
                 height = obj["Height"] if "Height" in obj else width
                 messier_id = obj[ObjectTableLabels.MESSIER]
                 marker_size = (width * height) ** 0.5
-                color = current_messier_colors.get(
-                    obj_type, current_messier_colors[gettext_("Other")]
-                )
+                color = get_messier_color(obj_type, effective_dark_mode)
                 plotted_types[obj_type] = color
                 ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
                 ax.annotate(
