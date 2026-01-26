@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aenum import Enum, auto
 
 
@@ -85,6 +87,42 @@ class GraphConstants:
         "Neptune": "#5B8FBF",
     }
 
+    MESSIER_COLORS_LIGHT = {
+        "Spiral Galaxy": "#6A1B9A",     # Deep Purple
+        "Elliptical Galaxy": "#8E24AA", # Purple
+        "Irregular Galaxy": "#9C27B0",  # Light Purple
+        "Lenticular (S0) Galaxy": "#AB47BC", # Lighter Purple
+        "Galaxy": "#6A1B9A",            # Fallback for Galaxy
+        "Globular Cluster": "#F9A825",  # Dark Yellow/Gold
+        "Open Cluster": "#1565C0",      # Dark Blue
+        "Diffuse Nebula": "#C62828",    # Dark Red
+        "Nebula": "#C62828",            # Fallback for Nebula
+        "Planetary Nebula": "#00695C",  # Dark Teal
+        "Supernova Remnant": "#D84315", # Dark Orange
+        "Double Star": "#795548",       # Brown
+        "Group/Asterism": "#0277BD",    # Light Blue
+        "Star Cloud": "#EF6C00",        # Orange
+        "Other": "#616161",             # Gray
+    }
+
+    MESSIER_COLORS_DARK = {
+        "Spiral Galaxy": "#A569BD",     # Purple
+        "Elliptical Galaxy": "#AF7AC5", # Soft Purple
+        "Irregular Galaxy": "#C39BD3",  # Lavender
+        "Lenticular (S0) Galaxy": "#D2B4DE", # Light Lavender
+        "Galaxy": "#A569BD",            # Fallback for Galaxy
+        "Globular Cluster": "#F4D03F",  # Yellow
+        "Open Cluster": "#5DADE2",      # Blue
+        "Diffuse Nebula": "#EC7063",    # Red
+        "Nebula": "#EC7063",            # Fallback for Nebula
+        "Planetary Nebula": "#48C9B0",  # Turquoise
+        "Supernova Remnant": "#EB984E", # Orange
+        "Double Star": "#F7DC6F",       # Light Yellow
+        "Group/Asterism": "#85C1E9",    # Light Blue
+        "Star Cloud": "#F8C471",        # Light Orange
+        "Other": "#ABB2B9",             # Gray
+    }
+
 
 def get_plot_colors(dark_mode_enabled: bool) -> dict:
     """
@@ -118,3 +156,36 @@ def get_planet_color(
     else:
         colors_dict = GraphConstants.PLANET_COLORS_LIGHT
     return colors_dict.get(planet_name, default_color)
+
+
+def get_messier_color(
+    messier_type: str, dark_mode_enabled: bool, default_color: Optional[str] = None
+) -> str:
+    """
+    Retrieves the specific color for a Messier object type based on the theme.
+    Handles translated messier_type by matching against translated technical names.
+    """
+    from apts.i18n import gettext_
+
+    if dark_mode_enabled:
+        colors_dict = GraphConstants.MESSIER_COLORS_DARK
+    else:
+        colors_dict = GraphConstants.MESSIER_COLORS_LIGHT
+
+    if default_color is None:
+        default_color = colors_dict["Other"]
+
+    # Iterate through technical names, translate them and check for match
+    for tech_name, color in colors_dict.items():
+        if gettext_(tech_name) == messier_type:
+            return color
+
+    # Special case for "Galaxy" and "Nebula" if they are part of the translated string
+    # but not an exact match (e.g. "Spiral Galaxy" matching "Galaxy" if "Spiral Galaxy" was missing)
+    # However, we have specific entries for most types now.
+    if gettext_("Galaxy") in messier_type:
+        return colors_dict["Galaxy"]
+    if gettext_("Nebula") in messier_type:
+        return colors_dict["Nebula"]
+
+    return default_color

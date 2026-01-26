@@ -6,7 +6,7 @@ from matplotlib.patches import Ellipse
 from skyfield.api import Star as SkyfieldStar
 
 from apts.config import get_dark_mode
-from apts.constants.graphconstants import get_planet_color
+from apts.constants.graphconstants import get_messier_color, get_planet_color
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
 from apts.plotting.utils import (
@@ -518,6 +518,10 @@ def _plot_messier_on_skymap(
                     magnitude = m_obj.get("Magnitude")
                     face_color = get_brightness_color(magnitude)
 
+                    obj_type = gettext_(m_obj.get("Type", "Other"))
+                    effective_dark_mode = get_dark_mode()
+                    edge_color = get_messier_color(obj_type, effective_dark_mode)
+
                     _plot_celestial_object(
                         ax,
                         name=cast(str, messier_name),
@@ -529,7 +533,7 @@ def _plot_messier_on_skymap(
                         height_deg=height_deg,
                         angle=angle,
                         face_color=face_color,
-                        edge_color="red",
+                        edge_color=edge_color,
                         is_polar=is_polar,
                         ra_rad=ra.radians,
                         coordinate_system=coordinate_system,
