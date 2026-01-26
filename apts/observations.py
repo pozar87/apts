@@ -498,35 +498,24 @@ class Observation:
             return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
+        if hourly_data.empty:
+            return []
+
+        # Filter by time limit and make a copy to avoid SettingWithCopyWarning
+        hourly_data = hourly_data[hourly_data.time <= self.time_limit].copy()
+
         if "fog" not in hourly_data.columns:
             hourly_data["fog"] = 100
         if "aurora" not in hourly_data.columns:
             hourly_data["aurora"] = 0
-        hourly_data = hourly_data[hourly_data.time <= self.time_limit]
 
-        moon_altitudes = self.place.get_altaz_curve(
-            self.place.moon, self.start, self.stop, num_points=len(hourly_data)
+        # Calculate moon altitudes exactly for each weather data point
+        ts = self.place.ts
+        times = ts.from_datetimes(hourly_data["time"].tolist())
+        alt, _, _ = (
+            self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
         )
-
-        if not moon_altitudes.empty:
-            # First, convert Skyfield Time objects to timezone-aware datetimes
-            moon_altitudes["Time"] = moon_altitudes["Time"].apply(
-                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-            )
-            moon_altitudes = moon_altitudes.dropna(subset=["Time"])
-            # Then, ensure the dtype (especially precision) matches the other dataframe's key
-            moon_altitudes["Time"] = moon_altitudes["Time"].astype(
-                hourly_data["time"].dtype
-            )
-            hourly_data = pd.merge_asof(
-                hourly_data.sort_values("time"),
-                moon_altitudes.sort_values("Time"),
-                left_on="time",
-                right_on="Time",
-                direction="nearest",
-            )
-        else:
-            hourly_data["Altitude"] = -1
+        hourly_data["Altitude"] = alt.degrees
 
         for col in [
             "cloudCover",
