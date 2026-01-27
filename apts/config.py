@@ -195,6 +195,7 @@ def set_redis_location(redis_location: str):
     if not config.has_section("cache"):
         config.add_section("cache")
     config.set("cache", "redis_location", redis_location)
+    config.set("cache", "backend", "redis")
 
 
 def get_data_settings() -> str:
