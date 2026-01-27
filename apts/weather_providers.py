@@ -10,12 +10,34 @@ from apts.config import get_cache_settings
 logger = logging.getLogger(__name__)
 
 session = None
+_last_cache_settings = None
+
+
+def reset_session():
+    """
+    Resets the global session, closing it if it exists.
+    """
+    global session, _last_cache_settings
+    if session is not None:
+        try:
+            session.close()
+        except Exception as e:
+            logger.debug(f"Error closing session: {e}")
+    session = None
+    _last_cache_settings = None
 
 
 def get_session():
-    global session
+    global session, _last_cache_settings
+    cache_settings = get_cache_settings()
+
+    # If session exists, check if settings have changed
+    if session is not None and cache_settings != _last_cache_settings:
+        logger.info("Cache settings changed, resetting session.")
+        reset_session()
+
     if session is None:
-        cache_settings = get_cache_settings()
+        _last_cache_settings = cache_settings
         kwargs = {
             "backend": cache_settings["backend"],
             "expire_after": cache_settings["expire_after"],
