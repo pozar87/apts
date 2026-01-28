@@ -76,11 +76,10 @@ class ConfigTest(unittest.TestCase):
         mock_cached_session.side_effect = session_side_effect
 
         # Manually reset the global session to ensure get_session runs its logic
+        import importlib
         import apts.weather_providers
+        importlib.reload(apts.weather_providers)
         apts.weather_providers.reset_session()
-
-        # Configure apts to use redis
-        set_redis_location("redis://nonexistent-server:6379")
         config_content = """
         [cache]
         backend = redis
