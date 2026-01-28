@@ -188,11 +188,21 @@ class Place:
             return self._get_twilight_time(start_date, twilight, "rise")
         return self._next_rising_time(self.sun, start=start_date)
 
-    def moonset_time(self):
-        return self._previous_setting_time(self.moon, start=self.date.utc_datetime())
+    def moonset_time(
+        self,
+        target_date=None,
+        start_search_from: Optional[datetime.datetime] = None,
+    ):
+        start_date = self._get_start_date(target_date, start_search_from)
+        return self._previous_setting_time(self.moon, start=start_date)
 
-    def moonrise_time(self):
-        return self._next_rising_time(self.moon, start=self.date.utc_datetime())
+    def moonrise_time(
+        self,
+        target_date=None,
+        start_search_from: Optional[datetime.datetime] = None,
+    ):
+        start_date = self._get_start_date(target_date, start_search_from)
+        return self._next_rising_time(self.moon, start=start_date)
 
     def _moon_phase_letter(self) -> str:
         phase_angle = almanac.moon_phase(self.eph, self.date)
