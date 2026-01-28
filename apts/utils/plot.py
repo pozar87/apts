@@ -60,9 +60,11 @@ class Utils:
         ax.spines["left"].set_color(style["AXIS_COLOR"])
         ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
         if x_label == "Time":
-            # Use AutoDateLocator with hints for tick density
+            # Use AutoDateLocator with hints for tick density.
+            # Relaxed tick count requirements (from 8-12 to 5-15) to avoid UserWarning
+            # from matplotlib when no nice interval can be found in a narrow range.
             locator = mdates.AutoDateLocator(
-                tz=local_timezone, minticks=8, maxticks=12
+                tz=local_timezone, minticks=5, maxticks=15
             )
             ax.xaxis.set_major_locator(locator)
             # Only set formatter if one hasn't been set by the caller
