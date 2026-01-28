@@ -173,6 +173,19 @@ class TestSolarObjects(unittest.TestCase):
             "Expected transit time to be before setting time.",
         )
 
+    def test_sun_elongation(self):
+        """Test that the Sun's elongation is 0."""
+        sun_data = self.solar_objects.objects[
+            self.solar_objects.objects[ObjectTableLabels.NAME] == "sun"
+        ].iloc[0]
+
+        self.assertAlmostEqual(
+            sun_data[ObjectTableLabels.ELONGATION],
+            0,
+            places=5,
+            msg="Sun elongation should be 0.",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

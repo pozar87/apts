@@ -245,6 +245,10 @@ class SolarObjects(Objects):
             ]
         ] = self.objects.apply(get_ephem_properties, axis=1)
 
+        # Pre-calculate Sun position as observed from the observer's location
+        # for correct elongation calculation.
+        sun_pos = observer_to_use.observer.at(t).observe(observer_to_use.sun)
+
         # Calculate planets RA, Dec, Distance, and Elongation
         # Batch compute positions for better performance
         def compute_position(row):
@@ -254,9 +258,7 @@ class SolarObjects(Objects):
                     ObjectTableLabels.RA: pos.radec()[0].hours,
                     ObjectTableLabels.DEC: pos.radec()[1].degrees,
                     ObjectTableLabels.DISTANCE: pos.distance().au,
-                    ObjectTableLabels.ELONGATION: pos.separation_from(
-                        observer_to_use.sun.at(t)  # pyright: ignore
-                    ).degrees,
+                    ObjectTableLabels.ELONGATION: pos.separation_from(sun_pos).degrees,
                 }
             )
 
