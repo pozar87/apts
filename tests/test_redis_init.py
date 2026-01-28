@@ -1,9 +1,9 @@
+
 import unittest
-from unittest.mock import MagicMock, patch
-
-from apts.config import config, get_cache_settings, load_config, set_redis_location
+from unittest.mock import patch, MagicMock
+from apts.config import set_redis_location, get_cache_settings, load_config, config
 from apts.weather_providers import get_session, reset_session
-
+import apts.weather_providers
 
 class TestRedisInit(unittest.TestCase):
     def setUp(self):
@@ -13,9 +13,9 @@ class TestRedisInit(unittest.TestCase):
         load_config()
 
     def test_set_redis_location_updates_backend(self):
-        # Initially it should be memory (default) or redis
+        # Initially it should be memory (default)
         settings = get_cache_settings()
-        self.assertIn(settings["backend"], ["memory", "redis"])
+        self.assertEqual(settings["backend"], "memory")
 
         # Set redis location
         set_redis_location("redis://test-host:6379")
@@ -25,8 +25,9 @@ class TestRedisInit(unittest.TestCase):
         # Check if backend is also set to redis
         self.assertEqual(settings["backend"], "redis")
 
-    @patch("requests_cache.CachedSession")
-    def test_get_session_reinitializes_on_config_change(self, mock_session):
+    @patch('redis.from_url')
+    @patch('apts.weather_providers.requests_cache.CachedSession')
+    def test_get_session_reinitializes_on_config_change(self, mock_session, mock_redis_from_url):
         # Ensure it returns a new mock each time
         mock_session.side_effect = lambda *args, **kwargs: MagicMock()
 
@@ -44,7 +45,11 @@ class TestRedisInit(unittest.TestCase):
         self.assertGreater(mock_session.call_count, 1)
         self.assertIsNot(session1, session2)
 
-    @patch("requests_cache.CachedSession")
+        # Verify it was called with 'connection' kwarg
+        last_call_args, last_call_kwargs = mock_session.call_args
+        self.assertIn('connection', last_call_kwargs)
+
+    @patch('apts.weather_providers.requests_cache.CachedSession')
     def test_get_session_caches_session_if_no_change(self, mock_session):
         # Initialize session
         session1 = get_session()
@@ -56,7 +61,6 @@ class TestRedisInit(unittest.TestCase):
         # Should be the same object and no new calls to CachedSession
         self.assertIs(session1, session2)
         self.assertEqual(mock_session.call_count, call_count_after_first)
-
 
 if __name__ == "__main__":
     unittest.main()
