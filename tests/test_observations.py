@@ -544,6 +544,10 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     mock_fig = MagicMock()
                     mock_ax.figure = mock_fig
                     mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+                    mock_ax.get_xlim.return_value = (
+                        self.observation.start,
+                        self.observation.stop,
+                    )
 
                     # Mock legend calls for this subtest run
                     mock_legend = MagicMock()
@@ -632,6 +636,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         mock_fig = MagicMock()
         mock_ax.figure = mock_fig
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
+        mock_ax.get_xlim.return_value = (self.observation.start, self.observation.stop)
 
         # Mock legend calls
         mock_legend = MagicMock()
@@ -826,6 +831,10 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 mock_ax.figure = mock_fig
                 mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
                 mock_df_plot.return_value = mock_ax
+                mock_ax.get_xlim.return_value = (
+                    self.observation.start,
+                    self.observation.stop,
+                )
 
                 self.observation.plot_planets(
                     dark_mode_override=scenario_data["override"]

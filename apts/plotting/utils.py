@@ -1,10 +1,10 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
 import pandas as pd
-from matplotlib import pyplot
+from matplotlib import dates as mdates, pyplot
 from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
@@ -183,27 +183,66 @@ def mark_observation(
 ):
     if plot is None:
         return
-    plot.axvspan(
-        observation.start,
-        observation.stop,
-        color=style.get(
-            "SPAN_BACKGROUND_COLOR",
-            "#DDDDDD" if not dark_mode_enabled else "#FFFFFF",
-        ),
-        alpha=0.07 if dark_mode_enabled else 0.2,
-    )
-    moon_start, moon_stop = normalize_dates(
-        observation.place.moonrise_time(), observation.place.moonset_time()
-    )
-    plot.axvspan(
-        moon_start,
-        moon_stop,
-        color=style.get(
-            "MOON_SPAN_COLOR", "#FFFFE0" if not dark_mode_enabled else "#5A1A75"
-        ),
-        alpha=0.07 if dark_mode_enabled else 0.1,
-    )
 
+    # Get plot limits to know which days to mark
+    try:
+        limits = plot.get_xlim()
+        x_min, x_max = limits
+        # Handle both numeric and datetime plot limits
+        if isinstance(x_min, (float, numpy.float64, int)):
+            start_date = mdates.num2date(x_min, tz=observation.place.local_timezone)
+            end_date = mdates.num2date(x_max, tz=observation.place.local_timezone)
+        else:
+            start_date = x_min
+            end_date = x_max
+
+        # Ensure we have datetime objects before proceeding
+        if not isinstance(start_date, datetime) or not isinstance(end_date, datetime):
+            raise ValueError("Plot limits are not valid datetime objects")
+    except Exception as e:
+        logger.debug(f"Could not determine plot range for multi-day marking: {e}")
+        # Fallback to marking primary observation window if possible
+        if observation.start and observation.time_limit:
+            plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
+            plot.axvline(observation.time_limit, color=style["GRID_COLOR"], linestyle="--")
+        return
+
+    # Iterate through days in the visible range
+    # Start from the beginning of the first visible day
+    current_day = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    while current_day <= end_date:
+        # Highlight Night (Sunset to Sunrise)
+        sunset = observation.place.sunset_time(current_day)
+        sunrise = observation.place.sunrise_time(current_day + timedelta(days=1))
+        if isinstance(sunset, datetime) and isinstance(sunrise, datetime):
+            plot.axvspan(
+                sunset,
+                sunrise,
+                color=style.get(
+                    "SPAN_BACKGROUND_COLOR",
+                    "#DDDDDD" if not dark_mode_enabled else "#FFFFFF",
+                ),
+                alpha=0.07 if dark_mode_enabled else 0.2,
+                label="_nolegend_",
+            )
+
+        # Highlight Moon Presence
+        moonrise = observation.place.moonrise_time(current_day)
+        moonset = observation.place.moonset_time(current_day)
+        moon_start, moon_stop = normalize_dates(moonrise, moonset)
+        if isinstance(moon_start, datetime) and isinstance(moon_stop, datetime):
+            plot.axvspan(
+                moon_start,
+                moon_stop,
+                color=style.get(
+                    "MOON_SPAN_COLOR", "#FFFFE0" if not dark_mode_enabled else "#5A1A75"
+                ),
+                alpha=0.07 if dark_mode_enabled else 0.1,
+                label="_nolegend_",
+            )
+        current_day += timedelta(days=1)
+
+    # Still mark the primary observation start/stop with dashed lines
     plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
     plot.axvline(observation.time_limit, color=style["GRID_COLOR"], linestyle="--")
 
