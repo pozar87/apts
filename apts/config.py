@@ -15,6 +15,13 @@ config_paths = [
 ]
 
 
+def read(filenames):
+    """
+    Reads and parses a list of filenames.
+    """
+    return config.read(filenames)
+
+
 def load_config():
     """
     Load configuration from the defined config paths.
