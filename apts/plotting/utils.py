@@ -185,14 +185,27 @@ def mark_observation(
         return
 
     # Get plot limits to know which days to mark
-    x_min, x_max = plot.get_xlim()
-    # Handle both numeric and datetime plot limits
-    if isinstance(x_min, float):
-        start_date = mdates.num2date(x_min)
-        end_date = mdates.num2date(x_max)
-    else:
-        start_date = x_min
-        end_date = x_max
+    try:
+        limits = plot.get_xlim()
+        x_min, x_max = limits
+        # Handle both numeric and datetime plot limits
+        if isinstance(x_min, (float, numpy.float64, int)):
+            start_date = mdates.num2date(x_min, tz=observation.place.local_timezone)
+            end_date = mdates.num2date(x_max, tz=observation.place.local_timezone)
+        else:
+            start_date = x_min
+            end_date = x_max
+
+        # Ensure we have datetime objects before proceeding
+        if not isinstance(start_date, datetime) or not isinstance(end_date, datetime):
+            raise ValueError("Plot limits are not valid datetime objects")
+    except Exception as e:
+        logger.debug(f"Could not determine plot range for multi-day marking: {e}")
+        # Fallback to marking primary observation window if possible
+        if observation.start and observation.time_limit:
+            plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
+            plot.axvline(observation.time_limit, color=style["GRID_COLOR"], linestyle="--")
+        return
 
     # Iterate through days in the visible range
     # Start from the beginning of the first visible day
