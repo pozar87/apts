@@ -460,7 +460,10 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Inferior Conjunction"
-            event["event"] = "Inferior Conjunction"
+            if event.get("is_transit"):
+                event["event"] = "Mercury Transit"
+            else:
+                event["event"] = "Inferior Conjunction"
             event["object"] = "Mercury"
         logger.debug(
             f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
