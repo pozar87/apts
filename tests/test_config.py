@@ -61,9 +61,9 @@ class ConfigTest(unittest.TestCase):
             self.skipTest("redis library not installed")
 
         # Mock the side effect of CachedSession to raise a ConnectionError
-        # when called with a 'url' kwarg, but succeed otherwise.
+        # when called with a 'connection' kwarg, but succeed otherwise.
         def session_side_effect(name, **kwargs):
-            if 'url' in kwargs:
+            if 'connection' in kwargs:
                 # Simulate the real behavior: the connection is lazy, so the error
                 # happens on the first cache access, not on creation.
                 mock_session_instance = MagicMock()
@@ -107,12 +107,12 @@ class ConfigTest(unittest.TestCase):
             # First call is for Redis
             first_call_args, first_call_kwargs = mock_cached_session.call_args_list[0]
             self.assertEqual(first_call_kwargs['backend'], 'redis')
-            self.assertIn('url', first_call_kwargs)
+            self.assertIn('connection', first_call_kwargs)
 
             # Second call is the fallback to in-memory
             second_call_args, second_call_kwargs = mock_cached_session.call_args_list[1]
             self.assertEqual(second_call_kwargs['backend'], 'memory')
-            self.assertNotIn('url', second_call_kwargs)
+            self.assertNotIn('connection', second_call_kwargs)
 
         finally:
             remove_config_path(fake_config_path)

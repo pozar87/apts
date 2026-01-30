@@ -45,11 +45,11 @@ def get_session():
 
         if cache_settings["backend"] == "redis" and cache_settings["redis_location"]:
             try:
-                # This import is here to avoid a hard dependency on redis
+                # These imports are here to avoid a hard dependency on redis
                 # if the user doesn't use the redis backend.
-                from redis.exceptions import ConnectionError as RedisConnectionError # pyright: ignore[reportMissingImports] # noqa: F401
+                import redis
 
-                kwargs["url"] = cache_settings["redis_location"]
+                kwargs["connection"] = redis.from_url(cache_settings["redis_location"])
                 # The connection is lazy, so we need to trigger it to test it.
                 # A full 'ping' is too slow, so we just initialize the session
                 # and let it fail on first use if it's going to. A try/except
@@ -64,7 +64,7 @@ def get_session():
                     f"Redis connection failed with error: {e}. "
                     "Falling back to in-memory cache for this session."
                 )
-                kwargs.pop("url", None)
+                kwargs.pop("connection", None)
                 kwargs["backend"] = "memory"
                 session = requests_cache.CachedSession("weather_cache", **kwargs)
         else:
