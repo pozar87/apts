@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Any, cast
 from .cache import get_timescale, get_ephemeris
 from .utils import planetary
+from .constants import astronomy
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
@@ -153,9 +154,41 @@ def find_oppositions(observer, planet_name, start_date, end_date):
 def find_mercury_inferior_conjunctions(
     observer, start_date, end_date, threshold_degrees=1.0
 ):
-    return find_conjunctions(
+    conjunctions = find_conjunctions(
         observer, "mercury", "sun", start_date, end_date, threshold_degrees
     )
+
+    mercury = planetary.get_skyfield_obj("mercury")
+    sun = planetary.get_skyfield_obj("sun")
+    ts = get_timescale()
+
+    inferior_events = []
+    for event in conjunctions:
+        t = ts.from_datetime(event["date"])
+        mercury_obs = observer.at(t).observe(mercury)
+        sun_obs = observer.at(t).observe(sun)
+
+        mercury_dist = mercury_obs.distance().au
+        sun_dist = sun_obs.distance().au
+
+        if mercury_dist < sun_dist:
+            # It is an inferior conjunction
+            # Calculate angular radii
+            mercury_angular_radius = np.degrees(
+                np.arctan2(
+                    astronomy.MERCURY_RADIUS_KM / astronomy.AU_KM, mercury_dist
+                )
+            )
+            sun_angular_radius = np.degrees(
+                np.arctan2(astronomy.SUN_RADIUS_KM / astronomy.AU_KM, sun_dist)
+            )
+
+            event["is_transit"] = event["separation_degrees"] < (
+                mercury_angular_radius + sun_angular_radius
+            )
+            inferior_events.append(event)
+
+    return inferior_events
 
 
 def find_conjunctions_with_star(
