@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .observations import Observation
+    from .conditions import Conditions
 
 
 logger = logging.getLogger(__name__)
@@ -37,8 +38,8 @@ class Plotter:
     def planets(self, **args):
         return plot_planets(self.observation, **args)
 
-    def weather(self, **args):
-        return plot_weather(self.observation, **args)
+    def weather(self, conditions: Optional["Conditions"] = None, **args):
+        return plot_weather(self.observation, conditions=conditions, **args)
 
     def skymap(self, **args):
         return plot_skymap(self.observation, **args)
@@ -74,14 +75,20 @@ def plot_planets(
 
 
 def plot_weather(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
 ):
     from .plotting.weather import generate_plot_weather
 
     if observation.place.weather is None:
         observation.place.get_weather()
     return generate_plot_weather(
-        observation, dark_mode_override=dark_mode_override, **args
+        observation,
+        dark_mode_override=dark_mode_override,
+        conditions=conditions,
+        **args,
     )
 
 

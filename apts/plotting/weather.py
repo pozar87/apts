@@ -11,12 +11,16 @@ from apts.plotting.utils import mark_good_conditions, mark_observation
 
 if TYPE_CHECKING:
     from apts.observations import Observation
+    from apts.conditions import Conditions
 
 logger = logging.getLogger(__name__)
 
 
 def generate_plot_weather(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
 ):
     if dark_mode_override is not None:
         effective_dark_mode = dark_mode_override
@@ -24,6 +28,7 @@ def generate_plot_weather(
         effective_dark_mode = get_dark_mode()
 
     style = get_plot_style(effective_dark_mode)
+    eff_conditions = conditions or observation.conditions
 
     if observation.place.weather is None:
         fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
@@ -73,7 +78,7 @@ def generate_plot_weather(
                 observation,
                 plt_clouds_ax,
                 0,
-                observation.conditions.max_clouds,
+                eff_conditions.max_clouds,
                 effective_dark_mode,
                 style,
             )
@@ -91,7 +96,7 @@ def generate_plot_weather(
                 observation,
                 plt_precip_ax,
                 0,
-                observation.conditions.max_precipitation_probability,
+                eff_conditions.max_precipitation_probability,
                 effective_dark_mode,
                 style,
             )
@@ -108,8 +113,8 @@ def generate_plot_weather(
             mark_good_conditions(
                 observation,
                 plt_temp_ax,
-                observation.conditions.min_temperature,
-                observation.conditions.max_temperature,
+                eff_conditions.min_temperature,
+                eff_conditions.max_temperature,
                 effective_dark_mode,
                 style,
             )
@@ -123,7 +128,7 @@ def generate_plot_weather(
                 observation,
                 plt_wind_ax,
                 0,
-                observation.conditions.max_wind,
+                eff_conditions.max_wind,
                 effective_dark_mode,
                 style,
             )
@@ -141,6 +146,14 @@ def generate_plot_weather(
             mark_observation(
                 observation, plt_visibility_ax, effective_dark_mode, style
             )
+            mark_good_conditions(
+                observation,
+                plt_visibility_ax,
+                eff_conditions.min_visibility,
+                100,  # Arbitrary large value for max visibility
+                effective_dark_mode,
+                style,
+            )
 
         plt_moon_illumination_ax = observation.place.weather.plot_moon_illumination(
             ax=axes[4, 0], dark_mode_override=effective_dark_mode
@@ -149,12 +162,28 @@ def generate_plot_weather(
             mark_observation(
                 observation, plt_moon_illumination_ax, effective_dark_mode, style
             )
+            mark_good_conditions(
+                observation,
+                plt_moon_illumination_ax,
+                0,
+                eff_conditions.max_moon_illumination,
+                effective_dark_mode,
+                style,
+            )
 
         plt_fog_ax = observation.place.weather.plot_fog(
             ax=axes[4, 1], dark_mode_override=effective_dark_mode
         )
         if plt_fog_ax:
             mark_observation(observation, plt_fog_ax, effective_dark_mode, style)
+            mark_good_conditions(
+                observation,
+                plt_fog_ax,
+                0,
+                eff_conditions.max_fog,
+                effective_dark_mode,
+                style,
+            )
 
         if "aurora" in observation.place.weather.data.columns:
             plt_aurora_ax = observation.place.weather.plot_aurora(
@@ -162,6 +191,14 @@ def generate_plot_weather(
             )
             if plt_aurora_ax:
                 mark_observation(observation, plt_aurora_ax, effective_dark_mode, style)
+                mark_good_conditions(
+                    observation,
+                    plt_aurora_ax,
+                    eff_conditions.min_aurora,
+                    100,
+                    effective_dark_mode,
+                    style,
+                )
         else:
             # If the aurora column doesn't exist, you can hide the subplot
             axes[5, 0].set_visible(False)
