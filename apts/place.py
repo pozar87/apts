@@ -1,19 +1,21 @@
 import datetime
 import logging
+from functools import lru_cache
 from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
 from typing import Optional
 
 import matplotlib.font_manager as font_manager
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytz
 from dateutil import tz
 from skyfield import almanac
-from skyfield.api import Topos, load
+from skyfield.api import Topos
 from timezonefinder import TimezoneFinder
 
+from apts.cache import get_ephemeris, get_timescale
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
@@ -25,6 +27,82 @@ from .utils.planetary import get_moon_illumination
 from .weather import Weather
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1024)
+def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(start_date + datetime.timedelta(days=2))
+
+    f = almanac.dark_twilight_day(eph, location)
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    # Define transitions for evening (set) and morning (rise)
+    if event == "set":  # Evening: getting darker
+        transitions = {
+            Twilight.CIVIL: (4, 3),  # Day -> Civil
+            Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
+            Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
+        }
+    else:  # Morning: getting lighter
+        transitions = {
+            Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
+            Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
+            Twilight.CIVIL: (2, 3),  # Nautical -> Civil
+        }
+
+    prev_event, next_event = transitions.get(twilight)
+
+    # The first event is the state at t0
+    previous_y = f(t0)
+    if times is not None and events is not None:
+        for t, y in zip(times, events):
+            if previous_y == prev_event and y == next_event:
+                return t.utc_datetime().replace(tzinfo=pytz.UTC)
+            previous_y = y
+
+    return None
+
+
+@lru_cache(maxsize=1024)
+def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.utc(start - datetime.timedelta(days=2))
+    t1 = ts.utc(start)
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is None:
+        return None
+
+    settings = [ti for ti, yi in zip(t, y) if yi == 0]
+    if settings:
+        return settings[-1].utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+
+@lru_cache(maxsize=1024)
+def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.utc(start)
+    t1 = ts.utc(start + datetime.timedelta(days=2))
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is not None:
+        for ti, yi in zip(t, y):
+            if yi == 1:  # Rising
+                return ti.utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
 
 
 class Place:
@@ -41,8 +119,8 @@ class Place:
         elevation=300,
         date=datetime.datetime.now(datetime.UTC),
     ):
-        self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.ts = get_timescale()
+        self.eph = get_ephemeris()
         if isinstance(date, type(self.ts.now())):
             self.date = date
         else:
@@ -83,39 +161,20 @@ class Place:
             provider_name=provider_name,
         )
 
-    def _previous_setting_time(self, obj, start):
-        t0 = self.ts.utc(start - datetime.timedelta(days=2))
-        t1 = self.ts.utc(start)
-        f = almanac.risings_and_settings(self.eph, obj, self.location)
-        t, y = almanac.find_discrete(t0, t1, f) # type: ignore
-
-        if t is None:
-            return None
-
-        settings = [ti for ti, yi in zip(t, y) if yi == 0] # type: ignore
-        if settings:
-            return (
-                settings[-1]
-                .utc_datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
+    def _previous_setting_time(self, obj_name, start):
+        res = _previous_setting_time_utc(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+        )
+        if res:
+            return res.astimezone(self.local_timezone)
         return None
 
-    def _next_rising_time(self, obj, start):
-        t0 = self.ts.utc(start)
-        t1 = self.ts.utc(start + datetime.timedelta(days=2))
-        f = almanac.risings_and_settings(self.eph, obj, self.location)
-        t, y = almanac.find_discrete(t0, t1, f)
-
-        if t is not None:
-            for ti, yi in zip(t, y): # type: ignore
-                if yi == 1:  # Rising
-                    return (
-                        ti.utc_datetime()
-                        .replace(tzinfo=pytz.UTC) # type: ignore
-                        .astimezone(self.local_timezone)
-                    )
+    def _next_rising_time(self, obj_name, start):
+        res = _next_rising_time_utc(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+        )
+        if res:
+            return res.astimezone(self.local_timezone)
         return None
 
     def _get_start_date(self, target_date, start_search_from):
@@ -130,40 +189,11 @@ class Place:
             return self.date.utc_datetime()
 
     def _get_twilight_time(self, start_date, twilight: Twilight, event: str):
-        t0 = self.ts.utc(start_date)
-        t1 = self.ts.utc(start_date + datetime.timedelta(days=2))
-
-        f = almanac.dark_twilight_day(self.eph, self.location)
-        times, events = almanac.find_discrete(t0, t1, f) # type: ignore
-
-        # Define transitions for evening (set) and morning (rise)
-        if event == "set":  # Evening: getting darker
-            transitions = {
-                Twilight.CIVIL: (4, 3),  # Day -> Civil
-                Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
-                Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
-            }
-        else:  # Morning: getting lighter
-            transitions = {
-                Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
-                Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
-                Twilight.CIVIL: (2, 3),  # Nautical -> Civil
-            }
-
-        prev_event, next_event = transitions.get(twilight) # type: ignore
-
-        # The first event is the state at t0
-        previous_y = f(t0)
-        if times is not None and events is not None:
-            for t, y in zip(times, events): # type: ignore
-                if previous_y == prev_event and y == next_event:
-                    return (
-                        t.utc_datetime()
-                        .replace(tzinfo=pytz.UTC) # type: ignore
-                        .astimezone(self.local_timezone)
-                    )
-                previous_y = y
-
+        res = _get_twilight_time_utc(
+            self.lat_decimal, self.lon_decimal, self.elevation, start_date, twilight, event
+        )
+        if res:
+            return res.astimezone(self.local_timezone)
         return None
 
     def sunset_time(
@@ -175,7 +205,7 @@ class Place:
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "set")
-        return self._previous_setting_time(self.sun, start=start_date)
+        return self._previous_setting_time("sun", start=start_date)
 
     def sunrise_time(
         self,
@@ -186,7 +216,7 @@ class Place:
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "rise")
-        return self._next_rising_time(self.sun, start=start_date)
+        return self._next_rising_time("sun", start=start_date)
 
     def moonset_time(
         self,
@@ -194,7 +224,7 @@ class Place:
         start_search_from: Optional[datetime.datetime] = None,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
-        return self._previous_setting_time(self.moon, start=start_date)
+        return self._previous_setting_time("moon", start=start_date)
 
     def moonrise_time(
         self,
@@ -202,7 +232,7 @@ class Place:
         start_search_from: Optional[datetime.datetime] = None,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
-        return self._next_rising_time(self.moon, start=start_date)
+        return self._next_rising_time("moon", start=start_date)
 
     def _moon_phase_letter(self) -> str:
         phase_angle = almanac.moon_phase(self.eph, self.date)
@@ -407,8 +437,8 @@ class Place:
     def __setstate__(self, state):
         self.__dict__.update(state)
         # Re-create the unpicklable entries.
-        self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.ts = get_timescale()
+        self.eph = get_ephemeris()
         self.location = Topos(
             latitude_degrees=self.lat_decimal,
             longitude_degrees=self.lon_decimal,
