@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock
 import pytz
 import pandas as pd
 from apts.observations import Observation
-from apts.conditions import Conditions
 from apts.weather import Weather
 from . import setup_place
 
