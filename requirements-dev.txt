@@ -4,3 +4,4 @@ ruff
 pyright
 ruff
 pyright
+redis

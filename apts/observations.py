@@ -320,8 +320,8 @@ class Observation:
         with language_context(language):
             return self.plot.planets(dark_mode_override=dark_mode_override, **args)
 
-    def _compute_weather_goodness(self):
-        analysis = self.get_weather_analysis()
+    def _compute_weather_goodness(self, conditions: Optional[Conditions] = None):
+        analysis = self.get_weather_analysis(conditions=conditions)
         if not analysis:
             return 0
 
@@ -331,9 +331,10 @@ class Observation:
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
         if all_hours == 0:
             return 0
+
         return good_hours / all_hours * 100
 
-    def is_weather_good(self):
+    def is_weather_good(self, conditions: Optional[Conditions] = None):
         if self.place.weather is None:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
@@ -341,16 +342,153 @@ class Observation:
             self.place.get_weather()
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
-        return self._compute_weather_goodness() > self.conditions.min_weather_goodness
+
+        effective_conditions = conditions or self.conditions
+        return (
+            self._compute_weather_goodness(conditions=conditions)
+            > effective_conditions.min_weather_goodness
+        )
 
     def plot_weather(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.weather(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_clouds(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.clouds(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_clouds_summary(
         self,
         dark_mode_override: Optional[bool] = None,
         language: Optional[str] = None,
         **args,
     ):
         with language_context(language):
-            return self.plot.weather(dark_mode_override=dark_mode_override, **args)
+            return self.plot.clouds_summary(
+                dark_mode_override=dark_mode_override, **args
+            )
+
+    def plot_precipitation(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.precipitation(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_precipitation_type_summary(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.precipitation_type_summary(
+                dark_mode_override=dark_mode_override, **args
+            )
+
+    def plot_temperature(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.temperature(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_wind(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.wind(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_pressure_and_ozone(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.pressure_and_ozone(
+                dark_mode_override=dark_mode_override, **args
+            )
+
+    def plot_visibility(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.visibility(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_moon_illumination(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.moon_illumination(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_fog(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.fog(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_aurora(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.aurora(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
 
     def to_html(
         self,
@@ -481,8 +619,10 @@ class Observation:
             f"Observation at {self.place.name} from {self.start} to {self.time_limit}"
         )
 
-    def get_weather_analysis(self, language: Optional[str] = None):
-        if self._weather_analysis is not None:
+    def get_weather_analysis(
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+    ):
+        if conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
 
         if self.place.weather is None:
@@ -531,6 +671,7 @@ class Observation:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
 
         analysis_results = []
+        effective_conditions = conditions or self.conditions
         with language_context(language):
             from apts.i18n import gettext_
 
@@ -539,7 +680,7 @@ class Observation:
                 reasons = []
 
                 if pd.isna(row.cloudCover) or not (
-                    row.cloudCover < self.conditions.max_clouds
+                    row.cloudCover < effective_conditions.max_clouds
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -548,7 +689,7 @@ class Observation:
                     )
                 if pd.isna(row.precipProbability) or not (
                     row.precipProbability
-                    < self.conditions.max_precipitation_probability
+                    < effective_conditions.max_precipitation_probability
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -558,7 +699,7 @@ class Observation:
                         % {"precip_prob": f"{row.precipProbability:.1f}"}
                     )
                 if pd.isna(row.windSpeed) or not (
-                    row.windSpeed < self.conditions.max_wind
+                    row.windSpeed < effective_conditions.max_wind
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -566,9 +707,9 @@ class Observation:
                         % {"wind_speed": f"{row.windSpeed:.1f}"}
                     )
                 if pd.isna(row.temperature) or not (
-                    self.conditions.min_temperature
+                    effective_conditions.min_temperature
                     < row.temperature
-                    < self.conditions.max_temperature
+                    < effective_conditions.max_temperature
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -576,22 +717,26 @@ class Observation:
                         % {"temp": f"{row.temperature:.1f}"}
                     )
                 if pd.isna(row.visibility) or not (
-                    row.visibility > self.conditions.min_visibility
+                    row.visibility > effective_conditions.min_visibility
                 ):
                     is_good_hour = False
                     reasons.append(
                         gettext_("Visibility %(vis)s km below limit")
                         % {"vis": f"{row.visibility:.1f}"}
                     )
-                if pd.isna(row.fog) or not (row.fog <= self.conditions.max_fog):
+                if pd.isna(row.fog) or not (row.fog <= effective_conditions.max_fog):
                     is_good_hour = False
                     reasons.append(
                         gettext_("Fog %(fog)s%% exceeds limit of %(max_fog)s%%")
-                        % {"fog": f"{row.fog:.1f}", "max_fog": self.conditions.max_fog}
+                        % {
+                            "fog": f"{row.fog:.1f}",
+                            "max_fog": effective_conditions.max_fog,
+                        }
                     )
                 if (
                     row["Altitude"] > 0
-                    and not row.moonIllumination < self.conditions.max_moon_illumination
+                    and not row.moonIllumination
+                    < effective_conditions.max_moon_illumination
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -601,14 +746,14 @@ class Observation:
                         % {"illum": f"{row.moonIllumination:.1f}"}
                     )
                 if pd.isna(row.aurora) or not (
-                    row.aurora >= self.conditions.min_aurora
+                    row.aurora >= effective_conditions.min_aurora
                 ):
                     is_good_hour = False
                     reasons.append(
                         gettext_("Aurora %(aurora)s%% below limit of %(min_aurora)s%%")
                         % {
                             "aurora": f"{row.aurora:.1f}",
-                            "min_aurora": self.conditions.min_aurora,
+                            "min_aurora": effective_conditions.min_aurora,
                         }
                     )
 
@@ -627,8 +772,11 @@ class Observation:
                         "aurora": row.aurora,
                     }
                 )
-        self._weather_analysis = analysis_results
-        return self._weather_analysis
+        if conditions is None:
+            self._weather_analysis = analysis_results
+        return analysis_results
 
-    def get_hourly_weather_analysis(self, language: Optional[str] = None):
-        return self.get_weather_analysis(language=language)
+    def get_hourly_weather_analysis(
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+    ):
+        return self.get_weather_analysis(language=language, conditions=conditions)
