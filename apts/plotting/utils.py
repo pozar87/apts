@@ -184,10 +184,13 @@ def mark_observation(
     if plot is None:
         return
 
+    # Save current limits to restore them later, preventing unwanted expansion
+    # from axvspan or axvline calls.
+    original_xlim = plot.get_xlim()
+
     # Get plot limits to know which days to mark
     try:
-        limits = plot.get_xlim()
-        x_min, x_max = limits
+        x_min, x_max = original_xlim
         # Handle both numeric and datetime plot limits
         if isinstance(x_min, (float, numpy.float64, int)):
             start_date = mdates.num2date(x_min, tz=observation.place.local_timezone)
@@ -245,6 +248,9 @@ def mark_observation(
     # Still mark the primary observation start/stop with dashed lines
     plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
     plot.axvline(observation.time_limit, color=style["GRID_COLOR"], linestyle="--")
+
+    # Restore original limits
+    plot.set_xlim(original_xlim)
 
 
 def mark_good_conditions(

@@ -111,6 +111,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             ylim=(0, 105),
             title=gettext_("Clouds"),
             ax=ax,
@@ -168,6 +169,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             title=gettext_("Precipitation intensity and probability"),
             ax=ax,
             x_compat=True,
@@ -331,6 +333,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             title=gettext_("Temperatures"),
             ax=ax,
             x_compat=True,
@@ -383,6 +386,7 @@ class Weather:
         plot_ax = data.plot(  # pyright: ignore
             x="time",
             y="windSpeed",
+            xlim=(data.time.min(), data.time.max()),
             ylim=(0, max_wind_speed + 1),
             title=gettext_("Wind speed"),
             ax=ax,
@@ -456,6 +460,7 @@ class Weather:
 
         plot_ax = data.plot(  # pyright: ignore
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             title=plot_title,
             secondary_y=secondary_y_plot,
             ax=ax,
@@ -559,6 +564,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             title=gettext_("Visibility"),
             ax=ax,
             x_compat=True,
@@ -609,6 +615,7 @@ class Weather:
         plot_kwargs = args.copy()
         plot_ax = data.plot(
             x="time",
+            xlim=(data.time.min(), data.time.max()),
             ylim=(0, 105),
             title=gettext_("Fog"),
             ax=ax,
@@ -671,6 +678,7 @@ class Weather:
         plot_ax = data.plot(
             x="time",
             y="moonIllumination",
+            xlim=(data.time.min(), data.time.max()),
             ylim=(0, 105),
             title=title,
             ax=ax,
@@ -728,6 +736,7 @@ class Weather:
         plot_ax = data.plot(
             x="time",
             y="aurora",
+            xlim=(data.time.min(), data.time.max()),
             ylim=(0, 105),
             title=gettext_("Aurora"),
             ax=ax,
