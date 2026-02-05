@@ -1,4 +1,5 @@
 import datetime
+import functools
 import logging
 from importlib import resources
 from math import copysign as copysign
@@ -11,7 +12,7 @@ import numpy as np
 import pytz
 from dateutil import tz
 from skyfield import almanac
-from skyfield.api import Topos, load
+from skyfield.api import Topos
 from timezonefinder import TimezoneFinder
 
 from apts.config import get_dark_mode
@@ -21,17 +22,107 @@ from apts.i18n import gettext_
 from apts.light_pollution import LightPollution
 from apts.utils.plot import Utils as PlotUtils
 
+from .cache import get_timescale, get_ephemeris
 from .utils.planetary import get_moon_illumination
 from .weather import Weather
 
 logger = logging.getLogger(__name__)
 
 
+@functools.lru_cache(maxsize=512)
+def _get_previous_setting_time(lat, lon, elevation, obj_name, start_utc):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.from_datetime(start_utc - datetime.timedelta(days=2))
+    t1 = ts.from_datetime(start_utc)
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is None:
+        return None
+
+    settings = [ti for ti, yi in zip(t, y) if yi == 0] # type: ignore
+    if settings:
+        return settings[-1].utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+
+@functools.lru_cache(maxsize=512)
+def _get_next_rising_time(lat, lon, elevation, obj_name, start_utc):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.from_datetime(start_utc)
+    t1 = ts.from_datetime(start_utc + datetime.timedelta(days=2))
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is not None:
+        for ti, yi in zip(t, y): # type: ignore
+            if yi == 1:  # Rising
+                return ti.utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+
+@functools.lru_cache(maxsize=512)
+def _get_twilight_time(lat, lon, elevation, start_utc, twilight, event):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    t0 = ts.from_datetime(start_utc)
+    t1 = ts.from_datetime(start_utc + datetime.timedelta(days=2))
+
+    f = almanac.dark_twilight_day(eph, location)
+    times, events = almanac.find_discrete(t0, t1, f) # type: ignore
+
+    # Define transitions for evening (set) and morning (rise)
+    if event == "set":  # Evening: getting darker
+        transitions = {
+            Twilight.CIVIL: (4, 3),  # Day -> Civil
+            Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
+            Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
+        }
+    else:  # Morning: getting lighter
+        transitions = {
+            Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
+            Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
+            Twilight.CIVIL: (2, 3),  # Nautical -> Civil
+        }
+
+    trans = transitions.get(twilight)
+    if trans is None:
+        return None
+    prev_event, next_event = trans
+
+    # The first event is the state at t0
+    previous_y = f(t0)
+    if times is not None and events is not None:
+        for t, y in zip(times, events): # type: ignore
+            if previous_y == prev_event and y == next_event:
+                return t.utc_datetime().replace(tzinfo=pytz.UTC)
+            previous_y = y
+
+    return None
+
+
+class TFProxy:
+    def __init__(self):
+        self._instance = None
+
+    def __getattr__(self, name):
+        if self._instance is None:
+            self._instance = TimezoneFinder()
+        return getattr(self._instance, name)
+
+
 class Place:
     MOON_FONT = font_manager.FontProperties(
         fname=str(resources.files("apts").joinpath("data/moon_phases.ttf")), size=50
     )
-    TF = TimezoneFinder()
+    TF = TFProxy()
 
     def __init__(
         self,
@@ -41,8 +132,8 @@ class Place:
         elevation=300,
         date=datetime.datetime.now(datetime.UTC),
     ):
-        self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.ts = get_timescale()
+        self.eph = get_ephemeris()
         if isinstance(date, type(self.ts.now())):
             self.date = date
         else:
@@ -84,38 +175,29 @@ class Place:
         )
 
     def _previous_setting_time(self, obj, start):
-        t0 = self.ts.utc(start - datetime.timedelta(days=2))
-        t1 = self.ts.utc(start)
-        f = almanac.risings_and_settings(self.eph, obj, self.location)
-        t, y = almanac.find_discrete(t0, t1, f) # type: ignore
-
-        if t is None:
-            return None
-
-        settings = [ti for ti, yi in zip(t, y) if yi == 0] # type: ignore
-        if settings:
-            return (
-                settings[-1]
-                .utc_datetime()
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(self.local_timezone)
-            )
+        # We assume obj is self.sun or self.moon
+        obj_name = "sun" if obj == self.sun else "moon"
+        start_utc = (
+            start.astimezone(pytz.UTC) if start.tzinfo else start.replace(tzinfo=pytz.UTC)
+        )
+        result = _get_previous_setting_time(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start_utc
+        )
+        if result:
+            return result.astimezone(self.local_timezone)
         return None
 
     def _next_rising_time(self, obj, start):
-        t0 = self.ts.utc(start)
-        t1 = self.ts.utc(start + datetime.timedelta(days=2))
-        f = almanac.risings_and_settings(self.eph, obj, self.location)
-        t, y = almanac.find_discrete(t0, t1, f)
-
-        if t is not None:
-            for ti, yi in zip(t, y): # type: ignore
-                if yi == 1:  # Rising
-                    return (
-                        ti.utc_datetime()
-                        .replace(tzinfo=pytz.UTC) # type: ignore
-                        .astimezone(self.local_timezone)
-                    )
+        # We assume obj is self.sun or self.moon
+        obj_name = "sun" if obj == self.sun else "moon"
+        start_utc = (
+            start.astimezone(pytz.UTC) if start.tzinfo else start.replace(tzinfo=pytz.UTC)
+        )
+        result = _get_next_rising_time(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start_utc
+        )
+        if result:
+            return result.astimezone(self.local_timezone)
         return None
 
     def _get_start_date(self, target_date, start_search_from):
@@ -130,40 +212,21 @@ class Place:
             return self.date.utc_datetime()
 
     def _get_twilight_time(self, start_date, twilight: Twilight, event: str):
-        t0 = self.ts.utc(start_date)
-        t1 = self.ts.utc(start_date + datetime.timedelta(days=2))
-
-        f = almanac.dark_twilight_day(self.eph, self.location)
-        times, events = almanac.find_discrete(t0, t1, f) # type: ignore
-
-        # Define transitions for evening (set) and morning (rise)
-        if event == "set":  # Evening: getting darker
-            transitions = {
-                Twilight.CIVIL: (4, 3),  # Day -> Civil
-                Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
-                Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
-            }
-        else:  # Morning: getting lighter
-            transitions = {
-                Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
-                Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
-                Twilight.CIVIL: (2, 3),  # Nautical -> Civil
-            }
-
-        prev_event, next_event = transitions.get(twilight) # type: ignore
-
-        # The first event is the state at t0
-        previous_y = f(t0)
-        if times is not None and events is not None:
-            for t, y in zip(times, events): # type: ignore
-                if previous_y == prev_event and y == next_event:
-                    return (
-                        t.utc_datetime()
-                        .replace(tzinfo=pytz.UTC) # type: ignore
-                        .astimezone(self.local_timezone)
-                    )
-                previous_y = y
-
+        start_utc = (
+            start_date.astimezone(pytz.UTC)
+            if start_date.tzinfo
+            else start_date.replace(tzinfo=pytz.UTC)
+        )
+        result = _get_twilight_time(
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            start_utc,
+            twilight,
+            event,
+        )
+        if result:
+            return result.astimezone(self.local_timezone)
         return None
 
     def sunset_time(
@@ -407,8 +470,8 @@ class Place:
     def __setstate__(self, state):
         self.__dict__.update(state)
         # Re-create the unpicklable entries.
-        self.ts = load.timescale()
-        self.eph = load("de421.bsp")
+        self.ts = get_timescale()
+        self.eph = get_ephemeris()
         self.location = Topos(
             latitude_degrees=self.lat_decimal,
             longitude_degrees=self.lon_decimal,
