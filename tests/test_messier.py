@@ -21,7 +21,7 @@ class TestMessier(unittest.TestCase):
     def test_visiable_messier(self):
         o = setup_observation()
         m = o.get_visible_messier()
-        self.assertEqual(len(m), 47)
+        self.assertEqual(len(m), 46)
 
         # Check that string columns have string dtype
         self.assertEqual(m["Messier"].dtype, "string")
@@ -55,7 +55,7 @@ class TestMessier(unittest.TestCase):
 def test_visible_planets():
     o = setup_observation()
     p = o.get_visible_planets()
-    assert len(p) == 5  # Allow for small variations, but expect around 5
+    assert len(p) == 4  # Allow for small variations, but expect around 4
 
     # Check that Name is string type
     assert p["Name"].dtype == "string"

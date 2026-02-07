@@ -41,6 +41,36 @@ def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
 
     f = almanac.dark_twilight_day(eph, location)
     times, events = almanac.find_discrete(t0, t1, f)
+
+    # Define transitions for evening (set) and morning (rise)
+    if event == "set":  # Evening: getting darker
+        transitions = {
+            Twilight.CIVIL: (3, 2),  # Civil -> Nautical
+            Twilight.NAUTICAL: (2, 1),  # Nautical -> Astronomical
+            Twilight.ASTRONOMICAL: (1, 0),  # Astronomical -> Night
+        }
+    else:  # Morning: getting lighter
+        transitions = {
+            Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
+            Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
+            Twilight.CIVIL: (2, 3),  # Nautical -> Civil
+        }
+
+    trans = transitions.get(twilight)
+    if trans is None:
+        return None
+    prev_event, next_event = trans
+
+    # The first event is the state at t0
+    previous_y = f(t0)
+    if times is not None and events is not None:
+        for t, y in zip(times, events):
+            if previous_y == prev_event and y == next_event:
+                return t.utc_datetime().replace(tzinfo=pytz.UTC)
+            previous_y = y
+
+    return None
+
 @functools.lru_cache(maxsize=512)
 def _get_previous_setting_time(lat, lon, elevation, obj_name, start_utc):
     ts = get_timescale()
@@ -93,9 +123,9 @@ def _get_twilight_time(lat, lon, elevation, start_utc, twilight, event):
     # Define transitions for evening (set) and morning (rise)
     if event == "set":  # Evening: getting darker
         transitions = {
-            Twilight.CIVIL: (4, 3),  # Day -> Civil
-            Twilight.NAUTICAL: (3, 2),  # Civil -> Nautical
-            Twilight.ASTRONOMICAL: (2, 1),  # Nautical -> Astronomical
+            Twilight.CIVIL: (3, 2),  # Civil -> Nautical
+            Twilight.NAUTICAL: (2, 1),  # Nautical -> Astronomical
+            Twilight.ASTRONOMICAL: (1, 0),  # Astronomical -> Night
         }
     else:  # Morning: getting lighter
         transitions = {
