@@ -74,6 +74,9 @@ class Plotter:
     def aurora(self, conditions: Optional["Conditions"] = None, **args):
         return plot_aurora(self.observation, conditions=conditions, **args)
 
+    def weather_summary(self, conditions: Optional["Conditions"] = None, **args):
+        return plot_weather_summary(self.observation, conditions=conditions, **args)
+
     def skymap(self, **args):
         return plot_skymap(self.observation, **args)
 
@@ -305,6 +308,24 @@ def plot_aurora(
     )
 
 
+def plot_weather_summary(
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
+):
+    from .plotting.weather import generate_plot_weather_summary
+
+    if observation.place.weather is None:
+        observation.place.get_weather()
+    return generate_plot_weather_summary(
+        observation,
+        dark_mode_override=dark_mode_override,
+        conditions=conditions,
+        **args,
+    )
+
+
 def plot_skymap(observation: "Observation", **args):
     from .plotting.skymap import plot_skymap
 
@@ -358,6 +379,7 @@ __all__ = [
     "plot_moon_illumination",
     "plot_fog",
     "plot_aurora",
+    "plot_weather_summary",
     "plot_skymap",
     "plot_visible_planets",
     "plot_visible_planets_svg",

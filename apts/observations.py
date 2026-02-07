@@ -500,6 +500,18 @@ class Observation:
                 dark_mode_override=dark_mode_override, conditions=conditions, **args
             )
 
+    def plot_weather_summary(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.weather_summary(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
     def to_html(
         self,
         custom_template=None,
@@ -655,9 +667,23 @@ class Observation:
         hourly_data = hourly_data[hourly_data.time <= self.time_limit].copy()
 
         if "fog" not in hourly_data.columns:
-            hourly_data["fog"] = 100
+            hourly_data["fog"] = 0
         if "aurora" not in hourly_data.columns:
             hourly_data["aurora"] = 0
+        if "precipIntensity" not in hourly_data.columns:
+            hourly_data["precipIntensity"] = 0
+        if "precipProbability" not in hourly_data.columns:
+            hourly_data["precipProbability"] = 0
+        if "cloudCover" not in hourly_data.columns:
+            hourly_data["cloudCover"] = 0
+        if "windSpeed" not in hourly_data.columns:
+            hourly_data["windSpeed"] = 0
+        if "temperature" not in hourly_data.columns:
+            hourly_data["temperature"] = 20
+        if "visibility" not in hourly_data.columns:
+            hourly_data["visibility"] = 20
+        if "moonIllumination" not in hourly_data.columns:
+            hourly_data["moonIllumination"] = 0
 
         # Calculate moon altitudes exactly for each weather data point
         ts = self.place.ts
@@ -670,6 +696,7 @@ class Observation:
         for col in [
             "cloudCover",
             "precipProbability",
+            "precipIntensity",
             "windSpeed",
             "temperature",
             "visibility",
@@ -707,6 +734,17 @@ class Observation:
                             "Precipitation probability %(precip_prob)s%% exceeds limit"
                         )
                         % {"precip_prob": f"{row.precipProbability:.1f}"}
+                    )
+                if pd.isna(row.precipIntensity) or not (
+                    row.precipIntensity
+                    < effective_conditions.max_precipitation_intensity
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_(
+                            "Precipitation intensity %(precip_intens)s mm exceeds limit"
+                        )
+                        % {"precip_intens": f"{row.precipIntensity:.1f}"}
                     )
                 if pd.isna(row.windSpeed) or not (
                     row.windSpeed < effective_conditions.max_wind
@@ -775,6 +813,7 @@ class Observation:
                         "temperature": row.temperature,
                         "clouds": row.cloudCover,
                         "precipitation": row.precipProbability,
+                        "precipitation_intensity": row.precipIntensity,
                         "wind_speed": row.windSpeed,
                         "visibility": row.visibility,
                         "moon_illumination": row.moonIllumination,

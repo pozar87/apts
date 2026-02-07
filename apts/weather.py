@@ -528,6 +528,7 @@ class Weather:
         critical_data_columns = [
             "cloudCover",
             "precipProbability",
+            "precipIntensity",
             "windSpeed",
             "temperature",
             "visibility",

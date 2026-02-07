@@ -279,7 +279,7 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipProbability": [],
+                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -305,7 +305,7 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipProbability": [],
+                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -337,7 +337,7 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipProbability": [],
+                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -361,7 +361,7 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipProbability": [],
+                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -938,6 +938,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             # Good weather by default
             cloud = self.obs.conditions.max_clouds - 1
             precip = self.obs.conditions.max_precipitation_probability - 1
+            precip_int = self.obs.conditions.max_precipitation_intensity - 0.1
             wind = self.obs.conditions.max_wind - 1
             temp = (
                 self.obs.conditions.min_temperature
@@ -958,11 +959,13 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "time": hour_time,
                     "cloudCover": cloud,
                     "precipProbability": precip,
+                    "precipIntensity": precip_int,
                     "windSpeed": wind,
                     "temperature": temp,
                     "visibility": vis,
                     "moonIllumination": moonIllumination,
                     "fog": 0,
+                    "aurora": 0,
                 }
             )
         return pd.DataFrame(data)
@@ -1007,6 +1010,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 {
                     "time": hour_time,
                     "cloudCover": cloud,
+                    "precipIntensity": 0,
+                    "aurora": 0,
                     "precipProbability": precip,
                     "windSpeed": wind,
                     "temperature": temp,
@@ -1043,6 +1048,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             {
                 "time": base_time,
                 "cloudCover": cloud_bad,  # Bad
+                "precipIntensity": 0,
+                "aurora": 0,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,  # Good
                 "windSpeed": wind_bad,  # Bad
@@ -1061,6 +1068,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             {
                 "time": cast(Any, base_time) + datetime.timedelta(hours=1),
                 "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipIntensity": 0,
+                "aurora": 0,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
@@ -1167,6 +1176,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             {
                 "time": self.obs.start,
                 "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipIntensity": 0,
+                "aurora": 0,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
@@ -1193,6 +1204,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             {
                 "time": self.obs.start,
                 "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipIntensity": 0,
+                "aurora": 0,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
                 - 1,
                 "windSpeed": self.obs.conditions.max_wind - 1,
@@ -1219,6 +1232,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             {
                 "time": self.obs.start,
                 "cloudCover": self.obs.conditions.max_clouds - 1,
+                "precipIntensity": 0,
+                "aurora": 0,
                 "precipProbability": precip_bad,  # Too high
                 "windSpeed": self.obs.conditions.max_wind - 1,
                 "temperature": (
