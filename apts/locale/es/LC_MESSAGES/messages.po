@@ -918,3 +918,6 @@ msgstr "Error al generar los detalles del gráfico meteorológico.\nConsulte los
 
 msgid "Weather Plot Error"
 msgstr "Error en el gráfico meteorológico"
+
+msgid "Precipitation intensity %(precip_intens)s mm exceeds limit"
+msgstr "La intensidad de la precipitación %(precip_intens)s mm excede el límite"
