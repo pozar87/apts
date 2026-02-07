@@ -1,26 +1,35 @@
 import unittest
 from datetime import datetime
+
 from skyfield.api import Topos, utc
+
 from apts import skyfield_searches
 from apts.cache import get_ephemeris, get_timescale
-from apts.utils import planetary
 from apts.events import AstronomicalEvents
 from apts.place import Place
+from apts.utils import planetary
+
 
 class MercuryTransitTest(unittest.TestCase):
     def setUp(self):
         self.eph = get_ephemeris()
         self.ts = get_timescale()
-        self.observer = self.eph["earth"] + Topos(latitude_degrees=0.0, longitude_degrees=0.0)
+        self.observer = self.eph["earth"] + Topos(
+            latitude_degrees=0.0, longitude_degrees=0.0
+        )
 
     def test_mercury_transit_2019(self):
         # 2019-11-11 was an inferior transit
         start_date = datetime(2019, 11, 10, tzinfo=utc)
         end_date = datetime(2019, 11, 12, tzinfo=utc)
 
-        events = skyfield_searches.find_mercury_inferior_conjunctions(self.observer, start_date, end_date)
+        events = skyfield_searches.find_mercury_inferior_conjunctions(
+            self.observer, start_date, end_date
+        )
 
-        self.assertEqual(len(events), 1, "Should find exactly one inferior conjunction in Nov 2019")
+        self.assertEqual(
+            len(events), 1, "Should find exactly one inferior conjunction in Nov 2019"
+        )
         event = events[0]
 
         # Check if it's on the "right side" (closer to us than the sun)
@@ -31,7 +40,11 @@ class MercuryTransitTest(unittest.TestCase):
         m_dist = self.observer.at(t).observe(mercury).distance().au
         s_dist = self.observer.at(t).observe(sun).distance().au
 
-        self.assertLess(m_dist, s_dist, "Mercury should be closer to Earth than the Sun during inferior conjunction")
+        self.assertLess(
+            m_dist,
+            s_dist,
+            "Mercury should be closer to Earth than the Sun during inferior conjunction",
+        )
         self.assertTrue(event.get("is_transit"), "2019-11-11 should be a transit")
 
     def test_mercury_superior_conjunction_2019_not_found(self):
@@ -54,7 +67,9 @@ class MercuryTransitTest(unittest.TestCase):
         start_date = datetime(2023, 4, 30, tzinfo=utc)
         end_date = datetime(2023, 5, 4, tzinfo=utc)
 
-        events = skyfield_searches.find_mercury_inferior_conjunctions(self.observer, start_date, end_date, threshold_degrees=5.0)
+        events = skyfield_searches.find_mercury_inferior_conjunctions(
+            self.observer, start_date, end_date, threshold_degrees=5.0
+        )
 
         self.assertEqual(len(events), 1)
         event = events[0]
@@ -67,12 +82,14 @@ class MercuryTransitTest(unittest.TestCase):
         s_dist = self.observer.at(t).observe(sun).distance().au
 
         self.assertLess(m_dist, s_dist)
-        self.assertGreater(event["separation_degrees"], 0.3, "This should not be a transit")
+        self.assertGreater(
+            event["separation_degrees"], 0.3, "This should not be a transit"
+        )
         self.assertFalse(event.get("is_transit"), "2023-05-02 should NOT be a transit")
 
     def test_astronomical_events_mercury_transit(self):
         # Test that AstronomicalEvents correctly labels the transit
-        place = Place(lat=0.0, lon=0.0, elevation=0.0, name="Equator")
+        place = Place(lat=0.0, lon=0.0, elevation=800, name="Equator")
         # 2019-11-11 transit
         start_date = datetime(2019, 11, 11, 0, 0, 0, tzinfo=utc)
         end_date = datetime(2019, 11, 11, 23, 59, 59, tzinfo=utc)
@@ -84,6 +101,7 @@ class MercuryTransitTest(unittest.TestCase):
         event = events_df[0]
         self.assertEqual(event["event"], "Mercury Transit")
         self.assertTrue(event["is_transit"])
+
 
 if __name__ == "__main__":
     unittest.main()

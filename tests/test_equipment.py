@@ -802,11 +802,8 @@ def _create_custom_equipment_for_plotting():
     return eq
 
 
-patch("apts.equipment.plt")
-
-
-@patch("apts.equipment.plt")
-def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):
+@patch.object(Equipment, "_plot")
+def test_plot_zoom_excludes_naked_eye_by_default(mock_plot):
     eq = setup_equipment()
     eq.plot_zoom()
 
@@ -819,8 +816,8 @@ def test_plot_zoom_excludes_naked_eye_by_default(mock_plt):
         assert "Naked Eye 1x7" not in data_for_plot.index
 
 
-@patch("apts.equipment.plt")
-def test_plot_zoom_includes_naked_eye_when_flagged(mock_plt):
+@patch.object(Equipment, "_plot")
+def test_plot_zoom_includes_naked_eye_when_flagged(mock_plot):
     eq = setup_equipment()
     eq.plot_zoom(include_naked_eye=True)
 

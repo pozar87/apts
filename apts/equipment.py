@@ -3,7 +3,6 @@ from typing import Optional
 
 import cairo as ca
 import igraph as ig
-import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
@@ -314,6 +313,8 @@ class Equipment:
         include_naked_eye=False,
         **args,
     ):
+        import matplotlib.pyplot as plt
+
         style = get_plot_style(dark_mode_enabled)
         colors = get_plot_colors(dark_mode_enabled)
         data, legend_labels = self._filter_and_merge(
