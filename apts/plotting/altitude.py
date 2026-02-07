@@ -90,6 +90,12 @@ def generate_plot_messier(
                     lambda x: x.magnitude if hasattr(x, "magnitude") else x
                 )
 
+        transits = []
+        altitudes = []
+        sizes = []
+        colors = []
+        labels = []
+
         for _, obj in messier_df.iterrows():
             transit = obj[ObjectTableLabels.TRANSIT]
             if bool(pd.notna(transit)):
@@ -98,13 +104,28 @@ def generate_plot_messier(
                 width = obj[ObjectTableLabels.WIDTH]
                 height = obj["Height"] if "Height" in obj else width
                 messier_id = obj[ObjectTableLabels.MESSIER]
-                marker_size = (width * height) ** 0.5
+                # Calculate marker area (s) as width * height
+                # Original logic: marker_size = sqrt(width*height); s = marker_size**2
+                s_size = width * height
+
                 color = get_messier_color(obj_type, effective_dark_mode)
                 plotted_types[obj_type] = color
-                ax.scatter(transit, altitude, s=marker_size**2, marker="o", c=color)
+
+                transits.append(transit)
+                altitudes.append(altitude)
+                sizes.append(s_size)
+                colors.append(color)
+                labels.append((messier_id, transit, altitude))
+
+        if transits:
+            # Single vectorized scatter call
+            ax.scatter(transits, altitudes, s=sizes, marker="o", c=colors)
+
+            # Annotation loop remains necessary
+            for text, x, y in labels:
                 ax.annotate(
-                    messier_id,
-                    (transit, altitude),
+                    text,
+                    (x, y),
                     xytext=(5, 5),
                     textcoords="offset points",
                     color=style["TEXT_COLOR"],
