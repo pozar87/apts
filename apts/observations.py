@@ -490,6 +490,18 @@ class Observation:
                 dark_mode_override=dark_mode_override, conditions=conditions, **args
             )
 
+    def plot_weather_summary(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.weather_summary(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
     def to_html(
         self,
         custom_template=None,
@@ -660,6 +672,7 @@ class Observation:
         for col in [
             "cloudCover",
             "precipProbability",
+            "precipIntensity",
             "windSpeed",
             "temperature",
             "visibility",
@@ -697,6 +710,17 @@ class Observation:
                             "Precipitation probability %(precip_prob)s%% exceeds limit"
                         )
                         % {"precip_prob": f"{row.precipProbability:.1f}"}
+                    )
+                if pd.isna(row.precipIntensity) or not (
+                    row.precipIntensity
+                    < effective_conditions.max_precipitation_intensity
+                ):
+                    is_good_hour = False
+                    reasons.append(
+                        gettext_(
+                            "Precipitation intensity %(precip_intens)s mm exceeds limit"
+                        )
+                        % {"precip_intens": f"{row.precipIntensity:.1f}"}
                     )
                 if pd.isna(row.windSpeed) or not (
                     row.windSpeed < effective_conditions.max_wind
@@ -765,6 +789,7 @@ class Observation:
                         "temperature": row.temperature,
                         "clouds": row.cloudCover,
                         "precipitation": row.precipProbability,
+                        "precipitation_intensity": row.precipIntensity,
                         "wind_speed": row.windSpeed,
                         "visibility": row.visibility,
                         "moon_illumination": row.moonIllumination,

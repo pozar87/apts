@@ -225,7 +225,7 @@ def mark_observation(
                     "SPAN_BACKGROUND_COLOR",
                     "#DDDDDD" if not dark_mode_enabled else "#FFFFFF",
                 ),
-                alpha=0.07 if dark_mode_enabled else 0.2,
+                alpha=0.15 if dark_mode_enabled else 0.25,
                 label="_nolegend_",
             )
 
@@ -240,7 +240,7 @@ def mark_observation(
                 color=style.get(
                     "MOON_SPAN_COLOR", "#FFFFE0" if not dark_mode_enabled else "#5A1A75"
                 ),
-                alpha=0.07 if dark_mode_enabled else 0.1,
+                alpha=0.15 if dark_mode_enabled else 0.25,
                 label="_nolegend_",
             )
         current_day += timedelta(days=1)
@@ -268,7 +268,7 @@ def mark_good_conditions(
         maximal,
         color=style.get(
             "GOOD_CONDITION_HL_COLOR",
-            "#90EE90" if not dark_mode_enabled else "#007447",
+            "#90EE90" if not dark_mode_enabled else "#00FF7F",
         ),
-        alpha=0.1,
+        alpha=0.25,
     )
