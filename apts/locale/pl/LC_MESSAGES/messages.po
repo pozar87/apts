@@ -919,3 +919,6 @@ msgstr "Błąd podczas generowania szczegółów wykresu pogody.\nSzczegóły w 
 
 msgid "Weather Plot Error"
 msgstr "Błąd wykresu pogody"
+
+msgid "Precipitation intensity %(precip_intens)s mm exceeds limit"
+msgstr "Intensywność opadów %(precip_intens)s mm przekracza limit"
