@@ -657,9 +657,23 @@ class Observation:
         hourly_data = hourly_data[hourly_data.time <= self.time_limit].copy()
 
         if "fog" not in hourly_data.columns:
-            hourly_data["fog"] = 100
+            hourly_data["fog"] = 0
         if "aurora" not in hourly_data.columns:
             hourly_data["aurora"] = 0
+        if "precipIntensity" not in hourly_data.columns:
+            hourly_data["precipIntensity"] = 0
+        if "precipProbability" not in hourly_data.columns:
+            hourly_data["precipProbability"] = 0
+        if "cloudCover" not in hourly_data.columns:
+            hourly_data["cloudCover"] = 0
+        if "windSpeed" not in hourly_data.columns:
+            hourly_data["windSpeed"] = 0
+        if "temperature" not in hourly_data.columns:
+            hourly_data["temperature"] = 20
+        if "visibility" not in hourly_data.columns:
+            hourly_data["visibility"] = 20
+        if "moonIllumination" not in hourly_data.columns:
+            hourly_data["moonIllumination"] = 0
 
         # Calculate moon altitudes exactly for each weather data point
         ts = self.place.ts
