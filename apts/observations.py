@@ -157,19 +157,25 @@ class Observation:
                 self.time_limit = self.stop
         # If self.start is None, self.time_limit remains None.
 
+        self._plot = None
+
     @property
     def plot(self):
-        if not hasattr(self, "_plot_instance"):
+        if self._plot is None:
             try:
-                self._plot_instance = apts_plot.Plotter(self)
+                self._plot = apts_plot.Plotter(self)
             except ImportError:
                 # Fallback if dependencies are missing or plotting is disabled
-                self._plot_instance = apts_plot.NullPlotter()
+                self._plot = apts_plot.NullPlotter()
             except Exception as e:
                 # Fallback for any other initialization error
                 logger.warning(f"Failed to initialize plotter: {e}")
-                self._plot_instance = apts_plot.NullPlotter()
-        return self._plot_instance
+                self._plot = apts_plot.NullPlotter()
+        return self._plot
+
+    @plot.setter
+    def plot(self, value):
+        self._plot = value
 
     @property
     def local_messier(self):
