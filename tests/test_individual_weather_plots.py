@@ -22,7 +22,8 @@ def mock_weather_instance():
                 "visibility": [20.0],
                 "moonIllumination": [10.0],
                 "fog": [0.0],
-                "aurora": [0.0]
+                "aurora": [0.0],
+                "precipIntensity": [0.0]
             })
             mock_provider.download_data.return_value = mock_data
             weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)

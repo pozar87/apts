@@ -36,6 +36,7 @@ class TestWeatherModule(unittest.TestCase):
                 "ozone": [300, 301],
                 "visibility": [10, 12],
                 "fog": [5, 10],
+                "aurora": [0, 0],
             }
         )
         mock_pirate_weather.return_value = self.mock_provider

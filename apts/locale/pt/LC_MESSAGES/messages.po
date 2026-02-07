@@ -903,3 +903,18 @@ msgstr "Plutão"
 #: stargazer/templatetags/stargazer_tags.py:19
 msgid "Sun"
 msgstr "Sol"
+
+msgid "Good hours"
+msgstr "Horas favoráveis"
+
+msgid "Bad hours"
+msgstr "Horas desfavoráveis"
+
+msgid "Weather goodness summary"
+msgstr "Resumo de qualidade meteorológica"
+
+msgid "Error generating Weather plot details.\nSee logs for specifics."
+msgstr "Erro ao gerar os detalhes do gráfico meteorológico.\nConsulte os registos para obter detalhes específicos."
+
+msgid "Weather Plot Error"
+msgstr "Erro no gráfico meteorológico"

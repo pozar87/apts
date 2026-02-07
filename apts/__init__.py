@@ -101,4 +101,4 @@ if should_auto_preload_data():
         preload_data()
 
 
-__version__ = "0.9.2"
+__version__ = "0.9.3"

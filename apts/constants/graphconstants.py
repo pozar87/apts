@@ -47,7 +47,7 @@ class GraphConstants:
         "TICK_COLOR": "#CCCCCC",  # Light Gray
         "GRID_COLOR": "#404040",  # Subtle Dark Gray
         "SPAN_BACKGROUND_COLOR": "#2A2A4A",  # Dark blueish gray
-        "GOOD_CONDITION_HL_COLOR": "#007447",  # Vibrant Green (for low alpha highlights)
+        "GOOD_CONDITION_HL_COLOR": "#00FF7F",  # Spring Green (for low alpha highlights)
         "MOON_SPAN_COLOR": "#FFFFE0",  # Light Yellow
         "ERROR_TEXT_COLOR": "#FF6B6B",  # Light red
         "WARNING_TEXT_COLOR": "#FFCC00",  # Light orange
@@ -65,6 +65,7 @@ class GraphConstants:
         "AXES_FACE_COLOR": "#F0F0F0",
         "AXES_EDGE_COLOR": "#333333",
         "TICK_COLOR": "#333333",
+        "GOOD_CONDITION_HL_COLOR": "#90EE90",
     }
 
     PLANET_COLORS_LIGHT = {
