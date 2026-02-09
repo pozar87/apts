@@ -47,8 +47,9 @@ class GraphConstants:
         "TICK_COLOR": "#CCCCCC",  # Light Gray
         "GRID_COLOR": "#404040",  # Subtle Dark Gray
         "SPAN_BACKGROUND_COLOR": "#2A2A4A",  # Dark blueish gray
+        "DAY_SPAN_COLOR": "#3A1A5F",  # Subtle Purple for Day
         "GOOD_CONDITION_HL_COLOR": "#00FF7F",  # Spring Green (for low alpha highlights)
-        "MOON_SPAN_COLOR": "#FFFFE0",  # Light Yellow
+        "MOON_SPAN_COLOR": "#5A1A75",  # Muted Purple for Moon Presence
         "ERROR_TEXT_COLOR": "#FF6B6B",  # Light red
         "WARNING_TEXT_COLOR": "#FFCC00",  # Light orange
         # AXES_EDGE_COLOR is often the same as AXIS_COLOR or TEXT_COLOR depending on theme.
@@ -65,6 +66,9 @@ class GraphConstants:
         "AXES_FACE_COLOR": "#F0F0F0",
         "AXES_EDGE_COLOR": "#333333",
         "TICK_COLOR": "#333333",
+        "SPAN_BACKGROUND_COLOR": "#E0E0E0",  # Light Gray for Night
+        "DAY_SPAN_COLOR": "#FFF9C4",  # Very Light Yellow for Day
+        "MOON_SPAN_COLOR": "#FFFFE0",  # Light Yellow for Moon Presence
         "GOOD_CONDITION_HL_COLOR": "#90EE90",
     }
 
