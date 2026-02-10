@@ -2,7 +2,6 @@ import io
 import logging
 from typing import Optional
 
-import cairo as ca
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
@@ -29,7 +28,7 @@ class MatplotlibSVGWrapper:
 
     def _repr_svg_(self):
         output = io.StringIO()
-        self.fig.savefig(output, format="svg")
+        self.fig.savefig(output, format="svg", facecolor=self.fig.get_facecolor())
         return (output.getvalue(),)
 
 
@@ -463,8 +462,12 @@ class Equipment:
             fig, ax = plt.subplots(figsize=(10, 8))
             fig.patch.set_facecolor(background_color)
             ax.set_facecolor(background_color)
+            ax.axis("off")
 
-            pos = nx.spring_layout(self.connection_garph)
+            try:
+                pos = nx.kamada_kawai_layout(self.connection_garph)
+            except:
+                pos = nx.spring_layout(self.connection_garph)
 
             nx.draw(
                 self.connection_garph,
