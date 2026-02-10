@@ -1,5 +1,4 @@
 import datetime
-import functools
 import logging
 from functools import lru_cache
 from importlib import resources
@@ -24,7 +23,6 @@ from apts.i18n import gettext_
 from apts.light_pollution import LightPollution
 from apts.utils.plot import Utils as PlotUtils
 
-from .cache import get_timescale, get_ephemeris
 from .utils.planetary import get_moon_illumination
 from .weather import Weather
 
@@ -72,8 +70,6 @@ def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
     return None
 
 
-
-
 @lru_cache(maxsize=1024)
 def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
     ts = get_timescale()
@@ -110,6 +106,8 @@ def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
             if yi == 1:  # Rising
                 return ti.utc_datetime().replace(tzinfo=pytz.UTC)
     return None
+
+
 class TFProxy:
     def __init__(self):
         self._instance = None
@@ -205,7 +203,12 @@ class Place:
 
     def _get_twilight_time(self, start_date, twilight: Twilight, event: str):
         res = _get_twilight_time_utc(
-            self.lat_decimal, self.lon_decimal, self.elevation, start_date, twilight, event
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            start_date,
+            twilight,
+            event,
         )
         if res:
             return res.astimezone(self.local_timezone)
@@ -254,9 +257,9 @@ class Place:
         if hasattr(phase_angle, "degrees"):
             phase_angle_deg = phase_angle.degrees
         else:
-            phase_angle_deg = float(phase_angle) # type: ignore
-        lunation = phase_angle_deg / 360.0 # type: ignore
-        letter = chr(ord("A") + int(round(lunation * 26))) # type: ignore
+            phase_angle_deg = float(phase_angle)  # type: ignore
+        lunation = phase_angle_deg / 360.0  # type: ignore
+        letter = chr(ord("A") + int(round(lunation * 26)))  # type: ignore
         return letter
 
     def moon_illumination(self):
@@ -280,18 +283,18 @@ class Place:
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
             diffs = df["Azimuth"].diff()
-            wrap_around_indices = diffs[diffs.abs() > 180].index # type: ignore
-            if not wrap_around_indices.empty: # type: ignore
-                idx = wrap_around_indices[0] # type: ignore
-                new_index = idx - 0.5 # type: ignore
+            wrap_around_indices = diffs[diffs.abs() > 180].index  # type: ignore
+            if not wrap_around_indices.empty:  # type: ignore
+                idx = wrap_around_indices[0]  # type: ignore
+                new_index = idx - 0.5  # type: ignore
                 nan_row = pd.DataFrame(
                     {"Time": [pd.NaT], "Altitude": [np.nan], "Azimuth": [np.nan]},
-                    index=[new_index], # type: ignore
+                    index=[new_index],  # type: ignore
                 )
-                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True) # type: ignore
+                df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)  # type: ignore
 
         df["Local_time"] = [
-            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M") # type: ignore
+            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")  # type: ignore
             if hasattr(t, "utc_datetime")
             else ""
             for t in df["Time"]
@@ -299,7 +302,7 @@ class Place:
         return df
 
     def moon_path(self) -> pd.DataFrame:
-        start_time = self.date.utc_datetime().replace( # type: ignore
+        start_time = self.date.utc_datetime().replace(  # type: ignore
             hour=0, minute=0, second=0, microsecond=0
         )
         end_time = start_time + datetime.timedelta(days=1)
@@ -314,10 +317,10 @@ class Place:
                 phase_angle_deg = (
                     moon_phase_angle.degrees
                     if hasattr(moon_phase_angle, "degrees")
-                    else float(moon_phase_angle) # type: ignore
+                    else float(moon_phase_angle)  # type: ignore
                 )
-                phases.append((phase_angle_deg / 360.0) * 100) # type: ignore
-                lunations.append(phase_angle_deg / 360.0) # type: ignore
+                phases.append((phase_angle_deg / 360.0) * 100)  # type: ignore
+                lunations.append(phase_angle_deg / 360.0)  # type: ignore
             else:
                 phases.append(pd.NA)
                 lunations.append(pd.NA)
@@ -325,20 +328,20 @@ class Place:
         df["Phase"] = phases
         df["Lunation"] = lunations
         df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT # type: ignore
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT  # type: ignore
             for x in df["Time"]
         ]
         return df
 
     def sun_path(self) -> pd.DataFrame:
-        start_time = self.date.utc_datetime().replace( # type: ignore
+        start_time = self.date.utc_datetime().replace(  # type: ignore
             hour=0, minute=0, second=0, microsecond=0
         )
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
         df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT # type: ignore
+            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT  # type: ignore
             for x in df["Time"]
         ]
         return df
@@ -395,7 +398,7 @@ class Place:
 
         ax.set_title(
             gettext_("Sun Path on {date}").format(
-                date=self.date.utc_datetime().strftime("%Y-%m-%d") # type: ignore
+                date=self.date.utc_datetime().strftime("%Y-%m-%d")  # type: ignore
             ),
             color=style["TEXT_COLOR"],
         )
@@ -608,7 +611,7 @@ class Place:
                 )
         ax.set_title(
             gettext_("Moon Path")
-            + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}", # type: ignore
+            + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",  # type: ignore
             color=style["TEXT_COLOR"],
         )
         return ax

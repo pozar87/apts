@@ -1,4 +1,3 @@
-import pytest
 import datetime
 import pytz
 from unittest.mock import MagicMock

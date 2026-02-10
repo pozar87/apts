@@ -1,6 +1,5 @@
 import time
-import pytest
-from datetime import datetime, date
+from datetime import date
 from apts.place import Place
 from apts.equipment import Equipment
 from apts.observations import Observation
