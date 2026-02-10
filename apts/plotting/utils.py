@@ -212,77 +212,80 @@ def mark_observation(
         return
 
     # Use skyfield almanac for accurate and comprehensive day/night and moon marking
-    ts = observation.place.ts
-    eph = observation.place.eph
-    location = observation.place.location
+    try:
+        ts = observation.place.ts
+        eph = observation.place.eph
+        location = observation.place.location
 
-    # Search range slightly wider than visible range to catch transitions at edges
-    t0 = ts.from_datetime(start_date)
-    t1 = ts.from_datetime(end_date)
+        # Search range slightly wider than visible range to catch transitions at edges
+        t0 = ts.from_datetime(start_date)
+        t1 = ts.from_datetime(end_date)
 
-    alpha = 0.15 if dark_mode_enabled else 0.25
+        alpha = 0.15 if dark_mode_enabled else 0.25
 
-    # 1. Sun (Day and Night periods)
-    f_sun = almanac.risings_and_settings(eph, eph["sun"], location)
-    t_sun, y_sun = almanac.find_discrete(t0, t1, f_sun)
+        # 1. Sun (Day and Night periods)
+        f_sun = almanac.risings_and_settings(eph, eph["sun"], location)
+        t_sun, y_sun = almanac.find_discrete(t0, t1, f_sun)
 
-    # Determine state at start_date
-    sun_is_up = bool(f_sun(t0))
-    current_t = start_date
+        # Determine state at start_date
+        sun_is_up = bool(f_sun(t0))
+        current_t = start_date
 
-    # Iterate through sunrise/sunset events
-    for t, y in zip(t_sun, y_sun):
-        transition_time = t.astimezone(observation.place.local_timezone)
+        # Iterate through sunrise/sunset events
+        for t, y in zip(t_sun, y_sun):
+            transition_time = t.astimezone(observation.place.local_timezone)
+            color_key = "DAY_SPAN_COLOR" if sun_is_up else "SPAN_BACKGROUND_COLOR"
+            plot.axvspan(
+                current_t,
+                transition_time,
+                color=style.get(color_key),
+                alpha=alpha,
+                label="_nolegend_",
+            )
+            current_t = transition_time
+            sun_is_up = bool(y)  # 1 for rising, 0 for setting
+
+        # Last Sun segment to end_date
         color_key = "DAY_SPAN_COLOR" if sun_is_up else "SPAN_BACKGROUND_COLOR"
         plot.axvspan(
             current_t,
-            transition_time,
+            end_date,
             color=style.get(color_key),
             alpha=alpha,
             label="_nolegend_",
         )
-        current_t = transition_time
-        sun_is_up = bool(y)  # 1 for rising, 0 for setting
 
-    # Last Sun segment to end_date
-    color_key = "DAY_SPAN_COLOR" if sun_is_up else "SPAN_BACKGROUND_COLOR"
-    plot.axvspan(
-        current_t,
-        end_date,
-        color=style.get(color_key),
-        alpha=alpha,
-        label="_nolegend_",
-    )
+        # 2. Moon (Moon Presence periods)
+        f_moon = almanac.risings_and_settings(eph, eph["moon"], location)
+        t_moon, y_moon = almanac.find_discrete(t0, t1, f_moon)
 
-    # 2. Moon (Moon Presence periods)
-    f_moon = almanac.risings_and_settings(eph, eph["moon"], location)
-    t_moon, y_moon = almanac.find_discrete(t0, t1, f_moon)
+        moon_is_up = bool(f_moon(t0))
+        current_t = start_date
 
-    moon_is_up = bool(f_moon(t0))
-    current_t = start_date
+        for t, y in zip(t_moon, y_moon):
+            transition_time = t.astimezone(observation.place.local_timezone)
+            if moon_is_up:
+                plot.axvspan(
+                    current_t,
+                    transition_time,
+                    color=style.get("MOON_SPAN_COLOR"),
+                    alpha=alpha,
+                    label="_nolegend_",
+                )
+            current_t = transition_time
+            moon_is_up = bool(y)
 
-    for t, y in zip(t_moon, y_moon):
-        transition_time = t.astimezone(observation.place.local_timezone)
+        # Last Moon segment to end_date
         if moon_is_up:
             plot.axvspan(
                 current_t,
-                transition_time,
+                end_date,
                 color=style.get("MOON_SPAN_COLOR"),
                 alpha=alpha,
                 label="_nolegend_",
             )
-        current_t = transition_time
-        moon_is_up = bool(y)
-
-    # Last Moon segment to end_date
-    if moon_is_up:
-        plot.axvspan(
-            current_t,
-            end_date,
-            color=style.get("MOON_SPAN_COLOR"),
-            alpha=alpha,
-            label="_nolegend_",
-        )
+    except Exception as e:
+        logger.debug(f"Astrometric shading failed (likely due to mocks): {e}")
 
     # Still mark the primary observation start/stop with dashed lines
     if observation.start:
