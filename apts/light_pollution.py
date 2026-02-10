@@ -27,7 +27,14 @@ class LightPollution:
 
     def get_light_pollution(self):
         x, y = self._latlon_to_pixel(self.lat, self.lon)
-        palette_index = self.pix[x, y] # type: ignore
+        
+        if self.pix is None:
+            return -1
+
+        palette_index = self.pix[x, y]
+
+        if not isinstance(palette_index, int):
+            return -1
 
         # This mapping is based on the key.png from the data source
         # and the palette extracted from the image.

@@ -566,13 +566,13 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     mock_pyplot.subplots.assert_called_once()
                     if scenario_data["expected_effective_dark_mode"]:
                         mock_fig.patch.set_facecolor.assert_called_with("#1C1C3A")
-                        mock_ax.set_facecolor.assert_called_with("#2A004F")
+                        mock_ax.set_facecolor.assert_called_with("#14142B")
                         mock_ax.set_title.assert_any_call(
                             "Messier Objects Altitude", color="#FFFFFF"
                         )
                         if not self.mock_messier_df.empty:
                             mock_legend.get_frame().set_facecolor.assert_called_with(
-                                "#2A004F"
+                                "#14142B"
                             )
                             mock_legend.get_frame().set_edgecolor.assert_called_with(
                                 "#CCCCCC"

@@ -41,14 +41,15 @@ class GraphConstants:
     DARK_MODE_STYLE = {
         "BACKGROUND_COLOR": "#1C1C3A",  # Deep Space Blue
         "FIGURE_FACE_COLOR": "#1C1C3A",  # Deep Space Blue
-        "AXES_FACE_COLOR": "#2A004F",  # Dark Indigo variant
+        "AXES_FACE_COLOR": "#14142B",  # Darker Indigo variant
         "TEXT_COLOR": "#FFFFFF",  # White
         "AXIS_COLOR": "#CCCCCC",  # Light Gray
         "TICK_COLOR": "#CCCCCC",  # Light Gray
         "GRID_COLOR": "#404040",  # Subtle Dark Gray
-        "SPAN_BACKGROUND_COLOR": "#2A2A4A",  # Dark blueish gray
+        "SPAN_BACKGROUND_COLOR": "#050510",  # Very dark night
+        "DAY_SPAN_COLOR": "#FFD700",  # Gold for Day
         "GOOD_CONDITION_HL_COLOR": "#00FF7F",  # Spring Green (for low alpha highlights)
-        "MOON_SPAN_COLOR": "#FFFFE0",  # Light Yellow
+        "MOON_SPAN_COLOR": "#4A90E2",  # Bright Sky Blue for Moon
         "ERROR_TEXT_COLOR": "#FF6B6B",  # Light red
         "WARNING_TEXT_COLOR": "#FFCC00",  # Light orange
         # AXES_EDGE_COLOR is often the same as AXIS_COLOR or TEXT_COLOR depending on theme.
@@ -62,9 +63,12 @@ class GraphConstants:
         "AXIS_COLOR": "#333333",
         "GRID_COLOR": "#D3D3D3",
         "FIGURE_FACE_COLOR": "#FFFFFF",
-        "AXES_FACE_COLOR": "#F0F0F0",
+        "AXES_FACE_COLOR": "#F5F5F5",
         "AXES_EDGE_COLOR": "#333333",
         "TICK_COLOR": "#333333",
+        "SPAN_BACKGROUND_COLOR": "#BDBDBD",  # Darker Gray for Night
+        "DAY_SPAN_COLOR": "#FFF59D",  # More vivid Yellow for Day
+        "MOON_SPAN_COLOR": "#BBDEFB",  # Light Blue for Moon Presence
         "GOOD_CONDITION_HL_COLOR": "#90EE90",
     }
 
