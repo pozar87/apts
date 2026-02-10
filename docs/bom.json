@@ -1,0 +1,404 @@
+{
+  "components": [
+    {
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: Pint==0.25.2",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/Pint/"
+        }
+      ],
+      "name": "Pint",
+      "purl": "pkg:pypi/pint@0.25.2",
+      "type": "library",
+      "version": "0.25.2"
+    },
+    {
+      "bom-ref": "requirements-L1",
+      "description": "requirements line 1: aenum==3.1.16",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/aenum/"
+        }
+      ],
+      "name": "aenum",
+      "purl": "pkg:pypi/aenum@3.1.16",
+      "type": "library",
+      "version": "3.1.16"
+    },
+    {
+      "bom-ref": "requirements-L2",
+      "description": "requirements line 2: ephem==4.2",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/ephem/"
+        }
+      ],
+      "name": "ephem",
+      "purl": "pkg:pypi/ephem@4.2",
+      "type": "library",
+      "version": "4.2"
+    },
+    {
+      "bom-ref": "requirements-L3",
+      "description": "requirements line 3: matplotlib==3.10.8",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/matplotlib/"
+        }
+      ],
+      "name": "matplotlib",
+      "purl": "pkg:pypi/matplotlib@3.10.8",
+      "type": "library",
+      "version": "3.10.8"
+    },
+    {
+      "bom-ref": "requirements-L4",
+      "description": "requirements line 4: numpy==2.3.5",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/numpy/"
+        }
+      ],
+      "name": "numpy",
+      "purl": "pkg:pypi/numpy@2.3.5",
+      "type": "library",
+      "version": "2.3.5"
+    },
+    {
+      "bom-ref": "requirements-L5",
+      "description": "requirements line 5: pandas==2.3.3",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pandas/"
+        }
+      ],
+      "name": "pandas",
+      "purl": "pkg:pypi/pandas@2.3.3",
+      "type": "library",
+      "version": "2.3.3"
+    },
+    {
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: pycairo==1.29.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pycairo/"
+        }
+      ],
+      "name": "pycairo",
+      "purl": "pkg:pypi/pycairo@1.29.0",
+      "type": "library",
+      "version": "1.29.0"
+    },
+    {
+      "bom-ref": "requirements-L8",
+      "description": "requirements line 8: python-igraph==1.0.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/python-igraph/"
+        }
+      ],
+      "name": "python-igraph",
+      "purl": "pkg:pypi/python-igraph@1.0.0",
+      "type": "library",
+      "version": "1.0.0"
+    },
+    {
+      "bom-ref": "requirements-L9",
+      "description": "requirements line 9: pytz==2025.2",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/pytz/"
+        }
+      ],
+      "name": "pytz",
+      "purl": "pkg:pypi/pytz@2025.2",
+      "type": "library",
+      "version": "2025.2"
+    },
+    {
+      "bom-ref": "requirements-L10",
+      "description": "requirements line 10: requests-cache==1.2.1",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/requests-cache/"
+        }
+      ],
+      "name": "requests-cache",
+      "purl": "pkg:pypi/requests-cache@1.2.1",
+      "type": "library",
+      "version": "1.2.1"
+    },
+    {
+      "bom-ref": "requirements-L11",
+      "description": "requirements line 11: requests-mock==1.12.1",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/requests-mock/"
+        }
+      ],
+      "name": "requests-mock",
+      "purl": "pkg:pypi/requests-mock@1.12.1",
+      "type": "library",
+      "version": "1.12.1"
+    },
+    {
+      "bom-ref": "requirements-L12",
+      "description": "requirements line 12: scipy==1.16.3",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/scipy/"
+        }
+      ],
+      "name": "scipy",
+      "purl": "pkg:pypi/scipy@1.16.3",
+      "type": "library",
+      "version": "1.16.3"
+    },
+    {
+      "bom-ref": "requirements-L13",
+      "description": "requirements line 13: seaborn==0.13.2",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/seaborn/"
+        }
+      ],
+      "name": "seaborn",
+      "purl": "pkg:pypi/seaborn@0.13.2",
+      "type": "library",
+      "version": "0.13.2"
+    },
+    {
+      "bom-ref": "requirements-L14",
+      "description": "requirements line 14: skyfield==1.53",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/skyfield/"
+        }
+      ],
+      "name": "skyfield",
+      "purl": "pkg:pypi/skyfield@1.53",
+      "type": "library",
+      "version": "1.53"
+    },
+    {
+      "bom-ref": "requirements-L15",
+      "description": "requirements line 15: svgwrite==1.4.3",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/svgwrite/"
+        }
+      ],
+      "name": "svgwrite",
+      "purl": "pkg:pypi/svgwrite@1.4.3",
+      "type": "library",
+      "version": "1.4.3"
+    },
+    {
+      "bom-ref": "requirements-L16",
+      "description": "requirements line 16: timezonefinder==8.1.0",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "type": "distribution",
+          "url": "https://pypi.org/simple/timezonefinder/"
+        }
+      ],
+      "name": "timezonefinder",
+      "purl": "pkg:pypi/timezonefinder@8.1.0",
+      "type": "library",
+      "version": "8.1.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "requirements-L1"
+    },
+    {
+      "ref": "requirements-L10"
+    },
+    {
+      "ref": "requirements-L11"
+    },
+    {
+      "ref": "requirements-L12"
+    },
+    {
+      "ref": "requirements-L13"
+    },
+    {
+      "ref": "requirements-L14"
+    },
+    {
+      "ref": "requirements-L15"
+    },
+    {
+      "ref": "requirements-L16"
+    },
+    {
+      "ref": "requirements-L2"
+    },
+    {
+      "ref": "requirements-L3"
+    },
+    {
+      "ref": "requirements-L4"
+    },
+    {
+      "ref": "requirements-L5"
+    },
+    {
+      "ref": "requirements-L6"
+    },
+    {
+      "ref": "requirements-L7"
+    },
+    {
+      "ref": "requirements-L8"
+    },
+    {
+      "ref": "requirements-L9"
+    }
+  ],
+  "metadata": {
+    "timestamp": "2026-02-10T15:06:08.483753+00:00",
+    "tools": {
+      "components": [
+        {
+          "description": "CycloneDX Software Bill of Materials (SBOM) generator for Python projects and environments",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-bom/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-bom-tool.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "acknowledgement": "declared",
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-py",
+          "type": "application",
+          "version": "7.2.1"
+        },
+        {
+          "description": "Python library for CycloneDX",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-python-lib/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-python-library.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "acknowledgement": "declared",
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-python-lib",
+          "type": "library",
+          "version": "11.6.0"
+        }
+      ]
+    }
+  },
+  "serialNumber": "urn:uuid:a2afa410-0592-41d2-ae1b-6842169a5eaf",
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6"
+}
