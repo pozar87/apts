@@ -249,10 +249,10 @@ def test_plot_clouds_dark_mode_styles(
 
     if expected_effective_dark_mode:
         mock_fig_patch.set_facecolor.assert_called_with("#1C1C3A")
-        mock_ax.set_facecolor.assert_called_with("#2A004F")
+        mock_ax.set_facecolor.assert_called_with("#14142B")
         mock_ax.set_title.assert_any_call("Clouds", color="#FFFFFF")
         if mock_ax.get_legend() is not None and mock_legend_frame is not None:
-            mock_legend_frame.set_facecolor.assert_called_with("#2A004F")
+            mock_legend_frame.set_facecolor.assert_called_with("#14142B")
             mock_legend_frame.set_edgecolor.assert_called_with("#CCCCCC")
             mock_legend_text_item.set_color.assert_called_with("#FFFFFF")
     else:
