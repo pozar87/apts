@@ -17,10 +17,12 @@ class Utils:
     def plot_no_data(ax, title, dark_mode_enabled):
         style = get_plot_style(dark_mode_enabled)
         if ax is None:
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(
+                facecolor=style["FIGURE_FACE_COLOR"], edgecolor="none"
+            )
         else:
             fig = ax.figure
-        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
         ax.text(
             0.5,

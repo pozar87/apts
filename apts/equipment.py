@@ -28,7 +28,14 @@ class MatplotlibSVGWrapper:
 
     def _repr_svg_(self):
         output = io.StringIO()
-        self.fig.savefig(output, format="svg", facecolor=self.fig.get_facecolor())
+        self.fig.savefig(
+            output,
+            format="svg",
+            facecolor=self.fig.get_facecolor(),
+            edgecolor="none",
+            transparent=False,
+        )
+        plt.close(self.fig)
         return (output.getvalue(),)
 
 
@@ -334,10 +341,15 @@ class Equipment:
             plt.rcParams.update({"figure.autolayout": True})
 
         ax = args.get("ax")
+        if not ax:
+            subplot_args = {k: v for k, v in args.items() if k != "ax"}
+            # Ensure correct background for the figure from the start
+            fig, ax = plt.subplots(
+                facecolor=style["FIGURE_FACE_COLOR"], edgecolor="none", **subplot_args
+            )
+            args["ax"] = ax
+
         if data.empty:
-            if not ax:
-                subplot_args = {k: v for k, v in args.items() if k != "ax"}
-                _, ax = plt.subplots(**subplot_args)
             return PlotUtils.plot_no_data(ax, title, dark_mode_enabled)
 
         # Pass title as None initially, then set it with color
@@ -459,8 +471,9 @@ class Equipment:
             background_color = current_plot_style.get("BACKGROUND_COLOR", "#D3D3D3")
             edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
 
-            fig, ax = plt.subplots(figsize=(10, 8))
-            fig.patch.set_facecolor(background_color)
+            fig, ax = plt.subplots(
+                figsize=(10, 8), facecolor=background_color, edgecolor="none"
+            )
             ax.set_facecolor(background_color)
             ax.axis("off")
 
