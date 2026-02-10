@@ -1,6 +1,6 @@
 [![Join the chat at https://gitter.im/apts-core/Lobby](https://badges.gitter.im/apts-core/Lobby.svg)](https://gitter.im/apts-core/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-# APTS - AstroPhotography Tool Set
+# APTS - Astronomical Planning and Tracking System
 
 A comprehensive suite of tools for amateur astronomers and astrophotographers. APTS helps with equipment management, image acquisition planning, processing, and provides notifications about optimal weather conditions for stargazing. This project was formerly known as **Astro-Pożar Tool Set** and is now an open source library supporting the [stargazer.earth](https://stargazer.earth) service.
 
