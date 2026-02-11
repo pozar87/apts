@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from apts.weather import Weather
 from apts.constants.graphconstants import get_plot_style
-from . import setup_place
+from tests import setup_place
 from requests_mock import ANY
 from apts.observations import Observation
 from apts.conditions import Conditions
