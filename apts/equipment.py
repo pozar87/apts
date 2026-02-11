@@ -451,7 +451,22 @@ class Equipment:
                 f"plot_connection_graph: current_node_colors = {current_node_colors}"
             )
 
-            node_data = self.connection_garph.nodes(data=True)
+            # Create a simplified graph for visualization by removing technical IN/OUT nodes
+            plot_graph = self.connection_garph.copy()
+            nodes_to_remove = [
+                n
+                for n, d in plot_graph.nodes(data=True)
+                if d.get(NodeLabels.TYPE) in [OpticalType.INPUT, OpticalType.OUTPUT]
+            ]
+            for n in nodes_to_remove:
+                preds = list(plot_graph.predecessors(n))
+                succs = list(plot_graph.successors(n))
+                for p in preds:
+                    for s in succs:
+                        plot_graph.add_edge(p, s)
+                plot_graph.remove_node(n)
+
+            node_data = plot_graph.nodes(data=True)
 
             # Calculate vertex colors with a default for missing types
             vertex_colors_list = [
@@ -476,12 +491,54 @@ class Equipment:
             ax.axis("off")
 
             try:
-                pos = nx.kamada_kawai_layout(self.connection_garph)
-            except:
-                pos = nx.spring_layout(self.connection_garph)
+                # Calculate layers for multipartite layout
+                # Categorize nodes into logical steps of the optical path
+                layers = {}
+
+                # Import equipment classes locally to avoid circular dependencies
+                from .opticalequipment.barlow import Barlow
+                from .opticalequipment.binoculars import Binoculars
+                from .opticalequipment.camera import Camera
+                from .opticalequipment.diagonal import Diagonal
+                from .opticalequipment.eyepiece import Eyepiece
+                from .opticalequipment.filter import Filter
+                from .opticalequipment.naked_eye import NakedEye
+                from .opticalequipment.smart_telescope import SmartTelescope
+                from .opticalequipment.telescope import Telescope
+
+                for node_id, data in node_data:
+                    equipment = data.get(NodeLabels.EQUIPMENT)
+
+                    if node_id == GraphConstants.SPACE_ID:
+                        layers[node_id] = 0
+                    elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
+                        layers[node_id] = 4  # Final sinks
+                    elif equipment is not None:
+                        # Main equipment nodes
+                        if isinstance(
+                            equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
+                        ):
+                            layers[node_id] = 1
+                        elif isinstance(equipment, (Barlow, Diagonal, Filter)):
+                            layers[node_id] = 2
+                        elif isinstance(equipment, (Eyepiece, Camera)):
+                            layers[node_id] = 3
+                        else:
+                            layers[node_id] = 2
+                    else:
+                        layers[node_id] = 2
+
+                # Assign layer attribute to nodes (must be integer for multipartite_layout)
+                for node_id, layer in layers.items():
+                    plot_graph.nodes[node_id]["layer"] = int(layer)
+
+                pos = nx.multipartite_layout(plot_graph, subset_key="layer")
+            except Exception as e:
+                logger.warning(f"Failed to calculate multipartite layout: {e}")
+                pos = nx.kamada_kawai_layout(plot_graph)
 
             nx.draw(
-                self.connection_garph,
+                plot_graph,
                 pos,
                 ax=ax,
                 with_labels=True,
@@ -495,6 +552,11 @@ class Equipment:
                 font_color=text_color,
                 font_size=8,
             )
+
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
+
+            return MatplotlibSVGWrapper(fig)
 
             fig.patch.set_facecolor(figure_face_color)
             ax.set_facecolor(axes_face_color)
