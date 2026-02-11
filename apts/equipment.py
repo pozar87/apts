@@ -437,11 +437,7 @@ class Equipment:
             # Connect all outputs with inputs
             self._connect()
 
-            if dark_mode_override is not None:
-                effective_dark_mode = dark_mode_override
-            else:
-                effective_dark_mode = get_dark_mode()
-
+            effective_dark_mode = dark_mode_override if dark_mode_override is not None else get_dark_mode()
             current_plot_style = get_plot_style(effective_dark_mode)
             current_node_colors = get_plot_colors(effective_dark_mode)
 
@@ -466,15 +462,17 @@ class Equipment:
                 f"plot_connection_graph: Calculated vertex_colors_list = {vertex_colors_list}"
             )
 
-            # Determine general text color for labels
+            # Determine general colors from style
             text_color = current_plot_style.get("TEXT_COLOR", "#000000")
-            background_color = current_plot_style.get("BACKGROUND_COLOR", "#D3D3D3")
+            figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
+            axes_face_color = current_plot_style.get("AXES_FACE_COLOR", figure_face_color)
             edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
 
             fig, ax = plt.subplots(
-                figsize=(10, 8), facecolor=background_color, edgecolor="none"
+                figsize=(10, 8), facecolor=figure_face_color, edgecolor="none"
             )
-            ax.set_facecolor(background_color)
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
             ax.axis("off")
 
             try:
@@ -497,6 +495,9 @@ class Equipment:
                 font_color=text_color,
                 font_size=8,
             )
+
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
 
             return MatplotlibSVGWrapper(fig)
 
