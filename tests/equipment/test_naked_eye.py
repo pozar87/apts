@@ -1,7 +1,9 @@
 import unittest
 from typing import Any, cast
+import numpy as np
+import pytest
 
-from apts.constants import EquipmentTableLabels, GraphConstants
+from apts.constants import EquipmentTableLabels, GraphConstants, OpticalType
 from apts.equipment import Equipment
 from apts.opticalequipment import NakedEye
 from apts.i18n import language_context
@@ -14,6 +16,48 @@ class TestNakedEye(unittest.TestCase):
         self.assertEqual(ne.magnification, 1)
         self.assertEqual(cast(Any, ne.objective_diameter).magnitude, 7)
         self.assertEqual(ne.vendor, "Naked Eye")
+        self.assertEqual(ne._type, OpticalType.VISUAL)
+
+    def test_naked_eye_str(self):
+        ne = NakedEye()
+        self.assertEqual(str(ne), "Naked Eye 1x7")
+
+    def test_naked_eye_fov(self):
+        ne = NakedEye()
+        self.assertEqual(ne.fov().magnitude, 180)
+
+    def test_naked_eye_exit_pupil(self):
+        ne = NakedEye()
+        self.assertEqual(ne.exit_pupil().magnitude, 7.0)
+
+    def test_naked_eye_limits(self):
+        ne = NakedEye()
+        self.assertEqual(ne.dawes_limit().magnitude, 16.571)
+        self.assertEqual(ne.rayleigh_limit().magnitude, 19.714)
+
+    def test_naked_eye_limiting_magnitude(self):
+        ne = NakedEye()
+        self.assertTrue(np.isclose(ne.limiting_magnitude(), 6.92, atol=0.01))
+
+    def test_naked_eye_brightness(self):
+        ne = NakedEye()
+        self.assertEqual(ne.brightness(), 100.0)
+
+    def test_naked_eye_register(self):
+        eq = Equipment()
+        ne = NakedEye()
+        ne.register(eq)
+        self.assertIn(ne.id(), eq.connection_garph.nodes())
+        self.assertTrue(eq.connection_garph.has_edge(GraphConstants.SPACE_ID, ne.id()))
+        self.assertTrue(eq.connection_garph.has_edge(ne.id(), GraphConstants.EYE_ID))
+
+    def test_naked_eye_output_type(self):
+        ne = NakedEye()
+        self.assertEqual(ne.output_type(), OpticalType.VISUAL)
+
+    def test_naked_eye_max_useful_zoom(self):
+        ne = NakedEye()
+        self.assertEqual(ne.max_useful_zoom(), 1)
 
     def test_naked_eye_in_equipment(self):
         """Test that NakedEye is always present in the Equipment's graph."""
@@ -37,8 +81,6 @@ class TestNakedEye(unittest.TestCase):
         with language_context('en'):
             eq = Equipment()
             df = eq.data()
-
-            print(f"DEBUG: Labels in dataframe: {df[EquipmentTableLabels.LABEL].tolist()}")
 
             # Find the row corresponding to NakedEye
             naked_eye_rows = df[

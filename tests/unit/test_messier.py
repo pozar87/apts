@@ -8,7 +8,7 @@ from apts import catalogs
 from apts.constants import ObjectTableLabels
 from apts.objects import Messier, SolarObjects
 
-from . import setup_observation, setup_place, setup_southern_observation
+from tests import setup_observation, setup_place, setup_southern_observation
 
 # Helper to get initial datetime from setup_place
 INITIAL_DATE_STR = "2025/02/18 12:00:00"

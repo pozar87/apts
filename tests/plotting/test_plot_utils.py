@@ -3,7 +3,7 @@ import pytz
 from unittest.mock import MagicMock
 from apts.observations import Observation
 from apts.plotting.utils import mark_observation
-from . import setup_place
+from tests import setup_place
 
 def test_mark_observation_sun_and_moon_spans():
     place = setup_place()

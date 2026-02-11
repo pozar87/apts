@@ -20,7 +20,7 @@ from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
 from apts.utils import ConnectionType
 
-from . import setup_equipment
+from tests import setup_equipment
 
 
 def test_flipped_view():

@@ -6,7 +6,7 @@ import pandas as pd
 from apts.observations import Observation
 from apts.conditions import Conditions
 from apts.weather import Weather
-from . import setup_place
+from tests import setup_place
 
 @pytest.fixture
 def mock_weather_data():

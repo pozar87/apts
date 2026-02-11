@@ -16,7 +16,7 @@ from apts.place import Place
 # Assuming setup_place is a helper to create a Place instance for testing
 # If it's defined in tests/__init__.py, this import should work.
 # Otherwise, we might need to define a fixture or helper here.
-from . import setup_place
+from tests import setup_place
 
 # Define some known locations and timezones for testing
 GOLDEN_COORDS = {"lat": 39.7555, "lon": -105.2211, "tz_name": "America/Denver"}
