@@ -24,25 +24,22 @@ class ConnectionType(Enum):
 class Utils:
     @staticmethod
     def find_all_paths(graph, start, end, mode="OUT", maxlen=None):
-        def find_all_paths_aux(adjlist, start, end, path, maxlen=None):
-            path = path + [start]
-            if start == end:
-                return [path]
-            paths = []
-            if maxlen is None or len(path) <= maxlen:
-                for node in adjlist[start] - set(path):
-                    paths.extend(find_all_paths_aux(adjlist, node, end, path, maxlen))
-            return paths
+        import networkx as nx
 
-        adjlist = [
-            set(graph.neighbors(node, mode=mode)) for node in range(graph.vcount())
-        ]
+        start_nodes = start if isinstance(start, list) else [start]
+        end_nodes = end if isinstance(end, list) else [end]
+
         all_paths = []
-        start = start if type(start) is list else [start]
-        end = end if type(end) is list else [end]
-        for s in start:
-            for e in end:
-                all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
+        for s in start_nodes:
+            for e in end_nodes:
+                # networkx.all_simple_paths cutoff is in edges,
+                # so maxlen-1 if maxlen is the number of nodes.
+                cutoff = maxlen - 1 if maxlen is not None else None
+                try:
+                    paths = list(nx.all_simple_paths(graph, s, e, cutoff=cutoff))
+                    all_paths.extend(paths)
+                except nx.NodeNotFound:
+                    continue
         return all_paths
 
     @staticmethod

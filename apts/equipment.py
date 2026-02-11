@@ -1,8 +1,9 @@
+import io
 import logging
 from typing import Optional
 
-import cairo as ca
-import igraph as ig
+import matplotlib.pyplot as plt
+import networkx as nx
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
@@ -21,6 +22,23 @@ from .utils.plot import Utils as PlotUtils
 logger = logging.getLogger(__name__)
 
 
+class MatplotlibSVGWrapper:
+    def __init__(self, fig):
+        self.fig = fig
+
+    def _repr_svg_(self):
+        output = io.StringIO()
+        self.fig.savefig(
+            output,
+            format="svg",
+            facecolor=self.fig.get_facecolor(),
+            edgecolor="none",
+            transparent=False,
+        )
+        plt.close(self.fig)
+        return (output.getvalue(),)
+
+
 class Equipment:
     """
     This class represents all possessed astronomical equipment. Allows to compute all possible
@@ -28,7 +46,7 @@ class Equipment:
     """
 
     def __init__(self):
-        self.connection_garph = ig.Graph(directed=True)
+        self.connection_garph = nx.DiGraph()
         # Register standard input and outputs
         self.add_vertex(GraphConstants.SPACE_ID)
         self.add_vertex(GraphConstants.EYE_ID, node_type=OpticalType.VISUAL)
@@ -40,18 +58,16 @@ class Equipment:
         # Connect all outputs with inputs
         self._connect()
         # Find input and output nodes
-        space_node = self.connection_garph.vs.find(name=GraphConstants.SPACE_ID)
-        output_node = self.connection_garph.vs.find(name=output_id)
         results = []
         results_set = set()
-        logger.debug(f"Space {space_node}, Output {output_node}")
+        logger.debug(f"Space {GraphConstants.SPACE_ID}, Output {output_id}")
         for optical_path in GenericUtils.find_all_paths(
-            self.connection_garph, space_node.index, output_node.index
+            self.connection_garph, GraphConstants.SPACE_ID, output_id
         ):
             logger.debug(f"Optical Path: {optical_path}")
             result: list[Optional[OpticalEquipment]] = [
-                self.connection_garph.vs[id][NodeLabels.EQUIPMENT]
-                for id in optical_path
+                self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
+                for node_id in optical_path
             ]
             op = OpticalPath.from_path([item for item in result if item is not None])  # pyright: ignore
             if op.elements() not in results_set:
@@ -325,10 +341,15 @@ class Equipment:
             plt.rcParams.update({"figure.autolayout": True})
 
         ax = args.get("ax")
+        if not ax:
+            subplot_args = {k: v for k, v in args.items() if k != "ax"}
+            # Ensure correct background for the figure from the start
+            fig, ax = plt.subplots(
+                facecolor=style["FIGURE_FACE_COLOR"], edgecolor="none", **subplot_args
+            )
+            args["ax"] = ax
+
         if data.empty:
-            if not ax:
-                subplot_args = {k: v for k, v in args.items() if k != "ax"}
-                _, ax = plt.subplots(**subplot_args)
             return PlotUtils.plot_no_data(ax, title, dark_mode_enabled)
 
         # Pass title as None initially, then set it with color
@@ -416,11 +437,7 @@ class Equipment:
             # Connect all outputs with inputs
             self._connect()
 
-            if dark_mode_override is not None:
-                effective_dark_mode = dark_mode_override
-            else:
-                effective_dark_mode = get_dark_mode()
-
+            effective_dark_mode = dark_mode_override if dark_mode_override is not None else get_dark_mode()
             current_plot_style = get_plot_style(effective_dark_mode)
             current_node_colors = get_plot_colors(effective_dark_mode)
 
@@ -434,64 +451,117 @@ class Equipment:
                 f"plot_connection_graph: current_node_colors = {current_node_colors}"
             )
 
-            vertex_types = list(
-                self.connection_garph.vs[NodeLabels.TYPE]
-            )  # Collect to log
-            logger.debug(f"plot_connection_graph: Vertex NodeTypes = {vertex_types}")
+            # Create a simplified graph for visualization by removing technical IN/OUT nodes
+            plot_graph = self.connection_garph.copy()
+            nodes_to_remove = [
+                n
+                for n, d in plot_graph.nodes(data=True)
+                if d.get(NodeLabels.TYPE) in [OpticalType.INPUT, OpticalType.OUTPUT]
+            ]
+            for n in nodes_to_remove:
+                preds = list(plot_graph.predecessors(n))
+                succs = list(plot_graph.successors(n))
+                for p in preds:
+                    for s in succs:
+                        plot_graph.add_edge(p, s)
+                plot_graph.remove_node(n)
 
-            # Calculate vertex colors with a default for missing types (e.g., red to see if it's hit)
-            # Using a distinct default like bright green (#00FF00) for debugging this specific issue
-            # if the user reported "all red", this helps see if the default is hit.
-            # The previous default was black. The user saw red. Let's use a new color for the default.
+            node_data = plot_graph.nodes(data=True)
+
+            # Calculate vertex colors with a default for missing types
             vertex_colors_list = [
-                current_node_colors.get(v_type, "#FF00FF") for v_type in vertex_types
-            ]  # Magenta default
+                current_node_colors.get(data.get(NodeLabels.TYPE), "#FF00FF")
+                for _, data in node_data
+            ]
             logger.debug(
-                f"plot_connection_graph: Calculated vertex_colors_list for direct assignment = {vertex_colors_list}"
+                f"plot_connection_graph: Calculated vertex_colors_list = {vertex_colors_list}"
             )
 
-            # Determine general text color for labels
-            text_color = current_plot_style.get(
-                "TEXT_COLOR", "#000000"
-            )  # Black default for text
-            logger.debug(f"plot_connection_graph: text_color for labels = {text_color}")
+            # Determine general colors from style
+            text_color = current_plot_style.get("TEXT_COLOR", "#000000")
+            figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
+            axes_face_color = current_plot_style.get("AXES_FACE_COLOR", figure_face_color)
+            edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
 
-            if len(self.connection_garph.vs) == len(vertex_colors_list):
-                for i, color_val in enumerate(vertex_colors_list):
-                    self.connection_garph.vs[i]["color"] = color_val
-                    self.connection_garph.vs[i]["label_color"] = text_color
-                    self.connection_garph.vs[i]["size"] = 20  # Default size
-                    self.connection_garph.vs[i]["label_dist"] = (
-                        1.5  # Default label distance
-                    )
-            else:
-                logger.error(
-                    "Mismatch between number of vertices and calculated colors. Skipping direct vertex property assignment."
-                )
-
-            background_color = current_plot_style.get(
-                "BACKGROUND_COLOR", "#D3D3D3"
-            )  # Light gray default for debugging background
-            logger.debug(
-                f"plot_connection_graph: background_color = {background_color}"
+            fig, ax = plt.subplots(
+                figsize=(10, 8), facecolor=figure_face_color, edgecolor="none"
             )
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
+            ax.axis("off")
 
-            edge_color_val = current_plot_style.get(
-                "AXIS_COLOR", "#A9A9A9"
-            )  # DarkGray default for debugging edges
-            logger.debug(f"plot_connection_graph: edge_color_val = {edge_color_val}")
+            try:
+                # Calculate layers for multipartite layout
+                # Categorize nodes into logical steps of the optical path
+                layers = {}
 
-            # Call ig.plot(). Vertex-specific properties are now set on the graph itself.
-            # Pass general styling for background and edges.
-            return ig.plot(
-                self.connection_garph,
-                margin=80,
-                background=background_color,
+                # Import equipment classes locally to avoid circular dependencies
+                from .opticalequipment.barlow import Barlow
+                from .opticalequipment.binoculars import Binoculars
+                from .opticalequipment.camera import Camera
+                from .opticalequipment.diagonal import Diagonal
+                from .opticalequipment.eyepiece import Eyepiece
+                from .opticalequipment.filter import Filter
+                from .opticalequipment.naked_eye import NakedEye
+                from .opticalequipment.smart_telescope import SmartTelescope
+                from .opticalequipment.telescope import Telescope
+
+                for node_id, data in node_data:
+                    equipment = data.get(NodeLabels.EQUIPMENT)
+
+                    if node_id == GraphConstants.SPACE_ID:
+                        layers[node_id] = 0
+                    elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
+                        layers[node_id] = 4  # Final sinks
+                    elif equipment is not None:
+                        # Main equipment nodes
+                        if isinstance(
+                            equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
+                        ):
+                            layers[node_id] = 1
+                        elif isinstance(equipment, (Barlow, Diagonal, Filter)):
+                            layers[node_id] = 2
+                        elif isinstance(equipment, (Eyepiece, Camera)):
+                            layers[node_id] = 3
+                        else:
+                            layers[node_id] = 2
+                    else:
+                        layers[node_id] = 2
+
+                # Assign layer attribute to nodes (must be integer for multipartite_layout)
+                for node_id, layer in layers.items():
+                    plot_graph.nodes[node_id]["layer"] = int(layer)
+
+                pos = nx.multipartite_layout(plot_graph, subset_key="layer")
+            except Exception as e:
+                logger.warning(f"Failed to calculate multipartite layout: {e}")
+                pos = nx.kamada_kawai_layout(plot_graph)
+
+            nx.draw(
+                plot_graph,
+                pos,
+                ax=ax,
+                with_labels=True,
+                labels={
+                    node_id: data.get(NodeLabels.LABEL, "")
+                    for node_id, data in node_data
+                },
+                node_color=vertex_colors_list,
+                node_size=2000,
                 edge_color=edge_color_val,
-                # vertex_color, vertex_label_color, vertex_size, vertex_label_dist
-                # are now set directly on graph.vs attributes.
-                **args,
+                font_color=text_color,
+                font_size=8,
             )
+
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
+
+            return MatplotlibSVGWrapper(fig)
+
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
+
+            return MatplotlibSVGWrapper(fig)
 
     def plot_connection_graph_svg(
         self,
@@ -499,10 +569,8 @@ class Equipment:
         language: Optional[str] = None,
         **args,
     ):
-        surface = ca.ImageSurface(ca.FORMAT_ARGB32, 800, 600)
         # Pass dark_mode_override to the plot_connection_graph call
         plot = self.plot_connection_graph(
-            target=surface,
             dark_mode_override=dark_mode_override,
             language=language,
             **args,
@@ -513,17 +581,25 @@ class Equipment:
         if self._connected:
             return
         logger.debug("Connecting nodes")
-        for out_node in self.connection_garph.vs.select(node_type=OpticalType.OUTPUT):
-            # Get output type
-            connection_type = out_node[NodeLabels.CONNECTION_TYPE]
-            for in_node in self.connection_garph.vs.select(
-                node_type=OpticalType.INPUT, connection_type=connection_type
-            ):
-                # Connect all outputs with all inputs, excluding connecting part to itself
-                out_id = OpticalEquipment.get_parent_id(out_node[NodeLabels.NAME])
-                in_id = OpticalEquipment.get_parent_id(in_node[NodeLabels.NAME])
-                if out_id != in_id:
-                    self.add_edge(out_node, in_node)
+        for out_node_id, out_node_data in self.connection_garph.nodes(data=True):
+            if out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT:
+                # Get output type
+                connection_type = out_node_data[NodeLabels.CONNECTION_TYPE]
+                for in_node_id, in_node_data in self.connection_garph.nodes(data=True):
+                    if (
+                        in_node_data.get(NodeLabels.TYPE) == OpticalType.INPUT
+                        and in_node_data.get(NodeLabels.CONNECTION_TYPE)
+                        == connection_type
+                    ):
+                        # Connect all outputs with all inputs, excluding connecting part to itself
+                        out_id = OpticalEquipment.get_parent_id(
+                            out_node_data[NodeLabels.NAME]
+                        )
+                        in_id = OpticalEquipment.get_parent_id(
+                            in_node_data[NodeLabels.NAME]
+                        )
+                        if out_id != in_id:
+                            self.add_edge(out_node_id, in_node_id)
         logger.debug(self.connection_garph)
         self._connected = True
 
@@ -538,8 +614,8 @@ class Equipment:
         Add single node to graph. Return new vertex.
         """
         logger.debug(f"Adding vertex {node_name}")
-        self.connection_garph.add_vertex(node_name, label_dist=1.5)
-        node = self.connection_garph.vs.find(name=node_name)
+        self.connection_garph.add_node(node_name, label_dist=1.5)
+        node = self.connection_garph.nodes[node_name]
 
         if equipment is not None:
             node_type = equipment.type()
@@ -561,24 +637,20 @@ class Equipment:
         node[NodeLabels.LABEL] = node_label
         node[NodeLabels.EQUIPMENT] = equipment
         node[NodeLabels.CONNECTION_TYPE] = connection_type
+        node[NodeLabels.NAME] = node_name
 
         return node
 
     def add_edge(self, node_from, node_to):
         logger.debug(f"Adding edge {node_from} -> {node_to}")
         # Add edge if only it doesn't exist
-        # Check if an edge already exists. igraph's are_connected expects vertex IDs.
-        # error=False ensures it returns a special value (like -1 or an invalid EID)
-        # if no edge exists, instead of raising an error.
-        # We consider directedness based on the graph type.
 
-        source_id = node_from if isinstance(node_from, str) else node_from.index
-        target_id = node_to if isinstance(node_to, str) else node_to.index
-
-        existing_edge = self.connection_garph.get_eid(
-            source_id, target_id, directed=True, error=False
+        source_id = (
+            node_from if isinstance(node_from, str) else node_from[NodeLabels.NAME]
         )
-        if existing_edge < 0:  # An edge ID is non-negative if it exists
+        target_id = node_to if isinstance(node_to, str) else node_to[NodeLabels.NAME]
+
+        if not self.connection_garph.has_edge(source_id, target_id):
             self.connection_garph.add_edge(source_id, target_id)
 
     def register(self, optical_eqipment):

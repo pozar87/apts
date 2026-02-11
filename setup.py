@@ -33,7 +33,7 @@ setup(
         "pandas>=0.22.0",
         "pint>=0.8.1",
         "pycairo>=1.16.2",
-        "python-igraph>=0.7.1.post6",
+        "networkx>=2.0",
         "requests-cache>=1.2.0",
         "requests-mock>=1.12.1",
         "seaborn>=0.8.1",

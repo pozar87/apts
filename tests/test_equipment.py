@@ -1,5 +1,5 @@
 from typing import Any, cast
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np  # Added for np.log10
 import pandas as pd
@@ -114,8 +114,8 @@ def test_camera_path_with_setup_equipment():  # Renamed
     # Let's find this telescope instance from the equipment graph for later assertion
     # NodeLabels is already imported at the top
     setup_tele = None
-    for v in e.connection_garph.vs:
-        node_equipment_attr = v.attributes().get(
+    for _, data in e.connection_garph.nodes(data=True):
+        node_equipment_attr = data.get(
             NodeLabels.EQUIPMENT
         )  # Use NodeLabels for graph attributes
         if (
@@ -250,35 +250,26 @@ def test_binoculars_registration_and_graph():
     # Check graph connections
     # 1. Binoculars node exists
     bino_node_id_in_graph = None
-    for v in eq.connection_garph.vs:
-        if v[NodeLabels.EQUIPMENT] == bino:  # Use NodeLabels directly
-            bino_node_id_in_graph = v[NodeLabels.NAME]  # Use NodeLabels directly
+    for node_id, data in eq.connection_garph.nodes(data=True):
+        if data.get(NodeLabels.EQUIPMENT) == bino:  # Use NodeLabels directly
+            bino_node_id_in_graph = node_id  # In networkx, node_id is the name
             break
     assert bino_node_id_in_graph is not None, "Binoculars node not found in graph"
 
     # 2. Connected from SPACE
-    space_node = eq.connection_garph.vs.find(name=GraphConstants.SPACE_ID)
-    bino_vertex_index = eq.connection_garph.vs.find(name=bino_node_id_in_graph).index
-    assert (
-        eq.connection_garph.get_eid(
-            space_node.index, bino_vertex_index, directed=True, error=False
-        )
-        >= 0
+    assert eq.connection_garph.has_edge(
+        GraphConstants.SPACE_ID, bino_node_id_in_graph
     ), "Binoculars not connected from SPACE"
 
     # 3. Connected to EYE
-    eye_node = eq.connection_garph.vs.find(name=GraphConstants.EYE_ID)
-    assert (
-        eq.connection_garph.get_eid(
-            bino_vertex_index, eye_node.index, directed=True, error=False
-        )
-        >= 0
+    assert eq.connection_garph.has_edge(
+        bino_node_id_in_graph, GraphConstants.EYE_ID
     ), "Binoculars not connected to EYE"
 
     # 4. Ensure no input/output connection points were created for binoculars
     bino_internal_id = bino.id()  # The ID of the equipment itself
-    for v_node in eq.connection_garph.vs:
-        node_name = v_node[NodeLabels.NAME]  # Use NodeLabels directly
+    for _, data in eq.connection_garph.nodes(data=True):
+        node_name = data.get(NodeLabels.NAME)  # Use NodeLabels directly
         if node_name.startswith(bino_internal_id + "_") and (
             node_name.endswith("_IN") or node_name.endswith("_OUT")
         ):
@@ -827,8 +818,8 @@ def test_plot_zoom_includes_naked_eye_when_flagged(mock_plot):
 
 
 @patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.ig.plot")  # Mock the ig.plot call itself
-def test_plot_connection_graph_override_dark(mock_ig_plot, mock_get_global_dark_mode):
+@patch("apts.equipment.nx.draw")  # Mock the nx.draw call
+def test_plot_connection_graph_override_dark(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = False  # Global is light
     eq = _create_custom_equipment_for_plotting()
 
@@ -840,43 +831,32 @@ def test_plot_connection_graph_override_dark(mock_ig_plot, mock_get_global_dark_
 
     eq.plot_connection_graph(dark_mode_override=True)  # Override to dark
 
-    mock_ig_plot.assert_called_once()
-    args, kwargs = mock_ig_plot.call_args
+    mock_nx_draw.assert_called_once()
+    args, kwargs = mock_nx_draw.call_args
 
-    assert kwargs.get("background") == expected_style["BACKGROUND_COLOR"]
-    assert kwargs.get("edge_color") == expected_style["AXIS_COLOR"]
+    plotted_graph = args[0]  # The first positional argument to nx.draw is the graph
+    node_data = plotted_graph.nodes(data=True)
+    all_actual_colors = kwargs.get("node_color")
+    all_actual_font_color = kwargs.get("font_color")
 
-    plotted_graph = args[0]  # The first positional argument to ig.plot is the graph
-    all_vertex_types = plotted_graph.vs[NodeLabels.TYPE]
-    all_actual_colors = plotted_graph.vs["color"]
-    all_actual_label_colors = plotted_graph.vs["label_color"]
-
-    assert len(all_vertex_types) == len(all_actual_colors), (
-        "Mismatch in vertex type and color list lengths"
-    )
-    assert len(all_vertex_types) == len(all_actual_label_colors), (
-        "Mismatch in vertex type and label color list lengths"
+    assert len(node_data) == len(all_actual_colors), (
+        "Mismatch in number of nodes and color list length"
     )
 
-    for i, v_type in enumerate(all_vertex_types):
+    for i, (_, data) in enumerate(node_data):
+        v_type = data.get(NodeLabels.TYPE)
         expected_v_color = expected_colors_map.get(
             v_type, default_vertex_color_if_unmapped
         )
         assert all_actual_colors[i] == expected_v_color, (
-            f"Vertex {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
+            f"Node {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
         )
-        assert all_actual_label_colors[i] == expected_style["TEXT_COLOR"], (
-            f"Vertex {i} (type {v_type}) label color mismatch. Expected {expected_style['TEXT_COLOR']}, got {all_actual_label_colors[i]}"
-        )
-        assert plotted_graph.vs[i]["size"] == 20, f"Vertex {i} size mismatch"
-        assert plotted_graph.vs[i]["label_dist"] == 1.5, (
-            f"Vertex {i} label_dist mismatch"
-        )
+    assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
 @patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.ig.plot")
-def test_plot_connection_graph_override_light(mock_ig_plot, mock_get_global_dark_mode):
+@patch("apts.equipment.nx.draw")
+def test_plot_connection_graph_override_light(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = True  # Global is dark
     eq = _create_custom_equipment_for_plotting()
 
@@ -886,34 +866,28 @@ def test_plot_connection_graph_override_light(mock_ig_plot, mock_get_global_dark
 
     eq.plot_connection_graph(dark_mode_override=False)  # Override to light
 
-    mock_ig_plot.assert_called_once()
-    args, kwargs = mock_ig_plot.call_args
-
-    assert kwargs.get("background") == expected_style["BACKGROUND_COLOR"]
-    assert kwargs.get("edge_color") == expected_style["AXIS_COLOR"]
+    mock_nx_draw.assert_called_once()
+    args, kwargs = mock_nx_draw.call_args
 
     plotted_graph = args[0]
-    all_vertex_types = plotted_graph.vs[NodeLabels.TYPE]
-    all_actual_colors = plotted_graph.vs["color"]
-    all_actual_label_colors = plotted_graph.vs["label_color"]
+    node_data = plotted_graph.nodes(data=True)
+    all_actual_colors = kwargs.get("node_color")
+    all_actual_font_color = kwargs.get("font_color")
 
-    for i, v_type in enumerate(all_vertex_types):
+    for i, (_, data) in enumerate(node_data):
+        v_type = data.get(NodeLabels.TYPE)
         expected_v_color = expected_colors_map.get(
             v_type, default_vertex_color_if_unmapped
         )
         assert all_actual_colors[i] == expected_v_color, (
-            f"Vertex {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
+            f"Node {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
         )
-        assert all_actual_label_colors[i] == expected_style["TEXT_COLOR"], (
-            f"Vertex {i} (type {v_type}) label color mismatch. Expected {expected_style['TEXT_COLOR']}, got {all_actual_label_colors[i]}"
-        )
-        assert plotted_graph.vs[i]["size"] == 20
-        assert plotted_graph.vs[i]["label_dist"] == 1.5
+    assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
 @patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.ig.plot")
-def test_plot_connection_graph_global_dark(mock_ig_plot, mock_get_global_dark_mode):
+@patch("apts.equipment.nx.draw")
+def test_plot_connection_graph_global_dark(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = True  # Global is dark
     eq = _create_custom_equipment_for_plotting()
 
@@ -923,34 +897,28 @@ def test_plot_connection_graph_global_dark(mock_ig_plot, mock_get_global_dark_mo
 
     eq.plot_connection_graph(dark_mode_override=None)  # No override, use global
 
-    mock_ig_plot.assert_called_once()
-    args, kwargs = mock_ig_plot.call_args
-
-    assert kwargs.get("background") == expected_style["BACKGROUND_COLOR"]
-    assert kwargs.get("edge_color") == expected_style["AXIS_COLOR"]
+    mock_nx_draw.assert_called_once()
+    args, kwargs = mock_nx_draw.call_args
 
     plotted_graph = args[0]
-    all_vertex_types = plotted_graph.vs[NodeLabels.TYPE]
-    all_actual_colors = plotted_graph.vs["color"]
-    all_actual_label_colors = plotted_graph.vs["label_color"]
+    node_data = plotted_graph.nodes(data=True)
+    all_actual_colors = kwargs.get("node_color")
+    all_actual_font_color = kwargs.get("font_color")
 
-    for i, v_type in enumerate(all_vertex_types):
+    for i, (_, data) in enumerate(node_data):
+        v_type = data.get(NodeLabels.TYPE)
         expected_v_color = expected_colors_map.get(
             v_type, default_vertex_color_if_unmapped
         )
         assert all_actual_colors[i] == expected_v_color, (
-            f"Vertex {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
+            f"Node {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
         )
-        assert all_actual_label_colors[i] == expected_style["TEXT_COLOR"], (
-            f"Vertex {i} (type {v_type}) label color mismatch. Expected {expected_style['TEXT_COLOR']}, got {all_actual_label_colors[i]}"
-        )
-        assert plotted_graph.vs[i]["size"] == 20
-        assert plotted_graph.vs[i]["label_dist"] == 1.5
+    assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
 @patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.ig.plot")
-def test_plot_connection_graph_global_light(mock_ig_plot, mock_get_global_dark_mode):
+@patch("apts.equipment.nx.draw")
+def test_plot_connection_graph_global_light(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = False  # Global is light
     eq = _create_custom_equipment_for_plotting()
 
@@ -960,39 +928,30 @@ def test_plot_connection_graph_global_light(mock_ig_plot, mock_get_global_dark_m
 
     eq.plot_connection_graph(dark_mode_override=None)  # No override, use global
 
-    mock_ig_plot.assert_called_once()
-    args, kwargs = mock_ig_plot.call_args
-
-    assert kwargs.get("background") == expected_style["BACKGROUND_COLOR"]
-    assert kwargs.get("edge_color") == expected_style["AXIS_COLOR"]
+    mock_nx_draw.assert_called_once()
+    args, kwargs = mock_nx_draw.call_args
 
     plotted_graph = args[0]
-    all_vertex_types = plotted_graph.vs[NodeLabels.TYPE]
-    all_actual_colors = plotted_graph.vs["color"]
-    all_actual_label_colors = plotted_graph.vs["label_color"]
+    node_data = plotted_graph.nodes(data=True)
+    all_actual_colors = kwargs.get("node_color")
+    all_actual_font_color = kwargs.get("font_color")
 
-    for i, v_type in enumerate(all_vertex_types):
+    for i, (_, data) in enumerate(node_data):
+        v_type = data.get(NodeLabels.TYPE)
         expected_v_color = expected_colors_map.get(
             v_type, default_vertex_color_if_unmapped
         )
         assert all_actual_colors[i] == expected_v_color, (
-            f"Vertex {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
+            f"Node {i} (type {v_type}) color mismatch. Expected {expected_v_color}, got {all_actual_colors[i]}"
         )
-        assert all_actual_label_colors[i] == expected_style["TEXT_COLOR"], (
-            f"Vertex {i} (type {v_type}) label color mismatch. Expected {expected_style['TEXT_COLOR']}, got {all_actual_label_colors[i]}"
-        )
-        assert plotted_graph.vs[i]["size"] == 20
-        assert plotted_graph.vs[i]["label_dist"] == 1.5
+    assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
 # --- SVG Plotting Tests ---
 
 
-@patch("apts.equipment.ca.ImageSurface")  # Mock cairo.ImageSurface
 @patch.object(Equipment, "plot_connection_graph")  # Mock the internal call
-def test_plot_connection_graph_svg_override_dark(
-    mock_plot_connection_graph, mock_cairo_surface
-):
+def test_plot_connection_graph_svg_override_dark(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
     mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
@@ -1000,12 +959,9 @@ def test_plot_connection_graph_svg_override_dark(
 
     eq.plot_connection_graph_svg(dark_mode_override=True)
 
-    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get("dark_mode_override")
-    assert "target" in called_kwargs
-    assert called_kwargs["target"] == mock_cairo_surface.return_value
 
 
 def test_flipped_view_with_different_telescopes():
@@ -1086,11 +1042,8 @@ def test_flipped_view_with_camera():
     assert row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 
 
-@patch("apts.equipment.ca.ImageSurface")
 @patch.object(Equipment, "plot_connection_graph")
-def test_plot_connection_graph_svg_override_light(
-    mock_plot_connection_graph, mock_cairo_surface
-):
+def test_plot_connection_graph_svg_override_light(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
     mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
@@ -1098,19 +1051,13 @@ def test_plot_connection_graph_svg_override_light(
 
     eq.plot_connection_graph_svg(dark_mode_override=False)
 
-    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert not called_kwargs.get("dark_mode_override")
-    assert "target" in called_kwargs
-    assert called_kwargs["target"] == mock_cairo_surface.return_value
 
 
-@patch("apts.equipment.ca.ImageSurface")
 @patch.object(Equipment, "plot_connection_graph")
-def test_plot_connection_graph_svg_override_none(
-    mock_plot_connection_graph, mock_cairo_surface
-):
+def test_plot_connection_graph_svg_override_none(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
     mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
@@ -1118,19 +1065,13 @@ def test_plot_connection_graph_svg_override_none(
 
     eq.plot_connection_graph_svg(dark_mode_override=None)
 
-    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get("dark_mode_override") is None
-    assert "target" in called_kwargs
-    assert called_kwargs["target"] == mock_cairo_surface.return_value
 
 
-@patch("apts.equipment.ca.ImageSurface")
 @patch.object(Equipment, "plot_connection_graph")
-def test_plot_connection_graph_svg_no_override(
-    mock_plot_connection_graph, mock_cairo_surface
-):
+def test_plot_connection_graph_svg_no_override(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
     mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
@@ -1138,9 +1079,6 @@ def test_plot_connection_graph_svg_no_override(
 
     eq.plot_connection_graph_svg()  # Call without dark_mode_override
 
-    mock_cairo_surface.assert_called_once_with(ANY, 800, 600)
     mock_plot_connection_graph.assert_called_once()
     called_kwargs = mock_plot_connection_graph.call_args.kwargs
     assert called_kwargs.get("dark_mode_override") is None
-    assert "target" in called_kwargs
-    assert called_kwargs["target"] == mock_cairo_surface.return_value
