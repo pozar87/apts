@@ -46,17 +46,31 @@ def _load_messier_with_units():
 
 
 def _parse_ra(ra_str):
-    if isinstance(ra_str, str) and ra_str.count(":") == 2:
+    if isinstance(ra_str, str):
         parts = ra_str.split(":")
-        return float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600
+        if len(parts) > 0:
+            try:
+                h = float(parts[0])
+                m = float(parts[1]) if len(parts) > 1 else 0
+                s = float(parts[2]) if len(parts) > 2 else 0
+                return h + m / 60 + s / 3600
+            except ValueError:
+                return None
     return None
 
 
 def _parse_dec(dec_str):
-    if isinstance(dec_str, str) and dec_str.count(":") == 2:
+    if isinstance(dec_str, str):
         sign = -1 if dec_str.startswith("-") else 1
         parts = dec_str.lstrip("+-").split(":")
-        return sign * (float(parts[0]) + float(parts[1]) / 60 + float(parts[2]) / 3600)
+        if len(parts) > 0:
+            try:
+                d = float(parts[0])
+                m = float(parts[1]) if len(parts) > 1 else 0
+                s = float(parts[2]) if len(parts) > 2 else 0
+                return sign * (d + m / 60 + s / 3600)
+            except ValueError:
+                return None
     return None
 
 
