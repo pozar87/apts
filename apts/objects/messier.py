@@ -13,7 +13,7 @@ class Messier(Objects):
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.RISING] = None
         self.objects[ObjectTableLabels.SETTING] = None
-        self.objects[ObjectTableLabels.ALTITUDE] = pd.NA
+        self.objects[ObjectTableLabels.ALTITUDE] = None
         self.calculation_date = (
             calculation_date  # Store calculation_date for lazy computation
         )

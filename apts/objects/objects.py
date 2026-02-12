@@ -175,7 +175,7 @@ class Objects(ABC):
                     # Ensure columns exist before update
                     for col in self.objects.columns:
                         if col not in visible_candidate_objects.columns:
-                            visible_candidate_objects[col] = pandas.NA
+                            visible_candidate_objects[col] = None
                     visible_candidate_objects.update(self.objects.loc[visible_candidate_objects.index])
 
         visible = visible_candidate_objects
