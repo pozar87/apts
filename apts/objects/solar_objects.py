@@ -27,7 +27,7 @@ def _to_float(value):
 
 
 class SolarObjects(Objects):
-    def __init__(self, place, calculation_date=None):
+    def __init__(self, place, calculation_date=None, lazy=False):
         super(SolarObjects, self).__init__(place)
         # Eagerly load minor planets data on initialization
         self._minor_planets = get_mpcorb_data()
@@ -50,8 +50,9 @@ class SolarObjects(Objects):
         self.objects[ObjectTableLabels.NAME] = self.objects[
             ObjectTableLabels.NAME
         ].astype("string")
-        # Compute positions
-        self.compute(calculation_date)
+        self.calculation_date = calculation_date
+        # Compute positions and magnitudes. Skip slow transits if lazy.
+        self.compute(calculation_date, skip_transits=lazy)
 
     @property
     def minor_planets(self):
@@ -73,7 +74,7 @@ class SolarObjects(Objects):
         except (ValueError, KeyError):
             return None
 
-    def compute(self, calculation_date=None, df_to_compute=None):
+    def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
         if calculation_date is not None:
             # Instantiate as Place object
             temp_observer = Place(
@@ -82,86 +83,78 @@ class SolarObjects(Objects):
                 elevation=self.place.elevation,
                 name=self.place.name + "_temp",
                 date=calculation_date,
-            )  # Add name to avoid issues if Place requires it
-
+            )
             observer_to_use = temp_observer
         else:
             observer_to_use = self.place
 
-        # If df_to_compute is provided, we should ideally use it, but SolarObjects
-        # currently recomputes everything in self.objects.
-        # For compatibility with the base class, we accept the parameter.
+        # If no specific DataFrame is provided, use the class's default.
+        target_df = df_to_compute if df_to_compute is not None else self.objects
 
-        # Compute transit of planets at given place
-        self.objects[ObjectTableLabels.TRANSIT] = self.objects.apply(
-            lambda body: self._compute_tranzit(
-                self.get_skyfield_object(body), observer_to_use
-            ),
-            axis=1,
-        )
-        # Compute rising and setting of planets at given place
-        self.objects[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
-            self.objects.apply(
-                lambda body: self._compute_rising_and_setting(
-                    self.get_skyfield_object(body),
+        # Work on a copy to avoid SettingWithCopyWarning
+        computed_df = target_df.copy()
+
+        if not skip_transits:
+            # Compute transit of planets
+            computed_df[ObjectTableLabels.TRANSIT] = [
+                self._compute_tranzit(self.get_skyfield_object(row), observer_to_use)
+                for _, row in computed_df.iterrows()
+            ]
+
+            # Compute rising and setting
+            rise_set = [
+                self._compute_rising_and_setting(
+                    self.get_skyfield_object(row),
                     observer_to_use,
-                    body[ObjectTableLabels.TRANSIT],
-                ),
-                axis=1,
-            ).apply(pd.Series)
-        )
-        # Compute altitude of planets at transit (at given place)
-        self.objects[ObjectTableLabels.ALTITUDE] = self.objects[
-            [ObjectTableLabels.TRANSIT]
-        ].apply(
-            lambda row: self._altitude_at_transit(
-                self.get_skyfield_object(self.objects.loc[row.name]),
-                row.Transit,
-                observer_to_use,
-            ),
-            axis=1,
-        )
+                    row[ObjectTableLabels.TRANSIT],
+                )
+                for _, row in computed_df.iterrows()
+            ]
+            computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = pd.DataFrame(
+                rise_set, index=computed_df.index
+            )
+
+            # Compute altitude at transit
+            computed_df[ObjectTableLabels.ALTITUDE] = [
+                self._altitude_at_transit(
+                    self.get_skyfield_object(row),
+                    row[ObjectTableLabels.TRANSIT],
+                    observer_to_use,
+                )
+                for _, row in computed_df.iterrows()
+            ]
 
         t = observer_to_use.date
         # Calculate planets magnitude
-        # Define a mapping from Skyfield object names to Pyephem object constructors
-        # This map is local to the compute method as it's only used here.
         ephem_object_map = {
-            "mercury": ephem.Mercury,  # pyright: ignore
-            "venus": ephem.Venus,  # pyright: ignore
-            "mars barycenter": ephem.Mars,  # pyright: ignore
-            "jupiter barycenter": ephem.Jupiter,  # pyright: ignore
-            "saturn barycenter": ephem.Saturn,  # pyright: ignore
-            "uranus barycenter": ephem.Uranus,  # pyright: ignore
-            "neptune barycenter": ephem.Neptune,  # pyright: ignore
-            "moon": ephem.Moon,  # pyright: ignore
-            "sun": ephem.Sun,  # pyright: ignore
+            "mercury": ephem.Mercury,
+            "venus": ephem.Venus,
+            "mars barycenter": ephem.Mars,
+            "jupiter barycenter": ephem.Jupiter,
+            "saturn barycenter": ephem.Saturn,
+            "uranus barycenter": ephem.Uranus,
+            "neptune barycenter": ephem.Neptune,
+            "moon": ephem.Moon,
+            "sun": ephem.Sun,
         }
 
-        # Create an ephem observer for the current place and time, once for efficiency
         ephem_observer = ephem.Observer()
-        # pyephem expects latitude/longitude as strings or floats in degrees
         ephem_observer.lat = str(observer_to_use.lat_decimal)
         ephem_observer.lon = str(observer_to_use.lon_decimal)
-        # pyephem expects elevation in meters
         ephem_observer.elevation = observer_to_use.elevation
-        # pyephem expects a datetime object or ephem.Date
         ephem_observer.date = t.utc_datetime()
 
-        # Helper function to calculate magnitude
-        def get_ephem_properties(row):
+        mags, sizes, phases = [], [], []
+
+        for _, row in computed_df.iterrows():
             object_name = row[ObjectTableLabels.NAME]
             if object_name in MINOR_PLANET_NAMES.values():
                 try:
                     minor_planet_details = self.minor_planets.loc[object_name]
                     dp = ephem.EllipticalBody()
                     dp._inc = numpy.deg2rad(minor_planet_details["inclination_degrees"])
-                    dp._Om = numpy.deg2rad(
-                        minor_planet_details["longitude_of_ascending_node_degrees"]
-                    )
-                    dp._om = numpy.deg2rad(
-                        minor_planet_details["argument_of_perihelion_degrees"]
-                    )
+                    dp._Om = numpy.deg2rad(minor_planet_details["longitude_of_ascending_node_degrees"])
+                    dp._om = numpy.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
                     dp._a = minor_planet_details["semimajor_axis_au"]
                     dp._e = minor_planet_details["eccentricity"]
                     dp._M = numpy.deg2rad(minor_planet_details["mean_anomaly_degrees"])
@@ -170,106 +163,75 @@ class SolarObjects(Objects):
                     if pd.notna(minor_planet_details["magnitude_G"]):
                         dp._G = minor_planet_details["magnitude_G"]
 
-                    # Correctly parse the packed epoch format from MPCORB.DAT
                     packed_epoch = minor_planet_details["epoch_packed"]
                     _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
-                    _MPC_MONTH = {
-                        "1": 1,
-                        "2": 2,
-                        "3": 3,
-                        "4": 4,
-                        "5": 5,
-                        "6": 6,
-                        "7": 7,
-                        "8": 8,
-                        "9": 9,
-                        "A": 10,
-                        "B": 11,
-                        "C": 12,
-                    }
-                    _MPC_DAY = {
-                        "1": 1,
-                        "2": 2,
-                        "3": 3,
-                        "4": 4,
-                        "5": 5,
-                        "6": 6,
-                        "7": 7,
-                        "8": 8,
-                        "9": 9,
-                        "A": 10,
-                        "B": 11,
-                        "C": 12,
-                        "D": 13,
-                        "E": 14,
-                        "F": 15,
-                        "G": 16,
-                        "H": 17,
-                        "I": 18,
-                        "J": 19,
-                        "K": 20,
-                        "L": 21,
-                        "M": 22,
-                        "N": 23,
-                        "O": 24,
-                        "P": 25,
-                        "Q": 26,
-                        "R": 27,
-                        "S": 28,
-                        "T": 29,
-                        "U": 30,
-                        "V": 31,
-                    }
+                    _MPC_MONTH = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "A": 10, "B": 11, "C": 12}
+                    _MPC_DAY = {str(d): d for d in range(1, 10)}
+                    _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
+
                     year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
                     month = _MPC_MONTH[packed_epoch[3]]
                     day = _MPC_DAY[packed_epoch[4]]
                     dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
 
                     dp.compute(ephem_observer)
-                    return pd.Series([dp.mag, pd.NA, pd.NA])
-                except (KeyError, ValueError, IndexError):
-                    return pd.Series([pd.NA, pd.NA, pd.NA])
+                    mags.append(dp.mag)
+                    sizes.append(pd.NA)
+                    phases.append(pd.NA)
+                except:
+                    mags.append(pd.NA)
+                    sizes.append(pd.NA)
+                    phases.append(pd.NA)
             else:
                 ephem_obj_constructor = ephem_object_map.get(object_name)
                 if ephem_obj_constructor:
                     ephem_obj = ephem_obj_constructor()
                     ephem_obj.compute(ephem_observer)
-                    return pd.Series([ephem_obj.mag, ephem_obj.size, ephem_obj.phase])
-            return pd.Series([numpy.nan, numpy.nan, numpy.nan])
+                    mags.append(ephem_obj.mag)
+                    sizes.append(ephem_obj.size)
+                    phases.append(ephem_obj.phase)
+                else:
+                    mags.append(numpy.nan)
+                    sizes.append(numpy.nan)
+                    phases.append(numpy.nan)
 
-        self.objects[
-            [
-                ObjectTableLabels.MAGNITUDE,
-                ObjectTableLabels.SIZE,
-                ObjectTableLabels.PHASE,
-            ]
-        ] = self.objects.apply(get_ephem_properties, axis=1)
+        computed_df[ObjectTableLabels.MAGNITUDE] = mags
+        computed_df[ObjectTableLabels.SIZE] = sizes
+        computed_df[ObjectTableLabels.PHASE] = phases
 
-        # Pre-calculate Sun position as observed from the observer's location
-        # for correct elongation calculation.
-        sun_pos = observer_to_use.observer.at(t).observe(observer_to_use.sun)
+        # Vectorized Skyfield positions
+        obs_at_t = observer_to_use.observer.at(t)
+        # For elongation, use apparent position of Sun for consistency with planets
+        sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
 
-        # Calculate planets RA, Dec, Distance, and Elongation
-        # Batch compute positions for better performance
-        def compute_position(row):
-            pos = observer_to_use.observer.at(t).observe(self.get_skyfield_object(row))  # pyright: ignore
-            return pd.Series(
-                {
-                    ObjectTableLabels.RA: pos.radec()[0].hours,
-                    ObjectTableLabels.DEC: pos.radec()[1].degrees,
-                    ObjectTableLabels.DISTANCE: pos.distance().au,
-                    ObjectTableLabels.ELONGATION: pos.separation_from(sun_pos).degrees,
-                }
-            )
+        ras, decs, dists, elongs = [], [], [], []
+        for _, row in computed_df.iterrows():
+            sky_obj = self.get_skyfield_object(row)
+            if sky_obj:
+                pos = obs_at_t.observe(sky_obj).apparent()
+                ra, dec, dist = pos.radec()
+                ras.append(ra.hours)
+                decs.append(dec.degrees)
+                dists.append(dist.au)
+                elongs.append(pos.separation_from(sun_pos).degrees)
+            else:
+                ras.append(numpy.nan)
+                decs.append(numpy.nan)
+                dists.append(numpy.nan)
+                elongs.append(numpy.nan)
 
-        self.objects[
-            [
-                ObjectTableLabels.RA,
-                ObjectTableLabels.DEC,
-                ObjectTableLabels.DISTANCE,
-                ObjectTableLabels.ELONGATION,
-            ]
-        ] = self.objects.apply(compute_position, axis=1)
+        computed_df[ObjectTableLabels.RA] = ras
+        computed_df[ObjectTableLabels.DEC] = decs
+        computed_df[ObjectTableLabels.DISTANCE] = dists
+        computed_df[ObjectTableLabels.ELONGATION] = elongs
+
+        # Ensure all columns exist in self.objects
+        for col in computed_df.columns:
+            if col not in self.objects.columns:
+                self.objects[col] = pd.NA
+
+        self.objects.update(computed_df)
+        return computed_df
 
     def get_visible(
         self,
@@ -281,6 +243,12 @@ class SolarObjects(Objects):
         star_magnitude_limit=None,
         limiting_magnitude=None,
     ):
+        # Always ensure some basic computation is done if needed for magnitude filtering
+        # Actually self.objects starts with only names. Magnitude is needed for filtering.
+        # We skip transits here because they are slow and not needed for visibility filtering.
+        if ObjectTableLabels.MAGNITUDE not in self.objects.columns or self.objects[ObjectTableLabels.MAGNITUDE].isnull().all():
+            self.compute(self.calculation_date, skip_transits=True)
+
         # First, call the parent's get_visible method
         visible = super().get_visible(
             conditions,

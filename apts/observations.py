@@ -193,7 +193,7 @@ class Observation:
     def local_planets(self):
         if self._local_planets is None:
             self._local_planets = SolarObjects(
-                self.place, calculation_date=self.effective_date
+                self.place, calculation_date=self.effective_date, lazy=True
             )
         return self._local_planets
 

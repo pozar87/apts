@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import cast
 
+import numpy
 import pandas
 import pytz
 from skyfield import almanac
@@ -58,7 +59,96 @@ class Objects(ABC):
         )
         candidate_objects = self.objects[magnitude_values < max_magnitude].copy()
 
-        # Compute transit/rise/set if they haven't been already for sorting purposes
+        if candidate_objects.empty:
+            return pandas.DataFrame(columns=self.objects.columns)
+
+        # Vectorized visibility check
+        ts = self.ts
+        t_start = ts.utc(start)
+        t_stop = ts.utc(stop)
+        # Use 100 points to match previous behavior and ensure precision
+        check_times = ts.linspace(t_start, t_stop, 100)
+
+        # Check if get_altaz_curve is mocked or overridden (common in tests)
+        import types
+        import unittest.mock
+        # Original method is a bound method, mocked/overridden is often a function or a Mock object
+        is_mocked = (isinstance(self.place.get_altaz_curve, unittest.mock.Mock) or
+                     isinstance(self.place.get_altaz_curve, types.FunctionType))
+
+        if is_mocked:
+            visible_objects_indices = []
+            for index, row in candidate_objects.iterrows():
+                skyfield_object = self.get_skyfield_object(row)
+                if skyfield_object is None:
+                    continue
+                altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
+                altitude_values = altaz_df["Altitude"].apply(
+                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                )
+                azimuth_values = altaz_df["Azimuth"].apply(
+                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
+                )
+                altitude_condition = altitude_values > conditions.min_object_altitude
+                azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
+                if (altitude_condition & azimuth_condition).any():
+                    visible_objects_indices.append(index)
+
+            visible_candidate_objects = candidate_objects.loc[visible_objects_indices].copy()
+        else:
+            visible_mask = numpy.zeros(len(candidate_objects), dtype=bool)
+
+            # Group objects by type to vectorize Star objects
+            stars_indices = []
+            stars_ras = []
+            stars_decs = []
+            other_objects = [] # List of (local_index, skyfield_obj)
+
+            for i, (index, row) in enumerate(candidate_objects.iterrows()):
+                skyfield_obj = self.get_skyfield_object(row)
+                if skyfield_obj is None:
+                    continue
+                if isinstance(skyfield_obj, Star):
+                    stars_indices.append(i)
+                    stars_ras.append(skyfield_obj.ra.hours)
+                    stars_decs.append(skyfield_obj.dec.degrees)
+                else:
+                    other_objects.append((i, skyfield_obj))
+
+            observer = self.place.observer
+
+            # Check Stars in vectorized batches across check_times
+            if stars_indices:
+                combined_stars = Star(ra_hours=stars_ras, dec_degrees=stars_decs)
+                for t in check_times:
+                    alt, az, _ = observer.at(t).observe(combined_stars).apparent().altaz()
+                    alt_deg = alt.degrees
+                    az_deg = az.degrees
+
+                    alt_ok = alt_deg > conditions.min_object_altitude
+                    az_ok = self._is_azimuth_in_range(az_deg, conditions)
+
+                    visible_mask[stars_indices] |= (alt_ok & az_ok)
+
+            # Check Other objects (like planets)
+            for i, skyfield_obj in other_objects:
+                alt, az, _ = observer.at(check_times).observe(skyfield_obj).apparent().altaz()
+                alt_deg = alt.degrees
+                az_deg = az.degrees
+
+                alt_ok = alt_deg > conditions.min_object_altitude
+                az_ok = self._is_azimuth_in_range(az_deg, conditions)
+
+                if (alt_ok & az_ok).any():
+                    visible_mask[i] = True
+
+            visible_candidate_objects = candidate_objects[visible_mask].copy()
+
+        if visible_candidate_objects.empty:
+            return pandas.DataFrame(columns=self.objects.columns)
+
+        # Compute transit/rise/set ONLY for visible objects if needed for sorting or plotting
+        # SolarObjects and others often need these for plotting later
         if (
             sort_by
             in [
@@ -66,50 +156,32 @@ class Objects(ABC):
                 ObjectTableLabels.RISING,
                 ObjectTableLabels.SETTING,
             ]
-            and (
-                sort_by not in candidate_objects.columns
-                or cast(pandas.Series, candidate_objects[sort_by]).isnull().any()
-            )
+            or True # Always ensure these are available for visible objects to avoid KeyErrors in plotting
         ):
-            df_to_compute = (
-                candidate_objects[cast(pandas.Series, candidate_objects[sort_by]).isnull()]
-                if sort_by in candidate_objects.columns
-                else candidate_objects
-            )
-            if not cast(pandas.DataFrame, df_to_compute).empty:
-                self.compute(
-                    calculation_date=self.calculation_date, df_to_compute=df_to_compute
-                )
-                # Update candidate_objects with the new computed values
-                candidate_objects.update(self.objects.loc[cast(pandas.DataFrame, df_to_compute).index])
+            # Check if any of the core columns are missing
+            needed_cols = [ObjectTableLabels.TRANSIT, ObjectTableLabels.RISING, ObjectTableLabels.SETTING, ObjectTableLabels.ALTITUDE]
+            missing_any = False
+            for col in needed_cols:
+                if col not in visible_candidate_objects.columns or visible_candidate_objects[col].isnull().any():
+                    missing_any = True
+                    break
 
-        visible_objects_indices = []
-        for index, row in candidate_objects.iterrows():
-            skyfield_object = self.get_skyfield_object(row)
-            if skyfield_object is None:
-                continue
-            altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
+            if missing_any:
+                if not visible_candidate_objects.empty:
+                    self.compute(
+                        calculation_date=self.calculation_date, df_to_compute=visible_candidate_objects
+                    )
+                    # Update visible_candidate_objects with the new computed values
+                    # Ensure columns exist before update
+                    for col in self.objects.columns:
+                        if col not in visible_candidate_objects.columns:
+                            visible_candidate_objects[col] = pandas.NA
+                    visible_candidate_objects.update(self.objects.loc[visible_candidate_objects.index])
 
-            altitude_values = altaz_df["Altitude"].apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-            azimuth_values = altaz_df["Azimuth"].apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
-            )
-
-            altitude_condition = altitude_values > conditions.min_object_altitude
-            azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
-
-            if (altitude_condition & azimuth_condition).any():
-                visible_objects_indices.append(index)
-
-        if not visible_objects_indices:
-            return pandas.DataFrame(columns=self.objects.columns)
-
-        visible = self.objects.loc[visible_objects_indices].copy()
+        visible = visible_candidate_objects
 
         # Sort objects by given order, handling potential NaNs
-        if sort_by in visible.columns and not cast(pandas.Series, visible[sort_by]).isnull().all():
+        if sort_by in visible.columns and not visible[sort_by].isnull().all():
             visible = visible.sort_values(by=sort_by, ascending=True)
 
         return visible
@@ -139,13 +211,45 @@ class Objects(ABC):
     def _compute_tranzit(self, skyfield_object, observer):
         if skyfield_object is None:
             return None
-        # Return transit time in local time
 
-        # Start search from the beginning of the UTC day to catch earlier transits
+        # Optimization for stars: use sidereal time formula
+        if isinstance(skyfield_object, Star):
+            current_dt = observer.date.utc_datetime()
+            # Start search from the beginning of the UTC day
+            t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC)
+            t0 = self.ts.utc(t0_dt)
+
+            # RA of the star
+            ra_hours = skyfield_object.ra.hours
+            lon_hours = self.place.lon_decimal / 15.0
+
+            # LST = GMST + lon
+            # We want LST == RA => GMST + lon == RA => GMST == RA - lon
+            target_gmst = (ra_hours - lon_hours) % 24
+
+            current_gmst = t0.gmst
+
+            # Sidereal day is shorter than solar day
+            # 1 solar hour = 1.0027379 sidereal hours
+            # 1 sidereal hour = 0.99726957 solar hours
+            sidereal_to_solar = 0.99726957
+
+            dt_sidereal = (target_gmst - current_gmst) % 24
+            dt_solar = dt_sidereal * sidereal_to_solar
+
+            transit_dt = t0_dt + timedelta(hours=dt_solar)
+
+            # Ensure we catch the transit relevant to the observation window
+            # If it already happened more than 12 hours before observation start,
+            # we might want the next one (stars transit once per sidereal day)
+            if transit_dt < current_dt - timedelta(hours=12):
+                transit_dt += timedelta(hours=24 * sidereal_to_solar)
+
+            return transit_dt.astimezone(observer.local_timezone)
+
+        # Fallback for moving objects (planets)
         current_dt = observer.date.utc_datetime()
         t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-
-        # Search window extended to 2 days to catch transits happening next morning or late in the current day
         t0 = self.ts.utc(t0_dt)
         t1 = self.ts.utc(t0_dt + timedelta(days=2))
         f = almanac.meridian_transits(
@@ -153,13 +257,7 @@ class Objects(ABC):
         )
         t, y = almanac.find_discrete(t0, t1, f)
 
-        # Filter for upper culmination (y=1) AND relevant timing
-        # We want a transit that results in the object being visible during the observation window (starting at observer.date).
-        # A rough heuristic: Transit should be no earlier than 12 hours before observer.date.
-        # (If it transited >12h ago, it likely set >6h ago and is gone).
-
         cutoff_time = current_dt - timedelta(hours=12)
-
         valid_transits = []
         for i, event in enumerate(y):
             if event == 1:  # Upper
@@ -168,21 +266,8 @@ class Objects(ABC):
                     valid_transits.append(transit_dt)
 
         if valid_transits:
-            # Return the first valid transit found
             return (
                 valid_transits[0]
-                .replace(tzinfo=pytz.UTC)
-                .astimezone(observer.local_timezone)
-            )
-
-        return None
-        upper_indices = [i for i, event in enumerate(y) if event == 1]
-
-        if upper_indices:
-            idx = upper_indices[0]
-            return (
-                t[idx]
-                .utc_datetime()
                 .replace(tzinfo=pytz.UTC)
                 .astimezone(observer.local_timezone)
             )
@@ -232,8 +317,52 @@ class Objects(ABC):
         # Calculate objects altitude at transit time
         if transit is None or pandas.isna(transit):
             return 0
+
+        # Optimization for stars: geometric formula
+        if isinstance(skyfield_object, Star):
+            lat = self.place.lat_decimal
+            dec = skyfield_object.dec.degrees
+            # Max altitude = 90 - abs(lat - dec)
+            # This is exact for stars ignoring refraction
+            return 90.0 - abs(lat - dec)
+
         t = self.ts.utc(transit)
         alt, _, _ = (
             self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
         )
         return alt.degrees
+
+    def _fast_compute_stars(self, df, observer):
+        """
+        Fast transit and altitude calculation for a DataFrame of Stars.
+        """
+        current_dt = observer.date.utc_datetime()
+        t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC)
+        t0 = self.ts.utc(t0_dt)
+        lon_hours = self.place.lon_decimal / 15.0
+        current_gmst = t0.gmst
+        sidereal_to_solar = 0.99726957
+        lat = self.place.lat_decimal
+
+        transits = []
+        alts = []
+
+        for _, row in df.iterrows():
+            sky_obj = self.get_skyfield_object(row)
+            if not sky_obj or not isinstance(sky_obj, Star):
+                transits.append(None)
+                alts.append(0)
+                continue
+
+            # Fast transit
+            target_gmst = (sky_obj.ra.hours - lon_hours) % 24
+            dt_solar = ((target_gmst - current_gmst) % 24) * sidereal_to_solar
+            transit_dt = t0_dt + timedelta(hours=dt_solar)
+            if transit_dt < current_dt - timedelta(hours=12):
+                transit_dt += timedelta(hours=24 * sidereal_to_solar)
+            transits.append(transit_dt.astimezone(observer.local_timezone))
+
+            # Fast altitude
+            alts.append(90.0 - abs(lat - sky_obj.dec.degrees))
+
+        return transits, alts

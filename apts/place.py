@@ -293,12 +293,15 @@ class Place:
                 )
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)  # type: ignore
 
-        df["Local_time"] = [
-            t.utc_datetime().astimezone(self.local_timezone).strftime("%H:%M")  # type: ignore
-            if hasattr(t, "utc_datetime")
-            else ""
-            for t in df["Time"]
-        ]
+        local_datetimes = pd.Series(times.utc_datetime())
+        if local_datetimes.dt.tz is None:
+            local_datetimes = local_datetimes.dt.tz_localize("UTC")
+
+        df["Local_time"] = (
+            local_datetimes
+            .dt.tz_convert(self.local_timezone)
+            .dt.strftime("%H:%M")
+        )
         return df
 
     def moon_path(self) -> pd.DataFrame:

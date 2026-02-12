@@ -31,45 +31,33 @@ class Messier(Objects):
                 elevation=self.place.elevation,
                 name=self.place.name + "_temp",
                 date=calculation_date,
-            )  # Add name to avoid issues if Place requires it
+            )
             observer_to_use = temp_observer
         else:
             observer_to_use = self.place
 
         # If no specific DataFrame is provided, use the class's default.
-        if df_to_compute is None:
-            df_to_compute = self.objects
+        target_df = df_to_compute if df_to_compute is not None else self.objects
+        computed_df = target_df.copy()
 
-        # Work on a copy to avoid modifying the original DataFrame slice
-        computed_df = df_to_compute.copy()
+        # Fast transit and altitude calculation for stars
+        transits, alts = self._fast_compute_stars(computed_df, observer_to_use)
+        computed_df[ObjectTableLabels.TRANSIT] = transits
+        computed_df[ObjectTableLabels.ALTITUDE] = alts
 
-        # Compute transit of messier objects at given place
-        computed_df[ObjectTableLabels.TRANSIT] = computed_df.apply(
-            lambda body: self._compute_tranzit(
-                self.get_skyfield_object(body), observer_to_use
-            ),
-            axis=1,
-        )
-        # Compute rising and setting of planets at given place
-        computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = (
-            computed_df.apply(
-                lambda body: self._compute_rising_and_setting(
-                    self.get_skyfield_object(body),
-                    observer_to_use,
-                    body[ObjectTableLabels.TRANSIT],
-                ),
-                axis=1,
-            ).apply(pd.Series)
-        )
-        # Compute altitude of messier objects at transit (at given place)
-        computed_df[ObjectTableLabels.ALTITUDE] = computed_df.apply(
-            lambda row: self._altitude_at_transit(
+        # Rising and setting still use the loop, but it's okay as it's only called for visible objects
+        rise_set = [
+            self._compute_rising_and_setting(
                 self.get_skyfield_object(row),
-                row.Transit,
                 observer_to_use,
-            ),
-            axis=1,
+                row[ObjectTableLabels.TRANSIT],
+            )
+            for _, row in computed_df.iterrows()
+        ]
+        computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = pd.DataFrame(
+            rise_set, index=computed_df.index
         )
+
         self.objects.update(computed_df)
         return computed_df
 
