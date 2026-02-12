@@ -176,12 +176,12 @@ class SolarObjects(Objects):
 
                     dp.compute(ephem_observer)
                     mags.append(dp.mag)
-                    sizes.append(pd.NA)
-                    phases.append(pd.NA)
+                    sizes.append(None)
+                    phases.append(None)
                 except:
-                    mags.append(pd.NA)
-                    sizes.append(pd.NA)
-                    phases.append(pd.NA)
+                    mags.append(numpy.nan)
+                    sizes.append(None)
+                    phases.append(None)
             else:
                 ephem_obj_constructor = ephem_object_map.get(object_name)
                 if ephem_obj_constructor:
@@ -228,7 +228,7 @@ class SolarObjects(Objects):
         # Ensure all columns exist in self.objects
         for col in computed_df.columns:
             if col not in self.objects.columns:
-                self.objects[col] = pd.NA
+                self.objects[col] = None
 
         self.objects.update(computed_df)
         return computed_df
