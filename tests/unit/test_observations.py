@@ -235,16 +235,19 @@ class TestObservationTemplate(unittest.TestCase):
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                max_return_values = [
+                parts = [
                     int(value)
                     for value in cast(
                         str, self.observation.conditions.max_return
                     ).split(":")
                 ]
+                h = parts[0]
+                m = parts[1] if len(parts) > 1 else 0
+                s = parts[2] if len(parts) > 2 else 0
                 time_limit_dt = self.observation.start.replace(
-                    hour=max_return_values[0],
-                    minute=max_return_values[1],
-                    second=max_return_values[2],
+                    hour=h,
+                    minute=m,
+                    second=s,
                 )
                 self.observation.time_limit = (
                     time_limit_dt
@@ -424,16 +427,19 @@ class TestObservationPlottingStyles(unittest.TestCase):
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                max_return_values = [
+                parts = [
                     int(value)
                     for value in cast(
                         str, self.observation.conditions.max_return
                     ).split(":")
                 ]
+                h = parts[0]
+                m = parts[1] if len(parts) > 1 else 0
+                s = parts[2] if len(parts) > 2 else 0
                 time_limit_dt = self.observation.start.replace(
-                    hour=max_return_values[0],
-                    minute=max_return_values[1],
-                    second=max_return_values[2],
+                    hour=h,
+                    minute=m,
+                    second=s,
                 )
                 self.observation.time_limit = (
                     time_limit_dt

@@ -89,13 +89,14 @@ class Observation:
             else:
                 if self.conditions.start_time:
                     if isinstance(self.conditions.start_time, str):
-                        start_time_values = [
-                            int(v) for v in self.conditions.start_time.split(":")
-                        ]
+                        parts = [int(v) for v in self.conditions.start_time.split(":")]
+                        h = parts[0]
+                        m = parts[1] if len(parts) > 1 else 0
+                        s = parts[2] if len(parts) > 2 else 0
                         override_start_dt = self.start.replace(
-                            hour=start_time_values[0],
-                            minute=start_time_values[1],
-                            second=start_time_values[2],
+                            hour=h,
+                            minute=m,
+                            second=s,
                         )
                     else:
                         # Assume it's a datetime/time object and take its time components
@@ -143,9 +144,10 @@ class Observation:
         # Compute time limit for observation
         if self.start is not None:
             if self.conditions.max_return:
-                h, m, s = (
-                    int(value) for value in self.conditions.max_return.split(":")
-                )
+                parts = [int(v) for v in self.conditions.max_return.split(":")]
+                h = parts[0]
+                m = parts[1] if len(parts) > 1 else 0
+                s = parts[2] if len(parts) > 2 else 0
                 self.time_limit = self.start.replace(
                     hour=h, minute=m, second=s, microsecond=0
                 )
