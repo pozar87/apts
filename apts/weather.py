@@ -71,11 +71,10 @@ class Weather:
         if self.data is not None and not cast(pd.DataFrame, self.data).empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
-            moon_illumination_details = cast(pd.DataFrame, self.data)["time"].apply(
-                lambda x: get_moon_illumination_details(ts.from_datetime(x))
-            )
-            self.data["moonIllumination"] = [item[0] for item in moon_illumination_details]
-            self.data["moonWaxing"] = [item[1] for item in moon_illumination_details]
+            times = ts.from_datetimes(self.data["time"].tolist())
+            illumination, is_waxing = get_moon_illumination_details(times)
+            self.data["moonIllumination"] = illumination
+            self.data["moonWaxing"] = is_waxing
         else:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."

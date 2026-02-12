@@ -153,14 +153,18 @@ def get_skyfield_obj(planet_name: str):
 def get_moon_illumination_details(time):
     """
     Returns the moon illumination percentage and waxing/waning status for a given time.
+    Supports both scalar and array Skyfield Time objects.
     """
     eph = get_ephemeris()
 
     # Get the phase angle
-    phase_angle = float(getattr(almanac.moon_phase(eph, time), "degrees"))
+    phase_angle = almanac.moon_phase(eph, time).degrees
 
     # Determine if waxing or waning
-    is_waxing = 0 < phase_angle < 180
+    if np.isscalar(phase_angle):
+        is_waxing = 0 < phase_angle < 180
+    else:
+        is_waxing = (0 < phase_angle) & (phase_angle < 180)
 
     illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2
     return illumination * 100, is_waxing

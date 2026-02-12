@@ -38,18 +38,10 @@ class NGC(Objects):
         # Work on a copy to avoid modifying the original DataFrame slice
         computed_df = df_to_compute.copy()
 
-        # Compute transit of ngc objects at given place
-        computed_df[ObjectTableLabels.TRANSIT] = computed_df.apply(
-            lambda body: self._compute_tranzit(self.get_skyfield_object(body), observer_to_use),
-            axis=1
-        )
-        # Compute altitude of ngc objects at transit (at given place)
-        computed_df[ObjectTableLabels.ALTITUDE] = computed_df.apply(
-            lambda row: self._altitude_at_transit(
-                self.get_skyfield_object(row), row.Transit, observer_to_use
-            ),
-            axis=1,
-        )
+        # Fast transit and altitude calculation for stars
+        transits, alts = self._fast_compute_stars(computed_df, observer_to_use)
+        computed_df[ObjectTableLabels.TRANSIT] = transits
+        computed_df[ObjectTableLabels.ALTITUDE] = alts
         self.objects.update(computed_df)
         return computed_df
 
