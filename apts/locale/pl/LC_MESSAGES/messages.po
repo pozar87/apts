@@ -236,7 +236,7 @@ msgid "Microscopium"
 msgstr "Mikroskop"
 
 #: apts/constants/constellations.py:58
-msgid "Monoceros"
+msgid "Monocerus"
 msgstr "Jednorożec"
 
 #: apts/constants/constellations.py:59
@@ -323,6 +323,11 @@ msgstr "Tarcza"
 msgid "Serpens"
 msgstr "Wąż"
 
+msgid "Serpens Caput"
+msgstr "Głowa Węża"
+
+msgid "Serpens Cauda"
+msgstr "Ogon Węża"
 msgid "Ophiucus"
 msgstr "Wężownik"
 

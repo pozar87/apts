@@ -235,7 +235,7 @@ msgid "Microscopium"
 msgstr "Microscopio"
 
 #: apts/constants/constellations.py:58
-msgid "Monoceros"
+msgid "Monocerus"
 msgstr "Unicornio"
 
 #: apts/constants/constellations.py:59
@@ -321,6 +321,12 @@ msgstr "Escudo"
 #: apts/constants/constellations.py:79
 msgid "Serpens"
 msgstr "Serpiente"
+
+msgid "Serpens Caput"
+msgstr "Serpens Caput"
+
+msgid "Serpens Cauda"
+msgstr "Serpens Cauda"
 
 msgid "Ophiucus"
 msgstr "Ofiuco"

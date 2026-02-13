@@ -55,7 +55,7 @@ constellation_map = {
     "Lyr": _("Lyra"),
     "Men": _("Mensa"),
     "Mic": _("Microscopium"),
-    "Mon": _("Monoceros"),
+    "Mon": _("Monocerus"),
     "Mus": _("Musca"),
     "Nor": _("Norma"),
     "Oct": _("Octans"),
@@ -88,5 +88,5 @@ constellation_map = {
     "Vel": _("Vela"),
     "Vir": _("Virgo"),
     "Vol": _("Volans"),
-    "Vul": _("Vulpecula")
+    "Vul": _("Vulpecula"),
 }
