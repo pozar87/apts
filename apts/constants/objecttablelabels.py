@@ -26,6 +26,10 @@ class ObjectTableLabels:
     # Setting
     SETTING = "Setting"
 
+    SIMBAD = "SIMBAD"
+    ALADIN = "ALADIN"
+    ASTROBIN = "Astrobin"
+
     MESSIER = "Messier"
     NGC = "NGC"
     WIDTH = "Width"

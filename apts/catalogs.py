@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from importlib import resources
 from typing import Any, cast
 
@@ -6,6 +7,7 @@ import pandas as pd
 from skyfield.api import Star
 
 from .constants.constellations import constellation_map
+from .constants.objecttablelabels import ObjectTableLabels
 from .units import get_unit_registry
 
 _messier_df = None
@@ -40,6 +42,17 @@ def _load_messier_with_units():
             dec_degrees=row.Dec.to("degree").magnitude,
         ),
         axis=1,
+    )
+
+    # Add external links
+    messier_df[ObjectTableLabels.SIMBAD] = messier_df["Messier"].apply(
+        lambda x: f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+    )
+    messier_df[ObjectTableLabels.ALADIN] = messier_df["Messier"].apply(
+        lambda x: f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+    )
+    messier_df[ObjectTableLabels.ASTROBIN] = messier_df["Messier"].apply(
+        lambda x: f"https://www.astrobin.com/search/?q={urllib.parse.quote(str(x))}"
     )
 
     return messier_df
@@ -116,6 +129,17 @@ def _load_ngc_with_units():
 
     # Pre-calculate Skyfield objects
     ngc_df["skyfield_object"] = ngc_df.apply(_create_ngc_star, axis=1)
+
+    # Add external links
+    ngc_df[ObjectTableLabels.SIMBAD] = ngc_df["Name"].apply(
+        lambda x: f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+    )
+    ngc_df[ObjectTableLabels.ALADIN] = ngc_df["Name"].apply(
+        lambda x: f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+    )
+    ngc_df[ObjectTableLabels.ASTROBIN] = ngc_df["Name"].apply(
+        lambda x: f"https://www.astrobin.com/search/?q={urllib.parse.quote(str(x))}"
+    )
 
     return ngc_df
 
