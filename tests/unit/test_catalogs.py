@@ -54,3 +54,27 @@ def test_messier_catalog():
     assert hasattr(c["Magnitude"].iloc[0], "magnitude")
     assert hasattr(c["Magnitude"].iloc[0], "units")
     assert c["Magnitude"].iloc[0].units == "mag"
+
+    # Check external links
+    assert "SIMBAD" in c.columns
+    assert "ALADIN" in c.columns
+    assert "Astrobin" in c.columns
+    assert c.iloc[0]["SIMBAD"].startswith("https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=M1")
+    assert c.iloc[0]["ALADIN"].startswith("https://aladin.cds.unistra.fr/AladinLite/?target=M1")
+    assert c.iloc[0]["Astrobin"].startswith("https://www.astrobin.com/search/?q=M1")
+
+def test_ngc_catalog():
+    c = cast(pd.DataFrame, Catalogs().NGC)
+    # Check if some objects are loaded
+    assert len(c) > 0
+
+    # Check external links
+    assert "SIMBAD" in c.columns
+    assert "ALADIN" in c.columns
+    assert "Astrobin" in c.columns
+
+    # Check specific object, e.g., IC0001
+    ic1 = c[c["Name"] == "IC0001"].iloc[0]
+    assert ic1["SIMBAD"] == "https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=IC0001"
+    assert ic1["ALADIN"] == "https://aladin.cds.unistra.fr/AladinLite/?target=IC0001"
+    assert ic1["Astrobin"] == "https://www.astrobin.com/search/?q=IC0001"
