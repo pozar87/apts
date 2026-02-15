@@ -14,16 +14,27 @@ class Camera(OutputOpticalEqipment):
   """
 
   def __init__(self, sensor_width, sensor_height, width, height, vendor="unknown camera",
-               connection_type=ConnectionType.T2):
+               connection_type=ConnectionType.T2, pixel_size=None, read_noise=None,
+               full_well=None, quantum_efficiency=None):
     super(Camera, self).__init__(0, vendor)
     self.connection_type = connection_type
     self.sensor_width = sensor_width * get_unit_registry().mm
     self.sensor_height = sensor_height * get_unit_registry().mm
     self.width = width
     self.height = height
+    self.read_noise = read_noise
+    self.full_well = full_well
+    self.quantum_efficiency = quantum_efficiency
+    if pixel_size is not None:
+      self._pixel_size = pixel_size * get_unit_registry().micrometer
+    else:
+      self._pixel_size = None
 
   def pixel_size(self):
-    return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(self.width ** 2 + self.height ** 2)
+    if self._pixel_size is not None:
+      return self._pixel_size
+    return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(
+      self.width ** 2 + self.height ** 2)
 
   def _zoom_divider(self):
     return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)

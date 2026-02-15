@@ -11,4 +11,5 @@ class EquipmentTableLabels:
     ELEMENTS = "Elements"
     FLIPPED_HORIZONTALLY = "Flipped Horizontally"
     FLIPPED_VERTICALLY = "Flipped Vertically"
+    PIXEL_SCALE = "Pixel scale"
     IS_NAKED_EYE = "_is_naked_eye"

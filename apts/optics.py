@@ -1,5 +1,6 @@
 import functools
 import operator
+import numpy
 
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
@@ -183,3 +184,101 @@ class OpticalPath:
                 flipped_vertically = not flipped_vertically
 
         return (flipped_horizontally, flipped_vertically)
+
+    def pixel_scale(self):
+        from .opticalequipment.camera import Camera
+
+        if not isinstance(self.output, Camera):
+            return None
+        # Effective focal length
+        eff_focal_length = self.telescope.focal_length * self.effective_barlow()
+        # Pixel size
+        p_size = self.output.pixel_size()
+        # Formula: (p_size / eff_focal_length) * 206265
+        scale = (
+            p_size.to("mm").magnitude / eff_focal_length.to("mm").magnitude
+        ) * 206265
+        return scale * get_unit_registry().arcsecond
+
+    def sampling(self, seeing):
+        scale = self.pixel_scale()
+        if scale is None:
+            return None
+        ratio = seeing / scale.magnitude
+        if ratio < 1.0:
+            return "Under-sampled"
+        elif ratio <= 2.0:
+            return "Well-sampled"
+        else:
+            return "Over-sampled"
+
+    def critical_focus_zone(self, wavelength=550):
+        # wavelength in nm
+        fr = self.telescope.focal_ratio() * self.effective_barlow()
+        # CFZ = 2.44 * (wavelength/1000) * fr^2
+        cfz = 2.44 * (wavelength / 1000.0) * (fr**2)
+        return cfz * get_unit_registry().micrometer
+
+    def thermal_drift(self, delta_t):
+        if (
+            not hasattr(self.telescope, "tube_material")
+            or self.telescope.tube_material is None
+        ):
+            return None
+        # delta_t in Celsius
+        length = self.telescope.focal_length.to("mm").magnitude
+        alpha = self.telescope.tube_material.value  # m/(m*K)
+        drift = length * alpha * delta_t
+        return drift * get_unit_registry().mm
+
+    def sky_flux(self, sqm):
+        from .opticalequipment.camera import Camera
+
+        scale = self.pixel_scale()
+        if scale is None or not isinstance(self.output, Camera):
+            return None
+        if self.output.quantum_efficiency is None:
+            return None
+
+        aperture_cm = self.telescope.aperture.to("cm").magnitude
+        area_cm2 = numpy.pi * (aperture_cm / 2.0) ** 2
+        qe = self.output.quantum_efficiency / 100.0
+        pixel_area_arcsec2 = scale.magnitude**2
+
+        # Formula
+        flux = 0.005 * 10 ** (0.4 * (21.83 - sqm)) * area_cm2 * qe * pixel_area_arcsec2
+        return flux  # e-/s/pixel
+
+    def optimum_sub_exposure(self, sqm):
+        from .opticalequipment.camera import Camera
+
+        flux = self.sky_flux(sqm)
+        if (
+            flux is None
+            or not isinstance(self.output, Camera)
+            or self.output.read_noise is None
+        ):
+            return None
+        # Time where SkyNoise^2 = 10 * ReadNoise^2
+        # SkyNoise^2 = Flux * Time
+        # Time = 10 * ReadNoise^2 / Flux
+        time = (10 * self.output.read_noise**2) / flux
+        return time * get_unit_registry().second
+
+    def limiting_magnitude(self, sqm, integration_time):
+        from .opticalequipment.camera import Camera
+
+        # integration_time in seconds
+        if not isinstance(self.output, Camera) or self.output.quantum_efficiency is None:
+            # Fallback to telescope limiting magnitude if no camera data
+            return self.telescope.limiting_magnitude()
+
+        aperture_cm = self.telescope.aperture.to("cm").magnitude
+        # Base limiting magnitude for 1 second at SQM 21
+        base = 7.7 + 5 * numpy.log10(aperture_cm)
+        # Add integration time factor: 1.25 * log10(T)
+        time_factor = 1.25 * numpy.log10(integration_time)
+        # SQM factor: (SQM - 21)
+        sqm_factor = sqm - 21.0
+
+        return base + time_factor + sqm_factor
