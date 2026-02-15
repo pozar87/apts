@@ -2,6 +2,7 @@ import io
 import logging
 from typing import Optional
 
+import numpy
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
@@ -111,6 +112,7 @@ class Equipment:
             EquipmentTableLabels.ELEMENTS,
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
+            EquipmentTableLabels.PIXEL_SCALE,
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
@@ -153,6 +155,13 @@ class Equipment:
 
                 flipped_horizontally, flipped_vertically = path.get_image_orientation()
 
+                # Pixel Scale
+                pixel_scale_value = path.pixel_scale()
+                if pixel_scale_value is not None:
+                    pixel_scale_magnitude = pixel_scale_value.magnitude
+                else:
+                    pixel_scale_magnitude = numpy.nan
+
                 rows.append(
                     [
                         path.label(),
@@ -167,6 +176,7 @@ class Equipment:
                         path.length(),  # length() in OpticalPath returns int
                         flipped_horizontally,
                         flipped_vertically,
+                        pixel_scale_magnitude,
                         is_naked_eye,
                     ]
                 )
