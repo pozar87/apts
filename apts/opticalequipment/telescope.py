@@ -18,6 +18,14 @@ class TelescopeType(Enum):
     CATADIOPTRIC = "catadioptric"
 
 
+class TubeMaterial(Enum):
+    ALUMINUM = 23.1e-6
+    CARBON_FIBER = 0.5e-6
+    STEEL = 12.0e-6
+    BRASS = 19.0e-6
+    GLASS_FIBER = 8.0e-6
+
+
 class Telescope(OpticalEquipment):
     """
     Class representing telescope
@@ -31,12 +39,16 @@ class Telescope(OpticalEquipment):
         connection_type=ConnectionType.F_1_25,
         t2_output=False,
         telescope_type: Optional[TelescopeType] = TelescopeType.REFRACTOR,
+        focuser_step_size=None,
+        tube_material: Optional[TubeMaterial] = TubeMaterial.ALUMINUM,
     ):
         super(Telescope, self).__init__(focal_length, vendor)
         self.aperture = aperture * get_unit_registry().mm
         self.connection_type = connection_type
         self.t2_output = t2_output
         self.telescope_type = telescope_type
+        self.focuser_step_size = focuser_step_size
+        self.tube_material = tube_material
 
     def focal_ratio(self):
         return self.focal_length / self.aperture
