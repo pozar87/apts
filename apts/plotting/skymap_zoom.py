@@ -59,7 +59,7 @@ def _generate_zoom_skymap(
             0.5,
             0.5,
             gettext_("Target '{target_name}' is below the horizon.").format(
-                target_name=target_name
+                target_name=gettext_(target_name)
             ),
             horizontalalignment="center",
             verticalalignment="center",
@@ -69,7 +69,10 @@ def _generate_zoom_skymap(
         ax.set_title(
             gettext_(
                 "Skymap for {target_name} (Generated: {generation_time_str})"
-            ).format(target_name=target_name, generation_time_str=generation_time_str),
+            ).format(
+                target_name=gettext_(target_name),
+                generation_time_str=generation_time_str,
+            ),
             color=style["TEXT_COLOR"],
         )
         return fig
@@ -134,6 +137,7 @@ def _generate_zoom_skymap(
             style=style,
             zoom_deg=zoom_deg,
             target_object=target_object,
+            target_name=target_name,
             coordinate_system=coordinate_system,
         )
         _plot_bright_stars_on_skymap(
@@ -144,6 +148,7 @@ def _generate_zoom_skymap(
             style=style,
             zoom_deg=zoom_deg,
             coordinate_system=coordinate_system,
+            target_name=target_name,
         )
     if plot_messier:
         _plot_messier_on_skymap(
@@ -302,7 +307,7 @@ def _generate_zoom_skymap(
         else (target_ra.hours, target_dec.degrees)
     )
     ax.annotate(
-        target_name,
+        gettext_(target_name),
         annotate_coords,
         textcoords="offset points",
         xytext=(0, 15),
@@ -315,7 +320,7 @@ def _generate_zoom_skymap(
         gettext_(
             "Skymap for {target_name} ({zoom_deg}° view, Generated: {generation_time_str})"
         ).format(
-            target_name=target_name,
+            target_name=gettext_(target_name),
             zoom_deg=zoom_deg,
             generation_time_str=generation_time_str,
         ),

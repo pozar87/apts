@@ -32,8 +32,12 @@ def _plot_bright_stars_on_skymap(
     style: dict,
     zoom_deg: Optional[float] = None,
     coordinate_system: Optional[CoordinateSystem] = None,
+    target_name: Optional[str] = None,
 ):
     bright_stars_df = observation.local_stars.objects.copy()
+    if target_name:
+        bright_stars_df = bright_stars_df[bright_stars_df["Name"] != target_name]
+
     if bright_stars_df.empty:
         return
 
@@ -213,6 +217,7 @@ def _plot_stars_on_skymap(
     style: dict,
     zoom_deg: Optional[float] = None,
     target_object=None,
+    target_name: Optional[str] = None,
     coordinate_system: CoordinateSystem = cast(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
     ),
@@ -717,10 +722,17 @@ def _plot_planets_on_skymap(
 ):
     visible_planets = observation.get_visible_planets()
     if not visible_planets.empty:
+        target_technical_name = (
+            planetary.get_technical_name(target_name) if target_name else None
+        )
         for _, p_obj in visible_planets.iterrows():
             planet_name = p_obj[ObjectTableLabels.NAME]
             technical_name = p_obj["TechnicalName"]
-            if planet_name == target_name or technical_name == target_name:
+            if (
+                planet_name == target_name
+                or technical_name == target_name
+                or technical_name == target_technical_name
+            ):
                 continue  # Skip the target object, it will be plotted separately
             _plot_solar_system_object_on_skymap(
                 observation,
