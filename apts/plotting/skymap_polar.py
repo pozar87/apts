@@ -238,6 +238,7 @@ def _generate_polar_skymap(
             style=style,
             zoom_deg=None,
             target_object=target_object,
+            target_name=target_name,
             coordinate_system=coordinate_system,
         )
         _plot_bright_stars_on_skymap(
@@ -248,6 +249,7 @@ def _generate_polar_skymap(
             style=style,
             zoom_deg=None,
             coordinate_system=coordinate_system,
+            target_name=target_name,
         )
     if plot_messier:
         _plot_messier_on_skymap(
@@ -350,7 +352,7 @@ def _generate_polar_skymap(
                 linewidths=2,
             )
         polar_ax.annotate(
-            target_name,
+            gettext_(target_name),
             (target_az.radians, 90 - target_alt.degrees),
             textcoords="offset points",
             xytext=(0, 15),
@@ -388,7 +390,7 @@ def _generate_polar_skymap(
                 linewidths=2,
             )
         polar_ax.annotate(
-            target_name,
+            gettext_(target_name),
             (target_ra.radians, target_radius),
             textcoords="offset points",
             xytext=(0, 15),
@@ -399,7 +401,7 @@ def _generate_polar_skymap(
 
     ax.set_title(
         gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(
-            target_name=target_name, generation_time_str=generation_time_str
+            target_name=gettext_(target_name), generation_time_str=generation_time_str
         ),
         color=style["TEXT_COLOR"],
     )
