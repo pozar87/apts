@@ -4,7 +4,6 @@ import pytz
 import json
 import re
 from unittest.mock import patch, MagicMock
-from requests_mock import ANY
 from apts.weather_providers import StormGlass, Meteoblue, VisualCrossing
 from datetime import timezone
 

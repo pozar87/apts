@@ -233,7 +233,9 @@ class PirateWeather(WeatherProvider):
             )
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            result = result[result.time <= cutoff.astimezone(self.local_timezone)]
+            result = cast(
+                pd.DataFrame, result[result.time <= cutoff.astimezone(self.local_timezone)]
+            )
         return self._enrich_with_aurora_data(result)
 
 
@@ -321,7 +323,7 @@ class VisualCrossing(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -353,8 +355,8 @@ class StormGlass(WeatherProvider):
             lon=self.lon,
             apikey=self.api_key,
             params=",".join(params),
-            start=start.isoformat(),
-            end=end.isoformat(),
+            start=start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            end=end.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
         logger.debug("Download weather from: {}".format(url))
         headers = {"Authorization": self.api_key}
@@ -489,7 +491,7 @@ class StormGlass(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -595,7 +597,7 @@ class Meteoblue(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -708,7 +710,7 @@ class OpenWeatherMap(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
