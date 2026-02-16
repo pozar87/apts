@@ -166,12 +166,13 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_weather(self, provider_name: Optional[str] = None):
+    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48):
         self.weather = Weather(
             self.lat_decimal,
             self.lon_decimal,
             self.local_timezone,
             provider_name=provider_name,
+            hours=hours,
         )
 
     def _previous_setting_time(self, obj_name, start):

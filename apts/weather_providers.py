@@ -1,6 +1,8 @@
 import json
 import logging
+import math
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
 import pandas as pd
@@ -146,7 +148,7 @@ class WeatherProvider(ABC):
         self.local_timezone = local_timezone
 
     @abstractmethod
-    def download_data(self) -> pd.DataFrame:
+    def download_data(self, hours: int = 48) -> pd.DataFrame:
         pass
 
     def _empty_df(self) -> pd.DataFrame:
@@ -175,7 +177,7 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -229,14 +231,19 @@ class PirateWeather(WeatherProvider):
                 .dt.tz_localize("UTC")
                 .dt.tz_convert(self.local_timezone)
             )
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            result = result[result.time <= cutoff.astimezone(self.local_timezone)]
         return self._enrich_with_aurora_data(result)
 
 
 class VisualCrossing(WeatherProvider):
-    API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}?unitGroup=metric&key={apikey}&include=hours"
+    API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}/next{hours}hours?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self) -> pd.DataFrame:  # pyright: ignore
-        url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
+    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
+        url = self.API_URL.format(
+            apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
+        )
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
@@ -312,6 +319,10 @@ class VisualCrossing(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
@@ -319,9 +330,9 @@ class VisualCrossing(WeatherProvider):
 
 
 class StormGlass(WeatherProvider):
-    API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}"
+    API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}&start={start}&end={end}"
 
-    def download_data(self) -> pd.DataFrame:
+    def download_data(self, hours: int = 48) -> pd.DataFrame:
         params = [
             "airTemperature",
             "pressure",
@@ -335,8 +346,15 @@ class StormGlass(WeatherProvider):
             "rain",
             "snow",
         ]
+        start = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        end = start + timedelta(hours=hours)
         url = self.API_URL.format(
-            lat=self.lat, lon=self.lon, apikey=self.api_key, params=",".join(params)
+            lat=self.lat,
+            lon=self.lon,
+            apikey=self.api_key,
+            params=",".join(params),
+            start=start.isoformat(),
+            end=end.isoformat(),
         )
         logger.debug("Download weather from: {}".format(url))
         headers = {"Authorization": self.api_key}
@@ -469,6 +487,10 @@ class StormGlass(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
@@ -476,10 +498,16 @@ class StormGlass(WeatherProvider):
 
 
 class Meteoblue(WeatherProvider):
-    API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
+    API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json&forecast_days={forecast_days}"
 
-    def download_data(self) -> pd.DataFrame:  # pyright: ignore
-        url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
+    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
+        forecast_days = math.ceil(hours / 24)
+        url = self.API_URL.format(
+            apikey=self.api_key,
+            lat=self.lat,
+            lon=self.lon,
+            forecast_days=forecast_days,
+        )
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
@@ -565,6 +593,10 @@ class Meteoblue(WeatherProvider):
                 if col not in df.columns:
                     df[col] = "none"
 
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
+
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
@@ -574,7 +606,7 @@ class Meteoblue(WeatherProvider):
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
@@ -673,6 +705,10 @@ class OpenWeatherMap(WeatherProvider):
             for col in required_columns:
                 if col not in df.columns:
                     df[col] = "none"
+
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            df = df[df.time <= cutoff.astimezone(self.local_timezone)]
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
