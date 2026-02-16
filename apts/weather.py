@@ -15,6 +15,7 @@ from apts.weather_providers import (
     VisualCrossing,
     OpenWeatherMap,
     Meteoblue,
+    StormGlass,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,8 @@ class Weather:
             provider = OpenWeatherMap(api_key, lat, lon, local_timezone)
         elif provider_name == "meteoblue":
             provider = Meteoblue(api_key, lat, lon, local_timezone)
+        elif provider_name == "stormglass":
+            provider = StormGlass(api_key, lat, lon, local_timezone)
         else:
             logger.error(f"Unknown weather provider specified: {provider_name}")
             raise ValueError(f"Unknown weather provider: {provider_name}")

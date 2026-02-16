@@ -266,6 +266,130 @@ class VisualCrossing(WeatherProvider):
             return cast(pd.DataFrame, df[required_columns])
 
 
+class StormGlass(WeatherProvider):
+    API_URL = "https://api.stormglass.io/v2/weather/point?lat={lat}&lng={lon}&params={params}"
+
+    def download_data(self) -> pd.DataFrame:
+        params = [
+            "airTemperature",
+            "pressure",
+            "cloudCover",
+            "dewPointTemperature",
+            "humidity",
+            "precipitation",
+            "visibility",
+            "windSpeed",
+            "gust",
+            "rain",
+            "snow",
+        ]
+        url = self.API_URL.format(
+            lat=self.lat, lon=self.lon, params=",".join(params)
+        )
+        logger.debug("Download weather from: {}".format(url))
+        headers = {"Authorization": self.api_key}
+        with get_session().get(url, headers=headers) as data:
+            logger.debug(f"Data {data}")
+            json_data = json.loads(data.text)
+
+            if "hours" not in json_data:
+                logger.error(
+                    f"KeyError 'hours' in weather data. Full response: {json_data}"
+                )
+                return pd.DataFrame()
+
+            rows = []
+            for item in json_data["hours"]:
+                row = {"time": item["time"]}
+                for p in params:
+                    # Pick 'sg' source if available, otherwise first available
+                    if p in item:
+                        if "sg" in item[p]:
+                            row[p] = item[p]["sg"]
+                        elif item[p]:
+                            row[p] = next(iter(item[p].values()))
+                        else:
+                            row[p] = "none"
+                    else:
+                        row[p] = "none"
+                rows.append(row)
+
+            df = pd.DataFrame(rows)
+
+            # Rename columns to match the standard format
+            rename_map = {
+                "airTemperature": "temperature",
+                "dewPointTemperature": "dewPoint",
+                "precipitation": "precipIntensity",
+            }
+            df.rename(columns=rename_map, inplace=True)
+
+            # Convert units and types
+            df["time"] = (
+                pd.to_datetime(df["time"])
+                .dt.tz_convert(self.local_timezone)
+            )
+
+            for col in ["temperature", "dewPoint", "precipIntensity", "humidity", "windSpeed", "cloudCover", "visibility", "pressure", "rain", "snow"]:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+
+            # windSpeed is in m/s, convert to km/h
+            if "windSpeed" in df.columns:
+                df["windSpeed"] *= 3.6
+
+            if "visibility" in df.columns:
+                df["fog"] = ((10 - df["visibility"].clip(0, 10)) * 10)  # Fog in [%]
+            else:
+                df["fog"] = "none"
+
+            # Derive precipType
+            def get_precip_type(row):
+                if pd.isna(row.get("precipIntensity")) or row.get("precipIntensity", 0) <= 0:
+                    return "none"
+                rain = row.get("rain", 0)
+                snow = row.get("snow", 0)
+                if not pd.isna(snow) and not pd.isna(rain) and snow > rain:
+                    return "snow"
+                return "rain"
+
+            df["precipType"] = df.apply(get_precip_type, axis=1)
+
+            # Ensure all required columns are present
+            required_columns = [
+                "time",
+                "summary",
+                "precipType",
+                "precipProbability",
+                "precipIntensity",
+                "temperature",
+                "apparentTemperature",
+                "dewPoint",
+                "humidity",
+                "windSpeed",
+                "cloudCover",
+                "visibility",
+                "pressure",
+                "ozone",
+                "fog",
+            ]
+
+            # Add missing standard columns
+            df["summary"] = "none"
+            df["precipProbability"] = "none"
+            df["apparentTemperature"] = df["temperature"]
+            df["ozone"] = "none"
+
+            for col in required_columns:
+                if col not in df.columns:
+                    df[col] = "none"
+
+            df = self._enrich_with_aurora_data(df)
+            if "aurora" in df.columns:
+                required_columns.append("aurora")
+            return cast(pd.DataFrame, df[required_columns])
+
+
 class Meteoblue(WeatherProvider):
     API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json"
 
