@@ -28,10 +28,12 @@ class Weather:
         local_timezone,
         provider_name: Optional[str] = None,
         api_key: Optional[str] = None,
+        hours: int = 48,
     ):
         self.lat = lat
         self.lon = lon
         self.local_timezone = local_timezone
+        self.hours = hours
 
         # If provider_name is not explicitly given, get it from settings
         if provider_name is None:
@@ -69,7 +71,7 @@ class Weather:
             raise ValueError(f"Unknown weather provider: {provider_name}")
 
         logger.info(f"Attempting to download data from {provider_name}.")
-        self.data = provider.download_data()
+        self.data = provider.download_data(hours=self.hours)
         if self.data is not None and not cast(pd.DataFrame, self.data).empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()
