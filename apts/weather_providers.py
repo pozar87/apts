@@ -108,6 +108,27 @@ def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
 
 
 class WeatherProvider(ABC):
+    REQUIRED_COLUMNS = [
+        "time",
+        "summary",
+        "precipType",
+        "precipProbability",
+        "precipIntensity",
+        "temperature",
+        "apparentTemperature",
+        "dewPoint",
+        "humidity",
+        "windSpeed",
+        "cloudCover",
+        "visibility",
+        "pressure",
+        "ozone",
+        "fog",
+        "moonIllumination",
+        "moonWaxing",
+        "aurora",
+    ]
+
     def __init__(self, api_key, lat, lon, local_timezone):
         self.api_key = api_key
         self.lat = lat
@@ -117,6 +138,12 @@ class WeatherProvider(ABC):
     @abstractmethod
     def download_data(self) -> pd.DataFrame:
         pass
+
+    def _empty_df(self) -> pd.DataFrame:
+        """
+        Returns an empty DataFrame with the required columns.
+        """
+        return pd.DataFrame(columns=pd.Index(self.REQUIRED_COLUMNS))
 
     def _enrich_with_aurora_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -143,6 +170,13 @@ class PirateWeather(WeatherProvider):
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
+            try:
+                data.raise_for_status()
+                json_data = json.loads(data.text)
+            except Exception as e:
+                logger.error(f"Error downloading or parsing weather data: {e}. Full response: {data.text}")
+                return self._empty_df()
+
             columns = [
                 "time",
                 "summary",
@@ -159,7 +193,6 @@ class PirateWeather(WeatherProvider):
                 "pressure",
                 "ozone",
             ]
-            json_data = json.loads(data.text)
             if "hourly" in json_data and "data" in json_data["hourly"]:
                 raw_data = [
                     [
@@ -169,8 +202,8 @@ class PirateWeather(WeatherProvider):
                     for item in json_data["hourly"]["data"]
                 ]
             else:
-                logger.error(f"KeyError in weather data. Full response: {json_data}")
-                return pd.DataFrame(columns=pd.Index(columns))
+                logger.error(f"Missing 'hourly.data' in weather data. Full response: {json_data}")
+                return self._empty_df()
             result = pd.DataFrame(raw_data, columns=pd.Index(columns))
             # Convert units
             result["precipProbability"] *= 100
@@ -195,13 +228,18 @@ class VisualCrossing(WeatherProvider):
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
-            json_data = json.loads(data.text)
+            try:
+                data.raise_for_status()
+                json_data = json.loads(data.text)
+            except Exception as e:
+                logger.error(f"Error downloading or parsing weather data: {e}. Full response: {data.text}")
+                return self._empty_df()
 
             if "days" not in json_data:
                 logger.error(
                     f"KeyError 'days' in weather data. Full response: {json_data}"
                 )
-                return pd.DataFrame()
+                return self._empty_df()
 
             all_hours_data = []
             for day in json_data["days"]:
@@ -258,7 +296,7 @@ class VisualCrossing(WeatherProvider):
             ]
             for col in required_columns:
                 if col not in df.columns:
-                    df[col] = "none"  # or pd.NA
+                    df[col] = "none"
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -272,6 +310,7 @@ class StormGlass(WeatherProvider):
     def download_data(self) -> pd.DataFrame:
         params = [
             "airTemperature",
+            "apparentTemperature",
             "pressure",
             "cloudCover",
             "dewPointTemperature",
@@ -290,13 +329,18 @@ class StormGlass(WeatherProvider):
         headers = {"Authorization": self.api_key}
         with get_session().get(url, headers=headers) as data:
             logger.debug(f"Data {data}")
-            json_data = json.loads(data.text)
+            try:
+                data.raise_for_status()
+                json_data = json.loads(data.text)
+            except Exception as e:
+                logger.error(f"Error downloading or parsing weather data: {e}. Full response: {data.text}")
+                return self._empty_df()
 
             if "hours" not in json_data:
                 logger.error(
                     f"KeyError 'hours' in weather data. Full response: {json_data}"
                 )
-                return pd.DataFrame()
+                return self._empty_df()
 
             rows = []
             for item in json_data["hours"]:
@@ -330,7 +374,19 @@ class StormGlass(WeatherProvider):
                 .dt.tz_convert(self.local_timezone)
             )
 
-            for col in ["temperature", "dewPoint", "precipIntensity", "humidity", "windSpeed", "cloudCover", "visibility", "pressure", "rain", "snow"]:
+            for col in [
+                "temperature",
+                "dewPoint",
+                "precipIntensity",
+                "humidity",
+                "windSpeed",
+                "cloudCover",
+                "visibility",
+                "pressure",
+                "rain",
+                "snow",
+                "apparentTemperature",
+            ]:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce")
 
@@ -339,13 +395,16 @@ class StormGlass(WeatherProvider):
                 df["windSpeed"] *= 3.6
 
             if "visibility" in df.columns:
-                df["fog"] = ((10 - df["visibility"].clip(0, 10)) * 10)  # Fog in [%]
+                df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
             else:
                 df["fog"] = "none"
 
             # Derive precipType
             def get_precip_type(row):
-                if pd.isna(row.get("precipIntensity")) or row.get("precipIntensity", 0) <= 0:
+                if (
+                    pd.isna(row.get("precipIntensity"))
+                    or row.get("precipIntensity", 0) <= 0
+                ):
                     return "none"
                 rain = row.get("rain", 0)
                 snow = row.get("snow", 0)
@@ -376,8 +435,21 @@ class StormGlass(WeatherProvider):
 
             # Add missing standard columns
             df["summary"] = "none"
-            df["precipProbability"] = "none"
-            df["apparentTemperature"] = df["temperature"]
+            # Derive a dummy precipProbability based on precipIntensity if not available
+            if (
+                "precipProbability" not in df.columns
+                or df["precipProbability"].isna().all()
+                or (df["precipProbability"] == "none").all()
+            ):
+                df["precipProbability"] = df["precipIntensity"].apply(
+                    lambda x: 100 if pd.notna(x) and x != "none" and x > 0 else 0
+                )
+            if (
+                "apparentTemperature" not in df.columns
+                or df["apparentTemperature"].isna().all()
+                or (df["apparentTemperature"] == "none").all()
+            ):
+                df["apparentTemperature"] = df["temperature"]
             df["ozone"] = "none"
 
             for col in required_columns:
@@ -398,13 +470,18 @@ class Meteoblue(WeatherProvider):
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
-            json_data = json.loads(data.text)
+            try:
+                data.raise_for_status()
+                json_data = json.loads(data.text)
+            except Exception as e:
+                logger.error(f"Error downloading or parsing weather data: {e}. Full response: {data.text}")
+                return self._empty_df()
 
             if "data_1h" not in json_data:
                 logger.error(
                     f"KeyError 'data_1h' in weather data. Full response: {json_data}"
                 )
-                return pd.DataFrame()
+                return self._empty_df()
 
             df = pd.DataFrame(json_data["data_1h"])
 
@@ -470,6 +547,7 @@ class Meteoblue(WeatherProvider):
             for col in required_columns:
                 if col not in df.columns:
                     df[col] = "none"
+                    df[col] = "none"
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -485,13 +563,18 @@ class OpenWeatherMap(WeatherProvider):
         logger.debug("Download weather from: {}".format(url))
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
-            json_data = json.loads(data.text)
+            try:
+                data.raise_for_status()
+                json_data = json.loads(data.text)
+            except Exception as e:
+                logger.error(f"Error downloading or parsing weather data: {e}. Full response: {data.text}")
+                return self._empty_df()
 
             if "hourly" not in json_data:
                 logger.error(
                     f"KeyError 'hourly' in weather data. Full response: {json_data}"
                 )
-                return pd.DataFrame()
+                return self._empty_df()
 
             df = pd.DataFrame(json_data["hourly"])
 
