@@ -82,6 +82,8 @@ class Weather:
             logger.warning(
                 f"Failed to download or received empty data from {provider_name}."
             )
+            if self.data is None or cast(pd.DataFrame, self.data).empty:
+                self.data = provider._empty_df()
 
     def _filter_data(self, rows) -> pd.DataFrame:
         # Always add time column, ensuring it's first and all columns are unique.
@@ -89,7 +91,19 @@ class Weather:
         for col in rows:
             if col not in columns:
                 columns.append(col)
-        return self.data[columns]  # pyright: ignore
+
+        # Ensure all requested columns exist in self.data
+        for col in columns:
+            if col not in self.data.columns:
+                self.data[col] = "none"
+
+        # Ensure numeric columns are numeric
+        result = self.data[columns].copy()  # type: ignore
+        for col in columns:
+            if col != "time" and col not in ["summary", "precipType", "moonWaxing"]:
+                result[col] = pd.to_numeric(result[col], errors="coerce")
+
+        return result
 
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
@@ -372,10 +386,16 @@ class Weather:
             effective_dark_mode = get_dark_mode()
 
         style = get_plot_style(effective_dark_mode)
-        max_wind_speed = self.data[["windSpeed"]].max().max()
         data = self._filter_data(["windSpeed"])
         ax = args.pop("ax", None)
         if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Wind speed"), effective_dark_mode)
+
+        # Ensure windSpeed is numeric for max calculation
+        data["windSpeed"] = pd.to_numeric(data["windSpeed"], errors="coerce")
+        max_wind_speed = data[["windSpeed"]].max().max()
+
+        if pd.isna(max_wind_speed):
             return PlotUtils.plot_no_data(ax, gettext_("Wind speed"), effective_dark_mode)
 
         fig = None
@@ -538,9 +558,7 @@ class Weather:
             "fog",
             "aurora",
         ]
-        data = self._filter_data(
-            [c for c in critical_data_columns if c in self.data.columns]
-        )
+        data = self._filter_data(critical_data_columns)
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
 
     def plot_visibility(
@@ -553,7 +571,7 @@ class Weather:
 
         style = get_plot_style(effective_dark_mode)
         data = self._filter_data(["visibility"])
-        data = data.query("visibility != 'none'")  # pyright: ignore
+        data = data[data["visibility"].notna()]
         ax = args.pop("ax", None)
         if data.empty:
             return PlotUtils.plot_no_data(ax, gettext_("Visibility"), effective_dark_mode)
