@@ -14,16 +14,19 @@ def mock_weather_instance():
         with patch("apts.weather.PirateWeather") as mock_pw:
             mock_provider = mock_pw.return_value
             mock_data = pd.DataFrame({
-                "time": [datetime.datetime(2023, 6, 1, 12, tzinfo=pytz.utc)],
-                "cloudCover": [10.0],
-                "precipProbability": [0.0],
-                "windSpeed": [5.0],
-                "temperature": [15.0],
-                "visibility": [20.0],
-                "moonIllumination": [10.0],
-                "fog": [0.0],
-                "aurora": [0.0],
-                "precipIntensity": [0.0]
+                "time": [
+                    datetime.datetime(2023, 6, 1, 12, tzinfo=pytz.utc),
+                    datetime.datetime(2023, 6, 1, 13, tzinfo=pytz.utc)
+                ],
+                "cloudCover": [10.0, 20.0],
+                "precipProbability": [0.0, 0.0],
+                "windSpeed": [5.0, 6.0],
+                "temperature": [15.0, 16.0],
+                "visibility": [20.0, 20.0],
+                "moonIllumination": [10.0, 11.0],
+                "fog": [0.0, 0.0],
+                "aurora": [0.0, 0.0],
+                "precipIntensity": [0.0, 0.0]
             })
             mock_provider.download_data.return_value = mock_data
             weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
