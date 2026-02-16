@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import cast
+from typing import Any, cast
 
 import numpy
 import pandas
@@ -90,11 +90,13 @@ class Objects(ABC):
                     lambda x: x.magnitude if hasattr(x, "magnitude") else x
                 )
                 altitude_condition = altitude_values > conditions.min_object_altitude
-                azimuth_condition = self._is_azimuth_in_range(azimuth_values, conditions)
-                if (altitude_condition & azimuth_condition).any():
+                az_condition = self._is_azimuth_in_range(azimuth_values, conditions)
+                if cast(Any, (altitude_condition & az_condition).any()):
                     visible_objects_indices.append(index)
 
-            visible_candidate_objects = candidate_objects.loc[visible_objects_indices].copy()
+            visible_candidate_objects = cast(
+                pandas.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
+            )
         else:
             visible_mask = numpy.zeros(len(candidate_objects), dtype=bool)
 
@@ -139,10 +141,12 @@ class Objects(ABC):
                 alt_ok = alt_deg > conditions.min_object_altitude
                 az_ok = self._is_azimuth_in_range(az_deg, conditions)
 
-                if (alt_ok & az_ok).any():
+                if cast(Any, (alt_ok & az_ok).any()):
                     visible_mask[i] = True
 
-            visible_candidate_objects = candidate_objects[visible_mask].copy()
+            visible_candidate_objects: pandas.DataFrame = cast(
+                pandas.DataFrame, candidate_objects.loc[visible_mask].copy()
+            )
 
         if visible_candidate_objects.empty:
             return pandas.DataFrame(columns=self.objects.columns)
@@ -162,7 +166,9 @@ class Objects(ABC):
             needed_cols = [ObjectTableLabels.TRANSIT, ObjectTableLabels.RISING, ObjectTableLabels.SETTING, ObjectTableLabels.ALTITUDE]
             missing_any = False
             for col in needed_cols:
-                if col not in visible_candidate_objects.columns or visible_candidate_objects[col].isnull().any():
+                if col not in visible_candidate_objects.columns or cast(
+                    Any, visible_candidate_objects[col].isnull().any()
+                ):
                     missing_any = True
                     break
 
@@ -181,7 +187,7 @@ class Objects(ABC):
         visible = visible_candidate_objects
 
         # Sort objects by given order, handling potential NaNs
-        if sort_by in visible.columns and not visible[sort_by].isnull().all():
+        if sort_by in visible.columns and not bool(visible[sort_by].isnull().all()):
             visible = visible.sort_values(by=sort_by, ascending=True)
 
         return visible

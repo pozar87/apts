@@ -1,9 +1,8 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from typing import Any, cast
+from unittest.mock import MagicMock
 from apts.optics import OpticsUtils, OpticalPath
 from apts.opticalequipment.binoculars import Binoculars
-from apts.opticalequipment.naked_eye import NakedEye
-from apts.units import get_unit_registry
 
 # We need the real classes to use them with isinstance in OpticsUtils.expand
 from apts.opticalequipment.barlow import Barlow
@@ -54,7 +53,7 @@ class TestOptics(unittest.TestCase):
         path = OpticalPath(binos, [], [], [], binos)
 
         zoom = path.zoom()
-        self.assertEqual(zoom.magnitude, 10)
+        self.assertEqual(cast(Any, zoom).magnitude, 10)
 
     def test_optical_path_elements(self):
         t = MagicMock()

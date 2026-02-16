@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope

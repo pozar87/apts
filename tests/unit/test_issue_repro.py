@@ -1,6 +1,5 @@
 
 import pytest
-import matplotlib.pyplot as plt
 from apts.equipment import Equipment
 from apts.constants import GraphConstants
 import matplotlib.colors as mcolors

@@ -34,25 +34,25 @@ def _plot_bright_stars_on_skymap(
     coordinate_system: Optional[CoordinateSystem] = None,
     target_name: Optional[str] = None,
 ):
-    bright_stars_df = observation.local_stars.objects.copy()
+    bright_stars_df = cast(pd.DataFrame, observation.local_stars.objects.copy())
     if target_name:
         bright_stars_df = bright_stars_df[bright_stars_df["Name"] != target_name]
 
     if bright_stars_df.empty:
         return
 
-    if hasattr(bright_stars_df["RA"].iloc[0], "magnitude"):
-        bright_stars_df["RA"] = bright_stars_df["RA"].apply(lambda x: x.magnitude)
-    if hasattr(bright_stars_df["Dec"].iloc[0], "magnitude"):
-        bright_stars_df["Dec"] = bright_stars_df["Dec"].apply(lambda x: x.magnitude)
-    if hasattr(bright_stars_df["Magnitude"].iloc[0], "magnitude"):
-        bright_stars_df["Magnitude"] = bright_stars_df["Magnitude"].apply(
+    if hasattr(bright_stars_df["RA"].iloc[0], "magnitude"):  # type: ignore
+        bright_stars_df["RA"] = bright_stars_df["RA"].apply(lambda x: x.magnitude)  # type: ignore
+    if hasattr(bright_stars_df["Dec"].iloc[0], "magnitude"):  # type: ignore
+        bright_stars_df["Dec"] = bright_stars_df["Dec"].apply(lambda x: x.magnitude)  # type: ignore
+    if hasattr(bright_stars_df["Magnitude"].iloc[0], "magnitude"):  # type: ignore
+        bright_stars_df["Magnitude"] = bright_stars_df["Magnitude"].apply(  # type: ignore
             lambda x: x.magnitude
         )
 
     bright_stars_df["epoch_year"] = 2000.0
     bright_stars_df.rename(
-        columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True
+        columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True  # type: ignore
     )
 
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
@@ -72,7 +72,7 @@ def _plot_bright_stars_on_skymap(
     az_visible_deg = az.degrees[visible_mask]
     az_visible_rad = az.radians[visible_mask]
 
-    if df_visible.empty:
+    if df_visible.empty:  # type: ignore
         return
 
     star_color = style.get("EMPHASIS_COLOR", "yellow")
@@ -152,7 +152,7 @@ def _plot_bright_stars_on_skymap(
                     marker="*",
                 )
                 for i in range(len(df_visible)):
-                    star = df_visible.iloc[i]
+                    star = df_visible.iloc[i]  # type: ignore
                     ax.annotate(
                         star["Name"],
                         (az_visible_rad[i], 90 - alt_visible_deg[i]),
@@ -176,7 +176,7 @@ def _plot_bright_stars_on_skymap(
                     marker="*",
                 )
                 for i in range(len(df_visible)):
-                    star = df_visible.iloc[i]
+                    star = df_visible.iloc[i]  # type: ignore
                     ax.annotate(
                         star["Name"],
                         (
@@ -197,7 +197,7 @@ def _plot_bright_stars_on_skymap(
                 marker="*",
             )
             for i in range(len(df_visible)):
-                star = df_visible.iloc[i]
+                star = df_visible.iloc[i]  # type: ignore
                 ax.annotate(
                     star["Name"],
                     (az_visible_deg[i], alt_visible_deg[i]),
