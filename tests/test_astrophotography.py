@@ -1,9 +1,7 @@
-import pytest
 import numpy
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope, TubeMaterial
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 
 def test_camera_astrophotography_fields():
     c = Camera(sensor_width=36, sensor_height=24, width=6000, height=4000,

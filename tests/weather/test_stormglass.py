@@ -1,5 +1,3 @@
-import pytest
-import pandas as pd
 import pytz
 from unittest.mock import patch
 from requests_mock import ANY

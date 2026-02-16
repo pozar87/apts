@@ -1,4 +1,3 @@
-import pandas as pd
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels

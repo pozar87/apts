@@ -1,7 +1,6 @@
 import unittest
 from typing import Any, cast
 import numpy as np
-import pytest
 
 from apts.constants import EquipmentTableLabels, GraphConstants, OpticalType
 from apts.equipment import Equipment

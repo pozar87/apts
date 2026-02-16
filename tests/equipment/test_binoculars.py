@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from apts.opticalequipment.binoculars import Binoculars
 from apts.constants import OpticalType, GraphConstants

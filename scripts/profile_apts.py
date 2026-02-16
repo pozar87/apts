@@ -1,10 +1,9 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from apts.place import Place
 from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.conditions import Conditions
-import pandas as pd
 
 def profile():
     lat, lon = 52.2297, 21.0122 # Warsaw
@@ -30,7 +29,7 @@ def profile():
     print(f"get_visible_ngc took: {time.time() - start_time:.4f}s (found {len(ngc)})")
 
     start_time = time.time()
-    analysis = obs.get_weather_analysis()
+    obs.get_weather_analysis()
     print(f"get_weather_analysis took: {time.time() - start_time:.4f}s")
 
 if __name__ == "__main__":

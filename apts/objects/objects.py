@@ -94,7 +94,9 @@ class Objects(ABC):
                 if (altitude_condition & azimuth_condition).any():
                     visible_objects_indices.append(index)
 
-            visible_candidate_objects = candidate_objects.loc[visible_objects_indices].copy()
+            visible_candidate_objects = cast(
+                pandas.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
+            )
         else:
             visible_mask = numpy.zeros(len(candidate_objects), dtype=bool)
 
@@ -142,7 +144,7 @@ class Objects(ABC):
                 if (alt_ok & az_ok).any():
                     visible_mask[i] = True
 
-            visible_candidate_objects = candidate_objects[visible_mask].copy()
+            visible_candidate_objects: pandas.DataFrame = candidate_objects[visible_mask].copy()
 
         if visible_candidate_objects.empty:
             return pandas.DataFrame(columns=self.objects.columns)

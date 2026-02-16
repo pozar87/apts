@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.diagonal import Diagonal
 from apts.equipment import Equipment
 from apts.utils import ConnectionType

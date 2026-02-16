@@ -127,15 +127,15 @@ class SolarObjects(Objects):
         t = observer_to_use.date
         # Calculate planets magnitude
         ephem_object_map = {
-            "mercury": ephem.Mercury,
-            "venus": ephem.Venus,
-            "mars barycenter": ephem.Mars,
-            "jupiter barycenter": ephem.Jupiter,
-            "saturn barycenter": ephem.Saturn,
-            "uranus barycenter": ephem.Uranus,
-            "neptune barycenter": ephem.Neptune,
-            "moon": ephem.Moon,
-            "sun": ephem.Sun,
+            "mercury": ephem.Mercury,  # type: ignore
+            "venus": ephem.Venus,  # type: ignore
+            "mars barycenter": ephem.Mars,  # type: ignore
+            "jupiter barycenter": ephem.Jupiter,  # type: ignore
+            "saturn barycenter": ephem.Saturn,  # type: ignore
+            "uranus barycenter": ephem.Uranus,  # type: ignore
+            "neptune barycenter": ephem.Neptune,  # type: ignore
+            "moon": ephem.Moon,  # type: ignore
+            "sun": ephem.Sun,  # type: ignore
         }
 
         ephem_observer = ephem.Observer()
@@ -178,7 +178,7 @@ class SolarObjects(Objects):
                     mags.append(dp.mag)
                     sizes.append(None)
                     phases.append(None)
-                except:
+                except Exception:
                     mags.append(numpy.nan)
                     sizes.append(None)
                     phases.append(None)
