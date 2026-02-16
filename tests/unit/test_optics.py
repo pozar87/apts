@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, cast
 from unittest.mock import MagicMock
 from apts.optics import OpticsUtils, OpticalPath
 from apts.opticalequipment.binoculars import Binoculars
@@ -52,7 +53,7 @@ class TestOptics(unittest.TestCase):
         path = OpticalPath(binos, [], [], [], binos)
 
         zoom = path.zoom()
-        self.assertEqual(zoom.magnitude, 10)
+        self.assertEqual(cast(Any, zoom).magnitude, 10)
 
     def test_optical_path_elements(self):
         t = MagicMock()

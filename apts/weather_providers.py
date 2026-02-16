@@ -459,8 +459,8 @@ class StormGlass(WeatherProvider):
                 )
             if (
                 "apparentTemperature" not in df.columns
-                or df["apparentTemperature"].isna().all()
-                or (df["apparentTemperature"] == "none").all()
+                or bool(df["apparentTemperature"].isna().all())
+                or bool((df["apparentTemperature"] == "none").all())
             ):
                 df["apparentTemperature"] = df["temperature"]
             df["ozone"] = "none"

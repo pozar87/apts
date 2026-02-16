@@ -15,7 +15,7 @@ class TestUnits(unittest.TestCase):
         # Test conversions or properties
         self.assertEqual(ureg.hour, 60 * ureg.minute)
         self.assertAlmostEqual(
-            cast(Any, (1 * ureg.arcsecond).to(ureg.degree)).magnitude, 1 / 3600
+            cast(Any, 1 * ureg.arcsecond).to(ureg.degree).magnitude, 1 / 3600
         )
 
     def test_set_unit_registry(self):

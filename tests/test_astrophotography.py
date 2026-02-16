@@ -1,4 +1,5 @@
 import numpy
+from typing import Any, cast
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope, TubeMaterial
 from apts.optics import OpticalPath
@@ -9,7 +10,7 @@ def test_camera_astrophotography_fields():
     assert c.read_noise == 1.2
     assert c.full_well == 50000
     assert c.quantum_efficiency == 80
-    assert c.pixel_size().to("micrometer").magnitude == 3.76
+    assert cast(Any, c.pixel_size()).to("micrometer").magnitude == 3.76
 
 def test_telescope_astrophotography_fields():
     t = Telescope(aperture=150, focal_length=750, focuser_step_size=1.5, tube_material=TubeMaterial.CARBON_FIBER)
@@ -23,7 +24,7 @@ def test_optical_path_astrophotography():
 
     # Pixel scale: (3.76 / 750) * 206265 = 1.0340752
     scale = path.pixel_scale()
-    assert numpy.isclose(scale.to("arcsecond").magnitude, 1.0340752, atol=1e-4)
+    assert numpy.isclose(cast(Any, scale).to("arcsecond").magnitude, 1.0340752, atol=1e-4)
 
     # Sampling
     assert path.sampling(seeing=2.0) == "Well-sampled" # 2.0 / 1.03 = 1.94
@@ -33,13 +34,13 @@ def test_optical_path_astrophotography():
     # CFZ
     # 2.44 * 0.55 * (750/150)^2 = 2.44 * 0.55 * 25 = 33.55
     cfz = path.critical_focus_zone(wavelength=550)
-    assert numpy.isclose(cfz.to("micrometer").magnitude, 33.55)
+    assert numpy.isclose(cast(Any, cfz).to("micrometer").magnitude, 33.55)
 
     # Thermal drift
     # Aluminum alpha = 23.1e-6. 750 * 23.1e-6 * 1 = 0.017325 mm = 17.325 microns
     t.tube_material = TubeMaterial.ALUMINUM
     drift = path.thermal_drift(delta_t=1.0)
-    assert numpy.isclose(drift.to("micrometer").magnitude, 17.325)
+    assert numpy.isclose(cast(Any, drift).to("micrometer").magnitude, 17.325)
 
     # Sky flux
     # sqm=21. Area = pi * (7.5)^2 = 176.71 cm2. QE=0.8. PixelScale=1.03476.
@@ -47,12 +48,12 @@ def test_optical_path_astrophotography():
     # 10^(0.4*0.83) = 10^0.332 = 2.1478
     # flux = 0.005 * 2.1478 * 176.71 * 0.8 * 1.0707 = 1.626
     flux = path.sky_flux(sqm=21)
-    assert numpy.isclose(flux, 1.626, atol=1e-2)
+    assert numpy.isclose(cast(Any, flux), 1.626, atol=1e-2)
 
     # Optimum sub-exposure
     # (10 * 1.2^2) / 1.626 = 14.4 / 1.626 = 8.85
     opt_exp = path.optimum_sub_exposure(sqm=21)
-    assert numpy.isclose(opt_exp.to("second").magnitude, 8.85, atol=1e-1)
+    assert numpy.isclose(cast(Any, opt_exp).to("second").magnitude, 8.85, atol=1e-1)
 
     # Limiting magnitude
     # base = 7.7 + 5*log10(15) = 7.7 + 5*1.176 = 7.7 + 5.88 = 13.58
