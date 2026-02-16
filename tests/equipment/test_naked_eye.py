@@ -23,16 +23,16 @@ class TestNakedEye(unittest.TestCase):
 
     def test_naked_eye_fov(self):
         ne = NakedEye()
-        self.assertEqual(ne.fov().magnitude, 180)
+        self.assertEqual(cast(Any, ne.fov()).magnitude, 180)
 
     def test_naked_eye_exit_pupil(self):
         ne = NakedEye()
-        self.assertEqual(ne.exit_pupil().magnitude, 7.0)
+        self.assertEqual(cast(Any, ne.exit_pupil()).magnitude, 7.0)
 
     def test_naked_eye_limits(self):
         ne = NakedEye()
-        self.assertEqual(ne.dawes_limit().magnitude, 16.571)
-        self.assertEqual(ne.rayleigh_limit().magnitude, 19.714)
+        self.assertEqual(cast(Any, ne.dawes_limit()).magnitude, 16.571)
+        self.assertEqual(cast(Any, ne.rayleigh_limit()).magnitude, 19.714)
 
     def test_naked_eye_limiting_magnitude(self):
         ne = NakedEye()

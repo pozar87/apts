@@ -141,10 +141,12 @@ class Objects(ABC):
                 alt_ok = alt_deg > conditions.min_object_altitude
                 az_ok = self._is_azimuth_in_range(az_deg, conditions)
 
-                if (alt_ok & az_ok).any():
+                if bool((alt_ok & az_ok).any()):
                     visible_mask[i] = True
 
-            visible_candidate_objects: pandas.DataFrame = candidate_objects[visible_mask].copy()
+            visible_candidate_objects: pandas.DataFrame = cast(
+                pandas.DataFrame, candidate_objects.loc[visible_mask].copy()
+            )
 
         if visible_candidate_objects.empty:
             return pandas.DataFrame(columns=self.objects.columns)
@@ -183,7 +185,7 @@ class Objects(ABC):
         visible = visible_candidate_objects
 
         # Sort objects by given order, handling potential NaNs
-        if sort_by in visible.columns and not visible[sort_by].isnull().all():
+        if sort_by in visible.columns and not bool(visible[sort_by].isnull().all()):
             visible = visible.sort_values(by=sort_by, ascending=True)
 
         return visible

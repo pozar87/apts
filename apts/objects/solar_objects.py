@@ -1,5 +1,6 @@
 import functools
 from decimal import Decimal
+from typing import cast
 
 import ephem
 import numpy
@@ -147,7 +148,7 @@ class SolarObjects(Objects):
         mags, sizes, phases = [], [], []
 
         for _, row in computed_df.iterrows():
-            object_name = row[ObjectTableLabels.NAME]
+            object_name = cast(str, row[ObjectTableLabels.NAME])
             if object_name in MINOR_PLANET_NAMES.values():
                 try:
                     minor_planet_details = self.minor_planets.loc[object_name]
@@ -246,7 +247,7 @@ class SolarObjects(Objects):
         # Always ensure some basic computation is done if needed for magnitude filtering
         # Actually self.objects starts with only names. Magnitude is needed for filtering.
         # We skip transits here because they are slow and not needed for visibility filtering.
-        if ObjectTableLabels.MAGNITUDE not in self.objects.columns or self.objects[ObjectTableLabels.MAGNITUDE].isnull().all():
+        if ObjectTableLabels.MAGNITUDE not in self.objects.columns or bool(self.objects[ObjectTableLabels.MAGNITUDE].isnull().all()):
             self.compute(self.calculation_date, skip_transits=True)
 
         # First, call the parent's get_visible method

@@ -2,7 +2,12 @@ from pint import UnitRegistry
 
 _ureg = None
 
-def get_unit_registry():
+
+
+
+
+def get_unit_registry() -> UnitRegistry:
+
     global _ureg
     if _ureg is None:
         _ureg = UnitRegistry()

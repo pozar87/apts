@@ -180,7 +180,7 @@ class Observation:
         self._plot = value
 
     @property
-    def local_messier(self):
+    def local_messier(self) -> Messier:
         if self._local_messier is None:
             from apts import catalogs
 
@@ -190,7 +190,7 @@ class Observation:
         return self._local_messier
 
     @property
-    def local_planets(self):
+    def local_planets(self) -> SolarObjects:
         if self._local_planets is None:
             self._local_planets = SolarObjects(
                 self.place, calculation_date=self.effective_date, lazy=True
@@ -198,7 +198,7 @@ class Observation:
         return self._local_planets
 
     @property
-    def local_ngc(self):
+    def local_ngc(self) -> NGC:
         if self._local_ngc is None:
             from apts import catalogs
 
@@ -208,7 +208,7 @@ class Observation:
         return self._local_ngc
 
     @property
-    def local_stars(self):
+    def local_stars(self) -> Stars:
         if self._local_stars is None:
             from apts import catalogs
 

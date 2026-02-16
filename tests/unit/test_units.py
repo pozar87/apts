@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, cast
 from apts.units import get_unit_registry, set_unit_registry
 
 class TestUnits(unittest.TestCase):
@@ -13,7 +14,9 @@ class TestUnits(unittest.TestCase):
 
         # Test conversions or properties
         self.assertEqual(ureg.hour, 60 * ureg.minute)
-        self.assertAlmostEqual((1 * ureg.arcsecond).to(ureg.degree).magnitude, 1/3600)
+        self.assertAlmostEqual(
+            cast(Any, (1 * ureg.arcsecond).to(ureg.degree)).magnitude, 1 / 3600
+        )
 
     def test_set_unit_registry(self):
         original_ureg = get_unit_registry()

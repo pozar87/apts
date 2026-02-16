@@ -1,6 +1,7 @@
 import re
 import numpy as np
 from types import SimpleNamespace
+from typing import Any, cast
 
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
@@ -158,13 +159,13 @@ def get_moon_illumination_details(time):
     eph = get_ephemeris()
 
     # Get the phase angle
-    phase_angle = almanac.moon_phase(eph, time).degrees
+    phase_angle = cast(Any, almanac.moon_phase(eph, time).degrees)
 
     # Determine if waxing or waning
     if np.isscalar(phase_angle):
-        is_waxing = 0 < phase_angle < 180
+        is_waxing = 0 < phase_angle < 180  # type: ignore
     else:
-        is_waxing = (0 < phase_angle) & (phase_angle < 180)
+        is_waxing = (0 < phase_angle) & (phase_angle < 180)  # type: ignore
 
     illumination = (1 - np.cos(np.deg2rad(phase_angle))) / 2
     return illumination * 100, is_waxing

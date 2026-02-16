@@ -102,7 +102,7 @@ class Weather:
             if col != "time" and col not in ["summary", "precipType", "moonWaxing"]:
                 result[col] = pd.to_numeric(result[col], errors="coerce")
 
-        return result
+        return cast(pd.DataFrame, result)
 
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:

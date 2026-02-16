@@ -447,11 +447,12 @@ class StormGlass(WeatherProvider):
 
             # Add missing standard columns
             df["summary"] = "none"
+            df = cast(pd.DataFrame, df)
             # Derive a dummy precipProbability based on precipIntensity if not available
             if (
                 "precipProbability" not in df.columns
-                or df["precipProbability"].isna().all()
-                or (df["precipProbability"] == "none").all()
+                or bool(df["precipProbability"].isna().all())
+                or bool((df["precipProbability"] == "none").all())
             ):
                 df["precipProbability"] = df["precipIntensity"].apply(
                     lambda x: 100 if pd.notna(x) and x != "none" and x > 0 else 0

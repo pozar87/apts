@@ -34,7 +34,7 @@ def _plot_bright_stars_on_skymap(
     coordinate_system: Optional[CoordinateSystem] = None,
     target_name: Optional[str] = None,
 ):
-    bright_stars_df = observation.local_stars.objects.copy()
+    bright_stars_df = cast(pd.DataFrame, observation.local_stars.objects.copy())
     if target_name:
         bright_stars_df = bright_stars_df[bright_stars_df["Name"] != target_name]
 
