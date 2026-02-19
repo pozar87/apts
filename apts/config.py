@@ -3,6 +3,8 @@ import logging
 import os
 from typing import Optional
 
+from .secrets import mask_secret
+
 logger = logging.getLogger(__name__)
 
 # Init config
@@ -40,9 +42,11 @@ def load_config():
         logger.info(f"Loaded configuration from: {found_configs}")
         # Also log the content of the weather section if it exists
         if config.has_section("weather"):
-            logger.debug(
-                f"Content of [weather] section: {dict(config.items('weather'))}"
-            )
+            masked_weather = {
+                k: mask_secret(v) if "api_key" in k or "password" in k else v
+                for k, v in config.items("weather")
+            }
+            logger.debug(f"Content of [weather] section: {masked_weather}")
         else:
             logger.debug("No [weather] section found in loaded configuration.")
 
@@ -150,7 +154,7 @@ def get_weather_settings(provider: Optional[str] = None) -> tuple[str, str]:
             provider = "pirateweather"  # Default provider if no config section
 
     logger.debug(
-        f"get_weather_settings returning provider: {provider}, api_key: {api_key}"
+        f"get_weather_settings returning provider: {provider}, api_key: {mask_secret(api_key)}"
     )
     return provider, api_key
 

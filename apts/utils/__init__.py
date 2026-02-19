@@ -83,6 +83,12 @@ class Utils:
         return date_time.isoformat(timespec="seconds")
 
     @staticmethod
+    def mask_secret(secret: Any) -> str:
+        from ..secrets import mask_secret
+
+        return mask_secret(secret)
+
+    @staticmethod
     def annotate_plot(plot, y_label, dark_mode_enabled: bool): # Removed local_tz
         style = get_plot_style(dark_mode_enabled)
 
