@@ -41,22 +41,11 @@ class Messier(Objects):
         computed_df = target_df.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts = self._fast_compute_stars(computed_df, observer_to_use)
+        transits, alts, rises, sets = self._fast_compute_stars(computed_df, observer_to_use)
         computed_df[ObjectTableLabels.TRANSIT] = transits
         computed_df[ObjectTableLabels.ALTITUDE] = alts
-
-        # Rising and setting still use the loop, but it's okay as it's only called for visible objects
-        rise_set = [
-            self._compute_rising_and_setting(
-                self.get_skyfield_object(row),
-                observer_to_use,
-                row[ObjectTableLabels.TRANSIT],
-            )
-            for _, row in computed_df.iterrows()
-        ]
-        computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = pd.DataFrame(
-            rise_set, index=computed_df.index
-        )
+        computed_df[ObjectTableLabels.RISING] = rises
+        computed_df[ObjectTableLabels.SETTING] = sets
 
         self.objects.update(computed_df)
         return computed_df

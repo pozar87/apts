@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Any, cast
 
-import numpy
-import pandas
+import numpy as np
+import pandas as pd
 import pytz
 from skyfield import almanac
 from skyfield.api import Star, load
@@ -23,12 +23,12 @@ class Objects(ABC):
     @abstractmethod
     def compute(
         self, calculation_date=None, df_to_compute=None
-    ) -> pandas.DataFrame | None:
+    ) -> pd.DataFrame | None:
         pass
 
     def __init__(self, place, calculation_date=None):
         self.place = place
-        self.objects: pandas.DataFrame = pandas.DataFrame()
+        self.objects: pd.DataFrame = pd.DataFrame()
         self.ts = load.timescale()
         self.calculation_date = calculation_date  # Store it here
 
@@ -41,9 +41,9 @@ class Objects(ABC):
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
-    ) -> pandas.DataFrame:
+    ) -> pd.DataFrame:
         if not start or not stop:
-            return pandas.DataFrame(columns=self.objects.columns)
+            return pd.DataFrame(columns=self.objects.columns)
 
         max_magnitude = (
             limiting_magnitude
@@ -60,7 +60,7 @@ class Objects(ABC):
         candidate_objects = self.objects[magnitude_values < max_magnitude].copy()
 
         if candidate_objects.empty:
-            return pandas.DataFrame(columns=self.objects.columns)
+            return pd.DataFrame(columns=self.objects.columns)
 
         # Vectorized visibility check
         ts = self.ts
@@ -72,9 +72,11 @@ class Objects(ABC):
         # Check if get_altaz_curve is mocked or overridden (common in tests)
         import types
         import unittest.mock
+
         # Original method is a bound method, mocked/overridden is often a function or a Mock object
-        is_mocked = (isinstance(self.place.get_altaz_curve, unittest.mock.Mock) or
-                     isinstance(self.place.get_altaz_curve, types.FunctionType))
+        is_mocked = isinstance(
+            self.place.get_altaz_curve, unittest.mock.Mock
+        ) or isinstance(self.place.get_altaz_curve, types.FunctionType)
 
         if is_mocked:
             visible_objects_indices = []
@@ -95,10 +97,10 @@ class Objects(ABC):
                     visible_objects_indices.append(index)
 
             visible_candidate_objects = cast(
-                pandas.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
+                pd.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
             )
         else:
-            visible_mask = numpy.zeros(len(candidate_objects), dtype=bool)
+            visible_mask = np.zeros(len(candidate_objects), dtype=bool)
 
             # Group objects by type to vectorize Star objects
             stars_indices = []
@@ -144,12 +146,12 @@ class Objects(ABC):
                 if cast(Any, (alt_ok & az_ok).any()):
                     visible_mask[i] = True
 
-            visible_candidate_objects: pandas.DataFrame = cast(
-                pandas.DataFrame, candidate_objects.loc[visible_mask].copy()
+            visible_candidate_objects: pd.DataFrame = cast(
+                pd.DataFrame, candidate_objects.loc[visible_mask].copy()
             )
 
         if visible_candidate_objects.empty:
-            return pandas.DataFrame(columns=self.objects.columns)
+            return pd.DataFrame(columns=self.objects.columns)
 
         # Compute transit/rise/set ONLY for visible objects if needed for sorting or plotting
         # SolarObjects and others often need these for plotting later
@@ -215,6 +217,10 @@ class Objects(ABC):
         return Star(ra_hours=RA, dec_degrees=Dec)
 
     def _compute_tranzit(self, skyfield_object, observer):
+        """
+        Calculates the upper meridian transit of a celestial object.
+        For stars, a fast sidereal time approximation is used.
+        """
         if skyfield_object is None:
             return None
 
@@ -281,7 +287,11 @@ class Objects(ABC):
         return None
 
     def _compute_rising_and_setting(self, skyfield_object, observer, transit_time):
-        if skyfield_object is None or transit_time is None or pandas.isna(transit_time):
+        """
+        Calculates rising and setting times for a celestial object.
+        Note: For stars, use _fast_compute_stars for better performance.
+        """
+        if skyfield_object is None or transit_time is None or pd.isna(transit_time):
             return None, None
 
         f = almanac.risings_and_settings(
@@ -321,7 +331,7 @@ class Objects(ABC):
 
     def _altitude_at_transit(self, skyfield_object, transit, observer):
         # Calculate objects altitude at transit time
-        if transit is None or pandas.isna(transit):
+        if transit is None or pd.isna(transit):
             return 0
 
         # Optimization for stars: geometric formula
@@ -340,35 +350,88 @@ class Objects(ABC):
 
     def _fast_compute_stars(self, df, observer):
         """
-        Fast transit and altitude calculation for a DataFrame of Stars.
+        Fast transit, altitude, rising, and setting calculation for a DataFrame of Stars.
+        Uses vectorized numpy operations and geometric approximations for speed.
+
+        Note: Rising/setting times use a geometric formula that ignores atmospheric
+        refraction (~34'). This results in a 2-5 minute difference compared to
+        Skyfield's iterative solver, which is acceptable for fast visualization.
         """
         current_dt = observer.date.utc_datetime()
-        t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC)
+        t0_dt = current_dt.replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC
+        )
         t0 = self.ts.utc(t0_dt)
         lon_hours = self.place.lon_decimal / 15.0
         current_gmst = t0.gmst
         sidereal_to_solar = 0.99726957
-        lat = self.place.lat_decimal
+        lat_deg = self.place.lat_decimal
 
-        transits = []
-        alts = []
+        # Extract Skyfield Star objects and their coordinates in a vectorized way
+        sky_objs = [self.get_skyfield_object(row) for _, row in df.iterrows()]
+        valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
-        for _, row in df.iterrows():
-            sky_obj = self.get_skyfield_object(row)
-            if not sky_obj or not isinstance(sky_obj, Star):
-                transits.append(None)
-                alts.append(0)
-                continue
+        ras = np.array([obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs])
+        decs = np.array(
+            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
 
-            # Fast transit
-            target_gmst = (sky_obj.ra.hours - lon_hours) % 24
-            dt_solar = ((target_gmst - current_gmst) % 24) * sidereal_to_solar
-            transit_dt = t0_dt + timedelta(hours=dt_solar)
-            if transit_dt < current_dt - timedelta(hours=12):
-                transit_dt += timedelta(hours=24 * sidereal_to_solar)
-            transits.append(transit_dt.astimezone(observer.local_timezone))
+        # Vectorized Transit calculation
+        target_gmst = (ras - lon_hours) % 24
+        dt_solar = ((target_gmst - current_gmst) % 24) * sidereal_to_solar
 
-            # Fast altitude
-            alts.append(90.0 - abs(lat - sky_obj.dec.degrees))
+        # Use pandas for datetime vectorization
+        t0_ts = pd.Timestamp(t0_dt)
+        transit_times = t0_ts + pd.to_timedelta(dt_solar * 3600, unit="s")
 
-        return transits, alts
+        # Adjust for 12-hour window relative to current time
+        cutoff = current_dt - timedelta(hours=12)
+        shift = timedelta(hours=24 * sidereal_to_solar)
+
+        transit_times = pd.Series(transit_times)
+        # Ensure cutoff is compatible with transit_times timezone
+        cutoff_ts = pd.Timestamp(cutoff)
+        if transit_times.dt.tz is None and cutoff_ts.tz is not None:
+            cutoff_ts = cutoff_ts.replace(tzinfo=None)
+        elif transit_times.dt.tz is not None and cutoff_ts.tz is None:
+            cutoff_ts = cutoff_ts.replace(tzinfo=pytz.UTC)
+
+        needs_shift = transit_times < cutoff_ts
+        transit_times.loc[needs_shift] += shift
+
+        # Localize transits
+        local_tz = observer.local_timezone
+        transits = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if m else None
+            for t, m in zip(transit_times, valid_mask)
+        ]
+
+        # Vectorized Altitude calculation
+        altitudes = 90.0 - np.abs(lat_deg - decs)
+        alts = [float(a) if m else 0 for a, m in zip(altitudes, valid_mask)]
+
+        # Vectorized Rise/Set (Geometric) calculation
+        lat_rad = np.deg2rad(lat_deg)
+        decs_rad = np.deg2rad(decs)
+        cos_H = -np.tan(lat_rad) * np.tan(decs_rad)
+
+        # Hour angle in solar hours
+        H_hours = np.full(len(df), np.nan)
+        # Objects must be Stars and within the range where they actually rise/set
+        h_mask = valid_mask & (cos_H >= -1) & (cos_H <= 1)
+        H_hours[h_mask] = np.arccos(cos_H[h_mask]) * (12.0 / np.pi) * sidereal_to_solar
+
+        H_delta = pd.to_timedelta(H_hours * 3600, unit="s")
+        rising_times = transit_times - H_delta
+        setting_times = transit_times + H_delta
+
+        rises = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
+            for t in rising_times
+        ]
+        sets = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
+            for t in setting_times
+        ]
+
+        return transits, alts, rises, sets
