@@ -97,6 +97,18 @@ lunar_eclipses = false
         del os.environ["APTS_TEST_CONFIG"]
 
 
+@pytest.fixture(autouse=True)
+def close_plots():
+    """Close all matplotlib plots after each test to prevent memory warnings."""
+    yield
+    try:
+        import matplotlib.pyplot as plt
+
+        plt.close("all")
+    except ImportError:
+        pass
+
+
 @pytest.fixture(scope="session")
 def preload_expensive_data():
     """Pre-load expensive data once per test session to avoid repeated loading."""

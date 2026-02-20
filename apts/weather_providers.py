@@ -9,7 +9,7 @@ import pandas as pd
 import requests_cache
 
 from apts.config import get_cache_settings
-from .secrets import mask_secret, mask_text
+from .secrets import mask_text
 
 logger = logging.getLogger(__name__)
 
