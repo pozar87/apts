@@ -38,9 +38,11 @@ class Stars(Objects):
         computed_df = df_to_compute.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts = self._fast_compute_stars(computed_df, observer_to_use)
+        transits, alts, rises, sets = self._fast_compute_stars(computed_df, observer_to_use)
         computed_df[ObjectTableLabels.TRANSIT] = transits
         computed_df[ObjectTableLabels.ALTITUDE] = alts
+        computed_df[ObjectTableLabels.RISING] = rises
+        computed_df[ObjectTableLabels.SETTING] = sets
         self.objects.update(computed_df)
         return computed_df
 
