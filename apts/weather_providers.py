@@ -9,6 +9,7 @@ import pandas as pd
 import requests_cache
 
 from apts.config import get_cache_settings
+from .secrets import mask_secret, mask_text
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,16 @@ class WeatherProvider(ABC):
         self.lon = lon
         self.local_timezone = local_timezone
 
+    def _log_download_url(self, url):
+        logger.debug("Download weather from: {}".format(mask_text(url, self.api_key)))
+
+    def _log_download_error(self, e, data_text):
+        error_msg = mask_text(e, self.api_key)
+        masked_response = mask_text(data_text, self.api_key)
+        logger.error(
+            f"Error downloading or parsing weather data: {error_msg}. Full response: {masked_response}"
+        )
+
     @abstractmethod
     def download_data(self, hours: int = 48) -> pd.DataFrame:
         pass
@@ -179,16 +190,14 @@ class PirateWeather(WeatherProvider):
 
     def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
-        logger.debug("Download weather from: {}".format(url))
+        self._log_download_url(url)
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             try:
                 data.raise_for_status()
                 json_data = json.loads(data.text)
             except Exception as e:
-                logger.error(
-                    f"Error downloading or parsing weather data: {e}. Full response: {data.text}"
-                )
+                self._log_download_error(e, data.text)
                 return self._empty_df()
 
             columns = [
@@ -246,16 +255,14 @@ class VisualCrossing(WeatherProvider):
         url = self.API_URL.format(
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
-        logger.debug("Download weather from: {}".format(url))
+        self._log_download_url(url)
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             try:
                 data.raise_for_status()
                 json_data = json.loads(data.text)
             except Exception as e:
-                logger.error(
-                    f"Error downloading or parsing weather data: {e}. Full response: {data.text}"
-                )
+                self._log_download_error(e, data.text)
                 return self._empty_df()
 
             if "days" not in json_data:
@@ -358,7 +365,7 @@ class StormGlass(WeatherProvider):
             start=start.strftime("%Y-%m-%dT%H:%M:%SZ"),
             end=end.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
-        logger.debug("Download weather from: {}".format(url))
+        self._log_download_url(url)
         headers = {"Authorization": self.api_key}
         with get_session().get(url, headers=headers) as data:
             logger.debug(f"Data {data}")
@@ -366,9 +373,7 @@ class StormGlass(WeatherProvider):
                 data.raise_for_status()
                 json_data = json.loads(data.text)
             except Exception as e:
-                logger.error(
-                    f"Error downloading or parsing weather data: {e}. Full response: {data.text}"
-                )
+                self._log_download_error(e, data.text)
                 return self._empty_df()
 
             if "hours" not in json_data:
@@ -510,16 +515,14 @@ class Meteoblue(WeatherProvider):
             lon=self.lon,
             forecast_days=forecast_days,
         )
-        logger.debug("Download weather from: {}".format(url))
+        self._log_download_url(url)
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             try:
                 data.raise_for_status()
                 json_data = json.loads(data.text)
             except Exception as e:
-                logger.error(
-                    f"Error downloading or parsing weather data: {e}. Full response: {data.text}"
-                )
+                self._log_download_error(e, data.text)
                 return self._empty_df()
 
             if "data_1h" not in json_data:
@@ -610,16 +613,14 @@ class OpenWeatherMap(WeatherProvider):
 
     def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
-        logger.debug("Download weather from: {}".format(url))
+        self._log_download_url(url)
         with get_session().get(url) as data:
             logger.debug(f"Data {data}")
             try:
                 data.raise_for_status()
                 json_data = json.loads(data.text)
             except Exception as e:
-                logger.error(
-                    f"Error downloading or parsing weather data: {e}. Full response: {data.text}"
-                )
+                self._log_download_error(e, data.text)
                 return self._empty_df()
 
             if "hourly" not in json_data:
