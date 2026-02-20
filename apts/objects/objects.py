@@ -357,6 +357,28 @@ class Objects(ABC):
         refraction (~34'). This results in a 2-5 minute difference compared to
         Skyfield's iterative solver, which is acceptable for fast visualization.
         """
+        # Extract Skyfield Star objects and their coordinates in a vectorized way
+        sky_objs = [self.get_skyfield_object(row) for _, row in df.iterrows()]
+        valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
+
+        ras = np.array(
+            [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
+        decs = np.array(
+            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
+
+        return self._vectorized_geometric_compute(df, observer, ras, decs, valid_mask)
+
+    def _vectorized_geometric_compute(self, df, observer, ras, decs, valid_mask):
+        """
+        Generic vectorized transit, altitude, rising, and setting calculation.
+        Uses vectorized numpy operations and geometric approximations for speed.
+
+        Note: Rising/setting times use a geometric formula that ignores atmospheric
+        refraction (~34'). This results in a 2-5 minute difference compared to
+        Skyfield's iterative solver, which is acceptable for fast visualization.
+        """
         current_dt = observer.date.utc_datetime()
         t0_dt = current_dt.replace(
             hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC
@@ -366,15 +388,6 @@ class Objects(ABC):
         current_gmst = t0.gmst
         sidereal_to_solar = 0.99726957
         lat_deg = self.place.lat_decimal
-
-        # Extract Skyfield Star objects and their coordinates in a vectorized way
-        sky_objs = [self.get_skyfield_object(row) for _, row in df.iterrows()]
-        valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
-
-        ras = np.array([obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs])
-        decs = np.array(
-            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
-        )
 
         # Vectorized Transit calculation
         target_gmst = (ras - lon_hours) % 24

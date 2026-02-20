@@ -1,9 +1,10 @@
 import functools
 from decimal import Decimal
+from types import SimpleNamespace
 from typing import cast
 
 import ephem
-import numpy
+import numpy as np
 import pandas as pd
 
 from apts.place import Place
@@ -19,7 +20,7 @@ def _to_float(value):
     Safely converts a value to a float, handling Decimal, NA, and other types.
     """
     if pd.isna(value):
-        return numpy.nan
+        return np.nan
     if isinstance(value, Decimal):
         return float(value)
     if hasattr(value, "magnitude"):  # Handle pint.Quantity objects
@@ -77,55 +78,31 @@ class SolarObjects(Objects):
 
     def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
         if calculation_date is not None:
-            # Instantiate as Place object
-            temp_observer = Place(
-                lat=self.place.lat_decimal,
-                lon=self.place.lon_decimal,
-                elevation=self.place.elevation,
-                name=self.place.name + "_temp",
-                date=calculation_date,
+            t = (
+                calculation_date
+                if isinstance(calculation_date, type(self.ts.now()))
+                else self.ts.utc(calculation_date)
             )
-            observer_to_use = temp_observer
+            # Avoid creating a whole new Place object, which is slow.
+            # We only need basic properties for computation.
+            observer_to_use = SimpleNamespace(
+                date=t,
+                local_timezone=self.place.local_timezone,
+                lat_decimal=self.place.lat_decimal,
+                lon_decimal=self.place.lon_decimal,
+                elevation=self.place.elevation,
+                observer=self.place.observer,
+                sun=self.place.sun,
+            )
         else:
             observer_to_use = self.place
+            t = self.place.date
 
         # If no specific DataFrame is provided, use the class's default.
         target_df = df_to_compute if df_to_compute is not None else self.objects
 
         # Work on a copy to avoid SettingWithCopyWarning
         computed_df = target_df.copy()
-
-        if not skip_transits:
-            # Compute transit of planets
-            computed_df[ObjectTableLabels.TRANSIT] = [
-                self._compute_tranzit(self.get_skyfield_object(row), observer_to_use)
-                for _, row in computed_df.iterrows()
-            ]
-
-            # Compute rising and setting
-            rise_set = [
-                self._compute_rising_and_setting(
-                    self.get_skyfield_object(row),
-                    observer_to_use,
-                    row[ObjectTableLabels.TRANSIT],
-                )
-                for _, row in computed_df.iterrows()
-            ]
-            computed_df[[ObjectTableLabels.RISING, ObjectTableLabels.SETTING]] = pd.DataFrame(
-                rise_set, index=computed_df.index
-            )
-
-            # Compute altitude at transit
-            computed_df[ObjectTableLabels.ALTITUDE] = [
-                self._altitude_at_transit(
-                    self.get_skyfield_object(row),
-                    row[ObjectTableLabels.TRANSIT],
-                    observer_to_use,
-                )
-                for _, row in computed_df.iterrows()
-            ]
-
-        t = observer_to_use.date
         # Calculate planets magnitude
         ephem_object_map = {
             "mercury": ephem.Mercury,  # type: ignore
@@ -153,12 +130,12 @@ class SolarObjects(Objects):
                 try:
                     minor_planet_details = self.minor_planets.loc[object_name]
                     dp = ephem.EllipticalBody()
-                    dp._inc = numpy.deg2rad(minor_planet_details["inclination_degrees"])
-                    dp._Om = numpy.deg2rad(minor_planet_details["longitude_of_ascending_node_degrees"])
-                    dp._om = numpy.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
+                    dp._inc = np.deg2rad(minor_planet_details["inclination_degrees"])
+                    dp._Om = np.deg2rad(minor_planet_details["longitude_of_ascending_node_degrees"])
+                    dp._om = np.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
                     dp._a = minor_planet_details["semimajor_axis_au"]
                     dp._e = minor_planet_details["eccentricity"]
-                    dp._M = numpy.deg2rad(minor_planet_details["mean_anomaly_degrees"])
+                    dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
                     if pd.notna(minor_planet_details["magnitude_H"]):
                         dp._H = minor_planet_details["magnitude_H"]
                     if pd.notna(minor_planet_details["magnitude_G"]):
@@ -180,7 +157,7 @@ class SolarObjects(Objects):
                     sizes.append(None)
                     phases.append(None)
                 except Exception:
-                    mags.append(numpy.nan)
+                    mags.append(np.nan)
                     sizes.append(None)
                     phases.append(None)
             else:
@@ -192,9 +169,9 @@ class SolarObjects(Objects):
                     sizes.append(ephem_obj.size)
                     phases.append(ephem_obj.phase)
                 else:
-                    mags.append(numpy.nan)
-                    sizes.append(numpy.nan)
-                    phases.append(numpy.nan)
+                    mags.append(np.nan)
+                    sizes.append(np.nan)
+                    phases.append(np.nan)
 
         computed_df[ObjectTableLabels.MAGNITUDE] = mags
         computed_df[ObjectTableLabels.SIZE] = sizes
@@ -216,15 +193,33 @@ class SolarObjects(Objects):
                 dists.append(dist.au)
                 elongs.append(pos.separation_from(sun_pos).degrees)
             else:
-                ras.append(numpy.nan)
-                decs.append(numpy.nan)
-                dists.append(numpy.nan)
-                elongs.append(numpy.nan)
+                ras.append(np.nan)
+                decs.append(np.nan)
+                dists.append(np.nan)
+                elongs.append(np.nan)
 
         computed_df[ObjectTableLabels.RA] = ras
         computed_df[ObjectTableLabels.DEC] = decs
         computed_df[ObjectTableLabels.DISTANCE] = dists
         computed_df[ObjectTableLabels.ELONGATION] = elongs
+
+        if not skip_transits:
+            # Use fast vectorized geometric approximation for transits, rise, set, and altitude.
+            # This is much faster than the iterative find_discrete solver, especially for minor planets.
+            # While it introduces a small error (2-5 mins for planets, ~20 mins for the Moon),
+            # it is perfectly adequate for visualization purposes.
+            valid_mask = np.ones(len(computed_df), dtype=bool)
+            transits, alts, rises, sets = self._vectorized_geometric_compute(
+                computed_df,
+                observer_to_use,
+                np.array(ras),
+                np.array(decs),
+                valid_mask,
+            )
+            computed_df[ObjectTableLabels.TRANSIT] = transits
+            computed_df[ObjectTableLabels.ALTITUDE] = alts
+            computed_df[ObjectTableLabels.RISING] = rises
+            computed_df[ObjectTableLabels.SETTING] = sets
 
         # Ensure all columns exist in self.objects
         for col in computed_df.columns:
@@ -246,9 +241,9 @@ class SolarObjects(Objects):
     ):
         # Always ensure some basic computation is done if needed for magnitude filtering
         # Actually self.objects starts with only names. Magnitude is needed for filtering.
-        # We skip transits here because they are slow and not needed for visibility filtering.
+        # Since transits are now fast and vectorized, we compute them for all objects at once.
         if ObjectTableLabels.MAGNITUDE not in self.objects.columns or bool(self.objects[ObjectTableLabels.MAGNITUDE].isnull().all()):
-            self.compute(self.calculation_date, skip_transits=True)
+            self.compute(self.calculation_date, skip_transits=False)
 
         # First, call the parent's get_visible method
         visible = super().get_visible(
