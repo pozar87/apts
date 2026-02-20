@@ -1,5 +1,10 @@
+import logging
 import requests
 from datetime import datetime, timedelta
+
+from .secrets import mask_text
+
+logger = logging.getLogger(__name__)
 
 
 class NasaAPI:
@@ -17,9 +22,14 @@ class NasaAPI:
                 "end_date": current_end.strftime("%Y-%m-%d"),
                 "api_key": self.api_key,
             }
-            response = requests.get(self.base_url, params=params)
-            response.raise_for_status()
-            data = response.json()
+            try:
+                response = requests.get(self.base_url, params=params)
+                response.raise_for_status()
+                data = response.json()
+            except Exception as e:
+                error_msg = mask_text(str(e), self.api_key)
+                logger.error(f"NASA API request failed: {error_msg}")
+                raise
 
             if not all_data:
                 all_data = data
