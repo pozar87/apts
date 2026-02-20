@@ -1,4 +1,5 @@
 pytest==9.0.2
+pytest-cov
 requests-mock==1.12.1
 ruff
 pyright
