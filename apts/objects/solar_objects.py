@@ -7,8 +7,6 @@ import ephem
 import numpy as np
 import pandas as pd
 
-from apts.place import Place
-
 from ..cache import get_mpcorb_data
 from ..constants import ObjectTableLabels
 from ..utils import MINOR_PLANET_NAMES, planetary

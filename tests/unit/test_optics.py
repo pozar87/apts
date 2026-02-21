@@ -105,13 +105,13 @@ class TestOptics(unittest.TestCase):
 
         # NPF = (35*5.6 + 30*3.76) / 400 = (196 + 112.8) / 400 = 308.8 / 400 = 0.772
         npf = path.npf_rule()
-        self.assertAlmostEqual(npf.magnitude, 0.772, places=3)
-        self.assertEqual(npf.units, get_unit_registry().second)
+        self.assertAlmostEqual(cast(Any, npf).magnitude, 0.772, places=3)
+        self.assertEqual(cast(Any, npf).units, get_unit_registry().second)
 
         # With declination 60 degrees (cos(60) = 0.5)
         # NPF = 0.772 / 0.5 = 1.544
         npf_60 = path.npf_rule(declination=60)
-        self.assertAlmostEqual(npf_60.magnitude, 1.544, places=3)
+        self.assertAlmostEqual(cast(Any, npf_60).magnitude, 1.544, places=3)
 
     def test_rule_of_500(self):
         t = MagicMock(spec=Telescope)
@@ -132,8 +132,8 @@ class TestOptics(unittest.TestCase):
         crop_factor = 43.27 / diagonal
         expected = 500 / (50 * crop_factor)
 
-        self.assertAlmostEqual(r500.magnitude, expected, places=3)
-        self.assertEqual(r500.units, get_unit_registry().second)
+        self.assertAlmostEqual(cast(Any, r500).magnitude, expected, places=3)
+        self.assertEqual(cast(Any, r500).units, get_unit_registry().second)
 
 if __name__ == "__main__":
     unittest.main()
