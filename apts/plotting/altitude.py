@@ -167,12 +167,8 @@ def generate_plot_messier(
             )
             for obj_type, color in plotted_types.items()
         ]
-        legend = ax.legend(handles=legend_handles, title=gettext_("Object Types"))
-        legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-        legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-        legend.get_title().set_color(style["TEXT_COLOR"])
-        for text in legend.get_texts():
-            text.set_color(style["TEXT_COLOR"])
+        ax.legend(handles=legend_handles, title=gettext_("Object Types"))
+        PlotUtils.style_legend(ax, style)
 
         ax.set_title(gettext_("Messier Objects Altitude"), color=style["TEXT_COLOR"])
         logger.info(gettext_("Successfully generated Messier plot."))
@@ -379,5 +375,6 @@ def generate_plot_planets(
     )
     ax.set_title(gettext_("Solar Objects Altitude"), color=style["TEXT_COLOR"])
     ax.legend()
+    PlotUtils.style_legend(ax, style)
 
     return fig
