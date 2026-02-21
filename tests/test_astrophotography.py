@@ -20,7 +20,7 @@ def test_telescope_astrophotography_fields():
 def test_optical_path_astrophotography():
     t = Telescope(aperture=150, focal_length=750)
     c = Camera(sensor_width=36, sensor_height=24, width=6000, height=4000, pixel_size=3.76, read_noise=1.2, quantum_efficiency=80)
-    path = OpticalPath(t, [], [], [], c)
+    path = OpticalPath(t, [], [], [], [], c)
 
     # Pixel scale: (3.76 / 750) * 206265 = 1.0340752
     scale = path.pixel_scale()

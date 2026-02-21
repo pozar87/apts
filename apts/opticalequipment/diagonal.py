@@ -13,6 +13,7 @@ class Diagonal(IntermediateOpticalEquipment):
             in_connection_type=connection_type, out_connection_type=connection_type,
             in_gender=Gender.MALE, out_gender=Gender.FEMALE
         )
+        self.connection_type = connection_type
         self.is_erecting = is_erecting
         self.t2_output = t2_output
 

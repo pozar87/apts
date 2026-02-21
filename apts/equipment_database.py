@@ -82,8 +82,19 @@ class EquipmentDatabase:
             )
 
         if tp == "type_camera" or tp == "type_dslr":
+            # Heuristic for sensor sizes
+            sw, sh = 23.5, 15.7 # APS-C
+            w, h = 6000, 4000
+
+            if "full frame" in name.lower() or "36x24" in name.lower():
+                sw, sh = 35.9, 23.9
+                w, h = 8256, 5504
+            elif "4/3" in name.lower() or "micro four thirds" in name.lower():
+                sw, sh = 17.3, 13.0
+                w, h = 4656, 3520
+
             return Camera(
-                23.5, 15.7, 6000, 4000, vendor=vendor,
+                sw, sh, w, h, vendor=vendor,
                 connection_type=tt, connection_gender=tg or Gender.FEMALE,
                 backfocus=ol, mass=mass, optical_length=ol
             )

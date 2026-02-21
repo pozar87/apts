@@ -58,6 +58,9 @@ class OpticalEquipment:
     def get_parent_id(name: str):
         return name.split(OpticalEquipment._SEPARATOR)[0]
 
+    def register(self, equipment):
+        self._register(equipment)
+
     def _register(self, equipment):
         # Register equipment node
         equipment.add_vertex(self.id(), self)

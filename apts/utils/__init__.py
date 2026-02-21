@@ -13,8 +13,8 @@ __all__ = ["ureg", "MINOR_PLANET_NAMES"]
 
 
 class ConnectionType(Enum):
-    F_1_25 = '1.25"'
-    F_2 = '2"'
+    F_1_25 = "1.25"
+    F_2 = "2"
     T2 = "T2"
     M42 = "M42"
     M48 = "M48"
