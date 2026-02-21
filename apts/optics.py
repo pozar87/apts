@@ -14,12 +14,13 @@ class OpticsUtils:
         from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.filter import Filter
         from .opticalequipment.smart_telescope import SmartTelescope
+        from .opticalequipment.reducer import Reducer, Flattener, Corrector
 
         # First item in the path should be the telescope or binoculars
         main_optic = path[0]
         if isinstance(main_optic, (Binoculars, NakedEye, SmartTelescope)):
             # Treat binoculars as the 'output' as well for path structure consistency
-            return (main_optic, [], [], [], main_optic)
+            return (main_optic, [], [], [], [], main_optic)
 
         # Original logic for telescopes
         telescope = main_optic
@@ -27,10 +28,22 @@ class OpticsUtils:
         output = path[-1]
         # Intermediate elements
         intermediate = path[1:-1]
-        barlows = [item for item in intermediate if isinstance(item, Barlow)]
+        # We treat Reducer, Flattener, and Corrector similarly to Barlow for magnification purposes
+        barlows = [
+            item
+            for item in intermediate
+            if isinstance(item, (Barlow, Reducer, Flattener, Corrector))
+        ]
         diagonals = [item for item in intermediate if isinstance(item, Diagonal)]
         filters = [item for item in intermediate if isinstance(item, Filter)]
-        return (telescope, barlows, diagonals, filters, output)
+        others = [
+            item
+            for item in intermediate
+            if not isinstance(
+                item, (Barlow, Reducer, Flattener, Corrector, Diagonal, Filter)
+            )
+        ]
+        return (telescope, barlows, diagonals, filters, others, output)
 
     @staticmethod
     def barlows_multiplications(barlows_list):
@@ -68,17 +81,20 @@ class OpticalPath:
     Class representing an optical path in a telescope setup.
     """
 
-    def __init__(self, telescope, barlows, diagonals, filters, output):
+    def __init__(self, telescope, barlows, diagonals, filters, others, output):
         self.telescope = telescope
         self.barlows = barlows
         self.diagonals = diagonals
         self.filters = filters
+        self.others = others
         self.output = output
 
     @classmethod
     def from_path(cls, path):
-        telescope, barlows, diagonals, filters, output = OpticsUtils.expand(path)
-        return cls(telescope, barlows, diagonals, filters, output)
+        telescope, barlows, diagonals, filters, others, output = OpticsUtils.expand(
+            path
+        )
+        return cls(telescope, barlows, diagonals, filters, others, output)
 
     def zoom(self):
         return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
@@ -96,6 +112,7 @@ class OpticalPath:
             + [str(item) for item in self.barlows]
             + [str(item) for item in self.diagonals]
             + [str(item) for item in self.filters]
+            + [str(item) for item in self.others]
             + [str(self.output)]
         )
 
@@ -107,7 +124,13 @@ class OpticalPath:
         # Original: return 2 + len(self.barlows) (Telescope + Output + Barlows)
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
             return 1  # Just the binoculars itself
-        return 2 + len(self.barlows) + len(self.diagonals) + len(self.filters)
+        return (
+            2
+            + len(self.barlows)
+            + len(self.diagonals)
+            + len(self.filters)
+            + len(self.others)
+        )
 
     def fov(self):
         return OpticsUtils.compute_field_of_view(
@@ -160,7 +183,68 @@ class OpticalPath:
         elements |= set(self.barlows)
         elements |= set(self.diagonals)
         elements |= set(self.filters)
+        elements |= set(self.others)
         return frozenset(elements)
+
+    def total_mass(self):
+        mass = getattr(self.telescope, "mass", 0 * get_unit_registry().gram)
+        for item in self.barlows + self.diagonals + self.filters + self.others:
+            mass += getattr(item, "mass", 0 * get_unit_registry().gram)
+        mass += getattr(self.output, "mass", 0 * get_unit_registry().gram)
+        return mass
+
+    def backfocus_gap(self):
+        """
+        Calculate the backfocus gap.
+        Returns a Quantity (distance) or None if no backfocus requirement is defined.
+        """
+        # 1. Find the component that defines the required backfocus
+        required_bf = None
+        start_index = -1
+
+        # Flatten path for searching
+        path = (
+            [self.telescope]
+            + self.barlows
+            + self.diagonals
+            + self.filters
+            + self.others
+            + [self.output]
+        )
+
+        for i, item in enumerate(path):
+            # Check if component has required_backfocus (Reducer, Flattener, etc.)
+            if (
+                hasattr(item, "required_backfocus")
+                and item.required_backfocus is not None
+            ):
+                required_bf = item.required_backfocus
+                start_index = i
+            # For telescopes, 'backfocus' property can also mean required backfocus from flange
+            elif (
+                i == 0
+                and hasattr(item, "backfocus")
+                and item.backfocus is not None
+            ):
+                required_bf = item.backfocus
+                start_index = i
+
+        if required_bf is None:
+            return None
+
+        # 2. Calculate actual distance from that component's output to the sensor
+        actual_distance = 0 * get_unit_registry().mm
+        # Sum optical lengths of everything between start and end
+        for item in path[start_index + 1 : -1]:
+            actual_distance += getattr(
+                item, "optical_length", 0 * get_unit_registry().mm
+            )
+
+        # 3. Add the output component's backfocus contribution (e.g. sensor depth)
+        if hasattr(self.output, "backfocus") and self.output.backfocus is not None:
+            actual_distance += self.output.backfocus
+
+        return required_bf - actual_distance
 
     def get_image_orientation(self):
         from .opticalequipment.telescope import Telescope

@@ -13,9 +13,42 @@ __all__ = ["ureg", "MINOR_PLANET_NAMES"]
 
 
 class ConnectionType(Enum):
-    F_1_25 = "1.25"
-    F_2 = "2"
+    F_1_25 = '1.25"'
+    F_2 = '2"'
     T2 = "T2"
+    M42 = "M42"
+    M48 = "M48"
+    M54 = "M54"
+    M56 = "M56"
+    M63 = "M63"
+    M68 = "M68"
+    M72 = "M72"
+    M81 = "M81"
+    M82 = "M82"
+    M84 = "M84"
+    M92 = "M92"
+    M117 = "M117"
+    EOS = "EOS"
+    CANON_RF = "Canon RF"
+    NIKON_F = "Nikon F"
+    NIKON_Z = "Nikon Z"
+    SONY_E = "Sony E"
+    FUJI_X = "Fuji X"
+    MFT = "MFT"
+    PENTAX_K = "Pentax K"
+    CS = "CS"
+    SC = "SC (Schmidt-Cassegrain)"
+    ZWO_6_BOLT = "ZWO 6-bolt"
+    ZWO_4_BOLT = "ZWO 4-bolt"
+    QHY_4_BOLT = "QHY 4-bolt"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
+class Gender(Enum):
+    MALE = "Male"
+    FEMALE = "Female"
 
     def __str__(self) -> str:
         return str(self.value)

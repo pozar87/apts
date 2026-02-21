@@ -9,8 +9,8 @@ class Eyepiece(OutputOpticalEqipment):
   Class representing ocular
   """
 
-  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25):
-    super(Eyepiece, self).__init__(focal_length, vendor)
+  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25, mass=0, optical_length=0):
+    super(Eyepiece, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
     self._connection_type = connection_type
     self._field_of_view = field_of_view * get_unit_registry().deg
 

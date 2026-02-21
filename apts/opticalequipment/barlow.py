@@ -7,8 +7,8 @@ class Barlow(OpticalEquipment):
   Class representing Barlow lenses
   """
 
-  def __init__(self, magnification, vendor="unknown barlow", connection_type=ConnectionType.F_1_25, t2_output=False):
-    super(Barlow, self).__init__(0, vendor)
+  def __init__(self, magnification, vendor="unknown barlow", connection_type=ConnectionType.F_1_25, t2_output=False, mass=0, optical_length=0):
+    super(Barlow, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
     self.connection_type = connection_type
     self.t2_output = t2_output
     self.magnification = magnification

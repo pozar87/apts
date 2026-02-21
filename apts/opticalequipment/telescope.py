@@ -41,14 +41,22 @@ class Telescope(OpticalEquipment):
         telescope_type: Optional[TelescopeType] = TelescopeType.REFRACTOR,
         focuser_step_size=None,
         tube_material: Optional[TubeMaterial] = TubeMaterial.ALUMINUM,
+        backfocus=None,
+        mass=0,
+        optical_length=0,
+        connection_gender=None,
     ):
-        super(Telescope, self).__init__(focal_length, vendor)
+        super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self.aperture = aperture * get_unit_registry().mm
         self.connection_type = connection_type
+        self.connection_gender = connection_gender
         self.t2_output = t2_output
         self.telescope_type = telescope_type
         self.focuser_step_size = focuser_step_size
         self.tube_material = tube_material
+        self.backfocus = (
+            backfocus * get_unit_registry().mm if backfocus is not None else None
+        )
 
     def focal_ratio(self):
         return self.focal_length / self.aperture
@@ -105,7 +113,7 @@ class Telescope(OpticalEquipment):
         # Add telescope node
         super(Telescope, self)._register(equipment)
         # Add telescope output node and connect it to telescope
-        self._register_output(equipment, self.connection_type)
+        self._register_output(equipment, self.connection_type, self.connection_gender)
         # Connect telescope node to space node
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
         # Handling optional T2 output

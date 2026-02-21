@@ -14,10 +14,11 @@ class Camera(OutputOpticalEqipment):
   """
 
   def __init__(self, sensor_width, sensor_height, width, height, vendor="unknown camera",
-               connection_type=ConnectionType.T2, pixel_size=None, read_noise=None,
-               full_well=None, quantum_efficiency=None):
-    super(Camera, self).__init__(0, vendor)
+               connection_type=ConnectionType.T2, connection_gender=None, pixel_size=None, read_noise=None,
+               full_well=None, quantum_efficiency=None, backfocus=None, mass=0, optical_length=0):
+    super(Camera, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
     self.connection_type = connection_type
+    self.connection_gender = connection_gender
     self.sensor_width = sensor_width * get_unit_registry().mm
     self.sensor_height = sensor_height * get_unit_registry().mm
     self.width = width
@@ -25,6 +26,7 @@ class Camera(OutputOpticalEqipment):
     self.read_noise = read_noise
     self.full_well = full_well
     self.quantum_efficiency = quantum_efficiency
+    self.backfocus = backfocus * get_unit_registry().mm if backfocus is not None else None
     if pixel_size is not None:
       self._pixel_size = pixel_size * get_unit_registry().micrometer
     else:
@@ -49,7 +51,7 @@ class Camera(OutputOpticalEqipment):
     # Add camera node
     super(Camera, self)._register(equipment)
     # Add camera input node and connect it to camera
-    self._register_input(equipment, self.connection_type)
+    self._register_input(equipment, self.connection_type, self.connection_gender)
     # Connect camera with output image node
     equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 

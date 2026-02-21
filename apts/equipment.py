@@ -115,6 +115,8 @@ class Equipment:
             EquipmentTableLabels.PIXEL_SCALE,
             EquipmentTableLabels.NPF_RULE,
             EquipmentTableLabels.RULE_OF_500,
+            EquipmentTableLabels.BACKFOCUS_GAP,
+            EquipmentTableLabels.TOTAL_MASS,
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
@@ -178,6 +180,17 @@ class Equipment:
                 else:
                     r500_magnitude = numpy.nan
 
+                # Backfocus Gap
+                bf_gap_value = path.backfocus_gap()
+                if bf_gap_value is not None:
+                    bf_gap_magnitude = bf_gap_value.to("mm").magnitude
+                else:
+                    bf_gap_magnitude = numpy.nan
+
+                # Total Mass
+                total_mass_value = path.total_mass()
+                total_mass_magnitude = total_mass_value.to("gram").magnitude
+
                 rows.append(
                     [
                         path.label(),
@@ -195,6 +208,8 @@ class Equipment:
                         pixel_scale_magnitude,
                         npf_magnitude,
                         r500_magnitude,
+                        bf_gap_magnitude,
+                        total_mass_magnitude,
                         is_naked_eye,
                     ]
                 )
@@ -609,16 +624,30 @@ class Equipment:
         if self._connected:
             return
         logger.debug("Connecting nodes")
+        from .utils import Gender
+
         for out_node_id, out_node_data in self.connection_garph.nodes(data=True):
             if out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT:
-                # Get output type
+                # Get output type and gender
                 connection_type = out_node_data[NodeLabels.CONNECTION_TYPE]
+                connection_gender = out_node_data.get(NodeLabels.CONNECTION_GENDER)
+
                 for in_node_id, in_node_data in self.connection_garph.nodes(data=True):
                     if (
                         in_node_data.get(NodeLabels.TYPE) == OpticalType.INPUT
                         and in_node_data.get(NodeLabels.CONNECTION_TYPE)
                         == connection_type
                     ):
+                        # Match genders if provided
+                        in_gender = in_node_data.get(NodeLabels.CONNECTION_GENDER)
+                        if (
+                            connection_gender is not None
+                            and in_gender is not None
+                            and connection_gender == in_gender
+                        ):
+                            # Same gender cannot connect (usually Male -> Female)
+                            continue
+
                         # Connect all outputs with all inputs, excluding connecting part to itself
                         out_id = OpticalEquipment.get_parent_id(
                             out_node_data[NodeLabels.NAME]
@@ -637,6 +666,7 @@ class Equipment:
         equipment=None,
         node_type=OpticalType.GENERIC,
         connection_type=None,
+        connection_gender=None,
     ):
         """
         Add single node to graph. Return new vertex.
@@ -655,9 +685,19 @@ class Equipment:
         ):
             node_label = node_name
         elif node_type == OpticalType.INPUT:
-            node_label = str(connection_type) + " " + OpticalEquipment.IN
+            node_label = (
+                str(connection_type)
+                + (" (" + str(connection_gender) + ")" if connection_gender else "")
+                + " "
+                + OpticalEquipment.IN
+            )
         elif node_type == OpticalType.OUTPUT:
-            node_label = str(connection_type) + " " + OpticalEquipment.OUT
+            node_label = (
+                str(connection_type)
+                + (" (" + str(connection_gender) + ")" if connection_gender else "")
+                + " "
+                + OpticalEquipment.OUT
+            )
         else:
             node_label = ""
 
@@ -665,6 +705,7 @@ class Equipment:
         node[NodeLabels.LABEL] = node_label
         node[NodeLabels.EQUIPMENT] = equipment
         node[NodeLabels.CONNECTION_TYPE] = connection_type
+        node[NodeLabels.CONNECTION_GENDER] = connection_gender
         node[NodeLabels.NAME] = node_name
 
         return node

@@ -11,6 +11,19 @@ class OpticalType(Enum):  # pyright: ignore
     BINOCULARS = auto()
     VISUAL = auto()
     IMAGE = auto()
+    REDUCER = auto()
+    FLATTENER = auto()
+    CORRECTOR = auto()
+    FILTER_WHEEL = auto()
+    FILTER_HOLDER = auto()
+    OAG = auto()
+    ROTATOR = auto()
+    FOCUSER = auto()
+    ADAPTER = auto()
+    SPACER = auto()
+    ANTI_TILT = auto()
+    FLIP_MIRROR = auto()
+    GUIDE_SCOPE = auto()
 
 
 class GraphConstants:
