@@ -977,21 +977,20 @@ msgstr "Erro no Gráfico Meteorológico"
 msgid "No data to plot"
 msgstr "Sem dados para gerar gráfico"
 
-#~ msgid "Serpens Caput"
-#~ msgstr "Cabeça da Serpente"
+msgid "Serpens Caput"
+msgstr "Cabeça da Serpente"
 
-#~ msgid "Serpens Cauda"
-#~ msgstr "Cauda da Serpente"
+msgid "Serpens Cauda"
+msgstr "Cauda da Serpente"
 
-#~ msgid "Ophiucus"
-#~ msgstr "Ofiúco"
+msgid "Ophiucus"
+msgstr "Ofiúco"
 
-#~ msgid "Time"
-#~ msgstr "Hora"
+msgid "Time"
+msgstr "Hora"
 
-#~ msgid "IMAGE"
-#~ msgstr "Imagem"
+msgid "IMAGE"
+msgstr "Imagem"
 
-#~ msgid "VISUAL"
-#~ msgstr "Visual"
-
+msgid "VISUAL"
+msgstr "Visual"

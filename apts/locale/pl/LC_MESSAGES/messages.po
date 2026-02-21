@@ -982,21 +982,20 @@ msgstr "Błąd wykresu pogodowego"
 msgid "No data to plot"
 msgstr "Brak danych do wykresu"
 
-#~ msgid "Serpens Caput"
-#~ msgstr "Głowa Węża"
+msgid "Serpens Caput"
+msgstr "Głowa Węża"
 
-#~ msgid "Serpens Cauda"
-#~ msgstr "Ogon Węża"
+msgid "Serpens Cauda"
+msgstr "Ogon Węża"
 
-#~ msgid "Ophiucus"
-#~ msgstr "Wężownik"
+msgid "Ophiucus"
+msgstr "Wężownik"
 
-#~ msgid "Time"
-#~ msgstr "Czas"
+msgid "Time"
+msgstr "Czas"
 
-#~ msgid "IMAGE"
-#~ msgstr "Obraz"
+msgid "IMAGE"
+msgstr "Obraz"
 
-#~ msgid "VISUAL"
-#~ msgstr "Wizualne"
-
+msgid "VISUAL"
+msgstr "Wizualne"
