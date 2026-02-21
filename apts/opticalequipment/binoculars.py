@@ -8,11 +8,11 @@ class Binoculars(OpticalEquipment):
     Class representing binoculars
     """
 
-    def __init__(self, magnification, objective_diameter, vendor, apparent_fov_deg, focal_length=1):
+    def __init__(self, magnification, objective_diameter, vendor, apparent_fov_deg, focal_length=1, mass=0):
         # Call grandparent's init (OpticalEquipment)
         # We use a nominal focal_length (e.g., 1mm) because it's required by OpticalEquipment,
         # but not really used in the traditional sense for optical train calculations with binoculars.
-        super().__init__(focal_length=focal_length, vendor=vendor)
+        super().__init__(focal_length=focal_length, vendor=vendor, mass=mass)
 
         self.magnification = magnification
         self.objective_diameter = objective_diameter * get_unit_registry().mm
@@ -81,3 +81,11 @@ class Binoculars(OpticalEquipment):
     def max_useful_zoom(self):
         # For binoculars, their own magnification is effectively the max useful zoom
         return self.magnification
+
+    @classmethod
+    def Nikon_Action_Ex_10x50(cls):
+        return cls(10, 50, "Nikon Action EX 10x50 CF", apparent_fov_deg=65, mass=1020)
+
+    @classmethod
+    def Celestron_Skymaster_15x70(cls):
+        return cls(15, 70, "Celestron SkyMaster 15x70", apparent_fov_deg=66, mass=1360)

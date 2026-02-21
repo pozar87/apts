@@ -2,16 +2,17 @@ from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants, OpticalType
 
 from ..units import get_unit_registry
-from ..utils import ConnectionType
+from ..utils import ConnectionType, Gender
 
 class Eyepiece(OutputOpticalEqipment):
   """
   Class representing ocular
   """
 
-  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25, mass=0, optical_length=0):
+  def __init__(self, focal_length, vendor="unknown ocular", field_of_view=70, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0, optical_length=0):
     super(Eyepiece, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
     self._connection_type = connection_type
+    self._connection_gender = connection_gender
     self._field_of_view = field_of_view * get_unit_registry().deg
 
   def _zoom_divider(self):
@@ -31,10 +32,22 @@ class Eyepiece(OutputOpticalEqipment):
     # Add ocular node
     super(Eyepiece, self)._register(equipment)
     # Add ocular input node and connect it to ocular
-    self._register_input(equipment, self._connection_type)
+    self._register_input(equipment, self._connection_type, self._connection_gender)
     # Connect ocular with output eye node
     equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
   def __str__(self):
     return "{} f={}".format(self.get_vendor(), self.focal_length.magnitude)
     # Format: <vendor> f=<focal_length>
+
+  @classmethod
+  def Plossl_25mm(cls):
+    return cls(25, "Generic Plossl", field_of_view=50, connection_type=ConnectionType.F_1_25)
+
+  @classmethod
+  def Nagler_13mm(cls):
+    return cls(13, "Tele Vue Nagler Type 6", field_of_view=82, connection_type=ConnectionType.F_1_25)
+
+  @classmethod
+  def Ethos_21mm(cls):
+    return cls(21, "Tele Vue Ethos", field_of_view=100, connection_type=ConnectionType.F_2, mass=1000)

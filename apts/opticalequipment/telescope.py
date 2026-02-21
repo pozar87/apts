@@ -2,7 +2,7 @@ import numpy
 
 from .abstract import OpticalEquipment
 from ..units import get_unit_registry
-from ..utils import ConnectionType
+from ..utils import ConnectionType, Gender
 from ..constants import GraphConstants
 
 
@@ -44,7 +44,7 @@ class Telescope(OpticalEquipment):
         backfocus=None,
         mass=0,
         optical_length=0,
-        connection_gender=None,
+        connection_gender=Gender.FEMALE,
     ):
         super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self.aperture = aperture * get_unit_registry().mm
@@ -127,3 +127,15 @@ class Telescope(OpticalEquipment):
             self.aperture.magnitude,
             self.focal_length.magnitude,
         )
+
+    @classmethod
+    def SkyWatcher_80ED(cls):
+        return cls(80, 600, "Sky-Watcher Evostar 80ED", connection_type=ConnectionType.F_2, mass=2500)
+
+    @classmethod
+    def Celestron_C8(cls):
+        return cls(203, 2032, "Celestron C8", telescope_type=TelescopeType.SCHMIDT_CASSEGRAIN, connection_type=ConnectionType.SC, mass=5700)
+
+    @classmethod
+    def SharpStar_61EDPH(cls):
+        return cls(61, 335, "SharpStar 61EDPH II", connection_type=ConnectionType.F_2, mass=1800)

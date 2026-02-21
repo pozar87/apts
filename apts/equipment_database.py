@@ -68,37 +68,37 @@ class EquipmentDatabase:
         cg = map_gender(entry.get('cside_gender'))
 
         if tp in ["type_telescope", "type_refractor", "type_camera_lens"]:
-            # Try to extract aperture/focal length from name
             aperture, focal_length = self._guess_optical_properties(name)
-            # In backfocus DB, bf='start' for telescopes means they have a specific backfocus requirement
             bf_val = entry.get("bf_role") == "start"
             return Telescope(
                 aperture or 80,
                 focal_length or 500,
                 vendor=vendor,
                 connection_type=ct,
-                connection_gender=cg,
+                connection_gender=cg or Gender.FEMALE,
                 backfocus=ol if bf_val else None,
                 mass=mass,
                 optical_length=ol
             )
 
         if tp == "type_camera" or tp == "type_dslr":
-            # Default sensor sizes if unknown
-            # In backfocus DB, ol for cameras is the sensor depth (provided backfocus)
             return Camera(
                 23.5, 15.7, 6000, 4000, vendor=vendor,
-                connection_type=tt, connection_gender=tg,
+                connection_type=tt, connection_gender=tg or Gender.FEMALE,
                 backfocus=ol, mass=mass, optical_length=ol
             )
 
         if tp == "type_eyepiece":
             fl = self._extract_number(name) or 20
-            return Eyepiece(fl, vendor=vendor, connection_type=tt)
+            return Eyepiece(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
 
         if tp == "type_barlow":
             mag = self._extract_number(name, prefix="x") or 2.0
-            return Barlow(mag, vendor=vendor, connection_type=tt)
+            return Barlow(
+                mag, vendor=vendor, connection_type=tt,
+                in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE,
+                mass=mass, optical_length=ol
+            )
 
         if tp == "type_reducer":
             mag = self._extract_number(name, suffix="x") or 0.8
@@ -110,22 +110,24 @@ class EquipmentDatabase:
                 required_backfocus=55, # Defaulting to 55mm
                 in_connection_type=tt,
                 out_connection_type=ct,
-                in_gender=tg,
-                out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == "type_flattener":
             return Flattener(
                 vendor, optical_length=ol, mass=mass, required_backfocus=55,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == "type_corrector":
             return Corrector(
                 vendor, optical_length=ol, mass=mass, required_backfocus=55,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_diagonal':
@@ -135,70 +137,79 @@ class EquipmentDatabase:
             return FilterWheel(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_filter_holder':
             return FilterHolder(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_oag':
             return OAG(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_rotator':
             return Rotator(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_focuser':
             return Focuser(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_adapter':
             return Adapter(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_spacer':
             return Spacer(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_anti_tilt':
             return AntiTilt(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_flip_mirror':
             return FlipMirror(
                 vendor, optical_length=ol, mass=mass,
                 in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg, out_gender=cg
+                in_gender=tg or Gender.MALE,
+                out_gender=cg or Gender.FEMALE
             )
 
         if tp == 'type_guide_scope':
             aperture, focal_length = self._guess_optical_properties(name)
             return GuideScope(
                 aperture or 30, focal_length or 120, vendor=vendor,
-                connection_type=ct, connection_gender=cg,
+                connection_type=ct, connection_gender=cg or Gender.FEMALE,
                 mass=mass, optical_length=ol
             )
 

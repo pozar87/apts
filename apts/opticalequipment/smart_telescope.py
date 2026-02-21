@@ -20,9 +20,10 @@ class SmartTelescope(Telescope):
         width,
         height,
         vendor="unknown smart telescope",
+        mass=0,
     ):
         super().__init__(
-            aperture, focal_length, vendor, telescope_type=None, t2_output=False
+            aperture, focal_length, vendor, telescope_type=None, t2_output=False, mass=mass
         )
         ureg = get_unit_registry()
         self.sensor_width = sensor_width * ureg.mm
@@ -76,3 +77,11 @@ class SmartTelescope(Telescope):
             self.width,
             self.height,
         )
+
+    @classmethod
+    def ZWO_Seestar_S50(cls):
+        return cls(50, 250, 7.68, 4.32, 1920, 1080, "ZWO Seestar S50", mass=3000)
+
+    @classmethod
+    def Vaonis_Vespera(cls):
+        return cls(50, 200, 5.6, 3.2, 1920, 1080, "Vaonis Vespera", mass=5000)

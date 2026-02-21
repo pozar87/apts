@@ -5,7 +5,7 @@ import numpy
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants, OpticalType
 from ..units import get_unit_registry
-from ..utils import ConnectionType
+from ..utils import ConnectionType, Gender
 
 
 class Camera(OutputOpticalEqipment):
@@ -14,7 +14,7 @@ class Camera(OutputOpticalEqipment):
   """
 
   def __init__(self, sensor_width, sensor_height, width, height, vendor="unknown camera",
-               connection_type=ConnectionType.T2, connection_gender=None, pixel_size=None, read_noise=None,
+               connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE, pixel_size=None, read_noise=None,
                full_well=None, quantum_efficiency=None, backfocus=None, mass=0, optical_length=0):
     super(Camera, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
     self.connection_type = connection_type

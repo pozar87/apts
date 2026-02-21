@@ -8,20 +8,25 @@ from apts.constants import GraphConstants
 class TestBackfocus(unittest.TestCase):
     def test_backfocus_gap_with_reducer(self):
         # Setup: Telescope -> Reducer (55mm req) -> 20mm Spacer -> Camera (17.5mm depth)
-        # We must use matching connections
-        t = Telescope(80, 480, vendor="Test Scope", connection_type=ConnectionType.M42, connection_gender=Gender.FEMALE)
+        # Using default genders where possible
+        t = Telescope(80, 480, vendor="Test Scope", connection_type=ConnectionType.M42) # Default Female
 
-        # Reducer: Input M42 Male, Output M42 Female
+        # Reducer: Input M42 Male, Output M42 Female (Defaults)
         r = Reducer("Test Reducer", magnification=0.8, optical_length=10, required_backfocus=55,
-                    in_connection_type=ConnectionType.M42, out_connection_type=ConnectionType.M42,
-                    in_gender=Gender.MALE, out_gender=Gender.FEMALE)
+                    in_connection_type=ConnectionType.M42, out_connection_type=ConnectionType.M42)
 
         # Spacer: Input M42 Male, Output M42 Female
         s = Spacer("Test Spacer", optical_length=20,
                    in_connection_type=ConnectionType.M42, out_connection_type=ConnectionType.M42,
                    in_gender=Gender.MALE, out_gender=Gender.FEMALE)
 
-        # Camera: Input M42 Male, sensor depth 17.5
+        # Camera: Input M42 Male (override default Female if needed, but actually Camera input is Female usually... wait)
+        # In my code: Camera(connection_gender=Gender.FEMALE) by default.
+        # If Telescope is Female, it needs a Male input.
+        # Let's re-check the logic. Telescope OUT is Female. Reducer IN is Male. Correct.
+        # Reducer OUT is Female. Spacer IN is Male. Correct.
+        # Spacer OUT is Female. Camera IN is Male? Usually Camera has a Female thread, but let's see.
+
         c = Camera(23.5, 15.7, 6000, 4000, vendor="Test Cam",
                    connection_type=ConnectionType.M42, connection_gender=Gender.MALE,
                    backfocus=17.5)
@@ -38,11 +43,10 @@ class TestBackfocus(unittest.TestCase):
 
         path = paths[0]
         # Backfocus gap should be: 55 - (20 + 17.5) = 17.5mm
-        # Wait, 20 (spacer) + 17.5 (camera sensor depth) = 37.5. 55 - 37.5 = 17.5.
         self.assertEqual(path.backfocus_gap().magnitude, 17.5)
 
     def test_total_mass(self):
-        t = Telescope(80, 480, vendor="Test Scope", mass=2000, connection_type=ConnectionType.M42, connection_gender=Gender.FEMALE)
+        t = Telescope(80, 480, vendor="Test Scope", mass=2000, connection_type=ConnectionType.M42)
         c = Camera(23.5, 15.7, 6000, 4000, vendor="Test Cam", mass=500, connection_type=ConnectionType.M42, connection_gender=Gender.MALE)
 
         eq = Equipment()
@@ -55,3 +59,14 @@ class TestBackfocus(unittest.TestCase):
 
         # Total mass: 2000 (scope) + 500 (cam) = 2500g
         self.assertEqual(path.total_mass().magnitude, 2500)
+
+    def test_registry(self):
+        from apts.equipment_registry import EquipmentRegistry
+        registry = EquipmentRegistry.list_all_by_type()
+        self.assertIn("Telescope", registry)
+        self.assertIn("Camera", registry)
+
+        scope = EquipmentRegistry.create("Telescope", "SkyWatcher_80ED")
+        self.assertIsInstance(scope, Telescope)
+        self.assertEqual(scope.vendor, "Sky-Watcher Evostar 80ED")
+        self.assertEqual(scope.mass.magnitude, 2500)
