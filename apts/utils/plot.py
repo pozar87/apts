@@ -114,3 +114,17 @@ class Utils:
             except Exception:
                 # Fallback if limits are not set or not unpackable (e.g. in unit tests)
                 pass
+
+    @staticmethod
+    def style_legend(ax, style):
+        """
+        Applies a unified style to the legend of the provided axes.
+        """
+        legend = ax.get_legend()
+        if legend:
+            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
+            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
+            for text in legend.get_texts():
+                text.set_color(style["TEXT_COLOR"])
+            if legend.get_title():
+                legend.get_title().set_color(style["TEXT_COLOR"])
