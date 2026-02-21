@@ -22,6 +22,7 @@ def profile():
     start_time = time.time()
     planets = obs.get_visible_planets()
     print(f"get_visible_planets took: {time.time() - start_time:.4f}s (found {len(planets)})")
+    print(f"Visible planets: {planets['Name'].tolist()}")
 
     start_time = time.time()
     # NGC might be slow if not filtered

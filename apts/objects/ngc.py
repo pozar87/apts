@@ -1,7 +1,7 @@
+from types import SimpleNamespace
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
-from apts.place import Place
 
 
 class NGC(Objects):
@@ -16,17 +16,21 @@ class NGC(Objects):
         if calculation_date is not None:
             # It's a Skyfield Time object. If it's an array, use the first element.
             if hasattr(calculation_date, "shape") and calculation_date.shape:
-                calculation_date = calculation_date[0]
+                t = calculation_date[0]
+            elif isinstance(calculation_date, type(self.ts.now())):
+                t = calculation_date
+            else:
+                t = self.ts.utc(calculation_date)
 
-            # Instantiate as Place object
-            temp_observer = Place(
-                lat=self.place.lat_decimal,
-                lon=self.place.lon_decimal,
+            # Avoid creating a whole new Place object, which is slow.
+            observer_to_use = SimpleNamespace(
+                date=t,
+                local_timezone=self.place.local_timezone,
+                lat_decimal=self.place.lat_decimal,
+                lon_decimal=self.place.lon_decimal,
                 elevation=self.place.elevation,
-                name=self.place.name + "_temp",
-                date=calculation_date,
-            )  # Add name to avoid issues if Place requires it
-            observer_to_use = temp_observer
+                observer=self.place.observer,
+            )
         else:
             observer_to_use = self.place
 
