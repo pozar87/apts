@@ -119,6 +119,40 @@ class ConfigTest(unittest.TestCase):
             load_config()  # Reload original config
             apts.weather_providers.reset_session() # Clean up global state
 
+    def test_config_masking_in_logs(self):
+        config_content = """
+        [notification]
+        smtp_password = sensitive_pass
+        [cache]
+        redis_location = redis://:secret_pass@localhost:6379/0
+        [api_keys]
+        nasa_api_key = nasa_secret
+        """
+        fake_config_path = "/fake/path/for/masking/test/apts.ini"
+        try:
+            with patch("builtins.open", mock_open(read_data=config_content)):
+                with patch("os.path.exists", return_value=True):
+                    add_config_path(fake_config_path, priority=True)
+                    with self.assertLogs("apts.config", level="DEBUG") as cm:
+                        load_config()
+
+                        # Check that sensitive values are masked in the logs
+                        log_output = "\n".join(cm.output)
+                        self.assertIn("Content of [notification] section", log_output)
+                        self.assertIn("sens...pass", log_output)
+                        self.assertNotIn("sensitive_pass", log_output)
+
+                        self.assertIn("Content of [cache] section", log_output)
+                        self.assertIn("redi...79/0", log_output)
+                        self.assertNotIn("secret_pass", log_output)
+
+                        self.assertIn("Content of [api_keys] section", log_output)
+                        self.assertIn("nasa...cret", log_output)
+                        self.assertNotIn("nasa_secret", log_output)
+        finally:
+            remove_config_path(fake_config_path)
+            load_config()
+
 
 if __name__ == "__main__":
     unittest.main()

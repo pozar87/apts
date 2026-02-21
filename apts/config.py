@@ -40,15 +40,15 @@ def load_config():
         logger.warning(f"No configuration file found. Looked in: {config_paths}")
     else:
         logger.info(f"Loaded configuration from: {found_configs}")
-        # Also log the content of the weather section if it exists
-        if config.has_section("weather"):
-            masked_weather = {
-                k: mask_secret(v) if "api_key" in k or "password" in k else v
-                for k, v in config.items("weather")
+        # Log all sections with masked secrets
+        for section in config.sections():
+            masked_section = {
+                k: mask_secret(v)
+                if any(s in k.lower() for s in ["api_key", "password", "redis_location"])
+                else v
+                for k, v in config.items(section)
             }
-            logger.debug(f"Content of [weather] section: {masked_weather}")
-        else:
-            logger.debug("No [weather] section found in loaded configuration.")
+            logger.debug(f"Content of [{section}] section: {masked_section}")
 
     # Ensure [Display] section and dark_mode option exist with a default value
     if not config.has_section("Display"):

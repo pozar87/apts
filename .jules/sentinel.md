@@ -1,4 +1,9 @@
-## 2025-02-12 - Centralized Secret Masking
-**Vulnerability:** API keys and other secrets leaked in application logs at DEBUG level and in error messages (including full response bodies).
-**Learning:** Secrets were interpolated into URLs and logged. Error messages from requests often include the full URL. Response bodies from providers often echo the provided API key on authentication failure.
-**Prevention:** Use a centralized masking utility (apts/secrets.py) and centralized logging methods in base classes (like WeatherProvider) to automatically redact secrets from URLs and response bodies before they reach the logs.
+## 2025-01-30 - Generalized Secret Masking in Configuration
+**Vulnerability:** Configuration secrets (like SMTP passwords and API keys) were only masked in one specific section ("weather") when logging. Other sections containing credentials could accidentally leak secrets if logged.
+**Learning:** Hardcoded section checks for masking are fragile and easily missed when adding new features or sections.
+**Prevention:** Implement generalized masking in the configuration loading logic that iterates through all sections and applies keyword-based redaction (e.g., "api_key", "password") to protect secrets across the entire application.
+
+## 2025-01-30 - Sensitive Data Exposure in API Exceptions
+**Vulnerability:** Exceptions raised by libraries like `requests` often include the full URL in the error message. If the API key is passed as a query parameter (as in NASA API), it can be leaked in logs when a request fails.
+**Learning:** `response.raise_for_status()` can expose sensitive parameters in logs if the resulting exception is not handled with security in mind.
+**Prevention:** Wrap API calls in try-except blocks and use masking utilities to scrub secrets from exception messages before logging. Re-raise the exception after scrubbing to preserve application logic.
