@@ -9,11 +9,3 @@ class Focuser(IntermediateOpticalEquipment):
             in_gender=in_gender, out_gender=out_gender
         )
         self._type = OpticalType.FOCUSER
-
-    @classmethod
-    def ZWO_EAF(cls):
-        return cls("ZWO EAF", mass=277)
-
-    @classmethod
-    def Pegasus_FocusCube(cls):
-        return cls("Pegasus FocusCube 2", mass=230)

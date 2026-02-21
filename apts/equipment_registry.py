@@ -1,15 +1,17 @@
 import inspect
-from typing import Dict, List, Any, Type
+from typing import Dict, List, Any, Type, Optional
 from .opticalequipment import (
     Telescope, Camera, Eyepiece, Barlow, Diagonal, Filter,
     Reducer, Flattener, Corrector, FilterWheel, FilterHolder,
     OAG, Rotator, Focuser, Adapter, Spacer, AntiTilt, FlipMirror,
     GuideScope, Binoculars, SmartTelescope
 )
+from .equipment_database import EquipmentDatabase
 
 class EquipmentRegistry:
     """
-    Utility to discover and list all built-in equipment models (factory methods).
+    Unified registry for astronomical equipment.
+    Combines high-fidelity hardcoded presets with the full reference database.
     """
 
     EQUIPMENT_CLASSES = [
@@ -19,50 +21,100 @@ class EquipmentRegistry:
         GuideScope, Binoculars, SmartTelescope
     ]
 
-    @staticmethod
-    def list_all_by_type() -> Dict[str, List[Dict[str, Any]]]:
+    # Curated list of popular equipment names to feature in the UI
+    FEATURED_NAMES = [
+        # Telescopes
+        "Evostar 80ED", "C8", "61EDPH", "ED80", "ED100", "ED120", "RedCat 51",
+        # Cameras
+        "ASI2600MC Pro", "ASI1600MM Pro", "D850", "ASI294MC", "ASI533MC",
+        # Eyepieces
+        "Nagler", "Ethos", "Delos", "Plossl", "Hyperion", "Morpheus",
+        # Accessories
+        "EAF", "OAG", "Falcon Rotator", "FocusCube", "L-Pro", "UHC-S"
+    ]
+
+    def __init__(self):
+        self.db = EquipmentDatabase()
+
+    def get_featured(self) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Returns a dictionary where keys are class names and values are lists of
-        available factory methods (model names) and their instantiation functions.
+        Returns a dictionary of featured equipment categorized by class name.
         """
         registry = {}
-        for cls in EquipmentRegistry.EQUIPMENT_CLASSES:
+
+        # 1. Add hardcoded classmethods (like high-fidelity Camera presets)
+        for cls in self.EQUIPMENT_CLASSES:
             class_name = cls.__name__
             models = []
-
-            # Inspect class for class methods that return an instance of the class
             for name, method in inspect.getmembers(cls, predicate=inspect.ismethod):
-                # We look for methods that are not private and not standard class methods
-                if not name.startswith('_') and name not in ['register', 'from_path', 'get_parent_id', 'type', 'Dawes_Limit', 'ZWO_ASI2600MC_PRO', 'ZWO_ASI1600MM_PRO', 'Nikon_D850']:
-                    # In Python 3, ismethod on a class usually means it's a classmethod
+                if not name.startswith('_') and name not in ['register', 'from_path', 'get_parent_id', 'type', 'Dawes_Limit']:
                     models.append({
-                        "model_name": name.replace('_', ' '),
-                        "factory_name": name,
-                        "class": cls
+                        "id": f"preset:{class_name}:{name}",
+                        "name": name.replace('_', ' '),
+                        "source": "preset",
+                        "factory": method
                     })
-
-            # Special handling for Camera since I already had some there
-            if cls == Camera:
-                for name in ['ZWO_ASI2600MC_PRO', 'ZWO_ASI1600MM_PRO', 'Nikon_D850']:
-                    models.append({
-                        "model_name": name.replace('_', ' '),
-                        "factory_name": name,
-                        "class": cls
-                    })
-
             if models:
                 registry[class_name] = models
 
+        # 2. Search DB for featured items
+        for name_query in self.FEATURED_NAMES:
+            results = self.db.find(name=name_query)
+            for entry in results:
+                # Map DB type to Stargazer class
+                obj = self.db.create_equipment(entry)
+                if obj:
+                    class_name = obj.__class__.__name__
+                    if class_name not in registry:
+                        registry[class_name] = []
+
+                    # Avoid duplicates if already in registry
+                    display_name = f"{entry['brand']} {entry['name']}"
+                    if not any(m['name'] == display_name for m in registry[class_name]):
+                        registry[class_name].append({
+                            "id": f"db:{entry.get('id', entry['name'])}",
+                            "name": display_name,
+                            "source": "database",
+                            "entry": entry
+                        })
+
         return registry
 
-    @staticmethod
-    def create(class_name: str, factory_name: str) -> Any:
+    def get_all_by_type(self, class_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Instantiate an equipment model by its class and factory method names.
+        Returns all equipment from the database (optionally filtered by class).
         """
-        for cls in EquipmentRegistry.EQUIPMENT_CLASSES:
-            if cls.__name__ == class_name:
-                method = getattr(cls, factory_name, None)
-                if method:
-                    return method()
+        results = []
+        all_entries = self.db.get_all()
+        for entry in all_entries:
+            obj = self.db.create_equipment(entry)
+            if obj:
+                if class_name is None or obj.__class__.__name__ == class_name:
+                    results.append({
+                        "id": f"db:{entry.get('id', entry['name'])}",
+                        "name": f"{entry['brand']} {entry['name']}",
+                        "class": obj.__class__.__name__,
+                        "entry": entry
+                    })
+        return results
+
+    def create(self, item_id: str) -> Any:
+        """
+        Create an equipment instance from its registry ID.
+        Format: 'preset:ClassName:MethodName' or 'db:Name'
+        """
+        if item_id.startswith("preset:"):
+            _, class_name, method_name = item_id.split(":")
+            for cls in self.EQUIPMENT_CLASSES:
+                if cls.__name__ == class_name:
+                    method = getattr(cls, method_name, None)
+                    if method:
+                        return method()
+        elif item_id.startswith("db:"):
+            name = item_id[3:]
+            # Search by name in DB
+            results = self.db.find(name=name)
+            if results:
+                return self.db.create_equipment(results[0])
+
         return None

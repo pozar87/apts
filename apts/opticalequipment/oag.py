@@ -10,11 +10,3 @@ class OAG(IntermediateOpticalEquipment):
             in_gender=in_gender, out_gender=out_gender
         )
         self._type = OpticalType.OAG
-
-    @classmethod
-    def ZWO_OAG(cls):
-        return cls("ZWO OAG", optical_length=16.5, mass=200, in_connection_type=ConnectionType.M48, out_connection_type=ConnectionType.M42)
-
-    @classmethod
-    def ZWO_OAG_L(cls):
-        return cls("ZWO OAG-L", optical_length=17.5, mass=300, in_connection_type=ConnectionType.M68, out_connection_type=ConnectionType.M42)

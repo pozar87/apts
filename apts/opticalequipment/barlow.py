@@ -33,15 +33,3 @@ class Barlow(OpticalEquipment):
   def __str__(self):
     # Format: <vendor> x<magnification>
     return "{} x{}".format(self.get_vendor(), self.magnification)
-
-  @classmethod
-  def Celestron_Omni_2x(cls):
-    return cls(2.0, "Celestron Omni", connection_type=ConnectionType.F_1_25)
-
-  @classmethod
-  def TeleVue_Powermate_2x(cls):
-    return cls(2.0, "Tele Vue Powermate", connection_type=ConnectionType.F_2, mass=500)
-
-  @classmethod
-  def TeleVue_Powermate_4x(cls):
-    return cls(4.0, "Tele Vue Powermate", connection_type=ConnectionType.F_2, mass=500)

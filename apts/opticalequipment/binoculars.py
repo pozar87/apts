@@ -81,11 +81,3 @@ class Binoculars(OpticalEquipment):
     def max_useful_zoom(self):
         # For binoculars, their own magnification is effectively the max useful zoom
         return self.magnification
-
-    @classmethod
-    def Nikon_Action_Ex_10x50(cls):
-        return cls(10, 50, "Nikon Action EX 10x50 CF", apparent_fov_deg=65, mass=1020)
-
-    @classmethod
-    def Celestron_Skymaster_15x70(cls):
-        return cls(15, 70, "Celestron SkyMaster 15x70", apparent_fov_deg=66, mass=1360)

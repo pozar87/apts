@@ -687,14 +687,14 @@ class Equipment:
         elif node_type == OpticalType.INPUT:
             node_label = (
                 str(connection_type)
-                + (" (" + str(connection_gender) + ")" if connection_gender else "")
+                + (str(connection_gender) if connection_gender else "")
                 + " "
                 + OpticalEquipment.IN
             )
         elif node_type == OpticalType.OUTPUT:
             node_label = (
                 str(connection_type)
-                + (" (" + str(connection_gender) + ")" if connection_gender else "")
+                + (str(connection_gender) if connection_gender else "")
                 + " "
                 + OpticalEquipment.OUT
             )

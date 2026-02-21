@@ -62,11 +62,15 @@ class TestBackfocus(unittest.TestCase):
 
     def test_registry(self):
         from apts.equipment_registry import EquipmentRegistry
-        registry = EquipmentRegistry.list_all_by_type()
-        self.assertIn("Telescope", registry)
-        self.assertIn("Camera", registry)
+        reg = EquipmentRegistry()
+        featured = reg.get_featured()
+        self.assertIn("Camera", featured)
 
-        scope = EquipmentRegistry.create("Telescope", "SkyWatcher_80ED")
+        # Test preset creation
+        cam = reg.create("preset:Camera:ZWO_ASI2600MC_PRO")
+        self.assertIsInstance(cam, Camera)
+        self.assertEqual(cam.vendor, "ZWO ASI2600MC Pro")
+
+        # Test database creation (using a name we know is in featured)
+        scope = reg.create("db:80ED")
         self.assertIsInstance(scope, Telescope)
-        self.assertEqual(scope.vendor, "Sky-Watcher Evostar 80ED")
-        self.assertEqual(scope.mass.magnitude, 2500)

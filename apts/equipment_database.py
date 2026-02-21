@@ -56,9 +56,9 @@ class EquipmentDatabase:
             return ConnectionType.F_1_25
 
         def map_gender(gender_str):
-            if gender_str == "Male":
+            if gender_str in ["Male", "M"]:
                 return Gender.MALE
-            if gender_str == "Female":
+            if gender_str in ["Female", "F"]:
                 return Gender.FEMALE
             return None
 

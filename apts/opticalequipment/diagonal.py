@@ -27,11 +27,3 @@ class Diagonal(IntermediateOpticalEquipment):
 
     def __str__(self):
         return f"{self.vendor}"
-
-    @classmethod
-    def SkyWatcher_2_inch(cls):
-        return cls("Sky-Watcher 2\" Dielectric Diagonal", connection_type=ConnectionType.F_2, mass=500)
-
-    @classmethod
-    def Celestron_1_25_inch(cls):
-        return cls("Celestron 1.25\" Star Diagonal", connection_type=ConnectionType.F_1_25, mass=150)

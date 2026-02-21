@@ -47,8 +47,8 @@ class ConnectionType(Enum):
 
 
 class Gender(Enum):
-    MALE = "Male"
-    FEMALE = "Female"
+    MALE = "M"
+    FEMALE = "F"
 
     def __str__(self) -> str:
         return str(self.value)

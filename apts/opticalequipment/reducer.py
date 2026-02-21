@@ -21,13 +21,6 @@ class Reducer(IntermediateOpticalEquipment):
             else None
         )
 
-    @classmethod
-    def SharpStar_0_8x(cls):
-        return cls("SharpStar 0.8x Reducer/Flattener", magnification=0.8, optical_length=45, mass=300, required_backfocus=55, in_connection_type=ConnectionType.M63, out_connection_type=ConnectionType.M48)
-
-    @classmethod
-    def Celestron_0_63x(cls):
-        return cls("Celestron 0.63x Reducer/Corrector", magnification=0.63, mass=250, required_backfocus=105, in_connection_type=ConnectionType.SC, out_connection_type=ConnectionType.SC)
 
 class Flattener(IntermediateOpticalEquipment):
     def __init__(

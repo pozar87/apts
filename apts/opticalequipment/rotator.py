@@ -10,11 +10,3 @@ class Rotator(IntermediateOpticalEquipment):
             in_gender=in_gender, out_gender=out_gender
         )
         self._type = OpticalType.ROTATOR
-
-    @classmethod
-    def Pegasus_Falcon(cls):
-        return cls("Pegasus Falcon Rotator", optical_length=18, mass=700, in_connection_type=ConnectionType.M54, out_connection_type=ConnectionType.M54)
-
-    @classmethod
-    def Wanderer_Rotator_M54(cls):
-        return cls("Wanderer Rotator M54", optical_length=10, mass=400, in_connection_type=ConnectionType.M54, out_connection_type=ConnectionType.M54)

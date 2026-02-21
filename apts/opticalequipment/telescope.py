@@ -127,15 +127,3 @@ class Telescope(OpticalEquipment):
             self.aperture.magnitude,
             self.focal_length.magnitude,
         )
-
-    @classmethod
-    def SkyWatcher_80ED(cls):
-        return cls(80, 600, "Sky-Watcher Evostar 80ED", connection_type=ConnectionType.F_2, mass=2500)
-
-    @classmethod
-    def Celestron_C8(cls):
-        return cls(203, 2032, "Celestron C8", telescope_type=TelescopeType.SCHMIDT_CASSEGRAIN, connection_type=ConnectionType.SC, mass=5700)
-
-    @classmethod
-    def SharpStar_61EDPH(cls):
-        return cls(61, 335, "SharpStar 61EDPH II", connection_type=ConnectionType.F_2, mass=1800)

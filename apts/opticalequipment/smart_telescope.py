@@ -77,11 +77,3 @@ class SmartTelescope(Telescope):
             self.width,
             self.height,
         )
-
-    @classmethod
-    def ZWO_Seestar_S50(cls):
-        return cls(50, 250, 7.68, 4.32, 1920, 1080, "ZWO Seestar S50", mass=3000)
-
-    @classmethod
-    def Vaonis_Vespera(cls):
-        return cls(50, 200, 5.6, 3.2, 1920, 1080, "Vaonis Vespera", mass=5000)

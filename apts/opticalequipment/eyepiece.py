@@ -39,15 +39,3 @@ class Eyepiece(OutputOpticalEqipment):
   def __str__(self):
     return "{} f={}".format(self.get_vendor(), self.focal_length.magnitude)
     # Format: <vendor> f=<focal_length>
-
-  @classmethod
-  def Plossl_25mm(cls):
-    return cls(25, "Generic Plossl", field_of_view=50, connection_type=ConnectionType.F_1_25)
-
-  @classmethod
-  def Nagler_13mm(cls):
-    return cls(13, "Tele Vue Nagler Type 6", field_of_view=82, connection_type=ConnectionType.F_1_25)
-
-  @classmethod
-  def Ethos_21mm(cls):
-    return cls(21, "Tele Vue Ethos", field_of_view=100, connection_type=ConnectionType.F_2, mass=1000)
