@@ -443,6 +443,7 @@ class Place:
                     (azimuth + copysign(10, azimuth - 180) + 10, altitude + 1),
                     color=style["TEXT_COLOR"],
                 )
+        PlotUtils.style_legend(ax, style)
         return ax
 
     def __getstate__(self):
@@ -618,4 +619,5 @@ class Place:
             + f" on {self.date.utc_datetime().strftime('%Y-%m-%d')}",  # type: ignore
             color=style["TEXT_COLOR"],
         )
+        PlotUtils.style_legend(ax, style)
         return ax

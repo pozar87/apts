@@ -147,14 +147,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Cloud cover [%]"), effective_dark_mode, self.local_timezone
@@ -206,14 +199,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Probability"), effective_dark_mode, self.local_timezone
@@ -381,14 +367,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Temperature [°C]"), effective_dark_mode, self.local_timezone
@@ -447,14 +426,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Wind speed [km/h]"), effective_dark_mode, self.local_timezone
@@ -530,14 +502,7 @@ class Weather:
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
         # Style primary legend
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         # Annotate primary Y axis
         primary_y_label = ""
@@ -637,14 +602,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Visibility [km]"), effective_dark_mode, self.local_timezone
@@ -691,14 +649,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Fog [%]"), effective_dark_mode, self.local_timezone
@@ -758,14 +709,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Illumination [%]"), effective_dark_mode, self.local_timezone
@@ -816,14 +760,7 @@ class Weather:
 
         ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
 
-        legend = ax.get_legend()
-        if legend:
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            for text_obj in legend.get_texts():  # Changed variable name
-                text_obj.set_color(style["TEXT_COLOR"])
-            if legend.get_title():
-                legend.get_title().set_color(style["TEXT_COLOR"])
+        PlotUtils.style_legend(ax, style)
 
         PlotUtils.annotate_plot(
             ax, gettext_("Aurora"), effective_dark_mode, self.local_timezone

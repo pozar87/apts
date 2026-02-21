@@ -558,6 +558,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     # Mock legend calls for this subtest run
                     mock_legend = MagicMock()
                     mock_ax.legend.return_value = mock_legend
+                    mock_ax.get_legend.return_value = mock_legend
                     mock_legend.get_frame.return_value = MagicMock()
                     mock_legend.get_title.return_value = MagicMock()
                     mock_legend.get_texts.return_value = [
@@ -647,6 +648,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         # Mock legend calls
         mock_legend = MagicMock()
         mock_ax.legend.return_value = mock_legend
+        mock_ax.get_legend.return_value = mock_legend
         mock_legend.get_frame.return_value = MagicMock()
         mock_legend.get_title.return_value = MagicMock()
         mock_legend.get_texts.return_value = [MagicMock()]
