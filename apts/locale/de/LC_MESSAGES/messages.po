@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-02-18 20:24+0000\n"
+"POT-Creation-Date: 2026-02-21 12:36+0000\n"
 "PO-Revision-Date: 2026-02-18 20:24+0000\n"
 "Last-Translator: Jules\n"
 "Language: de\n"
@@ -16,41 +16,41 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: apts/equipment.py:256
+#: apts/equipment.py:274
 msgid "Available zoom"
 msgstr "Verfügbarer Zoom"
 
-#: apts/equipment.py:257 apts/equipment.py:316
+#: apts/equipment.py:275 apts/equipment.py:334
 msgid "Used equipment"
 msgstr "Verwendete Ausrüstung"
 
-#: apts/equipment.py:258
+#: apts/equipment.py:276
 msgid "Magnification"
 msgstr "Vergrößerung"
 
-#: apts/equipment.py:268
+#: apts/equipment.py:286
 msgid "Max useful zoom due to atmosphere"
 msgstr "Maximal sinnvolle Vergrößerung (atmosphärisch bedingt)"
 
-#: apts/equipment.py:315
+#: apts/equipment.py:333
 msgid "Available fields of view"
 msgstr "Verfügbare Sichtfelder"
 
-#: apts/equipment.py:317
+#: apts/equipment.py:335
 msgid "Field of view [°]"
 msgstr "Sichtfeld [°]"
 
-#: apts/equipment.py:324
+#: apts/equipment.py:342
 msgid "Pleiades size"
 msgstr "Größe der Plejaden"
 
-#: apts/equipment.py:326
+#: apts/equipment.py:344
 msgid "Moon size"
 msgstr "Mondgröße"
 
-#: apts/equipment.py:328
+#: apts/equipment.py:346
 msgid "M51 size"
 msgstr "Größe von M51"
 
@@ -64,7 +64,9 @@ msgstr "Gutes Wetter in {name}"
 msgid ""
 "Tonight you can see {num_planets} planets and {num_messier} Messier "
 "objects. Enable HTML to see the full content."
-msgstr "Heute Nacht können Sie {num_planets} Planeten und {num_messier} Messier-Objekte sehen. Aktivieren Sie HTML, um den vollständigen Inhalt zu sehen."
+msgstr ""
+"Heute Nacht können Sie {num_planets} Planeten und {num_messier} Messier-"
+"Objekte sehen. Aktivieren Sie HTML, um den vollständigen Inhalt zu sehen."
 
 #: apts/observations.py:726
 #, python-format
@@ -104,7 +106,9 @@ msgstr "Nebel %(fog)s%% übersteigt das Limit von %(max_fog)s%%"
 #: apts/observations.py:794
 #, python-format
 msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
-msgstr "Mondbeleuchtung %(illum)s%% übersteigt das Limit, während der Mond aufgegangen ist"
+msgstr ""
+"Mondbeleuchtung %(illum)s%% übersteigt das Limit, während der Mond "
+"aufgegangen ist"
 
 #: apts/observations.py:803
 #, python-format
@@ -581,251 +585,259 @@ msgstr "Fliegender Fisch"
 msgid "Vulpecula"
 msgstr "Füchschen"
 
-#: apts/constants/graphconstants.py:191 apts/constants/graphconstants.py:207
+#: apts/constants/graphconstants.py:191 apts/constants/graphconstants.py:208
 msgid "Galaxy"
 msgstr "Galaxie"
 
-#: apts/constants/graphconstants.py:193 apts/constants/graphconstants.py:211
+#: apts/constants/graphconstants.py:193 apts/constants/graphconstants.py:212
 msgid "Nebula"
 msgstr "Nebel"
 
-#: apts/constants/graphconstants.py:203
+#: apts/constants/graphconstants.py:204
 msgid "Spiral Galaxy"
 msgstr "Spiralgalaxie"
 
-#: apts/constants/graphconstants.py:204
+#: apts/constants/graphconstants.py:205
 msgid "Elliptical Galaxy"
 msgstr "Elliptische Galaxie"
 
-#: apts/constants/graphconstants.py:205
+#: apts/constants/graphconstants.py:206
 msgid "Irregular Galaxy"
 msgstr "Irreguläre Galaxie"
 
-#: apts/constants/graphconstants.py:206
+#: apts/constants/graphconstants.py:207
 msgid "Lenticular (S0) Galaxy"
 msgstr "Linsenförmige (S0) Galaxie"
 
-#: apts/constants/graphconstants.py:208
+#: apts/constants/graphconstants.py:209
 msgid "Globular Cluster"
 msgstr "Kugelsternhaufen"
 
-#: apts/constants/graphconstants.py:209
+#: apts/constants/graphconstants.py:210
 msgid "Open Cluster"
 msgstr "Offener Sternhaufen"
 
-#: apts/constants/graphconstants.py:210
+#: apts/constants/graphconstants.py:211
 msgid "Diffuse Nebula"
 msgstr "Diffuser Nebel"
 
-#: apts/constants/graphconstants.py:212
+#: apts/constants/graphconstants.py:213
 msgid "Planetary Nebula"
 msgstr "Planetarischer Nebel"
 
-#: apts/constants/graphconstants.py:213
+#: apts/constants/graphconstants.py:214
 msgid "Supernova Remnant"
 msgstr "Supernova-Überrest"
 
-#: apts/constants/graphconstants.py:214
+#: apts/constants/graphconstants.py:215
 msgid "Double Star"
 msgstr "Doppelstern"
 
-#: apts/constants/graphconstants.py:215
+#: apts/constants/graphconstants.py:216
 msgid "Group/Asterism"
 msgstr "Gruppe/Asterismus"
 
-#: apts/constants/graphconstants.py:216
+#: apts/constants/graphconstants.py:217
 msgid "Star Cloud"
 msgstr "Sternwolke"
 
-#: apts/constants/graphconstants.py:217
+#: apts/constants/graphconstants.py:218
 msgid "Other"
 msgstr "Andere"
 
-#: apts/constants/graphconstants.py:218
+#: apts/constants/graphconstants.py:219
 msgid "New Moon"
 msgstr "Neumond"
 
-#: apts/constants/graphconstants.py:219
+#: apts/constants/graphconstants.py:220
 msgid "First Quarter"
 msgstr "Erstes Viertel"
 
-#: apts/constants/graphconstants.py:220
+#: apts/constants/graphconstants.py:221
 msgid "Full Moon"
 msgstr "Vollmond"
 
-#: apts/constants/graphconstants.py:221
+#: apts/constants/graphconstants.py:222
 msgid "Last Quarter"
 msgstr "Letztes Viertel"
 
-#: apts/constants/graphconstants.py:222
+#: apts/constants/graphconstants.py:223
 msgid "Space Launch"
 msgstr "Raketenstart"
 
-#: apts/constants/graphconstants.py:223
+#: apts/constants/graphconstants.py:224
 msgid "Space Event"
 msgstr "Weltraumereignis"
 
-#: apts/constants/graphconstants.py:224
+#: apts/constants/graphconstants.py:225
 msgid "Solar Eclipse"
 msgstr "Sonnenfinsternis"
 
-#: apts/constants/graphconstants.py:225
+#: apts/constants/graphconstants.py:226
 msgid "Lunar Eclipse"
 msgstr "Mondfinsternis"
 
-#: apts/constants/graphconstants.py:226
+#: apts/constants/graphconstants.py:227
 msgid "Moon Phase"
 msgstr "Mondphase"
 
-#: apts/constants/graphconstants.py:227
+#: apts/constants/graphconstants.py:228
 msgid "Conjunction"
 msgstr "Konjunktion"
 
-#: apts/constants/graphconstants.py:228
+#: apts/constants/graphconstants.py:229
 msgid "Opposition"
 msgstr "Opposition"
 
-#: apts/constants/graphconstants.py:229
+#: apts/constants/graphconstants.py:230
 msgid "Meteor Shower"
 msgstr "Meteorschauer"
 
-#: apts/constants/graphconstants.py:230
+#: apts/constants/graphconstants.py:231
 msgid "Highest altitude"
 msgstr "Höchste Höhe"
 
-#: apts/constants/graphconstants.py:231
+#: apts/constants/graphconstants.py:232
 msgid "Planet Altitude"
 msgstr "Planetenhöhe"
 
-#: apts/constants/graphconstants.py:232
+#: apts/constants/graphconstants.py:233
+msgid "NPF Rule (s)"
+msgstr "NPF-Regel (s)"
+
+#: apts/constants/graphconstants.py:234
+msgid "Rule of 500 (s)"
+msgstr "500er-Regel (s)"
+
+#: apts/constants/graphconstants.py:235
 msgid "Lunar Occultation"
 msgstr "Mondbedeckung"
 
-#: apts/constants/graphconstants.py:233
+#: apts/constants/graphconstants.py:236
 msgid "Aphelion/Perihelion"
 msgstr "Aphel/Perihel"
 
-#: apts/constants/graphconstants.py:234
+#: apts/constants/graphconstants.py:237
 msgid "Moon Apogee/Perigee"
 msgstr "Mondapogäum/Mondperigäum"
 
-#: apts/constants/graphconstants.py:235
+#: apts/constants/graphconstants.py:238
 msgid "Inferior Conjunction"
 msgstr "Untere Konjunktion"
 
-#: apts/constants/graphconstants.py:236
+#: apts/constants/graphconstants.py:239
 msgid "Mercury Transit"
 msgstr "Merkurtransit"
 
-#: apts/constants/graphconstants.py:237
+#: apts/constants/graphconstants.py:240
 msgid "Moon-Messier Conjunction"
 msgstr "Mond-Messier-Konjunktion"
 
-#: apts/constants/graphconstants.py:238
+#: apts/constants/graphconstants.py:241
 msgid "Comet"
 msgstr "Komet"
 
-#: apts/constants/graphconstants.py:239
+#: apts/constants/graphconstants.py:242
 msgid "Mercury"
 msgstr "Merkur"
 
-#: apts/constants/graphconstants.py:240
+#: apts/constants/graphconstants.py:243
 msgid "Venus"
 msgstr "Venus"
 
-#: apts/constants/graphconstants.py:241
+#: apts/constants/graphconstants.py:244
 msgid "Mars"
 msgstr "Mars"
 
-#: apts/constants/graphconstants.py:242
+#: apts/constants/graphconstants.py:245
 msgid "Jupiter"
 msgstr "Jupiter"
 
-#: apts/constants/graphconstants.py:243
+#: apts/constants/graphconstants.py:246
 msgid "Saturn"
 msgstr "Saturn"
 
-#: apts/constants/graphconstants.py:244
+#: apts/constants/graphconstants.py:247
 msgid "Uranus"
 msgstr "Uran"
 
-#: apts/constants/graphconstants.py:245
+#: apts/constants/graphconstants.py:248
 msgid "Neptune"
 msgstr "Neptun"
 
-#: apts/constants/graphconstants.py:246
+#: apts/constants/graphconstants.py:249
 msgid "Pluto"
 msgstr "Pluto"
 
-#: apts/constants/graphconstants.py:247
+#: apts/constants/graphconstants.py:250
 msgid "Sun"
 msgstr "Sonne"
 
-#: apts/constants/graphconstants.py:248
+#: apts/constants/graphconstants.py:251
 msgid "Moon"
 msgstr "Mond"
 
-#: apts/constants/graphconstants.py:249
+#: apts/constants/graphconstants.py:252
 msgid "Start"
 msgstr "Beginn"
 
-#: apts/constants/graphconstants.py:250
+#: apts/constants/graphconstants.py:253
 msgid "Peak"
 msgstr "Maximum"
 
-#: apts/constants/graphconstants.py:251
+#: apts/constants/graphconstants.py:254
 msgid "End"
 msgstr "Ende"
 
-#: apts/constants/graphconstants.py:252
+#: apts/constants/graphconstants.py:255
 msgid "Quadrantids"
 msgstr "Quadrantiden"
 
-#: apts/constants/graphconstants.py:253
+#: apts/constants/graphconstants.py:256
 msgid "Lyrids"
 msgstr "Lyriden"
 
-#: apts/constants/graphconstants.py:254
+#: apts/constants/graphconstants.py:257
 msgid "Eta Aquarids"
 msgstr "Eta-Aquariiden"
 
-#: apts/constants/graphconstants.py:255
+#: apts/constants/graphconstants.py:258
 msgid "Delta Aquarids"
 msgstr "Delta-Aquariiden"
 
-#: apts/constants/graphconstants.py:256
+#: apts/constants/graphconstants.py:259
 msgid "Perseids"
 msgstr "Perseiden"
 
-#: apts/constants/graphconstants.py:257
+#: apts/constants/graphconstants.py:260
 msgid "Orionids"
 msgstr "Orioniden"
 
-#: apts/constants/graphconstants.py:258
+#: apts/constants/graphconstants.py:261
 msgid "Leonids"
 msgstr "Leoniden"
 
-#: apts/constants/graphconstants.py:259
+#: apts/constants/graphconstants.py:262
 msgid "Geminids"
 msgstr "Geminiden"
 
-#: apts/constants/graphconstants.py:260
+#: apts/constants/graphconstants.py:263
 msgid "Ursids"
 msgstr "Ursiden"
 
-#: apts/constants/graphconstants.py:261
+#: apts/constants/graphconstants.py:264
 msgid "Ceres"
 msgstr "Ceres"
 
-#: apts/constants/graphconstants.py:262
+#: apts/constants/graphconstants.py:265
 msgid "Haumea"
 msgstr "Haumea"
 
-#: apts/constants/graphconstants.py:263
+#: apts/constants/graphconstants.py:266
 msgid "Makemake"
 msgstr "Makemake"
 
-#: apts/constants/graphconstants.py:264
+#: apts/constants/graphconstants.py:267
 msgid "Eris"
 msgstr "Eris"
 
@@ -857,7 +869,9 @@ msgstr "Messier-Plot erfolgreich generiert."
 msgid ""
 "Error generating Messier plot.\n"
 "See logs for details."
-msgstr "Fehler beim Generieren des Messier-Plots.\nSiehe Logs für Details."
+msgstr ""
+"Fehler beim Generieren des Messier-Plots.\n"
+"Siehe Logs für Details."
 
 #: apts/plotting/altitude.py:201
 msgid "Messier Plot Error"
@@ -912,7 +926,9 @@ msgstr "Deklination (°)"
 msgid ""
 "Skymap for {target_name} ({zoom_deg}° view, Generated: "
 "{generation_time_str})"
-msgstr "Sternenkarte für {target_name} ({zoom_deg}° Sichtfeld, Generiert: {generation_time_str})"
+msgstr ""
+"Sternenkarte für {target_name} ({zoom_deg}° Sichtfeld, Generiert: "
+"{generation_time_str})"
 
 #: apts/plotting/skymap_zoom.py:334
 msgid "Flipped"
@@ -947,7 +963,9 @@ msgstr "Wetterplot-Informationen"
 msgid ""
 "Error generating Weather plot details.\n"
 "See logs for specifics."
-msgstr "Fehler beim Generieren der Wetterplot-Details.\nSiehe Logs für Details."
+msgstr ""
+"Fehler beim Generieren der Wetterplot-Details.\n"
+"Siehe Logs für Details."
 
 #: apts/plotting/weather.py:529
 msgid "Weather Plot Error"
