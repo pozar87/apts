@@ -168,6 +168,51 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(translated_df.iloc[0]["type"], "Faza Księżyca")
         self.assertEqual(translated_df.iloc[1]["event"], "Pełnia")
 
+    def test_calculate_meteor_showers(self):
+        # Perseids in 2023: Peak around August 12-13, Start July 17, End Aug 24
+        start_date = datetime(2023, 7, 15, tzinfo=utc)
+        end_date = datetime(2023, 8, 25, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.METEOR_SHOWERS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for Perseids events
+        perseids_events = events_df[events_df["shower_name"] == "Perseids"]
+
+        # All 3 phases should be in range now
+        self.assertEqual(len(perseids_events), 3)
+        self.assertTrue(any(perseids_events["phase"] == "Start"))
+        self.assertTrue(any(perseids_events["phase"] == "Peak"))
+        self.assertTrue(any(perseids_events["phase"] == "End"))
+
+    def test_calculate_oppositions(self):
+        # Mars opposition in 2022: December 8
+        start_date = datetime(2022, 12, 1, tzinfo=utc)
+        end_date = datetime(2022, 12, 15, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.OPPOSITIONS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for Mars opposition
+        mars_opposition = events_df[
+            (events_df["type"] == "Opposition") & (events_df["object"] == "Mars")
+        ]
+
+        self.assertEqual(len(mars_opposition), 1)
+        # Check date: should be 2022-12-08
+        event_date = mars_opposition.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2022)
+        self.assertEqual(event_date.month, 12)
+        self.assertEqual(event_date.day, 8)
+
 
 if __name__ == "__main__":
     unittest.main()
