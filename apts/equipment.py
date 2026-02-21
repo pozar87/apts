@@ -113,6 +113,8 @@ class Equipment:
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
             EquipmentTableLabels.PIXEL_SCALE,
+            EquipmentTableLabels.NPF_RULE,
+            EquipmentTableLabels.RULE_OF_500,
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
@@ -162,6 +164,20 @@ class Equipment:
                 else:
                     pixel_scale_magnitude = numpy.nan
 
+                # NPF Rule
+                npf_value = path.npf_rule()
+                if npf_value is not None:
+                    npf_magnitude = npf_value.magnitude
+                else:
+                    npf_magnitude = numpy.nan
+
+                # Rule of 500
+                r500_value = path.rule_of_500()
+                if r500_value is not None:
+                    r500_magnitude = r500_value.magnitude
+                else:
+                    r500_magnitude = numpy.nan
+
                 rows.append(
                     [
                         path.label(),
@@ -177,6 +193,8 @@ class Equipment:
                         flipped_horizontally,
                         flipped_vertically,
                         pixel_scale_magnitude,
+                        npf_magnitude,
+                        r500_magnitude,
                         is_naked_eye,
                     ]
                 )

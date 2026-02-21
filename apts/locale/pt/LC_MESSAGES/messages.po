@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: apts 0.8.5\n"
 "Report-Msgid-Bugs-To: lpozarlik@gmail.com\n"
-"POT-Creation-Date: 2025-11-12 08:31+0100\n"
+"POT-Creation-Date: 2026-02-21 12:36+0000\n"
 "PO-Revision-Date: 2025-11-30 02:21+0000\n"
 "Last-Translator: Jules\n"
 "Language: pt\n"
@@ -16,7 +16,220 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: apts/equipment.py:274
+msgid "Available zoom"
+msgstr "Zoom disponível"
+
+#: apts/equipment.py:275 apts/equipment.py:334
+msgid "Used equipment"
+msgstr "Equipamento usado"
+
+#: apts/equipment.py:276
+msgid "Magnification"
+msgstr "Ampliação"
+
+#: apts/equipment.py:286
+msgid "Max useful zoom due to atmosphere"
+msgstr "Zoom máximo útil devido à atmosfera"
+
+#: apts/equipment.py:333
+msgid "Available fields of view"
+msgstr "Campos de visão disponíveis"
+
+#: apts/equipment.py:335
+msgid "Field of view [°]"
+msgstr "Campo de visão [°]"
+
+#: apts/equipment.py:342
+msgid "Pleiades size"
+msgstr "Tamanho das Plêiades"
+
+#: apts/equipment.py:344
+msgid "Moon size"
+msgstr "Tamanho da Lua"
+
+#: apts/equipment.py:346
+msgid "M51 size"
+msgstr "Tamanho de M51"
+
+#: apts/notify.py:112
+#, python-brace-format
+msgid "Good weather in {name}"
+msgstr "Bom tempo em {name}"
+
+#: apts/notify.py:123
+#, python-brace-format
+msgid ""
+"Tonight you can see {num_planets} planets and {num_messier} Messier "
+"objects. Enable HTML to see the full content."
+msgstr ""
+"Esta noite você pode ver {num_planets} planetas e {num_messier} objetos "
+"Messier. Habilite o HTML para ver o conteúdo completo."
+
+#: apts/observations.py:726
+#, python-format
+msgid "Cloud cover %(cloud_cover)s%% exceeds limit"
+msgstr "Cobertura de nuvens %(cloud_cover)s%% excede o limite"
+
+#: apts/observations.py:736
+#, python-format
+msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
+msgstr "Probabilidade de precipitação %(precip_prob)s%% excede o limite"
+
+#: apts/observations.py:747
+#, python-format
+msgid "Precipitation intensity %(precip_intens)s mm exceeds limit"
+msgstr "A intensidade da precipitação %(precip_intens)s mm excede o limite"
+
+#: apts/observations.py:756
+#, python-format
+msgid "Wind speed %(wind_speed)s km/h exceeds limit"
+msgstr "Velocidade do vento %(wind_speed)s km/h excede o limite"
+
+#: apts/observations.py:766
+#, python-format
+msgid "Temperature %(temp)s°C out of range"
+msgstr "Temperatura %(temp)s°C fora do intervalo"
+
+#: apts/observations.py:774
+#, python-format
+msgid "Visibility %(vis)s km below limit"
+msgstr "Visibilidade %(vis)s km abaixo do limite"
+
+#: apts/observations.py:780
+#, python-format
+msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
+msgstr "Nebulosa %(fog)s%% excede o limite de %(max_fog)s%%"
+
+#: apts/observations.py:794
+#, python-format
+msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
+msgstr "Iluminação da lua %(illum)s%% excede o limite enquanto a lua está alta"
+
+#: apts/observations.py:803
+#, python-format
+msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
+msgstr "Aurora %(aurora)s%% abaixo do limite de %(min_aurora)s%%"
+
+#: apts/place.py:404
+#, fuzzy, python-brace-format
+msgid "Sun Path on {date}"
+msgstr "Caminho do Sol"
+
+#: apts/place.py:424 apts/place.py:536 apts/plotting/altitude.py:71
+#: apts/plotting/altitude.py:153 apts/plotting/altitude.py:250
+#: apts/plotting/altitude.py:376
+msgid "Altitude [°]"
+msgstr "Altitude [°]"
+
+#: apts/place.py:427 apts/place.py:539
+msgid "Azimuth [°]"
+msgstr "Azimute [°]"
+
+#: apts/place.py:617
+msgid "Moon Path"
+msgstr "Caminho da Lua"
+
+#: apts/plotting/weather.py:60 apts/weather.py:119 apts/weather.py:133
+msgid "Clouds"
+msgstr "Nuvens"
+
+#: apts/weather.py:160
+msgid "Cloud cover [%]"
+msgstr "Cobertura de nuvens [%]"
+
+#: apts/plotting/weather.py:102 apts/weather.py:178 apts/weather.py:192
+msgid "Precipitation intensity and probability"
+msgstr "Intensidade e probabilidade de precipitação"
+
+#: apts/weather.py:219
+msgid "Probability"
+msgstr "Probabilidade"
+
+#: apts/plotting/weather.py:134 apts/weather.py:236 apts/weather.py:252
+msgid "Precipitation type summary"
+msgstr "Resumo do tipo de precipitação"
+
+#: apts/plotting/weather.py:85 apts/weather.py:303 apts/weather.py:316
+msgid "Cloud summary"
+msgstr "Resumo de nuvens"
+
+#: apts/plotting/weather.py:151 apts/weather.py:354 apts/weather.py:367
+msgid "Temperatures"
+msgstr "Temperaturas"
+
+#: apts/weather.py:394
+msgid "Temperature [°C]"
+msgstr "Temperatura [°C]"
+
+#: apts/plotting/weather.py:178 apts/weather.py:409 apts/weather.py:418
+#: apts/weather.py:433
+msgid "Wind speed"
+msgstr "Velocidade do vento"
+
+#: apts/weather.py:460
+msgid "Wind speed [km/h]"
+msgstr "Velocidade do vento [km/h]"
+
+#: apts/plotting/weather.py:204 apts/weather.py:487 apts/weather.py:493
+#: apts/weather.py:506
+msgid "Pressure and Ozone"
+msgstr "Pressão e Ozônio"
+
+#: apts/weather.py:503
+msgid "Pressure"
+msgstr "Pressão"
+
+#: apts/weather.py:509
+msgid "Ozone"
+msgstr "Ozônio"
+
+#: apts/weather.py:545
+msgid "Pressure [hPa]"
+msgstr "Pressão [hPa]"
+
+#: apts/weather.py:547 apts/weather.py:556
+msgid "Ozone [DU]"
+msgstr "Ozônio [DU]"
+
+#: apts/plotting/weather.py:224 apts/weather.py:610 apts/weather.py:623
+msgid "Visibility"
+msgstr "Visibilidade"
+
+#: apts/weather.py:650
+msgid "Visibility [km]"
+msgstr "Visibilidade [km]"
+
+#: apts/plotting/weather.py:280 apts/weather.py:664 apts/weather.py:677
+msgid "Fog"
+msgstr "Nevoeiro"
+
+#: apts/weather.py:704
+msgid "Fog [%]"
+msgstr "Nevoeiro [%]"
+
+#: apts/plotting/weather.py:252 apts/weather.py:721 apts/weather.py:734
+msgid "Moon Illumination"
+msgstr "Iluminação da Lua"
+
+#: apts/weather.py:735
+msgid "Waxing"
+msgstr "Crescente"
+
+#: apts/weather.py:735
+msgid "Waning"
+msgstr "Minguante"
+
+#: apts/weather.py:771
+msgid "Illumination [%]"
+msgstr "Iluminação [%]"
+
+#: apts/plotting/weather.py:307 apts/weather.py:783 apts/weather.py:788
+#: apts/weather.py:802 apts/weather.py:829
+msgid "Aurora"
+msgstr "Aurora"
 
 #: apts/constants/constellations.py:4
 msgid "Andromeda"
@@ -322,15 +535,6 @@ msgstr "Escudo"
 msgid "Serpens"
 msgstr "Serpente"
 
-msgid "Serpens Caput"
-msgstr "Cabeça da Serpente"
-
-msgid "Serpens Cauda"
-msgstr "Cauda da Serpente"
-
-msgid "Ophiucus"
-msgstr "Ofiúco"
-
 #: apts/constants/constellations.py:80
 msgid "Sextans"
 msgstr "Sextante"
@@ -379,242 +583,290 @@ msgstr "Peixe Voador"
 msgid "Vulpecula"
 msgstr "Raposa"
 
-#: apts/constants/event_types.py:4
-msgid "Space Launch"
-msgstr "Lançamento Espacial"
-
-#: apts/constants/event_types.py:5
-msgid "Space Event"
-msgstr "Evento Espacial"
-
-#: apts/constants/event_types.py:6
-msgid "Solar Eclipse"
-msgstr "Eclipse Solar"
-
-#: apts/constants/event_types.py:7
-msgid "Lunar Eclipse"
-msgstr "Eclipse Lunar"
-
-#: apts/observations.py:620
-msgid "Cloud cover %(cloud_cover)s%% exceeds limit"
-msgstr "Cobertura de nuvens %(cloud_cover)s%% excede o limite"
-
-#: apts/observations.py:628
-msgid "Precipitation probability %(precip_prob)s%% exceeds limit"
-msgstr "Probabilidade de precipitação %(precip_prob)s%% excede o limite"
-
-#: apts/observations.py:636
-msgid "Wind speed %(wind_speed)s km/h exceeds limit"
-msgstr "Velocidade do vento %(wind_speed)s km/h excede o limite"
-
-#: apts/observations.py:645
-msgid "Temperature %(temp)s°C out of range"
-msgstr "Temperatura %(temp)s°C fora do intervalo"
-
-#: apts/constants/event_types.py:8
-msgid "Moon Phase"
-msgstr "Fase da Lua"
-
-#: apts/constants/event_types.py:8
-msgid "Moon Path"
-msgstr "Caminho da Lua"
-
-#: apts/observations.py:653
-msgid "Visibility %(vis)s km below limit"
-msgstr "Visibilidade %(vis)s km abaixo do limite"
-
-#: apts/constants/event_types.py:9
-msgid "Moon"
-msgstr "Lua"
-
-#: apts/observations.py:662
-msgid "Moon illumination %(illum)s%% exceeds limit while moon is up"
-msgstr "Iluminação da lua %(illum)s%% excede o limite enquanto a lua está alta"
-
-msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
-msgstr "Nebulosa %(fog)s%% excede o limite de %(max_fog)s%%"
-
-#: apts/constants/event_types.py:10
-msgid "Conjunction"
-msgstr "Conjunção"
-
-#: apts/place.py:275
-msgid "Sun Path"
-msgstr "Caminho do Sol"
-
-#: apts/constants/event_types.py:11
-msgid "Opposition"
-msgstr "Oposição"
-
-#: apts/constants/event_types.py:12
-msgid "Quadrantids"
-msgstr "Quadrantídeos"
-
-#: apts/constants/event_types.py:13
-msgid "Lyrids"
-msgstr "Lirídeos"
-
-#: apts/constants/event_types.py:14
-msgid "Eta Aquarids"
-msgstr "Eta Aquarídeos"
-
-#: apts/constants/event_types.py:15
-msgid "Delta Aquarids"
-msgstr "Delta Aquarídeos"
-
-#: apts/constants/event_types.py:16
-msgid "Perseids"
-msgstr "Perseidas"
-
-#: apts/constants/event_types.py:17
-msgid "Orionids"
-msgstr "Orionídeos"
-
-#: apts/constants/event_types.py:18
-msgid "Leonids"
-msgstr "Leonídeos"
-
-#: apts/constants/event_types.py:19
-msgid "Geminids"
-msgstr "Geminídeos"
-
-#: apts/constants/event_types.py:20
-msgid "Ursids"
-msgstr "Ursídeos"
-
-#: apts/constants/event_types.py:21
-msgid "Meteor Shower"
-msgstr "Chuva de Meteoros"
-
-#: apts/constants/event_types.py:22
-msgid "Start"
-msgstr "Início"
-
-#: apts/constants/event_types.py:23
-msgid "Peak"
-msgstr "Pico"
-
-#: apts/constants/event_types.py:24
-msgid "End"
-msgstr "Fim"
-
-#: apts/constants/event_types.py:25
-msgid "Highest altitude"
-msgstr "Altitude máxima"
-
-#: apts/constants/event_types.py:26
-msgid "Planet Altitude"
-msgstr "Altitude do Planeta"
-
-#: apts/constants/event_types.py:27
-msgid "Lunar Occultation"
-msgstr "Ocultação Lunar"
-
-#: apts/constants/event_types.py:28
-msgid "Aphelion/Perihelion"
-msgstr "Afélio/Periélio"
-
-#: apts/constants/event_types.py:29
-msgid "Moon Apogee/Perigee"
-msgstr "Apogeu/Perigeu Lunar"
-
-#: apts/constants/event_types.py:30
-msgid "Inferior Conjunction"
-msgstr "Conjunção Inferior"
-
-#: apts/constants/event_types.py:31
-msgid "Mercury"
-msgstr "Mercúrio"
-
-#: apts/constants/event_types.py:32
-msgid "Moon-Messier Conjunction"
-msgstr "Conjunção Lua-Messier"
-
-#: apts/constants/event_types.py:33
-msgid "Comet"
-msgstr "Cometa"
-
-#: apts/plot.py:165
-msgid "You can plot images only in Ipython notebook!"
-msgstr "Você só pode plotar imagens em um notebook Ipython!"
-
-#: apts/plot.py:294
-msgid "Altitude [°]"
-msgstr "Altitude [°]"
-
-#: apts/plot.py:297
-msgid "Messier Objects Altitude"
-msgstr "Altitude dos Objetos Messier"
-
-#: apts/place.py:287 apts/place.py:387
-msgid "Azimuth [°]"
-msgstr "Azimute [°]"
-
-#: apts/plot.py:302
-msgid "Generated empty Messier plot as no objects are visible."
-msgstr "Gráfico de Messier vazio gerado, pois nenhum objeto está visível."
-
-#: apts/plot.py:315
+#: apts/constants/graphconstants.py:191 apts/constants/graphconstants.py:208
 msgid "Galaxy"
 msgstr "Galáxia"
 
-#: apts/plot.py:317
-msgid "Globular Cluster"
-msgstr "Aglomerado Globular"
-
-#: apts/plot.py:319
-msgid "Open Cluster"
-msgstr "Aglomerado Aberto"
-
-#: apts/plot.py:321
+#: apts/constants/graphconstants.py:193 apts/constants/graphconstants.py:212
 msgid "Nebula"
 msgstr "Nebulosa"
 
-#: apts/plot.py:323
-msgid "Planetary Nebula"
-msgstr "Nebulosa Planetária"
-
-#: apts/plot.py:325
-msgid "Supernova Remnant"
-msgstr "Remanescente de Supernova"
-
-#: apts/plot.py:327
-msgid "Other"
-msgstr "Outro"
-
-msgid "Diffuse Nebula"
-msgstr "Nebulosa Difusa"
-
-msgid "Star Cloud"
-msgstr "Nuvem Estelar"
-
+#: apts/constants/graphconstants.py:204
 msgid "Spiral Galaxy"
 msgstr "Galáxia Espiral"
 
+#: apts/constants/graphconstants.py:205
 msgid "Elliptical Galaxy"
 msgstr "Galáxia Elíptica"
 
-msgid "Double Star"
-msgstr "Estrela Dupla"
-
-msgid "Group/Asterism"
-msgstr "Grupo/Asterismo"
-
+#: apts/constants/graphconstants.py:206
 msgid "Irregular Galaxy"
 msgstr "Galáxia Irregular"
 
+#: apts/constants/graphconstants.py:207
 msgid "Lenticular (S0) Galaxy"
 msgstr "Galáxia Lenticular (S0)"
 
-#: apts/plot.py:335
+#: apts/constants/graphconstants.py:209
+msgid "Globular Cluster"
+msgstr "Aglomerado Globular"
+
+#: apts/constants/graphconstants.py:210
+msgid "Open Cluster"
+msgstr "Aglomerado Aberto"
+
+#: apts/constants/graphconstants.py:211
+msgid "Diffuse Nebula"
+msgstr "Nebulosa Difusa"
+
+#: apts/constants/graphconstants.py:213
+msgid "Planetary Nebula"
+msgstr "Nebulosa Planetária"
+
+#: apts/constants/graphconstants.py:214
+msgid "Supernova Remnant"
+msgstr "Remanescente de Supernova"
+
+#: apts/constants/graphconstants.py:215
+msgid "Double Star"
+msgstr "Estrela Dupla"
+
+#: apts/constants/graphconstants.py:216
+msgid "Group/Asterism"
+msgstr "Grupo/Asterismo"
+
+#: apts/constants/graphconstants.py:217
+msgid "Star Cloud"
+msgstr "Nuvem Estelar"
+
+#: apts/constants/graphconstants.py:218
+msgid "Other"
+msgstr "Outro"
+
+#: apts/constants/graphconstants.py:219
+msgid "New Moon"
+msgstr "Lua Nova"
+
+#: apts/constants/graphconstants.py:220
+msgid "First Quarter"
+msgstr "Quarto Crescente"
+
+#: apts/constants/graphconstants.py:221
+msgid "Full Moon"
+msgstr "Lua Cheia"
+
+#: apts/constants/graphconstants.py:222
+msgid "Last Quarter"
+msgstr "Quarto Minguante"
+
+#: apts/constants/graphconstants.py:223
+msgid "Space Launch"
+msgstr "Lançamento Espacial"
+
+#: apts/constants/graphconstants.py:224
+msgid "Space Event"
+msgstr "Evento Espacial"
+
+#: apts/constants/graphconstants.py:225
+msgid "Solar Eclipse"
+msgstr "Eclipse Solar"
+
+#: apts/constants/graphconstants.py:226
+msgid "Lunar Eclipse"
+msgstr "Eclipse Lunar"
+
+#: apts/constants/graphconstants.py:227
+msgid "Moon Phase"
+msgstr "Fase da Lua"
+
+#: apts/constants/graphconstants.py:228
+msgid "Conjunction"
+msgstr "Conjunção"
+
+#: apts/constants/graphconstants.py:229
+msgid "Opposition"
+msgstr "Oposição"
+
+#: apts/constants/graphconstants.py:230
+msgid "Meteor Shower"
+msgstr "Chuva de Meteoros"
+
+#: apts/constants/graphconstants.py:231
+msgid "Highest altitude"
+msgstr "Altitude máxima"
+
+#: apts/constants/graphconstants.py:232
+msgid "Planet Altitude"
+msgstr "Altitude do Planeta"
+
+#: apts/constants/graphconstants.py:233
+msgid "NPF Rule (s)"
+msgstr "Regra NPF (s)"
+
+#: apts/constants/graphconstants.py:234
+msgid "Rule of 500 (s)"
+msgstr "Regra dos 500 (s)"
+
+#: apts/constants/graphconstants.py:235
+msgid "Lunar Occultation"
+msgstr "Ocultação Lunar"
+
+#: apts/constants/graphconstants.py:236
+msgid "Aphelion/Perihelion"
+msgstr "Afélio/Periélio"
+
+#: apts/constants/graphconstants.py:237
+msgid "Moon Apogee/Perigee"
+msgstr "Apogeu/Perigeu Lunar"
+
+#: apts/constants/graphconstants.py:238
+msgid "Inferior Conjunction"
+msgstr "Conjunção Inferior"
+
+#: apts/constants/graphconstants.py:239
+#, fuzzy
+msgid "Mercury Transit"
+msgstr "Mercúrio"
+
+#: apts/constants/graphconstants.py:240
+msgid "Moon-Messier Conjunction"
+msgstr "Conjunção Lua-Messier"
+
+#: apts/constants/graphconstants.py:241
+msgid "Comet"
+msgstr "Cometa"
+
+#: apts/constants/graphconstants.py:242
+msgid "Mercury"
+msgstr "Mercúrio"
+
+#: apts/constants/graphconstants.py:243
+msgid "Venus"
+msgstr "Vênus"
+
+#: apts/constants/graphconstants.py:244
+msgid "Mars"
+msgstr "Marte"
+
+#: apts/constants/graphconstants.py:245
+msgid "Jupiter"
+msgstr "Júpiter"
+
+#: apts/constants/graphconstants.py:246
+msgid "Saturn"
+msgstr "Saturno"
+
+#: apts/constants/graphconstants.py:247
+msgid "Uranus"
+msgstr "Urano"
+
+#: apts/constants/graphconstants.py:248
+msgid "Neptune"
+msgstr "Netuno"
+
+#: apts/constants/graphconstants.py:249
+msgid "Pluto"
+msgstr "Plutão"
+
+#: apts/constants/graphconstants.py:250
+msgid "Sun"
+msgstr "Sol"
+
+#: apts/constants/graphconstants.py:251
+msgid "Moon"
+msgstr "Lua"
+
+#: apts/constants/graphconstants.py:252
+msgid "Start"
+msgstr "Início"
+
+#: apts/constants/graphconstants.py:253
+msgid "Peak"
+msgstr "Pico"
+
+#: apts/constants/graphconstants.py:254
+msgid "End"
+msgstr "Fim"
+
+#: apts/constants/graphconstants.py:255
+msgid "Quadrantids"
+msgstr "Quadrantídeos"
+
+#: apts/constants/graphconstants.py:256
+msgid "Lyrids"
+msgstr "Lirídeos"
+
+#: apts/constants/graphconstants.py:257
+msgid "Eta Aquarids"
+msgstr "Eta Aquarídeos"
+
+#: apts/constants/graphconstants.py:258
+msgid "Delta Aquarids"
+msgstr "Delta Aquarídeos"
+
+#: apts/constants/graphconstants.py:259
+msgid "Perseids"
+msgstr "Perseidas"
+
+#: apts/constants/graphconstants.py:260
+msgid "Orionids"
+msgstr "Orionídeos"
+
+#: apts/constants/graphconstants.py:261
+msgid "Leonids"
+msgstr "Leonídeos"
+
+#: apts/constants/graphconstants.py:262
+msgid "Geminids"
+msgstr "Geminídeos"
+
+#: apts/constants/graphconstants.py:263
+msgid "Ursids"
+msgstr "Ursídeos"
+
+#: apts/constants/graphconstants.py:264
+#, fuzzy
+msgid "Ceres"
+msgstr "Serpente"
+
+#: apts/constants/graphconstants.py:265
+msgid "Haumea"
+msgstr ""
+
+#: apts/constants/graphconstants.py:266
+msgid "Makemake"
+msgstr ""
+
+#: apts/constants/graphconstants.py:267
+#, fuzzy
+msgid "Eris"
+msgstr "Erídano"
+
+#: apts/opticalequipment/binoculars.py:23
+msgid "Binoculars"
+msgstr "Binóculos"
+
+#: apts/opticalequipment/naked_eye.py:30
+msgid "Naked Eye"
+msgstr "Olho nu"
+
+#: apts/plotting/altitude.py:76 apts/plotting/altitude.py:177
+msgid "Messier Objects Altitude"
+msgstr "Altitude dos Objetos Messier"
+
+#: apts/plotting/altitude.py:79
+msgid "Generated empty Messier plot as no objects are visible."
+msgstr "Gráfico de Messier vazio gerado, pois nenhum objeto está visível."
+
+#: apts/plotting/altitude.py:170
 msgid "Object Types"
 msgstr "Tipos de Objeto"
 
-#: apts/plot.py:343
+#: apts/plotting/altitude.py:178
 msgid "Successfully generated Messier plot."
 msgstr "Gráfico de Messier gerado com sucesso."
 
-#: apts/plot.py:347
+#: apts/plotting/altitude.py:191
 msgid ""
 "Error generating Messier plot.\n"
 "See logs for details."
@@ -622,23 +874,94 @@ msgstr ""
 "Erro ao gerar o gráfico de Messier.\n"
 "Consulte os logs para obter detalhes."
 
-#: apts/plot.py:348
+#: apts/plotting/altitude.py:201
 msgid "Messier Plot Error"
 msgstr "Erro no Gráfico de Messier"
 
-#: apts/plot.py:365
+#: apts/plotting/altitude.py:254 apts/plotting/altitude.py:380
 msgid "Solar Objects Altitude"
 msgstr "Altitude dos Objetos Solares"
 
-#: apts/plot.py:397
+#: apts/plotting/planets.py:101
+msgid "You can plot images only in Ipython notebook!"
+msgstr "Você só pode plotar imagens em um notebook Ipython!"
+
+#: apts/plotting/skymap.py:124
+#, python-brace-format
+msgid "Object '{target_name}' not found."
+msgstr "Objeto '{target_name}' não encontrado."
+
+#: apts/plotting/skymap.py:133
+#, python-brace-format
+msgid "Skymap (Generated: {generation_time_str})"
+msgstr "Mapa do Céu (Gerado: {generation_time_str})"
+
+#: apts/plotting/skymap_polar.py:403 apts/plotting/skymap_zoom.py:71
+#, python-brace-format
+msgid "Skymap for {target_name} (Generated: {generation_time_str})"
+msgstr "Mapa do Céu para {target_name} (Gerado: {generation_time_str})"
+
+#: apts/plotting/skymap_zoom.py:61
+#, python-brace-format
+msgid "Target '{target_name}' is below the horizon."
+msgstr "O alvo '{target_name}' está abaixo do horizonte."
+
+#: apts/plotting/skymap_zoom.py:86
+msgid "Azimuth (°)"
+msgstr "Azimute (°)"
+
+#: apts/plotting/skymap_zoom.py:87
+msgid "Altitude (°)"
+msgstr "Altitude (°)"
+
+#: apts/plotting/skymap_zoom.py:93
+msgid "Right Ascension (hours)"
+msgstr "Ascensão Reta (horas)"
+
+#: apts/plotting/skymap_zoom.py:94
+msgid "Declination (°)"
+msgstr "Declinação (°)"
+
+#: apts/plotting/skymap_zoom.py:321
+#, python-brace-format
+msgid ""
+"Skymap for {target_name} ({zoom_deg}° view, Generated: "
+"{generation_time_str})"
+msgstr ""
+"Mapa do Céu para {target_name} (visão de {zoom_deg}°, Gerado: "
+"{generation_time_str})"
+
+#: apts/plotting/skymap_zoom.py:334
+msgid "Flipped"
+msgstr "Invertido"
+
+#: apts/plotting/weather.py:37
 msgid "Weather data not available for plotting."
 msgstr "Dados meteorológicos não disponíveis para plotagem."
 
-#: apts/plot.py:398
+#: apts/plotting/weather.py:338 apts/plotting/weather.py:344
+#: apts/plotting/weather.py:358
+#, fuzzy
+msgid "Weather summary"
+msgstr "Resumo de qualidade meteorológica"
+
+#: apts/plotting/weather.py:363
+msgid "Good hours"
+msgstr "Horas favoráveis"
+
+#: apts/plotting/weather.py:363
+msgid "Bad hours"
+msgstr "Horas desfavoráveis"
+
+#: apts/plotting/weather.py:386
+msgid "Weather goodness summary"
+msgstr "Resumo de qualidade meteorológica"
+
+#: apts/plotting/weather.py:405
 msgid "Weather Plot Information"
 msgstr "Informações do Gráfico Meteorológico"
 
-#: apts/plot.py:402
+#: apts/plotting/weather.py:519
 msgid ""
 "Error generating Weather plot details.\n"
 "See logs for specifics."
@@ -646,284 +969,28 @@ msgstr ""
 "Erro ao gerar os detalhes do gráfico meteorológico.\n"
 "Consulte os logs para obter detalhes específicos."
 
-#: apts/plot.py:403
+#: apts/plotting/weather.py:529
 msgid "Weather Plot Error"
 msgstr "Erro no Gráfico Meteorológico"
 
-#: apts/plot.py:539
-msgid "Object '{target_name}' not found."
-msgstr "Objeto '{target_name}' não encontrado."
-
-#: apts/plot.py:575
-msgid "Skymap (Generated: {generation_time_str})"
-msgstr "Mapa do Céu (Gerado: {generation_time_str})"
-
-#: apts/plot.py:579
-msgid "Target '{target_name}' is below the horizon."
-msgstr "O alvo '{target_name}' está abaixo do horizonte."
-
-#: apts/plot.py:641
-msgid "Skymap for {target_name} (Generated: {generation_time_str})"
-msgstr "Mapa do Céu para {target_name} (Gerado: {generation_time_str})"
-
-#: apts/plot.py:832 apts/utils/plot.py:33
-msgid "Azimuth (°)"
-msgstr "Azimute (°)"
-
-#: apts/plot.py:834 apts/utils/plot.py:35
-msgid "Altitude (°)"
-msgstr "Altitude (°)"
-
-#: apts/plot.py:843 apts/utils/plot.py:41
-msgid "Right Ascension (hours)"
-msgstr "Ascensão Reta (horas)"
-
-#: apts/plot.py:845 apts/utils/plot.py:43
-msgid "Declination (°)"
-msgstr "Declinação (°)"
-
-#: apts/plot.py:853
-msgid ""
-"Skymap for {target_name} ({zoom_deg}° view,"
-" Generated: {generation_time_str})"
-msgstr "Mapa do Céu para {target_name} (visão de {zoom_deg}°, Gerado: {generation_time_str})"
-
-#: apts/plot.py:906
-msgid "Flipped"
-msgstr "Invertido"
-
-#: apts/utils/planetary.py:100
-msgid "New Moon"
-msgstr "Lua Nova"
-
-#: apts/utils/planetary.py:102
-msgid "First Quarter"
-msgstr "Quarto Crescente"
-
-#: apts/utils/planetary.py:104
-msgid "Full Moon"
-msgstr "Lua Cheia"
-
-#: apts/utils/planetary.py:106
-msgid "Last Quarter"
-msgstr "Quarto Minguante"
-
-#: apts/weather.py:118
-msgid "Clouds"
-msgstr "Nuvens"
-
-#: apts/weather.py:141
-msgid "Cloud cover [%]"
-msgstr "Cobertura de nuvens [%]"
-
-#: apts/weather.py:169
-msgid "Precipitation intensity and probability"
-msgstr "Intensidade e probabilidade de precipitação"
-
-#: apts/weather.py:192
-msgid "Probability"
-msgstr "Probabilidade"
-
-#: apts/weather.py:220
-msgid "Precipitation type summary"
-msgstr "Resumo do tipo de precipitação"
-
-#: apts/weather.py:261
-msgid "Cloud summary"
-msgstr "Resumo de nuvens"
-
-#: apts/weather.py:295
-msgid "Temperatures"
-msgstr "Temperaturas"
-
-#: apts/weather.py:318
-msgid "Temperature [°C]"
-msgstr "Temperatura [°C]"
-
-#: apts/weather.py:348
-msgid "Wind speed"
-msgstr "Velocidade do vento"
-
-#: apts/weather.py:371
-msgid "Wind speed [km/h]"
-msgstr "Velocidade do vento [km/h]"
-
-#: apts/weather.py:408
-msgid "Pressure"
-msgstr "Pressão"
-
-#: apts/weather.py:410
-msgid "Pressure and Ozone"
-msgstr "Pressão e Ozônio"
-
-#: apts/weather.py:412
-msgid "Ozone"
-msgstr "Ozônio"
-
-#: apts/weather.py:441
-msgid "Pressure [hPa]"
-msgstr "Pressão [hPa]"
-
-#: apts/weather.py:443 apts/weather.py:450
-msgid "Ozone [DU]"
-msgstr "Ozônio [DU]"
-
-#: apts/weather.py:491
-msgid "Visibility"
-msgstr "Visibilidade"
-
-#: apts/weather.py:514
-msgid "Visibility [km]"
-msgstr "Visibilidade [km]"
-
-#: apts/weather.py:579
-msgid "Fog"
-msgstr "Nevoeiro"
-
-#: apts/weather.py:602
-msgid "Fog [%]"
-msgstr "Nevoeiro [%]"
-
-#: apts/weather.py:537
-msgid "Waxing"
-msgstr "Crescente"
-
-#: apts/weather.py:537
-msgid "Waning"
-msgstr "Minguante"
-
-#: apts/weather.py:581
-msgid "Moon Illumination"
-msgstr "Iluminação da Lua"
-
-#: apts/weather.py:610
-msgid "Illumination [%]"
-msgstr "Iluminação [%]"
-
-#: apts/utils/plot.py:15
-msgid "Time"
-msgstr "Hora"
-
-#: apts/equipment.py:209
-msgid "Available zoom"
-msgstr "Zoom disponível"
-
-#: apts/equipment.py:210
-msgid "Used equipment"
-msgstr "Equipamento usado"
-
-#: apts/equipment.py:211
-msgid "Magnification"
-msgstr "Ampliação"
-
-#: apts/equipment.py:221
-msgid "Max useful zoom due to atmosphere"
-msgstr "Zoom máximo útil devido à atmosfera"
-
-#: apts/equipment.py:264
-msgid "Available fields of view"
-msgstr "Campos de visão disponíveis"
-
-#: apts/equipment.py:266
-msgid "Field of view [°]"
-msgstr "Campo de visão [°]"
-
-#: apts/equipment.py:274
-msgid "Pleiades size"
-msgstr "Tamanho das Plêiades"
-
-#: apts/equipment.py:276
-msgid "Moon size"
-msgstr "Tamanho da Lua"
-
-#: apts/equipment.py:278
-msgid "M51 size"
-msgstr "Tamanho de M51"
-
-#: apts/opticalequipment/naked_eye.py:22
-msgid "Naked Eye"
-msgstr "Olho nu"
-
-#: apts/notify.py:108
-msgid "Good weather in {name}"
-msgstr "Bom tempo em {name}"
-
-#: apts/notify.py:115
-msgid ""
-"Tonight you can see {num_planets} planets and {num_messier} Messier "
-"objects. Enable HTML to see the full content."
-msgstr ""
-"Esta noite você pode ver {num_planets} planetas e {num_messier} objetos Messier. "
-"Habilite o HTML para ver o conteúdo completo."
-
+#: apts/utils/plot.py:30
 msgid "No data to plot"
 msgstr "Sem dados para gerar gráfico"
 
-msgid "Aurora"
-msgstr "Aurora"
+msgid "Serpens Caput"
+msgstr "Cabeça da Serpente"
 
-msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
-msgstr "Aurora %(aurora)s%% abaixo do limite de %(min_aurora)s%%"
+msgid "Serpens Cauda"
+msgstr "Cauda da Serpente"
 
-msgid "Binoculars"
-msgstr "Binóculos"
+msgid "Ophiucus"
+msgstr "Ofiúco"
+
+msgid "Time"
+msgstr "Hora"
 
 msgid "IMAGE"
 msgstr "Imagem"
 
 msgid "VISUAL"
 msgstr "Visual"
-
-#: stargazer/templatetags/stargazer_tags.py:12
-msgid "Mars"
-msgstr "Marte"
-
-#: stargazer/templatetags/stargazer_tags.py:13
-msgid "Jupiter"
-msgstr "Júpiter"
-
-#: stargazer/templatetags/stargazer_tags.py:14
-msgid "Saturn"
-msgstr "Saturno"
-
-#: stargazer/templatetags/stargazer_tags.py:15
-msgid "Venus"
-msgstr "Vênus"
-
-#: stargazer/templatetags/stargazer_tags.py:16
-msgid "Mercury"
-msgstr "Mercúrio"
-
-#: stargazer/templatetags/stargazer_tags.py:17
-msgid "Uranus"
-msgstr "Urano"
-
-#: stargazer/templatetags/stargazer_tags.py:18
-msgid "Neptune"
-msgstr "Netuno"
-
-#: stargazer/templatetags/stargazer_tags.py:19
-msgid "Pluto"
-msgstr "Plutão"
-
-#: stargazer/templatetags/stargazer_tags.py:19
-msgid "Sun"
-msgstr "Sol"
-
-msgid "Good hours"
-msgstr "Horas favoráveis"
-
-msgid "Bad hours"
-msgstr "Horas desfavoráveis"
-
-msgid "Weather goodness summary"
-msgstr "Resumo de qualidade meteorológica"
-
-msgid "Error generating Weather plot details.\nSee logs for specifics."
-msgstr "Erro ao gerar os detalhes do gráfico meteorológico.\nConsulte os registos para obter detalhes específicos."
-
-msgid "Weather Plot Error"
-msgstr "Erro no gráfico meteorológico"
-
-msgid "Precipitation intensity %(precip_intens)s mm exceeds limit"
-msgstr "A intensidade da precipitação %(precip_intens)s mm excede o limite"

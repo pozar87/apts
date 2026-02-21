@@ -230,6 +230,8 @@ _TRANSLATABLE_STRINGS = [
     _("Meteor Shower"),
     _("Highest altitude"),
     _("Planet Altitude"),
+    _("NPF Rule (s)"),
+    _("Rule of 500 (s)"),
     _("Lunar Occultation"),
     _("Aphelion/Perihelion"),
     _("Moon Apogee/Perigee"),

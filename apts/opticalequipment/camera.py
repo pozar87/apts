@@ -59,3 +59,36 @@ class Camera(OutputOpticalEqipment):
   def __str__(self):
     # Format: <vendor> <width>x<height>
     return "{} {}x{}".format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
+
+  @classmethod
+  def ZWO_ASI2600MC_PRO(cls):
+    """
+    Factory method for ZWO ASI2600MC Pro camera.
+    Sensor: Sony IMX571 (APS-C)
+    """
+    return cls(
+      23.5, 15.7, 6248, 4176, "ZWO ASI2600MC Pro",
+      pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80
+    )
+
+  @classmethod
+  def ZWO_ASI1600MM_PRO(cls):
+    """
+    Factory method for ZWO ASI1600MM Pro camera.
+    Sensor: Panasonic MN34230 (4/3")
+    """
+    return cls(
+      17.7, 13.4, 4656, 3520, "ZWO ASI1600MM Pro",
+      pixel_size=3.8, read_noise=1.2, full_well=20000, quantum_efficiency=60
+    )
+
+  @classmethod
+  def Nikon_D850(cls):
+    """
+    Factory method for Nikon D850 camera.
+    Sensor: Full Frame
+    """
+    return cls(
+      35.9, 23.9, 8256, 5504, "Nikon D850",
+      pixel_size=4.35, read_noise=1.1, full_well=48000, quantum_efficiency=54
+    )

@@ -3,6 +3,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 from apts.optics import OpticsUtils, OpticalPath
 from apts.opticalequipment.binoculars import Binoculars
+from apts.units import get_unit_registry
 
 # We need the real classes to use them with isinstance in OpticsUtils.expand
 from apts.opticalequipment.barlow import Barlow
@@ -10,6 +11,7 @@ from apts.opticalequipment.diagonal import Diagonal
 from apts.opticalequipment.filter import Filter
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.eyepiece import Eyepiece
+from apts.opticalequipment.camera import Camera
 
 class TestOptics(unittest.TestCase):
     def test_expand_binoculars(self):
@@ -90,6 +92,48 @@ class TestOptics(unittest.TestCase):
         path_de = OpticalPath(t, [], [de], [], e)
         # (True, True) + (True, True) -> (False, False)
         self.assertEqual(path_de.get_image_orientation(), (False, False))
+
+    def test_npf_rule(self):
+        t = MagicMock(spec=Telescope)
+        t.focal_length = 400 * get_unit_registry().mm
+        t.focal_ratio.return_value = 5.6 * get_unit_registry().dimensionless
+
+        c = MagicMock(spec=Camera)
+        c.pixel_size.return_value = 3.76 * get_unit_registry().micrometer
+
+        path = OpticalPath(t, [], [], [], c)
+
+        # NPF = (35*5.6 + 30*3.76) / 400 = (196 + 112.8) / 400 = 308.8 / 400 = 0.772
+        npf = path.npf_rule()
+        self.assertAlmostEqual(npf.magnitude, 0.772, places=3)
+        self.assertEqual(npf.units, get_unit_registry().second)
+
+        # With declination 60 degrees (cos(60) = 0.5)
+        # NPF = 0.772 / 0.5 = 1.544
+        npf_60 = path.npf_rule(declination=60)
+        self.assertAlmostEqual(npf_60.magnitude, 1.544, places=3)
+
+    def test_rule_of_500(self):
+        t = MagicMock(spec=Telescope)
+        t.focal_length = 50 * get_unit_registry().mm
+
+        c = MagicMock(spec=Camera)
+        # APS-C Nikon: 23.5 x 15.7 -> diag ~ 28.26mm
+        # crop_factor = 43.27 / 28.26 ~ 1.53
+        c.sensor_width = 23.5 * get_unit_registry().mm
+        c.sensor_height = 15.7 * get_unit_registry().mm
+
+        path = OpticalPath(t, [], [], [], c)
+
+        # 500 / (50 * 1.53) = 500 / 76.5 ~ 6.536
+        r500 = path.rule_of_500()
+
+        diagonal = (23.5**2 + 15.7**2) ** 0.5
+        crop_factor = 43.27 / diagonal
+        expected = 500 / (50 * crop_factor)
+
+        self.assertAlmostEqual(r500.magnitude, expected, places=3)
+        self.assertEqual(r500.units, get_unit_registry().second)
 
 if __name__ == "__main__":
     unittest.main()
