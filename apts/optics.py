@@ -282,3 +282,63 @@ class OpticalPath:
         sqm_factor = sqm - 21.0
 
         return base + time_factor + sqm_factor
+
+    def npf_rule(self, declination=0):
+        """
+        Calculates the maximum exposure time to avoid star trailing using the NPF rule.
+        The NPF rule is more accurate than the 'Rule of 500' for modern high-resolution sensors.
+        Formula: t = (35 * N + 30 * P) / (F * cos(declination))
+        Where N is f-number, P is pixel pitch (microns), F is focal length (mm).
+        Source: Frédéric Michaud
+        """
+        if not hasattr(self.output, "pixel_size") or not hasattr(
+            self.telescope, "focal_ratio"
+        ):
+            return None
+
+        # F-number (N)
+        n = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
+        # Pixel pitch in microns (P)
+        p = self.output.pixel_size().to("micrometer").magnitude
+        # Focal length in mm (F)
+        f = (self.telescope.focal_length * self.effective_barlow()).to("mm").magnitude
+
+        if f == 0:
+            return 0 * get_unit_registry().second
+
+        cos_dec = numpy.cos(numpy.radians(declination))
+
+        t = (35 * n + 30 * p) / (f * cos_dec)
+        return t * get_unit_registry().second
+
+    def rule_of_500(self):
+        """
+        Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.
+        Formula: t = 500 / (F_actual * crop_factor)
+        """
+        # Actual focal length
+        f_actual = (
+            self.telescope.focal_length * self.effective_barlow()
+        ).to("mm").magnitude
+
+        if f_actual == 0:
+            return 0 * get_unit_registry().second
+
+        if hasattr(self.output, "sensor_width") and hasattr(
+            self.output, "sensor_height"
+        ):
+            # crop_factor = 43.27 / diagonal
+            # diagonal of 35mm sensor (36x24) is ~43.27mm
+            diagonal = numpy.sqrt(
+                self.output.sensor_width.to("mm").magnitude ** 2
+                + self.output.sensor_height.to("mm").magnitude ** 2
+            )
+            if diagonal == 0:
+                return (500 / f_actual) * get_unit_registry().second
+            crop_factor = 43.27 / diagonal
+            t = 500 / (f_actual * crop_factor)
+        else:
+            # Fallback for non-camera or visual setup (though less relevant)
+            t = 500 / f_actual
+
+        return t * get_unit_registry().second

@@ -12,4 +12,6 @@ class EquipmentTableLabels:
     FLIPPED_HORIZONTALLY = "Flipped Horizontally"
     FLIPPED_VERTICALLY = "Flipped Vertically"
     PIXEL_SCALE = "Pixel scale"
+    NPF_RULE = "NPF Rule (s)"
+    RULE_OF_500 = "Rule of 500 (s)"
     IS_NAKED_EYE = "_is_naked_eye"
