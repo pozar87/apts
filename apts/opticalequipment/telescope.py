@@ -139,3 +139,43 @@ class Telescope(OpticalEquipment):
             self.aperture.magnitude,
             self.focal_length.magnitude,
         )
+
+    @classmethod
+    def William_Optics_RedCat_51(cls):
+        """
+        Factory method for William Optics RedCat 51.
+        Aperture: 51mm, Focal Length: 250mm, f/4.9
+        """
+        return cls(
+            51,
+            250,
+            "William Optics RedCat 51",
+            telescope_type=TelescopeType.REFRACTOR,
+        )
+
+    @classmethod
+    def Sky_Watcher_Esprit_100ED(cls):
+        """
+        Factory method for Sky-Watcher Esprit 100ED.
+        Aperture: 100mm, Focal Length: 550mm, f/5.5
+        """
+        return cls(
+            100,
+            550,
+            "Sky-Watcher Esprit 100ED",
+            telescope_type=TelescopeType.REFRACTOR,
+        )
+
+    @classmethod
+    def Celestron_EdgeHD_8(cls):
+        """
+        Factory method for Celestron EdgeHD 8".
+        Aperture: 203.2mm, Focal Length: 2032mm, f/10, Central Obstruction: 69mm
+        """
+        return cls(
+            203.2,
+            2032,
+            "Celestron EdgeHD 8",
+            telescope_type=TelescopeType.SCHMIDT_CASSEGRAIN,
+            central_obstruction=69,
+        )

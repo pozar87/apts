@@ -114,6 +114,27 @@ class OpticalPath:
             self.telescope, self.barlows, self.output
         )
 
+    def fov_width(self):
+        if hasattr(self.output, "field_of_view_width"):
+            return self.output.field_of_view_width(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
+    def fov_height(self):
+        if hasattr(self.output, "field_of_view_height"):
+            return self.output.field_of_view_height(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
+    def fov_diagonal(self):
+        if hasattr(self.output, "field_of_view_diagonal"):
+            return self.output.field_of_view_diagonal(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
     def brightness(self):
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -219,8 +240,10 @@ class OpticalPath:
         return self.sampling(seeing)
 
     def critical_focus_zone(self, wavelength=550):
+        if not hasattr(self.telescope, "focal_ratio"):
+            return None
         # wavelength in nm
-        fr = self.telescope.focal_ratio() * self.effective_barlow()
+        fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
         # CFZ = 2.44 * (wavelength/1000) * fr^2
         cfz = 2.44 * (wavelength / 1000.0) * (fr**2)
         return cfz * get_unit_registry().micrometer

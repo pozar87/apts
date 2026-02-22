@@ -105,6 +105,9 @@ class Equipment:
             EquipmentTableLabels.ZOOM,
             EquipmentTableLabels.USEFUL_ZOOM,
             EquipmentTableLabels.FOV,
+            EquipmentTableLabels.FOV_W,
+            EquipmentTableLabels.FOV_H,
+            EquipmentTableLabels.FOV_D,
             EquipmentTableLabels.EXIT_PUPIL,
             EquipmentTableLabels.DAWES_LIMIT,
             EquipmentTableLabels.RANGE,
@@ -116,6 +119,7 @@ class Equipment:
             EquipmentTableLabels.SAMPLING,
             EquipmentTableLabels.NPF_RULE,
             EquipmentTableLabels.RULE_OF_500,
+            EquipmentTableLabels.CRITICAL_FOCUS_ZONE,
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
@@ -182,6 +186,13 @@ class Equipment:
                 # Sampling status (default seeing 2.0")
                 sampling_value = path.sampling_status(seeing=2.0)
 
+                # Critical Focus Zone
+                cfz_value = path.critical_focus_zone()
+                if cfz_value is not None:
+                    cfz_magnitude = cfz_value.magnitude
+                else:
+                    cfz_magnitude = numpy.nan
+
                 rows.append(
                     [
                         path.label(),
@@ -189,6 +200,9 @@ class Equipment:
                         path.zoom().magnitude,
                         useful_zoom_value,
                         path.fov().magnitude,
+                        path.fov_width().magnitude,
+                        path.fov_height().magnitude,
+                        path.fov_diagonal().magnitude,
                         exit_pupil_value,
                         path.telescope.dawes_limit().magnitude,  # dawes_limit() in Binoculars/Telescope returns Quantity
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
@@ -200,6 +214,7 @@ class Equipment:
                         sampling_value,
                         npf_magnitude,
                         r500_magnitude,
+                        cfz_magnitude,
                         is_naked_eye,
                     ]
                 )
