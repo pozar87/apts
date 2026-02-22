@@ -388,7 +388,7 @@ class Observation:
 
         return True
 
-    def is_weather_good(self, conditions: Optional[Conditions] = None):
+    def is_weather_good(self, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None):
         effective_conditions = conditions or self.conditions
         if not self._is_moon_condition_met(effective_conditions):
             return False
@@ -397,7 +397,7 @@ class Observation:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
             )
-            self.place.get_weather(
+            self.place.get_weather(provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
             )
@@ -705,7 +705,7 @@ class Observation:
             return []
 
         if self.place.weather is None:
-            self.place.get_weather(
+            self.place.get_weather(provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
             )
@@ -888,4 +888,4 @@ class Observation:
     def get_hourly_weather_analysis(
         self, language: Optional[str] = None, conditions: Optional[Conditions] = None
     ):
-        return self.get_weather_analysis(language=language, conditions=conditions)
+        return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name)
