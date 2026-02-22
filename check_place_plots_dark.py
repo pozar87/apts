@@ -1,7 +1,5 @@
 
-import matplotlib.pyplot as plt
 from apts.place import Place
-import os
 
 # Setup mock data
 place = Place(52.2297, 21.0122, "Warsaw")
