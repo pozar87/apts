@@ -1,25 +1,36 @@
 import logging
-import re
 from typing import List, Dict, Any, Optional
 
-from .data.equipment_database_raw import REFERENCE_DB
 from .opticalequipment import (
-    Telescope, Camera, Eyepiece, Barlow, Diagonal, Filter,
+    Telescope, Camera, Eyepiece, Barlow, Diagonal,
     Reducer, Flattener, Corrector, FilterWheel, FilterHolder,
     OAG, Rotator, Focuser, Adapter, Spacer, AntiTilt, FlipMirror,
-    GuideScope
+    GuideScope, Binoculars
 )
-from .utils import ConnectionType, Gender
 
 logger = logging.getLogger(__name__)
+
+EQUIPMENT_CLASSES = [
+    Telescope, Camera, Eyepiece, Barlow, Diagonal,
+    Reducer, Flattener, Corrector, FilterWheel, FilterHolder,
+    OAG, Rotator, Focuser, Adapter, Spacer, AntiTilt, FlipMirror,
+    GuideScope, Binoculars
+]
 
 class EquipmentDatabase:
     """
     Utility class to interact with the equipment reference database.
+    Now loads data from individual equipment classes.
     """
 
     def __init__(self):
-        self.db = REFERENCE_DB
+        self.db = []
+        for cls in EQUIPMENT_CLASSES:
+            if hasattr(cls, "_DATABASE"):
+                if isinstance(cls._DATABASE, dict):
+                    self.db.extend(cls._DATABASE.values())
+                else:
+                    self.db.extend(cls._DATABASE)
 
     def get_all(self) -> List[Dict[str, Any]]:
         return self.db
@@ -39,225 +50,47 @@ class EquipmentDatabase:
         Creates an apts equipment object from a database entry.
         """
         tp = entry['type']
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f"{brand} {name}"
-        ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
+        name = entry.get('name', '')
 
-        # Connection mapping
-        def map_conn(thread_str):
-            if not thread_str:
-                return ConnectionType.F_1_25 # Default
-            # Try to match ConnectionType
-            for ct in ConnectionType:
-                if ct.value.lower() in thread_str.lower():
-                    return ct
-            return ConnectionType.F_1_25
-
-        def map_gender(gender_str):
-            if gender_str in ["Male", "M"]:
-                return Gender.MALE
-            if gender_str in ["Female", "F"]:
-                return Gender.FEMALE
-            return None
-
-        tt = map_conn(entry.get('tside_thread'))
-        tg = map_gender(entry.get('tside_gender'))
-        ct = map_conn(entry.get('cside_thread'))
-        cg = map_gender(entry.get('cside_gender'))
+        # Mapping to classes
+        if "binocular" in name.lower():
+            return Binoculars.from_database(entry)
 
         if tp in ["type_telescope", "type_refractor", "type_camera_lens"]:
-            aperture, focal_length = self._guess_optical_properties(name)
-            bf_val = entry.get("bf_role") == "start"
-            return Telescope(
-                aperture or 80,
-                focal_length or 500,
-                vendor=vendor,
-                connection_type=ct,
-                connection_gender=cg or Gender.FEMALE,
-                backfocus=ol if bf_val else None,
-                mass=mass,
-                optical_length=ol
-            )
-
-        if tp == "type_camera" or tp == "type_dslr":
-            # Heuristic for sensor sizes
-            sw, sh = 23.5, 15.7 # APS-C
-            w, h = 6000, 4000
-
-            if "full frame" in name.lower() or "36x24" in name.lower():
-                sw, sh = 35.9, 23.9
-                w, h = 8256, 5504
-            elif "4/3" in name.lower() or "micro four thirds" in name.lower():
-                sw, sh = 17.3, 13.0
-                w, h = 4656, 3520
-
-            return Camera(
-                sw, sh, w, h, vendor=vendor,
-                connection_type=tt, connection_gender=tg or Gender.FEMALE,
-                backfocus=ol, mass=mass, optical_length=ol
-            )
-
+            return Telescope.from_database(entry)
+        if tp in ["type_camera", "type_dslr"]:
+            return Camera.from_database(entry)
         if tp == "type_eyepiece":
-            fl = self._extract_number(name) or 20
-            return Eyepiece(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
-
-        if tp == "type_barlow":
-            mag = self._extract_number(name, prefix="x") or 2.0
-            return Barlow(
-                mag, vendor=vendor, connection_type=tt,
-                in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE,
-                mass=mass, optical_length=ol
-            )
-
+            return Eyepiece.from_database(entry)
+        if tp in ["type_barlow", "type_extender"]:
+            return Barlow.from_database(entry)
         if tp == "type_reducer":
-            mag = self._extract_number(name, suffix="x") or 0.8
-            return Reducer(
-                vendor,
-                magnification=mag,
-                optical_length=ol,
-                mass=mass,
-                required_backfocus=55, # Defaulting to 55mm
-                in_connection_type=tt,
-                out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Reducer.from_database(entry)
         if tp == "type_flattener":
-            return Flattener(
-                vendor, optical_length=ol, mass=mass, required_backfocus=55,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Flattener.from_database(entry)
         if tp == "type_corrector":
-            return Corrector(
-                vendor, optical_length=ol, mass=mass, required_backfocus=55,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Corrector.from_database(entry)
         if tp == 'type_diagonal':
-            return Diagonal(vendor=vendor, connection_type=tt, optical_length=ol, mass=mass)
-
+            return Diagonal.from_database(entry)
         if tp == 'type_filter_wheel':
-            return FilterWheel(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return FilterWheel.from_database(entry)
         if tp == 'type_filter_holder':
-            return FilterHolder(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return FilterHolder.from_database(entry)
         if tp == 'type_oag':
-            return OAG(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return OAG.from_database(entry)
         if tp == 'type_rotator':
-            return Rotator(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Rotator.from_database(entry)
         if tp == 'type_focuser':
-            return Focuser(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Focuser.from_database(entry)
         if tp == 'type_adapter':
-            return Adapter(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Adapter.from_database(entry)
         if tp == 'type_spacer':
-            return Spacer(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return Spacer.from_database(entry)
         if tp == 'type_anti_tilt':
-            return AntiTilt(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return AntiTilt.from_database(entry)
         if tp == 'type_flip_mirror':
-            return FlipMirror(
-                vendor, optical_length=ol, mass=mass,
-                in_connection_type=tt, out_connection_type=ct,
-                in_gender=tg or Gender.MALE,
-                out_gender=cg or Gender.FEMALE
-            )
-
+            return FlipMirror.from_database(entry)
         if tp == 'type_guide_scope':
-            aperture, focal_length = self._guess_optical_properties(name)
-            return GuideScope(
-                aperture or 30, focal_length or 120, vendor=vendor,
-                connection_type=ct, connection_gender=cg or Gender.FEMALE,
-                mass=mass, optical_length=ol
-            )
+            return GuideScope.from_database(entry)
 
         return None
-
-    def _extract_number(self, s: str, prefix: str = '', suffix: str = '') -> Optional[float]:
-        pattern = f"{prefix}(\\d+\\.?\\d*){suffix}"
-        match = re.search(pattern, s)
-        if match:
-            return float(match.group(1))
-        return None
-
-    def _guess_optical_properties(self, name: str):
-        # Very simple heuristic
-        aperture = None
-        focal_length = None
-
-        # Match 80ED, 100ED etc
-        match = re.search(r'(\d+)ED', name)
-        if match:
-            aperture = float(match.group(1))
-
-        # Match C8, C11
-        match = re.search(r'C(\d+)', name)
-        if match:
-            inches = float(match.group(1))
-            if inches < 20: # Heuristic for SCTs
-                aperture = inches * 25.4
-
-        # Match 135mm f/2
-        match = re.search(r'(\d+)mm', name)
-        if match:
-            val = float(match.group(1))
-            if val > 10:
-                if 'f/' in name:
-                    focal_length = val
-                else:
-                    aperture = val
-
-        return aperture, focal_length
