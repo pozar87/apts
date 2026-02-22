@@ -92,3 +92,14 @@ class Camera(OutputOpticalEqipment):
       35.9, 23.9, 8256, 5504, "Nikon D850",
       pixel_size=4.35, read_noise=1.1, full_well=48000, quantum_efficiency=54
     )
+
+  @classmethod
+  def ZWO_ASI533MC_PRO(cls):
+    """
+    Factory method for ZWO ASI533MC Pro camera.
+    Sensor: Sony IMX533 (1" Square)
+    """
+    return cls(
+      11.31, 11.31, 3008, 3008, "ZWO ASI533MC Pro",
+      pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80
+    )
