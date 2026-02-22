@@ -113,6 +113,7 @@ class Equipment:
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
             EquipmentTableLabels.PIXEL_SCALE,
+            EquipmentTableLabels.SAMPLING,
             EquipmentTableLabels.NPF_RULE,
             EquipmentTableLabels.RULE_OF_500,
             EquipmentTableLabels.BACKFOCUS_GAP,
@@ -190,6 +191,8 @@ class Equipment:
                 # Total Mass
                 total_mass_value = path.total_mass()
                 total_mass_magnitude = total_mass_value.to("gram").magnitude
+                # Sampling status (default seeing 2.0")
+                sampling_value = path.sampling_status(seeing=2.0)
 
                 rows.append(
                     [
@@ -206,6 +209,7 @@ class Equipment:
                         flipped_horizontally,
                         flipped_vertically,
                         pixel_scale_magnitude,
+                        sampling_value,
                         npf_magnitude,
                         r500_magnitude,
                         bf_gap_magnitude,
@@ -419,14 +423,8 @@ class Equipment:
         ax.spines["left"].set_color(style["AXIS_COLOR"])
         ax.spines["right"].set_color(style["AXIS_COLOR"])
 
-        legend = ax.legend(loc="upper right")
-        if legend:  # Check if legend exists
-            legend.get_frame().set_facecolor(style["AXES_FACE_COLOR"])
-            legend.get_frame().set_edgecolor(style["AXIS_COLOR"])
-            if legend.get_title():  # Check if legend has a title
-                legend.get_title().set_color(style["TEXT_COLOR"])
-            for text, col in zip(legend.get_texts(), legend_labels):
-                text.set_color(style["TEXT_COLOR"])
+        ax.legend(loc="upper right")
+        PlotUtils.style_legend(ax, style)
         return ax
 
     def _filter_and_merge(self, to_plot, multiline_labels, include_naked_eye=False):

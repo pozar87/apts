@@ -14,6 +14,7 @@ class EquipmentTableLabels:
     PIXEL_SCALE = "Pixel scale"
     NPF_RULE = "NPF Rule (s)"
     RULE_OF_500 = "Rule of 500 (s)"
+    SAMPLING = "Sampling"
     IS_NAKED_EYE = "_is_naked_eye"
     BACKFOCUS_GAP = "Backfocus Gap (mm)"
     TOTAL_MASS = "Total Mass (g)"

@@ -45,9 +45,11 @@ class Telescope(OpticalEquipment):
         mass=0,
         optical_length=0,
         connection_gender=Gender.FEMALE,
+        central_obstruction=0,
     ):
         super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self.aperture = aperture * get_unit_registry().mm
+        self.central_obstruction = central_obstruction * get_unit_registry().mm
         self.connection_type = connection_type
         self.connection_gender = connection_gender
         self.t2_output = t2_output
@@ -60,6 +62,22 @@ class Telescope(OpticalEquipment):
 
     def focal_ratio(self):
         return self.focal_length / self.aperture
+
+    def aperture_area(self):
+        """
+        Calculate the light gathering area of the telescope, accounting for central obstruction.
+        :return: area in mm^2
+        """
+        return (
+            numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
+        )
+
+    def effective_aperture(self):
+        """
+        Return the diameter of a clear aperture that would have the same light-gathering area.
+        :return: effective aperture in mm
+        """
+        return numpy.sqrt(self.aperture**2 - self.central_obstruction**2)
 
     def dawes_limit(self):
         """
@@ -86,18 +104,20 @@ class Telescope(OpticalEquipment):
     def limiting_magnitude(self):
         """
         Calculate a telescopes approximate limiting magnitude.
+        Uses effective aperture diameter for better accuracy when central obstruction is present.
         :return: range in magnitude
         """
-        return 7.7 + 5 * numpy.log10(self.aperture.to("cm").magnitude)
+        return 7.7 + 5 * numpy.log10(self.effective_aperture().to("cm").magnitude)
 
     def light_grasp_ratio(self, other_aperture):
         """
         Calculate the light grasp ratio between two telescopes.
+        Uses effective aperture area for better accuracy when central obstruction is present.
         :param other_aperture: aperture in mm
         :return: ratio between telescope and other aperture
         """
         other_aperture *= get_unit_registry().mm
-        return self.aperture**2 / other_aperture**2
+        return self.effective_aperture()**2 / other_aperture**2
 
     def min_useful_zoom(self):
         return self.aperture.magnitude / 6

@@ -1,3 +1,4 @@
+import html
 import logging
 from datetime import datetime, timedelta
 from importlib import resources
@@ -555,7 +556,7 @@ class Observation:
                 else visible_planets_df.to_html(),
                 "messier_table": messier_df.to_html(),
                 "equipment_table": self.equipment.data().to_html(),
-                "place_name": self.place.name,
+                "place_name": html.escape(self.place.name),
                 "lat": numpy.rad2deg(self.place.lat),
                 "lon": numpy.rad2deg(self.place.lon),
                 "hourly_weather": hourly_weather,
