@@ -692,7 +692,7 @@ class Observation:
         )
 
     def get_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None
     ):
         if conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
@@ -886,6 +886,6 @@ class Observation:
         return analysis_results
 
     def get_hourly_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None
     ):
         return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name)
