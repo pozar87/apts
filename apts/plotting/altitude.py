@@ -267,9 +267,7 @@ def generate_plot_planets(
             default_planet_color,  # type: ignore
         )
 
-        time_series = curve_df["Time"].apply(
-            lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-        )
+        time_series = curve_df["UTC_datetime"]
         valid_times = pd.notna(time_series)
 
         # Add Matplotlib-compatible time column for pandas plotting
