@@ -29,7 +29,8 @@ def test_camera_fov():
     c = Camera(sensor_width=36, sensor_height=24, width=6000, height=4000)
     t = Telescope(aperture=150, focal_length=750)
     fov = c.field_of_view(t, 1, 1)
-    assert np.isclose(fov.magnitude, 1.8336)
+    # Accurate formula: 2 * atan(24 / (2 * 750)) = 1.8333...
+    assert np.isclose(fov.magnitude, 1.8333085)
 
 
 def test_camera_output_type():

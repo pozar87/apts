@@ -33,14 +33,45 @@ class Camera(OutputOpticalEqipment):
   def pixel_size(self):
     if self._pixel_size is not None:
       return self._pixel_size
-    return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(
+    return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / numpy.sqrt(
       self.width ** 2 + self.height ** 2)
 
   def _zoom_divider(self):
     return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)
 
-  def field_of_view(self, telescop, zoom, barlow_magnification):
-    return self.sensor_height * 3438 / (telescop.focal_length * barlow_magnification) / 60 * get_unit_registry().deg
+  def field_of_view_width(self, telescope, zoom, barlow_magnification):
+    """
+    Calculates horizontal field of view in degrees using the accurate arctan formula.
+    """
+    f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+    d = self.sensor_width.to("mm").magnitude
+    if f == 0:
+      return 0 * get_unit_registry().deg
+    return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
+  def field_of_view_height(self, telescope, zoom, barlow_magnification):
+    """
+    Calculates vertical field of view in degrees using the accurate arctan formula.
+    """
+    f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+    d = self.sensor_height.to("mm").magnitude
+    if f == 0:
+      return 0 * get_unit_registry().deg
+    return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
+  def field_of_view_diagonal(self, telescope, zoom, barlow_magnification):
+    """
+    Calculates diagonal field of view in degrees using the accurate arctan formula.
+    """
+    f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+    d = numpy.sqrt(self.sensor_width.to("mm").magnitude**2 + self.sensor_height.to("mm").magnitude**2)
+    if f == 0:
+      return 0 * get_unit_registry().deg
+    return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
+  def field_of_view(self, telescope, zoom, barlow_magnification):
+    # Standard field_of_view returns height for cameras in this library
+    return self.field_of_view_height(telescope, zoom, barlow_magnification)
 
   def output_type(self):
     return OpticalType.IMAGE
@@ -102,4 +133,48 @@ class Camera(OutputOpticalEqipment):
     return cls(
       11.31, 11.31, 3008, 3008, "ZWO ASI533MC Pro",
       pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80
+    )
+
+  @classmethod
+  def ZWO_ASI533MM_PRO(cls):
+    """
+    Factory method for ZWO ASI533MM Pro camera.
+    Sensor: Sony IMX533 (1" Square)
+    """
+    return cls(
+      11.31, 11.31, 3008, 3008, "ZWO ASI533MM Pro",
+      pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91
+    )
+
+  @classmethod
+  def ZWO_ASI2600MM_PRO(cls):
+    """
+    Factory method for ZWO ASI2600MM Pro camera.
+    Sensor: Sony IMX571 (APS-C)
+    """
+    return cls(
+      23.5, 15.7, 6248, 4176, "ZWO ASI2600MM Pro",
+      pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91
+    )
+
+  @classmethod
+  def ZWO_ASI6200MM_PRO(cls):
+    """
+    Factory method for ZWO ASI6200MM Pro camera.
+    Sensor: Sony IMX455 (Full Frame)
+    """
+    return cls(
+      36.0, 24.0, 9576, 6388, "ZWO ASI6200MM Pro",
+      pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=91
+    )
+
+  @classmethod
+  def ZWO_ASI6200MC_PRO(cls):
+    """
+    Factory method for ZWO ASI6200MC Pro camera.
+    Sensor: Sony IMX455 (Full Frame)
+    """
+    return cls(
+      36.0, 24.0, 9576, 6388, "ZWO ASI6200MC Pro",
+      pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=80
     )

@@ -27,7 +27,8 @@ class SmartTelescopeTest(unittest.TestCase):
         self.assertEqual(len(paths), 1, "There should be exactly one path to the image node.")
         path = paths[0]
         self.assertEqual(path.telescope, st, "The telescope in the path should be the smart telescope.")
-        self.assertAlmostEqual(path.fov().magnitude, 0.3438, places=4)
+        # New accurate formula: 2 * atan(1.2 / (2 * 200)) = 0.34377...
+        self.assertAlmostEqual(path.fov().magnitude, 0.34377, places=5)
 
     def test_smart_telescope_no_visual_path(self):
         # Given

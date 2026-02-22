@@ -135,5 +135,29 @@ class TestOptics(unittest.TestCase):
         self.assertAlmostEqual(cast(Any, r500).magnitude, expected, places=3)
         self.assertEqual(cast(Any, r500).units, get_unit_registry().second)
 
+    def test_optical_path_fov_methods(self):
+        t = MagicMock(spec=Telescope)
+        t.focal_length = 1000 * get_unit_registry().mm
+
+        c = MagicMock(spec=Camera)
+        c.sensor_width = 36 * get_unit_registry().mm
+        c.sensor_height = 24 * get_unit_registry().mm
+
+        # Mock field_of_view_width etc. since we are testing OpticalPath's delegation
+        c.field_of_view_width.return_value = 2.0 * get_unit_registry().deg
+        c.field_of_view_height.return_value = 1.0 * get_unit_registry().deg
+        c.field_of_view_diagonal.return_value = 2.2 * get_unit_registry().deg
+
+        path = OpticalPath(t, [], [], [], c)
+
+        self.assertEqual(path.fov_width().magnitude, 2.0)
+        self.assertEqual(path.fov_height().magnitude, 1.0)
+        self.assertEqual(path.fov_diagonal().magnitude, 2.2)
+
+        # Verify calls
+        c.field_of_view_width.assert_called_once()
+        c.field_of_view_height.assert_called_once()
+        c.field_of_view_diagonal.assert_called_once()
+
 if __name__ == "__main__":
     unittest.main()

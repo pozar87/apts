@@ -45,9 +45,9 @@ class SmartTelescope(Telescope):
 
     def fov(self):
         """
-        Calculate the field of view for the smart telescope.
+        Calculate the field of view for the smart telescope in degrees using the accurate arctan formula.
         """
-        return self.sensor_height * 3438 / self.focal_length / 60 * get_unit_registry().deg
+        return 2 * numpy.degrees(numpy.arctan(self.sensor_height.to("mm").magnitude / (2 * self.focal_length.to("mm").magnitude))) * get_unit_registry().deg
 
     def exit_pupil(self):
         return numpy.nan * get_unit_registry().mm
