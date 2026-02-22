@@ -3,7 +3,7 @@ import logging
 import math
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
-from typing import cast
+from typing import Any, Optional, Tuple, cast
 
 import pandas as pd
 import requests_cache
@@ -159,7 +159,7 @@ class WeatherProvider(ABC):
         )
 
     @abstractmethod
-    def download_data(self, hours: int = 48) -> pd.DataFrame:
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
         pass
 
     def _empty_df(self) -> pd.DataFrame:
@@ -188,7 +188,7 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         with get_session().get(url) as data:
@@ -251,7 +251,7 @@ class PirateWeather(WeatherProvider):
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}/next{hours}hours?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
@@ -341,7 +341,7 @@ class VisualCrossing(WeatherProvider):
 class StormGlass(WeatherProvider):
     API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}&start={start}&end={end}"
 
-    def download_data(self, hours: int = 48) -> pd.DataFrame:
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
         params = [
             "airTemperature",
             "pressure",
@@ -505,113 +505,197 @@ class StormGlass(WeatherProvider):
 
 
 class Meteoblue(WeatherProvider):
-    API_URL = "https://my.meteoblue.com/packages/basic-1h_clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json&forecast_days={forecast_days}"
+    BASIC_URL = "https://my.meteoblue.com/packages/basic-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json&forecast_days={forecast_days}"
+    CLOUDS_URL = "https://my.meteoblue.com/packages/clouds-1h?lat={lat}&lon={lon}&apikey={apikey}&format=json&forecast_days={forecast_days}"
 
-    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
-        forecast_days = math.ceil(hours / 24)
-        url = self.API_URL.format(
-            apikey=self.api_key,
-            lat=self.lat,
-            lon=self.lon,
-            forecast_days=forecast_days,
-        )
-        self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
-                data.raise_for_status()
-                json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
+    def _parse_meteoblue_response(self, data_text: str) -> pd.DataFrame:
+        try:
+            json_data = json.loads(data_text)
+        except Exception as e:
+            self._log_download_error(e, data_text)
+            return pd.DataFrame()
 
-            if "data_1h" not in json_data:
-                logger.error(
-                    f"KeyError 'data_1h' in weather data. Full response: {json_data}"
-                )
-                return self._empty_df()
+        if "data_1h" not in json_data:
+            logger.error(
+                f"KeyError 'data_1h' in weather data. Full response: {json_data}"
+            )
+            return pd.DataFrame()
 
-            df = pd.DataFrame(json_data["data_1h"])
+        df = pd.DataFrame(json_data["data_1h"])
 
-            # Rename columns to match the standard format
-            rename_map = {
-                "time": "time",
-                "pictocode": "summary",
-                "snowfraction": "precipType",
-                "precipitation_probability": "precipProbability",
-                "precipitation": "precipIntensity",
-                "temperature": "temperature",
-                "felttemperature": "apparentTemperature",
-                "dewpointtemperature": "dewPoint",
-                "relativehumidity": "humidity",
-                "windspeed": "windSpeed",
-                "totalcloudcover": "cloudCover",
-                "visibility": "visibility",
-                "sealevelpressure": "pressure",
-                "ozone_concentration": "ozone",
-                "fog_probability": "fog",
-            }
-            df.rename(columns=rename_map, inplace=True)
+        # Rename columns to match the standard format
+        rename_map = {
+            "time": "time",
+            "pictocode": "summary",
+            "snowfraction": "precipType",
+            "precipitation_probability": "precipProbability",
+            "precipitation": "precipIntensity",
+            "temperature": "temperature",
+            "felttemperature": "apparentTemperature",
+            "dewpointtemperature": "dewPoint",
+            "relativehumidity": "humidity",
+            "windspeed": "windSpeed",
+            "totalcloudcover": "cloudCover",
+            "visibility": "visibility",
+            "sealevelpressure": "pressure",
+            "ozone_concentration": "ozone",
+            "fog_probability": "fog",
+        }
+        # Only rename columns that actually exist in the response
+        existing_rename_map = {k: v for k, v in rename_map.items() if k in df.columns}
+        df.rename(columns=existing_rename_map, inplace=True)
 
-            # Convert units and types
+        # Convert units and types
+        if "time" in df.columns:
             df["time"] = (
                 pd.to_datetime(df["time"])
                 .dt.tz_localize("UTC")
                 .dt.tz_convert(self.local_timezone)
             )
-            if "precipType" in df.columns:
-                df["precipType"] = df["precipType"].apply(
-                    lambda x: "snow" if x > 0 else "rain"
+
+        if "precipType" in df.columns:
+            df["precipType"] = df["precipType"].apply(
+                lambda x: "snow" if x > 0 else "rain"
+            )
+
+        if "visibility" in df.columns:
+            df["visibility"] = (
+                pd.to_numeric(df["visibility"], errors="coerce") / 1000
+            )  # type: ignore
+
+        if "fog" in df.columns:
+            df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
+        elif "visibility" in df.columns:
+            # Fallback to visibility if fog_probability is not available
+            df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
+
+        return df
+
+    def _is_basic_weather_good(self, df, conditions, observation_window) -> bool:
+        start, stop = observation_window
+        # Filter data for the observation window
+        df_window = df[(df.time >= start) & (df.time <= stop)].copy()
+        if df_window.empty:
+            return True
+
+        good_hours = 0
+        for _, row in df_window.iterrows():
+            is_good = True
+            # Check precipitation
+            if pd.notna(row.get("precipProbability")) and row.get("precipProbability") != "none":
+                if (
+                    float(row.precipProbability)
+                    >= conditions.max_precipitation_probability
+                ):
+                    is_good = False
+            if (
+                is_good
+                and pd.notna(row.get("precipIntensity"))
+                and row.get("precipIntensity") != "none"
+            ):
+                if (
+                    float(row.precipIntensity)
+                    >= conditions.max_precipitation_intensity
+                ):
+                    is_good = False
+            # Check wind
+            if (
+                is_good
+                and pd.notna(row.get("windSpeed"))
+                and row.get("windSpeed") != "none"
+            ):
+                if float(row.get("windSpeed")) >= conditions.max_wind:
+                    is_good = False
+            # Check temperature
+            if (
+                is_good
+                and pd.notna(row.get("temperature"))
+                and row.get("temperature") != "none"
+            ):
+                temp = float(row.get("temperature"))
+                if (
+                    temp <= conditions.min_temperature
+                    or temp >= conditions.max_temperature
+                ):
+                    is_good = False
+
+            if is_good:
+                good_hours += 1
+
+        return (good_hours / len(df_window)) * 100 > conditions.min_weather_goodness
+
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
+        forecast_days = math.ceil(hours / 24)
+
+        # 1. Fetch BASIC package
+        url_basic = self.BASIC_URL.format(
+            apikey=self.api_key,
+            lat=self.lat,
+            lon=self.lon,
+            forecast_days=forecast_days,
+        )
+        self._log_download_url(url_basic)
+        with get_session().get(url_basic) as resp_basic:
+            try:
+                resp_basic.raise_for_status()
+                df = self._parse_meteoblue_response(resp_basic.text)
+            except Exception as e:
+                self._log_download_error(e, resp_basic.text)
+                return self._empty_df()
+
+        if df.empty:
+            return self._empty_df()
+
+        # 2. Check if weather is already bad based on basic data
+        if conditions is not None and observation_window is not None:
+            if not self._is_basic_weather_good(df, conditions, observation_window):
+                logger.info(
+                    "Meteoblue: basic weather conditions not met, skipping clouds-1h fetch and aurora enrichment."
                 )
+                return self._finalize_df(df, hours)
 
-            if "visibility" in df.columns:
-                df["visibility"] = (
-                    pd.to_numeric(df["visibility"], errors="coerce") / 1000
-                )  # type: ignore
+        # 3. Fetch CLOUDS package
+        url_clouds = self.CLOUDS_URL.format(
+            apikey=self.api_key,
+            lat=self.lat,
+            lon=self.lon,
+            forecast_days=forecast_days,
+        )
+        self._log_download_url(url_clouds)
+        with get_session().get(url_clouds) as resp_clouds:
+            try:
+                resp_clouds.raise_for_status()
+                df_clouds = self._parse_meteoblue_response(resp_clouds.text)
+                if not df_clouds.empty:
+                    # Merge with basic data
+                    df = pd.merge(df, df_clouds, on="time", suffixes=("", "_clouds"))
+            except Exception as e:
+                self._log_download_error(e, resp_clouds.text)
+                # Continue with basic data only if clouds fetch fails
 
-            if "fog" in df.columns:
-                df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
+        df = self._finalize_df(df, hours)
+        return self._enrich_with_aurora_data(df)
 
-            elif "visibility" in df.columns:
-                # Fallback to visibility if fog_probability is not available
-                df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
+    def _finalize_df(self, df: pd.DataFrame, hours: int) -> pd.DataFrame:
+        # Ensure all required columns are present
+        required_columns = self.REQUIRED_COLUMNS.copy()
+        if "aurora" in required_columns:
+            required_columns.remove("aurora")
 
-            # Ensure all required columns are present
-            required_columns = [
-                "time",
-                "summary",
-                "precipType",
-                "precipProbability",
-                "precipIntensity",
-                "temperature",
-                "apparentTemperature",
-                "dewPoint",
-                "humidity",
-                "windSpeed",
-                "cloudCover",
-                "visibility",
-                "pressure",
-                "ozone",
-                "fog",
-            ]
-            for col in required_columns:
-                if col not in df.columns:
-                    df[col] = "none"
+        for col in required_columns:
+            if col not in df.columns:
+                df[col] = "none"
 
-            # Filter by hours
-            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
-
-            df = self._enrich_with_aurora_data(df)
-            if "aurora" in df.columns:
-                required_columns.append("aurora")
-            return cast(pd.DataFrame, df[required_columns])
+        # Filter by hours
+        cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+        df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+        return cast(pd.DataFrame, df[required_columns])
 
 
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self, hours: int = 48) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         with get_session().get(url) as data:
