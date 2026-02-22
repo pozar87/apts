@@ -388,9 +388,9 @@ class Observation:
 
         return True
 
-    def is_weather_good(self, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None):
+    def is_weather_good(self, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False):
         effective_conditions = conditions or self.conditions
-        if not self._is_moon_condition_met(effective_conditions):
+        if not force and not self._is_moon_condition_met(effective_conditions):
             return False
 
         if self.place.weather is None:
@@ -400,6 +400,7 @@ class Observation:
             self.place.get_weather(provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
+                force=force,
             )
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
@@ -692,13 +693,13 @@ class Observation:
         )
 
     def get_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
     ):
         if conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
 
         effective_conditions = conditions or self.conditions
-        if not self._is_moon_condition_met(effective_conditions):
+        if not force and not self._is_moon_condition_met(effective_conditions):
             logger.info(
                 "get_weather_analysis: Moon condition not met, skipping weather fetch."
             )
@@ -708,6 +709,7 @@ class Observation:
             self.place.get_weather(provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
+                force=force,
             )
             if self.place.weather is None:
                 logger.warning("Weather data unavailable after fetch attempt.")
@@ -886,6 +888,6 @@ class Observation:
         return analysis_results
 
     def get_hourly_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
     ):
-        return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name)
+        return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name, force=force)

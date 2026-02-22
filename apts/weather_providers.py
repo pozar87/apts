@@ -159,7 +159,7 @@ class WeatherProvider(ABC):
         )
 
     @abstractmethod
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
         pass
 
     def _empty_df(self) -> pd.DataFrame:
@@ -188,7 +188,7 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         with get_session().get(url) as data:
@@ -251,7 +251,7 @@ class PirateWeather(WeatherProvider):
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}/next{hours}hours?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
@@ -341,7 +341,7 @@ class VisualCrossing(WeatherProvider):
 class StormGlass(WeatherProvider):
     API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}&start={start}&end={end}"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
         params = [
             "airTemperature",
             "pressure",
@@ -624,7 +624,7 @@ class Meteoblue(WeatherProvider):
 
         return (good_hours / len(df_window)) * 100 > conditions.min_weather_goodness
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         forecast_days = math.ceil(hours / 24)
 
         # 1. Fetch BASIC package
@@ -647,7 +647,7 @@ class Meteoblue(WeatherProvider):
             return self._empty_df()
 
         # 2. Check if weather is already bad based on basic data
-        if conditions is not None and observation_window is not None:
+        if not force and conditions is not None and observation_window is not None:
             if not self._is_basic_weather_good(df, conditions, observation_window):
                 logger.info(
                     "Meteoblue: basic weather conditions not met, skipping clouds-1h fetch and aurora enrichment."
@@ -695,7 +695,7 @@ class Meteoblue(WeatherProvider):
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None) -> pd.DataFrame:  # pyright: ignore
+    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         with get_session().get(url) as data:

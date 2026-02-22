@@ -166,7 +166,7 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime.datetime, datetime.datetime]] = None):
+    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime.datetime, datetime.datetime]] = None, force: bool = False):
         self.weather = Weather(
             self.lat_decimal,
             self.lon_decimal,
@@ -175,6 +175,7 @@ class Place:
             hours=hours,
             conditions=conditions,
             observation_window=observation_window,
+            force=force,
         )
 
     def _previous_setting_time(self, obj_name, start):
