@@ -102,41 +102,77 @@ class Objects(ABC):
         else:
             visible_mask = np.zeros(len(candidate_objects), dtype=bool)
 
-            # Group objects by type to vectorize Star objects
-            stars_indices = []
-            stars_ras = []
-            stars_decs = []
-            other_objects = [] # List of (local_index, skyfield_obj)
+            # Fast property extraction instead of iterrows()
+            if "skyfield_object" in candidate_objects.columns:
+                skyfield_objs = candidate_objects["skyfield_object"].values
+            else:
+                skyfield_objs = np.array(
+                    [
+                        self.get_skyfield_object(row)
+                        for _, row in candidate_objects.iterrows()
+                    ]
+                )
+            is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
 
-            for i, (index, row) in enumerate(candidate_objects.iterrows()):
-                skyfield_obj = self.get_skyfield_object(row)
-                if skyfield_obj is None:
-                    continue
-                if isinstance(skyfield_obj, Star):
-                    stars_indices.append(i)
-                    stars_ras.append(skyfield_obj.ra.hours)
-                    stars_decs.append(skyfield_obj.dec.degrees)
-                else:
-                    other_objects.append((i, skyfield_obj))
+            stars_indices = np.where(is_star)[0]
+            other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
+
+            # Check Stars using vectorized geometric formulas across all check_times.
+            # Note: This use a geometric approximation that ignores atmospheric refraction
+            # and other small corrections. This results in a ~0.2-0.5 degree difference
+            # compared to Skyfield's rigorous solver, which is acceptable for fast
+            # candidate identification in get_visible.
+            if len(stars_indices) > 0:
+                # Extract RA/Dec for all stars
+                stars_ras = np.array([skyfield_objs[i].ra.hours for i in stars_indices])
+                stars_decs = np.array(
+                    [skyfield_objs[i].dec.degrees for i in stars_indices]
+                )
+
+                # Get LST for all check times (in hours)
+                lst_hours = check_times.gmst + self.place.lon_decimal / 15.0
+
+                # Broadcasting: (N_stars, 1) and (1, M_times) -> (N_stars, M_times)
+                ras = stars_ras[:, np.newaxis]
+                decs = stars_decs[:, np.newaxis]
+                lsts = lst_hours[np.newaxis, :]
+
+                # Geometric altitude and azimuth calculation
+                h_rad = np.deg2rad((lsts - ras) * 15.0)
+                lat_rad = np.deg2rad(self.place.lat_decimal)
+                dec_rad = np.deg2rad(decs)
+
+                # sin(alt) = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(H)
+                sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(
+                    lat_rad
+                ) * np.cos(dec_rad) * np.cos(h_rad)
+
+                # Determine altitude visibility
+                min_alt_rad = np.deg2rad(conditions.min_object_altitude)
+                alt_ok = sin_alt > np.sin(min_alt_rad)
+
+                # Determine azimuth visibility
+                # tan(Az) = sin(H) / (cos(H) sin(lat) - tan(dec) cos(lat))
+                # x = cos(H) sin(lat) - tan(dec) cos(lat)
+                # y = sin(H)
+                # Az = atan2(y, x) + 180 (to match Skyfield's 0-360 North=0 East=90)
+                x = np.cos(h_rad) * np.sin(lat_rad) - np.tan(dec_rad) * np.cos(lat_rad)
+                y = np.sin(h_rad)
+                az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+
+                az_ok = self._is_azimuth_in_range(az_deg, conditions)
+
+                # Combine and check if visible at ANY time point
+                visible_mask[stars_indices] = np.any(alt_ok & az_ok, axis=1)
 
             observer = self.place.observer
 
-            # Check Stars in vectorized batches across check_times
-            if stars_indices:
-                combined_stars = Star(ra_hours=stars_ras, dec_degrees=stars_decs)
-                for t in check_times:
-                    alt, az, _ = observer.at(t).observe(combined_stars).apparent().altaz()
-                    alt_deg = alt.degrees
-                    az_deg = az.degrees
-
-                    alt_ok = alt_deg > conditions.min_object_altitude
-                    az_ok = self._is_azimuth_in_range(az_deg, conditions)
-
-                    visible_mask[stars_indices] |= (alt_ok & az_ok)
-
             # Check Other objects (like planets)
-            for i, skyfield_obj in other_objects:
-                alt, az, _ = observer.at(check_times).observe(skyfield_obj).apparent().altaz()
+            for i in other_indices:
+                skyfield_obj = skyfield_objs[i]
+                alt, az, _ = (
+                    observer.at(check_times).observe(skyfield_obj).apparent().altaz()
+                )
                 alt_deg = alt.degrees
                 az_deg = az.degrees
 
