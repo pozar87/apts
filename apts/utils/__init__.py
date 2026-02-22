@@ -1,5 +1,6 @@
 import io
-from typing import overload, Literal, Tuple, Union, Any
+import re
+from typing import overload, Literal, Tuple, Union, Any, Optional
 from enum import Enum
 
 from matplotlib import pyplot
@@ -137,3 +138,59 @@ class Utils:
         plot.spines['top'].set_color(style['AXIS_COLOR'])
         plot.spines['left'].set_color(style['AXIS_COLOR'])
         plot.spines['right'].set_color(style['AXIS_COLOR'])
+
+    @staticmethod
+    def map_conn(thread_str):
+        if not thread_str:
+            return ConnectionType.F_1_25  # Default
+        # Try to match ConnectionType
+        for ct in ConnectionType:
+            if ct.value.lower() in thread_str.lower():
+                return ct
+        return ConnectionType.F_1_25
+
+    @staticmethod
+    def map_gender(gender_str):
+        if gender_str in ["Male", "M"]:
+            return Gender.MALE
+        if gender_str in ["Female", "F"]:
+            return Gender.FEMALE
+        return None
+
+    @staticmethod
+    def extract_number(s: str, prefix: str = "", suffix: str = "") -> Optional[float]:
+        pattern = f"{prefix}(\\d+\\.?\\d*){suffix}"
+        match = re.search(pattern, s)
+        if match:
+            return float(match.group(1))
+        return None
+
+    @staticmethod
+    def guess_optical_properties(name: str):
+        # Very simple heuristic
+        aperture = None
+        focal_length = None
+
+        # Match 80ED, 100ED etc
+        match = re.search(r"(\d+)ED", name)
+        if match:
+            aperture = float(match.group(1))
+
+        # Match C8, C11
+        match = re.search(r"C(\d+)", name)
+        if match:
+            inches = float(match.group(1))
+            if inches < 20:  # Heuristic for SCTs
+                aperture = inches * 25.4
+
+        # Match 135mm f/2
+        match = re.search(r"(\d+)mm", name)
+        if match:
+            val = float(match.group(1))
+            if val > 10:
+                if "f/" in name:
+                    focal_length = val
+                else:
+                    aperture = val
+
+        return aperture, focal_length
