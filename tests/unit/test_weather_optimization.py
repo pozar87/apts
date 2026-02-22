@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import pandas as pd
 import datetime
 from apts.observations import Observation
@@ -100,7 +100,7 @@ class TestWeatherOptimization(unittest.TestCase):
              mock_datetime.combine = datetime.datetime.combine
              mock_datetime.timedelta = datetime.timedelta
              mock_datetime.timezone = datetime.timezone
-             df = provider.download_data(hours=48, conditions=conditions, observation_window=window)
+             provider.download_data(hours=48, conditions=conditions, observation_window=window)
 
         # Should have called get() only ONCE (for basic-1h)
         self.assertEqual(mock_get_session.return_value.get.call_count, 1)
@@ -145,7 +145,7 @@ class TestWeatherOptimization(unittest.TestCase):
              mock_datetime.combine = datetime.datetime.combine
              mock_datetime.timedelta = datetime.timedelta
              mock_datetime.timezone = datetime.timezone
-             df = provider.download_data(hours=48, conditions=conditions, observation_window=window)
+             provider.download_data(hours=48, conditions=conditions, observation_window=window)
 
         # Should have called get() TWICE
         self.assertEqual(mock_get_session.return_value.get.call_count, 2)

@@ -1,6 +1,5 @@
-import pytest
 import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from apts.notify import Notify
 import smtplib
 
