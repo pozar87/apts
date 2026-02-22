@@ -32,29 +32,6 @@ class Camera(OutputOpticalEqipment):
       connection_type=tt, connection_gender=tg or Gender.FEMALE,
       backfocus=ol, mass=mass, optical_length=ol
     )
-  @classmethod
-  def from_database(cls, entry):
-    from ..utils import Utils, Gender
-    brand = entry["brand"]
-    name = entry["name"]
-    vendor = f"{brand} {name}"
-    ol = entry.get("optical_length", 0)
-    mass = entry.get("mass", 0)
-    tt = Utils.map_conn(entry.get("tside_thread"))
-    tg = Utils.map_gender(entry.get("tside_gender"))
-    sw, sh = 23.5, 15.7
-    w, h = 6000, 4000
-    if "full frame" in name.lower() or "36x24" in name.lower():
-      sw, sh = 35.9, 23.9
-      w, h = 8256, 5504
-    elif "4/3" in name.lower() or "micro four thirds" in name.lower():
-      sw, sh = 17.3, 13.0
-      w, h = 4656, 3520
-    return cls(
-      sw, sh, w, h, vendor=vendor,
-      connection_type=tt, connection_gender=tg or Gender.FEMALE,
-      backfocus=ol, mass=mass, optical_length=ol
-    )
   """
   Class representing DSLR camera mounted via T2 adapter
   """
@@ -136,9 +113,18 @@ class Camera(OutputOpticalEqipment):
     Factory method for Nikon D850 camera.
     Sensor: Full Frame
     """
+    entry = cls._DATABASE['Nikon_D850']
+    from ..utils import Utils, Gender
+    vendor = f"{entry['brand']} {entry['name']}"
+    ol = entry.get("optical_length", 0)
+    mass = entry.get("mass", 0)
+    tt = Utils.map_conn(entry.get("tside_thread"))
+    tg = Utils.map_gender(entry.get("tside_gender"))
     return cls(
-      35.9, 23.9, 8256, 5504, "Nikon D850",
-      pixel_size=4.35, read_noise=1.1, full_well=48000, quantum_efficiency=54
+      35.9, 23.9, 8256, 5504, vendor=vendor,
+      connection_type=tt, connection_gender=tg or Gender.FEMALE,
+      pixel_size=4.35, read_noise=1.1, full_well=48000, quantum_efficiency=54,
+      backfocus=ol, mass=mass, optical_length=ol
     )
 
   @classmethod
@@ -2067,10 +2053,6 @@ class Camera(OutputOpticalEqipment):
   @classmethod
   def Nikon_D810(cls):
     return cls.from_database(cls._DATABASE['Nikon_D810'])
-
-  @classmethod
-  def Nikon_D850(cls):
-    return cls.from_database(cls._DATABASE['Nikon_D850'])
 
   @classmethod
   def Nikon_D610(cls):
