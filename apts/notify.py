@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
+from .secrets import mask_text
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,8 @@ class Notify:
             logger.info("Email sent successfully")
             return True
         except Exception as e:
-            logger.error(f"Failed to send email: {e}", exc_info=True)
+            error_msg = mask_text(str(e), self.smtp_password) if self.smtp_password else str(e)
+            logger.error(f"Failed to send email: {error_msg}")
             return False
         finally:
             try:

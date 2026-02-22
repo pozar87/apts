@@ -191,14 +191,11 @@ class PirateWeather(WeatherProvider):
     def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             columns = [
                 "time",
@@ -245,7 +242,10 @@ class PirateWeather(WeatherProvider):
             result = cast(
                 pd.DataFrame, result[result.time <= cutoff.astimezone(self.local_timezone)]
             )
-        return self._enrich_with_aurora_data(result)
+            return self._enrich_with_aurora_data(result)
+        except Exception as e:
+            self._log_download_error(e, data.text if "data" in locals() else "")
+            return self._empty_df()
 
 
 class VisualCrossing(WeatherProvider):
@@ -256,14 +256,11 @@ class VisualCrossing(WeatherProvider):
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "days" not in json_data:
                 logger.error(
@@ -336,6 +333,9 @@ class VisualCrossing(WeatherProvider):
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if "data" in locals() else "")
+            return self._empty_df()
 
 
 class StormGlass(WeatherProvider):
@@ -367,14 +367,11 @@ class StormGlass(WeatherProvider):
         )
         self._log_download_url(url)
         headers = {"Authorization": self.api_key}
-        with get_session().get(url, headers=headers) as data:
-            logger.debug(f"Data {data}")
-            try:
+        try:
+            with get_session().get(url, headers=headers) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "hours" not in json_data:
                 logger.error(
@@ -502,6 +499,9 @@ class StormGlass(WeatherProvider):
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if "data" in locals() else "")
+            return self._empty_df()
 
 
 class Meteoblue(WeatherProvider):
@@ -635,13 +635,13 @@ class Meteoblue(WeatherProvider):
             forecast_days=forecast_days,
         )
         self._log_download_url(url_basic)
-        with get_session().get(url_basic) as resp_basic:
-            try:
+        try:
+            with get_session().get(url_basic) as resp_basic:
                 resp_basic.raise_for_status()
                 df = self._parse_meteoblue_response(resp_basic.text)
-            except Exception as e:
-                self._log_download_error(e, resp_basic.text)
-                return self._empty_df()
+        except Exception as e:
+            self._log_download_error(e, resp_basic.text if "resp_basic" in locals() else "")
+            return self._empty_df()
 
         if df.empty:
             return self._empty_df()
@@ -662,16 +662,16 @@ class Meteoblue(WeatherProvider):
             forecast_days=forecast_days,
         )
         self._log_download_url(url_clouds)
-        with get_session().get(url_clouds) as resp_clouds:
-            try:
+        try:
+            with get_session().get(url_clouds) as resp_clouds:
                 resp_clouds.raise_for_status()
                 df_clouds = self._parse_meteoblue_response(resp_clouds.text)
                 if not df_clouds.empty:
                     # Merge with basic data
                     df = pd.merge(df, df_clouds, on="time", suffixes=("", "_clouds"))
-            except Exception as e:
-                self._log_download_error(e, resp_clouds.text)
-                # Continue with basic data only if clouds fetch fails
+        except Exception as e:
+            self._log_download_error(e, resp_clouds.text if "resp_clouds" in locals() else "")
+            # Continue with basic data only if clouds fetch fails
 
         df = self._finalize_df(df, hours)
         return self._enrich_with_aurora_data(df)
@@ -698,14 +698,11 @@ class OpenWeatherMap(WeatherProvider):
     def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "hourly" not in json_data:
                 logger.error(
@@ -801,3 +798,6 @@ class OpenWeatherMap(WeatherProvider):
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if "data" in locals() else "")
+            return self._empty_df()
