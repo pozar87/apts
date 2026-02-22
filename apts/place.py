@@ -328,7 +328,16 @@ class Place:
         df = df.rename(columns={"Altitude": "Moon altitude"})
 
         # Vectorized moon phase calculation
-        valid_mask = df["UTC_datetime"].notna()
+        if "UTC_datetime" in df.columns:
+            valid_mask = df["UTC_datetime"].notna()
+        else:
+            # Fallback for mocks
+            df["UTC_datetime"] = df["Time"].apply(
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+            )
+            df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
+            valid_mask = df["UTC_datetime"].notna()
+
         if valid_mask.any():
             # Convert valid datetimes back to a Skyfield Time vector
             times_vec = self.ts.from_datetimes(
@@ -351,6 +360,14 @@ class Place:
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
+
+        if "UTC_datetime" not in df.columns:
+            # Fallback for mocks
+            df["UTC_datetime"] = df["Time"].apply(
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+            )
+            df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
+
         df["Time"] = df["UTC_datetime"].dt.time
         return df
 
