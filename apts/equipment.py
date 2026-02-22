@@ -113,6 +113,7 @@ class Equipment:
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
             EquipmentTableLabels.PIXEL_SCALE,
+            EquipmentTableLabels.SAMPLING,
             EquipmentTableLabels.NPF_RULE,
             EquipmentTableLabels.RULE_OF_500,
             EquipmentTableLabels.IS_NAKED_EYE,
@@ -178,6 +179,9 @@ class Equipment:
                 else:
                     r500_magnitude = numpy.nan
 
+                # Sampling status (default seeing 2.0")
+                sampling_value = path.sampling_status(seeing=2.0)
+
                 rows.append(
                     [
                         path.label(),
@@ -193,6 +197,7 @@ class Equipment:
                         flipped_horizontally,
                         flipped_vertically,
                         pixel_scale_magnitude,
+                        sampling_value,
                         npf_magnitude,
                         r500_magnitude,
                         is_naked_eye,
