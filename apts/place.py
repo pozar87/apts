@@ -4,7 +4,7 @@ from functools import lru_cache
 from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 import matplotlib.font_manager as font_manager
 import numpy as np
@@ -166,13 +166,16 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48):
+    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime.datetime, datetime.datetime]] = None, force: bool = False):
         self.weather = Weather(
             self.lat_decimal,
             self.lon_decimal,
             self.local_timezone,
             provider_name=provider_name,
             hours=hours,
+            conditions=conditions,
+            observation_window=observation_window,
+            force=force,
         )
 
     def _previous_setting_time(self, obj_name, start):

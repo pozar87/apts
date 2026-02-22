@@ -920,7 +920,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.max_wind = int(15.0)
         self.obs.conditions.min_temperature = int(0.0)
         self.obs.conditions.max_temperature = int(25.0)
-        self.obs.conditions.max_moon_illumination = int(50.0)
+        self.obs.conditions.max_moon_illumination = int(100.0)
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
@@ -1166,7 +1166,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_instance.get_critical_data.return_value = mock_weather_df
 
         # Mock self.obs.place.get_weather() to set self.obs.place.weather
-        def mock_get_weather():
+        def mock_get_weather(*args, **kwargs):
             self.obs.place.weather = mock_weather_instance
 
         self.obs.place.get_weather = MagicMock(side_effect=mock_get_weather)
@@ -1365,7 +1365,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Mock get_weather to set weather data when called
         mock_weather_fetched = MagicMock()
 
-        def mock_get_weather_side_effect():
+        def mock_get_weather_side_effect(*args, **kwargs):
             self.obs.place.weather = (
                 mock_weather_fetched  # Set the weather mock when get_weather is called
             )

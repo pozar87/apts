@@ -29,6 +29,9 @@ class Weather:
         provider_name: Optional[str] = None,
         api_key: Optional[str] = None,
         hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Any] = None,
+        force: bool = False,
     ):
         self.lat = lat
         self.lon = lon
@@ -71,7 +74,7 @@ class Weather:
             raise ValueError(f"Unknown weather provider: {provider_name}")
 
         logger.info(f"Attempting to download data from {provider_name}.")
-        self.data = provider.download_data(hours=self.hours)
+        self.data = provider.download_data(hours=self.hours, conditions=conditions, observation_window=observation_window, force=force)
         if self.data is not None and not cast(pd.DataFrame, self.data).empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
             ts = get_timescale()

@@ -24,6 +24,7 @@ from .objects.ngc import NGC
 from .objects.solar_objects import SolarObjects
 from .objects.stars import Stars
 from .utils import Utils
+from .utils.planetary import get_moon_illumination
 
 logger = logging.getLogger(__name__)
 
@@ -347,16 +348,63 @@ class Observation:
 
         return good_hours / all_hours * 100
 
-    def is_weather_good(self, conditions: Optional[Conditions] = None):
+    def _is_moon_condition_met(self, conditions: Conditions) -> bool:
+        if not self.start or not self.stop:
+            return True
+
+        # Use effective_date for moon illumination if available, otherwise fallback to place.date.
+        # We avoid using 'or' here because Skyfield Time objects can raise TypeError when evaluated in boolean context.
+        date_for_illumination = (
+            self.effective_date
+            if self.effective_date is not None
+            else self.place.date
+        )
+        moon_illumination = get_moon_illumination(date_for_illumination)
+        if moon_illumination < conditions.max_moon_illumination:
+            return True
+
+        # Illumination is too high, check if moon is up during observation window
+        ts = self.place.ts
+        t0 = ts.from_datetime(self.start)
+        t1 = ts.from_datetime(self.stop)
+        # Check at 10 points during the observation
+        times = ts.linspace(t0, t1, 10)
+        alt, _, _ = (
+            self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
+        )
+
+        # Calculate how much of the time the moon is up
+        moon_up_ratio = sum(1 for a in alt.degrees if a > 0) / 10.0
+        # If moon is up for more than (100 - min_weather_goodness)% of the time, it's bad
+        allowed_bad_ratio = (100 - conditions.min_weather_goodness) / 100.0
+
+        if moon_up_ratio > allowed_bad_ratio:
+            logger.info(
+                f"Moon condition not met: illumination {moon_illumination:.1f}% "
+                f"exceeds {conditions.max_moon_illumination}% and moon is up for "
+                f"{moon_up_ratio*100:.1f}% of the observation window."
+            )
+            return False
+
+        return True
+
+    def is_weather_good(self, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False):
+        effective_conditions = conditions or self.conditions
+        if not force and not self._is_moon_condition_met(effective_conditions):
+            return False
+
         if self.place.weather is None:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
             )
-            self.place.get_weather()
+            self.place.get_weather(provider_name=provider_name,
+                conditions=effective_conditions,
+                observation_window=(self.start, self.stop),
+                force=force,
+            )
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
 
-        effective_conditions = conditions or self.conditions
         return (
             self._compute_weather_goodness(conditions=conditions)
             > effective_conditions.min_weather_goodness
@@ -645,13 +693,24 @@ class Observation:
         )
 
     def get_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
     ):
         if conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
 
+        effective_conditions = conditions or self.conditions
+        if not force and not self._is_moon_condition_met(effective_conditions):
+            logger.info(
+                "get_weather_analysis: Moon condition not met, skipping weather fetch."
+            )
+            return []
+
         if self.place.weather is None:
-            self.place.get_weather()
+            self.place.get_weather(provider_name=provider_name,
+                conditions=effective_conditions,
+                observation_window=(self.start, self.stop),
+                force=force,
+            )
             if self.place.weather is None:
                 logger.warning("Weather data unavailable after fetch attempt.")
                 return []
@@ -829,6 +888,6 @@ class Observation:
         return analysis_results
 
     def get_hourly_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None
+        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
     ):
-        return self.get_weather_analysis(language=language, conditions=conditions)
+        return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name, force=force)
