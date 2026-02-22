@@ -212,6 +212,12 @@ class OpticalPath:
         else:
             return "Over-sampled"
 
+    def sampling_status(self, seeing=2.0):
+        """
+        Returns the sampling status as a string for a given seeing in arcseconds.
+        """
+        return self.sampling(seeing)
+
     def critical_focus_zone(self, wavelength=550):
         # wavelength in nm
         fr = self.telescope.focal_ratio() * self.effective_barlow()
@@ -240,8 +246,7 @@ class OpticalPath:
         if self.output.quantum_efficiency is None:
             return None
 
-        aperture_cm = self.telescope.aperture.to("cm").magnitude
-        area_cm2 = numpy.pi * (aperture_cm / 2.0) ** 2
+        area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
         qe = self.output.quantum_efficiency / 100.0
         pixel_area_arcsec2 = scale.magnitude**2
 
