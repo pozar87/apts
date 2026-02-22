@@ -104,7 +104,7 @@ class Objects(ABC):
 
             # Fast property extraction instead of iterrows()
             if "skyfield_object" in candidate_objects.columns:
-                skyfield_objs = candidate_objects["skyfield_object"].values
+                skyfield_objs = cast(pd.Series, candidate_objects["skyfield_object"]).values
             else:
                 skyfield_objs = np.array(
                     [
@@ -124,9 +124,11 @@ class Objects(ABC):
             # candidate identification in get_visible.
             if len(stars_indices) > 0:
                 # Extract RA/Dec for all stars
-                stars_ras = np.array([skyfield_objs[i].ra.hours for i in stars_indices])
+                stars_ras = np.array(
+                    [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
+                )
                 stars_decs = np.array(
-                    [skyfield_objs[i].dec.degrees for i in stars_indices]
+                    [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
                 )
 
                 # Get LST for all check times (in hours)

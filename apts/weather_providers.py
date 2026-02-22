@@ -191,6 +191,7 @@ class PirateWeather(WeatherProvider):
     def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
+        data = None
         try:
             with get_session().get(url) as data:
                 logger.debug(f"Data {data}")
@@ -244,7 +245,7 @@ class PirateWeather(WeatherProvider):
             )
             return self._enrich_with_aurora_data(result)
         except Exception as e:
-            self._log_download_error(e, data.text if "data" in locals() else "")
+            self._log_download_error(e, data.text if data is not None else "")
             return self._empty_df()
 
 
@@ -256,6 +257,7 @@ class VisualCrossing(WeatherProvider):
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
         self._log_download_url(url)
+        data = None
         try:
             with get_session().get(url) as data:
                 logger.debug(f"Data {data}")
@@ -334,7 +336,7 @@ class VisualCrossing(WeatherProvider):
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
         except Exception as e:
-            self._log_download_error(e, data.text if "data" in locals() else "")
+            self._log_download_error(e, data.text if data is not None else "")
             return self._empty_df()
 
 
@@ -367,6 +369,7 @@ class StormGlass(WeatherProvider):
         )
         self._log_download_url(url)
         headers = {"Authorization": self.api_key}
+        data = None
         try:
             with get_session().get(url, headers=headers) as data:
                 logger.debug(f"Data {data}")
@@ -500,7 +503,7 @@ class StormGlass(WeatherProvider):
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
         except Exception as e:
-            self._log_download_error(e, data.text if "data" in locals() else "")
+            self._log_download_error(e, data.text if data is not None else "")
             return self._empty_df()
 
 
@@ -635,12 +638,13 @@ class Meteoblue(WeatherProvider):
             forecast_days=forecast_days,
         )
         self._log_download_url(url_basic)
+        resp_basic = None
         try:
             with get_session().get(url_basic) as resp_basic:
                 resp_basic.raise_for_status()
                 df = self._parse_meteoblue_response(resp_basic.text)
         except Exception as e:
-            self._log_download_error(e, resp_basic.text if "resp_basic" in locals() else "")
+            self._log_download_error(e, resp_basic.text if resp_basic is not None else "")
             return self._empty_df()
 
         if df.empty:
@@ -662,6 +666,7 @@ class Meteoblue(WeatherProvider):
             forecast_days=forecast_days,
         )
         self._log_download_url(url_clouds)
+        resp_clouds = None
         try:
             with get_session().get(url_clouds) as resp_clouds:
                 resp_clouds.raise_for_status()
@@ -670,7 +675,7 @@ class Meteoblue(WeatherProvider):
                     # Merge with basic data
                     df = pd.merge(df, df_clouds, on="time", suffixes=("", "_clouds"))
         except Exception as e:
-            self._log_download_error(e, resp_clouds.text if "resp_clouds" in locals() else "")
+            self._log_download_error(e, resp_clouds.text if resp_clouds is not None else "")
             # Continue with basic data only if clouds fetch fails
 
         df = self._finalize_df(df, hours)
@@ -698,6 +703,7 @@ class OpenWeatherMap(WeatherProvider):
     def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
+        data = None
         try:
             with get_session().get(url) as data:
                 logger.debug(f"Data {data}")
@@ -799,5 +805,5 @@ class OpenWeatherMap(WeatherProvider):
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
         except Exception as e:
-            self._log_download_error(e, data.text if "data" in locals() else "")
+            self._log_download_error(e, data.text if data is not None else "")
             return self._empty_df()

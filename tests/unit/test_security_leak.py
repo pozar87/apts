@@ -1,4 +1,3 @@
-import pytest
 import logging
 import pytz
 from unittest.mock import patch
@@ -18,7 +17,7 @@ def test_weather_provider_leak_on_connection_error(requests_mock, caplog):
         requests_mock.get(url, exc=ConnectionError(f"Connection failed for {url}"))
 
         with caplog.at_level(logging.ERROR):
-            weather = Weather(lat=0, lon=0, local_timezone=pytz.utc, provider_name=provider_name, api_key=api_key)
+            Weather(lat=0, lon=0, local_timezone=pytz.utc, provider_name=provider_name, api_key=api_key)
 
             # The exception should be caught and logged by apts now
             # And it should be masked.

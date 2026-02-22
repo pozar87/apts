@@ -4,7 +4,7 @@ from functools import lru_cache
 from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
-from typing import Any, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, cast
 
 import matplotlib.font_manager as font_manager
 import numpy as np
@@ -262,8 +262,8 @@ class Place:
             phase_angle_deg = phase_angle.degrees
         else:
             phase_angle_deg = float(phase_angle)  # type: ignore
-        lunation = phase_angle_deg / 360.0  # type: ignore
-        letter = chr(ord("A") + int(round(lunation * 26)))  # type: ignore
+        lunation = cast(float, phase_angle_deg) / 360.0
+        letter = chr(ord("A") + int(round(lunation * 26)))
         return letter
 
     def moon_illumination(self):
@@ -281,7 +281,7 @@ class Place:
 
         df = pd.DataFrame(
             {
-                "Time": list(times),
+                "Time": list(cast(Iterable[Any], times)),
                 "UTC_datetime": utcs,
                 "Altitude": alt.degrees,
                 "Azimuth": az.degrees,
@@ -292,11 +292,11 @@ class Place:
         # If the path crosses this point, matplotlib will draw a line across the plot.
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
-            diffs = df["Azimuth"].diff()
-            wrap_around_indices = diffs[diffs.abs() > 180].index  # type: ignore
-            if not wrap_around_indices.empty:  # type: ignore
-                idx = wrap_around_indices[0]  # type: ignore
-                new_index = idx - 0.5  # type: ignore
+            diffs = cast(pd.Series, df["Azimuth"].diff())
+            wrap_around_indices = cast(pd.Series, diffs[diffs.abs() > 180]).index
+            if len(wrap_around_indices) > 0:
+                idx = cast(Any, wrap_around_indices[0])
+                new_index = idx - 0.5
                 nan_row = pd.DataFrame(
                     {
                         "Time": [pd.NaT],
@@ -338,14 +338,18 @@ class Place:
             df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
             valid_mask = df["UTC_datetime"].notna()
 
-        if valid_mask.any():
+        if bool(valid_mask.any()):
             # Convert valid datetimes back to a Skyfield Time vector
             times_vec = self.ts.from_datetimes(
                 df.loc[valid_mask, "UTC_datetime"].tolist()
             )
             moon_phase_angles = almanac.moon_phase(self.eph, times_vec).degrees
-            df.loc[valid_mask, "Phase"] = (moon_phase_angles / 360.0) * 100
-            df.loc[valid_mask, "Lunation"] = moon_phase_angles / 360.0
+            df.loc[valid_mask, "Phase"] = (
+                cast(np.ndarray[Any, Any], moon_phase_angles) / 360.0
+            ) * 100
+            df.loc[valid_mask, "Lunation"] = (
+                cast(np.ndarray[Any, Any], moon_phase_angles) / 360.0
+            )
         else:
             df["Phase"] = pd.NA
             df["Lunation"] = pd.NA
