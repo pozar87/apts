@@ -23,6 +23,7 @@ def setup_observation():
   p = setup_place()
   e = setup_equipment()
   o = observations.Observation(p, e)
+  o.conditions.max_moon_illumination = 100
   return o
 
 
@@ -40,4 +41,5 @@ def setup_southern_observation():
   p = setup_southern_place()
   e = setup_equipment()
   o = observations.Observation(p, e)
+  o.conditions.max_moon_illumination = 100
   return o

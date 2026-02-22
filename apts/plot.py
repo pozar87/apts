@@ -110,6 +110,16 @@ def plot_planets(
     )
 
 
+def _ensure_weather(
+    observation: "Observation", conditions: Optional["Conditions"] = None
+):
+    if observation.place.weather is None:
+        observation.place.get_weather(
+            conditions=conditions or observation.conditions,
+            observation_window=(observation.start, observation.stop),
+        )
+
+
 def plot_weather(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
@@ -118,8 +128,7 @@ def plot_weather(
 ):
     from .plotting.weather import generate_plot_weather
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_weather(
         observation,
         dark_mode_override=dark_mode_override,
@@ -136,8 +145,7 @@ def plot_clouds(
 ):
     from .plotting.weather import generate_plot_clouds
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_clouds(
         observation,
         dark_mode_override=dark_mode_override,
@@ -151,8 +159,7 @@ def plot_clouds_summary(
 ):
     from .plotting.weather import generate_plot_clouds_summary
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation)
     return generate_plot_clouds_summary(
         observation, dark_mode_override=dark_mode_override, **args
     )
@@ -166,8 +173,7 @@ def plot_precipitation(
 ):
     from .plotting.weather import generate_plot_precipitation
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_precipitation(
         observation,
         dark_mode_override=dark_mode_override,
@@ -181,8 +187,7 @@ def plot_precipitation_type_summary(
 ):
     from .plotting.weather import generate_plot_precipitation_type_summary
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation)
     return generate_plot_precipitation_type_summary(
         observation, dark_mode_override=dark_mode_override, **args
     )
@@ -196,8 +201,7 @@ def plot_temperature(
 ):
     from .plotting.weather import generate_plot_temperature
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_temperature(
         observation,
         dark_mode_override=dark_mode_override,
@@ -214,8 +218,7 @@ def plot_wind(
 ):
     from .plotting.weather import generate_plot_wind
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_wind(
         observation,
         dark_mode_override=dark_mode_override,
@@ -229,8 +232,7 @@ def plot_pressure_and_ozone(
 ):
     from .plotting.weather import generate_plot_pressure_and_ozone
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation)
     return generate_plot_pressure_and_ozone(
         observation, dark_mode_override=dark_mode_override, **args
     )
@@ -244,8 +246,7 @@ def plot_visibility(
 ):
     from .plotting.weather import generate_plot_visibility
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_visibility(
         observation,
         dark_mode_override=dark_mode_override,
@@ -262,8 +263,7 @@ def plot_moon_illumination(
 ):
     from .plotting.weather import generate_plot_moon_illumination
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_moon_illumination(
         observation,
         dark_mode_override=dark_mode_override,
@@ -280,8 +280,7 @@ def plot_fog(
 ):
     from .plotting.weather import generate_plot_fog
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_fog(
         observation,
         dark_mode_override=dark_mode_override,
@@ -298,8 +297,7 @@ def plot_aurora(
 ):
     from .plotting.weather import generate_plot_aurora
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_aurora(
         observation,
         dark_mode_override=dark_mode_override,
@@ -316,8 +314,7 @@ def plot_weather_summary(
 ):
     from .plotting.weather import generate_plot_weather_summary
 
-    if observation.place.weather is None:
-        observation.place.get_weather()
+    _ensure_weather(observation, conditions)
     return generate_plot_weather_summary(
         observation,
         dark_mode_override=dark_mode_override,
