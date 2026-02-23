@@ -1,6 +1,11 @@
 import unittest
+from unittest.mock import patch
 from apts.cache import get_timescale
-from apts.utils.planetary import get_moon_illumination, get_moon_illumination_details
+from apts.utils.planetary import (
+    get_moon_illumination,
+    get_moon_illumination_details,
+    get_moon_age,
+)
 
 # Ensure apts is discoverable, assuming tests are run from project root or similar
 import sys
@@ -33,6 +38,25 @@ class TestUtils(unittest.TestCase):
         time_waning = ts.utc(2023, 11, 30)
         _, is_waxing = get_moon_illumination_details(time_waning)
         self.assertFalse(is_waxing)
+
+    def test_get_moon_age(self):
+        ts = get_timescale()
+        # New Moon was on 2024-02-09 around 22:59 UTC
+        time = ts.utc(2024, 2, 10, 22, 59)
+        age = get_moon_age(time)
+        # It should be around 1.0 day
+        self.assertAlmostEqual(age, 1.0, delta=0.1)
+
+    @patch("apts.utils.planetary.almanac.find_discrete")
+    def test_get_moon_age_fallback(self, mock_find_discrete):
+        # Force fallback by returning empty lists
+        mock_find_discrete.return_value = ([], [])
+        ts = get_timescale()
+        # Full moon roughly
+        time = ts.utc(2024, 2, 24)
+        age = get_moon_age(time)
+        # Lunar month is ~29.5 days. Full moon is ~14.7 days.
+        self.assertAlmostEqual(age, 14.7, delta=1.0)
 
 
 if __name__ == "__main__":

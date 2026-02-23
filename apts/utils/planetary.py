@@ -196,7 +196,7 @@ def get_moon_age(time):
     new_moons = [ti for ti, yi in zip(t, y) if yi == 0]
     if not new_moons:
         # Fallback to a simple geometric approximation if for some reason search fails
-        phase_angle = almanac.moon_phase(eph, time).degrees
+        phase_angle = cast(Any, almanac.moon_phase(eph, time).degrees)
         return (phase_angle / 360.0) * 29.53059
     last_new_moon = new_moons[-1]
     return t1 - last_new_moon
@@ -209,7 +209,7 @@ def get_moon_distance(time):
     eph = get_ephemeris()
     moon = eph["moon"]
     earth = eph["earth"]
-    return earth.at(time).observe(moon).distance().km
+    return cast(Any, earth).at(time).observe(moon).distance().km
 
 
 def get_reverse_translated_planet_names(language: str) -> dict:

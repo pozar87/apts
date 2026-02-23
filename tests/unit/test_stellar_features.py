@@ -1,8 +1,6 @@
 import pytest
-from datetime import datetime, timezone
 from apts.place import Place
 from apts.opticalequipment.camera import Camera
-from apts.utils.planetary import get_moon_age, get_moon_distance
 
 def test_moon_metrics():
     # New Moon was on 2024-02-09 around 22:59 UTC
