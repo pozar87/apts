@@ -23,7 +23,7 @@ from apts.i18n import gettext_
 from apts.light_pollution import LightPollution
 from apts.utils.plot import Utils as PlotUtils
 
-from .utils.planetary import get_moon_illumination
+from .utils.planetary import get_moon_age, get_moon_distance, get_moon_illumination
 from .weather import Weather
 
 logger = logging.getLogger(__name__)
@@ -277,6 +277,18 @@ class Place:
 
     def moon_illumination(self):
         return get_moon_illumination(self.date)
+
+    def moon_age(self):
+        """
+        Returns the Moon age in days.
+        """
+        return get_moon_age(self.date)
+
+    def moon_distance(self):
+        """
+        Returns the Moon distance in km.
+        """
+        return get_moon_distance(self.date)
 
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = self.ts.utc(start_time)

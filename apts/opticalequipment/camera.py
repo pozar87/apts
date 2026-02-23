@@ -257,8 +257,8 @@ class Camera(OutputOpticalEqipment):
         Sensor: Sony IMX585 (1/1.2")
         """
         return cls(
-            11.2,
-            6.3,
+            11.13,
+            6.26,
             3840,
             2160,
             "ZWO ASI585MC",
