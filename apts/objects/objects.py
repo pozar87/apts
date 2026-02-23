@@ -429,7 +429,11 @@ class Objects(ABC):
         iterative solver, while maintaining excellent performance.
         """
         # Extract Skyfield Star objects and their coordinates in a vectorized way
-        sky_objs = [self.get_skyfield_object(row) for _, row in df.iterrows()]
+        if "skyfield_object" in df.columns:
+            sky_objs = df["skyfield_object"].values
+        else:
+            sky_objs = np.array([self.get_skyfield_object(row) for _, row in df.iterrows()])
+
         valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
         ras = np.array(
