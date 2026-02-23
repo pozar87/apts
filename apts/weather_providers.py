@@ -710,7 +710,7 @@ class Meteoblue(WeatherProvider):
                 df = self._parse_meteoblue_response(resp_clouds.text)
         except Exception as e:
             self._log_download_error(
-                e, resp_basic.text if resp_basic is not None else ""
+                e, resp_clouds.text if resp_clouds is not None else ""
             )
             return self._empty_df()
 
@@ -743,7 +743,7 @@ class Meteoblue(WeatherProvider):
                     df = pd.merge(df, df_basic, on="time", suffixes=("", "_basic"))
         except Exception as e:
             self._log_download_error(
-                e, resp_clouds.text if resp_clouds is not None else ""
+                e, resp_basic.text if resp_basic is not None else ""
             )
             # Continue with basic data only if clouds fetch fails
 
