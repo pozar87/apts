@@ -44,7 +44,7 @@ class Notify:
             return False
         server = None
         try:
-            server = smtplib.SMTP(self.smtp_host, self.smtp_port)
+            server = smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30)
             server.ehlo()
             if self.smtp_use_tls:
                 server.starttls()
@@ -78,9 +78,9 @@ class Notify:
             logger.error("Sender or recipient email not configured. Cannot send email.")
             return False
         msg_root = MIMEMultipart("alternative")
-        msg_root["Subject"] = subject
-        msg_root["From"] = self.sender_email
-        msg_root["To"] = self.recipient_email
+        msg_root["Subject"] = Utils.sanitize_header(subject)
+        msg_root["From"] = Utils.sanitize_header(self.sender_email)
+        msg_root["To"] = Utils.sanitize_header(self.recipient_email)
 
         # Plain text part
         text_part = MIMEText(body, "plain")
@@ -113,11 +113,11 @@ class Notify:
                 return False
             # Overall message container: multipart/alternative for text and HTML versions
             msg_root = MIMEMultipart("alternative")
-            msg_root["Subject"] = gettext_("Good weather in {name}").format(
-                name=observations.place.name
+            msg_root["Subject"] = Utils.sanitize_header(
+                gettext_("Good weather in {name}").format(name=observations.place.name)
             )
-            msg_root["From"] = self.sender_email
-            msg_root["To"] = self.recipient_email
+            msg_root["From"] = Utils.sanitize_header(self.sender_email)
+            msg_root["To"] = Utils.sanitize_header(self.recipient_email)
 
             # Fallback plain text message
             if plain_text_fallback is None:
