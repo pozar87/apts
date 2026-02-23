@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 import numpy as np
 from types import SimpleNamespace
 from typing import Any, cast
@@ -177,6 +178,38 @@ def get_moon_illumination(time):
     """
     illumination, _ = get_moon_illumination_details(time)
     return illumination
+
+
+def get_moon_age(time):
+    """
+    Returns the moon age in days since the last new moon.
+    Uses Skyfield's almanac for high accuracy.
+    """
+    ts = get_timescale()
+    eph = get_ephemeris()
+    t1 = time
+    # Search backwards for up to 31 days to find the last new moon
+    t0 = ts.utc(t1.utc_datetime() - timedelta(days=31))
+    f = almanac.moon_phases(eph)
+    t, y = almanac.find_discrete(t0, t1, f)
+    # y == 0 corresponds to New Moon
+    new_moons = [ti for ti, yi in zip(t, y) if yi == 0]
+    if not new_moons:
+        # Fallback to a simple geometric approximation if for some reason search fails
+        phase_angle = almanac.moon_phase(eph, time).degrees
+        return (phase_angle / 360.0) * 29.53059
+    last_new_moon = new_moons[-1]
+    return t1 - last_new_moon
+
+
+def get_moon_distance(time):
+    """
+    Returns the distance to the moon in km.
+    """
+    eph = get_ephemeris()
+    moon = eph["moon"]
+    earth = eph["earth"]
+    return earth.at(time).observe(moon).distance().km
 
 
 def get_reverse_translated_planet_names(language: str) -> dict:
