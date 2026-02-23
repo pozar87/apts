@@ -99,18 +99,14 @@ class TestWeatherOptimization(unittest.TestCase):
         provider = Meteoblue("api_key", 52.0, 21.0, datetime.timezone.utc)
         mock_aurora_df.return_value = pd.DataFrame()
 
-        # Mock response for BASIC call: heavy rain
-        mock_resp_basic = MagicMock()
-        mock_resp_basic.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "precipitation": [10.0], "precipitation_probability": [100], "windspeed": [50], "temperature": [10]}}'
-        mock_resp_basic.status_code = 200
+        # Mock response for CLOUDS call: 100% clouds
+        mock_resp_clouds = MagicMock()
+        mock_resp_clouds.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "totalcloudcover": [100], "visibility": [1000]}}'
+        mock_resp_clouds.status_code = 200
 
-        mock_get_session.return_value.get.return_value.__enter__.return_value = (
-            mock_resp_basic
-        )
+        mock_get_session.return_value.get.return_value.__enter__.return_value = mock_resp_clouds
 
-        conditions = Conditions(
-            max_precipitation_intensity=1.0, min_weather_goodness=80
-        )
+        conditions = Conditions(max_clouds=20, min_weather_goodness=80)
         window = (
             datetime.datetime(2025, 1, 1, 20, 0, tzinfo=datetime.timezone.utc),
             datetime.datetime(2025, 1, 1, 21, 0, tzinfo=datetime.timezone.utc),
@@ -127,9 +123,9 @@ class TestWeatherOptimization(unittest.TestCase):
                 hours=48, conditions=conditions, observation_window=window
             )
 
-        # Should have called get() only ONCE (for basic-1h)
+        # Should have called get() only ONCE (for clouds-1h)
         self.assertEqual(mock_get_session.return_value.get.call_count, 1)
-        self.assertIn("basic-1h", mock_get_session.return_value.get.call_args[0][0])
+        self.assertIn("clouds-1h", mock_get_session.return_value.get.call_args[0][0])
 
         # Verify that aurora enrichment was also skipped
         mock_aurora_df.assert_not_called()
@@ -143,27 +139,25 @@ class TestWeatherOptimization(unittest.TestCase):
         provider = Meteoblue("api_key", 52.0, 21.0, datetime.timezone.utc)
         mock_aurora_df.return_value = pd.DataFrame()
 
-        # Mock response for BASIC call: perfect weather
-        mock_resp_basic = MagicMock()
-        mock_resp_basic.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "precipitation": [0.0], "precipitation_probability": [0], "windspeed": [5], "temperature": [10]}}'
-        mock_resp_basic.status_code = 200
-
-        # Mock response for CLOUDS call
+        # Mock response for CLOUDS call: clear sky
         mock_resp_clouds = MagicMock()
         mock_resp_clouds.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "totalcloudcover": [0], "visibility": [20000]}}'
         mock_resp_clouds.status_code = 200
 
+        # Mock response for BASIC call
+        mock_resp_basic = MagicMock()
+        mock_resp_basic.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "precipitation": [0.0], "precipitation_probability": [0], "windspeed": [5], "temperature": [10]}}'
+        mock_resp_basic.status_code = 200
+
         # Set up a side effect for get() itself to return different context managers
-        mock_cm_basic = MagicMock()
-        mock_cm_basic.__enter__.return_value = mock_resp_basic
         mock_cm_clouds = MagicMock()
         mock_cm_clouds.__enter__.return_value = mock_resp_clouds
+        mock_cm_basic = MagicMock()
+        mock_cm_basic.__enter__.return_value = mock_resp_basic
 
-        mock_get_session.return_value.get.side_effect = [mock_cm_basic, mock_cm_clouds]
+        mock_get_session.return_value.get.side_effect = [mock_cm_clouds, mock_cm_basic]
 
-        conditions = Conditions(
-            max_precipitation_intensity=1.0, min_weather_goodness=80
-        )
+        conditions = Conditions(max_clouds=20, min_weather_goodness=80)
         window = (
             datetime.datetime(2025, 1, 1, 20, 0, tzinfo=datetime.timezone.utc),
             datetime.datetime(2025, 1, 1, 21, 0, tzinfo=datetime.timezone.utc),
@@ -182,6 +176,8 @@ class TestWeatherOptimization(unittest.TestCase):
 
         # Should have called get() TWICE
         self.assertEqual(mock_get_session.return_value.get.call_count, 2)
+        self.assertIn("clouds-1h", mock_get_session.return_value.get.call_args_list[0][0][0])
+        self.assertIn("basic-1h", mock_get_session.return_value.get.call_args_list[1][0][0])
 
         # Verify aurora was called
         mock_aurora_df.assert_called_once()
