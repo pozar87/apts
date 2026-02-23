@@ -1,4 +1,5 @@
 import numpy
+from typing import Any
 
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants, OpticalType
@@ -38,12 +39,12 @@ class Camera(OutputOpticalEqipment):
         else:
             self._pixel_size = None
 
-    def pixel_size(self):
+    def pixel_size(self) -> Any:
         if self._pixel_size is not None:
             return self._pixel_size
-        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / numpy.sqrt(
+        return (self.sensor_width**2 + self.sensor_height**2) ** 0.5 / (
             self.width**2 + self.height**2
-        )
+        ) ** 0.5
 
     def _zoom_divider(self):
         return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)

@@ -151,9 +151,9 @@ class TestOptics(unittest.TestCase):
 
         path = OpticalPath(t, [], [], [], c)
 
-        self.assertEqual(path.fov_width().magnitude, 2.0)
-        self.assertEqual(path.fov_height().magnitude, 1.0)
-        self.assertEqual(path.fov_diagonal().magnitude, 2.2)
+        self.assertEqual(cast(Any, path.fov_width()).magnitude, 2.0)
+        self.assertEqual(cast(Any, path.fov_height()).magnitude, 1.0)
+        self.assertEqual(cast(Any, path.fov_diagonal()).magnitude, 2.2)
 
         # Verify calls
         c.field_of_view_width.assert_called_once()
