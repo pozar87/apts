@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any, cast
 
 from apts.constants import GraphConstants, OpticalType
 from apts.equipment import Equipment
@@ -22,7 +23,7 @@ def test_camera_init():
 def test_camera_pixel_size():
     c = Camera(sensor_width=36, sensor_height=24, width=6000, height=4000)
     expected = np.sqrt(36**2 + 24**2) / np.sqrt(6000**2 + 4000**2)
-    assert np.isclose(c.pixel_size().magnitude, expected)
+    assert np.isclose(cast(Any, c.pixel_size()).magnitude, expected)
 
 
 def test_camera_fov():
@@ -30,7 +31,7 @@ def test_camera_fov():
     t = Telescope(aperture=150, focal_length=750)
     fov = c.field_of_view(t, 1, 1)
     # Accurate formula: 2 * atan(24 / (2 * 750)) = 1.8333...
-    assert np.isclose(fov.magnitude, 1.8333085)
+    assert np.isclose(cast(Any, fov).magnitude, 1.8333085)
 
 
 def test_camera_output_type():

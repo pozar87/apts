@@ -265,9 +265,9 @@ def test_binoculars_registration_and_graph():
     ), "Binoculars not connected from SPACE"
 
     # 3. Connected to EYE
-    assert eq.connection_garph.has_edge(
-        bino_node_id_in_graph, GraphConstants.EYE_ID
-    ), "Binoculars not connected to EYE"
+    assert eq.connection_garph.has_edge(bino_node_id_in_graph, GraphConstants.EYE_ID), (
+        "Binoculars not connected to EYE"
+    )
 
     # 4. Ensure no input/output connection points were created for binoculars
     bino_internal_id = bino.id()  # The ID of the equipment itself

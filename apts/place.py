@@ -166,7 +166,16 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime.datetime, datetime.datetime]] = None, force: bool = False):
+    def get_weather(
+        self,
+        provider_name: Optional[str] = None,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[
+            Tuple[datetime.datetime, datetime.datetime]
+        ] = None,
+        force: bool = False,
+    ):
         self.weather = Weather(
             self.lat_decimal,
             self.lon_decimal,
@@ -314,9 +323,9 @@ class Place:
         if local_datetimes.dt.tz is None:
             local_datetimes = local_datetimes.dt.tz_localize("UTC")
 
-        df["Local_time"] = (
-            local_datetimes.dt.tz_convert(self.local_timezone).dt.strftime("%H:%M")
-        )
+        df["Local_time"] = local_datetimes.dt.tz_convert(
+            self.local_timezone
+        ).dt.strftime("%H:%M")
         return df
 
     def moon_path(self) -> pd.DataFrame:

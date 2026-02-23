@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import brentq
 
+
 def find_extrema(f, t0, t1, num_points=1000):
     """
     Finds the extrema of a function f over the interval [t0, t1]
@@ -27,11 +28,11 @@ def find_extrema(f, t0, t1, num_points=1000):
             def deriv_at(t):
                 # Ensure t is float
                 t_val = float(t)
-                return np.gradient(f(ts.tt(jd=[t_val - 0.01, t_val, t_val + 0.01])), 0.01)[1]
+                return np.gradient(
+                    f(ts.tt(jd=[t_val - 0.01, t_val, t_val + 0.01])), 0.01
+                )[1]
 
-            t_root = brentq(
-                deriv_at, float(times[i].tt), float(times[i + 1].tt)
-            )
+            t_root = brentq(deriv_at, float(times[i].tt), float(times[i + 1].tt))
             t_extremum = ts.tt(jd=t_root)
             v_extremum = f(t_extremum)
 
@@ -77,7 +78,7 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
     t1 = ts.utc(end_date)
 
     body = eph[planet_name]
-    sun = eph['sun']
+    sun = eph["sun"]
 
     def distance_to_sun(t):
         return body.at(t).observe(sun).distance().km
@@ -86,8 +87,13 @@ def find_aphelion_perihelion(eph, planet_name, start_date, end_date):
 
     events = []
     for t, v, is_max in extrema:
-        event_type = 'Aphelion' if is_max else 'Perihelion'
-        events.append({'date': t.utc_datetime(), 'event': f'{planet_name.capitalize()} {event_type}'})
+        event_type = "Aphelion" if is_max else "Perihelion"
+        events.append(
+            {
+                "date": t.utc_datetime(),
+                "event": f"{planet_name.capitalize()} {event_type}",
+            }
+        )
 
     return events
 
@@ -97,8 +103,8 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    moon = eph['moon']
-    earth = eph['earth']
+    moon = eph["moon"]
+    earth = eph["earth"]
 
     def distance_to_earth(t):
         return earth.at(t).observe(moon).distance().km
@@ -107,13 +113,15 @@ def find_moon_apogee_perigee(eph, start_date, end_date):
 
     events = []
     for t, v, is_max in extrema:
-        event_type = 'Apogee' if is_max else 'Perigee'
-        events.append({'date': t.utc_datetime(), 'event': f'Moon {event_type}'})
+        event_type = "Apogee" if is_max else "Perigee"
+        events.append({"date": t.utc_datetime(), "event": f"Moon {event_type}"})
 
     return events
 
 
-def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None):
+def find_conjunctions(
+    eph, p1_name, p2_name, start_date, end_date, threshold_degrees=None
+):
     ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -131,45 +139,61 @@ def find_conjunctions(eph, p1_name, p2_name, start_date, end_date, threshold_deg
         if not is_max:
             separation_val = v
             if threshold_degrees is None or separation_val < threshold_degrees:
-                events.append({
-                    'date': t.utc_datetime(),
-                    'event': f'{p1_name.capitalize()} conjunct {p2_name.capitalize()}',
-                    'separation_degrees': separation_val
-                })
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": f"{p1_name.capitalize()} conjunct {p2_name.capitalize()}",
+                        "separation_degrees": separation_val,
+                    }
+                )
 
     return events
 
-def find_mercury_inferior_conjunctions(eph, start_date, end_date, threshold_degrees=5.0):
-    return find_conjunctions(eph, 'mercury', 'sun', start_date, end_date, threshold_degrees)
+
+def find_mercury_inferior_conjunctions(
+    eph, start_date, end_date, threshold_degrees=5.0
+):
+    return find_conjunctions(
+        eph, "mercury", "sun", start_date, end_date, threshold_degrees
+    )
 
 
 def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     ts = load.timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    moon = eph['moon']
+    moon = eph["moon"]
 
     events = []
 
     from skyfield.api import Star
+
     for index, star_data in bright_stars.iterrows():
-        star_df = pd.DataFrame({
-            'ra_hours': [star_data['RA'].to('hour').magnitude],
-            'dec_degrees': [star_data['Dec'].to('degree').magnitude],
-            'ra_mas_per_year': [0],
-            'dec_mas_per_year': [0],
-            'parallax_mas': [0],
-            'radial_km_per_s': [0],
-            'epoch_year': [2000.0]
-        }, index=pd.Index([0]))
+        star_df = pd.DataFrame(
+            {
+                "ra_hours": [star_data["RA"].to("hour").magnitude],
+                "dec_degrees": [star_data["Dec"].to("degree").magnitude],
+                "ra_mas_per_year": [0],
+                "dec_mas_per_year": [0],
+                "parallax_mas": [0],
+                "radial_km_per_s": [0],
+                "epoch_year": [2000.0],
+            },
+            index=pd.Index([0]),
+        )
         star = Star.from_dataframe(star_df)
 
-        times = ts.linspace(t0, t1, int((t1 - t0) * 24)) # Hourly check
+        times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
         for t in times:
-            mpos = eph['earth'].at(t).observe(moon)
-            spos = eph['earth'].at(t).observe(star)
+            mpos = eph["earth"].at(t).observe(moon)
+            spos = eph["earth"].at(t).observe(star)
 
             if mpos.separation_from(spos).degrees < 0.5:
-                events.append({'date': t.utc_datetime(), 'event': f'Moon occults {star_data["Name"]}'})
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": f"Moon occults {star_data['Name']}",
+                    }
+                )
 
     return events

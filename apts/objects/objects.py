@@ -21,9 +21,7 @@ class Objects(ABC):
         pass
 
     @abstractmethod
-    def compute(
-        self, calculation_date=None, df_to_compute=None
-    ) -> pd.DataFrame | None:
+    def compute(self, calculation_date=None, df_to_compute=None) -> pd.DataFrame | None:
         pass
 
     def __init__(self, place, calculation_date=None):
@@ -104,7 +102,9 @@ class Objects(ABC):
 
             # Fast property extraction instead of iterrows()
             if "skyfield_object" in candidate_objects.columns:
-                skyfield_objs = cast(pd.Series, candidate_objects["skyfield_object"]).values
+                skyfield_objs = cast(
+                    pd.Series, candidate_objects["skyfield_object"]
+                ).values
             else:
                 skyfield_objs = np.array(
                     [
@@ -145,9 +145,9 @@ class Objects(ABC):
                 dec_rad = np.deg2rad(decs)
 
                 # sin(alt) = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(H)
-                sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(
-                    lat_rad
-                ) * np.cos(dec_rad) * np.cos(h_rad)
+                sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(lat_rad) * np.cos(
+                    dec_rad
+                ) * np.cos(h_rad)
 
                 # Determine altitude visibility
                 min_alt_rad = np.deg2rad(conditions.min_object_altitude)
@@ -200,10 +200,15 @@ class Objects(ABC):
                 ObjectTableLabels.RISING,
                 ObjectTableLabels.SETTING,
             ]
-            or True # Always ensure these are available for visible objects to avoid KeyErrors in plotting
+            or True  # Always ensure these are available for visible objects to avoid KeyErrors in plotting
         ):
             # Check if any of the core columns are missing
-            needed_cols = [ObjectTableLabels.TRANSIT, ObjectTableLabels.RISING, ObjectTableLabels.SETTING, ObjectTableLabels.ALTITUDE]
+            needed_cols = [
+                ObjectTableLabels.TRANSIT,
+                ObjectTableLabels.RISING,
+                ObjectTableLabels.SETTING,
+                ObjectTableLabels.ALTITUDE,
+            ]
             missing_any = False
             for col in needed_cols:
                 if col not in visible_candidate_objects.columns or cast(
@@ -215,14 +220,17 @@ class Objects(ABC):
             if missing_any:
                 if not visible_candidate_objects.empty:
                     self.compute(
-                        calculation_date=self.calculation_date, df_to_compute=visible_candidate_objects
+                        calculation_date=self.calculation_date,
+                        df_to_compute=visible_candidate_objects,
                     )
                     # Update visible_candidate_objects with the new computed values
                     # Ensure columns exist before update
                     for col in self.objects.columns:
                         if col not in visible_candidate_objects.columns:
                             visible_candidate_objects[col] = None
-                    visible_candidate_objects.update(self.objects.loc[visible_candidate_objects.index])
+                    visible_candidate_objects.update(
+                        self.objects.loc[visible_candidate_objects.index]
+                    )
 
         visible = visible_candidate_objects
 
@@ -266,7 +274,9 @@ class Objects(ABC):
         if isinstance(skyfield_object, Star):
             current_dt = observer.date.utc_datetime()
             # Start search from the beginning of the UTC day
-            t0_dt = current_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC)
+            t0_dt = current_dt.replace(
+                hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC
+            )
             t0 = self.ts.utc(t0_dt)
 
             # RA of the star

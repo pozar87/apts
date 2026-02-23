@@ -1,8 +1,8 @@
-
 from apts.place import Place
 
 # Setup mock data
 place = Place(52.2297, 21.0122, "Warsaw")
+
 
 def check_legend(fig, name):
     if fig is None:
@@ -21,6 +21,7 @@ def check_legend(fig, name):
                 print(f"  Title color: {legend.get_title().get_color()}")
         else:
             print(f"Plot: {name} - No legend found on an axis")
+
 
 # Test Sun Path
 fig_sun = place.plot_sun_path().figure

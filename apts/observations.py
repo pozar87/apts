@@ -355,9 +355,7 @@ class Observation:
         # Use effective_date for moon illumination if available, otherwise fallback to place.date.
         # We avoid using 'or' here because Skyfield Time objects can raise TypeError when evaluated in boolean context.
         date_for_illumination = (
-            self.effective_date
-            if self.effective_date is not None
-            else self.place.date
+            self.effective_date if self.effective_date is not None else self.place.date
         )
         moon_illumination = get_moon_illumination(date_for_illumination)
         if moon_illumination < conditions.max_moon_illumination:
@@ -382,13 +380,18 @@ class Observation:
             logger.info(
                 f"Moon condition not met: illumination {moon_illumination:.1f}% "
                 f"exceeds {conditions.max_moon_illumination}% and moon is up for "
-                f"{moon_up_ratio*100:.1f}% of the observation window."
+                f"{moon_up_ratio * 100:.1f}% of the observation window."
             )
             return False
 
         return True
 
-    def is_weather_good(self, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False):
+    def is_weather_good(
+        self,
+        conditions: Optional[Conditions] = None,
+        provider_name: Optional[str] = None,
+        force: bool = False,
+    ):
         effective_conditions = conditions or self.conditions
         if not force and not self._is_moon_condition_met(effective_conditions):
             return False
@@ -397,7 +400,8 @@ class Observation:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
             )
-            self.place.get_weather(provider_name=provider_name,
+            self.place.get_weather(
+                provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
                 force=force,
@@ -693,7 +697,11 @@ class Observation:
         )
 
     def get_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
+        self,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        provider_name: Optional[str] = None,
+        force: bool = False,
     ):
         if conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
@@ -706,7 +714,8 @@ class Observation:
             return []
 
         if self.place.weather is None:
-            self.place.get_weather(provider_name=provider_name,
+            self.place.get_weather(
+                provider_name=provider_name,
                 conditions=effective_conditions,
                 observation_window=(self.start, self.stop),
                 force=force,
@@ -888,6 +897,15 @@ class Observation:
         return analysis_results
 
     def get_hourly_weather_analysis(
-        self, language: Optional[str] = None, conditions: Optional[Conditions] = None, provider_name: Optional[str] = None, force: bool = False
+        self,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        provider_name: Optional[str] = None,
+        force: bool = False,
     ):
-        return self.get_weather_analysis(language=language, conditions=conditions, provider_name=provider_name, force=force)
+        return self.get_weather_analysis(
+            language=language,
+            conditions=conditions,
+            provider_name=provider_name,
+            force=force,
+        )

@@ -7,10 +7,12 @@ from ..constants import ObjectTableLabels
 class NGC(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.NGC.copy() # type: ignore
+        self.objects = catalogs.NGC.copy()  # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.ALTITUDE] = None
-        self.calculation_date = calculation_date # Store calculation_date for lazy computation
+        self.calculation_date = (
+            calculation_date  # Store calculation_date for lazy computation
+        )
 
     def compute(self, calculation_date=None, df_to_compute=None):
         if calculation_date is not None:
@@ -42,7 +44,9 @@ class NGC(Objects):
         computed_df = df_to_compute.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts, rises, sets = self._fast_compute_stars(computed_df, observer_to_use)
+        transits, alts, rises, sets = self._fast_compute_stars(
+            computed_df, observer_to_use
+        )
         computed_df[ObjectTableLabels.TRANSIT] = transits
         computed_df[ObjectTableLabels.ALTITUDE] = alts
         computed_df[ObjectTableLabels.RISING] = rises

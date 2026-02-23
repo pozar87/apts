@@ -13,7 +13,9 @@ def get_ephemeris_path():
     if mode == "light":
         return "de421.bsp"
     else:
-        return "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp"
+        return (
+            "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp"
+        )
 
 
 def get_mpcorb_path():

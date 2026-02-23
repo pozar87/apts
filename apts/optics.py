@@ -297,7 +297,10 @@ class OpticalPath:
         from .opticalequipment.camera import Camera
 
         # integration_time in seconds
-        if not isinstance(self.output, Camera) or self.output.quantum_efficiency is None:
+        if (
+            not isinstance(self.output, Camera)
+            or self.output.quantum_efficiency is None
+        ):
             # Fallback to telescope limiting magnitude if no camera data
             return self.telescope.limiting_magnitude()
 
@@ -346,8 +349,8 @@ class OpticalPath:
         """
         # Actual focal length
         f_actual = (
-            self.telescope.focal_length * self.effective_barlow()
-        ).to("mm").magnitude
+            (self.telescope.focal_length * self.effective_barlow()).to("mm").magnitude
+        )
 
         if f_actual == 0:
             return 0 * get_unit_registry().second

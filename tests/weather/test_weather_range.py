@@ -7,11 +7,13 @@ from unittest.mock import patch, MagicMock
 from apts.weather_providers import StormGlass, Meteoblue, VisualCrossing
 from datetime import timezone
 
+
 @pytest.fixture(autouse=True)
 def mock_aurora():
     with patch("apts.weather_providers._get_aurora_df") as m:
         m.return_value = MagicMock(empty=True)
         yield m
+
 
 def test_stormglass_api_url_params(requests_mock):
     api_key = "test_key"
@@ -20,13 +22,18 @@ def test_stormglass_api_url_params(requests_mock):
     hours = 24
 
     # Mock weather response
-    requests_mock.get(re.compile("api.stormglass.io"), json={"hours": [{"time": "2024-01-01T00:00:00Z"}]})
+    requests_mock.get(
+        re.compile("api.stormglass.io"),
+        json={"hours": [{"time": "2024-01-01T00:00:00Z"}]},
+    )
 
     provider = StormGlass(api_key, lat, lon, local_timezone)
     provider.download_data(hours=hours)
 
     # Find the StormGlass request
-    weather_request = next(r for r in requests_mock.request_history if "stormglass.io" in r.url)
+    weather_request = next(
+        r for r in requests_mock.request_history if "stormglass.io" in r.url
+    )
     url = weather_request.url
 
     assert f"lat={lat}" in url
@@ -35,11 +42,12 @@ def test_stormglass_api_url_params(requests_mock):
     assert "end=" in url
     assert f"key={api_key}" in url
 
+
 def test_meteoblue_api_url_params(requests_mock):
     api_key = "test_key"
     lat, lon = 52.2297, 21.0122
     local_timezone = pytz.timezone("Europe/Warsaw")
-    hours = 36 # Should result in 2 days
+    hours = 36  # Should result in 2 days
 
     METEOBLUE_MOCK = {
         "data_1h": {
@@ -66,12 +74,15 @@ def test_meteoblue_api_url_params(requests_mock):
     provider.download_data(hours=hours)
 
     # Find the Meteoblue request
-    weather_request = next(r for r in requests_mock.request_history if "meteoblue.com" in r.url)
+    weather_request = next(
+        r for r in requests_mock.request_history if "meteoblue.com" in r.url
+    )
     url = weather_request.url
 
     assert f"lat={lat}" in url
     assert f"lon={lon}" in url
     assert "forecast_days=2" in url
+
 
 def test_visualcrossing_api_url_params(requests_mock):
     api_key = "test_key"
@@ -105,16 +116,21 @@ def test_visualcrossing_api_url_params(requests_mock):
     }
 
     # Mock weather response
-    requests_mock.get(re.compile("weather.visualcrossing.com"), json=VISUAL_CROSSING_MOCK)
+    requests_mock.get(
+        re.compile("weather.visualcrossing.com"), json=VISUAL_CROSSING_MOCK
+    )
 
     provider = VisualCrossing(api_key, lat, lon, local_timezone)
     provider.download_data(hours=hours)
 
     # Find the VisualCrossing request
-    weather_request = next(r for r in requests_mock.request_history if "visualcrossing.com" in r.url)
+    weather_request = next(
+        r for r in requests_mock.request_history if "visualcrossing.com" in r.url
+    )
     url = weather_request.url
 
     assert f"next{hours}hours" in url
+
 
 def test_weather_data_filtering():
     # Mock data with more than 48 hours
@@ -125,9 +141,7 @@ def test_weather_data_filtering():
         "hours": [{"time": t, "airTemperature": {"sg": 20}} for t in times]
     }
 
-    with (
-        patch("apts.weather_providers.get_session") as mock_session
-    ):
+    with patch("apts.weather_providers.get_session") as mock_session:
         mock_resp = MagicMock()
         mock_resp.text = json.dumps(mock_response)
         mock_resp.status_code = 200

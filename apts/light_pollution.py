@@ -1,11 +1,14 @@
 from PIL import Image
 from importlib import resources
 
+
 class LightPollution:
     def __init__(self, lat, lon):
         self.lat = lat
         self.lon = lon
-        self.image_path = str(resources.files("apts").joinpath("data/world202t4_low3.png"))
+        self.image_path = str(
+            resources.files("apts").joinpath("data/world202t4_low3.png")
+        )
         self.im = Image.open(self.image_path)
         self.pix = self.im.load()
 
@@ -27,7 +30,7 @@ class LightPollution:
 
     def get_light_pollution(self):
         x, y = self._latlon_to_pixel(self.lat, self.lon)
-        
+
         if self.pix is None:
             return -1
 
@@ -45,15 +48,15 @@ class LightPollution:
             3: 2,  # Dark Blue
             4: 3,  # Blue
             5: 4,  # Dark Green
-            6: 4.5, # Green
+            6: 4.5,  # Green
             7: 5,  # Olive
             8: 6,  # Yellow
             9: 7,  # Brown/Orange
-            10: 7, # Orange
-            11: 8, # Dark Red
-            12: 8, # Red
-            13: 9, # Light Grey
-            14: 9  # White
+            10: 7,  # Orange
+            11: 8,  # Dark Red
+            12: 8,  # Red
+            13: 9,  # Light Grey
+            14: 9,  # White
         }
 
         return bortle_scale.get(palette_index, -1)

@@ -4,6 +4,7 @@ from unittest.mock import patch
 from apts.weather import Weather
 from requests.exceptions import ConnectionError
 
+
 def test_weather_provider_leak_on_connection_error(requests_mock, caplog):
     # Set up the mock to raise a ConnectionError
     # The URL contains the API key
@@ -11,13 +12,21 @@ def test_weather_provider_leak_on_connection_error(requests_mock, caplog):
     provider_name = "pirateweather"
 
     # We need to mock get_weather_settings to return our provider and secret key
-    with patch("apts.weather.get_weather_settings", return_value=(provider_name, api_key)):
+    with patch(
+        "apts.weather.get_weather_settings", return_value=(provider_name, api_key)
+    ):
         # Configure requests_mock to raise ConnectionError for the PirateWeather URL
         url = f"https://api.pirateweather.net/forecast/{api_key}/0,0?units=si"
         requests_mock.get(url, exc=ConnectionError(f"Connection failed for {url}"))
 
         with caplog.at_level(logging.ERROR):
-            Weather(lat=0, lon=0, local_timezone=pytz.utc, provider_name=provider_name, api_key=api_key)
+            Weather(
+                lat=0,
+                lon=0,
+                local_timezone=pytz.utc,
+                provider_name=provider_name,
+                api_key=api_key,
+            )
 
             # The exception should be caught and logged by apts now
             # And it should be masked.

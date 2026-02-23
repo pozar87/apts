@@ -44,7 +44,9 @@ def load_config():
         for section in config.sections():
             masked_section = {
                 k: mask_secret(v)
-                if any(s in k.lower() for s in ["api_key", "password", "redis_location"])
+                if any(
+                    s in k.lower() for s in ["api_key", "password", "redis_location"]
+                )
                 else v
                 for k, v in config.items(section)
             }

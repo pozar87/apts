@@ -41,13 +41,24 @@ class SmartTelescope(Telescope):
         return False
 
     def pixel_size(self):
-        return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(self.width ** 2 + self.height ** 2)
+        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / math.sqrt(
+            self.width**2 + self.height**2
+        )
 
     def fov(self):
         """
         Calculate the field of view for the smart telescope in degrees using the accurate arctan formula.
         """
-        return 2 * numpy.degrees(numpy.arctan(self.sensor_height.to("mm").magnitude / (2 * self.focal_length.to("mm").magnitude))) * get_unit_registry().deg
+        return (
+            2
+            * numpy.degrees(
+                numpy.arctan(
+                    self.sensor_height.to("mm").magnitude
+                    / (2 * self.focal_length.to("mm").magnitude)
+                )
+            )
+            * get_unit_registry().deg
+        )
 
     def exit_pupil(self):
         return numpy.nan * get_unit_registry().mm

@@ -23,7 +23,10 @@ class SkyfieldSearchesTest(unittest.TestCase):
 
     def test_find_highest_altitude(self):
         time, alt = skyfield_searches.find_highest_altitude(
-            self.observer, planetary.get_skyfield_obj("venus"), self.start_date, self.end_date
+            self.observer,
+            planetary.get_skyfield_obj("venus"),
+            self.start_date,
+            self.end_date,
         )
         self.assertIsInstance(time, datetime)
         self.assertIsInstance(alt, float)

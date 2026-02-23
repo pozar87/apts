@@ -159,7 +159,13 @@ class WeatherProvider(ABC):
         )
 
     @abstractmethod
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:
         pass
 
     def _empty_df(self) -> pd.DataFrame:
@@ -188,7 +194,13 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         data = None
@@ -241,7 +253,8 @@ class PirateWeather(WeatherProvider):
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
             result = cast(
-                pd.DataFrame, result[result.time <= cutoff.astimezone(self.local_timezone)]
+                pd.DataFrame,
+                result[result.time <= cutoff.astimezone(self.local_timezone)],
             )
             return self._enrich_with_aurora_data(result)
         except Exception as e:
@@ -252,7 +265,13 @@ class PirateWeather(WeatherProvider):
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}/next{hours}hours?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
@@ -329,7 +348,9 @@ class VisualCrossing(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -343,7 +364,13 @@ class VisualCrossing(WeatherProvider):
 class StormGlass(WeatherProvider):
     API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}&start={start}&end={end}"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:
         params = [
             "airTemperature",
             "pressure",
@@ -496,7 +523,9 @@ class StormGlass(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
@@ -562,9 +591,7 @@ class Meteoblue(WeatherProvider):
             )
 
         if "visibility" in df.columns:
-            df["visibility"] = (
-                pd.to_numeric(df["visibility"], errors="coerce") / 1000
-            )  # type: ignore
+            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce") / 1000  # type: ignore
 
         if "fog" in df.columns:
             df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
@@ -629,10 +656,7 @@ class Meteoblue(WeatherProvider):
                 and pd.notna(row.precipIntensity)
                 and row.precipIntensity != "none"
             ):
-                if (
-                    float(row.precipIntensity)
-                    >= conditions.max_precipitation_intensity
-                ):
+                if float(row.precipIntensity) >= conditions.max_precipitation_intensity:
                     is_good = False
             # Check wind
             if (
@@ -662,7 +686,13 @@ class Meteoblue(WeatherProvider):
 
         return (good_hours / len(df_window)) * 100 > conditions.min_weather_goodness
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         forecast_days = math.ceil(hours / 24)
 
         # 1. Fetch CLOUDS package (cheaper)
@@ -679,7 +709,9 @@ class Meteoblue(WeatherProvider):
                 resp_clouds.raise_for_status()
                 df = self._parse_meteoblue_response(resp_clouds.text)
         except Exception as e:
-            self._log_download_error(e, resp_clouds.text if resp_clouds is not None else "")
+            self._log_download_error(
+                e, resp_basic.text if resp_basic is not None else ""
+            )
             return self._empty_df()
 
         if df.empty:
@@ -710,8 +742,10 @@ class Meteoblue(WeatherProvider):
                     # Merge with cloud data
                     df = pd.merge(df, df_basic, on="time", suffixes=("", "_basic"))
         except Exception as e:
-            self._log_download_error(e, resp_basic.text if resp_basic is not None else "")
-            # Continue with cloud data only if basic fetch fails
+            self._log_download_error(
+                e, resp_clouds.text if resp_clouds is not None else ""
+            )
+            # Continue with basic data only if clouds fetch fails
 
         df = self._finalize_df(df, hours)
         return self._enrich_with_aurora_data(df)
@@ -735,7 +769,13 @@ class Meteoblue(WeatherProvider):
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
         data = None
@@ -833,7 +873,9 @@ class OpenWeatherMap(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:

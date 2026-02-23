@@ -23,8 +23,12 @@ class TestSolarObjects(unittest.TestCase):
         self.assertFalse(
             self.solar_objects.objects[ObjectTableLabels.MAGNITUDE].isnull().all()
         )
-        self.assertFalse(self.solar_objects.objects[ObjectTableLabels.SIZE].isnull().all())
-        self.assertFalse(self.solar_objects.objects[ObjectTableLabels.PHASE].isnull().all())
+        self.assertFalse(
+            self.solar_objects.objects[ObjectTableLabels.SIZE].isnull().all()
+        )
+        self.assertFalse(
+            self.solar_objects.objects[ObjectTableLabels.PHASE].isnull().all()
+        )
 
     def test_moon_properties(self):
         """Test the calculated properties for the Moon."""
@@ -53,7 +57,6 @@ class TestSolarObjects(unittest.TestCase):
 
         # Size (apparent diameter) should be a positive value
         self.assertGreater(mars_data[ObjectTableLabels.SIZE], 0)
-
 
     def test_dwarf_planet_magnitude_and_filtering(self):
         """Test that dwarf planet magnitude is calculated and filtering works."""
@@ -136,7 +139,6 @@ class TestSolarObjects(unittest.TestCase):
             "Ceres should be filtered out with a low magnitude limit.",
         )
 
-
     def test_rise_transit_set_chronology_for_saturn(self):
         """
         Test that rise, transit, and set times are in the correct chronological order
@@ -154,7 +156,6 @@ class TestSolarObjects(unittest.TestCase):
         rising_time = saturn_data[ObjectTableLabels.RISING]
         transit_time = saturn_data[ObjectTableLabels.TRANSIT]
         setting_time = saturn_data[ObjectTableLabels.SETTING]
-
 
         # 1. Assert that all times were successfully calculated
         self.assertIsNotNone(rising_time, "Rising time should not be None.")

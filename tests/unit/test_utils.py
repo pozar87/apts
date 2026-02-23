@@ -5,7 +5,8 @@ from apts.utils.planetary import get_moon_illumination, get_moon_illumination_de
 # Ensure apts is discoverable, assuming tests are run from project root or similar
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class TestUtils(unittest.TestCase):
@@ -34,5 +35,5 @@ class TestUtils(unittest.TestCase):
         self.assertFalse(is_waxing)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

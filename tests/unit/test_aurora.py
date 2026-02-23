@@ -35,18 +35,20 @@ def test_get_aurora_df(mock_get_session):
     assert not aurora_df.empty
     assert "aurora" in aurora_df.columns
     assert aurora_df["aurora"].iloc[0] == 50
-    assert aurora_df["time"].iloc[0].strftime(
-        "%Y-%m-%d %H:%M:%S"
-    ) == "2024-01-01 04:00:00"  # Check timezone conversion
+    assert (
+        aurora_df["time"].iloc[0].strftime("%Y-%m-%d %H:%M:%S") == "2024-01-01 04:00:00"
+    )  # Check timezone conversion
 
 
 def test_enrich_with_aurora_data_handles_dtype_mismatch():
     # Create a sample weather DataFrame with second precision, which mimics the original bug scenario
     weather_data = {
-        "time": pd.to_datetime(["2024-01-01 12:00:00", "2024-01-01 13:00:00"]).tz_localize("UTC")
+        "time": pd.to_datetime(
+            ["2024-01-01 12:00:00", "2024-01-01 13:00:00"]
+        ).tz_localize("UTC")
     }
     weather_df = pd.DataFrame(weather_data)
-    weather_df['time'] = weather_df['time'].astype("datetime64[s, UTC]")
+    weather_df["time"] = weather_df["time"].astype("datetime64[s, UTC]")
 
     # Create a mock aurora DataFrame, which defaults to nanosecond precision
     aurora_data = {

@@ -67,9 +67,7 @@ class Utils:
             # Use AutoDateLocator with hints for tick density.
             # Relaxed tick count requirements (from 8-12 to 5-15) to avoid UserWarning
             # from matplotlib when no nice interval can be found in a narrow range.
-            locator = mdates.AutoDateLocator(
-                tz=local_timezone, minticks=5, maxticks=15
-            )
+            locator = mdates.AutoDateLocator(tz=local_timezone, minticks=5, maxticks=15)
             ax.xaxis.set_major_locator(locator)
             # Only set formatter if one hasn't been set by the caller
             # (i.e., it's still the default AutoDateFormatter or ScalarFormatter)
@@ -97,7 +95,9 @@ class Utils:
                 dmax = mdates.num2date(xmax, tz=local_timezone)
 
                 # Start from the first midnight after dmin
-                current_midnight = dmin.replace(hour=0, minute=0, second=0, microsecond=0)
+                current_midnight = dmin.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 if current_midnight < dmin:
                     current_midnight += timedelta(days=1)
 

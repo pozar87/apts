@@ -59,9 +59,14 @@ def test_messier_catalog():
     assert "SIMBAD" in c.columns
     assert "ALADIN" in c.columns
     assert "Astrobin" in c.columns
-    assert c.iloc[0]["SIMBAD"].startswith("https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=M1")
-    assert c.iloc[0]["ALADIN"].startswith("https://aladin.cds.unistra.fr/AladinLite/?target=M1")
+    assert c.iloc[0]["SIMBAD"].startswith(
+        "https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=M1"
+    )
+    assert c.iloc[0]["ALADIN"].startswith(
+        "https://aladin.cds.unistra.fr/AladinLite/?target=M1"
+    )
     assert c.iloc[0]["Astrobin"].startswith("https://www.astrobin.com/search/?q=M1")
+
 
 def test_ngc_catalog():
     c = cast(pd.DataFrame, Catalogs().NGC)
