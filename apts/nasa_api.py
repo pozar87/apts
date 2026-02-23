@@ -45,7 +45,9 @@ class NasaAPI:
 
         # Update element_count
         if "near_earth_objects" in all_data:
-            total_elements = sum(len(v) for v in all_data["near_earth_objects"].values())
+            total_elements = sum(
+                len(v) for v in all_data["near_earth_objects"].values()
+            )
             all_data["element_count"] = total_elements
 
         return all_data

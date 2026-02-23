@@ -405,9 +405,13 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             return_value=(MagicMock(), MagicMock(shape=(6, 2))),
         ) as mock_subplots,
         patch("apts.plotting.weather.mark_observation") as mock_mark_observation,
-        patch("apts.plotting.weather.mark_good_conditions") as mock_mark_good_conditions,
+        patch(
+            "apts.plotting.weather.mark_good_conditions"
+        ) as mock_mark_good_conditions,
         patch("apts.plotting.path.plot_sun_and_moon_path"),
-        patch.object(mock_weather_instance, "plot_moon_illumination") as mock_plot_moon_illumination,
+        patch.object(
+            mock_weather_instance, "plot_moon_illumination"
+        ) as mock_plot_moon_illumination,
         patch.object(mock_weather_instance, "plot_fog") as mock_plot_fog,
     ):
         fig = obs.plot_weather()

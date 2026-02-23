@@ -60,9 +60,7 @@ class Telescope(OpticalEquipment):
         Calculate the light gathering area of the telescope, accounting for central obstruction.
         :return: area in mm^2
         """
-        return (
-            numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
-        )
+        return numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
 
     def effective_aperture(self):
         """
@@ -109,7 +107,7 @@ class Telescope(OpticalEquipment):
         :return: ratio between telescope and other aperture
         """
         other_aperture *= get_unit_registry().mm
-        return self.effective_aperture()**2 / other_aperture**2
+        return self.effective_aperture() ** 2 / other_aperture**2
 
     def min_useful_zoom(self):
         return self.aperture.magnitude / 6

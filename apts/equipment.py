@@ -479,7 +479,11 @@ class Equipment:
             # Connect all outputs with inputs
             self._connect()
 
-            effective_dark_mode = dark_mode_override if dark_mode_override is not None else get_dark_mode()
+            effective_dark_mode = (
+                dark_mode_override
+                if dark_mode_override is not None
+                else get_dark_mode()
+            )
             current_plot_style = get_plot_style(effective_dark_mode)
             current_node_colors = get_plot_colors(effective_dark_mode)
 
@@ -522,7 +526,9 @@ class Equipment:
             # Determine general colors from style
             text_color = current_plot_style.get("TEXT_COLOR", "#000000")
             figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
-            axes_face_color = current_plot_style.get("AXES_FACE_COLOR", figure_face_color)
+            axes_face_color = current_plot_style.get(
+                "AXES_FACE_COLOR", figure_face_color
+            )
             edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
 
             fig, ax = plt.subplots(

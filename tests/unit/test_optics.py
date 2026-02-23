@@ -13,6 +13,7 @@ from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.camera import Camera
 
+
 class TestOptics(unittest.TestCase):
     def test_expand_binoculars(self):
         binos = MagicMock(spec=Binoculars)
@@ -158,6 +159,7 @@ class TestOptics(unittest.TestCase):
         c.field_of_view_width.assert_called_once()
         c.field_of_view_height.assert_called_once()
         c.field_of_view_diagonal.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

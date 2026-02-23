@@ -77,7 +77,7 @@ class TestNakedEye(unittest.TestCase):
 
     def test_naked_eye_data(self):
         """Test that the data() method includes an entry for NakedEye."""
-        with language_context('en'):
+        with language_context("en"):
             eq = Equipment()
             df = eq.data()
 
@@ -87,7 +87,9 @@ class TestNakedEye(unittest.TestCase):
             ]
 
             self.assertEqual(
-                len(naked_eye_rows), 1, "There should be exactly one entry for NakedEye."
+                len(naked_eye_rows),
+                1,
+                "There should be exactly one entry for NakedEye.",
             )
 
             # Verify some properties of the NakedEye entry

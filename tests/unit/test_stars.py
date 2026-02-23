@@ -11,6 +11,7 @@ INITIAL_DT = datetime.datetime.strptime(INITIAL_DATE_STR, "%Y/%m/%d %H:%M:%S").r
     tzinfo=pytz.UTC
 )
 
+
 class TestStars(unittest.TestCase):
     def setUp(self):
         self.place = setup_place()
@@ -41,11 +42,14 @@ class TestStars(unittest.TestCase):
         # Verify that transits are around the new date
         first_transit = df[ObjectTableLabels.TRANSIT].iloc[0]
         # Allow for some wiggle room because stars transit once per sidereal day
-        self.assertLess(abs((first_transit - local_new_date).total_seconds()), 24 * 3600)
+        self.assertLess(
+            abs((first_transit - local_new_date).total_seconds()), 24 * 3600
+        )
 
     def test_stars_compute_with_time_array(self):
         # Skyfield sometimes passes time arrays
         from skyfield.api import load
+
         ts = load.timescale()
         t = ts.utc([2025, 2025], [2, 2], [18, 19])  # type: ignore[reportArgumentType]
 

@@ -2,6 +2,7 @@ import unittest
 from typing import Any, cast
 from apts.units import get_unit_registry, set_unit_registry
 
+
 class TestUnits(unittest.TestCase):
     def test_unit_definitions(self):
         ureg = get_unit_registry()
@@ -27,6 +28,7 @@ class TestUnits(unittest.TestCase):
         finally:
             # Restore
             set_unit_registry(original_ureg)
+
 
 if __name__ == "__main__":
     unittest.main()

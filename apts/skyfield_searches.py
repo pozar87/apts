@@ -116,9 +116,7 @@ def find_conjunctions(
     events = []
     for t, s in zip(times, separations):
         if threshold_degrees is None or s < threshold_degrees:
-            events.append(
-                {"date": t.utc_datetime(), "separation_degrees": s}
-            )
+            events.append({"date": t.utc_datetime(), "separation_degrees": s})
 
     return events
 
@@ -175,9 +173,7 @@ def find_mercury_inferior_conjunctions(
             # It is an inferior conjunction
             # Calculate angular radii
             mercury_angular_radius = np.degrees(
-                np.arctan2(
-                    astronomy.MERCURY_RADIUS_KM / astronomy.AU_KM, mercury_dist
-                )
+                np.arctan2(astronomy.MERCURY_RADIUS_KM / astronomy.AU_KM, mercury_dist)
             )
             sun_angular_radius = np.degrees(
                 np.arctan2(astronomy.SUN_RADIUS_KM / astronomy.AU_KM, sun_dist)

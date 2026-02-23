@@ -116,10 +116,20 @@ class AstronomicalEvents:
         if df.empty:
             return df
 
-        columns_to_translate = ["event", "type", "shower_name", "phase", "object", "object1", "object2"]
+        columns_to_translate = [
+            "event",
+            "type",
+            "shower_name",
+            "phase",
+            "object",
+            "object1",
+            "object2",
+        ]
         for col in columns_to_translate:
             if col in df.columns:
-                df[col] = df[col].apply(lambda x: gettext_(x) if isinstance(x, str) else x)
+                df[col] = df[col].apply(
+                    lambda x: gettext_(x) if isinstance(x, str) else x
+                )
 
         return df
 
@@ -210,9 +220,7 @@ class AstronomicalEvents:
 
     def calculate_lunar_eclipses(self):
         start_time = time.time()
-        events = skyfield_searches.find_lunar_eclipses(
-            self.start_date, self.end_date
-        )
+        events = skyfield_searches.find_lunar_eclipses(self.start_date, self.end_date)
         for event in events:
             event["event"] = "Lunar Eclipse"
             event["type"] = "Lunar Eclipse"
@@ -553,8 +561,8 @@ class AstronomicalEvents:
             "M107",
         ]
 
-        messier_df = self.catalogs.MESSIER[ # type: ignore
-            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check) # type: ignore
+        messier_df = self.catalogs.MESSIER[  # type: ignore
+            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)  # type: ignore
         ]
 
         # Pre-create Star objects outside the loop
@@ -627,7 +635,7 @@ class AstronomicalEvents:
             events.append(
                 {
                     "date": parse_date(
-                        comet["close_approach_data"][0]["close_approach_date_full"] # type: ignore
+                        comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
                     ).astimezone(utc),
                     "event": comet["name"],
                     "type": "Comet",

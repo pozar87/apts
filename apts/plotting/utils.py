@@ -208,7 +208,9 @@ def mark_observation(
         # Fallback to marking primary observation window if possible
         if observation.start and observation.time_limit:
             plot.axvline(observation.start, color=style["GRID_COLOR"], linestyle="--")
-            plot.axvline(observation.time_limit, color=style["GRID_COLOR"], linestyle="--")
+            plot.axvline(
+                observation.time_limit, color=style["GRID_COLOR"], linestyle="--"
+            )
         return
 
     # Use skyfield almanac for accurate and comprehensive day/night and moon marking

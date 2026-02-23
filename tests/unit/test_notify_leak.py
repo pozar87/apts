@@ -3,6 +3,7 @@ from unittest.mock import patch
 from apts.notify import Notify
 import smtplib
 
+
 def test_notify_leak_on_login_error(caplog):
     smtp_password = "SUPER_SECRET_PASSWORD"
     recipient = "test@example.com"
@@ -26,7 +27,9 @@ def test_notify_leak_on_login_error(caplog):
             instance.ehlo.return_value = (250, b"ok")
             instance.starttls.return_value = (220, b"ready")
 
-            instance.login.side_effect = smtplib.SMTPAuthenticationError(535, f"Authentication failed for password {smtp_password}")
+            instance.login.side_effect = smtplib.SMTPAuthenticationError(
+                535, f"Authentication failed for password {smtp_password}"
+            )
 
             with caplog.at_level(logging.ERROR):
                 notify.send_simple_email("subject", "body")

@@ -8,7 +8,7 @@ from ..constants import ObjectTableLabels
 class Messier(Objects):
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Messier, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.MESSIER.copy() # type: ignore
+        self.objects = catalogs.MESSIER.copy()  # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.RISING] = None
         self.objects[ObjectTableLabels.SETTING] = None
@@ -44,7 +44,9 @@ class Messier(Objects):
         computed_df = target_df.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts, rises, sets = self._fast_compute_stars(computed_df, observer_to_use)
+        transits, alts, rises, sets = self._fast_compute_stars(
+            computed_df, observer_to_use
+        )
         computed_df[ObjectTableLabels.TRANSIT] = transits
         computed_df[ObjectTableLabels.ALTITUDE] = alts
         computed_df[ObjectTableLabels.RISING] = rises

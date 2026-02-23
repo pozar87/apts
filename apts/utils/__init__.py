@@ -47,9 +47,13 @@ class Utils:
     def decdeg2dms(dd: Any, pretty: Literal[True]) -> str: ...
     @staticmethod
     @overload
-    def decdeg2dms(dd: Any, pretty: Literal[False] = False) -> Tuple[float, float, float]: ...
+    def decdeg2dms(
+        dd: Any, pretty: Literal[False] = False
+    ) -> Tuple[float, float, float]: ...
     @staticmethod
-    def decdeg2dms(dd: Any, pretty: bool = False) -> Union[str, Tuple[float, float, float]]:
+    def decdeg2dms(
+        dd: Any, pretty: bool = False
+    ) -> Union[str, Tuple[float, float, float]]:
         is_pandas_series = hasattr(dd, "iloc")
         dd_val = dd.iloc[0] if is_pandas_series else dd
         mnt, sec = divmod(dd_val * 3600, 60)
@@ -89,18 +93,28 @@ class Utils:
         return mask_secret(secret)
 
     @staticmethod
-    def annotate_plot(plot, y_label, dark_mode_enabled: bool): # Removed local_tz
+    def annotate_plot(plot, y_label, dark_mode_enabled: bool):  # Removed local_tz
         style = get_plot_style(dark_mode_enabled)
 
-        plot.set_xlabel("Time", color=style['TEXT_COLOR'])
-        plot.set_ylabel(y_label, color=style['TEXT_COLOR'])
+        plot.set_xlabel("Time", color=style["TEXT_COLOR"])
+        plot.set_ylabel(y_label, color=style["TEXT_COLOR"])
         # The following line was found to cause incorrect date range scaling on the x-axis.
         # Pandas/Matplotlib's default formatter handles timezone-aware dates correctly.
         # plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
-        plot.tick_params(axis='x', which='both', colors=style['TICK_COLOR'], labelcolor=style['TEXT_COLOR'], bottom=True, top=False, labelbottom=True)
-        plot.tick_params(axis='y', colors=style['TICK_COLOR'], labelcolor=style['TEXT_COLOR']) # Also making y-axis labelcolor explicit
+        plot.tick_params(
+            axis="x",
+            which="both",
+            colors=style["TICK_COLOR"],
+            labelcolor=style["TEXT_COLOR"],
+            bottom=True,
+            top=False,
+            labelbottom=True,
+        )
+        plot.tick_params(
+            axis="y", colors=style["TICK_COLOR"], labelcolor=style["TEXT_COLOR"]
+        )  # Also making y-axis labelcolor explicit
 
-        plot.spines['bottom'].set_color(style['AXIS_COLOR'])
-        plot.spines['top'].set_color(style['AXIS_COLOR'])
-        plot.spines['left'].set_color(style['AXIS_COLOR'])
-        plot.spines['right'].set_color(style['AXIS_COLOR'])
+        plot.spines["bottom"].set_color(style["AXIS_COLOR"])
+        plot.spines["top"].set_color(style["AXIS_COLOR"])
+        plot.spines["left"].set_color(style["AXIS_COLOR"])
+        plot.spines["right"].set_color(style["AXIS_COLOR"])
