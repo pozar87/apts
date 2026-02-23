@@ -249,3 +249,21 @@ class Camera(OutputOpticalEqipment):
             full_well=51400,
             quantum_efficiency=80,
         )
+
+    @classmethod
+    def ZWO_ASI585MC(cls):
+        """
+        Factory method for ZWO ASI585MC camera.
+        Sensor: Sony IMX585 (1/1.2")
+        """
+        return cls(
+            11.2,
+            6.3,
+            3840,
+            2160,
+            "ZWO ASI585MC",
+            pixel_size=2.9,
+            read_noise=0.8,
+            full_well=40000,
+            quantum_efficiency=91,
+        )
