@@ -574,7 +574,7 @@ class Meteoblue(WeatherProvider):
 
         return df
 
-    def _is_basic_weather_good(self, df, conditions, observation_window) -> bool:
+    def _is_weather_good(self, df, conditions, observation_window) -> bool:
         start, stop = observation_window
         # Filter data for the observation window
         df_window = df[(df.time >= start) & (df.time <= stop)].copy()
@@ -584,8 +584,40 @@ class Meteoblue(WeatherProvider):
         good_hours = 0
         for _, row in df_window.iterrows():
             is_good = True
+            # Check clouds
+            if (
+                is_good
+                and "cloudCover" in row
+                and pd.notna(row.cloudCover)
+                and row.cloudCover != "none"
+            ):
+                if float(row.cloudCover) >= conditions.max_clouds:
+                    is_good = False
+            # Check visibility
+            if (
+                is_good
+                and "visibility" in row
+                and pd.notna(row.visibility)
+                and row.visibility != "none"
+            ):
+                if float(row.visibility) <= conditions.min_visibility:
+                    is_good = False
+            # Check fog
+            if (
+                is_good
+                and "fog" in row
+                and pd.notna(row.fog)
+                and row.fog != "none"
+            ):
+                if float(row.fog) >= conditions.max_fog:
+                    is_good = False
             # Check precipitation
-            if pd.notna(row.get("precipProbability")) and row.get("precipProbability") != "none":
+            if (
+                is_good
+                and "precipProbability" in row
+                and pd.notna(row.precipProbability)
+                and row.precipProbability != "none"
+            ):
                 if (
                     float(row.precipProbability)
                     >= conditions.max_precipitation_probability
@@ -593,8 +625,9 @@ class Meteoblue(WeatherProvider):
                     is_good = False
             if (
                 is_good
-                and pd.notna(row.get("precipIntensity"))
-                and row.get("precipIntensity") != "none"
+                and "precipIntensity" in row
+                and pd.notna(row.precipIntensity)
+                and row.precipIntensity != "none"
             ):
                 if (
                     float(row.precipIntensity)
@@ -604,18 +637,20 @@ class Meteoblue(WeatherProvider):
             # Check wind
             if (
                 is_good
-                and pd.notna(row.get("windSpeed"))
-                and row.get("windSpeed") != "none"
+                and "windSpeed" in row
+                and pd.notna(row.windSpeed)
+                and row.windSpeed != "none"
             ):
-                if float(row.get("windSpeed")) >= conditions.max_wind:
+                if float(row.windSpeed) >= conditions.max_wind:
                     is_good = False
             # Check temperature
             if (
                 is_good
-                and pd.notna(row.get("temperature"))
-                and row.get("temperature") != "none"
+                and "temperature" in row
+                and pd.notna(row.temperature)
+                and row.temperature != "none"
             ):
-                temp = float(row.get("temperature"))
+                temp = float(row.temperature)
                 if (
                     temp <= conditions.min_temperature
                     or temp >= conditions.max_temperature
@@ -630,35 +665,7 @@ class Meteoblue(WeatherProvider):
     def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
         forecast_days = math.ceil(hours / 24)
 
-        # 1. Fetch BASIC package
-        url_basic = self.BASIC_URL.format(
-            apikey=self.api_key,
-            lat=self.lat,
-            lon=self.lon,
-            forecast_days=forecast_days,
-        )
-        self._log_download_url(url_basic)
-        resp_basic = None
-        try:
-            with get_session().get(url_basic) as resp_basic:
-                resp_basic.raise_for_status()
-                df = self._parse_meteoblue_response(resp_basic.text)
-        except Exception as e:
-            self._log_download_error(e, resp_basic.text if resp_basic is not None else "")
-            return self._empty_df()
-
-        if df.empty:
-            return self._empty_df()
-
-        # 2. Check if weather is already bad based on basic data
-        if not force and conditions is not None and observation_window is not None:
-            if not self._is_basic_weather_good(df, conditions, observation_window):
-                logger.info(
-                    "Meteoblue: basic weather conditions not met, skipping clouds-1h fetch and aurora enrichment."
-                )
-                return self._finalize_df(df, hours)
-
-        # 3. Fetch CLOUDS package
+        # 1. Fetch CLOUDS package (cheaper)
         url_clouds = self.CLOUDS_URL.format(
             apikey=self.api_key,
             lat=self.lat,
@@ -670,13 +677,41 @@ class Meteoblue(WeatherProvider):
         try:
             with get_session().get(url_clouds) as resp_clouds:
                 resp_clouds.raise_for_status()
-                df_clouds = self._parse_meteoblue_response(resp_clouds.text)
-                if not df_clouds.empty:
-                    # Merge with basic data
-                    df = pd.merge(df, df_clouds, on="time", suffixes=("", "_clouds"))
+                df = self._parse_meteoblue_response(resp_clouds.text)
         except Exception as e:
             self._log_download_error(e, resp_clouds.text if resp_clouds is not None else "")
-            # Continue with basic data only if clouds fetch fails
+            return self._empty_df()
+
+        if df.empty:
+            return self._empty_df()
+
+        # 2. Check if weather is already bad based on cloud data
+        if not force and conditions is not None and observation_window is not None:
+            if not self._is_weather_good(df, conditions, observation_window):
+                logger.info(
+                    "Meteoblue: cloud conditions not met, skipping basic-1h fetch and aurora enrichment."
+                )
+                return self._finalize_df(df, hours)
+
+        # 3. Fetch BASIC package
+        url_basic = self.BASIC_URL.format(
+            apikey=self.api_key,
+            lat=self.lat,
+            lon=self.lon,
+            forecast_days=forecast_days,
+        )
+        self._log_download_url(url_basic)
+        resp_basic = None
+        try:
+            with get_session().get(url_basic) as resp_basic:
+                resp_basic.raise_for_status()
+                df_basic = self._parse_meteoblue_response(resp_basic.text)
+                if not df_basic.empty:
+                    # Merge with cloud data
+                    df = pd.merge(df, df_basic, on="time", suffixes=("", "_basic"))
+        except Exception as e:
+            self._log_download_error(e, resp_basic.text if resp_basic is not None else "")
+            # Continue with cloud data only if basic fetch fails
 
         df = self._finalize_df(df, hours)
         return self._enrich_with_aurora_data(df)
