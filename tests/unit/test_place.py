@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pandas as pd
 import pytest
+from dateutil import tz
 
 # from apts.config import config # Not directly used if get_dark_mode is mocked
 from apts.constants.graphconstants import get_plot_style
@@ -139,11 +140,11 @@ class TestPlace:
 
         assert p.date == original_place_date, "place.date should not be modified"
 
-    def test_sunset_sunrise_without_target_date_legacy(self, mid_latitude_place):
+    def test_sunset_sunrise_without_target_date(self, mid_latitude_place):
         p = mid_latitude_place  # Uses DEFAULT_INIT_DATE_UTC (2023-01-01 12:00 UTC)
 
         # init_date is Jan 1, 2023, 12:00 PM UTC, which is 5:00 AM MST in Golden, CO.
-        # The logic should find the PREVIOUS sunset (Dec 31, 2022) and NEXT sunrise (Jan 1, 2023).
+        # The logic should find the NEXT sunset (Jan 1, 2023) and NEXT sunrise (Jan 1, 2023).
 
         sunset_dt = p.sunset_time()  # No target_date
         sunrise_dt = p.sunrise_time()  # No target_date
@@ -152,8 +153,8 @@ class TestPlace:
         assert isinstance(sunset_dt, datetime)
         assert sunset_dt.tzinfo == p.local_timezone
 
-        # Check that the sunset is the PREVIOUS one (on Dec 31, 2022)
-        assert sunset_dt.year == 2022 and sunset_dt.month == 12 and sunset_dt.day == 31
+        # Check that the sunset is the NEXT one (on Jan 1, 2023)
+        assert sunset_dt.year == 2023 and sunset_dt.month == 1 and sunset_dt.day == 1
         assert 16 <= sunset_dt.hour <= 17  # Around 4-5 PM for sunset in winter
 
         assert sunrise_dt is not None
@@ -166,8 +167,46 @@ class TestPlace:
 
         # Also assert the chronological order relative to the place's date
         place_date_local = p.date.utc_datetime().astimezone(p.local_timezone)
-        assert sunset_dt < place_date_local
+        assert sunset_dt > place_date_local
         assert sunrise_dt > place_date_local
+
+    def test_user_reported_scenario(self):
+        """
+        Verify the fix for the scenario reported by the user:
+        Generated at 24-02-2026 11:02:00
+        Expected next sunset on 24th and next moonset on 24th.
+        """
+        local_tz = tz.gettz("Europe/Warsaw")
+        # 11:02 CET is 10:02 UTC
+        local_dt = datetime(2026, 2, 24, 11, 2, 0, tzinfo=local_tz)
+        utc_dt = local_dt.astimezone(timezone.utc)
+
+        # Coordinates for Zelków
+        p = Place(lat=50.1637973, lon=19.7855169, date=utc_dt)
+
+        target_date = date(2026, 2, 24)
+
+        sunset = p.sunset_time(target_date=target_date)
+        sunrise = p.sunrise_time(target_date=target_date)
+        moonset = p.moonset_time(target_date=target_date)
+        moonrise = p.moonrise_time(target_date=target_date)
+
+        # Next events from start of 24th (00:00 local)
+        # Sunrise should be Feb 24 morning
+        assert sunrise.date() == target_date
+        assert sunrise.hour == 6
+
+        # Sunset should be Feb 24 evening (Fixed!)
+        assert sunset.date() == target_date
+        assert sunset.hour == 17
+
+        # Moonrise should be Feb 24 morning
+        assert moonrise.date() == target_date
+        assert moonrise.hour == 9
+
+        # Moonset should be Feb 24 early morning (Fixed!)
+        assert moonset.date() == target_date
+        assert moonset.hour == 1
 
     def test_sun_always_up_polar(self, north_pole_place):
         p = north_pole_place
