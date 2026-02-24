@@ -60,8 +60,8 @@ class Notify:
             logger.info("Email sent successfully")
             return True
         except Exception as e:
-            error_msg = (
-                mask_text(str(e), self.smtp_password) if self.smtp_password else str(e)
+            error_msg = mask_text(
+                str(e), [s for s in [self.smtp_password, self.smtp_user] if s]
             )
             logger.error(f"Failed to send email: {error_msg}")
             return False

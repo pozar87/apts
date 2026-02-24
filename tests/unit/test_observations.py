@@ -321,7 +321,7 @@ class TestObservationTemplate(unittest.TestCase):
         )
 
         with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, encoding="utf-8"
+            mode="w", delete=False, encoding="utf-8", suffix=".html"
         ) as temp_file:
             temp_file.write(self.default_template_content)
             custom_template_path = temp_file.name
@@ -380,7 +380,9 @@ class TestObservationTemplate(unittest.TestCase):
             }
         )
         # Create a temporary template file
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w+", delete=False, suffix=".html"
+        ) as temp_file:
             temp_file.write(self.default_template_content)
             temp_path = temp_file.name
 
