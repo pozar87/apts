@@ -193,18 +193,22 @@ class TestPlace:
 
         # Next events from start of 24th (00:00 local)
         # Sunrise should be Feb 24 morning
+        assert sunrise is not None
         assert sunrise.date() == target_date
         assert sunrise.hour == 6
 
         # Sunset should be Feb 24 evening (Fixed!)
+        assert sunset is not None
         assert sunset.date() == target_date
         assert sunset.hour == 17
 
         # Moonrise should be Feb 24 morning
+        assert moonrise is not None
         assert moonrise.date() == target_date
         assert moonrise.hour == 9
 
         # Moonset should be Feb 24 early morning (Fixed!)
+        assert moonset is not None
         assert moonset.date() == target_date
         assert moonset.hour == 1
 
