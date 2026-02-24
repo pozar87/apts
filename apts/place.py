@@ -4,7 +4,7 @@ from functools import lru_cache
 from importlib import resources
 from math import copysign as copysign
 from math import radians as rad
-from typing import Any, Optional, Tuple
+from typing import Any, Iterable, Optional, Tuple, cast
 
 import matplotlib.font_manager as font_manager
 import numpy as np
@@ -166,7 +166,16 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_weather(self, provider_name: Optional[str] = None, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime.datetime, datetime.datetime]] = None, force: bool = False):
+    def get_weather(
+        self,
+        provider_name: Optional[str] = None,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[
+            Tuple[datetime.datetime, datetime.datetime]
+        ] = None,
+        force: bool = False,
+    ):
         self.weather = Weather(
             self.lat_decimal,
             self.lon_decimal,
@@ -262,8 +271,8 @@ class Place:
             phase_angle_deg = phase_angle.degrees
         else:
             phase_angle_deg = float(phase_angle)  # type: ignore
-        lunation = phase_angle_deg / 360.0  # type: ignore
-        letter = chr(ord("A") + int(round(lunation * 26)))  # type: ignore
+        lunation = cast(float, phase_angle_deg) / 360.0
+        letter = chr(ord("A") + int(round(lunation * 26)))
         return letter
 
     def moon_illumination(self):
@@ -276,36 +285,47 @@ class Place:
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
 
-        time_list = [t for t in times]
+        # Vectorized conversion to datetime
+        utcs = times.utc_datetime()
 
         df = pd.DataFrame(
-            {"Time": time_list, "Altitude": alt.degrees, "Azimuth": az.degrees}
+            {
+                "Time": list(cast(Iterable[Any], times)),
+                "UTC_datetime": utcs,
+                "Altitude": alt.degrees,
+                "Azimuth": az.degrees,
+            }
         )
 
         # For Southern Hemisphere, the transit is North (0/360 degrees).
         # If the path crosses this point, matplotlib will draw a line across the plot.
         # To prevent this, we find the wrap-around point and insert a NaN row.
         if self.lat_decimal < 0:
-            diffs = df["Azimuth"].diff()
-            wrap_around_indices = diffs[diffs.abs() > 180].index  # type: ignore
-            if not wrap_around_indices.empty:  # type: ignore
-                idx = wrap_around_indices[0]  # type: ignore
-                new_index = idx - 0.5  # type: ignore
+            diffs = cast(pd.Series, df["Azimuth"].diff())
+            wrap_around_indices = cast(pd.Series, diffs[diffs.abs() > 180]).index
+            if len(wrap_around_indices) > 0:
+                idx = cast(Any, wrap_around_indices[0])
+                new_index = idx - 0.5
                 nan_row = pd.DataFrame(
-                    {"Time": [pd.NaT], "Altitude": [np.nan], "Azimuth": [np.nan]},
+                    {
+                        "Time": [pd.NaT],
+                        "UTC_datetime": [pd.NaT],
+                        "Altitude": [np.nan],
+                        "Azimuth": [np.nan],
+                    },
                     index=[new_index],  # type: ignore
                 )
                 df = pd.concat([df, nan_row]).sort_index().reset_index(drop=True)  # type: ignore
 
-        local_datetimes = pd.Series(times.utc_datetime())
+        # Ensure UTC_datetime is recognized as a datetime series
+        df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
+        local_datetimes = df["UTC_datetime"]
         if local_datetimes.dt.tz is None:
             local_datetimes = local_datetimes.dt.tz_localize("UTC")
 
-        df["Local_time"] = (
-            local_datetimes
-            .dt.tz_convert(self.local_timezone)
-            .dt.strftime("%H:%M")
-        )
+        df["Local_time"] = local_datetimes.dt.tz_convert(
+            self.local_timezone
+        ).dt.strftime("%H:%M")
         return df
 
     def moon_path(self) -> pd.DataFrame:
@@ -316,28 +336,34 @@ class Place:
         df = self.get_altaz_curve(self.moon, start_time, end_time, num_points=26 * 8)
         df = df.rename(columns={"Altitude": "Moon altitude"})
 
-        phases = []
-        lunations = []
-        for t in df["Time"]:
-            if hasattr(t, "utc_datetime"):
-                moon_phase_angle = almanac.moon_phase(self.eph, t)
-                phase_angle_deg = (
-                    moon_phase_angle.degrees
-                    if hasattr(moon_phase_angle, "degrees")
-                    else float(moon_phase_angle)  # type: ignore
-                )
-                phases.append((phase_angle_deg / 360.0) * 100)  # type: ignore
-                lunations.append(phase_angle_deg / 360.0)  # type: ignore
-            else:
-                phases.append(pd.NA)
-                lunations.append(pd.NA)
+        # Vectorized moon phase calculation
+        if "UTC_datetime" in df.columns:
+            valid_mask = df["UTC_datetime"].notna()
+        else:
+            # Fallback for mocks
+            df["UTC_datetime"] = df["Time"].apply(
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+            )
+            df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
+            valid_mask = df["UTC_datetime"].notna()
 
-        df["Phase"] = phases
-        df["Lunation"] = lunations
-        df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT  # type: ignore
-            for x in df["Time"]
-        ]
+        if bool(valid_mask.any()):
+            # Convert valid datetimes back to a Skyfield Time vector
+            times_vec = self.ts.from_datetimes(
+                df.loc[valid_mask, "UTC_datetime"].tolist()
+            )
+            moon_phase_angles = almanac.moon_phase(self.eph, times_vec).degrees
+            df.loc[valid_mask, "Phase"] = (
+                cast(np.ndarray[Any, Any], moon_phase_angles) / 360.0
+            ) * 100
+            df.loc[valid_mask, "Lunation"] = (
+                cast(np.ndarray[Any, Any], moon_phase_angles) / 360.0
+            )
+        else:
+            df["Phase"] = pd.NA
+            df["Lunation"] = pd.NA
+
+        df["Time"] = df["UTC_datetime"].dt.time
         return df
 
     def sun_path(self) -> pd.DataFrame:
@@ -347,10 +373,15 @@ class Place:
         end_time = start_time + datetime.timedelta(days=1)
         df = self.get_altaz_curve(self.sun, start_time, end_time, num_points=26 * 4)
         df = df.rename(columns={"Altitude": "Sun altitude"})
-        df["Time"] = [
-            x.utc_datetime().time() if hasattr(x, "utc_datetime") else pd.NaT  # type: ignore
-            for x in df["Time"]
-        ]
+
+        if "UTC_datetime" not in df.columns:
+            # Fallback for mocks
+            df["UTC_datetime"] = df["Time"].apply(
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+            )
+            df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
+
+        df["Time"] = df["UTC_datetime"].dt.time
         return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):

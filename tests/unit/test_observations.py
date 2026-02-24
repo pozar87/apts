@@ -282,7 +282,9 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
+                "precipIntensity": 0,
+                "aurora": 0,
+                "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -308,7 +310,9 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
+                "precipIntensity": 0,
+                "aurora": 0,
+                "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -340,7 +344,9 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
+                "precipIntensity": 0,
+                "aurora": 0,
+                "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],
@@ -364,7 +370,9 @@ class TestObservationTemplate(unittest.TestCase):
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
-                "precipIntensity": 0, "aurora": 0, "precipProbability": [],
+                "precipIntensity": 0,
+                "aurora": 0,
+                "precipProbability": [],
                 "windSpeed": [],
                 "temperature": [],
                 "visibility": [],

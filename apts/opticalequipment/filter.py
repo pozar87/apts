@@ -14,12 +14,16 @@ class Filter(IntermediateOpticalEquipment):
         connection_type=ConnectionType.F_1_25,
         transmission=1.0,
         optical_length=0,
-        mass=0
+        mass=0,
     ):
         super(Filter, self).__init__(
-            vendor, optical_length=optical_length, mass=mass,
-            in_connection_type=connection_type, out_connection_type=connection_type,
-            in_gender=Gender.MALE, out_gender=Gender.FEMALE
+            vendor,
+            optical_length=optical_length,
+            mass=mass,
+            in_connection_type=connection_type,
+            out_connection_type=connection_type,
+            in_gender=Gender.MALE,
+            out_gender=Gender.FEMALE,
         )
         self.name = name
         self.transmission = transmission

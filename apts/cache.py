@@ -34,7 +34,7 @@ def get_hipparcos_data() -> pd.DataFrame:
     Returns a cached Hipparcos catalog as a pandas DataFrame.
     """
     # Ensure the 'data' directory exists
-    data_dir = 'data'
+    data_dir = "data"
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
@@ -100,7 +100,7 @@ def get_mpcorb_data() -> pd.DataFrame:
                 "hex_flags",
                 "designation",
                 "last_observation_date",
-            ]  # type: ignore
+            ],  # type: ignore
         )
         return df.set_index("designation")
 
@@ -140,6 +140,7 @@ def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
             if "comet" in comet["name"].lower():
                 records.append(comet)
     return pd.DataFrame(records)
+
 
 def download_all_data():
     """

@@ -220,9 +220,11 @@ def generate_plot_planets(
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     planets_df = observation.get_visible_planets().copy()
-    
+
     # Extended range for plotting context (+/- 30 mins)
-    plot_start = observation.start - timedelta(minutes=30) if observation.start else None
+    plot_start = (
+        observation.start - timedelta(minutes=30) if observation.start else None
+    )
     plot_end = observation.stop + timedelta(minutes=30) if observation.stop else None
 
     if len(planets_df) == 0:
@@ -230,7 +232,7 @@ def generate_plot_planets(
             # Also extend empty plot
             plot_limit = observation.time_limit + timedelta(minutes=30)
             ax.set_xlim([plot_start, plot_limit])
-            
+
         ax.set_ylim(0, 90)
         mark_observation(observation, ax, effective_dark_mode, style)
         mark_good_conditions(
@@ -267,9 +269,13 @@ def generate_plot_planets(
             default_planet_color,  # type: ignore
         )
 
-        time_series = curve_df["Time"].apply(
-            lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-        )
+        # Use pre-computed UTC_datetime if available, fallback for mocks/overrides
+        if "UTC_datetime" in curve_df.columns:
+            time_series = curve_df["UTC_datetime"]
+        else:
+            time_series = curve_df["Time"].apply(
+                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+            )
         valid_times = pd.notna(time_series)
 
         # Add Matplotlib-compatible time column for pandas plotting
@@ -322,14 +328,10 @@ def generate_plot_planets(
 
         rising_time = planet[ObjectTableLabels.RISING]
         if pd.notna(rising_time):  # type: ignore
-            ax.scatter(
-                rising_time, 0, marker="^", color=specific_planet_color, s=100
-            )
+            ax.scatter(rising_time, 0, marker="^", color=specific_planet_color, s=100)
         setting_time = planet[ObjectTableLabels.SETTING]
         if pd.notna(setting_time):  # type: ignore
-            ax.scatter(
-                setting_time, 0, marker="v", color=specific_planet_color, s=100
-            )
+            ax.scatter(setting_time, 0, marker="v", color=specific_planet_color, s=100)
 
         if not curve_df.empty:
             try:

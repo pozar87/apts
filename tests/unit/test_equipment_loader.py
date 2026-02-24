@@ -2,6 +2,7 @@ import unittest
 from apts.equipment_database import EquipmentDatabase
 from apts.opticalequipment import Telescope, Camera
 
+
 class TestEquipmentLoader(unittest.TestCase):
     def test_search_and_create(self):
         db = EquipmentDatabase()

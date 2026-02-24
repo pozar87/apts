@@ -20,7 +20,9 @@ class TestAstronomicalEvents(unittest.TestCase):
 
     @patch("apts.events.as_completed")
     @patch("apts.events.get_event_settings")
-    def test_get_events_parallelization(self, mock_get_event_settings, mock_as_completed):
+    def test_get_events_parallelization(
+        self, mock_get_event_settings, mock_as_completed
+    ):
         # Configure mock_get_event_settings to return all events enabled
         mock_get_event_settings.return_value = {
             "moon_phases": True,
@@ -41,26 +43,25 @@ class TestAstronomicalEvents(unittest.TestCase):
         # Mock the executor instance that the 'with' statement will use
         events_instance.executor = MagicMock()
         mock_executor_instance = events_instance.executor
-    
+
         # Create a list of mock futures
         mock_futures = [MagicMock() for _ in range(10)]
         for future in mock_futures:
             future.result.return_value = []
-    
+
         # Have the submit method return a different mock future each time
         mock_executor_instance.submit.side_effect = mock_futures
-    
+
         # have as_completed return the list of mock_futures
         mock_as_completed.return_value = mock_futures
-    
+
         events_instance.get_events()
-    
+
         # Check that submit was called for each calculation method
         self.assertEqual(mock_executor_instance.submit.call_count, 10)
         # Check that as_completed was called with the futures list
         mock_as_completed.assert_called_once()
         self.assertEqual(len(mock_as_completed.call_args[0][0]), 10)
-
 
     @patch("apts.events.as_completed")
     def test_get_events_with_enum_selection(self, mock_as_completed):

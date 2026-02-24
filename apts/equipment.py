@@ -2,9 +2,9 @@ import io
 import logging
 from typing import Optional
 
-import numpy
 import matplotlib.pyplot as plt
 import networkx as nx
+import numpy
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
@@ -105,6 +105,9 @@ class Equipment:
             EquipmentTableLabels.ZOOM,
             EquipmentTableLabels.USEFUL_ZOOM,
             EquipmentTableLabels.FOV,
+            EquipmentTableLabels.FOV_W,
+            EquipmentTableLabels.FOV_H,
+            EquipmentTableLabels.FOV_D,
             EquipmentTableLabels.EXIT_PUPIL,
             EquipmentTableLabels.DAWES_LIMIT,
             EquipmentTableLabels.RANGE,
@@ -116,6 +119,7 @@ class Equipment:
             EquipmentTableLabels.SAMPLING,
             EquipmentTableLabels.NPF_RULE,
             EquipmentTableLabels.RULE_OF_500,
+            EquipmentTableLabels.CRITICAL_FOCUS_ZONE,
             EquipmentTableLabels.BACKFOCUS_GAP,
             EquipmentTableLabels.TOTAL_MASS,
             EquipmentTableLabels.IS_NAKED_EYE,
@@ -181,6 +185,16 @@ class Equipment:
                 else:
                     r500_magnitude = numpy.nan
 
+                # Sampling status (default seeing 2.0")
+                sampling_value = path.sampling_status(seeing=2.0)
+
+                # Critical Focus Zone
+                cfz_value = path.critical_focus_zone()
+                if cfz_value is not None:
+                    cfz_magnitude = cfz_value.magnitude
+                else:
+                    cfz_magnitude = numpy.nan
+
                 # Backfocus Gap
                 bf_gap_value = path.backfocus_gap()
                 if bf_gap_value is not None:
@@ -191,8 +205,6 @@ class Equipment:
                 # Total Mass
                 total_mass_value = path.total_mass()
                 total_mass_magnitude = total_mass_value.to("gram").magnitude
-                # Sampling status (default seeing 2.0")
-                sampling_value = path.sampling_status(seeing=2.0)
 
                 rows.append(
                     [
@@ -201,6 +213,9 @@ class Equipment:
                         path.zoom().magnitude,
                         useful_zoom_value,
                         path.fov().magnitude,
+                        path.fov_width().magnitude,
+                        path.fov_height().magnitude,
+                        path.fov_diagonal().magnitude,
                         exit_pupil_value,
                         path.telescope.dawes_limit().magnitude,  # dawes_limit() in Binoculars/Telescope returns Quantity
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
@@ -212,6 +227,7 @@ class Equipment:
                         sampling_value,
                         npf_magnitude,
                         r500_magnitude,
+                        cfz_magnitude,
                         bf_gap_magnitude,
                         total_mass_magnitude,
                         is_naked_eye,
@@ -478,7 +494,11 @@ class Equipment:
             # Connect all outputs with inputs
             self._connect()
 
-            effective_dark_mode = dark_mode_override if dark_mode_override is not None else get_dark_mode()
+            effective_dark_mode = (
+                dark_mode_override
+                if dark_mode_override is not None
+                else get_dark_mode()
+            )
             current_plot_style = get_plot_style(effective_dark_mode)
             current_node_colors = get_plot_colors(effective_dark_mode)
 
@@ -521,7 +541,9 @@ class Equipment:
             # Determine general colors from style
             text_color = current_plot_style.get("TEXT_COLOR", "#000000")
             figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
-            axes_face_color = current_plot_style.get("AXES_FACE_COLOR", figure_face_color)
+            axes_face_color = current_plot_style.get(
+                "AXES_FACE_COLOR", figure_face_color
+            )
             edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
 
             fig, ax = plt.subplots(
@@ -599,11 +621,6 @@ class Equipment:
 
             return MatplotlibSVGWrapper(fig)
 
-            fig.patch.set_facecolor(figure_face_color)
-            ax.set_facecolor(axes_face_color)
-
-            return MatplotlibSVGWrapper(fig)
-
     def plot_connection_graph_svg(
         self,
         dark_mode_override: Optional[bool] = None,
@@ -622,7 +639,6 @@ class Equipment:
         if self._connected:
             return
         logger.debug("Connecting nodes")
-        from .utils import Gender
 
         for out_node_id, out_node_data in self.connection_garph.nodes(data=True):
             if out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT:

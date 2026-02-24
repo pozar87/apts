@@ -5,6 +5,7 @@ from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.conditions import Conditions
 
+
 def test_observation_creation_performance():
     # Setup
     place = Place(52.2297, 21.0122, "Warsaw")
@@ -29,6 +30,7 @@ def test_observation_creation_performance():
     # Assert that average time is less than 0.05s (it was ~0.12s before optimization)
     # Actually with caching it should be much faster.
     assert avg_time < 0.05
+
 
 def test_observation_correctness_after_optimization():
     place = Place(52.2297, 21.0122, "Warsaw")

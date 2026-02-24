@@ -729,7 +729,9 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     target_name = "M13"
     target_pos_angle = 45.0
     parallactic_angle_val = 20.0
-    expected_final_angle = (-target_pos_angle) % 360  # Equatorial does not use parallactic
+    expected_final_angle = (
+        -target_pos_angle
+    ) % 360  # Equatorial does not use parallactic
 
     mock_target_object = MagicMock()
     mock_target_object.ra = Angle(hours=16.6)

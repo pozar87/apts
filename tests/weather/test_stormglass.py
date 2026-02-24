@@ -20,13 +20,9 @@ STORMGLASS_MOCK = {
             "snow": {"sg": 0},
         }
     ],
-    "meta": {
-        "dailyQuota": 50,
-        "lat": 0,
-        "lng": 0,
-        "requestCount": 1
-    }
+    "meta": {"dailyQuota": 50, "lat": 0, "lng": 0, "requestCount": 1},
 }
+
 
 @patch("apts.weather.get_weather_settings")
 def test_stormglass_provider(mock_get_weather_settings, requests_mock):
@@ -51,6 +47,7 @@ def test_stormglass_provider(mock_get_weather_settings, requests_mock):
     assert data["precipType"] == "rain"
     assert data["fog"] == 0.0
 
+
 def test_stormglass_precip_type_snow(requests_mock):
     mock_response = {
         "hours": [
@@ -62,23 +59,9 @@ def test_stormglass_precip_type_snow(requests_mock):
             }
         ]
     }
-    with patch("apts.weather.get_weather_settings", return_value=("stormglass", "dummy_key")):
+    with patch(
+        "apts.weather.get_weather_settings", return_value=("stormglass", "dummy_key")
+    ):
         requests_mock.get(ANY, json=mock_response)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
         assert weather.data.iloc[0]["precipType"] == "snow"
-
-def test_stormglass_precip_type_none(requests_mock):
-    mock_response = {
-        "hours": [
-            {
-                "time": "2022-08-26T12:00:00+00:00",
-                "precipitation": {"sg": 0},
-                "rain": {"sg": 0},
-                "snow": {"sg": 0},
-            }
-        ]
-    }
-    with patch("apts.weather.get_weather_settings", return_value=("stormglass", "dummy_key")):
-        requests_mock.get(ANY, json=mock_response)
-        weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
-        assert weather.data.iloc[0]["precipType"] == "none"

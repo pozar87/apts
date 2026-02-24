@@ -37,8 +37,8 @@ class GraphConstants:
         OpticalType.OPTICAL: "#4B0082",
         OpticalType.OUTPUT: "#A9A9A9",
         OpticalType.BINOCULARS: "#00FF00",  # Green for Binoculars
-        OpticalType.VISUAL: "#90EE90", # Light Green for Visual
-        OpticalType.IMAGE: "#ADD8E6", # Light Blue for Image
+        OpticalType.VISUAL: "#90EE90",  # Light Green for Visual
+        OpticalType.IMAGE: "#ADD8E6",  # Light Blue for Image
     }
 
     DARK_COLORS = {
@@ -47,8 +47,8 @@ class GraphConstants:
         OpticalType.OPTICAL: "#5A1A75",  # Bright Purple
         OpticalType.OUTPUT: "#BBBBBB",  # Another Muted Light Gray
         OpticalType.BINOCULARS: "#007447",  # Vibrant Green
-        OpticalType.VISUAL: "#3CB371", # Medium Sea Green for Visual
-        OpticalType.IMAGE: "#4682B4", # Steel Blue for Image
+        OpticalType.VISUAL: "#3CB371",  # Medium Sea Green for Visual
+        OpticalType.IMAGE: "#4682B4",  # Steel Blue for Image
     }
 
     DARK_MODE_STYLE = {
@@ -106,39 +106,39 @@ class GraphConstants:
     }
 
     MESSIER_COLORS_LIGHT = {
-        "Spiral Galaxy": "#6A1B9A",     # Deep Purple
-        "Elliptical Galaxy": "#8E24AA", # Purple
+        "Spiral Galaxy": "#6A1B9A",  # Deep Purple
+        "Elliptical Galaxy": "#8E24AA",  # Purple
         "Irregular Galaxy": "#9C27B0",  # Light Purple
-        "Lenticular (S0) Galaxy": "#AB47BC", # Lighter Purple
-        "Galaxy": "#6A1B9A",            # Fallback for Galaxy
+        "Lenticular (S0) Galaxy": "#AB47BC",  # Lighter Purple
+        "Galaxy": "#6A1B9A",  # Fallback for Galaxy
         "Globular Cluster": "#F9A825",  # Dark Yellow/Gold
-        "Open Cluster": "#1565C0",      # Dark Blue
-        "Diffuse Nebula": "#C62828",    # Dark Red
-        "Nebula": "#C62828",            # Fallback for Nebula
+        "Open Cluster": "#1565C0",  # Dark Blue
+        "Diffuse Nebula": "#C62828",  # Dark Red
+        "Nebula": "#C62828",  # Fallback for Nebula
         "Planetary Nebula": "#00695C",  # Dark Teal
-        "Supernova Remnant": "#D84315", # Dark Orange
-        "Double Star": "#795548",       # Brown
-        "Group/Asterism": "#0277BD",    # Light Blue
-        "Star Cloud": "#EF6C00",        # Orange
-        "Other": "#616161",             # Gray
+        "Supernova Remnant": "#D84315",  # Dark Orange
+        "Double Star": "#795548",  # Brown
+        "Group/Asterism": "#0277BD",  # Light Blue
+        "Star Cloud": "#EF6C00",  # Orange
+        "Other": "#616161",  # Gray
     }
 
     MESSIER_COLORS_DARK = {
-        "Spiral Galaxy": "#A569BD",     # Purple
-        "Elliptical Galaxy": "#AF7AC5", # Soft Purple
+        "Spiral Galaxy": "#A569BD",  # Purple
+        "Elliptical Galaxy": "#AF7AC5",  # Soft Purple
         "Irregular Galaxy": "#C39BD3",  # Lavender
-        "Lenticular (S0) Galaxy": "#D2B4DE", # Light Lavender
-        "Galaxy": "#A569BD",            # Fallback for Galaxy
+        "Lenticular (S0) Galaxy": "#D2B4DE",  # Light Lavender
+        "Galaxy": "#A569BD",  # Fallback for Galaxy
         "Globular Cluster": "#F4D03F",  # Yellow
-        "Open Cluster": "#5DADE2",      # Blue
-        "Diffuse Nebula": "#EC7063",    # Red
-        "Nebula": "#EC7063",            # Fallback for Nebula
+        "Open Cluster": "#5DADE2",  # Blue
+        "Diffuse Nebula": "#EC7063",  # Red
+        "Nebula": "#EC7063",  # Fallback for Nebula
         "Planetary Nebula": "#48C9B0",  # Turquoise
-        "Supernova Remnant": "#EB984E", # Orange
-        "Double Star": "#F7DC6F",       # Light Yellow
-        "Group/Asterism": "#85C1E9",    # Light Blue
-        "Star Cloud": "#F8C471",        # Light Orange
-        "Other": "#ABB2B9",             # Gray
+        "Supernova Remnant": "#EB984E",  # Orange
+        "Double Star": "#F7DC6F",  # Light Yellow
+        "Group/Asterism": "#85C1E9",  # Light Blue
+        "Star Cloud": "#F8C471",  # Light Orange
+        "Other": "#ABB2B9",  # Gray
     }
 
 
@@ -207,6 +207,7 @@ def get_messier_color(
         return colors_dict["Nebula"]
 
     return default_color
+
 
 # Translatable object types for Babel
 def _(text):

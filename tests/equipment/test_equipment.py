@@ -1,3 +1,4 @@
+import math
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -169,10 +170,12 @@ def test_camera_path_with_setup_equipment():  # Renamed
         15
     )  # Confirm original assertion value
 
-    # FOV: (camera.sensor_height.magnitude * 3438 / (telescope.focal_length.magnitude * 1.0)) / 60
-    expected_fov = (
-        cam.sensor_height.magnitude * 3438 / (setup_tele.focal_length.magnitude * 1.0)
-    ) / 60  # No barlow (mag=1.0)
+    # FOV: 2 * arctan(h / (2 * f))
+    expected_fov = 2 * math.degrees(
+        math.atan(
+            cam.sensor_height.magnitude / (2 * setup_tele.focal_length.magnitude * 1.0)
+        )
+    )
     assert target_op.fov().magnitude == pytest.approx(expected_fov)
 
     # Verify the original DataFrame check for completeness, though target_op checks are more robust
@@ -262,9 +265,9 @@ def test_binoculars_registration_and_graph():
     ), "Binoculars not connected from SPACE"
 
     # 3. Connected to EYE
-    assert eq.connection_garph.has_edge(
-        bino_node_id_in_graph, GraphConstants.EYE_ID
-    ), "Binoculars not connected to EYE"
+    assert eq.connection_garph.has_edge(bino_node_id_in_graph, GraphConstants.EYE_ID), (
+        "Binoculars not connected to EYE"
+    )
 
     # 4. Ensure no input/output connection points were created for binoculars
     bino_internal_id = bino.id()  # The ID of the equipment itself
@@ -454,11 +457,12 @@ def test_telescope_to_camera_direct_t2():
 
     # op.fov() calls camera.field_of_view(self.telescope, self.zoom(), self.barlow_magnification())
     # The zoom argument to camera.field_of_view is not used in its formula.
-    expected_fov = (
-        target_op.output.sensor_height.magnitude
-        * 3438
-        / (tele.focal_length.magnitude * 1.0)
-    ) / 60  # Barlow mag is 1.0 for this path
+    expected_fov = 2 * math.degrees(
+        math.atan(
+            target_op.output.sensor_height.magnitude
+            / (2 * tele.focal_length.magnitude * 1.0)
+        )
+    )  # Barlow mag is 1.0 for this path
     assert target_op.fov().magnitude == pytest.approx(expected_fov)
 
 
@@ -533,11 +537,12 @@ def test_telescope_barlow_t2_camera():
     ) * barlow_t2.magnification
     assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
 
-    expected_fov = (
-        target_op.output.sensor_height.magnitude
-        * 3438
-        / (tele.focal_length.magnitude * barlow_t2.magnification)
-    ) / 60
+    expected_fov = 2 * math.degrees(
+        math.atan(
+            target_op.output.sensor_height.magnitude
+            / (2 * tele.focal_length.magnitude * barlow_t2.magnification)
+        )
+    )
     assert target_op.fov().magnitude == pytest.approx(expected_fov)
 
 
@@ -615,11 +620,12 @@ def test_telescope_std_barlow_t2_camera_variation():
     ) * barlow.magnification
     assert target_op.zoom().magnitude == pytest.approx(expected_zoom)
 
-    expected_fov = (
-        target_op.output.sensor_height.magnitude
-        * 3438
-        / (tele.focal_length.magnitude * barlow.magnification)
-    ) / 60
+    expected_fov = 2 * math.degrees(
+        math.atan(
+            target_op.output.sensor_height.magnitude
+            / (2 * tele.focal_length.magnitude * barlow.magnification)
+        )
+    )
     assert target_op.fov().magnitude == pytest.approx(expected_fov)
 
 
@@ -979,8 +985,6 @@ def test_flipped_view_with_different_telescopes():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()["Elements"] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
-    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 

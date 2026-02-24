@@ -8,6 +8,7 @@ from apts.objects.ngc import NGC
 from apts.constants import ObjectTableLabels
 from tests import setup_place
 
+
 class TestNGC(unittest.TestCase):
     def setUp(self):
         self.place = setup_place()

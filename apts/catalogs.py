@@ -46,10 +46,14 @@ def _load_messier_with_units():
 
     # Add external links
     messier_df[ObjectTableLabels.SIMBAD] = messier_df["Messier"].apply(
-        lambda x: f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+        lambda x: (
+            f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+        )
     )
     messier_df[ObjectTableLabels.ALADIN] = messier_df["Messier"].apply(
-        lambda x: f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+        lambda x: (
+            f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+        )
     )
     messier_df[ObjectTableLabels.ASTROBIN] = messier_df["Messier"].apply(
         lambda x: f"https://www.astrobin.com/search/?q={urllib.parse.quote(str(x))}"
@@ -132,10 +136,14 @@ def _load_ngc_with_units():
 
     # Add external links
     ngc_df[ObjectTableLabels.SIMBAD] = ngc_df["Name"].apply(
-        lambda x: f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+        lambda x: (
+            f"https://simbad.u-strasbg.fr/simbad/sim-basic?Ident={urllib.parse.quote(str(x))}"
+        )
     )
     ngc_df[ObjectTableLabels.ALADIN] = ngc_df["Name"].apply(
-        lambda x: f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+        lambda x: (
+            f"https://aladin.cds.unistra.fr/AladinLite/?target={urllib.parse.quote(str(x))}"
+        )
     )
     ngc_df[ObjectTableLabels.ASTROBIN] = ngc_df["Name"].apply(
         lambda x: f"https://www.astrobin.com/search/?q={urllib.parse.quote(str(x))}"

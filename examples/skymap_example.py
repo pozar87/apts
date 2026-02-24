@@ -43,11 +43,15 @@ if fig_zoom:
 
 # 3. Zoomed-in skymap with custom magnitude limit
 print("\nGenerating zoomed-in skymap with custom magnitude limit...")
-fig_zoom_mag = my_observation.plot_skymap(target_name=target, zoom_deg=15, star_magnitude_limit=9)
+fig_zoom_mag = my_observation.plot_skymap(
+    target_name=target, zoom_deg=15, star_magnitude_limit=9
+)
 if fig_zoom_mag:
     plot_format = get_plot_format()
     fig_zoom_mag.savefig(f"test_plots/skymap_zoom_mag9.{plot_format}")
     pyplot.close(fig_zoom_mag)
-    print(f"Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.{plot_format}")
+    print(
+        f"Saved zoomed-in skymap with custom magnitude to test_plots/skymap_zoom_mag9.{plot_format}"
+    )
 
 print("\nAll test plots generated.")

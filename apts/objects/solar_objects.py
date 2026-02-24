@@ -129,8 +129,12 @@ class SolarObjects(Objects):
                     minor_planet_details = self.minor_planets.loc[object_name]
                     dp = ephem.EllipticalBody()
                     dp._inc = np.deg2rad(minor_planet_details["inclination_degrees"])
-                    dp._Om = np.deg2rad(minor_planet_details["longitude_of_ascending_node_degrees"])
-                    dp._om = np.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
+                    dp._Om = np.deg2rad(
+                        minor_planet_details["longitude_of_ascending_node_degrees"]
+                    )
+                    dp._om = np.deg2rad(
+                        minor_planet_details["argument_of_perihelion_degrees"]
+                    )
                     dp._a = minor_planet_details["semimajor_axis_au"]
                     dp._e = minor_planet_details["eccentricity"]
                     dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
@@ -141,7 +145,20 @@ class SolarObjects(Objects):
 
                     packed_epoch = minor_planet_details["epoch_packed"]
                     _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
-                    _MPC_MONTH = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "A": 10, "B": 11, "C": 12}
+                    _MPC_MONTH = {
+                        "1": 1,
+                        "2": 2,
+                        "3": 3,
+                        "4": 4,
+                        "5": 5,
+                        "6": 6,
+                        "7": 7,
+                        "8": 8,
+                        "9": 9,
+                        "A": 10,
+                        "B": 11,
+                        "C": 12,
+                    }
                     _MPC_DAY = {str(d): d for d in range(1, 10)}
                     _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
 
@@ -240,7 +257,9 @@ class SolarObjects(Objects):
         # Always ensure some basic computation is done if needed for magnitude filtering
         # Actually self.objects starts with only names. Magnitude is needed for filtering.
         # Since transits are now fast and vectorized, we compute them for all objects at once.
-        if ObjectTableLabels.MAGNITUDE not in self.objects.columns or bool(self.objects[ObjectTableLabels.MAGNITUDE].isnull().all()):
+        if ObjectTableLabels.MAGNITUDE not in self.objects.columns or bool(
+            self.objects[ObjectTableLabels.MAGNITUDE].isnull().all()
+        ):
             self.compute(self.calculation_date, skip_transits=False)
 
         # First, call the parent's get_visible method
