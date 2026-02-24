@@ -576,6 +576,13 @@ class Observation:
     ):
         with language_context(language):
             if custom_template:
+                # Security: restrict to allowed template extensions to prevent reading sensitive files
+                if not str(custom_template).lower().endswith(
+                    (".template", ".html", ".htm")
+                ):
+                    raise ValueError(
+                        "Only .template, .html, or .htm files are allowed as custom templates."
+                    )
                 with open(custom_template, "r", encoding="utf-8") as f:
                     template_content = f.read()
             else:
