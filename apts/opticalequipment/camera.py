@@ -267,3 +267,40 @@ class Camera(OutputOpticalEqipment):
             full_well=40000,
             quantum_efficiency=91,
         )
+
+    @classmethod
+    def ZWO_ASI294MC_PRO(cls):
+        """
+        Factory method for ZWO ASI294MC Pro camera.
+        Sensor: Sony IMX294 (4/3")
+        """
+        return cls(
+            19.1,
+            13.0,
+            4144,
+            2822,
+            "ZWO ASI294MC Pro",
+            pixel_size=4.63,
+            read_noise=1.2,
+            full_well=63700,
+            quantum_efficiency=75,
+        )
+
+    @classmethod
+    def ZWO_ASI294MM_PRO(cls):
+        """
+        Factory method for ZWO ASI294MM Pro camera.
+        Sensor: Sony IMX492 (4/3")
+        Defaulting to Bin2 mode.
+        """
+        return cls(
+            19.1,
+            13.0,
+            4144,
+            2822,
+            "ZWO ASI294MM Pro",
+            pixel_size=4.63,
+            read_noise=1.2,
+            full_well=66000,
+            quantum_efficiency=90,
+        )
