@@ -148,13 +148,10 @@ class Objects(ABC):
                 sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(lat_rad) * np.cos(
                     dec_rad
                 ) * np.cos(h_rad)
-<<<<<<< HEAD
-=======
 
                 # Convert to degrees and add atmospheric refraction
                 true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
                 apparent_alt_deg = true_alt_deg + self._refraction(true_alt_deg)
->>>>>>> master
 
                 # Determine altitude visibility
                 alt_ok = apparent_alt_deg > conditions.min_object_altitude
@@ -435,7 +432,9 @@ class Objects(ABC):
         if "skyfield_object" in df.columns:
             sky_objs = df["skyfield_object"].values
         else:
-            sky_objs = np.array([self.get_skyfield_object(row) for _, row in df.iterrows()])
+            sky_objs = np.array(
+                [self.get_skyfield_object(row) for _, row in df.iterrows()]
+            )
 
         valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
@@ -474,9 +473,7 @@ class Objects(ABC):
         # Use pandas for datetime vectorization
         t0_ts = pd.Timestamp(t0_dt)
         # Ensure second precision to avoid lossless cast errors in newer pandas
-        transit_times = (
-            t0_ts + pd.to_timedelta(dt_solar * 3600, unit="s")
-        ).floor("s")
+        transit_times = (t0_ts + pd.to_timedelta(dt_solar * 3600, unit="s")).floor("s")
 
         # Adjust for 12-hour window relative to current time
         cutoff = current_dt - timedelta(hours=12)

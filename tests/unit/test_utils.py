@@ -1,15 +1,16 @@
-import unittest
-from unittest.mock import patch
-from apts.cache import get_timescale
-from apts.utils.planetary import (
-    get_moon_illumination,
-    get_moon_illumination_details,
-    get_moon_age,
-)
+import os
 
 # Ensure apts is discoverable, assuming tests are run from project root or similar
 import sys
-import os
+import unittest
+from unittest.mock import patch
+
+from apts.cache import get_timescale
+from apts.utils.planetary import (
+    get_moon_age,
+    get_moon_illumination,
+    get_moon_illumination_details,
+)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -47,8 +48,6 @@ class TestUtils(unittest.TestCase):
         # It should be around 1.0 day
         self.assertAlmostEqual(age, 1.0, delta=0.1)
 
-<<<<<<< HEAD
-=======
     @patch("apts.utils.planetary.almanac.find_discrete")
     def test_get_moon_age_fallback(self, mock_find_discrete):
         # Force fallback by returning empty lists
@@ -61,6 +60,5 @@ class TestUtils(unittest.TestCase):
         self.assertAlmostEqual(age, 14.7, delta=1.0)
 
 
->>>>>>> master
 if __name__ == "__main__":
     unittest.main()
