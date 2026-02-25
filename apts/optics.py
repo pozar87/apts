@@ -214,15 +214,26 @@ class OpticalPath:
         return frozenset(elements)
 
     def total_mass(self):
-        mass = getattr(self.telescope, "mass", 0 * get_unit_registry().gram)
-        for item in self.barlows + self.diagonals + self.filters + self.others:
-            item_mass = getattr(item, "mass", 0 * get_unit_registry().gram)
-            if item_mass is not None:
-                mass += item_mass
-        output_mass = getattr(self.output, "mass", 0 * get_unit_registry().gram)
-        if output_mass is not None:
-            mass += output_mass
-        return mass
+        from .opticalequipment.abstract import OpticalEquipment
+
+        all_equipment: set[OpticalEquipment] = set()
+        for item in (
+            [self.telescope]
+            + self.barlows
+            + self.diagonals
+            + self.filters
+            + self.others
+            + [self.output]
+        ):
+            if hasattr(item, "collect_all_attached"):
+                item.collect_all_attached(all_equipment)
+            else:
+                all_equipment.add(item)
+
+        total = 0 * get_unit_registry().gram
+        for eq in all_equipment:
+            total += getattr(eq, "mass", 0 * get_unit_registry().gram)
+        return total
 
     def backfocus_gap(self):
         """

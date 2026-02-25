@@ -1,5 +1,5 @@
 import unittest
-from apts.opticalequipment import Telescope, Camera, Reducer, Spacer
+from apts.opticalequipment import Telescope, Camera, Reducer, Spacer, Focuser
 from apts.equipment import Equipment
 from apts.utils import ConnectionType, Gender
 from apts.constants import GraphConstants
@@ -90,6 +90,20 @@ class TestBackfocus(unittest.TestCase):
 
         # Total mass: 2000 (scope) + 500 (cam) = 2500g
         self.assertEqual(path.total_mass().magnitude, 2500)
+
+    def test_total_mass_with_attached(self):
+        t = Telescope(80, 480, mass=2000, connection_type=ConnectionType.M42)
+        # Attach a focuser motor
+        f = Focuser("EAF", mass=500)
+        t.attach(f)
+
+        c = Camera(23.5, 15.7, 6000, 4000, mass=300, connection_type=ConnectionType.M42, connection_gender=Gender.MALE)
+
+        from apts.optics import OpticalPath
+        path = OpticalPath.from_path([t, c])
+
+        # Total mass: 2000 (scope) + 500 (focuser) + 300 (cam) = 2800g
+        self.assertEqual(path.total_mass().magnitude, 2800)
 
     def test_registry(self):
         from apts.equipment_registry import EquipmentRegistry
