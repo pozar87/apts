@@ -115,7 +115,7 @@ class Telescope(OpticalEquipment):
         self._register_output(equipment, self.connection_type, self.connection_gender)
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
         if self.t2_output:
-            self._register_output(equipment, ConnectionType.T2)
+            self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
         return '{} {}/{}'.format(self.get_vendor(), self.aperture.magnitude, self.focal_length.magnitude)

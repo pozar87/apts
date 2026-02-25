@@ -652,14 +652,14 @@ class Equipment:
                         and in_node_data.get(NodeLabels.CONNECTION_TYPE)
                         == connection_type
                     ):
-                        # Match genders if provided
+                        # Match genders - only different genders can connect
                         in_gender = in_node_data.get(NodeLabels.CONNECTION_GENDER)
                         if (
-                            connection_gender is not None
-                            and in_gender is not None
-                            and connection_gender == in_gender
+                            connection_gender is None
+                            or in_gender is None
+                            or connection_gender == in_gender
                         ):
-                            # Same gender cannot connect (usually Male -> Female)
+                            # Gender missing or same gender cannot connect
                             continue
 
                         # Connect all outputs with all inputs, excluding connecting part to itself

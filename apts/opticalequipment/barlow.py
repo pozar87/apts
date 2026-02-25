@@ -64,7 +64,7 @@ class Barlow(OpticalEquipment):
         self._register_input(equipment, self.connection_type, self.in_gender)
         # Handling optional T2 output
         if self.t2_output:
-            self._register_output(equipment, ConnectionType.T2)
+            self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
         # Format: <vendor> x<magnification>
