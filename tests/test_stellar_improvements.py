@@ -1,8 +1,10 @@
-import numpy
 from typing import Any, cast
+
+import numpy
+
 from apts.opticalequipment.camera import Camera
-from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.filter import Filter
+from apts.opticalequipment.telescope import Telescope
 from apts.optics import OpticalPath
 
 
@@ -71,22 +73,13 @@ def test_object_flux():
     s_flux = path.sky_flux(sqm=sqm)
     o_flux = path.object_flux(magnitude=mag)
     p_scale = path.pixel_scale()
-<<<<<<< HEAD
 
     assert s_flux is not None
     assert o_flux is not None
     assert p_scale is not None
 
-    scale = cast(Any, p_scale).magnitude
     scale = cast(Any, path.pixel_scale()).magnitude
-=======
->>>>>>> master
 
-    assert s_flux is not None
-    assert o_flux is not None
-    assert p_scale is not None
-
-    scale = p_scale.magnitude
     assert numpy.isclose(o_flux, s_flux / (scale**2))
 
 
