@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Flattener
 
 class BorgReducer(Reducer):
     _DATABASE = {'Borg_Reducer_0_72x_M57': {'brand': 'Borg', 'name': 'Reducer 0.72x (M57)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 200, 'tside_thread': 'M56', 'tside_gender': 'Female', 'cside_thread': 'M56', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}, 'Borg_0_85x_Reducer_M57': {'brand': 'Borg', 'name': '0.85x Reducer (M57)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 200, 'tside_thread': 'M56', 'tside_gender': 'Female', 'cside_thread': 'M56', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

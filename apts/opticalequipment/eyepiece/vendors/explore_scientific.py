@@ -1,7 +1,3 @@
-from ...abstract import OutputOpticalEqipment
-from ....constants import GraphConstants, OpticalType
-from ....units import get_unit_registry
-from ....utils import ConnectionType, Gender
 from ..base import Eyepiece
 
 class Explore_scientificEyepiece(Eyepiece):

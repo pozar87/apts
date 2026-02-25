@@ -52,9 +52,13 @@ class Objects(ABC):
                 else conditions.max_object_magnitude
             )
         )
-        magnitude_values = self.objects["Magnitude"].apply(
-            lambda x: x.magnitude if hasattr(x, "magnitude") else x
-        )
+        # Optimization: use pre-calculated float magnitudes if available to avoid slow Pint apply
+        if "Magnitude_float" in self.objects.columns:
+            magnitude_values = self.objects["Magnitude_float"]
+        else:
+            magnitude_values = self.objects["Magnitude"].apply(
+                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            )
         candidate_objects = self.objects[magnitude_values < max_magnitude].copy()
 
         if candidate_objects.empty:
@@ -124,12 +128,20 @@ class Objects(ABC):
             # candidate identification in get_visible.
             if len(stars_indices) > 0:
                 # Extract RA/Dec for all stars
-                stars_ras = np.array(
-                    [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
-                )
-                stars_decs = np.array(
-                    [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
-                )
+                # Optimization: use pre-calculated float coordinates if available to avoid loop over objects
+                if (
+                    "ra_hours" in candidate_objects.columns
+                    and "dec_degrees" in candidate_objects.columns
+                ):
+                    stars_ras = candidate_objects["ra_hours"].values[stars_indices]
+                    stars_decs = candidate_objects["dec_degrees"].values[stars_indices]
+                else:
+                    stars_ras = np.array(
+                        [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
+                    )
+                    stars_decs = np.array(
+                        [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
+                    )
 
                 # Get LST for all check times (in hours)
                 lst_hours = check_times.gmst + self.place.lon_decimal / 15.0

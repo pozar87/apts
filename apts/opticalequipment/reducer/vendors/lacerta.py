@@ -1,7 +1,3 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
 from ..base import Reducer, Flattener, Corrector
 
 class LacertaReducer(Reducer):

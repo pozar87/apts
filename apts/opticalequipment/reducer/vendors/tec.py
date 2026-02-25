@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Flattener
 
 class TecReducer(Reducer):
     _DATABASE = {'TEC_TEC_140_Reducer_0_72x': {'brand': 'TEC', 'name': 'TEC-140 Reducer 0.72x', 'type': 'type_reducer', 'optical_length': 0, 'mass': 350, 'tside_thread': 'M68', 'tside_gender': 'Female', 'cside_thread': 'M68', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}, 'TEC_TEC_180_Reducer_0_72x': {'brand': 'TEC', 'name': 'TEC-180 Reducer 0.72x', 'type': 'type_reducer', 'optical_length': 0, 'mass': 450, 'tside_thread': 'M68', 'tside_gender': 'Female', 'cside_thread': 'M68', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

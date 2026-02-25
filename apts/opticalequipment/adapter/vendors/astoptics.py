@@ -1,5 +1,3 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
 from ..base import Adapter, Spacer
 
 class AstopticsAdapter(Adapter):

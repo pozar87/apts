@@ -1,11 +1,4 @@
-import numpy
-from ...abstract import OpticalEquipment
-from ....units import get_unit_registry
-from ....utils import ConnectionType, Gender
-from ....constants import GraphConstants
-from enum import Enum
-from typing import Optional
-from ..base import TelescopeType, TubeMaterial, Telescope
+from ..base import Telescope
 
 class GenericTelescope(Telescope):
 

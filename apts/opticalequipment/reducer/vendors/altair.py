@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Flattener
 
 class AltairReducer(Reducer):
     _DATABASE = {'Altair_0_8x_Reducer_M48': {'brand': 'Altair', 'name': '0.8x Reducer (M48)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 250, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}, 'Altair_Lightwave_0_8x_Reducer': {'brand': 'Altair', 'name': 'Lightwave 0.8x Reducer', 'type': 'type_reducer', 'optical_length': 0, 'mass': 220, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}, 'Altair_0_6x_Reducer_M48': {'brand': 'Altair', 'name': '0.6x Reducer (M48)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 280, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}
