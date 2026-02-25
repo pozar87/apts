@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 import pytz
 from apts.place import Place

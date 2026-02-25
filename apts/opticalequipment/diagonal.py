@@ -60,9 +60,7 @@ class Diagonal(IntermediateOpticalEquipment):
         """
         Register diagonal in optical equipment graph.
         """
-        super(Diagonal, self)._register(
-            equipment, self.connection_type, self.connection_type
-        )
+        super(Diagonal, self).register(equipment)
         if self.t2_output:
             self._register_output(equipment, ConnectionType.T2)
 

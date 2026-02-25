@@ -1,8 +1,11 @@
 import pytest
 import pytz
 import re
+import datetime
+import json
+from datetime import timezone
 from unittest.mock import patch, MagicMock
-from apts.weather_providers import StormGlass
+from apts.weather_providers import StormGlass, Meteoblue, VisualCrossing
 
 
 
