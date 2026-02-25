@@ -16,7 +16,7 @@ def test_gender_matching_success():
 
     data = e.data()
     labels = data[EquipmentTableLabels.LABEL].tolist()
-    assert any("TeleMale" in l and "CamFemale" in l for l in labels)
+    assert any("TeleMale" in label and "CamFemale" in label for label in labels)
 
     # FEMALE output to MALE input
     e2 = Equipment()
@@ -28,7 +28,7 @@ def test_gender_matching_success():
 
     data2 = e2.data()
     labels2 = data2[EquipmentTableLabels.LABEL].tolist()
-    assert any("TeleFemale" in l and "EPMale" in l for l in labels2)
+    assert any("TeleFemale" in label and "EPMale" in label for label in labels2)
 
 def test_gender_matching_blocked_same_gender():
     """Test that same genders do not connect."""
@@ -43,7 +43,7 @@ def test_gender_matching_blocked_same_gender():
 
     data = e.data()
     labels = data[EquipmentTableLabels.LABEL].tolist()
-    assert not any("TeleMale" in l and "CamMale" in l for l in labels)
+    assert not any("TeleMale" in label and "CamMale" in label for label in labels)
 
     # FEMALE to FEMALE
     e2 = Equipment()
@@ -55,7 +55,7 @@ def test_gender_matching_blocked_same_gender():
 
     data2 = e2.data()
     labels2 = data2[EquipmentTableLabels.LABEL].tolist()
-    assert not any("TeleFemale" in l and "CamFemale" in l for l in labels2)
+    assert not any("TeleFemale" in label and "CamFemale" in label for label in labels2)
 
 def test_gender_matching_blocked_missing_gender():
     """Test that connections are blocked if any gender is missing."""
@@ -65,7 +65,7 @@ def test_gender_matching_blocked_missing_gender():
     cam_male = Camera(10, 10, 100, 100, vendor="CamMale", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
     e1.register(tele_none)
     e1.register(cam_male)
-    assert not any("TeleNone" in l and "CamMale" in l for l in e1.data()[EquipmentTableLabels.LABEL])
+    assert not any("TeleNone" in label and "CamMale" in label for label in e1.data()[EquipmentTableLabels.LABEL])
 
     # FEMALE to None
     e2 = Equipment()
@@ -73,7 +73,7 @@ def test_gender_matching_blocked_missing_gender():
     cam_none = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=None)
     e2.register(tele_female)
     e2.register(cam_none)
-    assert not any("TeleFemale" in l and "CamNone" in l for l in e2.data()[EquipmentTableLabels.LABEL])
+    assert not any("TeleFemale" in label and "CamNone" in label for label in e2.data()[EquipmentTableLabels.LABEL])
 
     # None to None
     e3 = Equipment()
@@ -81,7 +81,7 @@ def test_gender_matching_blocked_missing_gender():
     cam_none2 = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=None)
     e3.register(tele_none2)
     e3.register(cam_none2)
-    assert not any("TeleNone" in l and "CamNone" in l for l in e3.data()[EquipmentTableLabels.LABEL])
+    assert not any("TeleNone" in label and "CamNone" in label for label in e3.data()[EquipmentTableLabels.LABEL])
 
 def test_explicit_t2_gender_on_telescope():
     """Test that Telescope T2 output now has a gender and connects to camera."""
@@ -97,4 +97,4 @@ def test_explicit_t2_gender_on_telescope():
     data = e.data()
     labels = data[EquipmentTableLabels.LABEL].tolist()
     # It should connect!
-    assert any("TeleT2" in l and "CamT2" in l for l in labels)
+    assert any("TeleT2" in label and "CamT2" in label for label in labels)
