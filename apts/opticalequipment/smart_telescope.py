@@ -1,15 +1,39 @@
 import math
 import numpy
+from typing import Any
 
 from .telescope import Telescope
 from ..constants import GraphConstants, OpticalType
-from ..units import get_unit_registry
+from ..units import get_unit_registry, ureg
 
 
 class SmartTelescope(Telescope):
     """
     Class representing a smart telescope, which is a telescope and a camera in one.
     """
+
+    @classmethod
+    def from_database(cls, entry):
+        brand = entry["brand"]
+        name = entry["name"]
+        vendor = f"{brand} {name}"
+        aperture = entry["aperture"]
+        focal_length = entry["focal_length"]
+        sensor_width = entry["sensor_width"]
+        sensor_height = entry["sensor_height"]
+        width = entry["width"]
+        height = entry["height"]
+        mass = entry.get("mass", 0)
+        return cls(
+            aperture,
+            focal_length,
+            sensor_width,
+            sensor_height,
+            width,
+            height,
+            vendor=vendor,
+            mass=mass,
+        )
 
     def __init__(
         self,
@@ -23,7 +47,12 @@ class SmartTelescope(Telescope):
         mass=0,
     ):
         super().__init__(
-            aperture, focal_length, vendor, telescope_type=None, t2_output=False, mass=mass
+            aperture,
+            focal_length,
+            vendor,
+            telescope_type=None,
+            t2_output=False,
+            mass=mass,
         )
         ureg = get_unit_registry()
         self.sensor_width = sensor_width * ureg.mm
@@ -42,13 +71,23 @@ class SmartTelescope(Telescope):
         return False
 
     def pixel_size(self):
-        return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(self.width ** 2 + self.height ** 2)
+        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / math.sqrt(
+            self.width**2 + self.height**2
+        )
 
-    def fov(self):
+    def fov(self) -> Any:
         """
-        Calculate the field of view for the smart telescope.
+        Calculate the field of view for the smart telescope in degrees using the accurate arctan formula.
         """
-        return self.sensor_height * 3438 / self.focal_length / 60 * get_unit_registry().deg
+        return (
+            2
+            * numpy.degrees(
+                numpy.arctan(
+                    self.sensor_height.magnitude / (2 * self.focal_length.magnitude)
+                )
+            )
+            * get_unit_registry().deg
+        )
 
     def exit_pupil(self):
         return numpy.nan * get_unit_registry().mm

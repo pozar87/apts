@@ -3,6 +3,7 @@ from apts import Equipment, Observation, Place
 from apts.cache import clear_cache
 from apts.i18n import language_context
 
+
 def test_german_translation_for_plots():
     """
     Tests that the language of plots can be switched to German.
@@ -22,13 +23,14 @@ def test_german_translation_for_plots():
         assert fig_de is not None
         assert fig_de.axes[0].get_title() == "Höhe der Messier-Objekte"
 
+
 def test_german_translation_for_constellations():
     """
     Tests that the constellations are translated to German.
     """
     clear_cache()
     target_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    my_place = Place(lat=52.5200, lon=13.4050, name="Berlin") # Berlin
+    my_place = Place(lat=52.5200, lon=13.4050, name="Berlin")  # Berlin
     equipment = Equipment()
 
     observation = Observation(

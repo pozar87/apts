@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
+from .secrets import mask_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,13 @@ class Notify:
                 server.ehlo()
 
             if self.smtp_user and self.smtp_password:
-                server.login(self.smtp_user, self.smtp_password)
+                try:
+                    server.login(self.smtp_user, self.smtp_password)
+                except smtplib.SMTPAuthenticationError as e:
+                    # Specific handling for authentication error to avoid leaking password in logs
+                    error_msg = mask_text(str(e), self.smtp_password)
+                    logger.error(f"Failed to login to SMTP server: {error_msg}")
+                    return False
 
             logger.info(
                 f"Sending email to {msg['To']} via {self.smtp_host}:{self.smtp_port}"
@@ -59,7 +66,10 @@ class Notify:
             logger.info("Email sent successfully")
             return True
         except Exception as e:
-            logger.error(f"Failed to send email: {e}", exc_info=True)
+            error_msg = (
+                mask_text(str(e), self.smtp_password) if self.smtp_password else str(e)
+            )
+            logger.error(f"Failed to send email: {error_msg}", exc_info=False)
             return False
         finally:
             try:

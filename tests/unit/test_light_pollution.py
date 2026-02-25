@@ -2,10 +2,11 @@ import unittest
 from unittest.mock import patch, MagicMock
 from apts.light_pollution import LightPollution
 
+
 class TestLightPollution(unittest.TestCase):
     def setUp(self):
         # We patch Image.open in the setUp to avoid loading the actual image in every test
-        self.patcher = patch('apts.light_pollution.Image.open')
+        self.patcher = patch("apts.light_pollution.Image.open")
         self.mock_image_open = self.patcher.start()
         self.mock_image = MagicMock()
         self.mock_image.size = (14400, 5600)  # Set expected dimensions
@@ -29,8 +30,21 @@ class TestLightPollution(unittest.TestCase):
     def test_get_light_pollution(self):
         # Test the mapping from palette index to Bortle scale
         bortle_scale = {
-            0: 1, 1: 1, 2: 1, 3: 2, 4: 3, 5: 4, 6: 4.5, 7: 5,
-            8: 6, 9: 7, 10: 7, 11: 8, 12: 8, 13: 9, 14: 9
+            0: 1,
+            1: 1,
+            2: 1,
+            3: 2,
+            4: 3,
+            5: 4,
+            6: 4.5,
+            7: 5,
+            8: 6,
+            9: 7,
+            10: 7,
+            11: 8,
+            12: 8,
+            13: 9,
+            14: 9,
         }
 
         for palette_index, expected_bortle in bortle_scale.items():
@@ -46,6 +60,7 @@ class TestLightPollution(unittest.TestCase):
         self.mock_pix.__getitem__.return_value = 99  # An unknown index
         result = self.lp.get_light_pollution()
         self.assertEqual(result, -1)
+
 
 if __name__ == "__main__":
     unittest.main()

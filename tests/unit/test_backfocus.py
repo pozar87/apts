@@ -2,23 +2,36 @@ import unittest
 from apts.opticalequipment import Telescope, Camera, Reducer, Spacer
 from apts.equipment import Equipment
 from apts.utils import ConnectionType, Gender
-from apts.optics import OpticalPath
 from apts.constants import GraphConstants
+
 
 class TestBackfocus(unittest.TestCase):
     def test_backfocus_gap_with_reducer(self):
         # Setup: Telescope -> Reducer (55mm req) -> 20mm Spacer -> Camera (17.5mm depth)
         # Using default genders where possible
-        t = Telescope(80, 480, vendor="Test Scope", connection_type=ConnectionType.M42) # Default Female
+        t = Telescope(
+            80, 480, vendor="Test Scope", connection_type=ConnectionType.M42
+        )  # Default Female
 
         # Reducer: Input M42 Male, Output M42 Female (Defaults)
-        r = Reducer("Test Reducer", magnification=0.8, optical_length=10, required_backfocus=55,
-                    in_connection_type=ConnectionType.M42, out_connection_type=ConnectionType.M42)
+        r = Reducer(
+            "Test Reducer",
+            magnification=0.8,
+            optical_length=10,
+            required_backfocus=55,
+            in_connection_type=ConnectionType.M42,
+            out_connection_type=ConnectionType.M42,
+        )
 
         # Spacer: Input M42 Male, Output M42 Female
-        s = Spacer("Test Spacer", optical_length=20,
-                   in_connection_type=ConnectionType.M42, out_connection_type=ConnectionType.M42,
-                   in_gender=Gender.MALE, out_gender=Gender.FEMALE)
+        s = Spacer(
+            "Test Spacer",
+            optical_length=20,
+            in_connection_type=ConnectionType.M42,
+            out_connection_type=ConnectionType.M42,
+            in_gender=Gender.MALE,
+            out_gender=Gender.FEMALE,
+        )
 
         # Camera: Input M42 Male (override default Female if needed, but actually Camera input is Female usually... wait)
         # In my code: Camera(connection_gender=Gender.FEMALE) by default.
@@ -27,9 +40,16 @@ class TestBackfocus(unittest.TestCase):
         # Reducer OUT is Female. Spacer IN is Male. Correct.
         # Spacer OUT is Female. Camera IN is Male? Usually Camera has a Female thread, but let's see.
 
-        c = Camera(23.5, 15.7, 6000, 4000, vendor="Test Cam",
-                   connection_type=ConnectionType.M42, connection_gender=Gender.MALE,
-                   backfocus=17.5)
+        c = Camera(
+            23.5,
+            15.7,
+            6000,
+            4000,
+            vendor="Test Cam",
+            connection_type=ConnectionType.M42,
+            connection_gender=Gender.MALE,
+            backfocus=17.5,
+        )
 
         eq = Equipment()
         eq.register(t)
@@ -46,8 +66,19 @@ class TestBackfocus(unittest.TestCase):
         self.assertEqual(path.backfocus_gap().magnitude, 17.5)
 
     def test_total_mass(self):
-        t = Telescope(80, 480, vendor="Test Scope", mass=2000, connection_type=ConnectionType.M42)
-        c = Camera(23.5, 15.7, 6000, 4000, vendor="Test Cam", mass=500, connection_type=ConnectionType.M42, connection_gender=Gender.MALE)
+        t = Telescope(
+            80, 480, vendor="Test Scope", mass=2000, connection_type=ConnectionType.M42
+        )
+        c = Camera(
+            23.5,
+            15.7,
+            6000,
+            4000,
+            vendor="Test Cam",
+            mass=500,
+            connection_type=ConnectionType.M42,
+            connection_gender=Gender.MALE,
+        )
 
         eq = Equipment()
         eq.register(t)
@@ -62,6 +93,7 @@ class TestBackfocus(unittest.TestCase):
 
     def test_registry(self):
         from apts.equipment_registry import EquipmentRegistry
+
         reg = EquipmentRegistry()
         featured = reg.get_featured()
         self.assertIn("Camera", featured)

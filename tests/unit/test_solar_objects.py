@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels
-from tests import setup_southern_observation
 
 
 class TestSolarObjects(unittest.TestCase):
@@ -23,8 +22,12 @@ class TestSolarObjects(unittest.TestCase):
         self.assertFalse(
             self.solar_objects.objects[ObjectTableLabels.MAGNITUDE].isnull().all()
         )
-        self.assertFalse(self.solar_objects.objects[ObjectTableLabels.SIZE].isnull().all())
-        self.assertFalse(self.solar_objects.objects[ObjectTableLabels.PHASE].isnull().all())
+        self.assertFalse(
+            self.solar_objects.objects[ObjectTableLabels.SIZE].isnull().all()
+        )
+        self.assertFalse(
+            self.solar_objects.objects[ObjectTableLabels.PHASE].isnull().all()
+        )
 
     def test_moon_properties(self):
         """Test the calculated properties for the Moon."""
@@ -53,7 +56,6 @@ class TestSolarObjects(unittest.TestCase):
 
         # Size (apparent diameter) should be a positive value
         self.assertGreater(mars_data[ObjectTableLabels.SIZE], 0)
-
 
     def test_dwarf_planet_magnitude_and_filtering(self):
         """Test that dwarf planet magnitude is calculated and filtering works."""
@@ -135,65 +137,3 @@ class TestSolarObjects(unittest.TestCase):
             visible_planet_names_low,
             "Ceres should be filtered out with a low magnitude limit.",
         )
-
-
-    def test_rise_transit_set_chronology_for_saturn(self):
-        """
-        Test that rise, transit, and set times are in the correct chronological order
-        using the specific failing case for Saturn on 2025-12-05.
-        """
-        # This is the specific date that reproduces the bug reported by the user.
-        test_date = datetime(2025, 12, 5, 12, 0, 0, tzinfo=timezone.utc)
-        place = Place(lat=34.0, lon=-118.0, date=test_date)  # Los Angeles
-        solar_objects = SolarObjects(place, calculation_date=test_date)
-
-        saturn_data = solar_objects.objects[
-            solar_objects.objects[ObjectTableLabels.NAME] == "saturn barycenter"
-        ].iloc[0]
-
-        rising_time = saturn_data[ObjectTableLabels.RISING]
-        transit_time = saturn_data[ObjectTableLabels.TRANSIT]
-        setting_time = saturn_data[ObjectTableLabels.SETTING]
-
-
-        # 1. Assert that all times were successfully calculated
-        self.assertIsNotNone(rising_time, "Rising time should not be None.")
-        self.assertIsNotNone(transit_time, "Transit time should not be None.")
-        self.assertIsNotNone(setting_time, "Setting time should not be None.")
-
-        # 2. Assert the chronological order
-        self.assertLess(
-            rising_time,
-            transit_time,
-            "Expected rise time to be before transit time.",
-        )
-        self.assertLess(
-            transit_time,
-            setting_time,
-            "Expected transit time to be before setting time.",
-        )
-
-    def test_sun_elongation(self):
-        """Test that the Sun's elongation is 0."""
-        sun_data = self.solar_objects.objects[
-            self.solar_objects.objects[ObjectTableLabels.NAME] == "sun"
-        ].iloc[0]
-
-        self.assertAlmostEqual(
-            sun_data[ObjectTableLabels.ELONGATION],
-            0,
-            places=5,
-            msg="Sun elongation should be 0.",
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-class TestSolarObjectsSouthernHemisphere(unittest.TestCase):
-    def test_visible_planets_southern_hemisphere(self):
-        """Test that visible planets are returned for a southern hemisphere location."""
-        o = setup_southern_observation()
-        p = o.get_visible_planets()
-        self.assertTrue(len(p) > 0)

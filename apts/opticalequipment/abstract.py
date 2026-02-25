@@ -125,7 +125,9 @@ class IntermediateOpticalEquipment(OpticalEquipment):
 
 class OutputOpticalEqipment(OpticalEquipment):
     def __init__(self, focal_length, vendor, optical_length=0, mass=0):
-        super(OutputOpticalEqipment, self).__init__(focal_length, vendor, optical_length=optical_length, mass=mass)
+        super(OutputOpticalEqipment, self).__init__(
+            focal_length, vendor, optical_length=optical_length, mass=mass
+        )
 
     def is_visual_output(self) -> bool:
         """Indicates if the output is primarily for visual observation."""

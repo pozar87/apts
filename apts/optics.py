@@ -1,5 +1,6 @@
 import functools
 import operator
+
 import numpy
 
 from .opticalequipment.binoculars import Binoculars
@@ -13,8 +14,8 @@ class OpticsUtils:
         from .opticalequipment.barlow import Barlow
         from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.filter import Filter
+        from .opticalequipment.reducer import Corrector, Flattener, Reducer
         from .opticalequipment.smart_telescope import SmartTelescope
-        from .opticalequipment.reducer import Reducer, Flattener, Corrector
 
         # First item in the path should be the telescope or binoculars
         main_optic = path[0]
@@ -137,6 +138,27 @@ class OpticalPath:
             self.telescope, self.barlows, self.output
         )
 
+    def fov_width(self):
+        if hasattr(self.output, "field_of_view_width"):
+            return self.output.field_of_view_width(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
+    def fov_height(self):
+        if hasattr(self.output, "field_of_view_height"):
+            return self.output.field_of_view_height(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
+    def fov_diagonal(self):
+        if hasattr(self.output, "field_of_view_diagonal"):
+            return self.output.field_of_view_diagonal(
+                self.telescope, self.zoom(), self.effective_barlow()
+            )
+        return self.fov()
+
     def brightness(self):
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -189,8 +211,12 @@ class OpticalPath:
     def total_mass(self):
         mass = getattr(self.telescope, "mass", 0 * get_unit_registry().gram)
         for item in self.barlows + self.diagonals + self.filters + self.others:
-            mass += getattr(item, "mass", 0 * get_unit_registry().gram)
-        mass += getattr(self.output, "mass", 0 * get_unit_registry().gram)
+            item_mass = getattr(item, "mass", 0 * get_unit_registry().gram)
+            if item_mass is not None:
+                mass += item_mass
+        output_mass = getattr(self.output, "mass", 0 * get_unit_registry().gram)
+        if output_mass is not None:
+            mass += output_mass
         return mass
 
     def backfocus_gap(self):
@@ -221,11 +247,7 @@ class OpticalPath:
                 required_bf = item.required_backfocus
                 start_index = i
             # For telescopes, 'backfocus' property can also mean required backfocus from flange
-            elif (
-                i == 0
-                and hasattr(item, "backfocus")
-                and item.backfocus is not None
-            ):
+            elif i == 0 and hasattr(item, "backfocus") and item.backfocus is not None:
                 required_bf = item.backfocus
                 start_index = i
 
@@ -236,9 +258,9 @@ class OpticalPath:
         actual_distance = 0 * get_unit_registry().mm
         # Sum optical lengths of everything between start and end
         for item in path[start_index + 1 : -1]:
-            actual_distance += getattr(
-                item, "optical_length", 0 * get_unit_registry().mm
-            )
+            item_ol = getattr(item, "optical_length", 0 * get_unit_registry().mm)
+            if item_ol is not None:
+                actual_distance += item_ol
 
         # 3. Add the output component's backfocus contribution (e.g. sensor depth)
         if hasattr(self.output, "backfocus") and self.output.backfocus is not None:
@@ -303,8 +325,10 @@ class OpticalPath:
         return self.sampling(seeing)
 
     def critical_focus_zone(self, wavelength=550):
+        if not hasattr(self.telescope, "focal_ratio"):
+            return None
         # wavelength in nm
-        fr = self.telescope.focal_ratio() * self.effective_barlow()
+        fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
         # CFZ = 2.44 * (wavelength/1000) * fr^2
         cfz = 2.44 * (wavelength / 1000.0) * (fr**2)
         return cfz * get_unit_registry().micrometer
@@ -358,7 +382,10 @@ class OpticalPath:
         from .opticalequipment.camera import Camera
 
         # integration_time in seconds
-        if not isinstance(self.output, Camera) or self.output.quantum_efficiency is None:
+        if (
+            not isinstance(self.output, Camera)
+            or self.output.quantum_efficiency is None
+        ):
             # Fallback to telescope limiting magnitude if no camera data
             return self.telescope.limiting_magnitude()
 
@@ -407,8 +434,8 @@ class OpticalPath:
         """
         # Actual focal length
         f_actual = (
-            self.telescope.focal_length * self.effective_barlow()
-        ).to("mm").magnitude
+            (self.telescope.focal_length * self.effective_barlow()).to("mm").magnitude
+        )
 
         if f_actual == 0:
             return 0 * get_unit_registry().second

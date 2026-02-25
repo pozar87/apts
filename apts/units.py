@@ -3,11 +3,7 @@ from pint import UnitRegistry
 _ureg = None
 
 
-
-
-
 def get_unit_registry() -> UnitRegistry:
-
     global _ureg
     if _ureg is None:
         _ureg = UnitRegistry()
@@ -18,8 +14,10 @@ def get_unit_registry() -> UnitRegistry:
         _ureg.define("arcsecond = degree / 3600 = arcsec")  # Arc second
     return _ureg
 
+
 def set_unit_registry(registry):
     global _ureg
     _ureg = registry
+
 
 ureg = get_unit_registry()

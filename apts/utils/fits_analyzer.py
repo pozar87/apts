@@ -12,22 +12,19 @@ Supported formats: FITS (.fits .fit .fts), compressed FITS (.fits.fz .fit.fz),
 Requires: numpy, scipy, astropy, photutils, matplotlib
 """
 
-import concurrent.futures
 import math
 import os
 import struct
-import threading
 import xml.etree.ElementTree as ET
 import zlib
 import re
+from typing import Any, cast
 
 import numpy as np
 from scipy.optimize import curve_fit
 from astropy.io import fits
-from astropy.stats import sigma_clipped_stats, sigma_clip
+from astropy.stats import sigma_clipped_stats
 from photutils.detection import DAOStarFinder
-import matplotlib
-import matplotlib.colors as mcolors
 
 # ═══════════════════════════════════════════════════════════════════
 #  DEFAULTS
@@ -56,10 +53,12 @@ ANALYSIS_DEFAULTS = {
     "mosaic_tile_fraction": 0.20,
 }
 
+
 class FitsAnalyzer:
     """
     Backfocus analyzer for a single FITS/XISF image.
     """
+
     def __init__(self, filepath):
         self.filepath = filepath
         self.data, self.header = self._load_data(filepath)
@@ -77,9 +76,10 @@ class FitsAnalyzer:
                 data = None
                 header = None
                 for hdu in hdul:
-                    if hdu.data is not None and hdu.data.ndim >= 2:
-                        data = hdu.data
-                        header = hdu.header
+                    hdu_data = getattr(hdu, "data", None)
+                    if hdu_data is not None and hdu_data.ndim >= 2:
+                        data = hdu_data
+                        header = getattr(hdu, "header", None)
                         break
                 if data is None:
                     raise ValueError("No image data found in FITS file")
@@ -112,7 +112,7 @@ class FitsAnalyzer:
             header_len, _reserved = struct.unpack("<II", f.read(8))
             xml_bytes = f.read(header_len)
             xml_str = xml_bytes.decode("utf-8", errors="replace")
-            xml_str = re.sub(r'\s+xmlns\s*=\s*["\'][^"\']*["\']', '', xml_str)
+            xml_str = re.sub(r'\s+xmlns\s*=\s*["\'][^"\']*["\']', "", xml_str)
             root = ET.fromstring(xml_str)
             img_el = root.find(".//Image")
             if img_el is None:
@@ -124,10 +124,16 @@ class FitsAnalyzer:
             channels = int(parts[2]) if len(parts) > 2 else 1
             sample_fmt = img_el.get("sampleFormat", "Float32")
             dtype_map = {
-                "UInt8": np.uint8, "UInt16": np.uint16, "UInt32": np.uint32,
-                "UInt64": np.uint64, "Int8": np.int8, "Int16": np.int16,
-                "Int32": np.int32, "Int64": np.int64,
-                "Float32": np.float32, "Float64": np.float64,
+                "UInt8": np.uint8,
+                "UInt16": np.uint16,
+                "UInt32": np.uint32,
+                "UInt64": np.uint64,
+                "Int8": np.int8,
+                "Int16": np.int16,
+                "Int32": np.int32,
+                "Int64": np.int64,
+                "Float32": np.float32,
+                "Float64": np.float64,
             }
             dtype = dtype_map.get(sample_fmt)
             pixel_storage = img_el.get("pixelStorage", "planar")
@@ -146,8 +152,11 @@ class FitsAnalyzer:
                 comp_parts = compression.split(":")
                 codec = comp_parts[0].lower()
                 uncompressed_size = int(comp_parts[1]) if len(comp_parts) > 1 else 0
-                shuffle_item_size = (int(comp_parts[2]) if len(comp_parts) > 2
-                                     else np.dtype(dtype).itemsize)
+                shuffle_item_size = (
+                    int(comp_parts[2])
+                    if len(comp_parts) > 2
+                    else np.dtype(dtype).itemsize
+                )
                 byte_shuffle = "+sh" in codec
                 base_codec = codec.replace("+sh", "")
                 if base_codec == "zlib":
@@ -162,7 +171,7 @@ class FitsAnalyzer:
                 if pixel_storage == "planar":
                     data = data.reshape(channels, height, width)[0]
                 else:
-                    data = data.reshape(height, width, channels)[:,:,0]
+                    data = data.reshape(height, width, channels)[:, :, 0]
             else:
                 data = data.reshape(height, width)
 
@@ -185,28 +194,34 @@ class FitsAnalyzer:
 
         self.stars = []
         for row in sources:
-            self.stars.append({
-                "x": float(row["xcentroid"]),
-                "y": float(row["ycentroid"]),
-                "flux": float(row["flux"]),
-            })
+            self.stars.append(
+                {
+                    "x": float(row["xcentroid"]),
+                    "y": float(row["ycentroid"]),
+                    "flux": float(row["flux"]),
+                }
+            )
         return self.stars
 
     def analyze(self, progress_cb=None):
         if not self.stars:
             self.detect_stars()
 
-        self.fitted_stars = self._fit_stars(self.data, self.stars, progress_cb=progress_cb)
+        self.fitted_stars = self._fit_stars(
+            self.data, self.stars, progress_cb=progress_cb
+        )
         h, w = self.data.shape
         self.surface = self._build_surface(self.fitted_stars, (h, w))
-        self.classification = self._classify_backfocus(self.fitted_stars, (w/2, h/2))
+        self.classification = self._classify_backfocus(
+            self.fitted_stars, (w / 2, h / 2)
+        )
         return self.get_summary()
 
     def get_summary(self):
         summary = {
-            "exposure": self.header.get("EXPTIME"),
-            "temperature": self.header.get("CCD-TEMP"),
-            "filter": self.header.get("FILTER"),
+            "exposure": self.header.get("EXPTIME") if self.header else None,
+            "temperature": self.header.get("CCD-TEMP") if self.header else None,
+            "filter": self.header.get("FILTER") if self.header else None,
             "stars_count": len(self.fitted_stars),
         }
         if self.classification:
@@ -230,7 +245,7 @@ class FitsAnalyzer:
             x0, y0 = sx - half, sy - half
             if x0 < 0 or y0 < 0 or x0 + box_size > w or y0 + box_size > h:
                 continue
-            cutout = data[y0:y0+box_size, x0:x0+box_size]
+            cutout = data[y0 : y0 + box_size, x0 : x0 + box_size]
             res = self._fit_one_star(star, cutout, x0, y0, box_size, half, xy)
             if res:
                 results.append(res)
@@ -242,58 +257,80 @@ class FitsAnalyzer:
         bg = np.median(cutout)
         cutout_sub = cutout - bg
         amp_guess = cutout_sub.max()
-        if amp_guess <= 0: return None
+        if amp_guess <= 0:
+            return None
         p0 = [amp_guess, half, half, 2.0, 2.0, 0.0, 0.0]
         try:
-            popt, _ = curve_fit(self._gaussian_2d, xy, cutout_sub.ravel(), p0=p0, maxfev=1000)
+            popt, _ = curve_fit(
+                self._gaussian_2d, xy, cutout_sub.ravel(), p0=p0, maxfev=1000
+            )
             amp, fit_cx, fit_cy, sigma_x, sigma_y, theta, offset = popt
             fwhm_x, fwhm_y = abs(sigma_x) * 2.355, abs(sigma_y) * 2.355
             f_major, f_minor = max(fwhm_x, fwhm_y), min(fwhm_x, fwhm_y)
-            ecc = math.sqrt(1 - (f_minor/f_major)**2) if f_major > 0 else 0
-            pa = theta if fwhm_x >= fwhm_y else theta + math.pi/2
+            ecc = math.sqrt(1 - (f_minor / f_major) ** 2) if f_major > 0 else 0
+            pa = theta if fwhm_x >= fwhm_y else theta + math.pi / 2
             return {
-                "x": star["x"], "y": star["y"],
-                "fwhm_major": f_major, "fwhm_minor": f_minor,
-                "fwhm_geom": math.sqrt(f_major*f_minor),
-                "eccentricity": ecc, "position_angle": pa
+                "x": star["x"],
+                "y": star["y"],
+                "fwhm_major": f_major,
+                "fwhm_minor": f_minor,
+                "fwhm_geom": math.sqrt(f_major * f_minor),
+                "eccentricity": ecc,
+                "position_angle": pa,
             }
-        except: return None
+        except:
+            return None
 
     @staticmethod
     def _gaussian_2d(xy, amplitude, x0, y0, sigma_x, sigma_y, theta, offset):
         x, y = xy
         cos_t, sin_t = math.cos(theta), math.sin(theta)
-        a = cos_t**2/(2*sigma_x**2) + sin_t**2/(2*sigma_y**2)
-        b = -math.sin(2*theta)/(4*sigma_x**2) + math.sin(2*theta)/(4*sigma_y**2)
-        c = sin_t**2/(2*sigma_x**2) + cos_t**2/(2*sigma_y**2)
-        return (amplitude * np.exp(-(a*(x-x0)**2 + 2*b*(x-x0)*(y-y0) + c*(y-y0)**2)) + offset).ravel()
+        a = cos_t**2 / (2 * sigma_x**2) + sin_t**2 / (2 * sigma_y**2)
+        b = -math.sin(2 * theta) / (4 * sigma_x**2) + math.sin(2 * theta) / (
+            4 * sigma_y**2
+        )
+        c = sin_t**2 / (2 * sigma_x**2) + cos_t**2 / (2 * sigma_y**2)
+        return (
+            amplitude
+            * np.exp(
+                -(a * (x - x0) ** 2 + 2 * b * (x - x0) * (y - y0) + c * (y - y0) ** 2)
+            )
+            + offset
+        ).ravel()
 
     def _build_surface(self, fitted, shape):
-        if len(fitted) < 6: return None
+        if len(fitted) < 6:
+            return None
         h, w = shape
         xs = np.array([s["x"] for s in fitted])
         ys = np.array([s["y"] for s in fitted])
         fwhms = np.array([s["fwhm_geom"] for s in fitted])
-        xn, yn = (xs-w/2)/(w/2), (ys-h/2)/(h/2)
-        A = np.column_stack([np.ones_like(xn), xn, yn, xn**2, xn*yn, yn**2])
+        xn, yn = (xs - w / 2) / (w / 2), (ys - h / 2) / (h / 2)
+        A = np.column_stack([np.ones_like(xn), xn, yn, xn**2, xn * yn, yn**2])
         try:
             coeffs, _, _, _ = np.linalg.lstsq(A, fwhms, rcond=None)
             center_fwhm = max(coeffs[0], 0.1)
             edge_fwhm = np.mean([coeffs[0] + coeffs[3], coeffs[0] + coeffs[5]])
             return {"gradient_pct": (edge_fwhm - center_fwhm) / center_fwhm * 100}
-        except: return None
+        except:
+            return None
 
     def _classify_backfocus(self, fitted, center):
         cx, cy = center
         scores = []
         for s in fitted:
-            if s["eccentricity"] < 0.15: continue
-            dx, dy = s["x"]-cx, s["y"]-cy
+            if s["eccentricity"] < 0.15:
+                continue
+            dx, dy = s["x"] - cx, s["y"] - cy
             rad_angle = math.atan2(dy, dx)
             delta = abs(s["position_angle"] - rad_angle) % math.pi
-            if delta > math.pi/2: delta = math.pi - delta
-            scores.append(math.cos(2*delta) * s["eccentricity"])
-        if not scores: return {"score": 0, "verdict": "correct"}
+            if delta > math.pi / 2:
+                delta = math.pi - delta
+            scores.append(math.cos(2 * delta) * s["eccentricity"])
+        if not scores:
+            return {"score": 0, "verdict": "correct"}
         avg_score = np.mean(scores)
-        verdict = "short" if avg_score > 0.2 else ("long" if avg_score < -0.2 else "correct")
+        verdict = (
+            "short" if avg_score > 0.2 else ("long" if avg_score < -0.2 else "correct")
+        )
         return {"score": avg_score, "verdict": verdict}

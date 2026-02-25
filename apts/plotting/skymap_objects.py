@@ -52,7 +52,8 @@ def _plot_bright_stars_on_skymap(
 
     bright_stars_df["epoch_year"] = 2000.0
     bright_stars_df.rename(
-        columns={"RA": "ra_hours", "Dec": "dec_degrees"}, inplace=True  # type: ignore
+        columns={"RA": "ra_hours", "Dec": "dec_degrees"},
+        inplace=True,  # type: ignore
     )
 
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))

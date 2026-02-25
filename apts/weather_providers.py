@@ -9,6 +9,7 @@ import pandas as pd
 import requests_cache
 
 from apts.config import get_cache_settings
+
 from .secrets import mask_text
 
 logger = logging.getLogger(__name__)
@@ -159,7 +160,13 @@ class WeatherProvider(ABC):
         )
 
     @abstractmethod
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:
         pass
 
     def _empty_df(self) -> pd.DataFrame:
@@ -188,17 +195,21 @@ class WeatherProvider(ABC):
 class PirateWeather(WeatherProvider):
     API_URL = "https://api.pirateweather.net/forecast/{apikey}/{lat},{lon}?units=si"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        data = None
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             columns = [
                 "time",
@@ -243,27 +254,35 @@ class PirateWeather(WeatherProvider):
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
             result = cast(
-                pd.DataFrame, result[result.time <= cutoff.astimezone(self.local_timezone)]
+                pd.DataFrame,
+                result[result.time <= cutoff.astimezone(self.local_timezone)],
             )
-        return self._enrich_with_aurora_data(result)
+            return self._enrich_with_aurora_data(result)
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
 
 
 class VisualCrossing(WeatherProvider):
     API_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/{lat},{lon}/next{hours}hours?unitGroup=metric&key={apikey}&include=hours"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(
             apikey=self.api_key, lat=self.lat, lon=self.lon, hours=hours
         )
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        data = None
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "days" not in json_data:
                 logger.error(
@@ -330,18 +349,29 @@ class VisualCrossing(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
 
 
 class StormGlass(WeatherProvider):
     API_URL = "https://api.stormglass.io/v2/weather/point?key={apikey}&lat={lat}&lng={lon}&params={params}&start={start}&end={end}"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:
         params = [
             "airTemperature",
             "pressure",
@@ -367,14 +397,12 @@ class StormGlass(WeatherProvider):
         )
         self._log_download_url(url)
         headers = {"Authorization": self.api_key}
-        with get_session().get(url, headers=headers) as data:
-            logger.debug(f"Data {data}")
-            try:
+        data = None
+        try:
+            with get_session().get(url, headers=headers) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "hours" not in json_data:
                 logger.error(
@@ -496,12 +524,17 @@ class StormGlass(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
 
 
 class Meteoblue(WeatherProvider):
@@ -559,9 +592,7 @@ class Meteoblue(WeatherProvider):
             )
 
         if "visibility" in df.columns:
-            df["visibility"] = (
-                pd.to_numeric(df["visibility"], errors="coerce") / 1000
-            )  # type: ignore
+            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce") / 1000  # type: ignore
 
         if "fog" in df.columns:
             df["fog"] = pd.to_numeric(df["fog"], errors="coerce")
@@ -571,7 +602,7 @@ class Meteoblue(WeatherProvider):
 
         return df
 
-    def _is_basic_weather_good(self, df, conditions, observation_window) -> bool:
+    def _is_weather_good(self, df, conditions, observation_window) -> bool:
         start, stop = observation_window
         # Filter data for the observation window
         df_window = df[(df.time >= start) & (df.time <= stop)].copy()
@@ -581,8 +612,35 @@ class Meteoblue(WeatherProvider):
         good_hours = 0
         for _, row in df_window.iterrows():
             is_good = True
+            # Check clouds
+            if (
+                is_good
+                and "cloudCover" in row
+                and pd.notna(row.cloudCover)
+                and row.cloudCover != "none"
+            ):
+                if float(row.cloudCover) >= conditions.max_clouds:
+                    is_good = False
+            # Check visibility
+            if (
+                is_good
+                and "visibility" in row
+                and pd.notna(row.visibility)
+                and row.visibility != "none"
+            ):
+                if float(row.visibility) <= conditions.min_visibility:
+                    is_good = False
+            # Check fog
+            if is_good and "fog" in row and pd.notna(row.fog) and row.fog != "none":
+                if float(row.fog) >= conditions.max_fog:
+                    is_good = False
             # Check precipitation
-            if pd.notna(row.get("precipProbability")) and row.get("precipProbability") != "none":
+            if (
+                is_good
+                and "precipProbability" in row
+                and pd.notna(row.precipProbability)
+                and row.precipProbability != "none"
+            ):
                 if (
                     float(row.precipProbability)
                     >= conditions.max_precipitation_probability
@@ -590,29 +648,29 @@ class Meteoblue(WeatherProvider):
                     is_good = False
             if (
                 is_good
-                and pd.notna(row.get("precipIntensity"))
-                and row.get("precipIntensity") != "none"
+                and "precipIntensity" in row
+                and pd.notna(row.precipIntensity)
+                and row.precipIntensity != "none"
             ):
-                if (
-                    float(row.precipIntensity)
-                    >= conditions.max_precipitation_intensity
-                ):
+                if float(row.precipIntensity) >= conditions.max_precipitation_intensity:
                     is_good = False
             # Check wind
             if (
                 is_good
-                and pd.notna(row.get("windSpeed"))
-                and row.get("windSpeed") != "none"
+                and "windSpeed" in row
+                and pd.notna(row.windSpeed)
+                and row.windSpeed != "none"
             ):
-                if float(row.get("windSpeed")) >= conditions.max_wind:
+                if float(row.windSpeed) >= conditions.max_wind:
                     is_good = False
             # Check temperature
             if (
                 is_good
-                and pd.notna(row.get("temperature"))
-                and row.get("temperature") != "none"
+                and "temperature" in row
+                and pd.notna(row.temperature)
+                and row.temperature != "none"
             ):
-                temp = float(row.get("temperature"))
+                temp = float(row.temperature)
                 if (
                     temp <= conditions.min_temperature
                     or temp >= conditions.max_temperature
@@ -624,37 +682,16 @@ class Meteoblue(WeatherProvider):
 
         return (good_hours / len(df_window)) * 100 > conditions.min_weather_goodness
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         forecast_days = math.ceil(hours / 24)
 
-        # 1. Fetch BASIC package
-        url_basic = self.BASIC_URL.format(
-            apikey=self.api_key,
-            lat=self.lat,
-            lon=self.lon,
-            forecast_days=forecast_days,
-        )
-        self._log_download_url(url_basic)
-        with get_session().get(url_basic) as resp_basic:
-            try:
-                resp_basic.raise_for_status()
-                df = self._parse_meteoblue_response(resp_basic.text)
-            except Exception as e:
-                self._log_download_error(e, resp_basic.text)
-                return self._empty_df()
-
-        if df.empty:
-            return self._empty_df()
-
-        # 2. Check if weather is already bad based on basic data
-        if not force and conditions is not None and observation_window is not None:
-            if not self._is_basic_weather_good(df, conditions, observation_window):
-                logger.info(
-                    "Meteoblue: basic weather conditions not met, skipping clouds-1h fetch and aurora enrichment."
-                )
-                return self._finalize_df(df, hours)
-
-        # 3. Fetch CLOUDS package
+        # 1. Fetch CLOUDS package (cheaper)
         url_clouds = self.CLOUDS_URL.format(
             apikey=self.api_key,
             lat=self.lat,
@@ -662,16 +699,49 @@ class Meteoblue(WeatherProvider):
             forecast_days=forecast_days,
         )
         self._log_download_url(url_clouds)
-        with get_session().get(url_clouds) as resp_clouds:
-            try:
+        resp_clouds = None
+        try:
+            with get_session().get(url_clouds) as resp_clouds:
                 resp_clouds.raise_for_status()
-                df_clouds = self._parse_meteoblue_response(resp_clouds.text)
-                if not df_clouds.empty:
-                    # Merge with basic data
-                    df = pd.merge(df, df_clouds, on="time", suffixes=("", "_clouds"))
-            except Exception as e:
-                self._log_download_error(e, resp_clouds.text)
-                # Continue with basic data only if clouds fetch fails
+                df = self._parse_meteoblue_response(resp_clouds.text)
+        except Exception as e:
+            self._log_download_error(
+                e, resp_clouds.text if resp_clouds is not None else ""
+            )
+            return self._empty_df()
+
+        if df.empty:
+            return self._empty_df()
+
+        # 2. Check if weather is already bad based on cloud data
+        if not force and conditions is not None and observation_window is not None:
+            if not self._is_weather_good(df, conditions, observation_window):
+                logger.info(
+                    "Meteoblue: cloud conditions not met, skipping basic-1h fetch and aurora enrichment."
+                )
+                return self._finalize_df(df, hours)
+
+        # 3. Fetch BASIC package
+        url_basic = self.BASIC_URL.format(
+            apikey=self.api_key,
+            lat=self.lat,
+            lon=self.lon,
+            forecast_days=forecast_days,
+        )
+        self._log_download_url(url_basic)
+        resp_basic = None
+        try:
+            with get_session().get(url_basic) as resp_basic:
+                resp_basic.raise_for_status()
+                df_basic = self._parse_meteoblue_response(resp_basic.text)
+                if not df_basic.empty:
+                    # Merge with cloud data
+                    df = pd.merge(df, df_basic, on="time", suffixes=("", "_basic"))
+        except Exception as e:
+            self._log_download_error(
+                e, resp_basic.text if resp_basic is not None else ""
+            )
+            # Continue with cloud data only if basic fetch fails
 
         df = self._finalize_df(df, hours)
         return self._enrich_with_aurora_data(df)
@@ -695,17 +765,21 @@ class Meteoblue(WeatherProvider):
 class OpenWeatherMap(WeatherProvider):
     API_URL = "https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={apikey}&units=metric&exclude=minutely,daily,alerts"
 
-    def download_data(self, hours: int = 48, conditions: Optional[Any] = None, observation_window: Optional[Tuple[datetime, datetime]] = None, force: bool = False) -> pd.DataFrame:  # pyright: ignore
+    def download_data(
+        self,
+        hours: int = 48,
+        conditions: Optional[Any] = None,
+        observation_window: Optional[Tuple[datetime, datetime]] = None,
+        force: bool = False,
+    ) -> pd.DataFrame:  # pyright: ignore
         url = self.API_URL.format(apikey=self.api_key, lat=self.lat, lon=self.lon)
         self._log_download_url(url)
-        with get_session().get(url) as data:
-            logger.debug(f"Data {data}")
-            try:
+        data = None
+        try:
+            with get_session().get(url) as data:
+                logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
-            except Exception as e:
-                self._log_download_error(e, data.text)
-                return self._empty_df()
 
             if "hourly" not in json_data:
                 logger.error(
@@ -795,9 +869,14 @@ class OpenWeatherMap(WeatherProvider):
 
             # Filter by hours
             cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
 
             df = self._enrich_with_aurora_data(df)
             if "aurora" in df.columns:
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
