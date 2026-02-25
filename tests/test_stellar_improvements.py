@@ -1,6 +1,4 @@
 import numpy
-import pytest
-from typing import Any, cast
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.filter import Filter

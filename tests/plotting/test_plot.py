@@ -115,7 +115,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
 
         # Create a mock Skyfield object that can be observed
         import numpy as np
-        from skyfield.timelib import Time, Timescale
+        from skyfield.timelib import Timescale
         from skyfield.units import Angle
 
         mock_skyfield_obj = MagicMock()
@@ -127,7 +127,9 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
             None,
         )
         mock_ts = MagicMock(spec=Timescale)
-        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
+        from skyfield.api import load
+        ts = load.timescale()
+        mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_skyfield_obj._observe_from_bcrs.return_value = (
             np.ones(3),
@@ -181,10 +183,12 @@ def test_plot_ngc_object_with_no_size(mock_observation):
             MagicMock(),
         )
         import numpy as np
-        from skyfield.timelib import Time, Timescale
+        from skyfield.timelib import Timescale
 
         mock_ts = MagicMock(spec=Timescale)
-        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
+        from skyfield.api import load
+        ts = load.timescale()
+        mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_ngc_object._observe_from_bcrs.return_value = (
             np.ones(3),
@@ -476,9 +480,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
     ra_hours_array = np.array([0.5, 1.2, 1.8, 2.5, 3.0])
     dec_degrees_array = np.array([25.0, 35.0, 38.0, 45.0, 50.0])
 
-    # Create simple mock radec object that returns real numpy arrays
-    mock_radec = MagicMock()
-
     # Create separate mock objects for ra and dec with proper properties
     mock_ra = MagicMock()
     mock_dec = MagicMock()
@@ -518,15 +519,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         )
 
         # Test the actual property access and indexing
-
-        # Test boolean indexing
-        test_visible = np.ones(5, dtype=bool)
-        print(
-        )
-        print(
-        )
-        print(
-        )
 
         _plot_stars_on_skymap(
             mock_observation,

@@ -3,7 +3,6 @@ from apts.secrets import mask_text
 from apts.observations import Observation
 from apts.place import Place
 from apts.equipment import Equipment
-import os
 
 def test_mask_text_url_encoded():
     secret = "key with spaces"

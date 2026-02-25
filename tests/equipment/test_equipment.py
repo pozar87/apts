@@ -1,6 +1,5 @@
 import math
 from typing import Any, cast
-import math
 from unittest.mock import MagicMock, patch
 
 import numpy as np  # Added for np.log10
