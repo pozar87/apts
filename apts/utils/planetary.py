@@ -181,6 +181,33 @@ def get_moon_illumination(time):
     return illumination
 
 
+def get_moon_phase_name(time):
+    """
+    Returns the name of the moon phase for a given time.
+    """
+    eph = get_ephemeris()
+    # Get the phase angle in degrees (0-360)
+    # 0 = New Moon, 90 = First Quarter, 180 = Full Moon, 270 = Last Quarter
+    phase_angle = cast(Any, almanac.moon_phase(eph, time).degrees)
+
+    if phase_angle < 1.0 or phase_angle > 359.0:
+        return gettext_("New Moon")
+    elif phase_angle < 89.0:
+        return gettext_("Waxing Crescent")
+    elif phase_angle < 91.0:
+        return gettext_("First Quarter")
+    elif phase_angle < 179.0:
+        return gettext_("Waxing Gibbous")
+    elif phase_angle < 181.0:
+        return gettext_("Full Moon")
+    elif phase_angle < 269.0:
+        return gettext_("Waning Gibbous")
+    elif phase_angle < 271.0:
+        return gettext_("Last Quarter")
+    else:
+        return gettext_("Waning Crescent")
+
+
 def get_moon_age(time):
     """
     Returns the moon age in days since the last new moon.
