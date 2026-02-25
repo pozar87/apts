@@ -112,6 +112,44 @@ def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
     return None
 
 
+@lru_cache(maxsize=1024)
+def _next_setting_time_utc(lat, lon, elevation, obj_name, start):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.utc(start)
+    t1 = ts.utc(start + datetime.timedelta(days=2))
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is not None:
+        for ti, yi in zip(t, y):
+            if yi == 0:  # Setting
+                return ti.utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+
+@lru_cache(maxsize=1024)
+def _previous_rising_time_utc(lat, lon, elevation, obj_name, start):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    obj = eph[obj_name]
+    t0 = ts.utc(start - datetime.timedelta(days=2))
+    t1 = ts.utc(start)
+    f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is None:
+        return None
+
+    risings = [ti for ti, yi in zip(t, y) if yi == 1]
+    if risings:
+        return risings[-1].utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+
 class TFProxy:
     def __init__(self):
         self._instance = None
@@ -199,6 +237,22 @@ class Place:
             return res.astimezone(self.local_timezone)
         return None
 
+    def _next_setting_time(self, obj_name, start):
+        res = _next_setting_time_utc(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+        )
+        if res:
+            return res.astimezone(self.local_timezone)
+        return None
+
+    def _previous_rising_time(self, obj_name, start):
+        res = _previous_rising_time_utc(
+            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+        )
+        if res:
+            return res.astimezone(self.local_timezone)
+        return None
+
     def _next_rising_time(self, obj_name, start):
         res = _next_rising_time_utc(
             self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
@@ -240,7 +294,7 @@ class Place:
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "set")
-        return self._previous_setting_time("sun", start=start_date)
+        return self._next_setting_time("sun", start=start_date)
 
     def sunrise_time(
         self,
@@ -259,7 +313,7 @@ class Place:
         start_search_from: Optional[datetime.datetime] = None,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
-        return self._previous_setting_time("moon", start=start_date)
+        return self._next_setting_time("moon", start=start_date)
 
     def moonrise_time(
         self,

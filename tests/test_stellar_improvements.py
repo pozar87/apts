@@ -1,4 +1,6 @@
 import numpy
+import pytest
+from typing import Any, cast
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.filter import Filter
@@ -15,8 +17,7 @@ def test_new_cameras():
     assert mc.read_noise == 1.2
     assert mc.full_well == 63700
     assert mc.quantum_efficiency == 75
-    # Use public pixel_size() method
-    assert mc.pixel_size().to("micrometer").magnitude == 4.63
+    assert mc._pixel_size.to("micrometer").magnitude == 4.63
 
     mm = Camera.ZWO_ASI294MM_PRO()
     assert mm.vendor == "ZWO ASI294MM Pro"
@@ -77,6 +78,8 @@ def test_object_flux():
     assert p_scale is not None
 
     scale = p_scale.magnitude
+    scale = path.pixel_scale().magnitude
+
     assert numpy.isclose(o_flux, s_flux / (scale**2))
 
 

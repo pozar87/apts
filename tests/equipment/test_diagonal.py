@@ -16,3 +16,15 @@ def test_diagonal_register():
     d = Diagonal(vendor="TeleVue", connection_type=ConnectionType.F_2)
     d.register(eq)
     assert d.id() in eq.connection_garph.nodes()
+
+
+def test_diagonal_register_t2():
+    eq = Equipment()
+    d = Diagonal(vendor="TeleVue", connection_type=ConnectionType.F_2, t2_output=True)
+    d.register(eq)
+    assert d.id() in eq.connection_garph.nodes()
+
+
+def test_diagonal_str():
+    d = Diagonal(vendor="TeleVue")
+    assert str(d) == "TeleVue"

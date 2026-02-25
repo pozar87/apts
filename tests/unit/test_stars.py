@@ -48,4 +48,24 @@ class TestStars(unittest.TestCase):
 
     def test_stars_compute_with_time_array(self):
         # Skyfield sometimes passes time arrays
-        pass
+        from skyfield.api import load
+
+        ts = load.timescale()
+        t = ts.utc([2025, 2025], [2, 2], [18, 19])  # type: ignore[reportArgumentType]
+
+        df = self.stars.compute(calculation_date=t)
+        self.assertIsNotNone(df)
+
+    def test_find_by_name(self):
+        # Find a well-known star
+        sirius = self.stars.find_by_name("Sirius")
+        self.assertIsNotNone(sirius)
+
+        # Find a non-existent star
+        none_star = self.stars.find_by_name("NonExistentStar123")
+        self.assertIsNone(none_star)
+
+    def test_get_skyfield_object(self):
+        row = self.stars.objects.iloc[0]
+        obj = self.stars.get_skyfield_object(row)
+        self.assertIsNotNone(obj)

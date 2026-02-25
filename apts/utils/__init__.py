@@ -108,6 +108,13 @@ class Utils:
         return date.strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
+    def sanitize_header(value: str) -> str:
+        """Removes newlines to prevent header injection and crashes."""
+        if not value:
+            return ""
+        return str(value).replace("\n", "").replace("\r", "")
+
+    @staticmethod
     def plot_to_bytes(plot):
         plot_bytes = io.BytesIO()
         plot.savefig(plot_bytes, format=get_plot_format())

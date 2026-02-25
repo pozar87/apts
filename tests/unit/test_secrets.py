@@ -3,7 +3,7 @@ from apts.secrets import mask_text
 from apts.observations import Observation
 from apts.place import Place
 from apts.equipment import Equipment
-
+import os
 
 def test_mask_text_url_encoded():
     secret = "key with spaces"
@@ -35,12 +35,8 @@ def test_to_html_path_traversal_prevention():
     obs = Observation(place, equipment)
 
     # Try to read a file with an invalid extension
-    with pytest.raises(
-        ValueError, match="Only .template, .html, or .htm files are allowed"
-    ):
+    with pytest.raises(ValueError, match="Only .template, .html, or .htm files are allowed"):
         obs.to_html(custom_template="/etc/passwd")
 
-    with pytest.raises(
-        ValueError, match="Only .template, .html, or .htm files are allowed"
-    ):
+    with pytest.raises(ValueError, match="Only .template, .html, or .htm files are allowed"):
         obs.to_html(custom_template="config.ini")

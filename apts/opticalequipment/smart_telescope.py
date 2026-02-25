@@ -83,7 +83,8 @@ class SmartTelescope(Telescope):
             2
             * numpy.degrees(
                 numpy.arctan(
-                    self.sensor_height.magnitude / (2 * self.focal_length.magnitude)
+                    self.sensor_height.to("mm").magnitude
+                    / (2 * self.focal_length.to("mm").magnitude)
                 )
             )
             * get_unit_registry().deg

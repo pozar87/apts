@@ -631,7 +631,12 @@ class Meteoblue(WeatherProvider):
                 if float(row.visibility) <= conditions.min_visibility:
                     is_good = False
             # Check fog
-            if is_good and "fog" in row and pd.notna(row.fog) and row.fog != "none":
+            if (
+                is_good
+                and "fog" in row
+                and pd.notna(row.fog)
+                and row.fog != "none"
+            ):
                 if float(row.fog) >= conditions.max_fog:
                     is_good = False
             # Check precipitation

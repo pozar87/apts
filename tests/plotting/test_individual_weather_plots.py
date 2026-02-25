@@ -69,6 +69,12 @@ def test_individual_weather_plots(mock_weather_instance, plot_method, weather_me
             mock_mark_obs.assert_called_once()
             mock_mark_good.assert_called_once()
 
+
+def test_summary_weather_plots(mock_weather_instance):
+    place = setup_place()
+    place.weather = mock_weather_instance
+    obs = Observation(place=place, equipment=MagicMock())
+
     with (
         patch.object(mock_weather_instance, "plot_clouds_summary") as mock_clouds_sum,
         patch.object(
@@ -86,3 +92,14 @@ def test_individual_weather_plots(mock_weather_instance, plot_method, weather_me
 
         obs.plot_pressure_and_ozone()
         mock_press_ozone.assert_called_once()
+
+
+def test_plot_weather_still_works(mock_weather_instance):
+    place = setup_place()
+    place.weather = mock_weather_instance
+    obs = Observation(place=place, equipment=MagicMock())
+
+    # Just verify it doesn't crash and calls the new individual plot functions
+    with patch("apts.plotting.weather.generate_plot_clouds") as mock_clouds:
+        obs.plot_weather()
+        mock_clouds.assert_called_once()

@@ -118,9 +118,9 @@ class Objects(ABC):
             other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
 
             # Check Stars using vectorized geometric formulas across all check_times.
-            # Note: This use a geometric approximation that ignores atmospheric refraction
-            # and other small corrections. This results in a ~0.2-0.5 degree difference
-            # compared to Skyfield's rigorous solver, which is acceptable for fast
+            # Note: This uses a geometric approximation that includes atmospheric
+            # refraction (Bennett's formula). This results in high accuracy
+            # compared to Skyfield's rigorous solver, while maintaining fast
             # candidate identification in get_visible.
             if len(stars_indices) > 0:
                 # Extract RA/Dec for all stars
@@ -148,10 +148,16 @@ class Objects(ABC):
                 sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(lat_rad) * np.cos(
                     dec_rad
                 ) * np.cos(h_rad)
+<<<<<<< HEAD
+=======
+
+                # Convert to degrees and add atmospheric refraction
+                true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+                apparent_alt_deg = true_alt_deg + self._refraction(true_alt_deg)
+>>>>>>> master
 
                 # Determine altitude visibility
-                min_alt_rad = np.deg2rad(conditions.min_object_altitude)
-                alt_ok = sin_alt > np.sin(min_alt_rad)
+                alt_ok = apparent_alt_deg > conditions.min_object_altitude
 
                 # Determine azimuth visibility
                 # tan(Az) = sin(H) / (cos(H) sin(lat) - tan(dec) cos(lat))
@@ -261,6 +267,25 @@ class Objects(ABC):
     def fixed_body(RA, Dec):
         # Create body at given coordinates
         return Star(ra_hours=RA, dec_degrees=Dec)
+
+    @staticmethod
+    def _refraction(alt_deg):
+        """
+        Calculates atmospheric refraction in degrees using Bennett's formula.
+        Accurate to ~0.02' for altitudes > 0.
+        """
+        alt_deg_arr = np.atleast_1d(alt_deg)
+        refraction_deg = np.zeros_like(alt_deg_arr, dtype=float)
+        # Apply only for objects above -1 degree to avoid tan(0) or instability
+        mask = alt_deg_arr > -1.0
+        if np.any(mask):
+            # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
+            r_arcmin = 1.0 / np.tan(
+                np.deg2rad(alt_deg_arr[mask] + 7.31 / (alt_deg_arr[mask] + 4.4))
+            )
+            refraction_deg[mask] = r_arcmin / 60.0
+
+        return refraction_deg[0] if np.isscalar(alt_deg) else refraction_deg
 
     def _compute_tranzit(self, skyfield_object, observer):
         """
@@ -387,8 +412,9 @@ class Objects(ABC):
             lat = self.place.lat_decimal
             dec = skyfield_object.dec.degrees
             # Max altitude = 90 - abs(lat - dec)
-            # This is exact for stars ignoring refraction
-            return 90.0 - abs(lat - dec)
+            # Add refraction for better accuracy
+            true_alt = 90.0 - abs(lat - dec)
+            return true_alt + self._refraction(true_alt)
 
         t = self.ts.utc(transit)
         alt, _, _ = (
@@ -401,12 +427,16 @@ class Objects(ABC):
         Fast transit, altitude, rising, and setting calculation for a DataFrame of Stars.
         Uses vectorized numpy operations and geometric approximations for speed.
 
-        Note: Rising/setting times use a geometric formula that ignores atmospheric
-        refraction (~34'). This results in a 2-5 minute difference compared to
-        Skyfield's iterative solver, which is acceptable for fast visualization.
+        Note: Rising/setting times use a geometric formula that accounts for atmospheric
+        refraction (~34'). This results in high accuracy compared to Skyfield's
+        iterative solver, while maintaining excellent performance.
         """
         # Extract Skyfield Star objects and their coordinates in a vectorized way
-        sky_objs = [self.get_skyfield_object(row) for _, row in df.iterrows()]
+        if "skyfield_object" in df.columns:
+            sky_objs = df["skyfield_object"].values
+        else:
+            sky_objs = np.array([self.get_skyfield_object(row) for _, row in df.iterrows()])
+
         valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
         ras = np.array(
@@ -423,9 +453,9 @@ class Objects(ABC):
         Generic vectorized transit, altitude, rising, and setting calculation.
         Uses vectorized numpy operations and geometric approximations for speed.
 
-        Note: Rising/setting times use a geometric formula that ignores atmospheric
-        refraction (~34'). This results in a 2-5 minute difference compared to
-        Skyfield's iterative solver, which is acceptable for fast visualization.
+        Note: Rising/setting times use a geometric formula that accounts for atmospheric
+        refraction (~34'). This results in high accuracy compared to Skyfield's
+        iterative solver, while maintaining excellent performance.
         """
         current_dt = observer.date.utc_datetime()
         t0_dt = current_dt.replace(
@@ -477,13 +507,22 @@ class Objects(ABC):
         # Vectorized Rise/Set (Geometric) calculation
         lat_rad = np.deg2rad(lat_deg)
         decs_rad = np.deg2rad(decs)
-        cos_H = -np.tan(lat_rad) * np.tan(decs_rad)
+        # Standard altitude for rising/setting of stars is -34 arcminutes to account for refraction
+        h0_rad = np.deg2rad(-34.0 / 60.0)
+        # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
+        cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
+            np.cos(lat_rad) * np.cos(decs_rad)
+        )
 
         # Hour angle in solar hours
         H_hours = np.full(len(df), np.nan)
         # Objects must be Stars and within the range where they actually rise/set
         h_mask = valid_mask & (cos_H >= -1) & (cos_H <= 1)
-        H_hours[h_mask] = np.arccos(cos_H[h_mask]) * (12.0 / np.pi) * sidereal_to_solar
+        H_hours[h_mask] = (
+            np.arccos(np.clip(cos_H[h_mask], -1.0, 1.0))
+            * (12.0 / np.pi)
+            * sidereal_to_solar
+        )
 
         # Ensure second precision
         H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")

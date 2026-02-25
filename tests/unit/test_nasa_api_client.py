@@ -64,3 +64,7 @@ class TestNasaAPI(unittest.TestCase):
             self.assertEqual(data["element_count"], 2)
             self.assertIn("2023-01-01", data["near_earth_objects"])
             self.assertIn("2023-01-08", data["near_earth_objects"])
+
+
+if __name__ == "__main__":
+    unittest.main()
