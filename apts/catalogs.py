@@ -114,7 +114,7 @@ def _load_ngc_with_units():
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is ~7x faster than Series.apply(lambda x: x * unit)
     ureg = get_unit_registry()
-    magnitudes = cast(Any, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")).fillna(
+    magnitudes = cast(pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")).fillna(
         99
     )
     ngc_df["Magnitude"] = list(magnitudes.values * ureg.mag)
