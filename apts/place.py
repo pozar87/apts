@@ -27,6 +27,7 @@ from .utils.planetary import (
     get_moon_age,
     get_moon_distance,
     get_moon_illumination,
+    get_moon_phase_name,
 )
 from .weather import Weather
 
@@ -335,6 +336,12 @@ class Place:
 
     def moon_illumination(self):
         return get_moon_illumination(self.date)
+
+    def moon_phase_name(self):
+        """
+        Returns the name of the moon phase.
+        """
+        return get_moon_phase_name(self.date)
 
     def moon_age(self):
         """

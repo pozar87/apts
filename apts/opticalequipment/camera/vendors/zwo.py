@@ -44,6 +44,14 @@ class ZwoCamera(Camera):
         return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI2600MC Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80)
 
     @classmethod
+    def ZWO_ASI2600MM_PRO(cls):
+        """
+        Factory method for ZWO ASI2600MM Pro camera.
+        Sensor: Sony IMX571 (Mono APS-C)
+        """
+        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI2600MM Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91)
+
+    @classmethod
     def ZWO_ASI1600MM_PRO(cls):
         """
         Factory method for ZWO ASI1600MM Pro camera.
