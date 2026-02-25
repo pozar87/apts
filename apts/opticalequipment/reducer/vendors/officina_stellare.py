@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Corrector
 
 class Officina_stellareReducer(Reducer):
     _DATABASE = {'Officina_Stellare_RC_Corrector_0_75x_M68': {'brand': 'Officina Stellare', 'name': 'RC Corrector 0.75x (M68)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 500, 'tside_thread': 'M68', 'tside_gender': 'Female', 'cside_thread': 'M68', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

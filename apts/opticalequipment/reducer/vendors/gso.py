@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Flattener, Corrector
 
 class GsoFlattener(Flattener):
     _DATABASE = {'GSO_2_Field_Flattener': {'brand': 'GSO', 'name': '2" Field Flattener', 'type': 'type_flattener', 'optical_length': 0, 'mass': 250, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

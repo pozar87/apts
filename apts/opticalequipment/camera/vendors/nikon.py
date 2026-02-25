@@ -1,10 +1,4 @@
-import numpy
-import math
-from typing import Any
-from ...abstract import OutputOpticalEqipment
-from ....constants import GraphConstants, OpticalType
-from ....units import get_unit_registry
-from ....utils import ConnectionType, Gender
+from ....utils import Gender
 from ..base import Camera
 
 class NikonCamera(Camera):
@@ -17,7 +11,7 @@ class NikonCamera(Camera):
         Sensor: Full Frame
         """
         entry = cls._DATABASE['Nikon_D850']
-        from ....utils import Utils, Gender
+        from ....utils import Utils
         vendor = f"{entry['brand']} {entry['name']}"
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)

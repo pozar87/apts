@@ -41,23 +41,30 @@ def _plot_bright_stars_on_skymap(
     if bright_stars_df.empty:
         return
 
-    if hasattr(bright_stars_df["RA"].iloc[0], "magnitude"):  # type: ignore
-        bright_stars_df["RA"] = bright_stars_df["RA"].apply(lambda x: x.magnitude)  # type: ignore
-    if hasattr(bright_stars_df["Dec"].iloc[0], "magnitude"):  # type: ignore
-        bright_stars_df["Dec"] = bright_stars_df["Dec"].apply(lambda x: x.magnitude)  # type: ignore
-    if hasattr(bright_stars_df["Magnitude"].iloc[0], "magnitude"):  # type: ignore
+    # Use pre-calculated float versions if available, otherwise extract from Quantities
+    if "ra_hours" not in bright_stars_df.columns:
+        if hasattr(bright_stars_df["RA"].iloc[0], "magnitude"):  # type: ignore
+            bright_stars_df["RA"] = bright_stars_df["RA"].apply(lambda x: x.magnitude)  # type: ignore
+        bright_stars_df.rename(columns={"RA": "ra_hours"}, inplace=True)  # type: ignore
+
+    if "dec_degrees" not in bright_stars_df.columns:
+        if hasattr(bright_stars_df["Dec"].iloc[0], "magnitude"):  # type: ignore
+            bright_stars_df["Dec"] = bright_stars_df["Dec"].apply(lambda x: x.magnitude)  # type: ignore
+        bright_stars_df.rename(columns={"Dec": "dec_degrees"}, inplace=True)  # type: ignore
+
+    if "Magnitude_float" in bright_stars_df.columns:
+        bright_stars_df["Magnitude"] = bright_stars_df["Magnitude_float"]
+    elif hasattr(bright_stars_df["Magnitude"].iloc[0], "magnitude"):  # type: ignore
         bright_stars_df["Magnitude"] = bright_stars_df["Magnitude"].apply(  # type: ignore
             lambda x: x.magnitude
         )
 
     bright_stars_df["epoch_year"] = 2000.0
-    bright_stars_df.rename(
-        columns={"RA": "ra_hours", "Dec": "dec_degrees"},
-        inplace=True,  # type: ignore
-    )
 
     # Filter out stars with missing coordinates to avoid Skyfield errors
-    bright_stars_df = cast(Any, bright_stars_df).dropna(subset=["ra_hours", "dec_degrees"])
+    bright_stars_df = cast(Any, bright_stars_df).dropna(
+        subset=["ra_hours", "dec_degrees"]
+    )
 
     if bright_stars_df.empty:
         return

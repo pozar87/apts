@@ -1,4 +1,3 @@
-import pytest
 from apts.equipment import Equipment
 from apts.opticalequipment import Telescope, Camera, Eyepiece
 from apts.utils import ConnectionType, Gender

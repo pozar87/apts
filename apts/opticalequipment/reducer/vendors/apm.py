@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Corrector
 
 class ApmReducer(Reducer):
     _DATABASE = {'APM_Riccardi_Design_0_75x': {'brand': 'APM', 'name': 'Riccardi-Design 0.75x', 'type': 'type_reducer', 'optical_length': 0, 'mass': 450, 'tside_thread': 'M72', 'tside_gender': 'Female', 'cside_thread': 'M68', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

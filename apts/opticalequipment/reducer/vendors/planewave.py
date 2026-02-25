@@ -1,8 +1,4 @@
-from ...abstract import IntermediateOpticalEquipment
-from ....constants import OpticalType
-from ....units import get_unit_registry
-from ....utils import Gender
-from ..base import Reducer, Flattener, Corrector
+from ..base import Reducer, Corrector
 
 class PlanewaveReducer(Reducer):
     _DATABASE = {'PlaneWave_0_66x_Reducer_CDK14': {'brand': 'PlaneWave', 'name': '0.66x Reducer (CDK14)', 'type': 'type_reducer', 'optical_length': 0, 'mass': 900, 'tside_thread': 'M117', 'tside_gender': 'Female', 'cside_thread': 'M117', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}

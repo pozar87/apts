@@ -33,6 +33,12 @@ def _load_messier_with_units():
         for ra, dec in zip(messier_df["RA"], messier_df["Dec"])
     ]
 
+    # Store float versions for performance-critical filtering and calculations
+    # to avoid Pint and Skyfield object overhead in high-frequency loops.
+    messier_df["ra_hours"] = messier_df["RA"].values
+    messier_df["dec_degrees"] = messier_df["Dec"].values
+    messier_df["Magnitude_float"] = messier_df["Magnitude"].values
+
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is much faster than Series.apply()
     ureg = get_unit_registry()
@@ -108,15 +114,23 @@ def _load_ngc_with_units():
     # Using raw floats before wrapping in Quantities saves significant overhead.
     ngc_df["skyfield_object"] = [
         Star(ra_hours=ra, dec_degrees=dec) if pd.notna(ra) and pd.notna(dec) else None
-        for ra, dec in zip(cast(Iterable[Any], ra_hours), cast(Iterable[Any], dec_degrees))
+        for ra, dec in zip(
+            cast(Iterable[Any], ra_hours), cast(Iterable[Any], dec_degrees)
+        )
     ]
+
+    # Store float versions for performance-critical filtering and calculations
+    # to avoid Pint and Skyfield object overhead in high-frequency loops.
+    ngc_df["ra_hours"] = ra_hours.values
+    ngc_df["dec_degrees"] = dec_degrees.values
 
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is ~7x faster than Series.apply(lambda x: x * unit)
     ureg = get_unit_registry()
-    magnitudes = cast(pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")).fillna(
-        99
-    )
+    magnitudes = cast(
+        pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")
+    ).fillna(99)
+    ngc_df["Magnitude_float"] = magnitudes.values
     ngc_df["Magnitude"] = list(magnitudes.values * ureg.mag)
     ngc_df["Size"] = [
         x * ureg.arcminute if pd.notna(x) else None for x in ngc_df["Size"]
@@ -154,6 +168,12 @@ def _load_bright_stars_with_units():
         Star(ra_hours=ra, dec_degrees=dec)
         for ra, dec in zip(bright_stars_df["RA"], bright_stars_df["Dec"])
     ]
+
+    # Store float versions for performance-critical filtering and calculations
+    # to avoid Pint and Skyfield object overhead in high-frequency loops.
+    bright_stars_df["ra_hours"] = bright_stars_df["RA"].values
+    bright_stars_df["dec_degrees"] = bright_stars_df["Dec"].values
+    bright_stars_df["Magnitude_float"] = bright_stars_df["Magnitude"].values
 
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is much faster than Series.apply()

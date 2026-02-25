@@ -1,10 +1,3 @@
-import numpy
-import math
-from typing import Any
-from ...abstract import OutputOpticalEqipment
-from ....constants import GraphConstants, OpticalType
-from ....units import get_unit_registry
-from ....utils import ConnectionType, Gender
 from ..base import Camera
 
 class OrionCamera(Camera):
