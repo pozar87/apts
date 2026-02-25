@@ -104,7 +104,9 @@ class TestWeatherOptimization(unittest.TestCase):
         mock_resp_clouds.text = '{"data_1h": {"time": ["2025-01-01 20:00"], "totalcloudcover": [100], "visibility": [1000]}}'
         mock_resp_clouds.status_code = 200
 
-        mock_get_session.return_value.get.return_value.__enter__.return_value = mock_resp_clouds
+        mock_get_session.return_value.get.return_value.__enter__.return_value = (
+            mock_resp_clouds
+        )
 
         conditions = Conditions(max_clouds=20, min_weather_goodness=80)
         window = (
@@ -176,12 +178,12 @@ class TestWeatherOptimization(unittest.TestCase):
 
         # Should have called get() TWICE
         self.assertEqual(mock_get_session.return_value.get.call_count, 2)
-        self.assertIn("clouds-1h", mock_get_session.return_value.get.call_args_list[0][0][0])
-        self.assertIn("basic-1h", mock_get_session.return_value.get.call_args_list[1][0][0])
+        self.assertIn(
+            "clouds-1h", mock_get_session.return_value.get.call_args_list[0][0][0]
+        )
+        self.assertIn(
+            "basic-1h", mock_get_session.return_value.get.call_args_list[1][0][0]
+        )
 
         # Verify aurora was called
         mock_aurora_df.assert_called_once()
-
-
-if __name__ == "__main__":
-    unittest.main()

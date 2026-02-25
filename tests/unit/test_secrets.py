@@ -14,6 +14,7 @@ def test_mask_text_url_encoded():
     assert "key%20with%20spaces" not in masked
     assert "key ...aces" in masked
 
+
 def test_mask_text_multiple_secrets():
     secrets = ["longer_secret1", "longer_secret2"]
     # lengths are 14 (> 8)
@@ -25,6 +26,7 @@ def test_mask_text_multiple_secrets():
     assert "longer_secret2" not in masked
     assert "long...ret1" in masked
     assert "long...ret2" in masked
+
 
 def test_to_html_path_traversal_prevention():
     place = Place(52.2297, 21.0122, name="Warsaw")

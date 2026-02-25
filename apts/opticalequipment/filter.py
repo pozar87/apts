@@ -1,4 +1,4 @@
-from ..utils import ConnectionType
+from ..utils import ConnectionType, Gender
 from .abstract import IntermediateOpticalEquipment
 
 
@@ -13,9 +13,18 @@ class Filter(IntermediateOpticalEquipment):
         vendor="unknown filter",
         connection_type=ConnectionType.F_1_25,
         transmission=1.0,
+        optical_length=0,
+        mass=0,
     ):
-        super(Filter, self).__init__(vendor)
-        self.connection_type = connection_type
+        super(Filter, self).__init__(
+            vendor,
+            optical_length=optical_length,
+            mass=mass,
+            in_connection_type=connection_type,
+            out_connection_type=connection_type,
+            in_gender=Gender.MALE,
+            out_gender=Gender.FEMALE,
+        )
         self.name = name
         self.transmission = transmission
 
@@ -23,9 +32,7 @@ class Filter(IntermediateOpticalEquipment):
         """
         Register filter in optical equipment graph.
         """
-        super(Filter, self)._register(
-            equipment, self.connection_type, self.connection_type
-        )
+        super(Filter, self).register(equipment)
 
     def __str__(self):
         return f"{self.name} ({self.vendor})"

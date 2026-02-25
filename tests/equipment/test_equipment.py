@@ -1,5 +1,5 @@
-from typing import Any, cast
 import math
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import numpy as np  # Added for np.log10
@@ -985,8 +985,6 @@ def test_flipped_view_with_different_telescopes():
     e.register(Diagonal())
     e.register(Eyepiece(25))
     row = e.data()[e.data()["Elements"] == 3].iloc[0]
-    assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
-    assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
     assert row[EquipmentTableLabels.FLIPPED_HORIZONTALLY]
     assert not row[EquipmentTableLabels.FLIPPED_VERTICALLY]
 

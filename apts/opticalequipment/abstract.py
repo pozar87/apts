@@ -17,7 +17,7 @@ class OpticalEquipment:
     OUT = "out"
     IN = "in"
 
-    def __init__(self, focal_length, vendor):
+    def __init__(self, focal_length, vendor, optical_length=0, mass=0):
         if np.isnan(focal_length):
             raise ValueError("focal_length cannot be NaN")
         self._id = str(uuid.uuid4())
@@ -25,6 +25,8 @@ class OpticalEquipment:
 
         self.focal_length = focal_length * get_unit_registry().mm
         self.vendor = vendor
+        self.optical_length = (optical_length or 0) * get_unit_registry().mm
+        self.mass = (mass or 0) * get_unit_registry().gram
 
     def get_vendor(self):
         import logging
@@ -56,26 +58,35 @@ class OpticalEquipment:
     def get_parent_id(name: str):
         return name.split(OpticalEquipment._SEPARATOR)[0]
 
+    def register(self, equipment):
+        self._register(equipment)
+
     def _register(self, equipment):
         # Register equipment node
         equipment.add_vertex(self.id(), self)
 
-    def _register_output(self, equipment, connection_type=ConnectionType.F_1_25):
+    def _register_output(
+        self, equipment, connection_type=ConnectionType.F_1_25, gender=None
+    ):
         # Add output node
         equipment.add_vertex(
             self.out_id(connection_type),
             node_type=OpticalType.OUTPUT,
             connection_type=connection_type,
+            connection_gender=gender,
         )
         # Connect node to its output
         equipment.add_edge(self.id(), self.out_id(connection_type))
 
-    def _register_input(self, equipment, connection_type=ConnectionType.F_1_25):
+    def _register_input(
+        self, equipment, connection_type=ConnectionType.F_1_25, gender=None
+    ):
         # Add input node
         equipment.add_vertex(
             self.in_id(connection_type),
             node_type=OpticalType.INPUT,
             connection_type=connection_type,
+            connection_gender=gender,
         )
         # Connect node to its input
         equipment.add_edge(self.in_id(connection_type), self.id())
@@ -86,20 +97,37 @@ class OpticalEquipment:
 
 
 class IntermediateOpticalEquipment(OpticalEquipment):
-    def __init__(self, vendor):
+    def __init__(
+        self,
+        vendor,
+        optical_length=0,
+        mass=0,
+        in_connection_type=None,
+        out_connection_type=None,
+        in_gender=None,
+        out_gender=None,
+    ):
         super(IntermediateOpticalEquipment, self).__init__(
-            focal_length=0, vendor=vendor
+            focal_length=0, vendor=vendor, optical_length=optical_length, mass=mass
         )
+        self.in_connection_type = in_connection_type
+        self.out_connection_type = out_connection_type
+        self.in_gender = in_gender
+        self.out_gender = out_gender
 
-    def _register(self, equipment, in_connection_type, out_connection_type):  # type: ignore
+    def register(self, equipment):
         super(IntermediateOpticalEquipment, self)._register(equipment)
-        self._register_input(equipment, in_connection_type)
-        self._register_output(equipment, out_connection_type)
+        if self.in_connection_type:
+            self._register_input(equipment, self.in_connection_type, self.in_gender)
+        if self.out_connection_type:
+            self._register_output(equipment, self.out_connection_type, self.out_gender)
 
 
 class OutputOpticalEqipment(OpticalEquipment):
-    def __init__(self, focal_length, vendor):
-        super(OutputOpticalEqipment, self).__init__(focal_length, vendor)
+    def __init__(self, focal_length, vendor, optical_length=0, mass=0):
+        super(OutputOpticalEqipment, self).__init__(
+            focal_length, vendor, optical_length=optical_length, mass=mass
+        )
 
     def is_visual_output(self) -> bool:
         """Indicates if the output is primarily for visual observation."""

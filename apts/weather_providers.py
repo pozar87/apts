@@ -9,6 +9,7 @@ import pandas as pd
 import requests_cache
 
 from apts.config import get_cache_settings
+
 from .secrets import mask_text
 
 logger = logging.getLogger(__name__)
@@ -745,7 +746,7 @@ class Meteoblue(WeatherProvider):
             self._log_download_error(
                 e, resp_basic.text if resp_basic is not None else ""
             )
-            # Continue with basic data only if clouds fetch fails
+            # Continue with cloud data only if basic fetch fails
 
         df = self._finalize_df(df, hours)
         return self._enrich_with_aurora_data(df)

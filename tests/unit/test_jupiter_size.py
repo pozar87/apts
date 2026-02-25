@@ -1,7 +1,7 @@
 import pytest
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 import pytz
-from unittest.mock import MagicMock, patch
 from apts.place import Place
 from apts.equipment import Equipment
 from apts.conditions import Conditions

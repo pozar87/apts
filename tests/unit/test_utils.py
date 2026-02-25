@@ -1,15 +1,16 @@
-import unittest
-from unittest.mock import patch
-from apts.cache import get_timescale
-from apts.utils.planetary import (
-    get_moon_illumination,
-    get_moon_illumination_details,
-    get_moon_age,
-)
+import os
 
 # Ensure apts is discoverable, assuming tests are run from project root or similar
 import sys
-import os
+import unittest
+from unittest.mock import patch
+
+from apts.cache import get_timescale
+from apts.utils.planetary import (
+    get_moon_age,
+    get_moon_illumination,
+    get_moon_illumination_details,
+)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 

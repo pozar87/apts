@@ -18,11 +18,14 @@ class TestOptics(unittest.TestCase):
     def test_expand_binoculars(self):
         binos = MagicMock(spec=Binoculars)
         path = [binos]
-        telescope, barlows, diagonals, filters, output = OpticsUtils.expand(path)
+        telescope, barlows, diagonals, filters, others, output = OpticsUtils.expand(
+            path
+        )
         self.assertEqual(telescope, binos)
         self.assertEqual(barlows, [])
         self.assertEqual(diagonals, [])
         self.assertEqual(filters, [])
+        self.assertEqual(others, [])
         self.assertEqual(output, binos)
 
     def test_expand_telescope(self):
@@ -33,12 +36,15 @@ class TestOptics(unittest.TestCase):
         e = MagicMock(spec=Eyepiece)
 
         path = [t, b, d, f, e]
-        telescope, barlows, diagonals, filters, output = OpticsUtils.expand(path)
+        telescope, barlows, diagonals, filters, others, output = OpticsUtils.expand(
+            path
+        )
 
         self.assertEqual(telescope, t)
         self.assertEqual(barlows, [b])
         self.assertEqual(diagonals, [d])
         self.assertEqual(filters, [f])
+        self.assertEqual(others, [])
         self.assertEqual(output, e)
 
     def test_barlows_multiplications(self):
@@ -53,7 +59,7 @@ class TestOptics(unittest.TestCase):
     def test_optical_path_zoom_binos(self):
         binos = MagicMock(spec=Binoculars)
         binos.magnification = 10
-        path = OpticalPath(binos, [], [], [], binos)
+        path = OpticalPath(binos, [], [], [], [], binos)
 
         zoom = path.zoom()
         self.assertEqual(cast(Any, zoom).magnitude, 10)
@@ -62,14 +68,14 @@ class TestOptics(unittest.TestCase):
         t = MagicMock()
         e = MagicMock()
         b = MagicMock()
-        path = OpticalPath(t, [b], [], [], e)
+        path = OpticalPath(t, [b], [], [], [], e)
 
         elements = path.elements()
         self.assertEqual(elements, frozenset({t, e, b}))
 
     def test_get_image_orientation_binos(self):
         binos = MagicMock(spec=Binoculars)
-        path = OpticalPath(binos, [], [], [], binos)
+        path = OpticalPath(binos, [], [], [], [], binos)
         self.assertEqual(path.get_image_orientation(), (False, False))
 
     def test_get_image_orientation_telescope(self):
@@ -77,20 +83,20 @@ class TestOptics(unittest.TestCase):
         e = MagicMock()
 
         # Default telescope (inverted)
-        path = OpticalPath(t, [], [], [], e)
+        path = OpticalPath(t, [], [], [], [], e)
         self.assertEqual(path.get_image_orientation(), (True, True))
 
         # With standard diagonal (vertical flip)
         d = MagicMock(spec=Diagonal)
         d.is_erecting = False
-        path_d = OpticalPath(t, [], [d], [], e)
+        path_d = OpticalPath(t, [], [d], [], [], e)
         # (True, True) + vertical flip -> (True, False)
         self.assertEqual(path_d.get_image_orientation(), (True, False))
 
         # With erecting diagonal (horizontal and vertical flip)
         de = MagicMock(spec=Diagonal)
         de.is_erecting = True
-        path_de = OpticalPath(t, [], [de], [], e)
+        path_de = OpticalPath(t, [], [de], [], [], e)
         # (True, True) + (True, True) -> (False, False)
         self.assertEqual(path_de.get_image_orientation(), (False, False))
 
@@ -102,7 +108,7 @@ class TestOptics(unittest.TestCase):
         c = MagicMock(spec=Camera)
         c.pixel_size.return_value = 3.76 * get_unit_registry().micrometer
 
-        path = OpticalPath(t, [], [], [], c)
+        path = OpticalPath(t, [], [], [], [], c)
 
         # NPF = (35*5.6 + 30*3.76) / 400 = (196 + 112.8) / 400 = 308.8 / 400 = 0.772
         npf = path.npf_rule()
@@ -124,7 +130,7 @@ class TestOptics(unittest.TestCase):
         c.sensor_width = 23.5 * get_unit_registry().mm
         c.sensor_height = 15.7 * get_unit_registry().mm
 
-        path = OpticalPath(t, [], [], [], c)
+        path = OpticalPath(t, [], [], [], [], c)
 
         # 500 / (50 * 1.53) = 500 / 76.5 ~ 6.536
         r500 = path.rule_of_500()
@@ -149,7 +155,7 @@ class TestOptics(unittest.TestCase):
         c.field_of_view_height.return_value = 1.0 * get_unit_registry().deg
         c.field_of_view_diagonal.return_value = 2.2 * get_unit_registry().deg
 
-        path = OpticalPath(t, [], [], [], c)
+        path = OpticalPath(t, [], [], [], [], c)
 
         self.assertEqual(cast(Any, path.fov_width()).magnitude, 2.0)
         self.assertEqual(cast(Any, path.fov_height()).magnitude, 1.0)

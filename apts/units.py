@@ -4,7 +4,6 @@ _ureg = None
 
 
 def get_unit_registry() -> UnitRegistry:
-
     global _ureg
     if _ureg is None:
         _ureg = UnitRegistry()

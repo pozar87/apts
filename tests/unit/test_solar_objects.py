@@ -1,9 +1,9 @@
 import unittest
 from datetime import datetime, timezone
+from tests import setup_southern_observation
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels
-from tests import setup_southern_observation
 
 
 class TestSolarObjects(unittest.TestCase):

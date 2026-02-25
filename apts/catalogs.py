@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from importlib import resources
-from typing import cast
+from typing import Any, Iterable, cast
 
 import pandas as pd
 from skyfield.api import Star
@@ -59,8 +59,6 @@ def _load_messier_with_units():
     return messier_df
 
 
-
-
 def _load_ngc_with_units():
     # Load NGC catalogue data
     ngc_df = pd.read_csv(
@@ -92,9 +90,11 @@ def _load_ngc_with_units():
     h_ra = cast(pd.Series, pd.to_numeric(ras_split[0], errors="coerce"))
     m_ra = cast(pd.Series, pd.to_numeric(ras_split[1], errors="coerce")).fillna(0)
     s_ra = cast(pd.Series, pd.to_numeric(ras_split[2], errors="coerce")).fillna(0)
-    ra_hours = h_ra + m_ra / 60.0 + s_ra / 3600.0
+    ra_hours = cast(pd.Series, h_ra + m_ra / 60.0 + s_ra / 3600.0)
 
-    decs_signs = ngc_df["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
+    decs_signs = cast(
+        pd.Series, ngc_df["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
+    )
     decs_split = ngc_df["Dec"].str.lstrip("+-").str.split(":", expand=True)
     for col in range(3):
         if col not in decs_split.columns:
@@ -102,13 +102,13 @@ def _load_ngc_with_units():
     h_dec = cast(pd.Series, pd.to_numeric(decs_split[0], errors="coerce"))
     m_dec = cast(pd.Series, pd.to_numeric(decs_split[1], errors="coerce")).fillna(0)
     s_dec = cast(pd.Series, pd.to_numeric(decs_split[2], errors="coerce")).fillna(0)
-    dec_degrees = decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0)
+    dec_degrees = cast(pd.Series, decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0))
 
     # Pre-calculate Skyfield objects (vectorized list comprehension)
     # Using raw floats before wrapping in Quantities saves significant overhead.
     ngc_df["skyfield_object"] = [
         Star(ra_hours=ra, dec_degrees=dec) if pd.notna(ra) and pd.notna(dec) else None
-        for ra, dec in zip(ra_hours, dec_degrees)
+        for ra, dec in zip(cast(Iterable[Any], ra_hours), cast(Iterable[Any], dec_degrees))
     ]
 
     # Convert columns to quantities with units (vectorized)

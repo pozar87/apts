@@ -20,3 +20,5 @@ class EquipmentTableLabels:
     SAMPLING = "Sampling"
     CRITICAL_FOCUS_ZONE = "CFZ (µm)"
     IS_NAKED_EYE = "_is_naked_eye"
+    BACKFOCUS_GAP = "Backfocus Gap (mm)"
+    TOTAL_MASS = "Total Mass (g)"

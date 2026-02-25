@@ -1,7 +1,10 @@
+from typing import Any, cast
+
 import numpy
+
 from apts.opticalequipment.camera import Camera
-from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.filter import Filter
+from apts.opticalequipment.telescope import Telescope
 from apts.optics import OpticalPath
 
 
@@ -15,8 +18,7 @@ def test_new_cameras():
     assert mc.read_noise == 1.2
     assert mc.full_well == 63700
     assert mc.quantum_efficiency == 75
-    # Use public pixel_size() method
-    assert mc.pixel_size().to("micrometer").magnitude == 4.63
+    assert cast(Any, mc._pixel_size).to("micrometer").magnitude == 4.63
 
     mm = Camera.ZWO_ASI294MM_PRO()
     assert mm.vendor == "ZWO ASI294MM Pro"
@@ -38,8 +40,8 @@ def test_sky_flux_with_filters():
     f1 = Filter(name="L-Pro", transmission=0.9)
     f2 = Filter(name="Some Filter", transmission=0.8)
 
-    path_no_filter = OpticalPath(t, [], [], [], c)
-    path_with_filters = OpticalPath(t, [], [], [f1, f2], c)
+    path_no_filter = OpticalPath(t, [], [], [], [], c)
+    path_with_filters = OpticalPath(t, [], [], [f1, f2], [], c)
 
     flux_no_filter = path_no_filter.sky_flux(sqm=21)
     flux_with_filters = path_with_filters.sky_flux(sqm=21)
@@ -63,7 +65,7 @@ def test_object_flux():
         read_noise=1.2,
         quantum_efficiency=80,
     )
-    path = OpticalPath(t, [], [], [], c)
+    path = OpticalPath(t, [], [], [], [], c)
 
     # If sqm == magnitude, object_flux should be sky_flux / pixel_area_arcsec2
     sqm = 21
@@ -76,7 +78,8 @@ def test_object_flux():
     assert o_flux is not None
     assert p_scale is not None
 
-    scale = p_scale.magnitude
+    scale = cast(Any, path.pixel_scale()).magnitude
+
     assert numpy.isclose(o_flux, s_flux / (scale**2))
 
 
@@ -91,7 +94,7 @@ def test_snr():
         read_noise=1.2,
         quantum_efficiency=80,
     )
-    path = OpticalPath(t, [], [], [], c)
+    path = OpticalPath(t, [], [], [], [], c)
 
     # High SNR case: bright star, dark sky, long exposure
     snr_high = path.snr(magnitude=10, sqm=21, exposure_time=60)

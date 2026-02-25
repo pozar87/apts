@@ -1,11 +1,12 @@
 import pytest
-import datetime
 import pytz
-import json
 import re
+import datetime
+import json
+from datetime import timezone
 from unittest.mock import patch, MagicMock
 from apts.weather_providers import StormGlass, Meteoblue, VisualCrossing
-from datetime import timezone
+
 
 
 @pytest.fixture(autouse=True)

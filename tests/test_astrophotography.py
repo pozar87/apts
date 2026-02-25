@@ -44,7 +44,7 @@ def test_optical_path_astrophotography():
         read_noise=1.2,
         quantum_efficiency=80,
     )
-    path = OpticalPath(t, [], [], [], c)
+    path = OpticalPath(t, [], [], [], [], c)
 
     # Pixel scale: (3.76 / 750) * 206265 = 1.0340752
     scale = path.pixel_scale()

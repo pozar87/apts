@@ -1,0 +1,8 @@
+from ...abstract import OutputOpticalEqipment
+from ....constants import GraphConstants, OpticalType
+from ....units import get_unit_registry
+from ....utils import ConnectionType, Gender
+from ..base import Eyepiece
+
+class MaxvisionEyepiece(Eyepiece):
+    _DATABASE = {'Maxvision_3_5mm_82': {'brand': 'Maxvision', 'name': '3.5mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 280, 'tside_thread': '1.25"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}, 'Maxvision_6mm_82': {'brand': 'Maxvision', 'name': '6mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 300, 'tside_thread': '1.25"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}, 'Maxvision_9mm_82': {'brand': 'Maxvision', 'name': '9mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 320, 'tside_thread': '1.25"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}, 'Maxvision_13mm_82': {'brand': 'Maxvision', 'name': '13mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 350, 'tside_thread': '2"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}, 'Maxvision_20mm_82': {'brand': 'Maxvision', 'name': '20mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 500, 'tside_thread': '2"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}, 'Maxvision_28mm_82': {'brand': 'Maxvision', 'name': '28mm 82°', 'type': 'type_eyepiece', 'optical_length': 0, 'mass': 700, 'tside_thread': '2"', 'tside_gender': 'Male', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': ''}}

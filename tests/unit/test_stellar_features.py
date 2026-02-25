@@ -2,6 +2,7 @@ import pytest
 from apts.place import Place
 from apts.opticalequipment.camera import Camera
 
+
 def test_moon_metrics():
     # New Moon was on 2024-02-09 around 22:59 UTC
     # Let's test on 2024-02-10 22:59 UTC - should be exactly 1.0 day
@@ -16,6 +17,7 @@ def test_moon_metrics():
     distance = place.moon_distance()
     # Typical moon distance 356k to 406k km
     assert distance > 350000 and distance < 410000
+
 
 def test_asi585mc_specs():
     camera = Camera.ZWO_ASI585MC()
