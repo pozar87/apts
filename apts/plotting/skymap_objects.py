@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast, Any
 
 import numpy
 import pandas as pd
@@ -57,7 +57,7 @@ def _plot_bright_stars_on_skymap(
     )
 
     # Filter out stars with missing coordinates to avoid Skyfield errors
-    bright_stars_df = bright_stars_df.dropna(subset=["ra_hours", "dec_degrees"])
+    bright_stars_df = cast(Any, bright_stars_df).dropna(subset=["ra_hours", "dec_degrees"])
 
     if bright_stars_df.empty:
         return
@@ -306,7 +306,7 @@ def _plot_stars_on_skymap(
     bright_stars = stars[stars["magnitude"] <= limit]
 
     # Filter out stars with missing coordinates to avoid Skyfield errors
-    bright_stars = bright_stars.dropna(subset=["ra_hours", "dec_degrees"])
+    bright_stars = cast(Any, bright_stars).dropna(subset=["ra_hours", "dec_degrees"])
 
     if bright_stars.empty:  # type: ignore
         return

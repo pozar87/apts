@@ -522,7 +522,7 @@ class Objects(ABC):
         )
 
         # Ensure second precision
-        H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")
+        H_delta = cast(Any, pd.to_timedelta(H_hours * 3600, unit="s")).round("s")
         rising_times = (transit_times - H_delta).dt.floor("s")
         setting_times = (transit_times + H_delta).dt.floor("s")
 
