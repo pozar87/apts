@@ -443,7 +443,10 @@ class Objects(ABC):
 
         # Use pandas for datetime vectorization
         t0_ts = pd.Timestamp(t0_dt)
-        transit_times = t0_ts + pd.to_timedelta(dt_solar * 3600, unit="s")
+        # Ensure second precision to avoid lossless cast errors in newer pandas
+        transit_times = (
+            t0_ts + pd.to_timedelta(dt_solar * 3600, unit="s")
+        ).floor("s")
 
         # Adjust for 12-hour window relative to current time
         cutoff = current_dt - timedelta(hours=12)
@@ -482,9 +485,10 @@ class Objects(ABC):
         h_mask = valid_mask & (cos_H >= -1) & (cos_H <= 1)
         H_hours[h_mask] = np.arccos(cos_H[h_mask]) * (12.0 / np.pi) * sidereal_to_solar
 
-        H_delta = pd.to_timedelta(H_hours * 3600, unit="s")
-        rising_times = transit_times - H_delta
-        setting_times = transit_times + H_delta
+        # Ensure second precision
+        H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")
+        rising_times = (transit_times - H_delta).dt.floor("s")
+        setting_times = (transit_times + H_delta).dt.floor("s")
 
         rises = [
             t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None

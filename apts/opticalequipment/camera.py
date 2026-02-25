@@ -1,6 +1,7 @@
 import math
 
 import numpy
+from typing import Any
 
 from .abstract import OutputOpticalEqipment
 from ..constants import GraphConstants, OpticalType
@@ -82,7 +83,7 @@ class Camera(OutputOpticalEqipment):
         else:
             self._pixel_size = None
 
-    def pixel_size(self):
+    def pixel_size(self) -> Any:
         if self._pixel_size is not None:
             return self._pixel_size
         return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / math.sqrt(
@@ -147,6 +148,61 @@ class Camera(OutputOpticalEqipment):
         # Format: <vendor> <width>x<height>
         return "{} {}x{}".format(
             self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude
+        )
+
+    @classmethod
+    def ZWO_ASI294MC_PRO(cls):
+        """
+        Factory method for ZWO ASI294MC Pro camera.
+        Sensor: Sony IMX294 (4/3")
+        """
+        return cls(
+            19.1,
+            13.0,
+            4144,
+            2822,
+            "ZWO ASI294MC Pro",
+            pixel_size=4.63,
+            read_noise=1.2,
+            full_well=63700,
+            quantum_efficiency=75,
+        )
+
+    @classmethod
+    def ZWO_ASI294MM_PRO(cls):
+        """
+        Factory method for ZWO ASI294MM Pro camera.
+        Sensor: Sony IMX492 (4/3")
+        Defaulting to Bin2 mode.
+        """
+        return cls(
+            19.1,
+            13.0,
+            4144,
+            2822,
+            "ZWO ASI294MM Pro",
+            pixel_size=4.63,
+            read_noise=1.2,
+            full_well=66000,
+            quantum_efficiency=90,
+        )
+
+    @classmethod
+    def ZWO_ASI585MC(cls):
+        """
+        Factory method for ZWO ASI585MC camera.
+        Sensor: Sony IMX585 (1/1.2")
+        """
+        return cls(
+            11.13,
+            6.26,
+            3840,
+            2160,
+            "ZWO ASI585MC",
+            pixel_size=2.9,
+            read_noise=0.8,
+            full_well=40000,
+            quantum_efficiency=91,
         )
 
     @classmethod

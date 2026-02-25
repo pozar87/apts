@@ -133,11 +133,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
             None,
         )
         mock_ts = MagicMock(spec=Timescale)
-        mock_time = MagicMock(spec=Time)
-        mock_time.tdb = 2451545.0
-        mock_time.whole = 2451545.0
-        mock_time.tdb_fraction = 0.0
-        mock_time.ts = mock_ts
+        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_skyfield_obj._observe_from_bcrs.return_value = (
             np.ones(3),
@@ -190,11 +186,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         from skyfield.timelib import Time, Timescale
 
         mock_ts = MagicMock(spec=Timescale)
-        mock_time = MagicMock(spec=Time)
-        mock_time.tdb = 2451545.0
-        mock_time.whole = 2451545.0
-        mock_time.tdb_fraction = 0.0
-        mock_time.ts = mock_ts
+        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_ngc_object._observe_from_bcrs.return_value = (
             np.ones(3),

@@ -82,13 +82,18 @@ class OpticalPath:
     Class representing an optical path in a telescope setup.
     """
 
-    def __init__(self, telescope, barlows, diagonals, filters, others, output):
+    def __init__(self, telescope, barlows, diagonals, filters, others, output=None):
         self.telescope = telescope
         self.barlows = barlows
         self.diagonals = diagonals
         self.filters = filters
-        self.others = others
-        self.output = output
+        if output is None:
+            # Handle 5-argument constructor calls for backward compatibility
+            self.others = []
+            self.output = others
+        else:
+            self.others = others
+            self.output = output
 
     @classmethod
     def from_path(cls, path):
@@ -356,11 +361,75 @@ class OpticalPath:
 
         area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
         qe = self.output.quantum_efficiency / 100.0
+
+        # Account for filters transmission
+        transmission = 1.0
+        for f in self.filters:
+            transmission *= f.transmission
+
         pixel_area_arcsec2 = scale.magnitude**2
 
         # Formula
-        flux = 0.005 * 10 ** (0.4 * (21.83 - sqm)) * area_cm2 * qe * pixel_area_arcsec2
+        flux = (
+            0.005
+            * 10 ** (0.4 * (21.83 - sqm))
+            * area_cm2
+            * qe
+            * transmission
+            * pixel_area_arcsec2
+        )
         return flux  # e-/s/pixel
+
+    def object_flux(self, magnitude):
+        from .opticalequipment.camera import Camera
+
+        if (
+            not isinstance(self.output, Camera)
+            or self.output.quantum_efficiency is None
+        ):
+            return None
+
+        area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
+        qe = self.output.quantum_efficiency / 100.0
+
+        # Account for filters transmission
+        transmission = 1.0
+        for f in self.filters:
+            transmission *= f.transmission
+
+        # Total flux from the object
+        # Based on the same zero point as sky_flux
+        flux = 0.005 * 10 ** (0.4 * (21.83 - magnitude)) * area_cm2 * qe * transmission
+        return flux  # e-/s total
+
+    def snr(self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4):
+        from .opticalequipment.camera import Camera
+
+        obj_flux = self.object_flux(magnitude)
+        sky_flux_val = self.sky_flux(sqm)
+
+        if (
+            obj_flux is None
+            or sky_flux_val is None
+            or not isinstance(self.output, Camera)
+            or self.output.read_noise is None
+        ):
+            return None
+
+        # Total signal
+        signal = obj_flux * exposure_time * n_subs
+
+        # Noise components (squared)
+        shot_noise_sq = obj_flux * exposure_time * n_subs
+        sky_noise_sq = sky_flux_val * exposure_time * n_subs * n_pix
+        read_noise_sq = (self.output.read_noise**2) * n_subs * n_pix
+
+        total_noise = numpy.sqrt(shot_noise_sq + sky_noise_sq + read_noise_sq)
+
+        if total_noise == 0:
+            return 0.0
+
+        return signal / total_noise
 
     def optimum_sub_exposure(self, sqm):
         from .opticalequipment.camera import Camera
