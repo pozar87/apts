@@ -62,7 +62,7 @@ class Diagonal(IntermediateOpticalEquipment):
         """
         super(Diagonal, self).register(equipment)
         if self.t2_output:
-            self._register_output(equipment, ConnectionType.T2)
+            self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
         return f"{self.vendor}"
