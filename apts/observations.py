@@ -576,10 +576,14 @@ class Observation:
     ):
         with language_context(language):
             if custom_template:
-                # Security: restrict to allowed template extensions to prevent reading sensitive files
-                if not str(custom_template).lower().endswith(
-                    (".template", ".html", ".htm")
-                ):
+                # Security: restrict to allowed template extensions and prevent path traversal.
+                # We allow absolute paths to support templates located outside the package (and for tests),
+                # but we explicitly block directory traversal via '..'.
+                str_template = str(custom_template)
+                if ".." in str_template:
+                    raise ValueError("Path traversal detected in custom template path.")
+
+                if not str_template.lower().endswith((".template", ".html", ".htm")):
                     raise ValueError(
                         "Only .template, .html, or .htm files are allowed as custom templates."
                     )
@@ -591,8 +595,11 @@ class Observation:
                 )
 
             if css:
-                # Sanitize CSS to prevent breaking out of <style> block
-                sanitized_css = re.sub(r"</style>", "", css, flags=re.IGNORECASE)
+                # Sanitize CSS to prevent breaking out of <style> block.
+                # Regex handles variations like </style >, </style/>, etc.
+                sanitized_css = re.sub(
+                    r"</style\s*/?>", "", str(css), flags=re.IGNORECASE
+                )
                 style_end_pos = template_content.find("</style>")
                 if style_end_pos != -1:
                     template_content = (
@@ -602,6 +609,22 @@ class Observation:
                     )
             template = Template(template_content)
             hourly_weather = self.get_hourly_weather_analysis(language=language)
+            # Sanitize hourly_weather contents
+            sanitized_hourly_weather = []
+            for hour in hourly_weather:
+                sanitized_hour = {}
+                for k, v in hour.items():
+                    if isinstance(v, str):
+                        sanitized_hour[k] = html.escape(v)
+                    elif isinstance(v, list):
+                        sanitized_hour[k] = [
+                            html.escape(item) if isinstance(item, str) else item
+                            for item in v
+                        ]
+                    else:
+                        sanitized_hour[k] = v
+                sanitized_hourly_weather.append(sanitized_hour)
+
             visible_planets_df = self.get_visible_planets(language=language)
             messier_df = self.get_visible_messier(language=language)
 
@@ -621,8 +644,8 @@ class Observation:
                 "place_name": html.escape(self.place.name),
                 "lat": numpy.rad2deg(self.place.lat),
                 "lon": numpy.rad2deg(self.place.lon),
-                "hourly_weather": hourly_weather,
-                "timezone": self.place.local_timezone,
+                "hourly_weather": sanitized_hourly_weather,
+                "timezone": html.escape(str(self.place.local_timezone)),
             }
             return str(template.substitute(data))
 

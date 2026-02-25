@@ -17,3 +17,8 @@
 **Vulnerability:** Security masking logic was bypassed when secrets (like API keys) appeared in logs in their URL-encoded form (e.g., %20 for spaces).
 **Learning:** Literal string replacement is insufficient for scrubbing secrets that might undergo common transformations like URL encoding before being logged.
 **Prevention:** Enhancement of masking utilities to automatically generate and scrub common encoded variations (URL, URL-plus) of all sensitive values.
+
+## 2025-01-30 - Insufficient CSS Sanitization in HTML Templates
+**Vulnerability:** XSS was possible in `Observation.to_html` by injecting `</style >` (with a space) into the `css` parameter, bypassing a literal `</style>` check and breaking out of the style block.
+**Learning:** Simple string replacement or regex for HTML tags must account for variations like spaces or trailing slashes that browsers still recognize as valid closing tags.
+**Prevention:** Use robust regex like `r"</style\s*/?>"` for sanitizing injected CSS and ensure all dynamic template variables (including nested structures like lists/dicts) are escaped via `html.escape`.
