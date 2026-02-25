@@ -35,6 +35,8 @@ class FlipMirror(IntermediateOpticalEquipment):
         out_connection_type=None,
         in_gender=None,
         out_gender=None,
+        diagonal_connection_type=None,
+        diagonal_gender=None,
     ):
         super(FlipMirror, self).__init__(
             vendor,
@@ -46,6 +48,14 @@ class FlipMirror(IntermediateOpticalEquipment):
             out_gender=out_gender,
         )
         self._type = OpticalType.FLIP_MIRROR
+        from ..utils import ConnectionType, Gender
+        self.diagonal_connection_type = diagonal_connection_type or ConnectionType.F_1_25
+        self.diagonal_gender = diagonal_gender or Gender.FEMALE
+
+    def register(self, equipment):
+        super(FlipMirror, self).register(equipment)
+        # Add additional diagonal output
+        self._register_output(equipment, self.diagonal_connection_type, self.diagonal_gender)
 
     _DATABASE = {
         "Baader_Flipmirror_II": {

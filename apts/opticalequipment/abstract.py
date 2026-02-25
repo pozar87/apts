@@ -27,6 +27,24 @@ class OpticalEquipment:
         self.vendor = vendor
         self.optical_length = (optical_length or 0) * get_unit_registry().mm
         self.mass = (mass or 0) * get_unit_registry().gram
+        self.attached_equipment = []
+
+    def attach(self, equipment: "OpticalEquipment"):
+        """
+        Attach supporting equipment to this piece of equipment.
+        """
+        if equipment not in self.attached_equipment:
+            self.attached_equipment.append(equipment)
+
+    def collect_all_attached(self, all_equipment: set):
+        """
+        Collect all attached equipment recursively.
+        """
+        if self in all_equipment:
+            return
+        all_equipment.add(self)
+        for att in self.attached_equipment:
+            att.collect_all_attached(all_equipment)
 
     def get_vendor(self):
         import logging
@@ -64,6 +82,11 @@ class OpticalEquipment:
     def _register(self, equipment):
         # Register equipment node
         equipment.add_vertex(self.id(), self)
+        # Register attached equipment
+        for att in self.attached_equipment:
+            att.register(equipment)
+            # Add mechanical edge
+            equipment.add_edge(self.id(), att.id())
 
     def _register_output(
         self, equipment, connection_type=ConnectionType.F_1_25, gender=None

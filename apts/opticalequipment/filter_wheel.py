@@ -46,6 +46,25 @@ class FilterWheel(IntermediateOpticalEquipment):
             out_gender=out_gender,
         )
         self._type = OpticalType.FILTER_WHEEL
+        self.filters = []
+
+    def add_filter(self, filter):
+        """
+        Add a filter to the filter wheel.
+        """
+        self.filters.append(filter)
+        self.attach(filter)
+
+    def register(self, equipment):
+        super(FilterWheel, self).register(equipment)
+        for f in self.filters:
+            # Register filter
+            f.register(equipment)
+            # Connect filter wheel node to filter input
+            # This allows the optical path to go: Wheel_IN -> Wheel_Node -> Filter_IN -> Filter_Node -> Filter_OUT -> Wheel_OUT
+            equipment.add_edge(self.id(), f.in_id(f.in_connection_type))
+            # Connect filter output to filter wheel output
+            equipment.add_edge(f.out_id(f.out_connection_type), self.out_id(self.out_connection_type))
 
     _DATABASE = {
         "ZWO_EFW_Mini_5x1_25": {
@@ -1442,6 +1461,24 @@ class FilterHolder(IntermediateOpticalEquipment):
             out_gender=out_gender,
         )
         self._type = OpticalType.FILTER_HOLDER
+        self.filters = []
+
+    def add_filter(self, filter):
+        """
+        Add a filter to the filter holder.
+        """
+        self.filters.append(filter)
+        self.attach(filter)
+
+    def register(self, equipment):
+        super(FilterHolder, self).register(equipment)
+        for f in self.filters:
+            # Register filter
+            f.register(equipment)
+            # Connect filter holder node to filter input
+            equipment.add_edge(self.id(), f.in_id(f.in_connection_type))
+            # Connect filter output to filter holder output
+            equipment.add_edge(f.out_id(f.out_connection_type), self.out_id(self.out_connection_type))
 
     _DATABASE = {
         "ZWO_Filter_Drawer_M48": {

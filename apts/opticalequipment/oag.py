@@ -35,6 +35,8 @@ class OAG(IntermediateOpticalEquipment):
         out_connection_type=None,
         in_gender=None,
         out_gender=None,
+        guide_connection_type=None,
+        guide_gender=None,
     ):
         super(OAG, self).__init__(
             vendor,
@@ -46,6 +48,14 @@ class OAG(IntermediateOpticalEquipment):
             out_gender=out_gender,
         )
         self._type = OpticalType.OAG
+        from ..utils import ConnectionType, Gender
+        self.guide_connection_type = guide_connection_type or ConnectionType.M42
+        self.guide_gender = guide_gender or Gender.MALE
+
+    def register(self, equipment):
+        super(OAG, self).register(equipment)
+        # Add additional guide output
+        self._register_output(equipment, self.guide_connection_type, self.guide_gender)
 
     _DATABASE = {
         "ZWO_OAG_M48_M42": {

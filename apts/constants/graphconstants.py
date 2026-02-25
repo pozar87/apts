@@ -39,6 +39,19 @@ class GraphConstants:
         OpticalType.BINOCULARS: "#00FF00",  # Green for Binoculars
         OpticalType.VISUAL: "#90EE90",  # Light Green for Visual
         OpticalType.IMAGE: "#ADD8E6",  # Light Blue for Image
+        OpticalType.REDUCER: "#FFA07A",
+        OpticalType.FLATTENER: "#FFA07A",
+        OpticalType.CORRECTOR: "#FFA07A",
+        OpticalType.FILTER_WHEEL: "#FFD700",
+        OpticalType.FILTER_HOLDER: "#FFD700",
+        OpticalType.OAG: "#87CEEB",
+        OpticalType.ROTATOR: "#DDA0DD",
+        OpticalType.FOCUSER: "#F0E68C",
+        OpticalType.ADAPTER: "#D3D3D3",
+        OpticalType.SPACER: "#D3D3D3",
+        OpticalType.ANTI_TILT: "#C0C0C0",
+        OpticalType.FLIP_MIRROR: "#B0C4DE",
+        OpticalType.GUIDE_SCOPE: "#98FB98",
     }
 
     DARK_COLORS = {
@@ -49,6 +62,19 @@ class GraphConstants:
         OpticalType.BINOCULARS: "#007447",  # Vibrant Green
         OpticalType.VISUAL: "#3CB371",  # Medium Sea Green for Visual
         OpticalType.IMAGE: "#4682B4",  # Steel Blue for Image
+        OpticalType.REDUCER: "#A0522D",
+        OpticalType.FLATTENER: "#A0522D",
+        OpticalType.CORRECTOR: "#A0522D",
+        OpticalType.FILTER_WHEEL: "#DAA520",
+        OpticalType.FILTER_HOLDER: "#DAA520",
+        OpticalType.OAG: "#4682B4",
+        OpticalType.ROTATOR: "#8B008B",
+        OpticalType.FOCUSER: "#BDB76B",
+        OpticalType.ADAPTER: "#696969",
+        OpticalType.SPACER: "#696969",
+        OpticalType.ANTI_TILT: "#808080",
+        OpticalType.FLIP_MIRROR: "#778899",
+        OpticalType.GUIDE_SCOPE: "#2E8B57",
     }
 
     DARK_MODE_STYLE = {
