@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from importlib import resources
-from typing import Any, cast
+from typing import cast
 
 import pandas as pd
 from skyfield.api import Star
@@ -89,9 +89,9 @@ def _load_ngc_with_units():
     for col in range(3):
         if col not in ras_split.columns:
             ras_split[col] = 0
-    h_ra = pd.to_numeric(ras_split[0], errors="coerce")
-    m_ra = pd.to_numeric(ras_split[1], errors="coerce").fillna(0)
-    s_ra = pd.to_numeric(ras_split[2], errors="coerce").fillna(0)
+    h_ra = cast(pd.Series, pd.to_numeric(ras_split[0], errors="coerce"))
+    m_ra = cast(pd.Series, pd.to_numeric(ras_split[1], errors="coerce")).fillna(0)
+    s_ra = cast(pd.Series, pd.to_numeric(ras_split[2], errors="coerce")).fillna(0)
     ra_hours = h_ra + m_ra / 60.0 + s_ra / 3600.0
 
     decs_signs = ngc_df["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
@@ -99,9 +99,9 @@ def _load_ngc_with_units():
     for col in range(3):
         if col not in decs_split.columns:
             decs_split[col] = 0
-    h_dec = pd.to_numeric(decs_split[0], errors="coerce")
-    m_dec = pd.to_numeric(decs_split[1], errors="coerce").fillna(0)
-    s_dec = pd.to_numeric(decs_split[2], errors="coerce").fillna(0)
+    h_dec = cast(pd.Series, pd.to_numeric(decs_split[0], errors="coerce"))
+    m_dec = cast(pd.Series, pd.to_numeric(decs_split[1], errors="coerce")).fillna(0)
+    s_dec = cast(pd.Series, pd.to_numeric(decs_split[2], errors="coerce")).fillna(0)
     dec_degrees = decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0)
 
     # Pre-calculate Skyfield objects (vectorized list comprehension)
@@ -114,7 +114,7 @@ def _load_ngc_with_units():
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is ~7x faster than Series.apply(lambda x: x * unit)
     ureg = get_unit_registry()
-    magnitudes = cast(Any, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")).fillna(
+    magnitudes = cast(pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")).fillna(
         99
     )
     ngc_df["Magnitude"] = list(magnitudes.values * ureg.mag)
