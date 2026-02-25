@@ -18,7 +18,6 @@ import struct
 import xml.etree.ElementTree as ET
 import zlib
 import re
-from typing import Any, cast
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -151,7 +150,6 @@ class FitsAnalyzer:
             if compression:
                 comp_parts = compression.split(":")
                 codec = comp_parts[0].lower()
-                uncompressed_size = int(comp_parts[1]) if len(comp_parts) > 1 else 0
                 shuffle_item_size = (
                     int(comp_parts[2])
                     if len(comp_parts) > 2
@@ -278,7 +276,7 @@ class FitsAnalyzer:
                 "eccentricity": ecc,
                 "position_angle": pa,
             }
-        except:
+        except Exception:
             return None
 
     @staticmethod
@@ -312,7 +310,7 @@ class FitsAnalyzer:
             center_fwhm = max(coeffs[0], 0.1)
             edge_fwhm = np.mean([coeffs[0] + coeffs[3], coeffs[0] + coeffs[5]])
             return {"gradient_pct": (edge_fwhm - center_fwhm) / center_fwhm * 100}
-        except:
+        except Exception:
             return None
 
     def _classify_backfocus(self, fitted, center):

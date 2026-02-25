@@ -56,6 +56,12 @@ def _plot_bright_stars_on_skymap(
         inplace=True,  # type: ignore
     )
 
+    # Filter out stars with missing coordinates to avoid Skyfield errors
+    bright_stars_df = bright_stars_df.dropna(subset=["ra_hours", "dec_degrees"])
+
+    if bright_stars_df.empty:
+        return
+
     star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
     ra, dec, _ = star_positions.apparent().radec()
@@ -298,6 +304,9 @@ def _plot_stars_on_skymap(
         limit = 6.0
 
     bright_stars = stars[stars["magnitude"] <= limit]
+
+    # Filter out stars with missing coordinates to avoid Skyfield errors
+    bright_stars = bright_stars.dropna(subset=["ra_hours", "dec_degrees"])
 
     if bright_stars.empty:  # type: ignore
         return

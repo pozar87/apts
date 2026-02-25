@@ -127,11 +127,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
             None,
         )
         mock_ts = MagicMock(spec=Timescale)
-        mock_time = MagicMock(spec=Time)
-        mock_time.tdb = 2451545.0
-        mock_time.whole = 2451545.0
-        mock_time.tdb_fraction = 0.0
-        mock_time.ts = mock_ts
+        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_skyfield_obj._observe_from_bcrs.return_value = (
             np.ones(3),
@@ -188,11 +184,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
         from skyfield.timelib import Time, Timescale
 
         mock_ts = MagicMock(spec=Timescale)
-        mock_time = MagicMock(spec=Time)
-        mock_time.tdb = 2451545.0
-        mock_time.whole = 2451545.0
-        mock_time.tdb_fraction = 0.0
-        mock_time.ts = mock_ts
+        from skyfield.api import load; ts = load.timescale(); mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
         mock_ngc_object._observe_from_bcrs.return_value = (
             np.ones(3),
@@ -515,45 +507,25 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         "apts.plotting.skymap_objects.get_hipparcos_data", return_value=mock_stars_data
     ):
         # Test _plot_stars_on_skymap
-        print("=== DEBUG: About to call _plot_stars_on_skymap ===")
         print("is_polar: False, zoom_deg: 2.0, coordinate_system: EQUATORIAL")
         print(f"Mock dec_degrees_array: {dec_degrees_array}")
         print(f"Mock dec_degrees_array type: {type(dec_degrees_array)}")
 
         # Add debug output to track the mock objects
-        print(f"DEBUG: mock_observer: {mock_observer}")
-        print(f"DEBUG: mock_star_positions: {mock_star_positions}")
-        print(f"DEBUG: mock_radec: {mock_radec}")
-        print(f"DEBUG: mock_ra: {mock_ra}")
-        print(f"DEBUG: mock_dec: {mock_dec}")
-        print(f"DEBUG: type(mock_ra).hours: {type(mock_ra).hours}")
-        print(f"DEBUG: type(mock_dec).degrees: {type(mock_dec).degrees}")
         print(
-            f"DEBUG: PropertyMock for ra hours: {PropertyMock(return_value=ra_hours_array)}"
         )
         print(
-            f"DEBUG: PropertyMock for dec degrees: {PropertyMock(return_value=dec_degrees_array)}"
         )
 
         # Test the actual property access and indexing
-        print("DEBUG: Testing property access...")
-        print(f"DEBUG: mock_ra.hours: {mock_ra.hours}")
-        print(f"DEBUG: type(mock_ra.hours): {type(mock_ra.hours)}")
-        print(f"DEBUG: mock_dec.degrees: {mock_dec.degrees}")
-        print(f"DEBUG: type(mock_dec.degrees): {type(mock_dec.degrees)}")
 
         # Test boolean indexing
         test_visible = np.ones(5, dtype=bool)
-        print(f"DEBUG: test_visible: {test_visible}")
-        print(f"DEBUG: mock_ra.hours[test_visible]: {mock_ra.hours[test_visible]}")
         print(
-            f"DEBUG: type(mock_ra.hours[test_visible]): {type(mock_ra.hours[test_visible])}"
         )
         print(
-            f"DEBUG: mock_dec.degrees[test_visible]: {mock_dec.degrees[test_visible]}"
         )
         print(
-            f"DEBUG: type(mock_dec.degrees[test_visible]): {type(mock_dec.degrees[test_visible])}"
         )
 
         _plot_stars_on_skymap(
@@ -567,7 +539,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
         )
 
-        print("=== DEBUG: _plot_stars_on_skymap call completed ===")
 
         # Check if scatter was called at all
         print(f"mock_ax.scatter called: {mock_ax.scatter.called}")
@@ -1438,14 +1409,12 @@ def test_plot_stars_ra_wrapping_equatorial():
     with patch(
         "apts.plotting.skymap_objects.get_hipparcos_data", return_value=mock_stars_data
     ):
-        print("=== DEBUG: About to call _plot_stars_on_skymap ===")
         print(f"RA values: {[0.5, 1.2, 1.8, 2.5, 3.0]}")
         print(f"Expected RA in zoom (1.0-2.0): {[1.2, 1.8]}")
         print(f"Dec values: {[25.0, 35.0, 38.0, 45.0, 50.0]}")
         print("Expected Dec in zoom (30.0-40.0): 2 stars (35.0, 38.0)")
 
         # Debug the mock data setup
-        print("=== DEBUG: Mock data sizes ===")
         print(f"  alt.degrees: {len(mock_altaz.degrees)} items")
         print(f"  az.degrees: {len(mock_az.degrees)} items")
         print(f"  ra.hours: {len(mock_ra.hours)} items")
@@ -1469,12 +1438,9 @@ def test_plot_stars_ra_wrapping_equatorial():
             coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
         )
 
-        print(f"=== DEBUG: scatter called: {mock_ax.scatter.called} ===")
-        print(f"=== DEBUG: Number of scatter calls: {mock_ax.scatter.call_count} ===")
 
         # Verify that scatter was called with stars in the wrapped zoom window
         scatter_calls = mock_ax.scatter.call_args_list
-        print(f"=== DEBUG: All scatter calls: {len(scatter_calls)} ===")
 
         if scatter_calls:
             for i, call in enumerate(scatter_calls):
@@ -1489,7 +1455,6 @@ def test_plot_stars_ra_wrapping_equatorial():
                     else:
                         print("  No RA/Dec data to show ranges")
         else:
-            print("=== DEBUG: No scatter calls made ===")
             # Let's also check if alt.degrees exists and has the right size
             try:
                 alt, az, _ = mock_star_positions.apparent().altaz.return_value

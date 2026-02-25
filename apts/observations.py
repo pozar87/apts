@@ -1,5 +1,6 @@
 import html
 import logging
+import re
 from datetime import datetime, timedelta
 from importlib import resources
 from string import Template
@@ -575,6 +576,13 @@ class Observation:
     ):
         with language_context(language):
             if custom_template:
+                # Security: restrict to allowed template extensions to prevent reading sensitive files
+                if not str(custom_template).lower().endswith(
+                    (".template", ".html", ".htm")
+                ):
+                    raise ValueError(
+                        "Only .template, .html, or .htm files are allowed as custom templates."
+                    )
                 with open(custom_template, "r", encoding="utf-8") as f:
                     template_content = f.read()
             else:
@@ -583,11 +591,13 @@ class Observation:
                 )
 
             if css:
+                # Sanitize CSS to prevent breaking out of <style> block
+                sanitized_css = re.sub(r"</style>", "", css, flags=re.IGNORECASE)
                 style_end_pos = template_content.find("</style>")
                 if style_end_pos != -1:
                     template_content = (
                         template_content[:style_end_pos]
-                        + css
+                        + sanitized_css
                         + template_content[style_end_pos:]
                     )
             template = Template(template_content)

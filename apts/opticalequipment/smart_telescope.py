@@ -4,7 +4,7 @@ from typing import Any
 
 from .telescope import Telescope
 from ..constants import GraphConstants, OpticalType
-from ..units import get_unit_registry, ureg
+from ..units import get_unit_registry
 
 
 class SmartTelescope(Telescope):
