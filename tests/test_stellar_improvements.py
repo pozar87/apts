@@ -131,8 +131,8 @@ def test_stellar_limits_and_helpers():
     # Dawes' Limit: 11.6 / 20.32 cm = 0.57086...
     assert cast(Any, path.dawes_limit()).magnitude == pytest.approx(0.571, abs=1e-3)
 
-    # Rayleigh Limit: 13.8 / 20.32 cm = 0.67913...
-    assert cast(Any, path.rayleigh_limit()).magnitude == pytest.approx(0.679, abs=1e-3)
+    # Rayleigh Limit: 1.22 * 550e-9 / 0.2032 * 206265 = 0.6808...
+    assert cast(Any, path.rayleigh_limit()).magnitude == pytest.approx(0.681, abs=1e-3)
 
     # Ideal Planetary Focal Ratio: 5 * 3.76 = 18.8
     assert path.ideal_planetary_focal_ratio(k=5.0) == pytest.approx(18.8)
