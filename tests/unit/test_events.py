@@ -245,7 +245,12 @@ class EventsTest(unittest.TestCase):
         # Moon-Antares conjunction in 2023: August 25 around 02:00-03:00 UTC
         start_date = datetime(2023, 8, 24, tzinfo=utc)
         end_date = datetime(2023, 8, 26, tzinfo=utc)
-              events_to_calculate=[EventType.MOON_STAR_CONJUNCTIONS],
+
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.MOON_STAR_CONJUNCTIONS],
         )
         events_df = events_calculator.get_events()
 
@@ -262,7 +267,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 8)
         self.assertEqual(event_date.day, 25)
         self.assertLess(antares_conjunction.iloc[0]["separation_degrees"], 2.0)
-        
+
     def test_planet_alignment(self):
         # Great planetary alignment of Feb 28, 2026
         # We use a window that covers the end of February to catch the alignment on Feb 28
