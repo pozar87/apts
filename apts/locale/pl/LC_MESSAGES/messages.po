@@ -999,3 +999,27 @@ msgstr "Obraz"
 
 msgid "VISUAL"
 msgstr "Wizualne"
+
+msgid "CFZ (µm)"
+msgstr "ZFC (µm)"
+
+msgid "Backfocus Gap (mm)"
+msgstr "Folga do backfocus (mm)"
+
+msgid "Total Mass"
+msgstr "Masa Total"
+
+msgid "Rayleigh limit"
+msgstr "Limite de Rayleigh"
+
+msgid "Ideal Focal Ratio"
+msgstr "Relação Focal Ideal"
+
+msgid "Telescope type"
+msgstr "Tipo de telescópio"
+
+msgid "Mass [g]"
+msgstr "Massa [g]"
+
+msgid "Mass"
+msgstr "Massa"
