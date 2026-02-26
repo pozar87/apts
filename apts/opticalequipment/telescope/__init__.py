@@ -1,3 +1,4 @@
+from typing import Any, cast
 from .base import TelescopeType, TubeMaterial, Telescope
 import pkgutil
 import importlib
@@ -13,13 +14,13 @@ for loader, module_name, is_pkg in pkgutil.iter_modules([vendors_path]):
     except ImportError:
         continue
 
-if not hasattr(TelescopeType, '_DATABASE') or TelescopeType._DATABASE is None:
-    TelescopeType._DATABASE = {}
+if not hasattr(TelescopeType, '_DATABASE') or cast(Any, TelescopeType)._DATABASE is None:
+    cast(Any, TelescopeType)._DATABASE = {}
 for module in _VENDOR_MODULES:
     for name, obj in vars(module).items():
         if isinstance(obj, type) and issubclass(obj, TelescopeType) and obj is not TelescopeType:
             if hasattr(obj, '_DATABASE'):
-                TelescopeType._DATABASE.update(obj._DATABASE)
+                cast(Any, TelescopeType)._DATABASE.update(obj._DATABASE)
             for attr_name in vars(obj):
                 if attr_name.startswith('__') or attr_name == '_DATABASE':
                     continue
@@ -27,13 +28,13 @@ for module in _VENDOR_MODULES:
                 if callable(attr_val):
                     setattr(TelescopeType, attr_name, attr_val)
 
-if not hasattr(TubeMaterial, '_DATABASE') or TubeMaterial._DATABASE is None:
-    TubeMaterial._DATABASE = {}
+if not hasattr(TubeMaterial, '_DATABASE') or cast(Any, TubeMaterial)._DATABASE is None:
+    cast(Any, TubeMaterial)._DATABASE = {}
 for module in _VENDOR_MODULES:
     for name, obj in vars(module).items():
         if isinstance(obj, type) and issubclass(obj, TubeMaterial) and obj is not TubeMaterial:
             if hasattr(obj, '_DATABASE'):
-                TubeMaterial._DATABASE.update(obj._DATABASE)
+                cast(Any, TubeMaterial)._DATABASE.update(obj._DATABASE)
             for attr_name in vars(obj):
                 if attr_name.startswith('__') or attr_name == '_DATABASE':
                     continue

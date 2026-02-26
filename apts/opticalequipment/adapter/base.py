@@ -2,6 +2,7 @@ from ..abstract import IntermediateOpticalEquipment
 from ...constants import OpticalType
 
 class Adapter(IntermediateOpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
@@ -22,6 +23,7 @@ class Adapter(IntermediateOpticalEquipment):
         self._type = OpticalType.ADAPTER
 
 class Spacer(IntermediateOpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):

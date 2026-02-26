@@ -21,6 +21,7 @@ class TubeMaterial(Enum):
     GLASS_FIBER = 8e-06
 
 class Telescope(OpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):

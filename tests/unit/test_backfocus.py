@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, cast
 from apts.opticalequipment import Telescope, Camera, Reducer, Spacer, Focuser
 from apts.equipment import Equipment
 from apts.utils import ConnectionType, Gender
@@ -63,7 +64,7 @@ class TestBackfocus(unittest.TestCase):
 
         path = paths[0]
         # Backfocus gap should be: 55 - (20 + 17.5) = 17.5mm
-        self.assertEqual(path.backfocus_gap().magnitude, 17.5)
+        self.assertEqual(cast(Any, path.backfocus_gap()).magnitude, 17.5)
 
     def test_total_mass(self):
         t = Telescope(
@@ -89,7 +90,7 @@ class TestBackfocus(unittest.TestCase):
         path = paths[0]
 
         # Total mass: 2000 (scope) + 500 (cam) = 2500g
-        self.assertEqual(path.total_mass().magnitude, 2500)
+        self.assertEqual(cast(Any, path.total_mass()).magnitude, 2500)
 
     def test_total_mass_with_attached(self):
         t = Telescope(80, 480, mass=2000, connection_type=ConnectionType.M42)
@@ -103,7 +104,7 @@ class TestBackfocus(unittest.TestCase):
         path = OpticalPath.from_path([t, c])
 
         # Total mass: 2000 (scope) + 500 (focuser) + 300 (cam) = 2800g
-        self.assertEqual(path.total_mass().magnitude, 2800)
+        self.assertEqual(cast(Any, path.total_mass()).magnitude, 2800)
 
     def test_registry(self):
         from apts.equipment_registry import EquipmentRegistry

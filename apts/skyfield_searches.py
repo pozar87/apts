@@ -519,16 +519,17 @@ def find_planet_alignments(observer, start_date, end_date):
     if num_days <= 0:
         return []
 
+    t_utc = cast(Any, t_start.utc_datetime())
     times = ts.utc(
-        t_start.utc_datetime().year,
-        t_start.utc_datetime().month,
-        t_start.utc_datetime().day + np.arange(num_days),
+        t_utc.year,
+        t_utc.month,
+        t_utc.day + np.arange(num_days),
     )
 
     # Pre-calculate longitudes for all planets at all times
     longitudes = []
     for _, obj in planet_objs:
-        lons = earth.at(times).observe(obj).ecliptic_latlon()[1].degrees
+        lons = cast(Any, earth).at(times).observe(obj).ecliptic_latlon()[1].degrees
         longitudes.append(lons)
 
     longitudes = np.array(longitudes)  # (n_planets, n_times)

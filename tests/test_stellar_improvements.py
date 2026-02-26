@@ -9,7 +9,7 @@ from apts.optics import OpticalPath
 
 
 def test_new_cameras():
-    mc = Camera.ZWO_ASI294MC_PRO()
+    mc = cast(Any, Camera).ZWO_ASI294MC_PRO()
     assert mc.vendor == "ZWO ASI294MC Pro"
     assert mc.sensor_width.magnitude == 19.1
     assert mc.sensor_height.magnitude == 13.0
@@ -20,7 +20,7 @@ def test_new_cameras():
     assert mc.quantum_efficiency == 75
     assert cast(Any, mc._pixel_size).to("micrometer").magnitude == 4.63
 
-    mm = Camera.ZWO_ASI294MM_PRO()
+    mm = cast(Any, Camera).ZWO_ASI294MM_PRO()
     assert mm.vendor == "ZWO ASI294MM Pro"
     assert mm.quantum_efficiency == 90
     assert mm.full_well == 66000

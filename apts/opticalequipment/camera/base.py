@@ -7,6 +7,7 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
 class Camera(OutputOpticalEqipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):

@@ -4,6 +4,7 @@ from ...units import get_unit_registry
 from ...utils import Gender
 
 class Reducer(IntermediateOpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
@@ -28,6 +29,7 @@ class Reducer(IntermediateOpticalEquipment):
         self.required_backfocus = required_backfocus * get_unit_registry().mm if required_backfocus is not None else None
 
 class Flattener(IntermediateOpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
@@ -52,6 +54,7 @@ class Flattener(IntermediateOpticalEquipment):
         self.required_backfocus = required_backfocus * get_unit_registry().mm if required_backfocus is not None else None
 
 class Corrector(IntermediateOpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):

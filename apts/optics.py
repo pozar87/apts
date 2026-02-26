@@ -232,7 +232,9 @@ class OpticalPath:
 
         total = 0 * get_unit_registry().gram
         for eq in all_equipment:
-            total += getattr(eq, "mass", 0 * get_unit_registry().gram)
+            mass = getattr(eq, "mass", 0 * get_unit_registry().gram)
+            if mass is not None:
+                total += mass
         return total
 
     def backfocus_gap(self):
