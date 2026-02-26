@@ -104,6 +104,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_lunar_eclipses))
         if self.event_settings.get("nasa_comets"):
             futures.append(executor.submit(self.calculate_nasa_comets))
+        if self.event_settings.get("planet_alignments"):
+            futures.append(executor.submit(self.calculate_planet_alignments))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -126,11 +128,14 @@ class AstronomicalEvents:
             "object",
             "object1",
             "object2",
+            "planets",
         ]
         for col in columns_to_translate:
             if col in df.columns:
                 df[col] = df[col].apply(
-                    lambda x: gettext_(x) if isinstance(x, str) else x
+                    lambda x: [gettext_(item) for item in x]
+                    if isinstance(x, list)
+                    else (gettext_(x) if isinstance(x, str) else x)
                 )
 
         return df
@@ -688,4 +693,14 @@ class AstronomicalEvents:
                 }
             )
         logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_alignments(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_alignments(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["type"] = "Planet Alignment"
+        logger.debug(f"--- calculate_planet_alignments: {time.time() - start_time}s")
         return events

@@ -1,4 +1,3 @@
-import pytest
 from apts.equipment import Equipment
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.camera import Camera
@@ -54,8 +53,8 @@ def test_filter_wheel_paths():
     assert len(paths) >= 2
 
     labels = [p.label() for p in paths]
-    assert any("Red" in l for l in labels)
-    assert any("Green" in l for l in labels)
+    assert any("Red" in label for label in labels)
+    assert any("Green" in label for label in labels)
 
 def test_oag_paths():
     e = Equipment()
@@ -79,8 +78,8 @@ def test_oag_paths():
     assert len(paths) == 4
 
     labels = [p.label() for p in paths]
-    assert any("Main Cam" in l for l in labels)
-    assert any("Guide Cam" in l for l in labels)
+    assert any("Main Cam" in label for label in labels)
+    assert any("Guide Cam" in label for label in labels)
 
 def test_flip_mirror_paths():
     e = Equipment()

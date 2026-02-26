@@ -24,6 +24,7 @@ class EventType(str, Enum):
     TIANGONG_FLYBYS = "tiangong_flybys"
     NASA_COMETS = "nasa_comets"
     MOON_STAR_CONJUNCTIONS = "moon_star_conjunctions"
+    PLANET_ALIGNMENTS = "planet_alignments"
 
     def __str__(self):
         return self.value

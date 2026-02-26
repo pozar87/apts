@@ -245,11 +245,7 @@ class EventsTest(unittest.TestCase):
         # Moon-Antares conjunction in 2023: August 25 around 02:00-03:00 UTC
         start_date = datetime(2023, 8, 24, tzinfo=utc)
         end_date = datetime(2023, 8, 26, tzinfo=utc)
-        events_calculator = AstronomicalEvents(
-            self.place,
-            start_date,
-            end_date,
-            events_to_calculate=[EventType.MOON_STAR_CONJUNCTIONS],
+              events_to_calculate=[EventType.MOON_STAR_CONJUNCTIONS],
         )
         events_df = events_calculator.get_events()
 
@@ -266,6 +262,39 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 8)
         self.assertEqual(event_date.day, 25)
         self.assertLess(antares_conjunction.iloc[0]["separation_degrees"], 2.0)
+        
+    def test_planet_alignment(self):
+        # Great planetary alignment of Feb 28, 2026
+        # We use a window that covers the end of February to catch the alignment on Feb 28
+        start_date = datetime(2026, 2, 20, tzinfo=utc)
+        end_date = datetime(2026, 2, 28, 23, 59, 59, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_ALIGNMENTS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for the alignment event
+        alignment_events = events_df[events_df["type"] == "Planet Alignment"]
+        self.assertGreaterEqual(len(alignment_events), 1)
+
+        # Check if it correctly identified the number of planets
+        # The Feb 28 alignment has 7 planets
+        feb_28_alignment = alignment_events[alignment_events["date"].dt.day == 28]
+        self.assertEqual(len(feb_28_alignment), 1)
+        self.assertIn("7 planets", feb_28_alignment.iloc[0]["event"])
+
+        # Check planets involved
+        planets_involved = feb_28_alignment.iloc[0]["planets"]
+        self.assertIn("Mercury", planets_involved)
+        self.assertIn("Venus", planets_involved)
+        self.assertIn("Mars", planets_involved)
+        self.assertIn("Jupiter", planets_involved)
+        self.assertIn("Saturn", planets_involved)
+        self.assertIn("Uranus", planets_involved)
+        self.assertIn("Neptune", planets_involved)
 
 
 if __name__ == "__main__":
