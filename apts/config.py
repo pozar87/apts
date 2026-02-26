@@ -45,7 +45,16 @@ def load_config():
             masked_section = {
                 k: mask_secret(v)
                 if any(
-                    s in k.lower() for s in ["api_key", "password", "redis_location"]
+                    s in k.lower()
+                    for s in [
+                        "api_key",
+                        "password",
+                        "redis_location",
+                        "token",
+                        "secret",
+                        "auth",
+                        "credential",
+                    ]
                 )
                 else v
                 for k, v in config.items(section)

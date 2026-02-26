@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
-from .secrets import mask_text
+from .secrets import mask_text, mask_secret
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,9 @@ class Notify:
         self.sender_email = config.get("notification", "sender_email", fallback=None)
 
         if not self.smtp_host or not self.smtp_user:
+            masked_user = mask_secret(self.smtp_user)
             logger.warning(
-                f"SMTP host ('{self.smtp_host}') or user ('{self.smtp_user}') not configured. Email notifications may fail."
+                f"SMTP host ('{self.smtp_host}') or user ('{masked_user}') not configured. Email notifications may fail."
             )
 
     def _send_email(self, msg):
@@ -54,8 +55,11 @@ class Notify:
                 try:
                     server.login(self.smtp_user, self.smtp_password)
                 except smtplib.SMTPAuthenticationError as e:
-                    # Specific handling for authentication error to avoid leaking password in logs
-                    error_msg = mask_text(str(e), self.smtp_password)
+                    # Specific handling for authentication error to avoid leaking credentials in logs
+                    secrets = [self.smtp_password]
+                    if self.smtp_user:
+                        secrets.append(self.smtp_user)
+                    error_msg = mask_text(str(e), secrets)
                     logger.error(f"Failed to login to SMTP server: {error_msg}")
                     return False
 
@@ -66,9 +70,12 @@ class Notify:
             logger.info("Email sent successfully")
             return True
         except Exception as e:
-            error_msg = (
-                mask_text(str(e), self.smtp_password) if self.smtp_password else str(e)
-            )
+            secrets = []
+            if self.smtp_password:
+                secrets.append(self.smtp_password)
+            if self.smtp_user:
+                secrets.append(self.smtp_user)
+            error_msg = mask_text(str(e), secrets) if secrets else str(e)
             logger.error(f"Failed to send email: {error_msg}", exc_info=False)
             return False
         finally:
@@ -247,10 +254,11 @@ class Notify:
             )
 
     def __str__(self) -> str:
+        masked_user = mask_secret(self.smtp_user)
         return (
             f"Notify(recipient_email='{self.recipient_email}', "
             f"smtp_host='{self.smtp_host}',"
             f"smtp_port={self.smtp_port}, "
-            f"smtp_user='{self.smtp_user}', "
+            f"smtp_user='{masked_user}', "
             f"sender_email='{self.sender_email}')"
         )
