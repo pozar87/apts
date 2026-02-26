@@ -974,3 +974,24 @@ msgstr "Wetterplot-Fehler"
 #: apts/utils/plot.py:30
 msgid "No data to plot"
 msgstr "Keine Daten zum Plotten"
+
+msgid "CFZ (µm)"
+msgstr "KFZ (µm)"
+
+msgid "Backfocus Gap (mm)"
+msgstr "Backfocus-Abstand (mm)"
+
+msgid "Total Mass"
+msgstr "Gesamtmasse"
+
+msgid "Rayleigh limit"
+msgstr "Rayleigh-Limit"
+
+msgid "Ideal Focal Ratio"
+msgstr "Ideales Öffnungsverhältnis"
+
+msgid "Mass [g]"
+msgstr "Masse [g]"
+
+msgid "Mass"
+msgstr "Masse"
