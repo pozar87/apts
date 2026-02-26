@@ -1,5 +1,7 @@
 class EquipmentTableLabels:
     DAWES_LIMIT = "Dawes' limit"
+    RAYLEIGH_LIMIT = "Rayleigh limit"
+    IDEAL_PLANETARY_FOCAL_RATIO = "Ideal Focal Ratio"
     EXIT_PUPIL = "Exit pupil"
     LABEL = "Label"
     TYPE = "Type"

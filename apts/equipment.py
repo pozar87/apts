@@ -110,6 +110,8 @@ class Equipment:
             EquipmentTableLabels.FOV_D,
             EquipmentTableLabels.EXIT_PUPIL,
             EquipmentTableLabels.DAWES_LIMIT,
+            EquipmentTableLabels.RAYLEIGH_LIMIT,
+            EquipmentTableLabels.IDEAL_PLANETARY_FOCAL_RATIO,
             EquipmentTableLabels.RANGE,
             EquipmentTableLabels.BRIGHTNESS,
             EquipmentTableLabels.ELEMENTS,
@@ -217,7 +219,9 @@ class Equipment:
                         path.fov_height().magnitude,
                         path.fov_diagonal().magnitude,
                         exit_pupil_value,
-                        path.telescope.dawes_limit().magnitude,  # dawes_limit() in Binoculars/Telescope returns Quantity
+                        path.dawes_limit().magnitude if path.dawes_limit() is not None else numpy.nan,
+                        path.rayleigh_limit().magnitude if path.rayleigh_limit() is not None else numpy.nan,
+                        path.ideal_planetary_focal_ratio() or numpy.nan,
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
                         path.length(),  # length() in OpticalPath returns int

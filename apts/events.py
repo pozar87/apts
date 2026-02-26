@@ -133,9 +133,11 @@ class AstronomicalEvents:
         for col in columns_to_translate:
             if col in df.columns:
                 df[col] = df[col].apply(
-                    lambda x: [gettext_(item) for item in x]
-                    if isinstance(x, list)
-                    else (gettext_(x) if isinstance(x, str) else x)
+                    lambda x: (
+                        [gettext_(item) for item in x]
+                        if isinstance(x, list)
+                        else (gettext_(x) if isinstance(x, str) else x)
+                    )
                 )
 
         return df
@@ -643,13 +645,11 @@ class AstronomicalEvents:
         # Stars with ecliptic latitude > 10 degrees can't have close conjunctions.
         ts = get_timescale()
         t_ref = ts.utc(self.start_date)
-        earth = self.eph["earth"]
-
         candidate_stars = []
         for _, row in self.catalogs.BRIGHT_STARS.iterrows():
             star = row["skyfield_object"]
             # Optimization: check ecliptic latitude to only include stars that can be close to the moon
-            lat = earth.at(t_ref).observe(star).ecliptic_latlon()[0].degrees
+            lat = self.observer.at(t_ref).observe(star).ecliptic_latlon()[0].degrees
             if abs(lat) < 10.0:
                 candidate_stars.append((row["Name"], star))
 
@@ -675,7 +675,9 @@ class AstronomicalEvents:
                     }
                 )
 
-        logger.debug(f"--- calculate_moon_star_conjunctions: {time.time() - start_time}s")
+        logger.debug(
+            f"--- calculate_moon_star_conjunctions: {time.time() - start_time}s"
+        )
         return events
 
     def calculate_nasa_comets(self):
