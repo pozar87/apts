@@ -34,6 +34,7 @@ class EventsTest(unittest.TestCase):
         #  - January 21, 2023
         #  - February 20, 2023
         self.assertEqual(sum(events_df["event"] == "New Moon"), 2)
+        self.assertTrue(all(events_df["rarity"] == 1))
 
         # Full Moons within January 1, 2023, to March 15, 2023:
         #  - January 6, 2023
@@ -71,6 +72,7 @@ class EventsTest(unittest.TestCase):
 
         # Check if the event description is correct
         self.assertEqual(venus_event["event"], "Highest altitude")
+        self.assertEqual(venus_event["rarity"], 2)
 
         # Check the date and altitude
         self.assertEqual(venus_event["date"].day, 14)
@@ -116,6 +118,7 @@ class EventsTest(unittest.TestCase):
 
         # Check that the event was found
         self.assertEqual(len(jupiter_saturn_event), 1)
+        self.assertEqual(jupiter_saturn_event.iloc[0]["rarity"], 4)  # Very close
 
         # Check the date of the event
         event_date = jupiter_saturn_event.iloc[0]["date"]
@@ -151,6 +154,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(events_df.iloc[0]["type"], "ISS Flyby")
         self.assertEqual(events_df.iloc[0]["peak_altitude"], 85.0)
         self.assertEqual(events_df.iloc[0]["peak_magnitude"], -3.5)
+        self.assertEqual(events_df.iloc[0]["rarity"], 3)
 
     def test_translate_events(self):
         # Create a sample DataFrame
@@ -186,6 +190,8 @@ class EventsTest(unittest.TestCase):
 
         # All 3 phases should be in range now
         self.assertEqual(len(perseids_events), 3)
+        self.assertEqual(perseids_events[perseids_events["phase"] == "Peak"].iloc[0]["rarity"], 3)
+        self.assertEqual(perseids_events[perseids_events["phase"] == "Start"].iloc[0]["rarity"], 1)
         self.assertTrue(any(perseids_events["phase"] == "Start"))
         self.assertTrue(any(perseids_events["phase"] == "Peak"))
         self.assertTrue(any(perseids_events["phase"] == "End"))
@@ -208,6 +214,7 @@ class EventsTest(unittest.TestCase):
         ]
 
         self.assertEqual(len(mars_opposition), 1)
+        self.assertEqual(mars_opposition.iloc[0]["rarity"], 3)
         # Check date: should be 2022-12-08
         event_date = mars_opposition.iloc[0]["date"]
         self.assertEqual(event_date.year, 2022)
@@ -241,6 +248,7 @@ class EventsTest(unittest.TestCase):
         self.assertGreater(len(messier_events), 0)
         self.assertEqual(messier_events.iloc[0]["object1"], "Moon")
         self.assertEqual(messier_events.iloc[0]["separation_degrees"], 2.5)
+        self.assertEqual(messier_events.iloc[0]["rarity"], 2)
 
     def test_calculate_moon_star_conjunctions(self):
         # Moon-Antares conjunction in 2023: August 25 around 02:00-03:00 UTC
@@ -268,6 +276,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 8)
         self.assertEqual(event_date.day, 25)
         self.assertLess(antares_conjunction.iloc[0]["separation_degrees"], 2.0)
+        self.assertEqual(antares_conjunction.iloc[0]["rarity"], 3)
 
     def test_planet_alignment(self):
         # Great planetary alignment of Feb 28, 2026
@@ -291,6 +300,7 @@ class EventsTest(unittest.TestCase):
         feb_28_alignment = alignment_events[cast(Any, alignment_events["date"]).dt.day == 28]
         self.assertEqual(len(feb_28_alignment), 1)
         self.assertIn("7 planets", cast(Any, feb_28_alignment).iloc[0]["event"])
+        self.assertEqual(feb_28_alignment.iloc[0]["rarity"], 5)
 
         # Check planets involved
         planets_involved = cast(Any, feb_28_alignment).iloc[0]["planets"]

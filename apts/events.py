@@ -142,6 +142,68 @@ class AstronomicalEvents:
 
         return df
 
+    def _get_rarity(self, event_type: str, data: dict) -> int:
+        if event_type == "Moon Phase":
+            return 1
+        if event_type in [
+            "Conjunction",
+            "Moon-Messier Conjunction",
+            "Moon-Star Conjunction",
+        ]:
+            sep = data.get("separation_degrees", 5.0)
+            if sep < 0.5:
+                return 4
+            if sep < 2.0:
+                return 3
+            return 2
+        if event_type == "Opposition":
+            obj = data.get("object", "")
+            if obj in ["Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]:
+                return 3
+            return 2
+        if event_type == "Meteor Shower":
+            if data.get("phase") == "Peak":
+                return 3
+            return 1
+        if event_type == "Planet Altitude":
+            return 2
+        if event_type == "Lunar Occultation":
+            return 4
+        if event_type == "Aphelion/Perihelion":
+            return 1
+        if event_type == "Moon Apogee/Perigee":
+            return 1
+        if event_type == "Inferior Conjunction":
+            if data.get("is_transit"):
+                return 5
+            return 2
+        if event_type == "Solar Eclipse":
+            return 5
+        if event_type == "Lunar Eclipse":
+            kind = str(data.get("eclipse_kind", "")).lower()
+            if "total" in kind:
+                return 5
+            if "partial" in kind:
+                return 4
+            return 3
+        if event_type in ["Space Launch", "Space Event"]:
+            return 2
+        if event_type in ["ISS Flyby", "Tiangong Flyby"]:
+            mag = data.get("peak_magnitude", 0)
+            if mag < -3:
+                return 3
+            if mag < -1:
+                return 2
+            return 1
+        if event_type == "Comet":
+            return 4
+        if event_type == "Planet Alignment":
+            planets_count = len(data.get("planets", []))
+            if planets_count >= 5:
+                return 5
+            return 4
+        return 1
+
     def calculate_space_launches(self):
         start_time = time.time()
         events = []
@@ -153,13 +215,13 @@ class AstronomicalEvents:
             response.raise_for_status()
             data = response.json()
             for launch in data.get("results", []):
-                events.append(
-                    {
-                        "date": parse_date(launch["window_start"]).astimezone(utc),
-                        "event": launch["name"],
-                        "type": "Space Launch",
-                    }
-                )
+                event_data = {
+                    "date": parse_date(launch["window_start"]).astimezone(utc),
+                    "event": launch["name"],
+                    "type": "Space Launch",
+                }
+                event_data["rarity"] = self._get_rarity("Space Launch", event_data)
+                events.append(event_data)
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching space launches: {e}")
         logger.debug(f"--- calculate_space_launches: {time.time() - start_time}s")
@@ -176,13 +238,13 @@ class AstronomicalEvents:
             response.raise_for_status()
             data = response.json()
             for event in data.get("results", []):
-                events.append(
-                    {
-                        "date": parse_date(event["date"]).astimezone(utc),
-                        "event": event["name"],
-                        "type": "Space Event",
-                    }
-                )
+                event_data = {
+                    "date": parse_date(event["date"]).astimezone(utc),
+                    "event": event["name"],
+                    "type": "Space Event",
+                }
+                event_data["rarity"] = self._get_rarity("Space Event", event_data)
+                events.append(event_data)
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching space events: {e}")
         logger.debug(f"--- calculate_space_events: {time.time() - start_time}s")
@@ -199,6 +261,8 @@ class AstronomicalEvents:
         events = skyfield_searches.find_iss_flybys(
             topos_observer, self.observer, self.start_date, self.end_date
         )
+        for event in events:
+            event["rarity"] = self._get_rarity("ISS Flyby", event)
         logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
         return events
 
@@ -213,6 +277,8 @@ class AstronomicalEvents:
         events = skyfield_searches.find_tiangong_flybys(
             topos_observer, self.observer, self.start_date, self.end_date
         )
+        for event in events:
+            event["rarity"] = self._get_rarity("Tiangong Flyby", event)
         logger.debug(f"--- calculate_tiangong_flybys: {time.time() - start_time}s")
         return events
 
@@ -224,6 +290,7 @@ class AstronomicalEvents:
         for event in events:
             event["event"] = "Solar Eclipse"
             event["type"] = "Solar Eclipse"
+            event["rarity"] = self._get_rarity("Solar Eclipse", event)
         logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -233,6 +300,7 @@ class AstronomicalEvents:
         for event in events:
             event["event"] = "Lunar Eclipse"
             event["type"] = "Lunar Eclipse"
+            event["rarity"] = self._get_rarity("Lunar Eclipse", event)
         logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
         return events
 
@@ -244,13 +312,13 @@ class AstronomicalEvents:
         which_phase = almanac.moon_phases(self.eph)
         t, y = almanac.find_discrete(t0, t1, which_phase)
         for ti, yi in zip(t, y):
-            events.append(
-                {
-                    "date": ti.utc_datetime().astimezone(utc),
-                    "event": almanac.MOON_PHASES[yi],
-                    "type": "Moon Phase",
-                }
-            )
+            event_data = {
+                "date": ti.utc_datetime().astimezone(utc),
+                "event": almanac.MOON_PHASES[yi],
+                "type": "Moon Phase",
+            }
+            event_data["rarity"] = self._get_rarity("Moon Phase", event_data)
+            events.append(event_data)
         logger.debug(f"--- calculate_moon_phases: {time.time() - start_time}s")
         return events
 
@@ -297,6 +365,7 @@ class AstronomicalEvents:
                 event["event"] = "Conjunction"
                 event["object1"] = p1_name
                 event["object2"] = p2_name
+                event["rarity"] = self._get_rarity("Conjunction", event)
                 events.append(event)
         logger.debug(f"--- calculate_conjunctions: {time.time() - start_time}s")
         return events
@@ -324,6 +393,7 @@ class AstronomicalEvents:
                 event["event"] = "Opposition"
                 event["object"] = simple_name
                 del event["planet"]
+                event["rarity"] = self._get_rarity("Opposition", event)
             events.extend(found_events)
         logger.debug(f"--- calculate_oppositions: {time.time() - start_time}s")
         return events
@@ -355,35 +425,35 @@ class AstronomicalEvents:
                 )
 
                 if self.start_date <= start_date <= self.end_date:
-                    events.append(
-                        {
-                            "date": start_date.astimezone(utc),
-                            "event": "Meteor Shower",
-                            "shower_name": shower,
-                            "phase": "Start",
-                            "type": "Meteor Shower",
-                        }
-                    )
+                    event_data = {
+                        "date": start_date.astimezone(utc),
+                        "event": "Meteor Shower",
+                        "shower_name": shower,
+                        "phase": "Start",
+                        "type": "Meteor Shower",
+                    }
+                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
+                    events.append(event_data)
                 if self.start_date <= peak_date <= self.end_date:
-                    events.append(
-                        {
-                            "date": peak_date.astimezone(utc),
-                            "event": "Meteor Shower",
-                            "shower_name": shower,
-                            "phase": "Peak",
-                            "type": "Meteor Shower",
-                        }
-                    )
+                    event_data = {
+                        "date": peak_date.astimezone(utc),
+                        "event": "Meteor Shower",
+                        "shower_name": shower,
+                        "phase": "Peak",
+                        "type": "Meteor Shower",
+                    }
+                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
+                    events.append(event_data)
                 if self.start_date <= end_date <= self.end_date:
-                    events.append(
-                        {
-                            "date": end_date.astimezone(utc),
-                            "event": "Meteor Shower",
-                            "shower_name": shower,
-                            "phase": "End",
-                            "type": "Meteor Shower",
-                        }
-                    )
+                    event_data = {
+                        "date": end_date.astimezone(utc),
+                        "event": "Meteor Shower",
+                        "shower_name": shower,
+                        "phase": "End",
+                        "type": "Meteor Shower",
+                    }
+                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
+                    events.append(event_data)
         logger.debug(f"--- calculate_meteor_showers: {time.time() - start_time}s")
         return events
 
@@ -406,15 +476,15 @@ class AstronomicalEvents:
             t, alt = future.result()
             if t:
                 simple_name = planetary.get_simple_name(planet_name)
-                events.append(
-                    {
-                        "date": t.astimezone(utc),  # type: ignore
-                        "event": "Highest altitude",
-                        "object": simple_name,
-                        "type": "Planet Altitude",
-                        "altitude": alt,
-                    }
-                )
+                event_data = {
+                    "date": t.astimezone(utc),  # type: ignore
+                    "event": "Highest altitude",
+                    "object": simple_name,
+                    "type": "Planet Altitude",
+                    "altitude": alt,
+                }
+                event_data["rarity"] = self._get_rarity("Planet Altitude", event_data)
+                events.append(event_data)
         logger.debug(f"--- calculate_highest_altitudes: {time.time() - start_time}s")
         return events
 
@@ -429,6 +499,7 @@ class AstronomicalEvents:
         for event in events:
             event["type"] = "Lunar Occultation"
             event["event"] = "Lunar Occultation"
+            event["rarity"] = self._get_rarity("Lunar Occultation", event)
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
         return events
 
@@ -456,6 +527,9 @@ class AstronomicalEvents:
                 del event_dict["event_type"]
                 event_dict["date"] = event_dict["date"].astimezone(utc)  # type: ignore
                 event_dict["type"] = "Aphelion/Perihelion"
+                event_dict["rarity"] = self._get_rarity(
+                    "Aphelion/Perihelion", event_dict
+                )
                 events.append(event_dict)
         logger.debug(f"--- calculate_aphelion_perihelion: {time.time() - start_time}s")
         return events
@@ -467,6 +541,7 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Moon Apogee/Perigee"
+            event["rarity"] = self._get_rarity("Moon Apogee/Perigee", event)
         logger.debug(f"--- calculate_moon_apogee_perigee: {time.time() - start_time}s")
         return events
 
@@ -482,6 +557,7 @@ class AstronomicalEvents:
             else:
                 event["event"] = "Inferior Conjunction"
             event["object"] = "Mercury"
+            event["rarity"] = self._get_rarity("Inferior Conjunction", event)
         logger.debug(
             f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
         )
@@ -604,16 +680,18 @@ class AstronomicalEvents:
                     threshold_degrees=4.0,
                 )
                 for conj in conjunctions:
-                    all_events.append(
-                        {
-                            "date": conj["date"].astimezone(utc),
-                            "event": "Conjunction",
-                            "object1": "Moon",
-                            "object2": messier_name,
-                            "separation_degrees": conj["separation_degrees"],
-                            "type": "Moon-Messier Conjunction",
-                        }
+                    event_data = {
+                        "date": conj["date"].astimezone(utc),
+                        "event": "Conjunction",
+                        "object1": "Moon",
+                        "object2": messier_name,
+                        "separation_degrees": conj["separation_degrees"],
+                        "type": "Moon-Messier Conjunction",
+                    }
+                    event_data["rarity"] = self._get_rarity(
+                        "Moon-Messier Conjunction", event_data
                     )
+                    all_events.append(event_data)
             return all_events
 
         executor = self.executor
@@ -664,16 +742,18 @@ class AstronomicalEvents:
                 threshold_degrees=5.0,
             )
             for conj in conjunctions:
-                events.append(
-                    {
-                        "date": conj["date"].astimezone(utc),
-                        "event": "Conjunction",
-                        "object1": "Moon",
-                        "object2": star_name,
-                        "separation_degrees": conj["separation_degrees"],
-                        "type": "Moon-Star Conjunction",
-                    }
+                event_data = {
+                    "date": conj["date"].astimezone(utc),
+                    "event": "Conjunction",
+                    "object1": "Moon",
+                    "object2": star_name,
+                    "separation_degrees": conj["separation_degrees"],
+                    "type": "Moon-Star Conjunction",
+                }
+                event_data["rarity"] = self._get_rarity(
+                    "Moon-Star Conjunction", event_data
                 )
+                events.append(event_data)
 
         logger.debug(
             f"--- calculate_moon_star_conjunctions: {time.time() - start_time}s"
@@ -685,15 +765,15 @@ class AstronomicalEvents:
         events = []
         comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
         for _, comet in comets.iterrows():
-            events.append(
-                {
-                    "date": parse_date(
-                        comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
-                    ).astimezone(utc),
-                    "event": comet["name"],
-                    "type": "Comet",
-                }
-            )
+            event_data = {
+                "date": parse_date(
+                    comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
+                ).astimezone(utc),
+                "event": comet["name"],
+                "type": "Comet",
+            }
+            event_data["rarity"] = self._get_rarity("Comet", event_data)
+            events.append(event_data)
         logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
         return events
 
@@ -704,5 +784,6 @@ class AstronomicalEvents:
         )
         for event in events:
             event["type"] = "Planet Alignment"
+            event["rarity"] = self._get_rarity("Planet Alignment", event)
         logger.debug(f"--- calculate_planet_alignments: {time.time() - start_time}s")
         return events
