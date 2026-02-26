@@ -143,44 +143,73 @@ class Objects(ABC):
                         [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
                     )
 
-                # Get LST for all check times (in hours)
-                lst_hours = check_times.gmst + self.place.lon_decimal / 15.0
+                # Preliminary filter: max altitude check
+                # max_alt = 90 - abs(lat - dec)
+                max_alt_deg = 90.0 - np.abs(self.place.lat_decimal - stars_decs)
+                # Add refraction at max altitude for better filtering
+                max_alt_deg += self._refraction(max_alt_deg)
 
-                # Broadcasting: (N_stars, 1) and (1, M_times) -> (N_stars, M_times)
-                ras = cast(Any, stars_ras)[:, np.newaxis]
-                decs = cast(Any, stars_decs)[:, np.newaxis]
-                lsts = lst_hours[np.newaxis, :]
+                # Only process stars that can potentially reach the minimum altitude
+                potential_mask = max_alt_deg > conditions.min_object_altitude
 
-                # Geometric altitude and azimuth calculation
-                h_rad = np.deg2rad((lsts - ras) * 15.0)
-                lat_rad = np.deg2rad(self.place.lat_decimal)
-                dec_rad = np.deg2rad(decs)
+                if np.any(potential_mask):
+                    # Ensure stars_indices is an array before masking
+                    stars_indices = np.asarray(stars_indices)
+                    active_stars_indices = stars_indices[potential_mask]
+                    active_ras_hours = stars_ras[potential_mask]
+                    active_decs_deg = stars_decs[potential_mask]
 
-                # sin(alt) = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(H)
-                sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(lat_rad) * np.cos(
-                    dec_rad
-                ) * np.cos(h_rad)
+                    # Get LST for all check times (in hours)
+                    lst_hours = check_times.gmst + self.place.lon_decimal / 15.0
 
-                # Convert to degrees and add atmospheric refraction
-                true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
-                apparent_alt_deg = true_alt_deg + self._refraction(true_alt_deg)
+                    # Pre-calculate trigonometric values for O(N+M) optimization
+                    lat_rad = np.deg2rad(self.place.lat_decimal)
+                    sin_lat = np.sin(lat_rad)
+                    cos_lat = np.cos(lat_rad)
 
-                # Determine altitude visibility
-                alt_ok = apparent_alt_deg > conditions.min_object_altitude
+                    # For active stars (N_active)
+                    ra_rad = np.deg2rad(active_ras_hours * 15.0)
+                    dec_rad = np.deg2rad(active_decs_deg)
+                    sin_ra = np.sin(ra_rad)[:, np.newaxis]
+                    cos_ra = np.cos(ra_rad)[:, np.newaxis]
+                    sin_dec = np.sin(dec_rad)[:, np.newaxis]
+                    cos_dec = np.cos(dec_rad)[:, np.newaxis]
+                    tan_dec = np.tan(dec_rad)[:, np.newaxis]
 
-                # Determine azimuth visibility
-                # tan(Az) = sin(H) / (cos(H) sin(lat) - tan(dec) cos(lat))
-                # x = cos(H) sin(lat) - tan(dec) cos(lat)
-                # y = sin(H)
-                # Az = atan2(y, x) + 180 (to match Skyfield's 0-360 North=0 East=90)
-                x = np.cos(h_rad) * np.sin(lat_rad) - np.tan(dec_rad) * np.cos(lat_rad)
-                y = np.sin(h_rad)
-                az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+                    # For check times (M_times)
+                    lst_rad = np.deg2rad(lst_hours * 15.0)
+                    sin_lst = np.sin(lst_rad)[np.newaxis, :]
+                    cos_lst = np.cos(lst_rad)[np.newaxis, :]
 
-                az_ok = self._is_azimuth_in_range(az_deg, conditions)
+                    # Use identity: cos(H) = cos(LST-RA) = cos(LST)cos(RA) + sin(LST)sin(RA)
+                    cos_h = cos_lst * cos_ra + sin_lst * sin_ra
+                    # Use identity: sin(H) = sin(LST-RA) = sin(LST)cos(RA) - cos(LST)sin(RA)
+                    sin_h = sin_lst * cos_ra - cos_lst * sin_ra
 
-                # Combine and check if visible at ANY time point
-                visible_mask[stars_indices] = np.any(alt_ok & az_ok, axis=1)
+                    # Geometric altitude and azimuth calculation
+                    # sin(alt) = sin(lat)*sin(dec) + cos(lat)*cos(dec)*cos(H)
+                    sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_h
+
+                    # Convert to degrees and add atmospheric refraction
+                    true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+                    apparent_alt_deg = true_alt_deg + self._refraction(true_alt_deg)
+
+                    # Determine altitude visibility
+                    alt_ok = apparent_alt_deg > conditions.min_object_altitude
+
+                    # Determine azimuth visibility
+                    # tan(Az) = sin(H) / (cos(H) sin(lat) - tan(dec) cos(lat))
+                    # x = cos(H) sin(lat) - tan(dec) cos(lat)
+                    # y = sin(H)
+                    # Az = atan2(y, x) + 180 (to match Skyfield's 0-360 North=0 East=90)
+                    x = cos_h * sin_lat - tan_dec * cos_lat
+                    y = sin_h
+                    az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+
+                    az_ok = self._is_azimuth_in_range(az_deg, conditions)
+
+                    # Combine and check if visible at ANY time point
+                    visible_mask[active_stars_indices] = np.any(alt_ok & az_ok, axis=1)
 
             observer = self.place.observer
 
