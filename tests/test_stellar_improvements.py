@@ -1,11 +1,13 @@
 from typing import Any, cast
 
 import numpy
+import pytest
 
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.filter import Filter
 from apts.opticalequipment.telescope import Telescope
 from apts.optics import OpticalPath
+from apts.units import get_unit_registry
 
 
 def test_new_cameras():
@@ -116,3 +118,37 @@ def test_snr():
     assert snr_4 is not None
 
     assert numpy.isclose(snr_4, snr_1 * 2, rtol=0.1)
+
+
+def test_stellar_limits_and_helpers():
+    # 8-inch SCT (203.2 mm aperture, 2032 mm focal length)
+    telescope = Telescope(203.2, 2032, vendor="Celestron C8")
+    # ZWO ASI2600MM Pro (3.76 micron pixels)
+    camera = Camera(
+        23.5, 15.7, 6248, 4176, vendor="ZWO ASI2600MM Pro", pixel_size=3.76
+    )
+
+    path = OpticalPath(telescope, [], [], [], [], camera)
+
+    # Dawes' Limit: 11.6 / 20.32 cm = 0.57086...
+    assert path.dawes_limit().magnitude == pytest.approx(0.571, abs=1e-3)
+
+    # Rayleigh Limit: 13.8 / 20.32 cm = 0.67913...
+    assert path.rayleigh_limit().magnitude == pytest.approx(0.679, abs=1e-3)
+
+    # Ideal Planetary Focal Ratio: 5 * 3.76 = 18.8
+    assert path.ideal_planetary_focal_ratio(k=5.0) == pytest.approx(18.8)
+    # With k=3.0: 3 * 3.76 = 11.28
+    assert path.ideal_planetary_focal_ratio(k=3.0) == pytest.approx(11.28)
+
+
+def test_limits_without_telescope_support():
+    # Create a mock-like object that doesn't have the methods
+    class FakeOptic:
+        def __init__(self):
+            self.focal_length = 500 * get_unit_registry().mm
+
+    path = OpticalPath(FakeOptic(), [], [], [], [], None)
+    assert path.dawes_limit() is None
+    assert path.rayleigh_limit() is None
+    assert path.ideal_planetary_focal_ratio() is None

@@ -513,6 +513,40 @@ class OpticalPath:
         t = k * (35 * n + 30 * p) / (f * cos_dec)
         return t * get_unit_registry().second
 
+    def dawes_limit(self):
+        """
+        Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
+        Based on the telescope aperture.
+        """
+        if hasattr(self.telescope, "dawes_limit"):
+            return self.telescope.dawes_limit()
+        return None
+
+    def rayleigh_limit(self):
+        """
+        Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
+        Based on the telescope aperture and the standard wavelength of 550nm.
+        """
+        if hasattr(self.telescope, "rayleigh_limit"):
+            return self.telescope.rayleigh_limit()
+        return None
+
+    def ideal_planetary_focal_ratio(self, k=5.0):
+        """
+        Calculates the ideal focal ratio for planetary imaging based on the pixel size.
+        Rule of thumb: Ideal focal ratio is between 3x and 5x the pixel size in microns.
+        Formula: Ideal Focal Ratio = k * Pixel Size (µm)
+        Where k is usually 5.0 for average to good seeing.
+        """
+        from .opticalequipment.camera import Camera
+
+        if not isinstance(self.output, Camera):
+            return None
+
+        # Pixel size in microns
+        p_size = self.output.pixel_size().to("micrometer").magnitude
+        return k * p_size
+
     def rule_of_500(self):
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.
