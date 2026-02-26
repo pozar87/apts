@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Optional
 
 class TelescopeType(Enum):
+    _DATABASE = {}
     REFRACTOR = 'refractor'
     NEWTONIAN_REFLECTOR = 'newtonian_reflector'
     SCHMIDT_CASSEGRAIN = 'schmidt_cassegrain'
@@ -14,6 +15,7 @@ class TelescopeType(Enum):
     CATADIOPTRIC = 'catadioptric'
 
 class TubeMaterial(Enum):
+    _DATABASE = {}
     ALUMINUM = 2.31e-05
     CARBON_FIBER = 5e-07
     STEEL = 1.2e-05
@@ -21,6 +23,7 @@ class TubeMaterial(Enum):
     GLASS_FIBER = 8e-06
 
 class Telescope(OpticalEquipment):
+    _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):

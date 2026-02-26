@@ -108,7 +108,7 @@ class Objects(ABC):
             if "skyfield_object" in candidate_objects.columns:
                 skyfield_objs = cast(
                     pd.Series, candidate_objects["skyfield_object"]
-                ).values
+                ).to_numpy()
             else:
                 skyfield_objs = np.array(
                     [
@@ -133,8 +133,8 @@ class Objects(ABC):
                     "ra_hours" in candidate_objects.columns
                     and "dec_degrees" in candidate_objects.columns
                 ):
-                    stars_ras = candidate_objects["ra_hours"].values[stars_indices]
-                    stars_decs = candidate_objects["dec_degrees"].values[stars_indices]
+                    stars_ras = cast(pd.Series, candidate_objects["ra_hours"]).to_numpy()[stars_indices]
+                    stars_decs = cast(pd.Series, candidate_objects["dec_degrees"]).to_numpy()[stars_indices]
                 else:
                     stars_ras = np.array(
                         [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
@@ -147,8 +147,8 @@ class Objects(ABC):
                 lst_hours = check_times.gmst + self.place.lon_decimal / 15.0
 
                 # Broadcasting: (N_stars, 1) and (1, M_times) -> (N_stars, M_times)
-                ras = stars_ras[:, np.newaxis]
-                decs = stars_decs[:, np.newaxis]
+                ras = cast(Any, stars_ras)[:, np.newaxis]
+                decs = cast(Any, stars_decs)[:, np.newaxis]
                 lsts = lst_hours[np.newaxis, :]
 
                 # Geometric altitude and azimuth calculation
@@ -442,7 +442,7 @@ class Objects(ABC):
         """
         # Extract Skyfield Star objects and their coordinates in a vectorized way
         if "skyfield_object" in df.columns:
-            sky_objs = df["skyfield_object"].values
+            sky_objs = df["skyfield_object"].to_numpy()
         else:
             sky_objs = np.array(
                 [self.get_skyfield_object(row) for _, row in df.iterrows()]
