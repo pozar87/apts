@@ -61,6 +61,30 @@ class ZwoCamera(Camera):
         return cls(11.31, 11.31, 3008, 3008, 'ZWO ASI533MC Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80)
 
     @classmethod
+    def ZWO_ASI533MM_PRO(cls):
+        """
+        Factory method for ZWO ASI533MM Pro camera.
+        Sensor: Sony IMX533 (Mono 1" Square)
+        """
+        return cls(11.31, 11.31, 3008, 3008, 'ZWO ASI533MM Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91)
+
+    @classmethod
+    def ZWO_ASI6200MM_PRO(cls):
+        """
+        Factory method for ZWO ASI6200MM Pro camera.
+        Sensor: Sony IMX455 (Full-Frame Mono)
+        """
+        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI6200MM Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=91)
+
+    @classmethod
+    def ZWO_ASI6200MC_PRO(cls):
+        """
+        Factory method for ZWO ASI6200MC Pro camera.
+        Sensor: Sony IMX455 (Full-Frame Color)
+        """
+        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI6200MC Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=80)
+
+    @classmethod
     def ZWO_ASI_183MC_Pro(cls):
         return cls.from_database(cls._DATABASE['ZWO_ASI_183MC_Pro'])
 
