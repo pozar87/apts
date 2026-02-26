@@ -61,7 +61,7 @@ def test_camera_str():
 
 
 def test_factory_zwo_2600():
-    cam = Camera.ZWO_ASI2600MC_PRO()
+    cam = cast(Any, Camera).ZWO_ASI2600MC_PRO()
     assert cam.vendor == "ZWO ASI2600MC Pro"
     assert cam.pixel_size().to("micrometer").magnitude == 3.76
     assert cam.quantum_efficiency == 80
@@ -70,14 +70,14 @@ def test_factory_zwo_2600():
 
 
 def test_factory_zwo_1600():
-    cam = Camera.ZWO_ASI1600MM_PRO()
+    cam = cast(Any, Camera).ZWO_ASI1600MM_PRO()
     assert cam.vendor == "ZWO ASI1600MM Pro"
     assert cam.pixel_size().to("micrometer").magnitude == 3.8
     assert cam.quantum_efficiency == 60
 
 
 def test_factory_nikon_d850():
-    cam = Camera.Nikon_D850()
+    cam = cast(Any, Camera).Nikon_D850()
     assert cam.vendor == "Nikon D850"
     assert cam.pixel_size().to("micrometer").magnitude == 4.35
     assert cam.quantum_efficiency == 54

@@ -1,3 +1,4 @@
+from typing import Any, cast
 from apts.equipment import Equipment
 from apts.opticalequipment import Telescope, Camera, Eyepiece
 from apts.utils import ConnectionType, Gender
@@ -61,7 +62,7 @@ def test_gender_matching_blocked_missing_gender():
     """Test that connections are blocked if any gender is missing."""
     # None to MALE
     e1 = Equipment()
-    tele_none = Telescope(150, 750, vendor="TeleNone", connection_type=ConnectionType.T2, connection_gender=None)
+    tele_none = Telescope(150, 750, vendor="TeleNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
     cam_male = Camera(10, 10, 100, 100, vendor="CamMale", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
     e1.register(tele_none)
     e1.register(cam_male)
@@ -70,15 +71,15 @@ def test_gender_matching_blocked_missing_gender():
     # FEMALE to None
     e2 = Equipment()
     tele_female = Telescope(150, 750, vendor="TeleFemale", connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE)
-    cam_none = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=None)
+    cam_none = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
     e2.register(tele_female)
     e2.register(cam_none)
     assert not any("TeleFemale" in label and "CamNone" in label for label in e2.data()[EquipmentTableLabels.LABEL])
 
     # None to None
     e3 = Equipment()
-    tele_none2 = Telescope(150, 750, vendor="TeleNone", connection_type=ConnectionType.T2, connection_gender=None)
-    cam_none2 = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=None)
+    tele_none2 = Telescope(150, 750, vendor="TeleNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
+    cam_none2 = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
     e3.register(tele_none2)
     e3.register(cam_none2)
     assert not any("TeleNone" in label and "CamNone" in label for label in e3.data()[EquipmentTableLabels.LABEL])

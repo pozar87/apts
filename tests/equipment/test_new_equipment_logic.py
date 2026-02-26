@@ -1,3 +1,4 @@
+from typing import Any, cast
 from apts.equipment import Equipment
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.camera import Camera
@@ -23,7 +24,7 @@ def test_attached_equipment_mass():
     path = OpticalPath.from_path([t, c])
 
     # Total mass should include t, f, and c
-    total_mass = path.total_mass().to("gram").magnitude
+    total_mass = cast(Any, path.total_mass()).to("gram").magnitude
     assert total_mass == 3000 + 500 + 500
 
 def test_filter_wheel_paths():
@@ -152,7 +153,7 @@ def test_nested_attachments():
 
     path = OpticalPath.from_path([t, c])
     # total mass should be 1000 + 200 + 100 + 300 = 1600
-    assert path.total_mass().to("gram").magnitude == 1600
+    assert cast(Any, path.total_mass()).to("gram").magnitude == 1600
 
 def test_supporting_equipment_in_path():
     e = Equipment()

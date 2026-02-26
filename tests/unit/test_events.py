@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, cast
 from datetime import datetime, timezone
 from unittest.mock import patch
 
@@ -260,12 +261,12 @@ class EventsTest(unittest.TestCase):
 
         # Check if it correctly identified the number of planets
         # The Feb 28 alignment has 7 planets
-        feb_28_alignment = alignment_events[alignment_events["date"].dt.day == 28]
+        feb_28_alignment = alignment_events[cast(Any, alignment_events["date"]).dt.day == 28]
         self.assertEqual(len(feb_28_alignment), 1)
-        self.assertIn("7 planets", feb_28_alignment.iloc[0]["event"])
+        self.assertIn("7 planets", cast(Any, feb_28_alignment).iloc[0]["event"])
 
         # Check planets involved
-        planets_involved = feb_28_alignment.iloc[0]["planets"]
+        planets_involved = cast(Any, feb_28_alignment).iloc[0]["planets"]
         self.assertIn("Mercury", planets_involved)
         self.assertIn("Venus", planets_involved)
         self.assertIn("Mars", planets_involved)

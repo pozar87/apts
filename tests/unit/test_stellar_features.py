@@ -1,4 +1,5 @@
 import pytest
+from typing import Any, cast
 from apts.place import Place
 from apts.opticalequipment.camera import Camera
 
@@ -20,7 +21,7 @@ def test_moon_metrics():
 
 
 def test_asi585mc_specs():
-    camera = Camera.ZWO_ASI585MC()
+    camera = cast(Any, Camera).ZWO_ASI585MC()
     assert camera.vendor == "ZWO ASI585MC"
     assert camera.sensor_width.magnitude == 11.13
     assert camera.sensor_height.magnitude == 6.26
@@ -33,7 +34,7 @@ def test_asi585mc_specs():
 
 
 def test_zwo_asi2600mm_pro_specs():
-    camera = Camera.ZWO_ASI2600MM_PRO()
+    camera = cast(Any, Camera).ZWO_ASI2600MM_PRO()
     assert camera.vendor == "ZWO ASI2600MM Pro"
     assert camera.sensor_width.magnitude == 23.5
     assert camera.sensor_height.magnitude == 15.7
@@ -72,19 +73,19 @@ def test_npf_rule_with_k():
     from apts.optics import OpticalPath
 
     telescope = Telescope(80, 480, vendor="RedCat 51 Equivalent")  # f/6
-    camera = Camera.ZWO_ASI2600MM_PRO()  # 3.76um
+    camera = cast(Any, Camera).ZWO_ASI2600MM_PRO()  # 3.76um
     path = OpticalPath(telescope, [], [], [], [], camera)
 
     # Declination 0
     t1 = path.npf_rule(declination=0, k=1.0)
     # n=6, p=3.76, f=480
     # t = (35*6 + 30*3.76) / 480 = (210 + 112.8) / 480 = 322.8 / 480 = 0.6725
-    assert t1.magnitude == pytest.approx(0.6725)
+    assert cast(Any, t1).magnitude == pytest.approx(0.6725)
 
     # With k=2.0
     t2 = path.npf_rule(declination=0, k=2.0)
-    assert t2.magnitude == pytest.approx(1.345)
+    assert cast(Any, t2).magnitude == pytest.approx(1.345)
 
     # At the pole
     t_pole = path.npf_rule(declination=90)
-    assert t_pole.magnitude == 3600
+    assert cast(Any, t_pole).magnitude == 3600
