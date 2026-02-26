@@ -241,6 +241,33 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(messier_events.iloc[0]["object1"], "Moon")
         self.assertEqual(messier_events.iloc[0]["separation_degrees"], 2.5)
 
+    def test_calculate_moon_star_conjunctions(self):
+        # Moon-Antares conjunction in 2023: August 25 around 02:00-03:00 UTC
+        start_date = datetime(2023, 8, 24, tzinfo=utc)
+        end_date = datetime(2023, 8, 26, tzinfo=utc)
+
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.MOON_STAR_CONJUNCTIONS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for Moon-Antares conjunction
+        antares_conjunction = events_df[
+            (events_df["type"] == "Moon-Star Conjunction")
+            & (events_df["object2"] == "Antares")
+        ]
+
+        self.assertGreater(len(antares_conjunction), 0)
+        # Check date: should be 2023-08-25
+        event_date = antares_conjunction.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2023)
+        self.assertEqual(event_date.month, 8)
+        self.assertEqual(event_date.day, 25)
+        self.assertLess(antares_conjunction.iloc[0]["separation_degrees"], 2.0)
+
     def test_planet_alignment(self):
         # Great planetary alignment of Feb 28, 2026
         # We use a window that covers the end of February to catch the alignment on Feb 28

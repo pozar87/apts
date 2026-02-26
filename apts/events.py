@@ -88,6 +88,8 @@ class AstronomicalEvents:
             )
         if self.event_settings.get("moon_messier_conjunctions"):
             futures.append(executor.submit(self.calculate_moon_messier_conjunctions))
+        if self.event_settings.get("moon_star_conjunctions"):
+            futures.append(executor.submit(self.calculate_moon_star_conjunctions))
         if self.event_settings.get("space_launches"):
             futures.append(executor.submit(self.calculate_space_launches))
         if self.event_settings.get("space_events"):
@@ -630,6 +632,50 @@ class AstronomicalEvents:
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
         )
+        return events
+
+    def calculate_moon_star_conjunctions(self):
+        start_time = time.time()
+        events = []
+
+        # Filter stars close to the ecliptic (within 10 degrees)
+        # The Moon stays within ~5.1 degrees of the ecliptic.
+        # Stars with ecliptic latitude > 10 degrees can't have close conjunctions.
+        ts = get_timescale()
+        t_ref = ts.utc(self.start_date)
+        earth = self.eph["earth"]
+
+        candidate_stars = []
+        for _, row in self.catalogs.BRIGHT_STARS.iterrows():
+            star = row["skyfield_object"]
+            # Optimization: check ecliptic latitude to only include stars that can be close to the moon
+            lat = earth.at(t_ref).observe(star).ecliptic_latlon()[0].degrees
+            if abs(lat) < 10.0:
+                candidate_stars.append((row["Name"], star))
+
+        # Process sequentially to avoid deadlock risk with shared executor
+        for star_name, star_obj in candidate_stars:
+            conjunctions = skyfield_searches.find_conjunctions_with_star(
+                self.observer,
+                "moon",
+                star_obj,
+                self.start_date,
+                self.end_date,
+                threshold_degrees=5.0,
+            )
+            for conj in conjunctions:
+                events.append(
+                    {
+                        "date": conj["date"].astimezone(utc),
+                        "event": "Conjunction",
+                        "object1": "Moon",
+                        "object2": star_name,
+                        "separation_degrees": conj["separation_degrees"],
+                        "type": "Moon-Star Conjunction",
+                    }
+                )
+
+        logger.debug(f"--- calculate_moon_star_conjunctions: {time.time() - start_time}s")
         return events
 
     def calculate_nasa_comets(self):
