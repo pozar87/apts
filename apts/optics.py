@@ -64,6 +64,20 @@ class OpticsUtils:
         return telescope.focal_length * magnification / output._zoom_divider()
 
     @staticmethod
+    def calculate_airmass(altitude_degrees):
+        """
+        Calculates the relative airmass using the Kasten-Young (1989) formula.
+        Formula: X = 1 / (sin(h) + 0.50572 * (h + 6.07995)^-1.6364)
+        Where h is the apparent altitude in degrees.
+        Source: https://en.wikipedia.org/wiki/Air_mass_(astronomy)
+        """
+        # Ensure altitude is at least 0 to avoid complex numbers/errors
+        h = max(altitude_degrees, 0.0)
+        return 1.0 / (
+            numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364
+        )
+
+    @staticmethod
     def compute_field_of_view(telescope, barlows, output):
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -163,6 +177,22 @@ class OpticalPath:
                 self.telescope, self.zoom(), self.effective_barlow()
             )
         return self.fov()
+
+    def airmass(self, altitude_degrees):
+        """
+        Calculates the relative airmass for a given altitude in degrees.
+        """
+        return OpticsUtils.calculate_airmass(altitude_degrees)
+
+    def atmospheric_extinction(self, magnitude, altitude_degrees, extinction_k=0.2):
+        """
+        Calculates the apparent magnitude of an object accounting for atmospheric extinction.
+        Formula: m_apparent = m_zero + k * X
+        Where k is the extinction coefficient and X is the airmass.
+        k typically ranges from 0.15 (very clear) to 0.5+ (hazy/polluted). Default 0.2.
+        """
+        airmass_val = self.airmass(altitude_degrees)
+        return magnitude + extinction_k * airmass_val
 
     def brightness(self):
         from .opticalequipment.smart_telescope import SmartTelescope
@@ -393,7 +423,7 @@ class OpticalPath:
         )
         return flux  # e-/s/pixel
 
-    def object_flux(self, magnitude):
+    def object_flux(self, magnitude, altitude=None, extinction_k=0.2):
         from .opticalequipment.camera import Camera
 
         if (
@@ -401,6 +431,13 @@ class OpticalPath:
             or self.output.quantum_efficiency is None
         ):
             return None
+
+        # Apply atmospheric extinction if altitude is provided
+        effective_magnitude = magnitude
+        if altitude is not None:
+            effective_magnitude = self.atmospheric_extinction(
+                magnitude, altitude, extinction_k
+            )
 
         area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
         qe = self.output.quantum_efficiency / 100.0
@@ -412,13 +449,21 @@ class OpticalPath:
 
         # Total flux from the object
         # Based on the same zero point as sky_flux
-        flux = 0.005 * 10 ** (0.4 * (21.83 - magnitude)) * area_cm2 * qe * transmission
+        flux = (
+            0.005
+            * 10 ** (0.4 * (21.83 - effective_magnitude))
+            * area_cm2
+            * qe
+            * transmission
+        )
         return flux  # e-/s total
 
-    def snr(self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4):
+    def snr(
+        self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4, altitude=None, extinction_k=0.2
+    ):
         from .opticalequipment.camera import Camera
 
-        obj_flux = self.object_flux(magnitude)
+        obj_flux = self.object_flux(magnitude, altitude=altitude, extinction_k=extinction_k)
         sky_flux_val = self.sky_flux(sqm)
 
         if (

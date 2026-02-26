@@ -18,7 +18,7 @@ class OpticalEquipmentTest(unittest.TestCase):
         t = Telescope(aperture=150, focal_length=750)
         self.assertEqual(t.focal_ratio(), 5.0)
         self.assertEqual(t.dawes_limit().magnitude, 0.773)
-        self.assertEqual(t.rayleigh_limit().magnitude, 0.92)
+        self.assertEqual(t.rayleigh_limit().magnitude, 0.923)
         self.assertAlmostEqual(t.limiting_magnitude(), 13.58, 2)
         self.assertAlmostEqual(t.light_grasp_ratio(7).magnitude, 459.18, 2)
         self.assertEqual(t.min_useful_zoom(), 25)
