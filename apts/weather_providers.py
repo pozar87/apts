@@ -52,7 +52,7 @@ def get_session():
             try:
                 # These imports are here to avoid a hard dependency on redis
                 # if the user doesn't use the redis backend.
-                import redis
+                import redis  # type: ignore
 
                 kwargs["connection"] = redis.from_url(cache_settings["redis_location"])
                 # The connection is lazy, so we need to trigger it to test it.
