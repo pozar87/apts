@@ -999,7 +999,7 @@ def test_flipped_view_with_different_telescopes():
 
     # Maksutov-Cassegrain with erecting diagonal is not flipped
     e = Equipment()
-    e.register(Telescope(150, 750, telescope_type=TelescopeType.MAKSTUTOV_CASSEGRAIN))
+    e.register(Telescope(150, 750, telescope_type=TelescopeType.MAKSUTOV_CASSEGRAIN))
     e.register(Diagonal(is_erecting=True))
     e.register(Eyepiece(25))
     row = e.data()[e.data()["Elements"] == 3].iloc[0]

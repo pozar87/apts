@@ -10,7 +10,7 @@ class TelescopeType(Enum):
     REFRACTOR = 'refractor'
     NEWTONIAN_REFLECTOR = 'newtonian_reflector'
     SCHMIDT_CASSEGRAIN = 'schmidt_cassegrain'
-    MAKSTUTOV_CASSEGRAIN = 'makstutov_cassegrain'
+    MAKSUTOV_CASSEGRAIN = 'maksutov_cassegrain'
     CATADIOPTRIC = 'catadioptric'
 
 class TubeMaterial(Enum):
@@ -32,9 +32,33 @@ class Telescope(OpticalEquipment):
         mass = entry.get('mass', 0)
         ct = Utils.map_conn(entry.get('cside_thread'))
         cg = Utils.map_gender(entry.get('cside_gender'))
-        aperture, focal_length = Utils.guess_optical_properties(name)
+
+        # Use explicit aperture and focal length if available, otherwise guess
+        aperture = entry.get('aperture_mm')
+        focal_length = entry.get('focal_length_mm')
+        if aperture is None or focal_length is None:
+            g_aperture, g_focal_length = Utils.guess_optical_properties(name)
+            aperture = aperture or g_aperture
+            focal_length = focal_length or g_focal_length
+
+        central_obstruction = entry.get('central_obstruction_mm', 0)
+
+        # Map type string to TelescopeType enum
+        type_str = entry.get('type', '')
+        telescope_type = TelescopeType.REFRACTOR  # Default
+        if 'refractor' in type_str:
+            telescope_type = TelescopeType.REFRACTOR
+        elif 'newtonian' in type_str:
+            telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
+        elif 'schmidt_cassegrain' in type_str or 'sct' in type_str:
+            telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
+        elif 'maksutov' in type_str:
+            telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
+        elif 'catadioptric' in type_str or 'astrograph' in type_str:
+            telescope_type = TelescopeType.CATADIOPTRIC
+
         bf_val = entry.get('bf_role') == 'start'
-        return cls(aperture or 80, focal_length or 500, vendor=vendor, connection_type=ct, connection_gender=cg or Gender.FEMALE, backfocus=ol if bf_val else None, mass=mass, optical_length=ol)
+        return cls(aperture or 80, focal_length or 500, vendor=vendor, connection_type=ct, connection_gender=cg or Gender.FEMALE, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
     '\n    Class representing telescope\n    '
 
     def __init__(self, aperture, focal_length, vendor='unknown telescope', connection_type=ConnectionType.F_1_25, t2_output=False, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0, optical_length=0, connection_gender=Gender.FEMALE, central_obstruction=0):
