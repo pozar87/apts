@@ -1,6 +1,6 @@
 import unittest
-from typing import Any, cast
 from datetime import datetime, timezone
+from typing import Any, cast
 from unittest.mock import patch
 
 import pandas as pd
@@ -190,8 +190,18 @@ class EventsTest(unittest.TestCase):
 
         # All 3 phases should be in range now
         self.assertEqual(len(perseids_events), 3)
-        self.assertEqual(perseids_events[perseids_events["phase"] == "Peak"].iloc[0]["rarity"], 3)
-        self.assertEqual(perseids_events[perseids_events["phase"] == "Start"].iloc[0]["rarity"], 1)
+        self.assertEqual(
+            cast(Any, perseids_events[perseids_events["phase"] == "Peak"]).iloc[0][
+                "rarity"
+            ],
+            3,
+        )
+        self.assertEqual(
+            cast(Any, perseids_events[perseids_events["phase"] == "Start"]).iloc[0][
+                "rarity"
+            ],
+            1,
+        )
         self.assertTrue(any(perseids_events["phase"] == "Start"))
         self.assertTrue(any(perseids_events["phase"] == "Peak"))
         self.assertTrue(any(perseids_events["phase"] == "End"))
@@ -297,10 +307,12 @@ class EventsTest(unittest.TestCase):
 
         # Check if it correctly identified the number of planets
         # The Feb 28 alignment has 7 planets
-        feb_28_alignment = alignment_events[cast(Any, alignment_events["date"]).dt.day == 28]
+        feb_28_alignment = alignment_events[
+            cast(Any, alignment_events["date"]).dt.day == 28
+        ]
         self.assertEqual(len(feb_28_alignment), 1)
         self.assertIn("7 planets", cast(Any, feb_28_alignment).iloc[0]["event"])
-        self.assertEqual(feb_28_alignment.iloc[0]["rarity"], 5)
+        self.assertEqual(cast(Any, feb_28_alignment).iloc[0]["rarity"], 5)
 
         # Check planets involved
         planets_involved = cast(Any, feb_28_alignment).iloc[0]["planets"]
