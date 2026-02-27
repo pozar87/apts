@@ -99,7 +99,7 @@ class Telescope(OpticalEquipment):
         """
         return round((11.6 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
-    def rayleigh_limit(self, wavelength_nm=550):
+    def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
         Calculate the maximum resolving power of your telescope using the Rayleigh Limit formula.
         θ = 1.22 * λ / D

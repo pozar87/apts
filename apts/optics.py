@@ -569,13 +569,13 @@ class OpticalPath:
             return self.telescope.dawes_limit()
         return None
 
-    def rayleigh_limit(self):
+    def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
-        Based on the telescope aperture and the standard wavelength of 550nm.
+        Based on the telescope aperture and the provided wavelength (default 550nm).
         """
         if hasattr(self.telescope, "rayleigh_limit"):
-            return self.telescope.rayleigh_limit()
+            return self.telescope.rayleigh_limit(wavelength_nm=wavelength_nm)
         return None
 
     def ideal_planetary_focal_ratio(self, k=5.0):
