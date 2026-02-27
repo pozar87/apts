@@ -1,11 +1,13 @@
-from skyfield.api import load
-from skyfield import eclipselib
-from skyfield.searchlib import find_maxima, find_minima
-import numpy as np
 from typing import Any, cast
-from .cache import get_timescale, get_ephemeris
-from .utils import planetary
+
+import numpy as np
+from skyfield import eclipselib
+from skyfield.api import load
+from skyfield.searchlib import find_maxima, find_minima
+
+from .cache import get_ephemeris, get_timescale
 from .constants import astronomy
+from .utils import planetary
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
@@ -212,7 +214,9 @@ def find_conjunctions_with_star(
     events = []
     # Find local minima in the separations array
     # A point is a local minimum if it's smaller than its neighbors
-    is_min = (separations[1:-1] < separations[:-2]) & (separations[1:-1] < separations[2:])
+    is_min = (separations[1:-1] < separations[:-2]) & (
+        separations[1:-1] < separations[2:]
+    )
     min_indices = np.where(is_min)[0] + 1
 
     for idx in min_indices:
@@ -263,7 +267,6 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     events = []
 
-
     stars_to_check = bright_stars[bright_stars["Name"].str.strip().isin(target_stars)]
 
     # Collect star objects directly from the dataframe
@@ -278,14 +281,14 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     times = ts.linspace(t0, t1, num_hours)
 
     mpos = cast(Any, earth).at(times).observe(moon)
-    
+
     for star_name, star in star_objects:
         spos = cast(Any, earth).at(times).observe(star)
         separations = mpos.separation_from(spos).degrees
-        
+
         # Check for values below 0.5 degrees
         occ_indices = np.where(separations < 0.5)[0]
-        
+
         # We only want the moment of maximum occultation (minimum separation)
         # for each occultation event. An event can span multiple hours.
         if len(occ_indices) > 0:
@@ -303,6 +306,38 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
                 )
 
     return events
+
+
+def calculate_satellite_magnitude(
+    satellite_name, sat_pos_km, sun_pos_km, observer_pos_km, distance_km
+):
+    """Calculates the apparent magnitude of a satellite."""
+    # Vector from satellite to sun
+    vec_sat_sun = sun_pos_km - sat_pos_km
+
+    # Vector from satellite to observer
+    vec_sat_obs = observer_pos_km - sat_pos_km
+
+    # Calculate phase angle beta
+    norm_sun = np.linalg.norm(vec_sat_sun)
+    norm_obs = np.linalg.norm(vec_sat_obs)
+
+    if norm_sun > 0 and norm_obs > 0:
+        cos_beta = np.dot(vec_sat_sun, vec_sat_obs) / (norm_sun * norm_obs)
+        beta = np.arccos(np.clip(cos_beta, -1.0, 1.0))
+
+        # Phase function for diffuse sphere
+        phi = (np.sin(beta) + (np.pi - beta) * np.cos(beta)) / np.pi
+
+        # Standard magnitude (at 1000km, 0 phase)
+        # ISS is approx -1.8, Tiangong is approx 0.0
+        m_std = -1.8 if "ISS" in satellite_name else 0.0
+
+        # Apparent magnitude
+        return float(
+            m_std + 5 * np.log10(distance_km / 1000.0) - 2.5 * np.log10(max(phi, 1e-9))
+        )
+    return 5.0
 
 
 def _find_satellite_flybys(
@@ -363,6 +398,22 @@ def _find_satellite_flybys(
         if alt.degrees < peak_altitude_threshold:
             continue
 
+        # Check if satellite is sunlit
+        if not sat.is_sunlit(get_ephemeris()):
+            continue
+
+        # Calculate apparent magnitude
+        mag = calculate_satellite_magnitude(
+            satellite_name,
+            sat.position.km,
+            cast(Any, sun).at(culmination_time).position.km,
+            obs.position.km,
+            distance.km,
+        )
+
+        if magnitude_threshold is not None and mag > magnitude_threshold:
+            continue
+
         event_data = {
             "date": culmination_time.utc_datetime(),
             "event": event_name,
@@ -371,14 +422,8 @@ def _find_satellite_flybys(
             "culmination_time": culmination_time.utc_datetime(),
             "set_time": None,
             "peak_altitude": alt.degrees,
+            "peak_magnitude": float(mag),
         }
-
-        if magnitude_threshold is not None:
-            # Apparent magnitude (Skyfield computes it for satellites directly)
-            mag = -3.0
-            if mag is not None and mag > magnitude_threshold:
-                continue
-            event_data["peak_magnitude"] = mag
 
         # Find rise and set times for this pass
         if i > 0 and events[i - 1] == 0:
@@ -491,6 +536,7 @@ def find_solar_eclipses(observer, start_date, end_date):
                 {"date": t.utc_datetime(), "type": "Solar Eclipse", "separation": sep}
             )
     return events
+
 
 def find_planet_alignments(observer, start_date, end_date):
     ts = get_timescale()
