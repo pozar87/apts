@@ -355,13 +355,25 @@ class OpticalPath:
         return scale * get_unit_registry().arcsecond
 
     def sampling(self, seeing):
+        """
+        Calculates the sampling status based on the resolution limit and the pixel scale.
+        The resolution limit is the larger of the atmospheric seeing and the telescope's diffraction limit (Rayleigh limit).
+        According to the Nyquist-Shannon sampling theorem, the ideal sampling is between 2 and 3 pixels per resolution element.
+        """
         scale = self.pixel_scale()
         if scale is None:
             return None
-        ratio = seeing / scale.magnitude
-        if ratio < 1.0:
+
+        # Effective resolution limit is the larger of seeing and diffraction limit
+        r_limit = seeing
+        diffraction_limit = self.rayleigh_limit()
+        if diffraction_limit is not None:
+            r_limit = max(seeing, diffraction_limit.to("arcsecond").magnitude)
+
+        ratio = r_limit / scale.magnitude
+        if ratio < 1.5:
             return "Under-sampled"
-        elif ratio <= 2.0:
+        elif ratio <= 3.0:
             return "Well-sampled"
         else:
             return "Over-sampled"

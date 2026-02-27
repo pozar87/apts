@@ -31,18 +31,36 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI2600MC_PRO(cls):
         """
-        Factory method for ZWO ASI2600MC Pro camera.
+        Factory method for ZWO ASI 2600MC Pro camera.
         Sensor: Sony IMX571 (APS-C)
         """
-        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI2600MC Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80)
+        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI 2600MC Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80, mass=720, backfocus=17.5, optical_length=17.5)
 
     @classmethod
     def ZWO_ASI2600MM_PRO(cls):
         """
-        Factory method for ZWO ASI2600MM Pro camera.
+        Factory method for ZWO ASI 2600MM Pro camera.
         Sensor: Sony IMX571 (Mono APS-C)
         """
-        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI2600MM Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91)
+        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI 2600MM Pro', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91, mass=720, backfocus=17.5, optical_length=17.5)
+
+    @classmethod
+    def ZWO_ASI2600MC_DUO(cls):
+        """
+        Factory method for ZWO ASI 2600MC Duo camera.
+        Main Sensor: Sony IMX571 (APS-C)
+        Guide Sensor: Sony IMX220
+        """
+        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI 2600MC Duo', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=80, mass=800, backfocus=17.5, optical_length=17.5)
+
+    @classmethod
+    def ZWO_ASI2600MM_DUO(cls):
+        """
+        Factory method for ZWO ASI 2600MM Duo camera.
+        Main Sensor: Sony IMX571 (Mono APS-C)
+        Guide Sensor: Sony IMX220
+        """
+        return cls(23.5, 15.7, 6248, 4176, 'ZWO ASI 2600MM Duo', pixel_size=3.76, read_noise=1.0, full_well=50000, quantum_efficiency=91, mass=800, backfocus=17.5, optical_length=17.5)
 
     @classmethod
     def ZWO_ASI1600MM_PRO(cls):
@@ -71,18 +89,18 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI6200MM_PRO(cls):
         """
-        Factory method for ZWO ASI6200MM Pro camera.
+        Factory method for ZWO ASI 6200MM Pro camera.
         Sensor: Sony IMX455 (Full-Frame Mono)
         """
-        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI6200MM Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=91)
+        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI 6200MM Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=91, mass=1010, backfocus=17.5, optical_length=17.5)
 
     @classmethod
     def ZWO_ASI6200MC_PRO(cls):
         """
-        Factory method for ZWO ASI6200MC Pro camera.
+        Factory method for ZWO ASI 6200MC Pro camera.
         Sensor: Sony IMX455 (Full-Frame Color)
         """
-        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI6200MC Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=80)
+        return cls(36.0, 24.0, 9576, 6388, 'ZWO ASI 6200MC Pro', pixel_size=3.76, read_noise=1.2, full_well=51400, quantum_efficiency=80, mass=1010, backfocus=17.5, optical_length=17.5)
 
     @classmethod
     def ZWO_ASI_183MC_Pro(cls):
@@ -134,27 +152,27 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI_2600MC_Pro(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_2600MC_Pro'])
+        return cls.ZWO_ASI2600MC_PRO()
 
     @classmethod
     def ZWO_ASI_2600MM_Pro(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_2600MM_Pro'])
+        return cls.ZWO_ASI2600MM_PRO()
 
     @classmethod
     def ZWO_ASI_2600MC_Duo(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_2600MC_Duo'])
+        return cls.ZWO_ASI2600MC_DUO()
 
     @classmethod
     def ZWO_ASI_2600MM_Duo(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_2600MM_Duo'])
+        return cls.ZWO_ASI2600MM_DUO()
 
     @classmethod
     def ZWO_ASI_6200MC_Pro(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_6200MC_Pro'])
+        return cls.ZWO_ASI6200MC_PRO()
 
     @classmethod
     def ZWO_ASI_6200MM_Pro(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_6200MM_Pro'])
+        return cls.ZWO_ASI6200MM_PRO()
 
     @classmethod
     def ZWO_ASI_2400MC_Pro(cls):
