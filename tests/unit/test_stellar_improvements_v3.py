@@ -33,9 +33,9 @@ class TestStellarImprovementsV3(unittest.TestCase):
 
         # Case 2: Seeing (5.0") > Rayleigh (1.702")
         # Resolution limit = 5.0"
-        # Ratio = 5.0 / 1.939 = 2.578 (1.5-3.0 -> Well-sampled)
+        # Ratio = 5.0 / 1.939 = 2.578 (> 2.0 -> Over-sampled)
         status_bad_seeing = path.sampling(seeing=5.0)
-        self.assertEqual(status_bad_seeing, "Well-sampled")
+        self.assertEqual(status_bad_seeing, "Over-sampled")
 
     def test_sampling_nyquist_thresholds(self):
         t = MagicMock(spec=Telescope)
@@ -51,32 +51,31 @@ class TestStellarImprovementsV3(unittest.TestCase):
         # Resolution limit will be max(seeing=2.0, rayleigh=2.0) = 2.0
 
         # Ratio = 2.0 / pixel_scale
-        # Ratio 1.0 (< 1.5) -> Under-sampled
-        # pixel_scale = 2.0
-        # Formula: (p_size / focal_length) * 206265
-        # (p_size / 100) * 206265 = 2.0 => p_size = 2.0 * 100 / 206265 = 0.0009698 mm = 0.9698 um
-        c.pixel_size.return_value = (2.0 * 100 / 206265) * get_unit_registry().mm
+        # Ratio 0.8 (< 1.0) -> Under-sampled
+        # pixel_scale = 2.5
+        # (p_size / 100) * 206265 = 2.5 => p_size = 2.5 * 100 / 206265
+        c.pixel_size.return_value = (2.5 * 100 / 206265) * get_unit_registry().mm
         self.assertEqual(path.sampling(seeing=2.0), "Under-sampled")
 
-        # Ratio 2.0 (Well-sampled)
-        # pixel_scale = 1.0
-        c.pixel_size.return_value = (1.0 * 100 / 206265) * get_unit_registry().mm
+        # Ratio 1.5 (Well-sampled, 1.0-2.0)
+        # pixel_scale = 2.0 / 1.5 = 1.333
+        c.pixel_size.return_value = (1.3333 * 100 / 206265) * get_unit_registry().mm
         self.assertEqual(path.sampling(seeing=2.0), "Well-sampled")
 
-        # Ratio 4.0 (> 3.0) -> Over-sampled
+        # Ratio 4.0 (> 2.0) -> Over-sampled
         # pixel_scale = 0.5
         c.pixel_size.return_value = (0.5 * 100 / 206265) * get_unit_registry().mm
         self.assertEqual(path.sampling(seeing=2.0), "Over-sampled")
 
     def test_zwo_duo_cameras(self):
         mc_duo = ZwoCamera.ZWO_ASI2600MC_DUO()
-        self.assertEqual(mc_duo.vendor, "ZWO ASI 2600MC Duo")
+        self.assertEqual(mc_duo.vendor, "ZWO ASI2600MC Duo")
         self.assertEqual(mc_duo.mass, 800 * get_unit_registry().gram)
         self.assertEqual(mc_duo.backfocus, 17.5 * get_unit_registry().mm)
         self.assertEqual(mc_duo.quantum_efficiency, 80)
 
         mm_duo = ZwoCamera.ZWO_ASI2600MM_DUO()
-        self.assertEqual(mm_duo.vendor, "ZWO ASI 2600MM Duo")
+        self.assertEqual(mm_duo.vendor, "ZWO ASI2600MM Duo")
         self.assertEqual(mm_duo.quantum_efficiency, 91)
 
     def test_zwo_updated_pro_cameras(self):

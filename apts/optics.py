@@ -371,9 +371,9 @@ class OpticalPath:
             r_limit = max(seeing, diffraction_limit.to("arcsecond").magnitude)
 
         ratio = r_limit / scale.magnitude
-        if ratio < 1.5:
+        if ratio < 1.0:
             return "Under-sampled"
-        elif ratio <= 3.0:
+        elif ratio <= 2.0:
             return "Well-sampled"
         else:
             return "Over-sampled"
