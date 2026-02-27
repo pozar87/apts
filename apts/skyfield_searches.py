@@ -2,7 +2,6 @@ from skyfield.api import load
 from skyfield import eclipselib
 from skyfield.searchlib import find_maxima, find_minima
 import numpy as np
-import pandas as pd
 from typing import Any, cast
 from .cache import get_timescale, get_ephemeris
 from .utils import planetary
@@ -200,26 +199,29 @@ def find_conjunctions_with_star(
     t1 = ts.utc(end_date)
     body1 = planetary.get_skyfield_obj(body1_name)
 
-    times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
+    # Hourly check
+    num_hours = int((t1 - t0) * 24)
+    if num_hours < 2:
+        return []
+    times = ts.linspace(t0, t1, num_hours)
+
+    pos1 = observer.at(times).observe(body1)
+    pos_star = observer.at(times).observe(star_object)
+    separations = pos1.separation_from(pos_star).degrees
 
     events = []
+    # Find local minima in the separations array
+    # A point is a local minimum if it's smaller than its neighbors
+    is_min = (separations[1:-1] < separations[:-2]) & (separations[1:-1] < separations[2:])
+    min_indices = np.where(is_min)[0] + 1
 
-    separations = []
-    for t in times:
-        pos1 = observer.at(t).observe(body1)
-        pos_star = observer.at(t).observe(star_object)
-        separations.append(pos1.separation_from(pos_star).degrees.item())
-
-    for i in range(1, len(separations) - 1):
-        if (
-            separations[i] < separations[i - 1]
-            and separations[i] < separations[i + 1]
-            and separations[i] < threshold_degrees
-        ):
+    for idx in min_indices:
+        s = separations[idx]
+        if s < threshold_degrees:
             events.append(
                 {
-                    "date": times[i].utc_datetime(),
-                    "separation_degrees": separations[i],
+                    "date": times[idx].utc_datetime(),
+                    "separation_degrees": float(s),
                 }
             )
 
@@ -261,38 +263,40 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     events = []
 
-    from skyfield.api import Star
 
     stars_to_check = bright_stars[bright_stars["Name"].str.strip().isin(target_stars)]
 
+    # Collect star objects directly from the dataframe
     star_objects = []
-    for index, star_data in stars_to_check.iterrows():
-        star_df = pd.DataFrame(
-            {
-                "ra_hours": [star_data["RA"].to("hour").magnitude],
-                "dec_degrees": [star_data["Dec"].to("degree").magnitude],
-                "ra_mas_per_year": [0],
-                "dec_mas_per_year": [0],
-                "parallax_mas": [0],
-                "radial_km_per_s": [0],
-                "epoch_year": [2000.0],
-            },
-            index=pd.Index([0]),
-        )
-        star_objects.append((star_data["Name"], Star.from_dataframe(star_df)))
+    for _, star_data in stars_to_check.iterrows():
+        star_objects.append((star_data["Name"], star_data["skyfield_object"]))
 
-    ts = get_timescale()
-    times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
+    # Hourly check
+    num_hours = int((t1 - t0) * 24)
+    if num_hours < 1:
+        return []
+    times = ts.linspace(t0, t1, num_hours)
 
-    for t in times:
-        mpos = cast(Any, earth).at(t).observe(moon)
-        for star_name, star in star_objects:
-            spos = cast(Any, earth).at(t).observe(star)
-
-            if mpos.separation_from(spos).degrees < 0.5:
+    mpos = cast(Any, earth).at(times).observe(moon)
+    
+    for star_name, star in star_objects:
+        spos = cast(Any, earth).at(times).observe(star)
+        separations = mpos.separation_from(spos).degrees
+        
+        # Check for values below 0.5 degrees
+        occ_indices = np.where(separations < 0.5)[0]
+        
+        # We only want the moment of maximum occultation (minimum separation)
+        # for each occultation event. An event can span multiple hours.
+        if len(occ_indices) > 0:
+            # Group consecutive indices as one event
+            groups = np.split(occ_indices, np.where(np.diff(occ_indices) > 1)[0] + 1)
+            for group in groups:
+                # Find the index with the minimum separation in this group
+                min_idx = group[np.argmin(separations[group])]
                 events.append(
                     {
-                        "date": t.utc_datetime(),
+                        "date": times[min_idx].utc_datetime(),
                         "object1": "Moon",
                         "object2": star_name,
                     }
