@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "total_years_simulated": 20,
+    "locations_count": 5,
+    "total_observation_years": 100,
+    "start_year": 2024,
+    "generated_at": "2026-02-27T14:11:01.572755"
+  },
+  "frequencies": {
+    "Meteor Shower": 27.2,
+    "Moon-Messier Conjunction": 204.77,
+    "Moon Apogee/Perigee": 27.0,
+    "Moon Phase": 49.5,
+    "Moon-Star Conjunction": 59.75,
+    "Aphelion/Perihelion": 32.55,
+    "Conjunction": 86.8,
+    "Solar Eclipse": 2.2,
+    "Opposition": 9.05,
+    "Planet Alignment": 1.8,
+    "Inferior Conjunction": 0.45,
+    "Lunar Eclipse": 2.25,
+    "Planet Altitude": 0.4,
+    "Lunar Occultation": 9.05
+  },
+  "thresholds": {
+    "Moon-Messier Conjunction": {
+      "r5": 0.15686692828551155,
+      "r4": 0.4084277259702701,
+      "r3": 1.1176085245886473,
+      "r2": 2.3923887819597125
+    },
+    "Moon-Star Conjunction": {
+      "r5": 0.161749659847759,
+      "r4": 0.41817080867506984,
+      "r3": 1.2108688003172126,
+      "r2": 2.613738290717025
+    },
+    "Conjunction": {
+      "r5": 0.0885031381364641,
+      "r4": 0.42265028303414287,
+      "r3": 1.3049716712843864,
+      "r2": 2.896659828898755
+    },
+    "Planet Alignment": {
+      "3": 0.75,
+      "7": 0.6,
+      "6": 0.25,
+      "4": 0.15,
+      "5": 0.05
+    },
+    "Lunar Eclipse": {
+      "Total": 0.85,
+      "Penumbral": 0.8,
+      "Partial": 0.6
+    }
+  }
+}
