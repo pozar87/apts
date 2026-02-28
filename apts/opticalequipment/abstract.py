@@ -17,7 +17,13 @@ class OpticalEquipment:
     OUT = "out"
     IN = "in"
 
-    def __init__(self, focal_length, vendor, optical_length=0, mass=0):
+    def __init__(
+        self,
+        focal_length: float,
+        vendor: str,
+        optical_length: float = 0,
+        mass: float = 0,
+    ):
         if np.isnan(focal_length):
             raise ValueError("focal_length cannot be NaN")
         self._id = str(uuid.uuid4())
