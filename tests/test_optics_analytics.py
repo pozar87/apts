@@ -87,3 +87,18 @@ def test_rule_of_500_with_barlow():
     r500 = path.rule_of_500()
     assert r500 is not None
     assert numpy.isclose(cast(Any, r500).to("second").magnitude, 0.3333, atol=0.001)
+
+
+def test_rayleigh_limit_path():
+    t = Telescope(aperture=100, focal_length=500)
+    path = OpticalPath(t, [], [], [], [], t)
+
+    # Standard 550nm: 1.384 arcsec
+    limit_550 = path.rayleigh_limit(wavelength_nm=550)
+    assert limit_550 is not None
+    assert numpy.isclose(cast(Any, limit_550).magnitude, 1.384, atol=0.001)
+
+    # H-alpha 656.3nm: 1.652 arcsec
+    limit_656 = path.rayleigh_limit(wavelength_nm=656.3)
+    assert limit_656 is not None
+    assert numpy.isclose(cast(Any, limit_656).magnitude, 1.652, atol=0.001)

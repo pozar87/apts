@@ -133,7 +133,7 @@ class TestFitsAnalyzer(unittest.TestCase):
 
         header_len = len(xml_header)
         reserved = 0
-        file_header = magic + struct.pack("<II", header_len, reserved) + xml_header
+        _ = magic + struct.pack("<II", header_len, reserved) + xml_header
 
         # Data: 4x4 Float32 = 16 * 4 = 64 bytes
         data = np.arange(16, dtype=np.float32).tobytes()
@@ -163,6 +163,7 @@ class TestFitsAnalyzer(unittest.TestCase):
             analyzer = FitsAnalyzer("mock.xisf")
             self.assertEqual(analyzer.data.shape, (4, 4))
             self.assertTrue(np.allclose(analyzer.data.flatten(), np.arange(16)))
+            assert analyzer.header is not None
             self.assertEqual(analyzer.header["NAXIS1"], 4)
 
     def test_load_xisf_multi_channel(self):

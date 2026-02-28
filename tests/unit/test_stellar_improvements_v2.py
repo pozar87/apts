@@ -58,11 +58,16 @@ def test_snr_with_altitude():
     # SNR at low altitude (more extinction -> less signal -> lower SNR)
     snr_low = path.snr(magnitude=10, sqm=21, exposure_time=60, altitude=10)
 
+    assert snr_zenith is not None
+    assert snr_low is not None
     assert snr_zenith > snr_low
 
     # Object flux should also be lower
     flux_zenith = path.object_flux(10, altitude=90)
     flux_low = path.object_flux(10, altitude=10)
+
+    assert flux_zenith is not None
+    assert flux_low is not None
     assert flux_zenith > flux_low
 
 def test_new_camera_factory_methods():
