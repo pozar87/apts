@@ -387,7 +387,17 @@ class OpticalPath:
         """
         Calculates the sampling status based on the resolution limit and the pixel scale.
         The resolution limit is the larger of the atmospheric seeing and the telescope's diffraction limit (Rayleigh limit).
-        According to the Nyquist-Shannon sampling theorem, the ideal sampling is between 2 and 3 pixels per resolution element.
+
+        According to the Nyquist-Shannon sampling theorem, the ideal sampling (critical sampling)
+        is at least 2 pixels per resolution element. In astrophotography, a ratio of 2.0 to 3.0
+        is often considered ideal to capture all available detail without excessive oversampling.
+
+        Thresholds:
+        - Under-sampled: ratio < 1.0 (Information lost, stars look like squares)
+        - Well-sampled: 1.0 <= ratio <= 3.0 (Good balance for most conditions)
+        - Over-sampled: ratio > 3.0 (No extra detail gained, smaller field of view, lower SNR)
+
+        Source: Nyquist-Shannon sampling theorem
         """
         scale = self.pixel_scale()
         if scale is None:
@@ -402,7 +412,7 @@ class OpticalPath:
         ratio = r_limit / scale.magnitude
         if ratio < 1.0:
             return "Under-sampled"
-        elif ratio <= 2.0:
+        elif ratio <= 3.0:
             return "Well-sampled"
         else:
             return "Over-sampled"

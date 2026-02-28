@@ -232,8 +232,8 @@ def test_binoculars_instantiation():
         11.6 / 5.0
     )  # 11.6 / 5.0 cm = 2.32
     assert bino.rayleigh_limit().magnitude == pytest.approx(
-        13.8 / 5.0
-    )  # 13.8 / 5.0 cm = 2.76
+        2.768, abs=1e-3
+    )  # Precise 1.22 * lambda / D
     # limiting_magnitude: 7.7 + 5 * log10(objective_diameter_cm) = 7.7 + 5 * log10(5.0)
     assert bino.limiting_magnitude() == pytest.approx(7.7 + 5 * np.log10(5.0), abs=1e-3)
     assert bino.brightness() == pytest.approx(

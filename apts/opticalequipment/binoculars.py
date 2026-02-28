@@ -67,14 +67,17 @@ class Binoculars(OpticalEquipment):
     def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
         Calculate the maximum resolving power using the Rayleigh Limit formula.
+        θ = 1.22 * λ / D
+        Where λ is the wavelength and D is the aperture (objective diameter).
+        https://en.wikipedia.org/wiki/Angular_resolution
+        :param wavelength_nm: wavelength in nanometers (default 550nm for green light)
         :return: limit in arcsecond
         """
-        # For simplicity and backward compatibility with current implementation,
-        # we don't use wavelength_nm here yet, but we accept it.
-        return (
-            round((13.8 / self.objective_diameter.to("cm")).magnitude, 3)
-            * get_unit_registry().arcsecond
-        )
+        wavelength_m = wavelength_nm * 1e-9
+        aperture_m = self.objective_diameter.to("m").magnitude
+        limit_rad = 1.22 * wavelength_m / aperture_m
+        limit_arcsec = limit_rad * 206265
+        return round(limit_arcsec, 3) * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
         """
