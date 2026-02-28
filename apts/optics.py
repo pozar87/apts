@@ -194,6 +194,35 @@ class OpticalPath:
         airmass_val = self.airmass(altitude_degrees)
         return magnitude + extinction_k * airmass_val
 
+    def atmospheric_dispersion(self, altitude_degrees, lambda1_nm=400, lambda2_nm=700):
+        """
+        Calculates the atmospheric dispersion (angular separation) between two wavelengths
+        at a given altitude using the Peck and Reeder (1972) refractive index formula.
+        Formula: (n-1) * 10^6 = 64.328 + 29498.1 / (146 - lambda^-2) + 255.4 / (41 - lambda^-2)
+        Dispersion Delta R = (n1 - n2) * tan(zenith_distance)
+        Source: Peck & Reeder (1972), "Refractive Index of Air in the Near Infrared"
+        """
+        if altitude_degrees >= 90:
+            return 0.0 * get_unit_registry().arcsecond
+
+        z = numpy.radians(90.0 - max(altitude_degrees, 0.1))  # Avoid tan(90)
+
+        def get_n_minus_1(lambda_nm):
+            l_um = lambda_nm / 1000.0
+            l_inv_sq = 1.0 / (l_um**2)
+            n_minus_1_e6 = (
+                64.328 + 29498.1 / (146.0 - l_inv_sq) + 255.4 / (41.0 - l_inv_sq)
+            )
+            return n_minus_1_e6 * 1e-6
+
+        n1_m_1 = get_n_minus_1(lambda1_nm)
+        n2_m_1 = get_n_minus_1(lambda2_nm)
+
+        dispersion_rad = abs(n1_m_1 - n2_m_1) * numpy.tan(z)
+        dispersion_arcsec = numpy.degrees(dispersion_rad) * 3600.0
+
+        return dispersion_arcsec * get_unit_registry().arcsecond
+
     def brightness(self):
         from .opticalequipment.smart_telescope import SmartTelescope
 
