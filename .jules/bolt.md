@@ -17,3 +17,11 @@
 ## 2026-03-05 - [Skyfield Vectorized Observations]
 **Learning:** Skyfield's performance is heavily dependent on using its vectorization capabilities. Calling `observer.at(t).observe(body)` inside a Python loop is an order of magnitude slower than passing an array of times to `observer.at(times).observe(body)`. In conjunction searches, replacing an hourly loop with a single vectorized call and NumPy-based minima finding provided a ~12x speedup.
 **Action:** Always use Skyfield's vectorized `at(times)` method for any repetitive astronomical calculations.
+
+## 2026-03-07 - [Fixed Object Broadcasting with ICRF]
+**Learning:** For astronomical searches involving fixed objects (stars, DSOs) over many time points, rigorous coordinate transformations can be avoided by observing the object once (at the start of the interval) and broadcasting its ICRF position across the time array using `ICRF(pos[:, np.newaxis], t=times)`. This provides a significant speedup with sub-arcsecond accuracy loss.
+**Action:** Use ICRF broadcasting for all star-related conjunction and occultation searches to eliminate redundant coordinate transformations.
+
+## 2026-03-07 - [Ecliptic Latitude Filtering]
+**Learning:** The Moon's orbit is inclined only ~5.1 degrees to the ecliptic. When searching for Moon-star occultations, filtering candidates by ecliptic latitude (e.g., within 10 degrees) can prune more than 60% of target stars before any expensive separation calculations begin.
+**Action:** Always implement a geometric pre-filter (like ecliptic latitude for lunar events) before performing dense time-based separation checks.
