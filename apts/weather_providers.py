@@ -69,9 +69,8 @@ def get_session():
                 session = temp_session
 
             except (ImportError, Exception) as e:
-                error_msg = mask_text(str(e), cache_settings["redis_location"])
                 logger.warning(
-                    f"Redis connection failed with error: {error_msg}. "
+                    f"Redis connection failed with error: {e}. "
                     "Falling back to in-memory cache for this session."
                 )
                 kwargs.pop("connection", None)

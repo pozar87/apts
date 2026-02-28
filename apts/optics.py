@@ -184,29 +184,6 @@ class OpticalPath:
         """
         return OpticsUtils.calculate_airmass(altitude_degrees)
 
-    def atmospheric_dispersion(self, altitude_degrees, wavelength1=400, wavelength2=700):
-        """
-        Calculates the atmospheric dispersion (angular spread) between two wavelengths in arcseconds.
-        Uses a simplified formula: ΔR = 206265 * (n(λ1) - n(λ2)) * tan(z)
-        Where z is the zenith distance.
-        Source: Peck & Reeder (1972) for refractive index of air.
-        """
-        if altitude_degrees <= 0:
-            return 0 * get_unit_registry().arcsecond
-
-        zenith_distance = numpy.radians(90.0 - altitude_degrees)
-
-        def n_minus_1(w_nm):
-            # Simplified formula for (n-1) * 10^8
-            w_um = w_nm / 1000.0
-            sig = 1.0 / w_um
-            return 8060.51 + 2480990.0 / (132.274 - sig**2) + 17455.7 / (39.3295 - sig**2)
-
-        dispersion_unitless = (n_minus_1(wavelength1) - n_minus_1(wavelength2)) * 1e-8
-        delta_r = dispersion_unitless * numpy.tan(zenith_distance) * 206265
-
-        return delta_r * get_unit_registry().arcsecond
-
     def atmospheric_extinction(self, magnitude, altitude_degrees, extinction_k=0.2):
         """
         Calculates the apparent magnitude of an object accounting for atmospheric extinction.
@@ -216,35 +193,6 @@ class OpticalPath:
         """
         airmass_val = self.airmass(altitude_degrees)
         return magnitude + extinction_k * airmass_val
-
-    def atmospheric_dispersion(self, altitude_degrees, lambda1_nm=400, lambda2_nm=700):
-        """
-        Calculates the atmospheric dispersion (angular separation) between two wavelengths
-        at a given altitude using the Peck and Reeder (1972) refractive index formula.
-        Formula: (n-1) * 10^6 = 64.328 + 29498.1 / (146 - lambda^-2) + 255.4 / (41 - lambda^-2)
-        Dispersion Delta R = (n1 - n2) * tan(zenith_distance)
-        Source: Peck & Reeder (1972), "Refractive Index of Air in the Near Infrared"
-        """
-        if altitude_degrees >= 90:
-            return 0.0 * get_unit_registry().arcsecond
-
-        z = numpy.radians(90.0 - max(altitude_degrees, 0.1))  # Avoid tan(90)
-
-        def get_n_minus_1(lambda_nm):
-            l_um = lambda_nm / 1000.0
-            l_inv_sq = 1.0 / (l_um**2)
-            n_minus_1_e6 = (
-                64.328 + 29498.1 / (146.0 - l_inv_sq) + 255.4 / (41.0 - l_inv_sq)
-            )
-            return n_minus_1_e6 * 1e-6
-
-        n1_m_1 = get_n_minus_1(lambda1_nm)
-        n2_m_1 = get_n_minus_1(lambda2_nm)
-
-        dispersion_rad = abs(n1_m_1 - n2_m_1) * numpy.tan(z)
-        dispersion_arcsec = numpy.degrees(dispersion_rad) * 3600.0
-
-        return dispersion_arcsec * get_unit_registry().arcsecond
 
     def brightness(self):
         from .opticalequipment.smart_telescope import SmartTelescope
@@ -407,22 +355,10 @@ class OpticalPath:
         return scale * get_unit_registry().arcsecond
 
     def sampling(self, seeing):
-        """
-        Calculates the sampling status based on the resolution limit and the pixel scale.
-        The resolution limit is the larger of the atmospheric seeing and the telescope's diffraction limit (Rayleigh limit).
-        According to the Nyquist-Shannon sampling theorem, the ideal sampling is between 2 and 3 pixels per resolution element.
-        """
         scale = self.pixel_scale()
         if scale is None:
             return None
-
-        # Effective resolution limit is the larger of seeing and diffraction limit
-        r_limit = seeing
-        diffraction_limit = self.rayleigh_limit()
-        if diffraction_limit is not None:
-            r_limit = max(seeing, diffraction_limit.to("arcsecond").magnitude)
-
-        ratio = r_limit / scale.magnitude
+        ratio = seeing / scale.magnitude
         if ratio < 1.0:
             return "Under-sampled"
         elif ratio <= 2.0:
@@ -633,13 +569,13 @@ class OpticalPath:
             return self.telescope.dawes_limit()
         return None
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
+    def rayleigh_limit(self):
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
-        Based on the telescope aperture and the provided wavelength (default 550nm).
+        Based on the telescope aperture and the standard wavelength of 550nm.
         """
         if hasattr(self.telescope, "rayleigh_limit"):
-            return self.telescope.rayleigh_limit(wavelength_nm=wavelength_nm)
+            return self.telescope.rayleigh_limit()
         return None
 
     def ideal_planetary_focal_ratio(self, k=5.0):
@@ -689,3 +625,22 @@ class OpticalPath:
             t = 500 / f_actual
 
         return t * get_unit_registry().second
+
+    def atmospheric_dispersion(self, altitude):
+        """
+        Calculate the atmospheric dispersion at a given altitude.
+        Atmospheric dispersion is the separation of white light into its spectral colors
+        as it passes through the earth's atmosphere.
+        Formula based on Peck & Reeder (1972).
+        :param altitude: altitude in degrees
+        :return: dispersion in arcseconds
+        """
+        if altitude >= 90:
+            return 0 * get_unit_registry().arcsecond
+        # Convert altitude to zenith distance (Z)
+        z = numpy.radians(90 - altitude)
+        # Simplified formula for atmospheric dispersion (arcsec)
+        # Ref: Peck, E. R., & Reeder, K. (1972). Dispersion of Air. J. Opt. Soc. Am., 62(8), 958-962.
+        # This is an approximation for visible light (400nm-700nm) at standard conditions.
+        dispersion = 2.05 * numpy.tan(z)
+        return dispersion * get_unit_registry().arcsecond

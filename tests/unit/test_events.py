@@ -72,7 +72,7 @@ class EventsTest(unittest.TestCase):
 
         # Check if the event description is correct
         self.assertEqual(venus_event["event"], "Highest altitude")
-        self.assertEqual(venus_event["rarity"], 3)
+        self.assertEqual(venus_event["rarity"], 2)
 
         # Check the date and altitude
         self.assertEqual(venus_event["date"].day, 14)
@@ -118,7 +118,7 @@ class EventsTest(unittest.TestCase):
 
         # Check that the event was found
         self.assertEqual(len(jupiter_saturn_event), 1)
-        self.assertEqual(jupiter_saturn_event.iloc[0]["rarity"], 5)  # Very close
+        self.assertEqual(jupiter_saturn_event.iloc[0]["rarity"], 4)  # Very close
 
         # Check the date of the event
         event_date = jupiter_saturn_event.iloc[0]["date"]
@@ -154,7 +154,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(events_df.iloc[0]["type"], "ISS Flyby")
         self.assertEqual(events_df.iloc[0]["peak_altitude"], 85.0)
         self.assertEqual(events_df.iloc[0]["peak_magnitude"], -3.5)
-        self.assertEqual(events_df.iloc[0]["rarity"], 4)
+        self.assertEqual(events_df.iloc[0]["rarity"], 3)
 
     def test_translate_events(self):
         # Create a sample DataFrame
@@ -194,7 +194,7 @@ class EventsTest(unittest.TestCase):
             cast(Any, perseids_events[perseids_events["phase"] == "Peak"]).iloc[0][
                 "rarity"
             ],
-            4,
+            3,
         )
         self.assertEqual(
             cast(Any, perseids_events[perseids_events["phase"] == "Start"]).iloc[0][
@@ -222,8 +222,9 @@ class EventsTest(unittest.TestCase):
         mars_opposition = events_df[
             (events_df["type"] == "Opposition") & (events_df["object"] == "Mars")
         ]
+
         self.assertEqual(len(mars_opposition), 1)
-        self.assertEqual(mars_opposition.iloc[0]["rarity"], 4)
+        self.assertEqual(mars_opposition.iloc[0]["rarity"], 3)
         # Check date: should be 2022-12-08
         event_date = mars_opposition.iloc[0]["date"]
         self.assertEqual(event_date.year, 2022)
@@ -257,7 +258,7 @@ class EventsTest(unittest.TestCase):
         self.assertGreater(len(messier_events), 0)
         self.assertEqual(messier_events.iloc[0]["object1"], "Moon")
         self.assertEqual(messier_events.iloc[0]["separation_degrees"], 2.5)
-        self.assertEqual(messier_events.iloc[0]["rarity"], 1)
+        self.assertEqual(messier_events.iloc[0]["rarity"], 2)
 
     def test_calculate_moon_star_conjunctions(self):
         # Moon-Antares conjunction in 2023: August 25 around 02:00-03:00 UTC

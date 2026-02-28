@@ -44,9 +44,7 @@ class NakedEye(OpticalEquipment):
             * get_unit_registry().arcsecond
         )
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
-        # For simplicity and backward compatibility with current implementation,
-        # we don't use wavelength_nm here yet, but we accept it.
+    def rayleigh_limit(self):
         return (
             round((13.8 / self.objective_diameter.to("cm")).magnitude, 3)  # pyright: ignore
             * get_unit_registry().arcsecond

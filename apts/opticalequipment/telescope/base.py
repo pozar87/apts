@@ -26,11 +26,14 @@ class Telescope(OpticalEquipment):
     @classmethod
     def from_database(cls, entry):
         from ...utils import Utils, Gender
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
+        if isinstance(entry, str):
+            entry = cls._DATABASE.get(entry, {})
+
+        brand = entry.get('brand', 'Unknown')
+        name = entry.get('name', 'Unknown')
+        vendor = entry.get('vendor', f'{brand} {name}')
         ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
+        mass = entry.get('mass', entry.get('mass_g', 0))
         ct = Utils.map_conn(entry.get('cside_thread'))
         cg = Utils.map_gender(entry.get('cside_gender'))
 
@@ -46,17 +49,20 @@ class Telescope(OpticalEquipment):
 
         # Map type string to TelescopeType enum
         type_str = entry.get('type', '')
-        telescope_type = TelescopeType.REFRACTOR  # Default
-        if 'refractor' in type_str:
-            telescope_type = TelescopeType.REFRACTOR
-        elif 'newtonian' in type_str:
-            telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
-        elif 'schmidt_cassegrain' in type_str or 'sct' in type_str:
-            telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
-        elif 'maksutov' in type_str:
-            telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
-        elif 'catadioptric' in type_str or 'astrograph' in type_str:
-            telescope_type = TelescopeType.CATADIOPTRIC
+        if isinstance(type_str, TelescopeType):
+            telescope_type = type_str
+        else:
+            telescope_type = TelescopeType.REFRACTOR  # Default
+            if 'refractor' in type_str.lower():
+                telescope_type = TelescopeType.REFRACTOR
+            elif 'newtonian' in type_str.lower():
+                telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
+            elif 'schmidt_cassegrain' in type_str.lower() or 'sct' in type_str.lower():
+                telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
+            elif 'maksutov' in type_str.lower():
+                telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
+            elif 'catadioptric' in type_str.lower() or 'astrograph' in type_str.lower():
+                telescope_type = TelescopeType.CATADIOPTRIC
 
         bf_val = entry.get('bf_role') == 'start'
         return cls(aperture or 80, focal_length or 500, vendor=vendor, connection_type=ct, connection_gender=cg or Gender.FEMALE, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
@@ -99,7 +105,7 @@ class Telescope(OpticalEquipment):
         """
         return round((11.6 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
+    def rayleigh_limit(self, wavelength_nm=550):
         """
         Calculate the maximum resolving power of your telescope using the Rayleigh Limit formula.
         θ = 1.22 * λ / D

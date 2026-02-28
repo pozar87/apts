@@ -12,11 +12,14 @@ class Camera(OutputOpticalEqipment):
     @classmethod
     def from_database(cls, entry):
         from ...utils import Utils, Gender
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
+        if isinstance(entry, str):
+            entry = cls._DATABASE.get(entry, {})
+
+        brand = entry.get('brand', 'Unknown')
+        name = entry.get('name', 'Unknown')
+        vendor = entry.get('vendor', f'{brand} {name}')
         ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
+        mass = entry.get('mass', entry.get('mass_g', 0))
         tt = Utils.map_conn(entry.get('tside_thread'))
         tg = Utils.map_gender(entry.get('tside_gender'))
 

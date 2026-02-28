@@ -41,10 +41,8 @@ def test_atmospheric_dispersion():
 
     # At 45 degrees
     disp_45 = path.atmospheric_dispersion(45)
-    # n-1 for 400nm is ~2.82e-4, for 700nm is ~2.75e-4. Difference ~7e-6.
-    # tan(45) = 1. 206265 * 7e-6 * 1 approx 1.4 arcsec.
     assert disp_45.magnitude > 0
-    assert disp_45.magnitude < 5 # Reasonable range for 45 deg
+    assert disp_45.magnitude < 5
 
 def test_quattro_npf_rule():
     telescope = cast(Any, Telescope).Sky_Watcher_Quattro_200P() # 200/800 f/4
