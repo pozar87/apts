@@ -64,11 +64,13 @@ class Binoculars(OpticalEquipment):
             * get_unit_registry().arcsecond
         )
 
-    def rayleigh_limit(self):
+    def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
         Calculate the maximum resolving power using the Rayleigh Limit formula.
         :return: limit in arcsecond
         """
+        # For simplicity and backward compatibility with current implementation,
+        # we don't use wavelength_nm here yet, but we accept it.
         return (
             round((13.8 / self.objective_diameter.to("cm")).magnitude, 3)
             * get_unit_registry().arcsecond
