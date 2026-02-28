@@ -33,9 +33,14 @@ class TestStellarImprovementsV3(unittest.TestCase):
 
         # Case 2: Seeing (5.0") > Rayleigh (1.702")
         # Resolution limit = 5.0"
-        # Ratio = 5.0 / 1.939 = 2.578 (> 2.0 -> Over-sampled)
+        # Ratio = 5.0 / 1.939 = 2.578 (Well-sampled, 1.0 <= ratio <= 3.0)
         status_bad_seeing = path.sampling(seeing=5.0)
-        self.assertEqual(status_bad_seeing, "Over-sampled")
+        self.assertEqual(status_bad_seeing, "Well-sampled")
+
+        # Case 3: Extreme seeing
+        # Ratio = 7.0 / 1.939 = 3.61 (> 3.0 -> Over-sampled)
+        status_extreme_seeing = path.sampling(seeing=7.0)
+        self.assertEqual(status_extreme_seeing, "Over-sampled")
 
     def test_sampling_nyquist_thresholds(self):
         t = MagicMock(spec=Telescope)

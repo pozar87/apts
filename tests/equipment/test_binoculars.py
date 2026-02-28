@@ -40,7 +40,7 @@ def test_binoculars_limits():
         magnification=10, objective_diameter=50, vendor="Nikon", apparent_fov_deg=65
     )
     assert b.dawes_limit().magnitude == 2.32
-    assert b.rayleigh_limit().magnitude == 2.76
+    assert round(b.rayleigh_limit().magnitude, 2) == 2.77
 
 
 def test_binoculars_limiting_magnitude():

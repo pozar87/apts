@@ -55,7 +55,7 @@ def test_optical_path_astrophotography():
     # Sampling
     assert path.sampling(seeing=2.0) == "Well-sampled"  # 2.0 / 1.03 = 1.94
     assert path.sampling(seeing=0.5) == "Under-sampled"  # 0.5 / 1.03 = 0.48
-    assert path.sampling(seeing=3.0) == "Over-sampled"  # 3.0 / 1.03 = 2.91
+    assert path.sampling(seeing=3.0) == "Well-sampled"  # 3.0 / 1.03 = 2.91
 
     # CFZ
     # 2.44 * 0.55 * (750/150)^2 = 2.44 * 0.55 * 25 = 33.55

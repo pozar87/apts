@@ -19,8 +19,11 @@ def test_sampling():
     # Seeing 0.5 / 1.034 = 0.48 -> Under-sampled (ratio < 1.0)
     assert path.sampling(0.5) == "Under-sampled"
 
-    # Seeing 3.0 / 1.034 = 2.9 -> Over-sampled (ratio > 2.0)
-    assert path.sampling(3.0) == "Over-sampled"
+    # Seeing 3.0 / 1.034 = 2.9 -> Well-sampled (1.0 <= ratio <= 3.0)
+    assert path.sampling(3.0) == "Well-sampled"
+
+    # Seeing 4.0 / 1.034 = 3.86 -> Over-sampled (ratio > 3.0)
+    assert path.sampling(4.0) == "Over-sampled"
 
 
 def test_sampling_none():
