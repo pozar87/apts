@@ -10,7 +10,7 @@ import requests
 import requests_cache
 from dateutil.parser import parse as parse_date
 from skyfield import almanac
-from skyfield.api import Topos
+from skyfield.api import Star, Topos
 
 from . import cache, skyfield_searches
 from .cache import get_ephemeris, get_timescale
@@ -151,26 +151,22 @@ class AstronomicalEvents:
             "Moon-Star Conjunction",
         ]:
             sep = data.get("separation_degrees", 5.0)
-            if sep < 0.15:
-                return 5
-            if sep < 0.4:
+            if sep < 0.5:
                 return 4
-            if sep < 1.2:
+            if sep < 2.0:
                 return 3
-            if sep < 2.5:
-                return 2
-            return 1
+            return 2
         if event_type == "Opposition":
             obj = data.get("object", "")
             if obj in ["Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]:
-                return 4
-            return 3
+                return 3
+            return 2
         if event_type == "Meteor Shower":
             if data.get("phase") == "Peak":
-                return 4
+                return 3
             return 1
         if event_type == "Planet Altitude":
-            return 3
+            return 2
         if event_type == "Lunar Occultation":
             return 4
         if event_type == "Aphelion/Perihelion":
@@ -180,7 +176,7 @@ class AstronomicalEvents:
         if event_type == "Inferior Conjunction":
             if data.get("is_transit"):
                 return 5
-            return 3
+            return 2
         if event_type == "Solar Eclipse":
             return 5
         if event_type == "Lunar Eclipse":
@@ -195,21 +191,17 @@ class AstronomicalEvents:
         if event_type in ["ISS Flyby", "Tiangong Flyby"]:
             mag = data.get("peak_magnitude", 0)
             if mag < -3:
-                return 4
-            if mag < -1:
                 return 3
+            if mag < -1:
+                return 2
             return 1
         if event_type == "Comet":
-            return 5
+            return 4
         if event_type == "Planet Alignment":
             planets_count = len(data.get("planets", []))
-            if planets_count >= 6:
+            if planets_count >= 5:
                 return 5
-            if planets_count == 5:
-                return 4
-            if planets_count == 4:
-                return 3
-            return 2
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -654,14 +646,27 @@ class AstronomicalEvents:
             "M107",
         ]
 
-        messier_df = self.catalogs.MESSIER[
-            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
+        messier_df = self.catalogs.MESSIER[  # type: ignore
+            self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)  # type: ignore
         ]
 
-        # Use pre-calculated skyfield_objects from the catalog
-        messier_stars = {
-            row["Messier"]: row["skyfield_object"] for _, row in messier_df.iterrows()
-        }
+        # Pre-create Star objects outside the loop
+        messier_stars = {}
+        for _, row in messier_df.iterrows():
+            messier_stars[row["Messier"]] = Star.from_dataframe(
+                pd.DataFrame(
+                    {
+                        "ra_hours": [row["RA"].to("hour").magnitude],  # pyright: ignore
+                        "dec_degrees": [row["Dec"].to("degree").magnitude],  # pyright: ignore
+                        "ra_mas_per_year": [0],
+                        "dec_mas_per_year": [0],
+                        "parallax_mas": [0],
+                        "radial_km_per_s": [0],
+                        "epoch_year": [2000.0],
+                    },
+                    index=[0],  # pyright: ignore
+                )
+            )
 
         def find_all_conjunctions(messier_stars_subset):
             all_events = []

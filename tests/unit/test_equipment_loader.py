@@ -20,7 +20,7 @@ class TestEquipmentLoader(unittest.TestCase):
 
     def test_camera_loader(self):
         db = EquipmentDatabase()
-        results = db.find(name="ASI2600MC Pro")
+        results = db.find(name="ASI 2600MC Pro")
         self.assertTrue(len(results) > 0)
 
         obj = db.create_equipment(results[0])
