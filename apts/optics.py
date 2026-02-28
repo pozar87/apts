@@ -184,6 +184,29 @@ class OpticalPath:
         """
         return OpticsUtils.calculate_airmass(altitude_degrees)
 
+    def atmospheric_dispersion(self, altitude_degrees, wavelength1=400, wavelength2=700):
+        """
+        Calculates the atmospheric dispersion (angular spread) between two wavelengths in arcseconds.
+        Uses a simplified formula: ΔR = 206265 * (n(λ1) - n(λ2)) * tan(z)
+        Where z is the zenith distance.
+        Source: Peck & Reeder (1972) for refractive index of air.
+        """
+        if altitude_degrees <= 0:
+            return 0 * get_unit_registry().arcsecond
+
+        zenith_distance = numpy.radians(90.0 - altitude_degrees)
+
+        def n_minus_1(w_nm):
+            # Simplified formula for (n-1) * 10^8
+            w_um = w_nm / 1000.0
+            sig = 1.0 / w_um
+            return 8060.51 + 2480990.0 / (132.274 - sig**2) + 17455.7 / (39.3295 - sig**2)
+
+        dispersion_unitless = (n_minus_1(wavelength1) - n_minus_1(wavelength2)) * 1e-8
+        delta_r = dispersion_unitless * numpy.tan(zenith_distance) * 206265
+
+        return delta_r * get_unit_registry().arcsecond
+
     def atmospheric_extinction(self, magnitude, altitude_degrees, extinction_k=0.2):
         """
         Calculates the apparent magnitude of an object accounting for atmospheric extinction.
