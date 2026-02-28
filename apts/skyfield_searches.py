@@ -211,23 +211,29 @@ def find_conjunctions_with_star(
     pos_star = observer.at(times).observe(star_object)
     separations = pos1.separation_from(pos_star).degrees
 
-    events = []
-    # Find local minima in the separations array
-    # A point is a local minimum if it's smaller than its neighbors
-    is_min = (separations[1:-1] < separations[:-2]) & (
+    # Vectorized observation for body1 and star_object
+    pos1 = observer.at(times).observe(body1)
+    pos_star = observer.at(times).observe(star_object)
+
+    # Vectorized separation calculation
+    separations = pos1.separation_from(pos_star).degrees
+
+    # Find local minima where separation is below threshold
+    # Using vectorized operations for comparison
+    is_minima = (separations[1:-1] < separations[:-2]) & (
         separations[1:-1] < separations[2:]
     )
-    min_indices = np.where(is_min)[0] + 1
+    is_below_threshold = separations[1:-1] < threshold_degrees
 
-    for idx in min_indices:
-        s = separations[idx]
-        if s < threshold_degrees:
-            events.append(
-                {
-                    "date": times[idx].utc_datetime(),
-                    "separation_degrees": float(s),
-                }
-            )
+    minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
+
+    events = [
+        {
+            "date": times[idx].utc_datetime(),
+            "separation_degrees": float(separations[idx]),
+        }
+        for idx in minima_indices
+    ]
 
     return events
 
