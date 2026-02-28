@@ -13,3 +13,7 @@
 ## 2026-02-26 - [Visibility Search Optimization]
 **Learning:** When performing visibility checks for large catalogs across multiple time points, complexity can be significantly reduced by implementing a "maximum altitude" (culmination) pre-filter to prune objects that never rise above the horizon. Furthermore, trigonometric broadcasting over an $N \times M$ grid can be optimized from $O(N \times M)$ to $O(N + M)$ function calls by using trigonometric identities to decompose compound angles into separate object and time components.
 **Action:** Implement a culmination pre-filter before dense time-based checks. Use trigonometric identities to optimize grid-based coordinate transformations.
+
+## 2026-03-05 - [Skyfield Vectorized Observations]
+**Learning:** Skyfield's performance is heavily dependent on using its vectorization capabilities. Calling `observer.at(t).observe(body)` inside a Python loop is an order of magnitude slower than passing an array of times to `observer.at(times).observe(body)`. In conjunction searches, replacing an hourly loop with a single vectorized call and NumPy-based minima finding provided a ~12x speedup.
+**Action:** Always use Skyfield's vectorized `at(times)` method for any repetitive astronomical calculations.
