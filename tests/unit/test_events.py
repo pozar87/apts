@@ -323,6 +323,32 @@ class EventsTest(unittest.TestCase):
         self.assertIn("Uranus", planets_involved)
         self.assertIn("Neptune", planets_involved)
 
+    def test_calculate_culminations(self):
+        # Warsaw, June 21, 2023. Sun should culminate around 10:45 UTC (12:45 local)
+        start_date = datetime(2023, 6, 21, 0, 0, 0, tzinfo=utc)
+        end_date = datetime(2023, 6, 21, 23, 59, 59, tzinfo=utc)
+
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.CULMINATIONS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for Sun culmination
+        sun_culmination = events_df[
+            (events_df["type"] == "Culmination") & (events_df["object"] == "Sun")
+        ]
+
+        self.assertEqual(len(sun_culmination), 1)
+        event_date = sun_culmination.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2023)
+        self.assertEqual(event_date.month, 6)
+        self.assertEqual(event_date.day, 21)
+        self.assertEqual(event_date.hour, 10)
+        self.assertAlmostEqual(sun_culmination.iloc[0]["altitude"], 61.2, delta=0.5)
+
 
 if __name__ == "__main__":
     unittest.main()
