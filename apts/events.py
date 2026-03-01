@@ -111,6 +111,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_golden_blue_hours))
         if self.event_settings.get("culminations"):
             futures.append(executor.submit(self.calculate_culminations))
+        if self.event_settings.get("greatest_elongations"):
+            futures.append(executor.submit(self.calculate_greatest_elongations))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -215,6 +217,8 @@ class AstronomicalEvents:
             if planets_count == 4:
                 return 3
             return 2
+        if event_type == "Greatest Elongation":
+            return 3
         return 1
 
     def calculate_space_launches(self):
@@ -827,4 +831,14 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = 2  # Frequent but useful
         logger.debug(f"--- calculate_culminations: {time.time() - start_time}s")
+        return events
+
+    def calculate_greatest_elongations(self):
+        start_time = time.time()
+        events = skyfield_searches.find_greatest_elongations(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Greatest Elongation", event)
+        logger.debug(f"--- calculate_greatest_elongations: {time.time() - start_time}s")
         return events

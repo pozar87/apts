@@ -837,7 +837,14 @@ def find_culminations(observer, start_date, end_date):
     for name, obj in planet_objs:
 
         def altitude(t):
-            return observer.at(t).observe(obj).apparent().altaz()[0].degrees
+            # Account for atmospheric refraction for high-precision culmination altitude
+            return (
+                observer.at(t)
+                .observe(obj)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
 
         altitude.step_days = 0.5  # Check twice a day
         times, altitudes = find_maxima(t0, t1, altitude)
@@ -862,5 +869,58 @@ def find_culminations(observer, start_date, end_date):
                             "altitude": float(alt),
                         }
                     )
+
+    return events
+
+
+def find_greatest_elongations(observer, start_date, end_date):
+    """
+    Finds greatest elongations for Mercury and Venus.
+    Greatest Eastern Elongation is in the evening sky.
+    Greatest Western Elongation is in the morning sky.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+
+    planets = ["mercury", "venus"]
+    events = []
+
+    for p_name in planets:
+        planet = planetary.get_skyfield_obj(p_name)
+
+        def elongation(t):
+            # Elongation is the angle between the Sun and the planet as seen from Earth
+            # We use Earth center (barycentric) for standard elongation values
+            s = earth.at(t).observe(sun)
+            p = earth.at(t).observe(planet)
+            return s.separation_from(p).degrees
+
+        elongation.step_days = 2.0  # Elongations change slowly
+        times, separations = find_maxima(t0, t1, elongation)
+
+        for t, sep in zip(times, separations):
+            # Determine if it's Eastern or Western elongation
+            # Eastern elongation: planet is east of the Sun (evening sky)
+            # Western elongation: planet is west of the Sun (morning sky)
+            s_lon = earth.at(t).observe(sun).ecliptic_latlon()[1].degrees
+            p_lon = earth.at(t).observe(planet).ecliptic_latlon()[1].degrees
+
+            diff = (p_lon - s_lon + 180) % 360 - 180
+            direction = "Eastern" if diff > 0 else "Western"
+
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": f"Greatest {direction} Elongation",
+                    "object": planetary.get_simple_name(p_name),
+                    "type": "Greatest Elongation",
+                    "separation_degrees": float(sep),
+                    "direction": direction,
+                }
+            )
 
     return events
