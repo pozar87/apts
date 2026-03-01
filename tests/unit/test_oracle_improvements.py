@@ -1,9 +1,9 @@
 import unittest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from apts.place import Place
 from apts.events import AstronomicalEvents
 from apts.constants.event_types import EventType
-from apts.skyfield_searches import find_golden_blue_hours, find_lunar_occultations
+from apts.skyfield_searches import find_golden_blue_hours
 
 utc = timezone.utc
 

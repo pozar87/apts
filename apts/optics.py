@@ -1,5 +1,6 @@
 import functools
 import operator
+from typing import Any
 
 import numpy
 
@@ -368,7 +369,7 @@ class OpticalPath:
 
         return (flipped_horizontally, flipped_vertically)
 
-    def pixel_scale(self):
+    def pixel_scale(self) -> Any | None:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -384,7 +385,7 @@ class OpticalPath:
         ) * 206265
         return scale * get_unit_registry().arcsecond
 
-    def sampling(self, seeing):
+    def sampling(self, seeing: float) -> str | None:
         """
         Calculates the sampling status based on the resolution limit and the pixel scale.
         The resolution limit is the larger of the atmospheric seeing and the telescope's diffraction limit (Rayleigh limit).
@@ -401,7 +402,7 @@ class OpticalPath:
         Source: Nyquist-Shannon sampling theorem
         """
         scale = self.pixel_scale()
-        if scale is None:
+        if scale is None or scale.magnitude == 0:
             return None
 
         # Effective resolution limit is the larger of seeing and diffraction limit
@@ -418,7 +419,7 @@ class OpticalPath:
         else:
             return "Over-sampled"
 
-    def sampling_status(self, seeing=2.0):
+    def sampling_status(self, seeing: float = 2.0) -> str | None:
         """
         Returns the sampling status as a string for a given seeing in arcseconds.
         """
@@ -583,7 +584,7 @@ class OpticalPath:
 
         return base + time_factor + sqm_factor
 
-    def npf_rule(self, declination=0, k=1.0):
+    def npf_rule(self, declination: float = 0, k: float = 1.0) -> Any | None:
         """
         Calculates the maximum exposure time to avoid star trailing using the NPF rule.
         The NPF rule is more accurate than the 'Rule of 500' for modern high-resolution sensors.
@@ -600,7 +601,10 @@ class OpticalPath:
         # F-number (N)
         n = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
         # Pixel pitch in microns (P)
-        p = self.output.pixel_size().to("micrometer").magnitude
+        p_size_q = self.output.pixel_size()
+        if p_size_q is None:
+            return None
+        p = p_size_q.to("micrometer").magnitude
         # Focal length in mm (F)
         f = (self.telescope.focal_length * self.effective_barlow()).to("mm").magnitude
 
@@ -617,7 +621,7 @@ class OpticalPath:
         t = k * (35 * n + 30 * p) / (f * cos_dec)
         return t * get_unit_registry().second
 
-    def dawes_limit(self):
+    def dawes_limit(self) -> Any | None:
         """
         Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture.
@@ -626,7 +630,7 @@ class OpticalPath:
             return self.telescope.dawes_limit()
         return None
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
+    def rayleigh_limit(self, wavelength_nm: float | int = 550) -> Any | None:
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture and the provided wavelength (default 550nm).
@@ -635,7 +639,7 @@ class OpticalPath:
             return self.telescope.rayleigh_limit(wavelength_nm=wavelength_nm)
         return None
 
-    def ideal_planetary_focal_ratio(self, k=5.0):
+    def ideal_planetary_focal_ratio(self, k: float = 5.0) -> float | None:
         """
         Calculates the ideal focal ratio for planetary imaging based on the pixel size.
         Rule of thumb: Ideal focal ratio is between 3x and 5x the pixel size in microns.
@@ -649,7 +653,10 @@ class OpticalPath:
             return None
 
         # Pixel size in microns
-        p_size = self.output.pixel_size().to("micrometer").magnitude
+        p_size_q = self.output.pixel_size()
+        if p_size_q is None:
+            return None
+        p_size = p_size_q.to("micrometer").magnitude
         return k * p_size
 
     def rule_of_500(self):

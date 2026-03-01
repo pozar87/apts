@@ -185,6 +185,70 @@ class TestOptics(unittest.TestCase):
         disp_30 = path.atmospheric_dispersion(30)
         self.assertAlmostEqual(disp_30.magnitude, 2.489, places=3)
 
+    def test_sampling(self):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+
+        # Rayleigh limit = 1.22 * 550nm / 100mm = 6.71e-6 rad = 1.38 arcsec
+        t.rayleigh_limit.return_value = 1.38 * get_unit_registry().arcsecond
+
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Case 1: Under-sampled (ratio < 1.0)
+        # scale = 2.0, r_limit = max(seeing=1.5, rayleigh=1.38) = 1.5
+        # ratio = 1.5 / 2.0 = 0.75
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 2.0
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+            self.assertEqual(path.sampling(seeing=1.5), "Under-sampled")
+
+        # Case 2: Well-sampled (1.0 <= ratio <= 3.0)
+        # scale = 1.0, r_limit = 1.5
+        # ratio = 1.5 / 1.0 = 1.5
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 1.0
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+            self.assertEqual(path.sampling(seeing=1.5), "Well-sampled")
+
+        # Case 3: Over-sampled (ratio > 3.0)
+        # scale = 0.4, r_limit = 1.5
+        # ratio = 1.5 / 0.4 = 3.75
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 0.4
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+            self.assertEqual(path.sampling(seeing=1.5), "Over-sampled")
+
+        # Case 4: Zero pixel scale (robustness check)
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 0.0
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+            self.assertIsNone(path.sampling(seeing=1.5))
+
+    def test_sampling_status(self):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+        path = OpticalPath(t, [], [], [], [], c)
+        path.sampling = MagicMock(return_value="Well-sampled")
+
+        self.assertEqual(path.sampling_status(seeing=2.0), "Well-sampled")
+        path.sampling.assert_called_with(2.0)
+
+    def test_ideal_planetary_focal_ratio(self):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Pixel size 3.76um, k=5.0 -> 18.8
+        with MagicMock() as mock_p_size:
+            mock_p_size.to.return_value.magnitude = 3.76
+            c.pixel_size.return_value = mock_p_size
+            self.assertAlmostEqual(path.ideal_planetary_focal_ratio(k=5.0), 18.8)
+
+        # Missing pixel size (robustness check)
+        c.pixel_size.return_value = None
+        self.assertIsNone(path.ideal_planetary_focal_ratio())
+
 
 if __name__ == "__main__":
     unittest.main()
