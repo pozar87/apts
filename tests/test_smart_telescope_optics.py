@@ -1,8 +1,6 @@
 import numpy
-import pytest
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 
 def test_seestar_s50_optics():
     seestar = ZwoTelescope.ZWO_Seestar_S50()
