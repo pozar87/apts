@@ -370,8 +370,9 @@ class OpticalPath:
 
     def pixel_scale(self):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
-        if not isinstance(self.output, Camera):
+        if not isinstance(self.output, (Camera, SmartTelescope)):
             return None
         # Effective focal length
         eff_focal_length = self.telescope.focal_length * self.effective_barlow()
@@ -446,9 +447,10 @@ class OpticalPath:
 
     def sky_flux(self, sqm):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
         scale = self.pixel_scale()
-        if scale is None or not isinstance(self.output, Camera):
+        if scale is None or not isinstance(self.output, (Camera, SmartTelescope)):
             return None
         if self.output.quantum_efficiency is None:
             return None
@@ -476,9 +478,10 @@ class OpticalPath:
 
     def object_flux(self, magnitude, altitude=None, extinction_k=0.2):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
         if (
-            not isinstance(self.output, Camera)
+            not isinstance(self.output, (Camera, SmartTelescope))
             or self.output.quantum_efficiency is None
         ):
             return None
@@ -513,6 +516,7 @@ class OpticalPath:
         self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4, altitude=None, extinction_k=0.2
     ):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
         obj_flux = self.object_flux(magnitude, altitude=altitude, extinction_k=extinction_k)
         sky_flux_val = self.sky_flux(sqm)
@@ -520,7 +524,7 @@ class OpticalPath:
         if (
             obj_flux is None
             or sky_flux_val is None
-            or not isinstance(self.output, Camera)
+            or not isinstance(self.output, (Camera, SmartTelescope))
             or self.output.read_noise is None
         ):
             return None
@@ -542,11 +546,12 @@ class OpticalPath:
 
     def optimum_sub_exposure(self, sqm):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
         flux = self.sky_flux(sqm)
         if (
             flux is None
-            or not isinstance(self.output, Camera)
+            or not isinstance(self.output, (Camera, SmartTelescope))
             or self.output.read_noise is None
         ):
             return None
@@ -558,10 +563,11 @@ class OpticalPath:
 
     def limiting_magnitude(self, sqm, integration_time):
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
         # integration_time in seconds
         if (
-            not isinstance(self.output, Camera)
+            not isinstance(self.output, (Camera, SmartTelescope))
             or self.output.quantum_efficiency is None
         ):
             # Fallback to telescope limiting magnitude if no camera data
@@ -637,8 +643,9 @@ class OpticalPath:
         Where k is usually 5.0 for average to good seeing.
         """
         from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
 
-        if not isinstance(self.output, Camera):
+        if not isinstance(self.output, (Camera, SmartTelescope)):
             return None
 
         # Pixel size in microns

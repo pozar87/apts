@@ -33,6 +33,9 @@ class SmartTelescope(Telescope):
             height,
             vendor=vendor,
             mass=mass,
+            pixel_size=entry.get("pixel_size_um"),
+            read_noise=entry.get("read_noise_e"),
+            quantum_efficiency=entry.get("quantum_efficiency_pct"),
         )
 
     def __init__(
@@ -45,6 +48,9 @@ class SmartTelescope(Telescope):
         height,
         vendor="unknown smart telescope",
         mass=0,
+        pixel_size=None,
+        read_noise=None,
+        quantum_efficiency=None,
     ):
         super().__init__(
             aperture,
@@ -59,6 +65,12 @@ class SmartTelescope(Telescope):
         self.sensor_height = sensor_height * ureg.mm
         self.width = width
         self.height = height
+        self.read_noise = read_noise
+        self.quantum_efficiency = quantum_efficiency
+        if pixel_size is not None:
+            self._pixel_size = pixel_size * ureg.micrometer
+        else:
+            self._pixel_size = None
 
     @property
     def magnification(self):
@@ -71,9 +83,13 @@ class SmartTelescope(Telescope):
         return False
 
     def pixel_size(self):
-        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / math.sqrt(
+        if hasattr(self, "_pixel_size") and self._pixel_size is not None:
+            return self._pixel_size
+        ureg = get_unit_registry()
+        size_mm = numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / math.sqrt(
             self.width**2 + self.height**2
         )
+        return size_mm.to(ureg.micrometer)
 
     def fov(self) -> Any:
         """

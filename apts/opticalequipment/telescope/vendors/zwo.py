@@ -12,7 +12,10 @@ class ZwoTelescope(Telescope):
             'sensor_height': 3.2,
             'width': 1920,
             'height': 1080,
-            'mass': 2500
+            'mass': 2500,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 80,
+            'read_noise_e': 1.0
         }
     }
 
