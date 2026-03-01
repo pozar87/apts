@@ -600,6 +600,8 @@ class Observation:
                 sanitized_css = re.sub(
                     r"</style\s*/?>", "", str(css), flags=re.IGNORECASE
                 )
+                # Escape '$' to '$$' to prevent string.Template from interpreting it as a variable.
+                sanitized_css = sanitized_css.replace("$", "$$")
                 style_end_pos = template_content.find("</style>")
                 if style_end_pos != -1:
                     template_content = (
