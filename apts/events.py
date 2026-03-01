@@ -1,5 +1,6 @@
 import logging
 import time
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from itertools import combinations
@@ -10,7 +11,7 @@ import requests
 import requests_cache
 from dateutil.parser import parse as parse_date
 from skyfield import almanac
-from skyfield.api import Topos
+from skyfield.api import Topos, Star
 
 from . import cache, skyfield_searches
 from .cache import get_ephemeris, get_timescale
@@ -106,6 +107,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_nasa_comets))
         if self.event_settings.get("planet_alignments"):
             futures.append(executor.submit(self.calculate_planet_alignments))
+        if self.event_settings.get("golden_hour") or self.event_settings.get("blue_hour"):
+            futures.append(executor.submit(self.calculate_golden_blue_hours))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -715,16 +718,26 @@ class AstronomicalEvents:
 
         # Filter stars close to the ecliptic (within 10 degrees)
         # The Moon stays within ~5.1 degrees of the ecliptic.
-        # Stars with ecliptic latitude > 10 degrees can't have close conjunctions.
         ts = get_timescale()
         t_ref = ts.utc(self.start_date)
-        candidate_stars = []
-        for _, row in self.catalogs.BRIGHT_STARS.iterrows():
-            star = row["skyfield_object"]
-            # Optimization: check ecliptic latitude to only include stars that can be close to the moon
-            lat = self.observer.at(t_ref).observe(star).ecliptic_latlon()[0].degrees
-            if abs(lat) < 10.0:
-                candidate_stars.append((row["Name"], star))
+
+        star_objs_all = self.catalogs.BRIGHT_STARS["skyfield_object"].tolist()
+        star_names_all = self.catalogs.BRIGHT_STARS["Name"].tolist()
+
+        # Observe all stars at once using a vectorized Star object
+        stars_vector = Star(
+            ra_hours=np.array([s.ra.hours for s in star_objs_all]),
+            dec_degrees=np.array([s.dec.degrees for s in star_objs_all])
+        )
+        spos_at_t_ref = self.observer.at(t_ref).observe(stars_vector)
+        lats, _, _ = spos_at_t_ref.ecliptic_latlon()
+
+        # Filter using vectorized mask
+        mask = np.abs(lats.degrees) < 10.0
+        candidate_stars = [
+            (star_names_all[i], star_objs_all[i])
+            for i in np.where(mask)[0]
+        ]
 
         # Process sequentially to avoid deadlock risk with shared executor
         for star_name, star_obj in candidate_stars:
@@ -782,3 +795,24 @@ class AstronomicalEvents:
             event["rarity"] = self._get_rarity("Planet Alignment", event)
         logger.debug(f"--- calculate_planet_alignments: {time.time() - start_time}s")
         return events
+
+    def calculate_golden_blue_hours(self):
+        start_time = time.time()
+        events = skyfield_searches.find_golden_blue_hours(
+            self.observer, self.start_date, self.end_date
+        )
+        # Filter based on settings
+        show_golden = self.event_settings.get("golden_hour")
+        show_blue = self.event_settings.get("blue_hour")
+
+        filtered_events = [
+            e for e in events
+            if (e["type"] == "Golden Hour" and show_golden) or
+               (e["type"] == "Blue Hour" and show_blue)
+        ]
+
+        for event in filtered_events:
+            event["rarity"] = 1 # Common events
+
+        logger.debug(f"--- calculate_golden_blue_hours: {time.time() - start_time}s")
+        return filtered_events

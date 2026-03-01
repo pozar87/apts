@@ -2,13 +2,62 @@ from typing import Any, cast
 
 import numpy as np
 from skyfield import eclipselib
-from skyfield.api import load
+from skyfield.api import load, Star
 from skyfield.positionlib import ICRF
 from skyfield.searchlib import find_maxima, find_minima
 
 from .cache import get_ephemeris, get_timescale
 from .constants import astronomy
 from .utils import planetary
+
+
+def find_golden_blue_hours(observer, start_date, end_date):
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = get_ephemeris()
+    sun = eph["sun"]
+
+    # Check every 10 minutes
+    num_steps = int((t1 - t0) * 24 * 6)
+    if num_steps < 2:
+        return []
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Observe Sun
+    sun_alt = observer.at(times).observe(sun).apparent().altaz()[0].degrees
+
+    events = []
+
+    def add_event(time, event_type, phase):
+        events.append({
+            "date": time.utc_datetime(),
+            "event": event_type,
+            "phase": phase,
+            "type": event_type
+        })
+
+    # Transitions for Golden and Blue Hour
+    # Golden: -4 to 6 deg, Blue: -6 to -4 deg
+    for i in range(1, len(times)):
+        t_curr = times[i]
+        alt_prev, alt_curr = sun_alt[i-1], sun_alt[i]
+
+        # Rising
+        if alt_prev <= -6 and alt_curr > -6: add_event(t_curr, "Blue Hour", "Start")
+        if alt_prev <= -4 and alt_curr > -4:
+            add_event(t_curr, "Blue Hour", "End")
+            add_event(t_curr, "Golden Hour", "Start")
+        if alt_prev <= 6 and alt_curr > 6: add_event(t_curr, "Golden Hour", "End")
+
+        # Setting
+        if alt_prev >= 6 and alt_curr < 6: add_event(t_curr, "Golden Hour", "Start")
+        if alt_prev >= -4 and alt_curr < -4:
+            add_event(t_curr, "Golden Hour", "End")
+            add_event(t_curr, "Blue Hour", "Start")
+        if alt_prev >= -6 and alt_curr < -6: add_event(t_curr, "Blue Hour", "End")
+
+    return events
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
@@ -278,36 +327,44 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     # Optimization: Pre-filter stars based on ecliptic latitude.
     # The Moon stays within ~5.3 degrees of the ecliptic.
-    # Stars further than ~10 degrees from the ecliptic can never be occulted.
-    # This provides a significant speedup (~2.6x) for typical year-long searches.
-    star_objects = []
-    for _, star_data in stars_to_check.iterrows():
-        star = star_data["skyfield_object"]
-        # Optimization: Observe fixed star once (at t0) and reuse for both
-        # ecliptic filtering and broadcasting to avoid redundant transformations.
-        spos_at_t0 = cast(Any, earth).at(t0).observe(star)
+    star_objs_all = stars_to_check["skyfield_object"].tolist()
+    star_names_all = stars_to_check["Name"].tolist()
 
-        # Check ecliptic latitude (nearly constant for stars)
-        lat, _, _ = spos_at_t0.ecliptic_latlon()
-        if abs(lat.degrees) < 10:
-            star_objects.append((star_data["Name"], spos_at_t0))
+    # Observe all stars at once using a vectorized Star object
+    stars_vector = Star(
+        ra_hours=np.array([s.ra.hours for s in star_objs_all]),
+        dec_degrees=np.array([s.dec.degrees for s in star_objs_all])
+    )
+    spos_at_t0_all = cast(Any, earth).at(t0).observe(stars_vector)
+    lats, _, _ = spos_at_t0_all.ecliptic_latlon()
 
-    # Hourly check
-    num_hours = int((t1 - t0) * 24)
-    if num_hours < 1:
+    # Filter using vectorized mask
+    mask = np.abs(lats.degrees) < 10
+    star_objects = [
+        (star_names_all[i], star_objs_all[i])
+        for i in np.where(mask)[0]
+    ]
+
+    # Check every 2 minutes for precision
+    num_steps = int((t1 - t0) * 24 * 30)
+    if num_steps < 2:
         return []
-    times = ts.linspace(t0, t1, num_hours)
+    times = ts.linspace(t0, t1, num_steps)
 
-    mpos = cast(Any, earth).at(times).observe(moon)
+    # Topocentric position for accurate occultations
+    mpos = observer.at(times).observe(moon)
+    m_alt, _, m_dist = mpos.apparent().altaz()
 
-    for star_name, spos_at_t0 in star_objects:
-        # Optimization: Broadcast the observed position across the time array
-        # for separation checks. Negligible accuracy loss.
-        spos = ICRF(spos_at_t0.position.au[:, np.newaxis], t=times)
+    # Calculate Moon's angular radius
+    moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+
+    for star_name, star_obj in star_objects:
+        # Topocentric observation of star
+        spos = observer.at(times).observe(star_obj)
         separations = mpos.separation_from(spos).degrees
 
-        # Check for values below 0.5 degrees
-        occ_indices = np.where(separations < 0.5)[0]
+        # Occultation check: separation < angular radius AND Moon above horizon
+        occ_indices = np.where((separations < moon_angular_radius) & (m_alt.degrees > 0))[0]
 
         # We only want the moment of maximum occultation (minimum separation)
         # for each occultation event. An event can span multiple hours.
