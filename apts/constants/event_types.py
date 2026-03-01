@@ -27,6 +27,7 @@ class EventType(str, Enum):
     PLANET_ALIGNMENTS = "planet_alignments"
     GOLDEN_HOUR = "golden_hour"
     BLUE_HOUR = "blue_hour"
+    CULMINATIONS = "culminations"
 
     def __str__(self):
         return self.value

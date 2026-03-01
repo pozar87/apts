@@ -346,19 +346,38 @@ class SkyfieldSearchesTest(unittest.TestCase):
         self.assertIn("umbral_magnitude", events[1])
 
     def test_find_solar_eclipses(self):
+        # October 25, 2022 was visible in Warsaw
+        start_date = datetime(2022, 10, 24, tzinfo=utc)
+        end_date = datetime(2022, 10, 26, tzinfo=utc)
+        events = skyfield_searches.find_solar_eclipses(
+            self.observer, start_date, end_date
+        )
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["type"], "Solar Eclipse")
+        self.assertEqual(events[0]["date"].day, 25)
+        self.assertEqual(events[0]["date"].month, 10)
+
+        # In 2023 no solar eclipses were visible in Warsaw
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 12, 31, tzinfo=utc)
         events = skyfield_searches.find_solar_eclipses(
             self.observer, start_date, end_date
         )
-        self.assertIsInstance(events, list)
-        self.assertEqual(len(events), 2)
-        self.assertEqual(events[0]["type"], "Solar Eclipse")
+        self.assertEqual(len(events), 0)
+
+        # April 20, 2023 was visible in Exmouth, Australia
+        exmouth_observer = self.eph["earth"] + Topos(
+            latitude_degrees=-21.93, longitude_degrees=114.12
+        )
+        start_date = datetime(2023, 4, 19, tzinfo=utc)
+        end_date = datetime(2023, 4, 21, tzinfo=utc)
+        events = skyfield_searches.find_solar_eclipses(
+            exmouth_observer, start_date, end_date
+        )
+        self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["date"].day, 20)
         self.assertEqual(events[0]["date"].month, 4)
-        self.assertEqual(events[1]["type"], "Solar Eclipse")
-        self.assertEqual(events[1]["date"].day, 14)
-        self.assertEqual(events[1]["date"].month, 10)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 from typing import Any, cast
 
 import numpy as np
-from skyfield import eclipselib
+from skyfield import almanac, eclipselib
 from skyfield.api import load, Star
 from skyfield.positionlib import ICRF
 from skyfield.searchlib import find_maxima, find_minima
@@ -18,44 +18,108 @@ def find_golden_blue_hours(observer, start_date, end_date):
     eph = get_ephemeris()
     sun = eph["sun"]
 
-    # Check every 10 minutes
-    num_steps = int((t1 - t0) * 24 * 6)
-    if num_steps < 2:
-        return []
-    times = ts.linspace(t0, t1, num_steps)
+    def sun_state(t):
+        # We want to detect transitions at -6, -4, 6
+        # Account for atmospheric refraction at standard conditions
+        alt = (
+            observer.at(t)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+        return (alt >= -6).astype(int) + (alt >= -4).astype(int) + (alt >= 6).astype(int)
 
-    # Observe Sun
-    sun_alt = observer.at(times).observe(sun).apparent().altaz()[0].degrees
+    # Step size: must be small enough to catch all transitions.
+    # A 2-degree interval (-6 to -4) takes about 8 minutes.
+    sun_state.step_days = 0.005  # ~7.2 minutes
+
+    t, y = almanac.find_discrete(t0, t1, sun_state)
 
     events = []
+    y_prev = sun_state(t0)
 
-    def add_event(time, event_type, phase):
-        events.append({
-            "date": time.utc_datetime(),
-            "event": event_type,
-            "phase": phase,
-            "type": event_type
-        })
+    for ti, yi in zip(t, y):
+        # Transitions:
+        # 0 -> 1: Rising, Blue Hour Start (-6)
+        # 1 -> 2: Rising, Blue Hour End / Golden Hour Start (-4)
+        # 2 -> 3: Rising, Golden Hour End (6)
+        # 3 -> 2: Setting, Golden Hour Start (6)
+        # 2 -> 1: Setting, Golden Hour End / Blue Hour Start (-4)
+        # 1 -> 0: Setting, Blue Hour End (-6)
 
-    # Transitions for Golden and Blue Hour
-    # Golden: -4 to 6 deg, Blue: -6 to -4 deg
-    for i in range(1, len(times)):
-        t_curr = times[i]
-        alt_prev, alt_curr = sun_alt[i-1], sun_alt[i]
+        if y_prev == 0 and yi == 1:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Blue Hour",
+                    "phase": "Start",
+                    "type": "Blue Hour",
+                }
+            )
+        elif y_prev == 1 and yi == 2:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Blue Hour",
+                    "phase": "End",
+                    "type": "Blue Hour",
+                }
+            )
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Golden Hour",
+                    "phase": "Start",
+                    "type": "Golden Hour",
+                }
+            )
+        elif y_prev == 2 and yi == 3:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Golden Hour",
+                    "phase": "End",
+                    "type": "Golden Hour",
+                }
+            )
+        elif y_prev == 3 and yi == 2:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Golden Hour",
+                    "phase": "Start",
+                    "type": "Golden Hour",
+                }
+            )
+        elif y_prev == 2 and yi == 1:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Golden Hour",
+                    "phase": "End",
+                    "type": "Golden Hour",
+                }
+            )
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Blue Hour",
+                    "phase": "Start",
+                    "type": "Blue Hour",
+                }
+            )
+        elif y_prev == 1 and yi == 0:
+            events.append(
+                {
+                    "date": ti.utc_datetime(),
+                    "event": "Blue Hour",
+                    "phase": "End",
+                    "type": "Blue Hour",
+                }
+            )
 
-        # Rising
-        if alt_prev <= -6 and alt_curr > -6: add_event(t_curr, "Blue Hour", "Start")
-        if alt_prev <= -4 and alt_curr > -4:
-            add_event(t_curr, "Blue Hour", "End")
-            add_event(t_curr, "Golden Hour", "Start")
-        if alt_prev <= 6 and alt_curr > 6: add_event(t_curr, "Golden Hour", "End")
-
-        # Setting
-        if alt_prev >= 6 and alt_curr < 6: add_event(t_curr, "Golden Hour", "Start")
-        if alt_prev >= -4 and alt_curr < -4:
-            add_event(t_curr, "Golden Hour", "End")
-            add_event(t_curr, "Blue Hour", "Start")
-        if alt_prev >= -6 and alt_curr < -6: add_event(t_curr, "Blue Hour", "End")
+        y_prev = yi
 
     return events
 
@@ -589,29 +653,41 @@ def find_solar_eclipses(observer, start_date, end_date):
     t1 = ts.utc(end_date)
     sun = planetary.get_skyfield_obj("sun")
     moon = planetary.get_skyfield_obj("moon")
-    earth = planetary.get_skyfield_obj("earth")
 
-    Rs = 695700  # km
-    rm = 1737.4  # km
-    re = 6378  # km
+    def solar_separation(t):
+        s = observer.at(t).observe(sun).apparent()
+        m = observer.at(t).observe(moon).apparent()
 
-    def eclipse_separation(t):
-        s = cast(Any, earth).at(t).observe(sun)
-        m = cast(Any, earth).at(t).observe(moon)
-        Ds = s.distance().km
-        dm = m.distance().km
-        mu = s.separation_from(m).radians
-        threshold = np.arcsin((rm + re) / dm) + np.arcsin((Rs - re) / Ds)
-        return mu - threshold
+        # Calculate angular radii
+        s_dist = s.distance().km
+        m_dist = m.distance().km
 
-    setattr(eclipse_separation, "step_days", 0.1)
-    times, separations = find_minima(t0, t1, eclipse_separation)
+        # Standard radii
+        Rs = 695700.0  # Sun radius km
+        Rm = 1737.4  # Moon radius km
+
+        s_radius = np.degrees(np.arcsin(Rs / s_dist))
+        m_radius = np.degrees(np.arcsin(Rm / m_dist))
+
+        sep = s.separation_from(m).degrees
+        return sep - (s_radius + m_radius)
+
+    setattr(solar_separation, "step_days", 0.05)
+    times, separations = find_minima(t0, t1, solar_separation)
+
     events = []
     for t, sep in zip(times, separations):
         if sep < 0:
-            events.append(
-                {"date": t.utc_datetime(), "type": "Solar Eclipse", "separation": sep}
-            )
+            # Visibility check: Is the Sun above the horizon for this observer?
+            sun_alt = observer.at(t).observe(sun).apparent().altaz()[0].degrees
+            if sun_alt > 0:
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "type": "Solar Eclipse",
+                        "separation_degrees": float(sep),
+                    }
+                )
     return events
 
 
@@ -732,5 +808,59 @@ def find_planet_alignments(observer, start_date, end_date):
             )
         else:
             i += 1
+
+    return events
+
+
+def find_culminations(observer, start_date, end_date):
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = get_ephemeris()
+    sun = eph["sun"]
+
+    planets = [
+        "sun",
+        "moon",
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+    planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
+
+    events = []
+
+    for name, obj in planet_objs:
+
+        def altitude(t):
+            return observer.at(t).observe(obj).apparent().altaz()[0].degrees
+
+        altitude.step_days = 0.5  # Check twice a day
+        times, altitudes = find_maxima(t0, t1, altitude)
+
+        simple_name = planetary.get_simple_name(name)
+
+        for t, alt in zip(times, altitudes):
+            if alt > 0:
+                # Visibility check: For non-solar objects, Sun must be below -6 degrees
+                sun_alt = observer.at(t).observe(sun).apparent().altaz()[0].degrees
+                visible = True
+                if simple_name != "Sun" and sun_alt > -6:
+                    visible = False
+
+                if visible:
+                    events.append(
+                        {
+                            "date": t.utc_datetime(),
+                            "event": "Culmination",
+                            "object": simple_name,
+                            "type": "Culmination",
+                            "altitude": float(alt),
+                        }
+                    )
 
     return events

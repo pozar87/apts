@@ -109,6 +109,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_alignments))
         if self.event_settings.get("golden_hour") or self.event_settings.get("blue_hour"):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
+        if self.event_settings.get("culminations"):
+            futures.append(executor.submit(self.calculate_culminations))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -816,3 +818,13 @@ class AstronomicalEvents:
 
         logger.debug(f"--- calculate_golden_blue_hours: {time.time() - start_time}s")
         return filtered_events
+
+    def calculate_culminations(self):
+        start_time = time.time()
+        events = skyfield_searches.find_culminations(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = 2  # Frequent but useful
+        logger.debug(f"--- calculate_culminations: {time.time() - start_time}s")
+        return events
