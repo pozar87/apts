@@ -479,12 +479,18 @@ class Objects(ABC):
 
         valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
-        ras = np.array(
-            [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
-        )
-        decs = np.array(
-            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
-        )
+        # Optimization: directly use pre-calculated float coordinates if available
+        # to avoid slow row-wise property access on Skyfield objects.
+        if "ra_hours" in df.columns and "dec_degrees" in df.columns:
+            ras = df["ra_hours"].values
+            decs = df["dec_degrees"].values
+        else:
+            ras = np.array(
+                [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
+            )
+            decs = np.array(
+                [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+            )
 
         return self._vectorized_geometric_compute(df, observer, ras, decs, valid_mask)
 
@@ -531,16 +537,14 @@ class Objects(ABC):
         needs_shift = transit_times < cutoff_ts
         transit_times.loc[needs_shift] += shift
 
-        # Localize transits
+        # Vectorized localization for transits
         local_tz = observer.local_timezone
-        transits = [
-            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if m else None
-            for t, m in zip(transit_times, valid_mask)
-        ]
+        transits_localized = transit_times.dt.tz_convert(local_tz)
+        transits = np.where(valid_mask, transits_localized, None).tolist()
 
         # Vectorized Altitude calculation
         altitudes = 90.0 - np.abs(lat_deg - decs)
-        alts = [float(a) if m else 0 for a, m in zip(altitudes, valid_mask)]
+        alts = np.where(valid_mask, altitudes, 0.0).tolist()
 
         # Vectorized Rise/Set (Geometric) calculation
         lat_rad = np.deg2rad(lat_deg)
@@ -548,8 +552,10 @@ class Objects(ABC):
         # Standard altitude for rising/setting of stars is -34 arcminutes to account for refraction
         h0_rad = np.deg2rad(-34.0 / 60.0)
         # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
+        cos_lat = np.cos(lat_rad)
+        cos_dec = np.cos(decs_rad)
         cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-            np.cos(lat_rad) * np.cos(decs_rad)
+            cos_lat * cos_dec
         )
 
         # Hour angle in solar hours
@@ -567,13 +573,11 @@ class Objects(ABC):
         rising_times = (transit_times - H_delta).dt.floor("s")
         setting_times = (transit_times + H_delta).dt.floor("s")
 
-        rises = [
-            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
-            for t in rising_times
-        ]
-        sets = [
-            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
-            for t in setting_times
-        ]
+        # Vectorized localization for rise and set times
+        rising_localized = rising_times.dt.tz_convert(local_tz)
+        setting_localized = setting_times.dt.tz_convert(local_tz)
+
+        rises = np.where(rising_localized.notnull(), rising_localized, None).tolist()
+        sets = np.where(setting_localized.notnull(), setting_localized, None).tolist()
 
         return transits, alts, rises, sets
