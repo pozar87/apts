@@ -1,11 +1,9 @@
 import unittest
-import numpy
 from apts.opticalequipment.binoculars import Binoculars
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.camera import Camera
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 
 class TestStellarImprovementsV4(unittest.TestCase):
     def test_binoculars_rayleigh_limit_precision(self):
@@ -28,7 +26,6 @@ class TestStellarImprovementsV4(unittest.TestCase):
         # Rayleigh limit (100mm) = 1.384 arcsec
 
         path = OpticalPath(t, [], [], [], [], c)
-        scale = path.pixel_scale().magnitude
 
         # Case 1: Under-sampled (ratio < 1.0)
         # r_limit < 1.23759

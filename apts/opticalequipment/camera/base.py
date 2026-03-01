@@ -51,7 +51,7 @@ class Camera(OutputOpticalEqipment):
                    quantum_efficiency=entry.get('quantum_efficiency_pct'))
     '\n  Class representing DSLR camera mounted via T2 adapter\n  '
 
-    def __init__(self, sensor_width, sensor_height, width, height, vendor='unknown camera', connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE, pixel_size=None, read_noise=None, full_well=None, quantum_efficiency=None, backfocus=None, mass=0, optical_length=0):
+    def __init__(self, sensor_width: float, sensor_height: float, width: int, height: int, vendor: str = 'unknown camera', connection_type: ConnectionType = ConnectionType.T2, connection_gender: Gender = Gender.FEMALE, pixel_size: float | None = None, read_noise: float | None = None, full_well: float | None = None, quantum_efficiency: float | None = None, backfocus: float | None = None, mass: float = 0, optical_length: float = 0):
         super(Camera, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
         self.connection_type = connection_type
         self.connection_gender = connection_gender

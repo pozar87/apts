@@ -1,5 +1,4 @@
 import unittest
-from typing import Any, cast
 from unittest.mock import MagicMock
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope import Telescope
