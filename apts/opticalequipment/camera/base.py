@@ -19,15 +19,36 @@ class Camera(OutputOpticalEqipment):
         mass = entry.get('mass', 0)
         tt = Utils.map_conn(entry.get('tside_thread'))
         tg = Utils.map_gender(entry.get('tside_gender'))
-        sw, sh = (23.5, 15.7)
-        w, h = (6000, 4000)
-        if 'full frame' in name.lower() or '36x24' in name.lower():
-            sw, sh = (35.9, 23.9)
-            w, h = (8256, 5504)
-        elif '4/3' in name.lower() or 'micro four thirds' in name.lower():
-            sw, sh = (17.3, 13.0)
-            w, h = (4656, 3520)
-        return cls(sw, sh, w, h, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.FEMALE, backfocus=ol, mass=mass, optical_length=ol)
+        sw, sh = (entry.get('sensor_width_mm'), entry.get('sensor_height_mm'))
+        w, h = (entry.get('width'), entry.get('height'))
+
+        # If any of the values are missing, try heuristics
+        if sw is None or sh is None or w is None or h is None:
+            sw_h, sh_h = (23.5, 15.7)
+            w_h, h_h = (6000, 4000)
+            if 'full frame' in name.lower() or '36x24' in name.lower():
+                sw_h, sh_h = (35.9, 23.9)
+                w_h, h_h = (8256, 5504)
+            elif '4/3' in name.lower() or 'micro four thirds' in name.lower():
+                sw_h, sh_h = (17.3, 13.0)
+                w_h, h_h = (4656, 3520)
+
+            sw = sw if sw is not None else sw_h
+            sh = sh if sh is not None else sh_h
+            w = w if w is not None else w_h
+            h = h if h is not None else h_h
+
+        return cls(sw, sh, w, h,
+                   vendor=vendor,
+                   connection_type=tt,
+                   connection_gender=tg or Gender.FEMALE,
+                   backfocus=ol,
+                   mass=mass,
+                   optical_length=ol,
+                   pixel_size=entry.get('pixel_size_um'),
+                   read_noise=entry.get('read_noise_e'),
+                   full_well=entry.get('full_well_e'),
+                   quantum_efficiency=entry.get('quantum_efficiency_pct'))
     '\n  Class representing DSLR camera mounted via T2 adapter\n  '
 
     def __init__(self, sensor_width, sensor_height, width, height, vendor='unknown camera', connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE, pixel_size=None, read_noise=None, full_well=None, quantum_efficiency=None, backfocus=None, mass=0, optical_length=0):
