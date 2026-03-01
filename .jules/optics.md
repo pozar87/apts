@@ -26,3 +26,18 @@
     - Mass (OTA): 2.47kg -> 2470g
 - **Action:** Updated database entry with verified specs and added source comment.
 - **Source URL:** http://skywatcher.com/product/bk-80ed-otaw/
+
+## 2024-05-25 - Audit of Celestron AstroMaster 130EQ
+
+- **Item:** Celestron AstroMaster 130EQ Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 3800g, cside_thread: '2"', missing explicit aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 44mm (34% by diameter)
+    - Mass (OTA): 3.5kg -> 3500g
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated database entry with verified specs, corrected type and focuser size, and added source comment.
+- **Source URL:** https://www.celestron.com/products/astromaster-130eq-telescope
