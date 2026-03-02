@@ -1,17 +1,21 @@
+from enum import Enum
+from typing import Optional, Any, cast
+
 import numpy
-from ..abstract import OpticalEquipment
+
+from ...constants import GraphConstants
 from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
-from ...constants import GraphConstants
-from enum import Enum
-from typing import Optional
+from ..abstract import OpticalEquipment
+
 
 class TelescopeType(Enum):
-    REFRACTOR = 'refractor'
-    NEWTONIAN_REFLECTOR = 'newtonian_reflector'
-    SCHMIDT_CASSEGRAIN = 'schmidt_cassegrain'
-    MAKSUTOV_CASSEGRAIN = 'maksutov_cassegrain'
-    CATADIOPTRIC = 'catadioptric'
+    REFRACTOR = "refractor"
+    NEWTONIAN_REFLECTOR = "newtonian_reflector"
+    SCHMIDT_CASSEGRAIN = "schmidt_cassegrain"
+    MAKSUTOV_CASSEGRAIN = "maksutov_cassegrain"
+    CATADIOPTRIC = "catadioptric"
+
 
 class TubeMaterial(Enum):
     ALUMINUM = 2.31e-05
@@ -20,59 +24,94 @@ class TubeMaterial(Enum):
     BRASS = 1.9e-05
     GLASS_FIBER = 8e-06
 
+
 class Telescope(OpticalEquipment):
     _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
-        ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
-        ct = Utils.map_conn(entry.get('cside_thread'))
-        cg = Utils.map_gender(entry.get('cside_gender'))
+        from ...utils import Gender, Utils
+
+        if isinstance(entry, str):
+            entry = cls._DATABASE[entry.replace(" ", "_")]
+        brand = entry["brand"]
+        name = entry["name"]
+        vendor = f"{brand} {name}"
+        ol = entry.get("optical_length", 0)
+        mass = entry.get("mass", 0)
+        ct = Utils.map_conn(entry.get("cside_thread"))
+        cg = Utils.map_gender(entry.get("cside_gender"))
 
         # Use explicit aperture and focal length if available, otherwise guess
-        aperture = entry.get('aperture_mm')
-        focal_length = entry.get('focal_length_mm')
+        aperture = entry.get("aperture_mm")
+        focal_length = entry.get("focal_length_mm")
         if aperture is None or focal_length is None:
             g_aperture, g_focal_length = Utils.guess_optical_properties(name)
             aperture = aperture or g_aperture
             focal_length = focal_length or g_focal_length
 
-        central_obstruction = entry.get('central_obstruction_mm', 0)
+        central_obstruction = entry.get("central_obstruction_mm", 0)
 
         # Map type string to TelescopeType enum
-        type_str = entry.get('type', '')
+        type_str = entry.get("type", "")
         telescope_type = TelescopeType.REFRACTOR  # Default
-        if 'refractor' in type_str:
+        if "refractor" in type_str:
             telescope_type = TelescopeType.REFRACTOR
-        elif 'newtonian' in type_str:
+        elif "newtonian" in type_str:
             telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
-        elif 'schmidt_cassegrain' in type_str or 'sct' in type_str:
+        elif "schmidt_cassegrain" in type_str or "sct" in type_str:
             telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
-        elif 'maksutov' in type_str:
+        elif "maksutov" in type_str:
             telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
-        elif 'catadioptric' in type_str or 'astrograph' in type_str:
+        elif "catadioptric" in type_str or "astrograph" in type_str:
             telescope_type = TelescopeType.CATADIOPTRIC
 
-        bf_val = entry.get('bf_role') == 'start'
-        return cls(aperture or 80, focal_length or 500, vendor=vendor, connection_type=ct, connection_gender=cg or Gender.FEMALE, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
-    '\n    Class representing telescope\n    '
+        bf_val = entry.get("bf_role") == "start"
+        return cls(
+            aperture or 80,
+            focal_length or 500,
+            vendor=vendor,
+            connection_type=ct,
+            connection_gender=cg or Gender.FEMALE,
+            backfocus=ol if bf_val else None,
+            mass=mass,
+            optical_length=ol,
+            telescope_type=telescope_type,
+            central_obstruction=central_obstruction,
+        )
 
-    def __init__(self, aperture, focal_length, vendor='unknown telescope', connection_type=ConnectionType.F_1_25, t2_output=False, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0, optical_length=0, connection_gender=Gender.FEMALE, central_obstruction=0):
-        super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
-        self.aperture = aperture * get_unit_registry().mm
-        self.central_obstruction = central_obstruction * get_unit_registry().mm
+    "\n    Class representing telescope\n    "
+
+    def __init__(
+        self,
+        aperture,
+        focal_length,
+        vendor="unknown telescope",
+        connection_type=ConnectionType.F_1_25,
+        t2_output=False,
+        telescope_type: Optional[TelescopeType] = TelescopeType.REFRACTOR,
+        focuser_step_size=None,
+        tube_material: Optional[TubeMaterial] = TubeMaterial.ALUMINUM,
+        backfocus=None,
+        mass=0,
+        optical_length=0,
+        connection_gender=Gender.FEMALE,
+        central_obstruction=0,
+    ):
+        super(Telescope, self).__init__(
+            focal_length, vendor, mass=mass, optical_length=optical_length
+        )
+        self.aperture = cast(Any, aperture * get_unit_registry().mm)
+        self.central_obstruction = cast(Any, central_obstruction * get_unit_registry().mm)
         self.connection_type = connection_type
         self.connection_gender = connection_gender
         self.t2_output = t2_output
         self.telescope_type = telescope_type
         self.focuser_step_size = focuser_step_size
         self.tube_material = tube_material
-        self.backfocus = backfocus * get_unit_registry().mm if backfocus is not None else None
+        self.backfocus = (
+            cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
+        )
 
     def focal_ratio(self):
         return self.focal_length / self.aperture
@@ -82,14 +121,14 @@ class Telescope(OpticalEquipment):
         Calculate the light gathering area of the telescope, accounting for central obstruction.
         :return: area in mm^2
         """
-        return numpy.pi * (self.aperture ** 2 - self.central_obstruction ** 2) / 4.0
+        return numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
 
     def effective_aperture(self):
         """
         Return the diameter of a clear aperture that would have the same light-gathering area.
         :return: effective aperture in mm
         """
-        return numpy.sqrt(self.aperture ** 2 - self.central_obstruction ** 2)
+        return numpy.sqrt(self.aperture**2 - self.central_obstruction**2)
 
     def dawes_limit(self):
         """
@@ -97,7 +136,10 @@ class Telescope(OpticalEquipment):
         https://en.wikipedia.org/wiki/Dawes%27_limit
         :return: limit in arcsecond
         """
-        return round((11.6 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
+        return (
+            round((11.6 / self.aperture.to("cm")).magnitude, 3)
+            * get_unit_registry().arcsecond
+        )
 
     def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
@@ -120,7 +162,7 @@ class Telescope(OpticalEquipment):
         Uses effective aperture diameter for better accuracy when central obstruction is present.
         :return: range in magnitude
         """
-        return 7.7 + 5 * numpy.log10(self.effective_aperture().to('cm').magnitude)
+        return 7.7 + 5 * numpy.log10(self.effective_aperture().to("cm").magnitude)
 
     def light_grasp_ratio(self, other_aperture):
         """
@@ -130,7 +172,7 @@ class Telescope(OpticalEquipment):
         :return: ratio between telescope and other aperture
         """
         other_aperture *= get_unit_registry().mm
-        return self.effective_aperture() ** 2 / other_aperture ** 2
+        return self.effective_aperture() ** 2 / other_aperture**2
 
     def min_useful_zoom(self):
         return self.aperture.magnitude / 6
@@ -150,4 +192,6 @@ class Telescope(OpticalEquipment):
             self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
-        return '{} {}/{}'.format(self.get_vendor(), self.aperture.magnitude, self.focal_length.magnitude)
+        return "{} {}/{}".format(
+            self.get_vendor(), self.aperture.magnitude, self.focal_length.magnitude
+        )
