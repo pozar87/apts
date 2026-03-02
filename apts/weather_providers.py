@@ -90,7 +90,7 @@ def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
     url = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json"
     logger.debug("Download aurora data from: {}".format(url))
     try:
-        with get_session().get(url) as data:
+        with get_session().get(url, timeout=10) as data:
             data.raise_for_status()
             json_data = json.loads(data.text)
             if "coordinates" not in json_data:
@@ -207,7 +207,7 @@ class PirateWeather(WeatherProvider):
         self._log_download_url(url)
         data = None
         try:
-            with get_session().get(url) as data:
+            with get_session().get(url, timeout=10) as data:
                 logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
@@ -280,7 +280,7 @@ class VisualCrossing(WeatherProvider):
         self._log_download_url(url)
         data = None
         try:
-            with get_session().get(url) as data:
+            with get_session().get(url, timeout=10) as data:
                 logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
@@ -400,7 +400,7 @@ class StormGlass(WeatherProvider):
         headers = {"Authorization": self.api_key}
         data = None
         try:
-            with get_session().get(url, headers=headers) as data:
+            with get_session().get(url, headers=headers, timeout=10) as data:
                 logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
@@ -707,7 +707,7 @@ class Meteoblue(WeatherProvider):
         self._log_download_url(url_clouds)
         resp_clouds = None
         try:
-            with get_session().get(url_clouds) as resp_clouds:
+            with get_session().get(url_clouds, timeout=10) as resp_clouds:
                 resp_clouds.raise_for_status()
                 df = self._parse_meteoblue_response(resp_clouds.text)
         except Exception as e:
@@ -737,7 +737,7 @@ class Meteoblue(WeatherProvider):
         self._log_download_url(url_basic)
         resp_basic = None
         try:
-            with get_session().get(url_basic) as resp_basic:
+            with get_session().get(url_basic, timeout=10) as resp_basic:
                 resp_basic.raise_for_status()
                 df_basic = self._parse_meteoblue_response(resp_basic.text)
                 if not df_basic.empty:
@@ -782,7 +782,7 @@ class OpenWeatherMap(WeatherProvider):
         self._log_download_url(url)
         data = None
         try:
-            with get_session().get(url) as data:
+            with get_session().get(url, timeout=10) as data:
                 logger.debug(f"Data {data}")
                 data.raise_for_status()
                 json_data = json.loads(data.text)
