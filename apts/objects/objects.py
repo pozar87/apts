@@ -133,8 +133,12 @@ class Objects(ABC):
                     "ra_hours" in candidate_objects.columns
                     and "dec_degrees" in candidate_objects.columns
                 ):
-                    stars_ras = cast(pd.Series, candidate_objects["ra_hours"]).to_numpy()[stars_indices]
-                    stars_decs = cast(pd.Series, candidate_objects["dec_degrees"]).to_numpy()[stars_indices]
+                    stars_ras = cast(
+                        pd.Series, candidate_objects["ra_hours"]
+                    ).to_numpy()[stars_indices]
+                    stars_decs = cast(
+                        pd.Series, candidate_objects["dec_degrees"]
+                    ).to_numpy()[stars_indices]
                 else:
                     stars_ras = np.array(
                         [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
@@ -546,10 +550,12 @@ class Objects(ABC):
         transits = np.where(valid_mask, transits_localized, None).tolist()
 
         # Vectorized Altitude calculation
-        altitudes += self._refraction(altitudes)
+        altitudes = 90.0 - np.abs(lat_deg - decs)
+
         # Add atmospheric refraction for high-precision
+        altitudes += self._refraction(altitudes)
         alts = np.where(valid_mask, altitudes, 0.0).tolist()
-       
+
         # Vectorized Rise/Set (Geometric) calculation
         lat_rad = np.deg2rad(lat_deg)
         decs_rad = np.deg2rad(decs)
