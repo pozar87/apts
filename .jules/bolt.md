@@ -25,3 +25,7 @@
 ## 2026-03-07 - [Ecliptic Latitude Filtering]
 **Learning:** The Moon's orbit is inclined only ~5.1 degrees to the ecliptic. When searching for Moon-star occultations, filtering candidates by ecliptic latitude (e.g., within 10 degrees) can prune more than 60% of target stars before any expensive separation calculations begin.
 **Action:** Always implement a geometric pre-filter (like ecliptic latitude for lunar events) before performing dense time-based separation checks.
+
+## 2026-03-10 - [Vectorized Timestamp Localization]
+**Learning:** Even when core calculations are vectorized with NumPy, the final formatting and localization of results (e.g., timestamps) can become a major bottleneck if implemented with Python list comprehensions. Using pandas `.dt.tz_convert` combined with `np.where` and `.tolist()` provides a ~4x speedup (from ~0.44s to ~0.12s for 14k objects). Additionally, prioritizing pre-calculated float columns (like `ra_hours`) over accessing properties on Skyfield objects avoids expensive row-wise overhead.
+**Action:** Vectorize result formatting and localization using pandas/numpy. Always check for pre-calculated float columns in DataFrames to avoid object-oriented overhead in high-frequency loops.
