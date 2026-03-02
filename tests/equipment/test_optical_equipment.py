@@ -45,7 +45,7 @@ def test_optical_equipment_init_with_nan_focal_length():
 def test_optical_equipment_init_with_nan_vendor():
     # This should probably raise an error, but let's see what it does
     # For now, let's assume it converts it to a string "nan"
-    eq = OpticalEquipment(focal_length=100, vendor=np.nan)
+    eq = OpticalEquipment(focal_length=100, vendor=cast(Any, np.nan))
     assert str(eq) == "nan f=100 millimeter"
 
 

@@ -172,18 +172,18 @@ class TestOptics(unittest.TestCase):
 
         # At zenith (90 degrees), dispersion should be 0
         disp_90 = path.atmospheric_dispersion(90)
-        self.assertEqual(disp_90.magnitude, 0.0)
+        self.assertEqual(cast(Any, disp_90).magnitude, 0.0)
 
         # At 45 degrees, tan(z) = 1.
         # Manual calculation for 400nm and 700nm gives ~1.437 arcseconds
         disp_45 = path.atmospheric_dispersion(45)
-        self.assertAlmostEqual(disp_45.magnitude, 1.437, places=3)
-        self.assertEqual(disp_45.units, get_unit_registry().arcsecond)
+        self.assertAlmostEqual(cast(Any, disp_45).magnitude, 1.437, places=3)
+        self.assertEqual(cast(Any, disp_45).units, get_unit_registry().arcsecond)
 
         # At 30 degrees, tan(z) = sqrt(3) ~ 1.732.
         # 1.4368 * 1.732 ~ 2.4886
         disp_30 = path.atmospheric_dispersion(30)
-        self.assertAlmostEqual(disp_30.magnitude, 2.489, places=3)
+        self.assertAlmostEqual(cast(Any, disp_30).magnitude, 2.489, places=3)
 
     def test_sampling(self):
         t = MagicMock(spec=Telescope)
@@ -243,7 +243,7 @@ class TestOptics(unittest.TestCase):
         with MagicMock() as mock_p_size:
             mock_p_size.to.return_value.magnitude = 3.76
             c.pixel_size.return_value = mock_p_size
-            self.assertAlmostEqual(path.ideal_planetary_focal_ratio(k=5.0), 18.8)
+            self.assertAlmostEqual(cast(float, path.ideal_planetary_focal_ratio(k=5.0)), 18.8)
 
         # Missing pixel size (robustness check)
         c.pixel_size.return_value = None
