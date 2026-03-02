@@ -121,9 +121,20 @@ class SolarObjects(Objects):
         ephem_observer.date = t.utc_datetime()
 
         mags, sizes, phases = [], [], []
+        ras, decs, dists, elongs = [], [], [], []
+        sky_objs = []
 
+        # Vectorized Skyfield positions setup
+        obs_at_t = observer_to_use.observer.at(t)
+        # For elongation, use apparent position of Sun for consistency with planets
+        sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
+
+        # Optimization: Combine Ephem and Skyfield calculations into a single loop
+        # to minimize iterrows() overhead.
         for _, row in computed_df.iterrows():
             object_name = cast(str, row[ObjectTableLabels.NAME])
+
+            # --- Ephem Calculation ---
             if object_name in MINOR_PLANET_NAMES.values():
                 try:
                     minor_planet_details = self.minor_planets.loc[object_name]
@@ -188,18 +199,9 @@ class SolarObjects(Objects):
                     sizes.append(np.nan)
                     phases.append(np.nan)
 
-        computed_df[ObjectTableLabels.MAGNITUDE] = mags
-        computed_df[ObjectTableLabels.SIZE] = sizes
-        computed_df[ObjectTableLabels.PHASE] = phases
-
-        # Vectorized Skyfield positions
-        obs_at_t = observer_to_use.observer.at(t)
-        # For elongation, use apparent position of Sun for consistency with planets
-        sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
-
-        ras, decs, dists, elongs = [], [], [], []
-        for _, row in computed_df.iterrows():
+            # --- Skyfield Calculation ---
             sky_obj = self.get_skyfield_object(row)
+            sky_objs.append(sky_obj)
             if sky_obj:
                 pos = obs_at_t.observe(sky_obj).apparent()
                 ra, dec, dist = pos.radec()
@@ -212,6 +214,14 @@ class SolarObjects(Objects):
                 decs.append(np.nan)
                 dists.append(np.nan)
                 elongs.append(np.nan)
+
+        computed_df[ObjectTableLabels.MAGNITUDE] = mags
+        computed_df["Magnitude_float"] = mags
+        computed_df[ObjectTableLabels.SIZE] = sizes
+        computed_df[ObjectTableLabels.PHASE] = phases
+        computed_df["skyfield_object"] = sky_objs
+        computed_df["ra_hours"] = ras
+        computed_df["dec_degrees"] = decs
 
         computed_df[ObjectTableLabels.RA] = ras
         computed_df[ObjectTableLabels.DEC] = decs

@@ -25,3 +25,7 @@
 ## 2026-03-07 - [Ecliptic Latitude Filtering]
 **Learning:** The Moon's orbit is inclined only ~5.1 degrees to the ecliptic. When searching for Moon-star occultations, filtering candidates by ecliptic latitude (e.g., within 10 degrees) can prune more than 60% of target stars before any expensive separation calculations begin.
 **Action:** Always implement a geometric pre-filter (like ecliptic latitude for lunar events) before performing dense time-based separation checks.
+
+## 2026-03-08 - [Loop Consolidation and Observer Hoisting]
+**Learning:** Consolidated multiple iteration loops (e.g., `ephem` and `skyfield` calculations) in `SolarObjects.compute` into a single `iterrows()` pass, significantly reducing Pandas overhead. Additionally, hoisting the expensive Skyfield `observer.at(times)` call out of the object iteration loop in `get_visible` prevents redundant coordinate transformations across all objects in a collection.
+**Action:** Always consolidate loops processing the same DataFrame and hoist expensive coordinate setup (like Skyfield observers) outside of iteration loops.

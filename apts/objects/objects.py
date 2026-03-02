@@ -1,4 +1,6 @@
 import logging
+import types
+import unittest.mock
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Any, cast
@@ -72,9 +74,6 @@ class Objects(ABC):
         check_times = ts.linspace(t_start, t_stop, 100)
 
         # Check if get_altaz_curve is mocked or overridden (common in tests)
-        import types
-        import unittest.mock
-
         # Original method is a bound method, mocked/overridden is often a function or a Mock object
         is_mocked = isinstance(
             self.place.get_altaz_curve, unittest.mock.Mock
@@ -212,13 +211,14 @@ class Objects(ABC):
                     visible_mask[active_stars_indices] = np.any(alt_ok & az_ok, axis=1)
 
             observer = self.place.observer
+            # Optimization: move observer.at(check_times) out of the loop
+            # to reuse calculated observer positions for all objects.
+            obs_at_check_times = observer.at(check_times)
 
             # Check Other objects (like planets)
             for i in other_indices:
                 skyfield_obj = skyfield_objs[i]
-                alt, az, _ = (
-                    observer.at(check_times).observe(skyfield_obj).apparent().altaz()
-                )
+                alt, az, _ = obs_at_check_times.observe(skyfield_obj).apparent().altaz()
                 alt_deg = alt.degrees
                 az_deg = az.degrees
 
