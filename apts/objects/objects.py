@@ -456,7 +456,10 @@ class Objects(ABC):
 
         t = self.ts.utc(transit)
         alt, _, _ = (
-            self.place.observer.at(t).observe(skyfield_object).apparent().altaz()
+            self.place.observer.at(t)
+            .observe(skyfield_object)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
         )
         return alt.degrees
 
@@ -540,6 +543,8 @@ class Objects(ABC):
 
         # Vectorized Altitude calculation
         altitudes = 90.0 - np.abs(lat_deg - decs)
+        # Add atmospheric refraction for high-precision
+        altitudes += self._refraction(altitudes)
         alts = [float(a) if m else 0 for a, m in zip(altitudes, valid_mask)]
 
         # Vectorized Rise/Set (Geometric) calculation
