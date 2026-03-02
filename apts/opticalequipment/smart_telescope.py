@@ -1,6 +1,6 @@
 import math
 import numpy
-from typing import Any
+from typing import Any, cast
 
 from .telescope import Telescope
 from ..constants import GraphConstants, OpticalType
@@ -61,14 +61,14 @@ class SmartTelescope(Telescope):
             mass=mass,
         )
         ureg = get_unit_registry()
-        self.sensor_width = sensor_width * ureg.mm
-        self.sensor_height = sensor_height * ureg.mm
+        self.sensor_width = cast(Any, sensor_width * ureg.mm)
+        self.sensor_height = cast(Any, sensor_height * ureg.mm)
         self.width = width
         self.height = height
         self.read_noise = read_noise
         self.quantum_efficiency = quantum_efficiency
         if pixel_size is not None:
-            self._pixel_size = pixel_size * ureg.micrometer
+            self._pixel_size = cast(Any, pixel_size * ureg.micrometer)
         else:
             self._pixel_size = None
 

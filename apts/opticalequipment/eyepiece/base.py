@@ -1,3 +1,4 @@
+from typing import Any, cast
 from ..abstract import OutputOpticalEqipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
@@ -8,7 +9,7 @@ class Eyepiece(OutputOpticalEqipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import Utils
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -16,21 +17,14 @@ class Eyepiece(OutputOpticalEqipment):
         tg = Utils.map_gender(entry.get('tside_gender'))
         fl = Utils.extract_number(name) or 20
         return cls(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
-        from ...utils import Utils, Gender
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
-        fl = Utils.extract_number(name) or 20
-        return cls(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
+
     '\n  Class representing ocular\n  '
 
     def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0, optical_length=0):
         super(Eyepiece, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self._connection_type = connection_type
         self._connection_gender = connection_gender
-        self._field_of_view = field_of_view * get_unit_registry().deg
+        self._field_of_view = cast(Any, field_of_view * get_unit_registry().deg)
 
     def _zoom_divider(self):
         return self.focal_length

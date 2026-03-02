@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any, cast
 
 import numpy
 
@@ -101,8 +101,8 @@ class Telescope(OpticalEquipment):
         super(Telescope, self).__init__(
             focal_length, vendor, mass=mass, optical_length=optical_length
         )
-        self.aperture = aperture * get_unit_registry().mm
-        self.central_obstruction = central_obstruction * get_unit_registry().mm
+        self.aperture = cast(Any, aperture * get_unit_registry().mm)
+        self.central_obstruction = cast(Any, central_obstruction * get_unit_registry().mm)
         self.connection_type = connection_type
         self.connection_gender = connection_gender
         self.t2_output = t2_output
@@ -110,7 +110,7 @@ class Telescope(OpticalEquipment):
         self.focuser_step_size = focuser_step_size
         self.tube_material = tube_material
         self.backfocus = (
-            backfocus * get_unit_registry().mm if backfocus is not None else None
+            cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
         )
 
     def focal_ratio(self):
