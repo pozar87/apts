@@ -69,9 +69,13 @@ class Camera(OutputOpticalEqipment):
             self._pixel_size = None
 
     def pixel_size(self) -> Any:
+        ureg = get_unit_registry()
         if self._pixel_size is not None:
-            return self._pixel_size
-        return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2) / math.sqrt(self.width ** 2 + self.height ** 2)
+            return self._pixel_size.to(ureg.micrometer)
+        size_mm = numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / numpy.sqrt(
+            self.width**2 + self.height**2
+        )
+        return size_mm.to(ureg.micrometer)
 
     def _zoom_divider(self):
         return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)
