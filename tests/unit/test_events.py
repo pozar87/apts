@@ -231,11 +231,12 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.day, 8)
 
     @patch("apts.events.skyfield_searches.find_conjunctions_with_stars")
-    def test_calculate_moon_messier_conjunctions(self, mock_find_conj):
+    def test_calculate_moon_messier_conjunctions(self, mock_find_conjs):
         # Arrange
-        mock_find_conj.return_value = [
+        mock_find_conjs.return_value = [
             {
                 "date": datetime(2023, 1, 20, 12, 0, 0, tzinfo=utc),
+                "object2": "M45",
                 "separation_degrees": 2.5,
                 "star_name": "M1",
             }
@@ -251,8 +252,8 @@ class EventsTest(unittest.TestCase):
         events_df = events_calculator.get_events()
 
         # Assert
-        # It should call find_conjunctions_with_stars
-        self.assertGreater(mock_find_conj.call_count, 0)
+        # It should call find_conjunctions_with_stars once for all Messier objects
+        self.assertEqual(mock_find_conjs.call_count, 1)
         self.assertGreater(len(events_df), 0)
         messier_events = events_df[events_df["type"] == "Moon-Messier Conjunction"]
         self.assertGreater(len(messier_events), 0)

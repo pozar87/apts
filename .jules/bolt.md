@@ -29,3 +29,7 @@
 ## 2026-03-08 - [Loop Consolidation and Observer Hoisting]
 **Learning:** Consolidated multiple iteration loops (e.g., `ephem` and `skyfield` calculations) in `SolarObjects.compute` into a single `iterrows()` pass, significantly reducing Pandas overhead. Additionally, hoisting the expensive Skyfield `observer.at(times)` call out of the object iteration loop in `get_visible` prevents redundant coordinate transformations across all objects in a collection.
 **Action:** Always consolidate loops processing the same DataFrame and hoist expensive coordinate setup (like Skyfield observers) outside of iteration loops.
+
+## 2026-03-09 - [Skyfield Vectorized Observation Requirements]
+**Learning:** While Skyfield supports vectorization over Time objects, its `observe` method does not natively support a Python list of astronomical objects (e.g., Stars). To achieve full vectorization over multiple objects, one must initialize a single Skyfield object (like `Star`) using NumPy arrays for its coordinates (RA, Dec). This allows a single `observe` call to return a position vector for all objects at once, which is significantly faster than iterative observations.
+**Action:** When vectorizing searches over multiple celestial objects, always consolidate them into a single Skyfield object with array-backed coordinates instead of passing a list of objects to the observer.

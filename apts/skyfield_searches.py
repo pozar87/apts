@@ -311,36 +311,46 @@ def find_conjunctions_with_star(
     end_date,
     threshold_degrees=1.0,
 ):
-    results = find_conjunctions_with_stars(
+    """
+    Finds conjunctions between a moving body and a fixed star.
+    Wrapper around find_conjunctions_with_stars for single star case.
+    """
+    events = find_conjunctions_with_stars(
         observer,
         body1_name,
-        [("Object", star_object)],
+        [("Target", star_object)],
         start_date,
         end_date,
         threshold_degrees,
     )
-    return [{"date": r["date"], "separation_degrees": r["separation_degrees"]} for r in results]
+
+    # Remove the object2 key for backward compatibility
+    for event in events:
+        if "object2" in event:
+            del event["object2"]
+
+    return events
 
 
 def find_conjunctions_with_stars(
     observer,
-    body1_name,
-    star_objects,
+    body_name,
+    star_data,  # List of (name, Star object)
     start_date,
     end_date,
     threshold_degrees=1.0,
 ):
     """
     Finds conjunctions between a moving body and multiple fixed stars.
-    Vectorized over both time and stars for maximum efficiency.
+    Vectorized over both time and stars for maximum performance.
     """
-    if not star_objects:
+    if not star_data:
         return []
 
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    body1 = planetary.get_skyfield_obj(body1_name)
+    body = planetary.get_skyfield_obj(body_name)
 
     # Hourly check
     num_hours = int((t1 - t0) * 24)
@@ -348,28 +358,55 @@ def find_conjunctions_with_stars(
         return []
     times = ts.linspace(t0, t1, num_hours)
 
-    # Vectorized observation for body1 (Moon/Planet)
-    # Calculated once for all stars
-    pos1 = observer.at(times).observe(body1)
+    # Vectorized observation for moving body (e.g. Moon)
+    pos_body = observer.at(times).observe(body)
+    # Unit vectors for body at all times: (3, M)
+    body_au = pos_body.position.au
+    u_body = body_au / np.linalg.norm(body_au, axis=0)
 
-    all_events = []
+    # Prepare vectorized Star objects
+    star_names = [name for name, _ in star_data]
+    star_objs = [obj for _, obj in star_data]
 
-    for star_name, star_obj in star_objects:
-        # Optimization: Observe fixed star once and broadcast to avoid repeated
-        # coordinate transformations across the time array. Negligible accuracy loss.
-        spos_single = observer.at(t0).observe(star_obj)
-        pos_star = ICRF(spos_single.position.au[:, np.newaxis], t=times)
+    stars_vector = Star(
+        ra_hours=np.array([s.ra.hours for s in star_objs]),
+        dec_degrees=np.array([s.dec.degrees for s in star_objs]),
+    )
 
-        # Vectorized separation calculation
-        separations = pos1.separation_from(pos_star).degrees
+    # Observe all stars at once at t0. Negligible accuracy loss for fixed stars.
+    spos_all = observer.at(t0).observe(stars_vector)
+    # Unit vectors for stars: (3, N)
+    stars_au = spos_all.position.au
+    u_stars = stars_au / np.linalg.norm(stars_au, axis=0)
 
-        # Find local minima where separation is below threshold
-        is_minima = (separations[1:-1] < separations[:-2]) & (
-            separations[1:-1] < separations[2:]
+    # Dot product between all stars and all times: (N, 3) @ (3, M) -> (N, M)
+    # This represents cos(angular_separation)
+    dot_products = u_stars.T @ u_body
+
+    # Angular separation in degrees: acos(dot_product)
+    # Using clip to avoid NaNs due to floating point precision
+    separations = np.degrees(np.arccos(np.clip(dot_products, -1.0, 1.0)))
+
+    events = []
+    for i, name in enumerate(star_names):
+        star_separations = separations[i]
+
+        # Identify local minima where separation is below threshold
+        is_minima = (star_separations[1:-1] < star_separations[:-2]) & (
+            star_separations[1:-1] < star_separations[2:]
         )
-        is_below_threshold = separations[1:-1] < threshold_degrees
+        is_below_threshold = star_separations[1:-1] < threshold_degrees
 
         minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
+
+        for idx in minima_indices:
+            events.append(
+                {
+                    "date": times[idx].utc_datetime(),
+                    "object2": name,
+                    "separation_degrees": float(star_separations[idx]),
+                }
+            )
 
         for idx in minima_indices:
             all_events.append(
