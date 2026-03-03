@@ -1,4 +1,6 @@
 import logging
+import types
+import unittest.mock
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Any, cast
@@ -7,9 +9,10 @@ import numpy as np
 import pandas as pd
 import pytz
 from skyfield import almanac
-from skyfield.api import Star, load
+from skyfield.api import Star
 from skyfield.searchlib import find_discrete
 
+from ..cache import get_timescale
 from ..constants import ObjectTableLabels
 
 logger = logging.getLogger(__name__)
@@ -27,8 +30,29 @@ class Objects(ABC):
     def __init__(self, place, calculation_date=None):
         self.place = place
         self.objects: pd.DataFrame = pd.DataFrame()
-        self.ts = load.timescale()
+        self.ts = get_timescale()
         self.calculation_date = calculation_date  # Store it here
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        if "ts" in state:
+            del state["ts"]
+
+        # Skyfield objects (especially planets) in the DataFrame are not picklable
+        # because they reference open ephemeris files (BufferedReader).
+        if "objects" in state and isinstance(state["objects"], pd.DataFrame):
+            if "skyfield_object" in state["objects"].columns:
+                # We drop the column. It will be re-populated by compute()
+                # or get_visible() using get_skyfield_object() if needed.
+                state["objects"] = state["objects"].drop(columns=["skyfield_object"])
+
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # Re-create the unpicklable entries.
+        self.ts = get_timescale()
 
     def get_visible(
         self,
@@ -72,9 +96,6 @@ class Objects(ABC):
         check_times = ts.linspace(t_start, t_stop, 100)
 
         # Check if get_altaz_curve is mocked or overridden (common in tests)
-        import types
-        import unittest.mock
-
         # Original method is a bound method, mocked/overridden is often a function or a Mock object
         is_mocked = isinstance(
             self.place.get_altaz_curve, unittest.mock.Mock
@@ -133,12 +154,8 @@ class Objects(ABC):
                     "ra_hours" in candidate_objects.columns
                     and "dec_degrees" in candidate_objects.columns
                 ):
-                    stars_ras = cast(
-                        pd.Series, candidate_objects["ra_hours"]
-                    ).to_numpy()[stars_indices]
-                    stars_decs = cast(
-                        pd.Series, candidate_objects["dec_degrees"]
-                    ).to_numpy()[stars_indices]
+                    stars_ras = cast(pd.Series, candidate_objects["ra_hours"]).to_numpy()[stars_indices]
+                    stars_decs = cast(pd.Series, candidate_objects["dec_degrees"]).to_numpy()[stars_indices]
                 else:
                     stars_ras = np.array(
                         [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
@@ -216,13 +233,14 @@ class Objects(ABC):
                     visible_mask[active_stars_indices] = np.any(alt_ok & az_ok, axis=1)
 
             observer = self.place.observer
+            # Optimization: move observer.at(check_times) out of the loop
+            # to reuse calculated observer positions for all objects.
+            obs_at_check_times = observer.at(check_times)
 
             # Check Other objects (like planets)
             for i in other_indices:
                 skyfield_obj = skyfield_objs[i]
-                alt, az, _ = (
-                    observer.at(check_times).observe(skyfield_obj).apparent().altaz()
-                )
+                alt, az, _ = obs_at_check_times.observe(skyfield_obj).apparent().altaz()
                 alt_deg = alt.degrees
                 az_deg = az.degrees
 
@@ -486,18 +504,12 @@ class Objects(ABC):
 
         valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
 
-        # Optimization: directly use pre-calculated float coordinates if available
-        # to avoid slow row-wise property access on Skyfield objects.
-        if "ra_hours" in df.columns and "dec_degrees" in df.columns:
-            ras = df["ra_hours"].values
-            decs = df["dec_degrees"].values
-        else:
-            ras = np.array(
-                [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
-            )
-            decs = np.array(
-                [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
-            )
+        ras = np.array(
+            [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
+        decs = np.array(
+            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
 
         return self._vectorized_geometric_compute(df, observer, ras, decs, valid_mask)
 
@@ -544,17 +556,18 @@ class Objects(ABC):
         needs_shift = transit_times < cutoff_ts
         transit_times.loc[needs_shift] += shift
 
-        # Vectorized localization for transits
+        # Localize transits
         local_tz = observer.local_timezone
-        transits_localized = transit_times.dt.tz_convert(local_tz)
-        transits = np.where(valid_mask, transits_localized, None).tolist()
+        transits = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if m else None
+            for t, m in zip(transit_times, valid_mask)
+        ]
 
         # Vectorized Altitude calculation
         altitudes = 90.0 - np.abs(lat_deg - decs)
-
         # Add atmospheric refraction for high-precision
         altitudes += self._refraction(altitudes)
-        alts = np.where(valid_mask, altitudes, 0.0).tolist()
+        alts = [float(a) if m else 0 for a, m in zip(altitudes, valid_mask)]
 
         # Vectorized Rise/Set (Geometric) calculation
         lat_rad = np.deg2rad(lat_deg)
@@ -562,10 +575,8 @@ class Objects(ABC):
         # Standard altitude for rising/setting of stars is -34 arcminutes to account for refraction
         h0_rad = np.deg2rad(-34.0 / 60.0)
         # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
-        cos_lat = np.cos(lat_rad)
-        cos_dec = np.cos(decs_rad)
         cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-            cos_lat * cos_dec
+            np.cos(lat_rad) * np.cos(decs_rad)
         )
 
         # Hour angle in solar hours
@@ -583,11 +594,13 @@ class Objects(ABC):
         rising_times = (transit_times - H_delta).dt.floor("s")
         setting_times = (transit_times + H_delta).dt.floor("s")
 
-        # Vectorized localization for rise and set times
-        rising_localized = rising_times.dt.tz_convert(local_tz)
-        setting_localized = setting_times.dt.tz_convert(local_tz)
-
-        rises = np.where(rising_localized.notnull(), rising_localized, None).tolist()
-        sets = np.where(setting_localized.notnull(), setting_localized, None).tolist()
+        rises = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
+            for t in rising_times
+        ]
+        sets = [
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if pd.notna(t) else None
+            for t in setting_times
+        ]
 
         return transits, alts, rises, sets

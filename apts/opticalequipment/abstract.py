@@ -1,5 +1,4 @@
 import uuid
-from typing import Any, cast
 
 import numpy as np  # For np.nan
 
@@ -30,10 +29,10 @@ class OpticalEquipment:
         self._id = str(uuid.uuid4())
         self._type = OpticalType.OPTICAL
 
-        self.focal_length = cast(Any, focal_length * get_unit_registry().mm)
+        self.focal_length = focal_length * get_unit_registry().mm
         self.vendor = vendor
-        self.optical_length = cast(Any, (optical_length or 0) * get_unit_registry().mm)
-        self.mass = cast(Any, (mass or 0) * get_unit_registry().gram)
+        self.optical_length = (optical_length or 0) * get_unit_registry().mm
+        self.mass = (mass or 0) * get_unit_registry().gram
         self.attached_equipment = []
 
     def attach(self, equipment: "OpticalEquipment"):
