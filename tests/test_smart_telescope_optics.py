@@ -1,5 +1,4 @@
 import numpy
-from typing import Any, cast
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
 from apts.optics import OpticalPath
 
@@ -15,12 +14,12 @@ def test_seestar_s50_optics():
     # (2.9 / 250) * 206265 = 2.392674 arcsec/pixel
     scale = path.pixel_scale()
     assert scale is not None
-    assert numpy.isclose(cast(Any, scale).magnitude, 2.392674, atol=1e-4)
+    assert numpy.isclose(scale.magnitude, 2.392674, atol=1e-4)
 
     # 2. Field of View (Height)
     # 2 * atan(3.2 / (2 * 250)) = 2 * atan(0.0064) = 2 * 0.36668 degrees = 0.73336 degrees
     fov_h = path.fov_height()
-    assert numpy.isclose(cast(Any, fov_h).to("deg").magnitude, 0.73336, atol=1e-4)
+    assert numpy.isclose(fov_h.to("deg").magnitude, 0.73336, atol=1e-4)
 
     # 3. SNR Calculation
     # Should not be None now that SmartTelescope has sensor props and OpticalPath is refactored

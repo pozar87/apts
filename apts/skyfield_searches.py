@@ -15,7 +15,7 @@ def find_golden_blue_hours(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
+    eph = get_ephemeris()
     sun = eph["sun"]
 
     def sun_state(t):
@@ -30,7 +30,9 @@ def find_golden_blue_hours(observer, start_date, end_date):
         )
         return (alt >= -6).astype(int) + (alt >= -4).astype(int) + (alt >= 6).astype(int)
 
-    setattr(sun_state, "step_days", 0.005)  # ~7.2 minutes
+    # Step size: must be small enough to catch all transitions.
+    # A 2-degree interval (-6 to -4) takes about 8 minutes.
+    sun_state.step_days = 0.005  # ~7.2 minutes
 
     t, y = almanac.find_discrete(t0, t1, sun_state)
 
@@ -629,7 +631,7 @@ def find_lunar_eclipses(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
+    eph = get_ephemeris()
     t, y, details = eclipselib.lunar_eclipses(t0, t1, eph)
     events = []
     for i, (ti, yi) in enumerate(zip(t, y)):
@@ -814,7 +816,7 @@ def find_culminations(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
+    eph = get_ephemeris()
     sun = eph["sun"]
 
     planets = [
@@ -844,12 +846,12 @@ def find_culminations(observer, start_date, end_date):
                 .degrees
             )
 
-        setattr(altitude, "step_days", 0.5)  # Check twice a day
+        altitude.step_days = 0.5  # Check twice a day
         times, altitudes = find_maxima(t0, t1, altitude)
 
         simple_name = planetary.get_simple_name(name)
 
-        for t, alt in zip(cast(Any, times), altitudes):
+        for t, alt in zip(times, altitudes):
             if alt > 0:
                 # Visibility check: For non-solar objects, Sun must be below -6 degrees
                 sun_alt = observer.at(t).observe(sun).apparent().altaz()[0].degrees
@@ -880,7 +882,7 @@ def find_greatest_elongations(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
+    eph = get_ephemeris()
     sun = eph["sun"]
     earth = eph["earth"]
 
@@ -897,10 +899,10 @@ def find_greatest_elongations(observer, start_date, end_date):
             p = earth.at(t).observe(planet)
             return s.separation_from(p).degrees
 
-        setattr(elongation, "step_days", 2.0)  # Elongations change slowly
+        elongation.step_days = 2.0  # Elongations change slowly
         times, separations = find_maxima(t0, t1, elongation)
 
-        for t, sep in zip(cast(Any, times), separations):
+        for t, sep in zip(times, separations):
             # Determine if it's Eastern or Western elongation
             # Eastern elongation: planet is east of the Sun (evening sky)
             # Western elongation: planet is west of the Sun (morning sky)

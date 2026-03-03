@@ -1,6 +1,6 @@
 import numpy
 import math
-from typing import Any, cast
+from typing import Any
 from ..abstract import OutputOpticalEqipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
@@ -55,16 +55,16 @@ class Camera(OutputOpticalEqipment):
         super(Camera, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
         self.connection_type = connection_type
         self.connection_gender = connection_gender
-        self.sensor_width = cast(Any, sensor_width * get_unit_registry().mm)
-        self.sensor_height = cast(Any, sensor_height * get_unit_registry().mm)
+        self.sensor_width = sensor_width * get_unit_registry().mm
+        self.sensor_height = sensor_height * get_unit_registry().mm
         self.width = width
         self.height = height
         self.read_noise = read_noise
         self.full_well = full_well
         self.quantum_efficiency = quantum_efficiency
-        self.backfocus = cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
+        self.backfocus = backfocus * get_unit_registry().mm if backfocus is not None else None
         if pixel_size is not None:
-            self._pixel_size = cast(Any, pixel_size * get_unit_registry().micrometer)
+            self._pixel_size = pixel_size * get_unit_registry().micrometer
         else:
             self._pixel_size = None
 

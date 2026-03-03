@@ -399,7 +399,7 @@ def test_telescope_to_camera_direct_t2():
     tele = Telescope(150, 750, t2_output=True, vendor="TestScopeT2")
     # Camera defaults to T2 connection
     # Parameters: chip_w, chip_h, pixel_w, pixel_h, vendor="unknown camera"
-    cam = Camera(22.2, 14.8, 4, 4, vendor="TestCamT2")
+    cam = Camera(22.2, 14.8, 4.3, 4.3, vendor="TestCamT2")
 
     eq.register(tele)
     eq.register(cam)
@@ -482,7 +482,7 @@ def test_telescope_barlow_t2_camera():
         vendor="BarlowT2Out",
     )
     # Camera defaults to T2 connection
-    cam = Camera(12.48, 9.98, 2, 2, vendor="MicroCam")
+    cam = Camera(12.48, 9.98, 2.4, 2.4, vendor="MicroCam")
 
     eq.register(tele)
     eq.register(barlow_t2)
