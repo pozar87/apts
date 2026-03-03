@@ -77,6 +77,34 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'type_refractor'},
+        'Sky_Watcher_Evolux_62ED': {'aperture_mm': 62,
+         'bf_role': '',
+         'brand': 'Sky-Watcher',
+         'central_obstruction_mm': 0,
+         'cside_gender': 'Male',
+         'cside_thread': '2"',
+         'focal_length_mm': 400,
+         'mass': 2500,
+         'name': 'Evolux 62ED',
+         'optical_length': 0,
+         'reversible': False,
+         'tside_gender': '',
+         'tside_thread': '',
+         'type': 'type_refractor'},
+        'Sky_Watcher_Evolux_82ED': {'aperture_mm': 82,
+         'bf_role': '',
+         'brand': 'Sky-Watcher',
+         'central_obstruction_mm': 0,
+         'cside_gender': 'Male',
+         'cside_thread': '2"',
+         'focal_length_mm': 530,
+         'mass': 2920,
+         'name': 'Evolux 82ED',
+         'optical_length': 0,
+         'reversible': False,
+         'tside_gender': '',
+         'tside_thread': '',
+         'type': 'type_refractor'},
         'Sky_Watcher_Black_Diamond_ED120': {'bf_role': '',
          'brand': 'Sky-Watcher',
          'cside_gender': 'Male',
@@ -926,6 +954,14 @@ class Sky_watcherTelescope(Telescope):
          'tside_thread': '',
          'type': 'type_telescope'},
     }
+
+    @classmethod
+    def Sky_Watcher_Evolux_62ED(cls):
+        return cls.from_database(cls._DATABASE['Sky_Watcher_Evolux_62ED'])
+
+    @classmethod
+    def Sky_Watcher_Evolux_82ED(cls):
+        return cls.from_database(cls._DATABASE['Sky_Watcher_Evolux_82ED'])
 
     @classmethod
     def Sky_Watcher_Esprit_80ED(cls):

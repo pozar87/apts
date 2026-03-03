@@ -1210,6 +1210,25 @@ class ZwoCamera(Camera):
                    'tside_gender': 'Female',
                    'tside_thread': 'CS',
                    'type': 'type_camera'},
+ 'ZWO_ASI_432MM': {'bf_role': 'end',
+                   'brand': 'ZWO',
+                   'cside_gender': '',
+                   'cside_thread': '',
+                   'full_well_e': 97000,
+                   'height': 1104,
+                   'mass': 126,
+                   'name': 'ASI432MM',
+                   'optical_length': 6.5,
+                   'pixel_size_um': 9.0,
+                   'quantum_efficiency_pct': 79,
+                   'read_noise_e': 2.4,
+                   'reversible': False,
+                   'sensor_height_mm': 9.9,
+                   'sensor_width_mm': 14.5,
+                   'tside_gender': 'Female',
+                   'tside_thread': 'M42',
+                   'type': 'type_camera',
+                   'width': 1608},
  'ZWO_ASI_462MC': {'bf_role': 'end',
                    'brand': 'ZWO',
                    'cside_gender': '',
@@ -2202,6 +2221,10 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI_485MM(cls):
         return cls.from_database(cls._DATABASE['ZWO_ASI_485MM'])
+
+    @classmethod
+    def ZWO_ASI_432MM(cls):
+        return cls.from_database(cls._DATABASE['ZWO_ASI_432MM'])
 
     @classmethod
     def ZWO_ASI_462MC(cls):
