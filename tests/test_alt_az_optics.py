@@ -1,6 +1,5 @@
 import numpy
 from typing import Any, cast
-import pytest
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.telescope import Telescope
 from apts.optics import OpticalPath

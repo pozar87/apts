@@ -547,7 +547,7 @@ class Objects(ABC):
         # Vectorized localization for transits
         local_tz = observer.local_timezone
         transits_localized = transit_times.dt.tz_convert(local_tz)
-        transits = np.where(valid_mask, transits_localized, None).tolist()
+        transits = [t if v else None for t, v in zip(transits_localized, valid_mask)]
 
         # Vectorized Altitude calculation
         altitudes = 90.0 - np.abs(lat_deg - decs)
@@ -587,7 +587,7 @@ class Objects(ABC):
         rising_localized = rising_times.dt.tz_convert(local_tz)
         setting_localized = setting_times.dt.tz_convert(local_tz)
 
-        rises = np.where(rising_localized.notnull(), rising_localized, None).tolist()
-        sets = np.where(setting_localized.notnull(), setting_localized, None).tolist()
+        rises = [t if pd.notnull(t) else None for t in rising_localized]
+        sets = [t if pd.notnull(t) else None for t in setting_localized]
 
         return transits, alts, rises, sets
