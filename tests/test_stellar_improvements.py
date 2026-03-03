@@ -150,3 +150,37 @@ def test_limits_without_telescope_support():
     assert path.dawes_limit() is None
     assert path.rayleigh_limit() is None
     assert path.ideal_planetary_focal_ratio() is None
+
+def test_camera_pixel_size_units():
+    ureg = get_unit_registry()
+    # Case 1: Explicit pixel size
+    cam1 = Camera(sensor_width=23.5, sensor_height=15.7, width=6000, height=4000, pixel_size=3.76)
+    ps1 = cam1.pixel_size()
+    assert ps1.units == ureg.micrometer
+    assert ps1.magnitude == pytest.approx(3.76)
+
+    # Case 2: Calculated pixel size from mm dimensions
+    cam2 = Camera(sensor_width=23.5, sensor_height=15.7, width=6000, height=4000)
+    ps2 = cam2.pixel_size()
+    assert ps2.units == ureg.micrometer
+    assert ps2.magnitude == pytest.approx(3.919, abs=1e-3)
+
+def test_seestar_s30_instantiation():
+    ureg = get_unit_registry()
+    from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+    s30 = ZwoTelescope.ZWO_Seestar_S30()
+    assert s30.get_vendor() == "ZWO Seestar S30"
+    assert s30.aperture.to(ureg.mm).magnitude == 30
+    assert s30.focal_length.to(ureg.mm).magnitude == 150
+    assert s30.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(2.9)
+    assert s30.mass.to(ureg.gram).magnitude == 1650
+
+def test_seestar_s30_pro_instantiation():
+    ureg = get_unit_registry()
+    from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+    s30p = ZwoTelescope.ZWO_Seestar_S30_Pro()
+    assert s30p.get_vendor() == "ZWO Seestar S30 Pro"
+    assert s30p.aperture.to(ureg.mm).magnitude == 30
+    assert s30p.focal_length.to(ureg.mm).magnitude == 160
+    assert s30p.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(2.9)
+    assert s30p.mass.to(ureg.gram).magnitude == 1650

@@ -22,8 +22,9 @@ def test_camera_init():
 
 def test_camera_pixel_size():
     c = Camera(sensor_width=36, sensor_height=24, width=6000, height=4000)
-    expected = np.sqrt(36**2 + 24**2) / np.sqrt(6000**2 + 4000**2)
-    assert np.isclose(cast(Any, c.pixel_size()).magnitude, expected)
+    expected_mm = np.sqrt(36**2 + 24**2) / np.sqrt(6000**2 + 4000**2)
+    expected_um = expected_mm * 1000
+    assert np.isclose(cast(Any, c.pixel_size()).magnitude, expected_um)
 
 
 def test_camera_fov():
