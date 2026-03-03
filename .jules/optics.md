@@ -41,3 +41,18 @@
     - Focuser: 1.25"
 - **Action:** Updated database entry with verified specs, corrected type and focuser size, and added source comment.
 - **Source URL:** https://www.celestron.com/products/astromaster-130eq-telescope
+
+## 2024-05-26 - Audit of Celestron AstroMaster 114EQ
+
+- **Item:** Celestron AstroMaster 114EQ Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 2400g, cside_thread: '2"', missing explicit aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 114mm
+    - Focal Length: 1000mm
+    - Central Obstruction: 44mm (38% by diameter)
+    - Mass (OTA): 5.9 lbs -> 2.68 kg -> 2676g
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated database entry with verified specs, corrected type and focuser size, and added source comment.
+- **Source URL:** https://www.celestron.com/products/astromaster-114eq-telescope
