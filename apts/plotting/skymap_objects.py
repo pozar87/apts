@@ -547,10 +547,10 @@ def _plot_messier_on_skymap(
                     _plot_celestial_object(
                         ax,
                         name=cast(str, messier_name),
-                        alt_deg=alt.degrees,
-                        az_deg=az.degrees,
-                        ra_hours=ra.hours,
-                        dec_deg=dec.degrees,
+                        alt_deg=cast(float, alt.degrees),
+                        az_deg=cast(float, az.degrees),
+                        ra_hours=cast(float, ra.hours),
+                        dec_deg=cast(float, dec.degrees),
                         width_deg=width_deg,
                         height_deg=height_deg,
                         angle=angle,
@@ -640,10 +640,10 @@ def _plot_ngc_on_skymap(
                 observed_center = observer.observe(center)
 
                 all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
-                observed_all_ngc = all_ngc_vectors.apply(observer.observe)
+                observed_all_ngc = cast(Any, all_ngc_vectors).apply(observer.observe)
 
                 dist_center = observed_center.position.au
-                vec_all_ngc = observed_all_ngc.apply(lambda x: x.xyz.au)
+                vec_all_ngc = cast(Any, observed_all_ngc).apply(lambda x: x.xyz.au)
 
                 vec_center_np = dist_center
                 vec_all_ngc_np = numpy.array(vec_all_ngc.tolist()).T
@@ -709,10 +709,10 @@ def _plot_ngc_on_skymap(
                     _plot_celestial_object(
                         ax,
                         name=cast(str, ngc_name),
-                        alt_deg=alt.degrees,
-                        az_deg=az.degrees,
-                        ra_hours=ra.hours,
-                        dec_deg=dec.degrees,
+                        alt_deg=cast(float, alt.degrees),
+                        az_deg=cast(float, az.degrees),
+                        ra_hours=cast(float, ra.hours),
+                        dec_deg=cast(float, dec.degrees),
                         width_deg=width_deg,
                         height_deg=height_deg,
                         angle=angle,
