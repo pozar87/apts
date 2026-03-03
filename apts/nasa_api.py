@@ -23,7 +23,7 @@ class NasaAPI:
                 "api_key": self.api_key,
             }
             try:
-                response = requests.get(self.base_url, params=params)
+                response = requests.get(self.base_url, params=params, timeout=10)
                 response.raise_for_status()
                 data = response.json()
             except Exception as e:

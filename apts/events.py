@@ -228,7 +228,7 @@ class AstronomicalEvents:
         end_date_str = self.end_date.strftime("%Y-%m-%d")
         url = f"https://ll.thespacedevs.com/2.2.0/launch/upcoming/?window_start__gte={start_date_str}&window_end__lte={end_date_str}"
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
             for launch in data.get("results", []):
@@ -251,7 +251,7 @@ class AstronomicalEvents:
         end_date_str = self.end_date.strftime("%Y-%m-%d")
         url = f"https://ll.thespacedevs.com/2.2.0/event/upcoming/?date__gte={start_date_str}&date__lte={end_date_str}"
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=10)
             response.raise_for_status()
             data = response.json()
             for event in data.get("results", []):
