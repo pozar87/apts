@@ -60,13 +60,24 @@ class Messier(Objects):
         """Cached version of skyfield object retrieval using object ID."""
         # Find object by ID and return its skyfield_object
         obj_row = self.objects.loc[obj_id]
-        return obj_row.skyfield_object
+        if "skyfield_object" in self.objects.columns:
+            return obj_row["skyfield_object"]
+        # Reconstruct from float coords if missing (e.g. after unpickling)
+        return self.fixed_body(obj_row["ra_hours"], obj_row["dec_degrees"])
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
         if hasattr(obj, "name") and obj.name in self.objects.index:
             return self.get_skyfield_object_cached(obj.name)
-        return obj.skyfield_object
+
+        if "skyfield_object" in obj:
+            return obj["skyfield_object"]
+
+        # Reconstruct if possible
+        if "ra_hours" in obj and "dec_degrees" in obj:
+            return self.fixed_body(obj["ra_hours"], obj["dec_degrees"])
+
+        return None
 
     def find_by_name(self, name):
         """
