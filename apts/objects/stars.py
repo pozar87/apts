@@ -57,7 +57,7 @@ class Stars(Objects):
 
     def get_skyfield_object(self, obj):
         if "skyfield_object" in obj:
-            return obj.skyfield_object
+            return obj["skyfield_object"]
 
         # Reconstruct if possible
         if "ra_hours" in obj and "dec_degrees" in obj:

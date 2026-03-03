@@ -61,9 +61,9 @@ class Messier(Objects):
         # Find object by ID and return its skyfield_object
         obj_row = self.objects.loc[obj_id]
         if "skyfield_object" in self.objects.columns:
-            return obj_row.skyfield_object
+            return obj_row["skyfield_object"]
         # Reconstruct from float coords if missing (e.g. after unpickling)
-        return self.fixed_body(obj_row.ra_hours, obj_row.dec_degrees)
+        return self.fixed_body(obj_row["ra_hours"], obj_row["dec_degrees"])
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
@@ -71,7 +71,7 @@ class Messier(Objects):
             return self.get_skyfield_object_cached(obj.name)
 
         if "skyfield_object" in obj:
-            return obj.skyfield_object
+            return obj["skyfield_object"]
 
         # Reconstruct if possible
         if "ra_hours" in obj and "dec_degrees" in obj:
