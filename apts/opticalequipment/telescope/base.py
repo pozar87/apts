@@ -4,7 +4,7 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 from ...constants import GraphConstants
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any, cast
 
 class TelescopeType(Enum):
     REFRACTOR = 'refractor'
@@ -64,15 +64,15 @@ class Telescope(OpticalEquipment):
 
     def __init__(self, aperture, focal_length, vendor='unknown telescope', connection_type=ConnectionType.F_1_25, t2_output=False, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0, optical_length=0, connection_gender=Gender.FEMALE, central_obstruction=0):
         super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
-        self.aperture = aperture * get_unit_registry().mm
-        self.central_obstruction = central_obstruction * get_unit_registry().mm
+        self.aperture = cast(Any, aperture * get_unit_registry().mm)
+        self.central_obstruction = cast(Any, central_obstruction * get_unit_registry().mm)
         self.connection_type = connection_type
         self.connection_gender = connection_gender
         self.t2_output = t2_output
         self.telescope_type = telescope_type
         self.focuser_step_size = focuser_step_size
         self.tube_material = tube_material
-        self.backfocus = backfocus * get_unit_registry().mm if backfocus is not None else None
+        self.backfocus = cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
 
     def focal_ratio(self):
         return self.focal_length / self.aperture
@@ -150,4 +150,4 @@ class Telescope(OpticalEquipment):
             self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
-        return '{} {}/{}'.format(self.get_vendor(), self.aperture.magnitude, self.focal_length.magnitude)
+        return '{} {}/{}'.format(self.get_vendor(), cast(Any, self.aperture).magnitude, cast(Any, self.focal_length).magnitude)

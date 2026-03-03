@@ -28,7 +28,7 @@ def profile_planets():
 
     pr = cProfile.Profile()
     pr.enable()
-    visible = planets.get_visible(conditions, start, stop)
+    planets.get_visible(conditions, start, stop)
     pr.disable()
 
     print(f"get_visible took: {time.time() - start_time:.4f}s")
