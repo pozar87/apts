@@ -37,7 +37,7 @@ class SpaceEventsTest(unittest.TestCase):
         mock_event_response = MagicMock()
         mock_event_response.json.return_value = {"results": []}
 
-        def side_effect(url):
+        def side_effect(url, **kwargs):
             if "launch" in url:
                 return mock_launch_response
             return mock_event_response
@@ -70,7 +70,7 @@ class SpaceEventsTest(unittest.TestCase):
             ]
         }
 
-        def side_effect(url):
+        def side_effect(url, **kwargs):
             if "launch" in url:
                 return mock_launch_response
             return mock_event_response
@@ -103,7 +103,7 @@ class SpaceEventsTest(unittest.TestCase):
         mock_event_response = MagicMock()
         mock_event_response.json.return_value = {"results": []}
 
-        def side_effect(url):
+        def side_effect(url, **kwargs):
             if "launch" in url:
                 return mock_launch_response
             return mock_event_response
@@ -134,7 +134,7 @@ class SpaceEventsTest(unittest.TestCase):
             ]
         }
 
-        def side_effect(url):
+        def side_effect(url, **kwargs):
             if "launch" in url:
                 return mock_launch_response
             return mock_event_response
