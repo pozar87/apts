@@ -1,5 +1,4 @@
 import unittest
-import pandas as pd
 from apts.observations import Observation
 from apts.place import Place
 from apts.equipment import Equipment

@@ -50,7 +50,7 @@ class Objects(ABC):
         return state
 
     def __setstate__(self, state):
-        self.__dict__.update(state)
+        cast(Any, self.__dict__).update(state)
         # Re-create the unpicklable entries.
         self.ts = get_timescale()
 
