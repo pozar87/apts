@@ -56,7 +56,14 @@ class Stars(Objects):
         return computed_df
 
     def get_skyfield_object(self, obj):
-        return obj.skyfield_object
+        if "skyfield_object" in obj:
+            return obj.skyfield_object
+
+        # Reconstruct if possible
+        if "ra_hours" in obj and "dec_degrees" in obj:
+            return self.fixed_body(obj["ra_hours"], obj["dec_degrees"])
+
+        return None
 
     def find_by_name(self, name):
         """
