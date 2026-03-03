@@ -222,7 +222,10 @@ def find_conjunctions(
             .degrees
         )
 
-    setattr(separation, "step_days", 1.0)
+    # The Moon moves quickly (~13 degrees per day), so we need a smaller step
+    # to avoid missing conjunctions or getting inaccurate timing.
+    step = 0.05 if "moon" in [p1_name.lower(), p2_name.lower()] else 1.0
+    setattr(separation, "step_days", step)
 
     times, separations = find_minima(t0, t1, separation)
 
@@ -308,6 +311,32 @@ def find_conjunctions_with_star(
     end_date,
     threshold_degrees=1.0,
 ):
+    results = find_conjunctions_with_stars(
+        observer,
+        body1_name,
+        [("Object", star_object)],
+        start_date,
+        end_date,
+        threshold_degrees,
+    )
+    return [{"date": r["date"], "separation_degrees": r["separation_degrees"]} for r in results]
+
+
+def find_conjunctions_with_stars(
+    observer,
+    body1_name,
+    star_objects,
+    start_date,
+    end_date,
+    threshold_degrees=1.0,
+):
+    """
+    Finds conjunctions between a moving body and multiple fixed stars.
+    Vectorized over both time and stars for maximum efficiency.
+    """
+    if not star_objects:
+        return []
+
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -319,35 +348,39 @@ def find_conjunctions_with_star(
         return []
     times = ts.linspace(t0, t1, num_hours)
 
-    # Vectorized observation for body1
+    # Vectorized observation for body1 (Moon/Planet)
+    # Calculated once for all stars
     pos1 = observer.at(times).observe(body1)
 
-    # Optimization: Observe fixed star once and broadcast to avoid repeated
-    # coordinate transformations across the time array. Negligible accuracy loss.
-    spos_single = observer.at(t0).observe(star_object)
-    pos_star = ICRF(spos_single.position.au[:, np.newaxis], t=times)
+    all_events = []
 
-    # Vectorized separation calculation
-    separations = pos1.separation_from(pos_star).degrees
+    for star_name, star_obj in star_objects:
+        # Optimization: Observe fixed star once and broadcast to avoid repeated
+        # coordinate transformations across the time array. Negligible accuracy loss.
+        spos_single = observer.at(t0).observe(star_obj)
+        pos_star = ICRF(spos_single.position.au[:, np.newaxis], t=times)
 
-    # Find local minima where separation is below threshold
-    # Using vectorized operations for comparison
-    is_minima = (separations[1:-1] < separations[:-2]) & (
-        separations[1:-1] < separations[2:]
-    )
-    is_below_threshold = separations[1:-1] < threshold_degrees
+        # Vectorized separation calculation
+        separations = pos1.separation_from(pos_star).degrees
 
-    minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
+        # Find local minima where separation is below threshold
+        is_minima = (separations[1:-1] < separations[:-2]) & (
+            separations[1:-1] < separations[2:]
+        )
+        is_below_threshold = separations[1:-1] < threshold_degrees
 
-    events = [
-        {
-            "date": times[idx].utc_datetime(),
-            "separation_degrees": float(separations[idx]),
-        }
-        for idx in minima_indices
-    ]
+        minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
-    return events
+        for idx in minima_indices:
+            all_events.append(
+                {
+                    "date": times[idx].utc_datetime(),
+                    "separation_degrees": float(separations[idx]),
+                    "star_name": star_name,
+                }
+            )
+
+    return all_events
 
 
 def find_lunar_occultations(observer, bright_stars, start_date, end_date):
@@ -921,4 +954,27 @@ def find_greatest_elongations(observer, start_date, end_date):
                 }
             )
 
+    return events
+
+
+def find_seasons(start_date, end_date):
+    """
+    Finds the start of seasons (equinoxes and solstices).
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_ephemeris())
+
+    t, y = almanac.find_discrete(t0, t1, almanac.seasons(eph))
+
+    events = []
+    for ti, yi in zip(t, y):
+        events.append(
+            {
+                "date": ti.utc_datetime(),
+                "event": almanac.SEASON_EVENTS[yi],
+                "type": "Season",
+            }
+        )
     return events

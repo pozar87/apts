@@ -113,6 +113,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_culminations))
         if self.event_settings.get("greatest_elongations"):
             futures.append(executor.submit(self.calculate_greatest_elongations))
+        if self.event_settings.get("seasons"):
+            futures.append(executor.submit(self.calculate_seasons))
 
         for future in as_completed(futures):
             self.events.extend(future.result())
@@ -219,6 +221,8 @@ class AstronomicalEvents:
             return 2
         if event_type == "Greatest Elongation":
             return 3
+        if event_type == "Season":
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -668,50 +672,32 @@ class AstronomicalEvents:
         ]
 
         # Use pre-calculated skyfield_objects from the catalog
-        messier_stars = {
-            row["Messier"]: row["skyfield_object"] for _, row in messier_df.iterrows()
-        }
-
-        def find_all_conjunctions(messier_stars_subset):
-            all_events = []
-            for messier_name, messier_star in messier_stars_subset.items():
-                conjunctions = skyfield_searches.find_conjunctions_with_star(
-                    self.observer,
-                    "moon",
-                    messier_star,
-                    self.start_date,
-                    self.end_date,
-                    threshold_degrees=4.0,
-                )
-                for conj in conjunctions:
-                    event_data = {
-                        "date": conj["date"].astimezone(utc),
-                        "event": "Conjunction",
-                        "object1": "Moon",
-                        "object2": messier_name,
-                        "separation_degrees": conj["separation_degrees"],
-                        "type": "Moon-Messier Conjunction",
-                    }
-                    event_data["rarity"] = self._get_rarity(
-                        "Moon-Messier Conjunction", event_data
-                    )
-                    all_events.append(event_data)
-            return all_events
-
-        executor = self.executor
-        # Split messier_stars into chunks for parallel processing
-        chunk_size = 10
-        messier_star_chunks = [
-            dict(list(messier_stars.items())[i : i + chunk_size])
-            for i in range(0, len(messier_stars), chunk_size)
-        ]
-        futures = [
-            executor.submit(find_all_conjunctions, chunk)
-            for chunk in messier_star_chunks
+        messier_stars = [
+            (row["Messier"], row["skyfield_object"]) for _, row in messier_df.iterrows()
         ]
 
-        for future in as_completed(futures):
-            events.extend(future.result())
+        conjunctions = skyfield_searches.find_conjunctions_with_stars(
+            self.observer,
+            "moon",
+            messier_stars,
+            self.start_date,
+            self.end_date,
+            threshold_degrees=4.0,
+        )
+
+        for conj in conjunctions:
+            event_data = {
+                "date": conj["date"].astimezone(utc),
+                "event": "Conjunction",
+                "object1": "Moon",
+                "object2": conj["star_name"],
+                "separation_degrees": conj["separation_degrees"],
+                "type": "Moon-Messier Conjunction",
+            }
+            event_data["rarity"] = self._get_rarity(
+                "Moon-Messier Conjunction", event_data
+            )
+            events.append(event_data)
 
         logger.debug(
             f"--- calculate_moon_messier_conjunctions: {time.time() - start_time}s"
@@ -745,29 +731,28 @@ class AstronomicalEvents:
             for i in np.where(mask)[0]
         ]
 
-        # Process sequentially to avoid deadlock risk with shared executor
-        for star_name, star_obj in candidate_stars:
-            conjunctions = skyfield_searches.find_conjunctions_with_star(
-                self.observer,
-                "moon",
-                star_obj,
-                self.start_date,
-                self.end_date,
-                threshold_degrees=5.0,
+        conjunctions = skyfield_searches.find_conjunctions_with_stars(
+            self.observer,
+            "moon",
+            candidate_stars,
+            self.start_date,
+            self.end_date,
+            threshold_degrees=5.0,
+        )
+
+        for conj in conjunctions:
+            event_data = {
+                "date": conj["date"].astimezone(utc),
+                "event": "Conjunction",
+                "object1": "Moon",
+                "object2": conj["star_name"],
+                "separation_degrees": conj["separation_degrees"],
+                "type": "Moon-Star Conjunction",
+            }
+            event_data["rarity"] = self._get_rarity(
+                "Moon-Star Conjunction", event_data
             )
-            for conj in conjunctions:
-                event_data = {
-                    "date": conj["date"].astimezone(utc),
-                    "event": "Conjunction",
-                    "object1": "Moon",
-                    "object2": star_name,
-                    "separation_degrees": conj["separation_degrees"],
-                    "type": "Moon-Star Conjunction",
-                }
-                event_data["rarity"] = self._get_rarity(
-                    "Moon-Star Conjunction", event_data
-                )
-                events.append(event_data)
+            events.append(event_data)
 
         logger.debug(
             f"--- calculate_moon_star_conjunctions: {time.time() - start_time}s"
@@ -841,4 +826,12 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Greatest Elongation", event)
         logger.debug(f"--- calculate_greatest_elongations: {time.time() - start_time}s")
+        return events
+
+    def calculate_seasons(self):
+        start_time = time.time()
+        events = skyfield_searches.find_seasons(self.start_date, self.end_date)
+        for event in events:
+            event["rarity"] = self._get_rarity("Season", event)
+        logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
         return events
