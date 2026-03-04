@@ -47,16 +47,15 @@ class AstronomicalEvents:
             elevation_m=self.place.elevation,
         )
         self.events = []
+        self.event_settings = get_event_settings()
         if events_to_calculate is not None:
-            # If a list of events is provided, use it to build the settings
+            # If a list of events is provided, filter it by what is enabled in config
+            # but allow explicit requests if they are not in the enum (e.g. for custom events)
             events_to_calculate_str = [str(e) for e in events_to_calculate]
             self.event_settings = {
-                event.value: (event.value in events_to_calculate_str)
+                event.value: (event.value in events_to_calculate_str and self.event_settings.get(event.value, True))
                 for event in EventType
             }
-        else:
-            # Otherwise, load from config as before
-            self.event_settings = get_event_settings()
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
@@ -107,15 +106,21 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_nasa_comets))
         if self.event_settings.get("planet_alignments"):
             futures.append(executor.submit(self.calculate_planet_alignments))
-        if self.event_settings.get("golden_hour") or self.event_settings.get("blue_hour"):
+
+        # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
+        if self.event_settings.get("golden_hour", False):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
-        if self.event_settings.get("culminations"):
+        if self.event_settings.get("culminations", False):
             futures.append(executor.submit(self.calculate_culminations))
+
         if self.event_settings.get("greatest_elongations"):
             futures.append(executor.submit(self.calculate_greatest_elongations))
 
         for future in as_completed(futures):
-            self.events.extend(future.result())
+            try:
+                self.events.extend(future.result())
+            except Exception as e:
+                logger.error(f"Error calculating astronomical events: {e}")
         if not self.events:
             return pd.DataFrame(self.events)
         df = pd.DataFrame(self.events).sort_values(by="date")
@@ -684,17 +689,20 @@ class AstronomicalEvents:
     def calculate_nasa_comets(self):
         start_time = time.time()
         events = []
-        comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
-        for _, comet in comets.iterrows():
-            event_data = {
-                "date": parse_date(
-                    comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
-                ).astimezone(utc),
-                "event": comet["name"],
-                "type": "Comet",
-            }
-            event_data["rarity"] = self._get_rarity("Comet", event_data)
-            events.append(event_data)
+        try:
+            comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
+            for _, comet in comets.iterrows():
+                event_data = {
+                    "date": parse_date(
+                        comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
+                    ).astimezone(utc),
+                    "event": comet["name"],
+                    "type": "Comet",
+                }
+                event_data["rarity"] = self._get_rarity("Comet", event_data)
+                events.append(event_data)
+        except Exception as e:
+            logger.error(f"Error calculating NASA comets: {e}")
         logger.debug(f"--- calculate_nasa_comets: {time.time() - start_time}s")
         return events
 
