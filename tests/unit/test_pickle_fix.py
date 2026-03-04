@@ -1,13 +1,10 @@
 import pickle
 import datetime
 import pytest
-import pandas as pd
 from apts.place import Place
 from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.conditions import Conditions
-from apts.objects.messier import Messier
-from apts.catalogs import Catalogs
 
 def test_messier_pickle_get_visible():
     # Setup

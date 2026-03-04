@@ -3,7 +3,6 @@ from typing import Any, cast
 import numpy as np
 from skyfield import almanac, eclipselib
 from skyfield.api import load, Star
-from skyfield.positionlib import ICRF
 from skyfield.searchlib import find_maxima, find_minima
 
 from .cache import get_ephemeris, get_timescale
