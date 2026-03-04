@@ -47,15 +47,18 @@ class AstronomicalEvents:
             elevation_m=self.place.elevation,
         )
         self.events = []
-        self.event_settings = get_event_settings()
+        # Load global settings from config
+        config_settings = get_event_settings()
+        
         if events_to_calculate is not None:
-            # If a list of events is provided, it should override settings
+            # If a list of events is provided, it should be filtered by what is enabled in config
             events_to_calculate_str = [str(e) for e in events_to_calculate]
-            # Initialize all EventTypes as False, then enable requested ones
-            new_settings = {event.value: False for event in EventType}
-            for e_str in events_to_calculate_str:
-                new_settings[e_str] = True
-            self.event_settings = new_settings
+            self.event_settings = {
+                event.value: (event.value in events_to_calculate_str and config_settings.get(event.value, False))
+                for event in EventType
+            }
+        else:
+            self.event_settings = config_settings
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
@@ -108,7 +111,7 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_alignments))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
-        if self.event_settings.get("golden_hour", False):
+        if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
         if self.event_settings.get("culminations", False):
             futures.append(executor.submit(self.calculate_culminations))
