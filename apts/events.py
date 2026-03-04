@@ -64,13 +64,21 @@ class AstronomicalEvents:
             if key in self.event_settings:
                 self.event_settings[key] = value
         
+        logger.debug(f"AstronomicalEvents initialized. Config-based settings: {self.event_settings}")
+        
         if events_to_calculate is not None:
-            # If a list of events is provided, it should override everything
+            # If a list of events is provided, it should explicitly enable those
+            # but ONLY if they are not explicitly disabled in config.
+            # This allows tests to force-enable events (as they have no config)
+            # while respecting user settings in real environments.
             events_to_calculate_str = [str(e) for e in events_to_calculate]
+            logger.debug(f"Limiting to events_to_calculate: {events_to_calculate_str}")
             new_settings = {event.value: False for event in EventType}
             for e_str in events_to_calculate_str:
-                new_settings[e_str] = True
+                # Use config if present, otherwise default to True for the requested event
+                new_settings[e_str] = config_settings.get(e_str, True)
             self.event_settings = new_settings
+            logger.debug(f"Final event_settings after override: {self.event_settings}")
         
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
