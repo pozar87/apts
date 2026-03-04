@@ -29,7 +29,7 @@ class OracleNewFeaturesTest(unittest.TestCase):
         events_df = ast_events.get_events()
         self.assertEqual(len(events_df), 4)
         self.assertTrue(all(events_df["type"] == "Season"))
-        self.assertTrue(all(events_df["rarity"] == 4))
+        self.assertTrue(all(events_df["rarity"] == 2))
 
     def test_moon_conjunction_timing_accuracy(self):
         # Known Moon-Jupiter conjunction on 2023-01-26

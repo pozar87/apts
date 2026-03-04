@@ -251,7 +251,7 @@ class AstronomicalEvents:
         if event_type == "Greatest Elongation":
             return 3
         if event_type == "Season":
-            return 4
+            return 2
         return 1
 
     def calculate_space_launches(self):
