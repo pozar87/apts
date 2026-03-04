@@ -508,16 +508,17 @@ def find_conjunctions_between_moving_bodies(
     body1 = planetary.get_skyfield_obj(body1_name)
 
     # Dynamically adjust step size based on moving bodies
+    # Using 15-minute resolution for the Moon for better conjunction accuracy
     if "moon" == body1_name.lower() or any(
         "moon" == name.lower() for name, _ in bodies2_data
     ):
-        step = 0.05  # ~1.2 hours
+        step = 0.01  # ~14.4 minutes
     elif "mercury" == body1_name.lower() or any(
         "mercury" == name.lower() for name, _ in bodies2_data
     ):
-        step = 0.2  # ~4.8 hours
+        step = 0.1  # ~2.4 hours
     else:
-        step = 0.5  # ~12 hours
+        step = 0.2  # ~4.8 hours
 
     num_steps = int((t1 - t0) / step)
     if num_steps < 2:
