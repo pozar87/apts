@@ -189,7 +189,12 @@ class AstronomicalEvents:
                 return 5
             return 3
         if event_type == "Solar Eclipse":
-            return 5
+            kind = str(data.get("eclipse_type", "")).lower()
+            if "total" in kind:
+                return 5
+            if "annular" in kind:
+                return 5
+            return 4
         if event_type == "Lunar Eclipse":
             kind = str(data.get("eclipse_kind", "")).lower()
             if "total" in kind:
@@ -305,7 +310,8 @@ class AstronomicalEvents:
             self.observer, self.start_date, self.end_date
         )
         for event in events:
-            event["event"] = "Solar Eclipse"
+            kind = event.get("eclipse_type", "")
+            event["event"] = f"{kind} Solar Eclipse"
             event["type"] = "Solar Eclipse"
             event["rarity"] = self._get_rarity("Solar Eclipse", event)
         logger.debug(f"--- calculate_solar_eclipses: {time.time() - start_time}s")
