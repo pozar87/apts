@@ -421,7 +421,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = planetary.get_skyfield_obj("moon")
-    earth = planetary.get_skyfield_obj("earth")
+    earth = cast(Any, planetary.get_skyfield_obj("earth"))
 
     target_stars = [
         "Sirius",
@@ -463,7 +463,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         ra_hours=np.array([s.ra.hours for s in star_objs_all]),
         dec_degrees=np.array([s.dec.degrees for s in star_objs_all])
     )
-    spos_at_t0_all = cast(Any, earth).at(t0).observe(stars_vector)
+    spos_at_t0_all = earth.at(t0).observe(stars_vector)
     lats, _, _ = spos_at_t0_all.ecliptic_latlon()
 
     # Filter using vectorized mask
