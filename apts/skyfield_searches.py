@@ -121,13 +121,84 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
+def find_lunar_planetary_occultations(observer, start_date, end_date):
+    """
+    Finds occultations of planets by the Moon for a specific observer.
+    Vectorized over time for each planet for precision and speed.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    moon = planetary.get_skyfield_obj("moon")
+
+    # Planets to check for occultations
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+
+    events = []
+
+    # Check every 2 minutes for precision
+    num_steps = int((t1 - t0) * 24 * 30)
+    if num_steps < 2:
+        return []
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Topocentric position for Moon
+    mpos = observer.at(times).observe(moon)
+    m_alt, _, m_dist = mpos.apparent().altaz()
+
+    # Calculate Moon's angular radius
+    moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+
+    for p_name in planets:
+        planet = planetary.get_skyfield_obj(p_name)
+        simple_name = planetary.get_simple_name(p_name)
+
+        # Topocentric observation of planet
+        ppos = observer.at(times).observe(planet)
+        separations = mpos.separation_from(ppos).degrees
+
+        # Occultation check: separation < Moon's radius AND Moon above horizon
+        occ_indices = np.where((separations < moon_angular_radius) & (m_alt.degrees > 0))[0]
+
+        if len(occ_indices) > 0:
+            # Group consecutive indices as one event
+            groups = np.split(occ_indices, np.where(np.diff(occ_indices) > 1)[0] + 1)
+            for group in groups:
+                # Find the index with the minimum separation in this group
+                min_idx = group[np.argmin(separations[group])]
+                events.append(
+                    {
+                        "date": times[min_idx].utc_datetime(),
+                        "object1": "Moon",
+                        "object2": simple_name,
+                    }
+                )
+
+    return events
+
+
 def find_highest_altitude(observer, planet, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
     def altitude(t):
-        return observer.at(t).observe(planet).apparent().altaz()[0].degrees
+        # Account for atmospheric refraction for high-precision altitude
+        return (
+            observer.at(t)
+            .observe(planet)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
 
     setattr(altitude, "step_days", 0.1)
     times, altitudes = find_maxima(t0, t1, altitude)
@@ -410,6 +481,72 @@ def find_conjunctions_with_stars(
                     "date": times[idx].utc_datetime(),
                     "object2": name,
                     "separation_degrees": float(star_separations[idx]),
+                }
+            )
+
+    return events
+
+
+def find_conjunctions_between_moving_bodies(
+    observer,
+    body1_name,
+    bodies2_data,  # List of (name, Skyfield object)
+    start_date,
+    end_date,
+    threshold_degrees=1.0,
+):
+    """
+    Finds conjunctions between a moving body and multiple other moving bodies.
+    Vectorized over time for each pair.
+    """
+    if not bodies2_data:
+        return []
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    body1 = planetary.get_skyfield_obj(body1_name)
+
+    # Dynamically adjust step size based on moving bodies
+    # Using 15-minute resolution for the Moon for better conjunction accuracy
+    if "moon" == body1_name.lower() or any(
+        "moon" == name.lower() for name, _ in bodies2_data
+    ):
+        step = 0.01  # ~14.4 minutes
+    elif "mercury" == body1_name.lower() or any(
+        "mercury" == name.lower() for name, _ in bodies2_data
+    ):
+        step = 0.1  # ~2.4 hours
+    else:
+        step = 0.2  # ~4.8 hours
+
+    num_steps = int((t1 - t0) / step)
+    if num_steps < 2:
+        num_steps = 2
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Vectorized observation for body1
+    pos1 = observer.at(times).observe(body1)
+
+    events = []
+    for name2, body2 in bodies2_data:
+        pos2 = observer.at(times).observe(body2)
+        separations = pos1.separation_from(pos2).degrees
+
+        # Identify local minima where separation is below threshold
+        is_minima = (separations[1:-1] < separations[:-2]) & (
+            separations[1:-1] < separations[2:]
+        )
+        is_below_threshold = separations[1:-1] < threshold_degrees
+
+        minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
+
+        for idx in minima_indices:
+            events.append(
+                {
+                    "date": times[idx].utc_datetime(),
+                    "object2": name2,
+                    "separation_degrees": float(separations[idx]),
                 }
             )
 
@@ -797,8 +934,9 @@ def find_solar_eclipses(observer, start_date, end_date):
 
         if d < rs + rm:
             # Visibility check: Is the Sun above the horizon for this observer?
-            sun_alt = s_pos.altaz()[0].degrees
-            if sun_alt <= -0.5:  # Account for refraction near horizon
+            # Account for atmospheric refraction for precise visibility check
+            sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+            if sun_alt <= 0:
                 continue
 
             # Classification

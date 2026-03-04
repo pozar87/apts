@@ -130,6 +130,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_nasa_comets))
         if self.event_settings.get("planet_alignments"):
             futures.append(executor.submit(self.calculate_planet_alignments))
+        if self.event_settings.get("lunar_planetary_occultations"):
+            futures.append(executor.submit(self.calculate_lunar_planetary_occultations))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -233,7 +235,7 @@ class AstronomicalEvents:
             return 1
         if event_type == "Planet Altitude":
             return 3
-        if event_type == "Lunar Occultation":
+        if event_type in ["Lunar Occultation", "Lunar Planetary Occultation"]:
             return 4
         if event_type == "Aphelion/Perihelion":
             return 1
@@ -405,46 +407,54 @@ class AstronomicalEvents:
     def calculate_conjunctions(self):
         start_time = time.time()
         events = []
-        planets = planetary.CONJUNCTION_PLANETS
+        planets_data = {
+            p: planetary.get_skyfield_obj(p) for p in planetary.CONJUNCTION_PLANETS
+        }
         moon = "moon"
         moon_display_name = "Moon"
 
         executor = self.executor
         futures = {}
-        # Planet-Planet conjunctions
-        for (p1, p1_name), (p2, p2_name) in combinations(planets.items(), 2):
+
+        # Optimization: Planet-Planet conjunctions
+        # Vectorized search across pairs to avoid overhead of multiple iterative searches
+        for (p1, p1_obj), (p2, p2_obj) in combinations(planets_data.items(), 2):
+            p1_name = planetary.get_simple_name(p1)
+            p2_name = planetary.get_simple_name(p2)
             future = executor.submit(
-                skyfield_searches.find_conjunctions,
+                skyfield_searches.find_conjunctions_between_moving_bodies,
                 self.observer,
                 p1,
-                p2,
+                [(p2_name, p2_obj)],
                 self.start_date,
                 self.end_date,
                 threshold_degrees=5.0,
             )
-            futures[future] = (p1_name, p2_name)
+            futures[future] = p1_name
 
         # Planet-Moon conjunctions
-        for p, p_name in planets.items():
-            future = executor.submit(
-                skyfield_searches.find_conjunctions,
-                self.observer,
-                p,
-                moon,
-                self.start_date,
-                self.end_date,
-                threshold_degrees=5.0,
-            )
-            futures[future] = (p_name, moon_display_name)
+        planet_list = [
+            (planetary.get_simple_name(p), obj) for p, obj in planets_data.items()
+        ]
+        future_moon = executor.submit(
+            skyfield_searches.find_conjunctions_between_moving_bodies,
+            self.observer,
+            moon,
+            planet_list,
+            self.start_date,
+            self.end_date,
+            threshold_degrees=5.0,
+        )
+        futures[future_moon] = moon_display_name
 
         for future in as_completed(futures):
-            p1_name, p2_name = futures[future]
+            obj1_name = futures[future]
             found_events = future.result()
             for event in found_events:
                 event["type"] = "Conjunction"
                 event["event"] = "Conjunction"
-                event["object1"] = p1_name
-                event["object2"] = p2_name
+                event["object1"] = obj1_name
+                # object2 is already in the event dict from find_conjunctions_between_moving_bodies
                 event["rarity"] = self._get_rarity("Conjunction", event)
                 events.append(event)
         logger.debug(f"--- calculate_conjunctions: {time.time() - start_time}s")
@@ -581,6 +591,22 @@ class AstronomicalEvents:
             event["event"] = "Lunar Occultation"
             event["rarity"] = self._get_rarity("Lunar Occultation", event)
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
+        return events
+
+    def calculate_lunar_planetary_occultations(self):
+        start_time = time.time()
+        events = skyfield_searches.find_lunar_planetary_occultations(
+            self.observer,
+            self.start_date,
+            self.end_date,
+        )
+        for event in events:
+            event["type"] = "Lunar Planetary Occultation"
+            event["event"] = "Lunar Planetary Occultation"
+            event["rarity"] = self._get_rarity("Lunar Planetary Occultation", event)
+        logger.debug(
+            f"--- calculate_lunar_planetary_occultations: {time.time() - start_time}s"
+        )
         return events
 
     def calculate_aphelion_perihelion(self):
