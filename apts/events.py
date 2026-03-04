@@ -48,17 +48,17 @@ class AstronomicalEvents:
         )
         self.events = []
         # Load global settings from config
-        config_settings = get_event_settings()
+        self.event_settings = get_event_settings()
         
         if events_to_calculate is not None:
-            # If a list of events is provided, it should be filtered by what is enabled in config
+            # If a list of events is provided, it should override settings
             events_to_calculate_str = [str(e) for e in events_to_calculate]
-            self.event_settings = {
-                event.value: (event.value in events_to_calculate_str and config_settings.get(event.value, False))
-                for event in EventType
-            }
-        else:
-            self.event_settings = config_settings
+            # Initialize all EventTypes as False, then enable requested ones
+            new_settings = {event.value: False for event in EventType}
+            for e_str in events_to_calculate_str:
+                new_settings[e_str] = True
+            self.event_settings = new_settings
+        
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
