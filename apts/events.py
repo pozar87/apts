@@ -51,10 +51,11 @@ class AstronomicalEvents:
         if events_to_calculate is not None:
             # If a list of events is provided, it should override settings
             events_to_calculate_str = [str(e) for e in events_to_calculate]
-            self.event_settings = {
-                event.value: (event.value in events_to_calculate_str)
-                for event in EventType
-            }
+            # Initialize all EventTypes as False, then enable requested ones
+            new_settings = {event.value: False for event in EventType}
+            for e_str in events_to_calculate_str:
+                new_settings[e_str] = True
+            self.event_settings = new_settings
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
@@ -107,9 +108,9 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_alignments))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
-        if self.event_settings.get("golden_hour", True):
+        if self.event_settings.get("golden_hour", False):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
-        if self.event_settings.get("culminations", True):
+        if self.event_settings.get("culminations", False):
             futures.append(executor.submit(self.calculate_culminations))
 
         if self.event_settings.get("greatest_elongations"):
@@ -250,7 +251,7 @@ class AstronomicalEvents:
         if event_type == "Greatest Elongation":
             return 3
         if event_type == "Season":
-            return 2
+            return 4
         return 1
 
     def calculate_space_launches(self):
