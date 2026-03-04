@@ -184,3 +184,90 @@ def test_seestar_s30_pro_instantiation():
     assert s30p.focal_length.to(ureg.mm).magnitude == 160
     assert s30p.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(2.9)
     assert s30p.mass.to(ureg.gram).magnitude == 1650
+
+def test_planetary_radii():
+    from apts.constants import astronomy
+    assert astronomy.JUPITER_RADIUS_KM == 71492.0
+    assert astronomy.SATURN_RADIUS_KM == 60268.0
+    assert astronomy.EARTH_RADIUS_KM == 6378.1
+    assert astronomy.VENUS_RADIUS_KM == 6051.8
+    assert astronomy.MARS_RADIUS_KM == 3396.2
+    assert astronomy.URANUS_RADIUS_KM == 25559.0
+    assert astronomy.NEPTUNE_RADIUS_KM == 24764.0
+    assert astronomy.PLUTO_RADIUS_KM == 1188.3
+
+def test_total_solar_eclipse_classification():
+    # April 8, 2024 Total Solar Eclipse
+    # Dallas, TX (in path of totality)
+    from apts.place import Place
+    from apts.skyfield_searches import find_solar_eclipses
+    from datetime import datetime, timezone
+    dallas = Place(32.7767, -96.7970, "Dallas", 131)
+    start = datetime(2024, 4, 8, 17, 0, tzinfo=timezone.utc)
+    end = datetime(2024, 4, 8, 20, 0, tzinfo=timezone.utc)
+
+    eclipses = find_solar_eclipses(dallas.observer, start, end)
+
+    assert len(eclipses) > 0
+    best_eclipse = max(eclipses, key=lambda x: x['obscuration'])
+
+    assert best_eclipse['eclipse_type'] == "Total"
+    assert best_eclipse['obscuration'] >= 0.99 # Numerical precision with topocentric radii
+    assert best_eclipse['magnitude'] >= 1.0
+
+def test_partial_solar_eclipse_classification():
+    # April 8, 2024 Total Solar Eclipse
+    # New York, NY (Partial from here)
+    from apts.place import Place
+    from apts.skyfield_searches import find_solar_eclipses
+    from datetime import datetime, timezone
+    nyc = Place(40.7128, -74.0060, "NYC", 10)
+    start = datetime(2024, 4, 8, 17, 0, tzinfo=timezone.utc)
+    end = datetime(2024, 4, 8, 20, 0, tzinfo=timezone.utc)
+
+    eclipses = find_solar_eclipses(nyc.observer, start, end)
+
+    assert len(eclipses) > 0
+    best_eclipse = max(eclipses, key=lambda x: x['obscuration'])
+
+    assert best_eclipse['eclipse_type'] == "Partial"
+    assert 0.8 < best_eclipse['obscuration'] < 1.0
+    assert 0.8 < best_eclipse['magnitude'] < 1.0
+
+def test_conjunction_step_logic():
+    # Check that Moon conjunctions use fine step
+    # and results are accurate.
+    # Moon-Jupiter on Jan 18, 2024
+    from apts.place import Place
+    from apts.skyfield_searches import find_conjunctions
+    from datetime import datetime, timezone
+    place = Place(51.4779, 0.0, "Greenwich", 46)
+    start = datetime(2024, 1, 18, 0, 0, tzinfo=timezone.utc)
+    end = datetime(2024, 1, 19, 0, 0, tzinfo=timezone.utc)
+
+    conjs = find_conjunctions(place.observer, "moon", "jupiter barycenter", start, end)
+
+    assert len(conjs) > 0
+    peak = conjs[0]
+    # Expected peak is around 18:41 UTC
+    assert peak['date'].hour == 18
+    assert 35 <= peak['date'].minute <= 45
+
+def test_eclipse_rarity_and_naming():
+    # April 8, 2024 Dallas
+    from apts.place import Place
+    from apts.events import AstronomicalEvents
+    from apts.constants.event_types import EventType
+    from datetime import datetime, timezone
+    dallas = Place(32.7767, -96.7970, "Dallas", 131)
+    start = datetime(2024, 4, 8, 0, 0, tzinfo=timezone.utc)
+    end = datetime(2024, 4, 9, 0, 0, tzinfo=timezone.utc)
+
+    events_obj = AstronomicalEvents(dallas, start, end, events_to_calculate=[EventType.SOLAR_ECLIPSES])
+    events = events_obj.get_events()
+
+    assert not events.empty
+    eclipse_event = events[events['type'] == "Solar Eclipse"].iloc[0]
+
+    assert "Total Solar Eclipse" in eclipse_event['event']
+    assert eclipse_event['rarity'] == 5

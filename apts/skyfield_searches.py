@@ -221,9 +221,15 @@ def find_conjunctions(
             .degrees
         )
 
-    # The Moon moves quickly (~13 degrees per day), so we need a smaller step
-    # to avoid missing conjunctions or getting inaccurate timing.
-    step = 0.05 if "moon" in [p1_name.lower(), p2_name.lower()] else 1.0
+    # Dynamically adjust step size based on moving bodies
+    # Moon moves ~13 deg/day, Mercury ~1.3 deg/day
+    if "moon" in [p1_name.lower(), p2_name.lower()]:
+        step = 0.05  # ~1.2 hours
+    elif any(p in [p1_name.lower(), p2_name.lower()] for p in ["mercury", "venus"]):
+        step = 0.2  # ~4.8 hours
+    else:
+        step = 0.5  # ~12 hours
+
     setattr(separation, "step_days", step)
 
     times, separations = find_minima(t0, t1, separation)
@@ -706,6 +712,10 @@ def find_lunar_eclipses(start_date, end_date):
 
 
 def find_solar_eclipses(observer, start_date, end_date):
+    """
+    Finds solar eclipses for a specific observer, providing classification
+    (Total, Annular, Partial), magnitude, and obscuration.
+    """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -716,36 +726,82 @@ def find_solar_eclipses(observer, start_date, end_date):
         s = observer.at(t).observe(sun).apparent()
         m = observer.at(t).observe(moon).apparent()
 
-        # Calculate angular radii
+        # Calculate topocentric angular radii
         s_dist = s.distance().km
         m_dist = m.distance().km
 
-        # Standard radii
-        Rs = 695700.0  # Sun radius km
-        Rm = 1737.4  # Moon radius km
-
-        s_radius = np.degrees(np.arcsin(Rs / s_dist))
-        m_radius = np.degrees(np.arcsin(Rm / m_dist))
+        s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
+        m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
 
         sep = s.separation_from(m).degrees
         return sep - (s_radius + m_radius)
 
     setattr(solar_separation, "step_days", 0.05)
-    times, separations = find_minima(t0, t1, solar_separation)
+    times, _ = find_minima(t0, t1, solar_separation)
 
     events = []
-    for t, sep in zip(times, separations):
-        if sep < 0:
+    for t in times:
+        s_pos = observer.at(t).observe(sun).apparent()
+        m_pos = observer.at(t).observe(moon).apparent()
+
+        d = s_pos.separation_from(m_pos).degrees
+        rs = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_pos.distance().km))
+        rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_pos.distance().km))
+
+        if d < rs + rm:
             # Visibility check: Is the Sun above the horizon for this observer?
-            sun_alt = observer.at(t).observe(sun).apparent().altaz()[0].degrees
-            if sun_alt > 0:
-                events.append(
-                    {
-                        "date": t.utc_datetime(),
-                        "type": "Solar Eclipse",
-                        "separation_degrees": float(sep),
-                    }
-                )
+            sun_alt = s_pos.altaz()[0].degrees
+            if sun_alt <= -0.5:  # Account for refraction near horizon
+                continue
+
+            # Classification
+            if d <= abs(rs - rm):
+                if rm >= rs:
+                    kind = "Total"
+                else:
+                    kind = "Annular"
+            else:
+                kind = "Partial"
+
+            # Magnitude (fraction of solar diameter covered)
+            mag = (rs + rm - d) / (2 * rs)
+
+            # Obscuration (fraction of solar area covered)
+            # Area of intersection of two circles
+            if d <= abs(rs - rm):
+                obs = 1.0 if rm >= rs else (rm / rs) ** 2
+            else:
+                # Formula for area of overlap of two circles
+                # Source: http://mathworld.wolfram.com/Circle-CircleIntersection.html
+                def area(r1, r2, d):
+                    if d >= r1 + r2:
+                        return 0.0
+                    if d <= abs(r1 - r2):
+                        return np.pi * min(r1, r2) ** 2
+                    r1sq = r1**2
+                    r2sq = r2**2
+                    dsq = d**2
+                    part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d * r1))
+                    part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d * r2))
+                    part3 = 0.5 * np.sqrt(
+                        (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)
+                    )
+                    return part1 + part2 - part3
+
+                overlap_area = area(rs, rm, d)
+                sun_area = np.pi * rs**2
+                obs = overlap_area / sun_area
+
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "type": "Solar Eclipse",
+                    "eclipse_type": kind,
+                    "magnitude": float(mag),
+                    "obscuration": float(obs),
+                    "separation_degrees": float(d),
+                }
+            )
     return events
 
 
