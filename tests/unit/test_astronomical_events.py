@@ -35,6 +35,20 @@ class TestAstronomicalEvents(unittest.TestCase):
             "moon_apogee_perigee": True,
             "mercury_inferior_conjunctions": True,
             "moon_messier_conjunctions": True,
+            "moon_star_conjunctions": True,
+            "space_launches": True,
+            "space_events": True,
+            "iss_flybys": True,
+            "tiangong_flybys": True,
+            "solar_eclipses": True,
+            "lunar_eclipses": True,
+            "nasa_comets": True,
+            "planet_alignments": True,
+            "golden_hour": True,
+            "blue_hour": True,
+            "culminations": True,
+            "greatest_elongations": True,
+            "seasons": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -44,24 +58,27 @@ class TestAstronomicalEvents(unittest.TestCase):
         events_instance.executor = MagicMock()
         mock_executor_instance = events_instance.executor
 
-        # Create a list of mock futures
-        mock_futures = [MagicMock() for _ in range(10)]
+        # Create a list of mock futures for all calculation methods
+        # Counting how many 'if self.event_settings.get(...):' are in get_events()
+        # It's actually 23 types in EventType enum
+        num_events = 23
+        mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
 
         # Have the submit method return a different mock future each time
         mock_executor_instance.submit.side_effect = mock_futures
 
-        # have as_completed return the list of mock_futures
-        mock_as_completed.return_value = mock_futures
+        # have as_completed return the list of mock_futures as an iterator
+        mock_as_completed.return_value = iter(mock_futures)
 
         events_instance.get_events()
 
         # Check that submit was called for each calculation method
-        self.assertEqual(mock_executor_instance.submit.call_count, 10)
+        self.assertEqual(mock_executor_instance.submit.call_count, num_events)
         # Check that as_completed was called with the futures list
         mock_as_completed.assert_called_once()
-        self.assertEqual(len(mock_as_completed.call_args[0][0]), 10)
+        self.assertEqual(len(mock_as_completed.call_args[0][0]), num_events)
 
     @patch("apts.events.as_completed")
     def test_get_events_with_enum_selection(self, mock_as_completed):
@@ -81,7 +98,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             future.result.return_value = []
 
         mock_executor_instance.submit.side_effect = mock_futures
-        mock_as_completed.return_value = mock_futures
+        mock_as_completed.return_value = iter(mock_futures)
 
         events_instance.get_events()
 
