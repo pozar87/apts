@@ -479,32 +479,79 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         return []
     times = ts.linspace(t0, t1, num_steps)
 
-    # Topocentric position for accurate occultations
-    mpos = observer.at(times).observe(moon)
-    m_alt, _, m_dist = mpos.apparent().altaz()
+    # Coarse check every 20 minutes (1 in 10 points)
+    coarse_idx = np.arange(0, num_steps, 10)
+    coarse_times = times[coarse_idx]
 
-    # Calculate Moon's angular radius
-    moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+    # Topocentric position for Moon (coarse)
+    mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
+    m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
+    moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
+
+    # Unit vectors for Moon (coarse)
+    m_au_coarse = mpos_coarse.position.au
+    u_moon_coarse = m_au_coarse / np.linalg.norm(m_au_coarse, axis=0)
 
     for star_name, star_obj in star_objects:
-        # Topocentric observation of star
-        spos = observer.at(times).observe(star_obj)
-        separations = mpos.separation_from(spos).degrees
+        # Use ICRS position once (t0) for coarse filter - very fast.
+        # This filters out stars far from the Moon's path.
+        spos_star = earth.at(t0).observe(star_obj)
+        u_star = spos_star.position.au / np.linalg.norm(spos_star.position.au)
+
+        # Dot product for coarse separations
+        dot_coarse = u_star @ u_moon_coarse
+        sep_coarse = np.degrees(np.arccos(np.clip(dot_coarse, -1.0, 1.0)))
+
+        # Potential occultation: coarse separation < angular radius + small margin (for parallax/aberration)
+        # Moon parallax is up to ~1 deg, aberration is ~20 arcsec.
+        # Using Topocentric Moon and ICRS Star at t0, so only need to cover Star motion (aberration/parallax).
+        # Parallax for Stars is tiny (<1"), aberration ~20". Using 0.1 deg margin for safety.
+        potential_mask = (sep_coarse < moon_rad_coarse + 0.1) & (m_alt_coarse.degrees > -1)
+
+        if not potential_mask.any():
+            continue
+
+        # For potential candidates, perform high-precision check only near those windows
+        # Expand windows to ensure we don't miss transitions
+        window_indices = np.unique(
+            np.concatenate([
+                np.clip(coarse_idx[potential_mask] + offset, 0, num_steps - 1)
+                for offset in range(-15, 16) # +/- 30 mins around potential event
+            ])
+        )
+
+        if len(window_indices) == 0:
+            continue
+
+        fine_times = times[window_indices]
+        mpos_fine = observer.at(fine_times).observe(moon).apparent()
+        m_alt_fine, _, m_dist_fine = mpos_fine.altaz()
+        moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_fine.km))
+
+        # Topocentric observation of star for maximum precision
+        spos_fine = observer.at(fine_times).observe(star_obj).apparent()
+        separations = mpos_fine.separation_from(spos_fine).degrees
 
         # Occultation check: separation < angular radius AND Moon above horizon
-        occ_indices = np.where((separations < moon_angular_radius) & (m_alt.degrees > 0))[0]
+        occ_mask = (separations < moon_rad_fine) & (m_alt_fine.degrees > 0)
+        occ_indices_local = np.where(occ_mask)[0]
 
-        # We only want the moment of maximum occultation (minimum separation)
-        # for each occultation event. An event can span multiple hours.
-        if len(occ_indices) > 0:
+        if len(occ_indices_local) > 0:
+            # map back to global times indices
+            occ_indices_global = window_indices[occ_indices_local]
             # Group consecutive indices as one event
-            groups = np.split(occ_indices, np.where(np.diff(occ_indices) > 1)[0] + 1)
+            groups = np.split(occ_indices_global, np.where(np.diff(occ_indices_global) > 10)[0] + 1)
             for group in groups:
-                # Find the index with the minimum separation in this group
-                min_idx = group[np.argmin(separations[group])]
+                # To find min separation in this event, we need all separations for these indices
+                # Actually we already have separations for all window_indices
+                # Let's map global indices back to local (within window_indices)
+                local_group_indices = np.searchsorted(window_indices, group)
+                min_local_idx = local_group_indices[np.argmin(separations[local_group_indices])]
+                min_global_idx = window_indices[min_local_idx]
+
                 events.append(
                     {
-                        "date": times[min_idx].utc_datetime(),
+                        "date": times[min_global_idx].utc_datetime(),
                         "object1": "Moon",
                         "object2": star_name,
                     }
