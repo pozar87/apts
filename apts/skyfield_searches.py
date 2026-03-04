@@ -408,16 +408,7 @@ def find_conjunctions_with_stars(
                 }
             )
 
-        for idx in minima_indices:
-            all_events.append(
-                {
-                    "date": times[idx].utc_datetime(),
-                    "separation_degrees": float(separations[idx]),
-                    "star_name": star_name,
-                }
-            )
-
-    return all_events
+    return events
 
 
 def find_lunar_occultations(observer, bright_stars, start_date, end_date):
