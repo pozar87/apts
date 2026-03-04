@@ -6,7 +6,6 @@ from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.conditions import Conditions
 
-
 def test_messier_pickle_get_visible():
     # Setup
     place = Place(52.2297, 21.0122, "Warsaw")
