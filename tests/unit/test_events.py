@@ -325,8 +325,10 @@ class EventsTest(unittest.TestCase):
         self.assertIn("Uranus", planets_involved)
         self.assertIn("Neptune", planets_involved)
 
-    def test_calculate_culminations(self):
+    @patch("apts.events.get_event_settings")
+    def test_calculate_culminations(self, mock_get_event_settings):
         # Warsaw, June 21, 2023. Sun should culminate around 10:45 UTC (12:45 local)
+        mock_get_event_settings.return_value = {"culminations": True}
         start_date = datetime(2023, 6, 21, 0, 0, 0, tzinfo=utc)
         end_date = datetime(2023, 6, 21, 23, 59, 59, tzinfo=utc)
 

@@ -131,7 +131,11 @@ def get_event_settings() -> dict:
         options = config.options("events")
         if options:
             for option in options:
-                event_settings[option] = config.getboolean("events", option)  # pyright: ignore
+                try:
+                    event_settings[option] = config.getboolean("events", option)
+                except Exception as e:
+                    logger.error(f"Error reading option {option} in [events]: {e}")
+    
     return event_settings
 
 

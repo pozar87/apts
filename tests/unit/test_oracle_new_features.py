@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime, timezone
+from unittest.mock import patch
 from apts.place import Place
 from apts.events import AstronomicalEvents
 from apts.constants.event_types import EventType
@@ -13,7 +14,9 @@ class OracleNewFeaturesTest(unittest.TestCase):
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
         self.end_date = datetime(2023, 12, 31, tzinfo=utc)
 
-    def test_seasons(self):
+    @patch("apts.events.get_event_settings")
+    def test_seasons(self, mock_get_event_settings):
+        mock_get_event_settings.return_value = {"seasons": True}
         events = find_seasons(self.start_date, self.end_date)
         self.assertEqual(len(events), 4)
 
@@ -29,7 +32,7 @@ class OracleNewFeaturesTest(unittest.TestCase):
         events_df = ast_events.get_events()
         self.assertEqual(len(events_df), 4)
         self.assertTrue(all(events_df["type"] == "Season"))
-        self.assertTrue(all(events_df["rarity"] == 4))
+        self.assertTrue(all(events_df["rarity"] == 2))
 
     def test_moon_conjunction_timing_accuracy(self):
         # Known Moon-Jupiter conjunction on 2023-01-26

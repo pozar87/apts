@@ -1,17 +1,17 @@
 import logging
 import time
-import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from itertools import combinations
 from typing import List, Optional
 
+import numpy as np
 import pandas as pd
 import requests
 import requests_cache
 from dateutil.parser import parse as parse_date
 from skyfield import almanac
-from skyfield.api import Topos, Star
+from skyfield.api import Star, Topos
 
 from . import cache, skyfield_searches
 from .cache import get_ephemeris, get_timescale
@@ -47,15 +47,39 @@ class AstronomicalEvents:
             elevation_m=self.place.elevation,
         )
         self.events = []
-        self.event_settings = get_event_settings()
+        # Load global settings from config
+        config_settings = get_event_settings()
+        
+        # Default settings: most are True, some expensive ones are False
+        self.event_settings = {
+            event.value: True for event in EventType
+        }
+        # Disable expensive events by default
+        self.event_settings["golden_hour"] = False
+        self.event_settings["blue_hour"] = False
+        self.event_settings["culminations"] = False
+        
+        # Override with config settings if present
+        for key, value in config_settings.items():
+            if key in self.event_settings:
+                self.event_settings[key] = value
+        
+        logger.debug(f"AstronomicalEvents initialized. Config-based settings: {self.event_settings}")
+        
         if events_to_calculate is not None:
-            # If a list of events is provided, filter it by what is enabled in config
-            # but allow explicit requests if they are not in the enum (e.g. for custom events)
+            # If a list of events is provided, it should explicitly enable those
+            # but ONLY if they are not explicitly disabled in config.
+            # This allows tests to force-enable events (as they have no config)
+            # while respecting user settings in real environments.
             events_to_calculate_str = [str(e) for e in events_to_calculate]
-            self.event_settings = {
-                event.value: (event.value in events_to_calculate_str and self.event_settings.get(event.value, True))
-                for event in EventType
-            }
+            logger.debug(f"Limiting to events_to_calculate: {events_to_calculate_str}")
+            new_settings = {event.value: False for event in EventType}
+            for e_str in events_to_calculate_str:
+                # Use config if present, otherwise default to True for the requested event
+                new_settings[e_str] = config_settings.get(e_str, True)
+            self.event_settings = new_settings
+            logger.debug(f"Final event_settings after override: {self.event_settings}")
+        
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
@@ -108,7 +132,7 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_alignments))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
-        if self.event_settings.get("golden_hour", False):
+        if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
         if self.event_settings.get("culminations", False):
             futures.append(executor.submit(self.calculate_culminations))
@@ -123,9 +147,33 @@ class AstronomicalEvents:
                 self.events.extend(future.result())
             except Exception as e:
                 logger.error(f"Error calculating astronomical events: {e}")
+
+        # Standard columns for the events DataFrame
+        columns = [
+            "date",
+            "event",
+            "type",
+            "rarity",
+            "object",
+            "object1",
+            "object2",
+            "altitude",
+            "planets",
+            "separation_degrees",
+            "phase",
+            "shower_name",
+        ]
+
         if not self.events:
-            return pd.DataFrame(self.events)
-        df = pd.DataFrame(self.events).sort_values(by="date")
+            return pd.DataFrame(columns=pd.Index(columns))
+
+        df = pd.DataFrame(self.events)
+        # Ensure all standard columns exist
+        for col in columns:
+            if col not in df.columns:
+                df[col] = None
+
+        df = df.sort_values(by="date")
         df = self.translate_events(df)
         logger.debug(f"--- get_events: {time.time() - start_time}s")
         return df
@@ -227,7 +275,7 @@ class AstronomicalEvents:
         if event_type == "Greatest Elongation":
             return 3
         if event_type == "Season":
-            return 4
+            return 2
         return 1
 
     def calculate_space_launches(self):
@@ -592,14 +640,83 @@ class AstronomicalEvents:
     def calculate_moon_messier_conjunctions(self):
         start_time = time.time()
         messier_objects_to_check = [
-            "M1", "M2", "M3", "M4", "M5", "M8", "M9", "M10", "M11", "M12",
-            "M14", "M15", "M16", "M17", "M18", "M19", "M20", "M21", "M22", "M23",
-            "M24", "M25", "M26", "M27", "M28", "M30", "M35", "M41", "M42", "M43",
-            "M44", "M45", "M46", "M47", "M48", "M49", "M50", "M53", "M54", "M55",
-            "M58", "M59", "M60", "M61", "M62", "M64", "M65", "M66", "M67", "M68",
-            "M71", "M72", "M73", "M74", "M75", "M77", "M78", "M79", "M80", "M83",
-            "M84", "M85", "M86", "M87", "M88", "M89", "M90", "M91", "M93", "M95",
-            "M96", "M98", "M99", "M100", "M104", "M105", "M107",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "M5",
+            "M8",
+            "M9",
+            "M10",
+            "M11",
+            "M12",
+            "M14",
+            "M15",
+            "M16",
+            "M17",
+            "M18",
+            "M19",
+            "M20",
+            "M21",
+            "M22",
+            "M23",
+            "M24",
+            "M25",
+            "M26",
+            "M27",
+            "M28",
+            "M30",
+            "M35",
+            "M41",
+            "M42",
+            "M43",
+            "M44",
+            "M45",
+            "M46",
+            "M47",
+            "M48",
+            "M49",
+            "M50",
+            "M53",
+            "M54",
+            "M55",
+            "M58",
+            "M59",
+            "M60",
+            "M61",
+            "M62",
+            "M64",
+            "M65",
+            "M66",
+            "M67",
+            "M68",
+            "M71",
+            "M72",
+            "M73",
+            "M74",
+            "M75",
+            "M77",
+            "M78",
+            "M79",
+            "M80",
+            "M83",
+            "M84",
+            "M85",
+            "M86",
+            "M87",
+            "M88",
+            "M89",
+            "M90",
+            "M91",
+            "M93",
+            "M95",
+            "M96",
+            "M98",
+            "M99",
+            "M100",
+            "M104",
+            "M105",
+            "M107",
         ]
 
         messier_df = self.catalogs.MESSIER[
@@ -629,7 +746,9 @@ class AstronomicalEvents:
                 "separation_degrees": conj["separation_degrees"],
                 "type": "Moon-Messier Conjunction",
             }
-            event_data["rarity"] = self._get_rarity("Moon-Messier Conjunction", event_data)
+            event_data["rarity"] = self._get_rarity(
+                "Moon-Messier Conjunction", event_data
+            )
             events.append(event_data)
 
         logger.debug(
@@ -651,17 +770,14 @@ class AstronomicalEvents:
         # Observe all stars at once using a vectorized Star object
         stars_vector = Star(
             ra_hours=np.array([s.ra.hours for s in star_objs_all]),
-            dec_degrees=np.array([s.dec.degrees for s in star_objs_all])
+            dec_degrees=np.array([s.dec.degrees for s in star_objs_all]),
         )
         spos_at_t_ref = self.observer.at(t_ref).observe(stars_vector)
         lats, _, _ = spos_at_t_ref.ecliptic_latlon()
 
         # Filter using vectorized mask
         mask = np.abs(lats.degrees) < 10.0
-        star_data = [
-            (star_names_all[i], star_objs_all[i])
-            for i in np.where(mask)[0]
-        ]
+        star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
 
         conjunctions = skyfield_searches.find_conjunctions_with_stars(
             self.observer,
@@ -731,13 +847,14 @@ class AstronomicalEvents:
         show_blue = self.event_settings.get("blue_hour")
 
         filtered_events = [
-            e for e in events
-            if (e["type"] == "Golden Hour" and show_golden) or
-               (e["type"] == "Blue Hour" and show_blue)
+            e
+            for e in events
+            if (e["type"] == "Golden Hour" and show_golden)
+            or (e["type"] == "Blue Hour" and show_blue)
         ]
 
         for event in filtered_events:
-            event["rarity"] = 1 # Common events
+            event["rarity"] = 1  # Common events
 
         logger.debug(f"--- calculate_golden_blue_hours: {time.time() - start_time}s")
         return filtered_events
