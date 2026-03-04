@@ -29,6 +29,7 @@ class EventType(str, Enum):
     BLUE_HOUR = "blue_hour"
     CULMINATIONS = "culminations"
     GREATEST_ELONGATIONS = "greatest_elongations"
+    SEASONS = "seasons"
 
     def __str__(self):
         return self.value

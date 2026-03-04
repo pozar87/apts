@@ -115,6 +115,8 @@ class AstronomicalEvents:
 
         if self.event_settings.get("greatest_elongations"):
             futures.append(executor.submit(self.calculate_greatest_elongations))
+        if self.event_settings.get("seasons"):
+            futures.append(executor.submit(self.calculate_seasons))
 
         for future in as_completed(futures):
             try:
@@ -224,6 +226,8 @@ class AstronomicalEvents:
             return 2
         if event_type == "Greatest Elongation":
             return 3
+        if event_type == "Season":
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -756,4 +760,12 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Greatest Elongation", event)
         logger.debug(f"--- calculate_greatest_elongations: {time.time() - start_time}s")
+        return events
+
+    def calculate_seasons(self):
+        start_time = time.time()
+        events = skyfield_searches.find_seasons(self.start_date, self.end_date)
+        for event in events:
+            event["rarity"] = self._get_rarity("Season", event)
+        logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
         return events

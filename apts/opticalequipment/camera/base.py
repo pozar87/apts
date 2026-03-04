@@ -1,5 +1,4 @@
 import numpy
-import math
 from typing import Any, cast
 from ..abstract import OutputOpticalEqipment
 from ...constants import GraphConstants, OpticalType

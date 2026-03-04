@@ -238,6 +238,7 @@ class EventsTest(unittest.TestCase):
                 "date": datetime(2023, 1, 20, 12, 0, 0, tzinfo=utc),
                 "object2": "M45",
                 "separation_degrees": 2.5,
+                "star_name": "M1",
             }
         ]
 
