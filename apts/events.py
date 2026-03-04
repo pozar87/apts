@@ -48,12 +48,25 @@ class AstronomicalEvents:
         )
         self.events = []
         # Load global settings from config
-        self.event_settings = get_event_settings()
+        config_settings = get_event_settings()
+        
+        # Default settings: most are True, some expensive ones are False
+        self.event_settings = {
+            event.value: True for event in EventType
+        }
+        # Disable expensive events by default
+        self.event_settings["golden_hour"] = False
+        self.event_settings["blue_hour"] = False
+        self.event_settings["culminations"] = False
+        
+        # Override with config settings if present
+        for key, value in config_settings.items():
+            if key in self.event_settings:
+                self.event_settings[key] = value
         
         if events_to_calculate is not None:
-            # If a list of events is provided, it should override settings
+            # If a list of events is provided, it should override everything
             events_to_calculate_str = [str(e) for e in events_to_calculate]
-            # Initialize all EventTypes as False, then enable requested ones
             new_settings = {event.value: False for event in EventType}
             for e_str in events_to_calculate_str:
                 new_settings[e_str] = True
