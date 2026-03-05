@@ -3,6 +3,20 @@ from .abstract import IntermediateOpticalEquipment
 
 
 class Diagonal(IntermediateOpticalEquipment):
+    @classmethod 
+    def normalize_database_entry(cls, entry: dict) -> dict: 
+        from ..utils import Utils, Gender 
+        entry = entry.copy() 
+        if "in_connection_type" not in entry and "tside_thread" in entry: 
+            entry["in_connection_type"] = Utils.map_conn(entry.get("tside_thread")).value 
+        if "out_connection_type" not in entry and "cside_thread" in entry: 
+            entry["out_connection_type"] = Utils.map_conn(entry.get("cside_thread")).value 
+        if "in_gender" not in entry and "tside_gender" in entry: 
+            entry["in_gender"] = (Utils.map_gender(entry.get("tside_gender")) or Gender.MALE).value 
+        if "out_gender" not in entry and "cside_gender" in entry: 
+            entry["out_gender"] = (Utils.map_gender(entry.get("cside_gender")) or Gender.FEMALE).value 
+        return super(Diagonal, cls).normalize_database_entry(entry) 
+
     @classmethod
     def from_database(cls, entry):
         from ..utils import Utils, Gender
