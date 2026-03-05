@@ -186,31 +186,45 @@ def _load_bright_stars_with_units():
 
 
 class Catalogs:
+    """
+    This class provides access to astronomical catalogs.
+    To improve application startup time, catalogs are loaded lazily on first access.
+    """
+
     def __init__(self):
-        global _messier_df, _ngc_df, _bright_stars_df
-        if _messier_df is None:
-            logger.info("Loading Messier catalog...")
-            _messier_df = _load_messier_with_units()
-        if _ngc_df is None:
-            logger.info("Loading NGC catalog...")
-            _ngc_df = _load_ngc_with_units()
-        if _bright_stars_df is None:
-            logger.info("Loading Bright Stars catalog...")
-            _bright_stars_df = _load_bright_stars_with_units()
+        pass
 
     @property
     def MESSIER(self) -> pd.DataFrame:
+        # Lazy load Messier catalog to avoid import overhead
+        global _messier_df
+        if _messier_df is None:
+            logger.info("Loading Messier catalog...")
+            _messier_df = _load_messier_with_units()
         return _messier_df  # type: ignore
 
     @property
     def NGC(self) -> pd.DataFrame:
+        # Lazy load NGC catalog to avoid import overhead
+        global _ngc_df
+        if _ngc_df is None:
+            logger.info("Loading NGC catalog...")
+            _ngc_df = _load_ngc_with_units()
         return _ngc_df  # type: ignore
 
     @property
     def BRIGHT_STARS(self) -> pd.DataFrame:
+        # Lazy load Bright Stars catalog to avoid import overhead
+        global _bright_stars_df
+        if _bright_stars_df is None:
+            logger.info("Loading Bright Stars catalog...")
+            _bright_stars_df = _load_bright_stars_with_units()
         return _bright_stars_df  # type: ignore
 
 
 def initialize_catalogs():
     logger.info("Initializing catalogs...")
-    Catalogs()
+    catalogs = Catalogs()
+    _ = catalogs.MESSIER
+    _ = catalogs.NGC
+    _ = catalogs.BRIGHT_STARS
