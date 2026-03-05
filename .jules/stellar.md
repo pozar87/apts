@@ -33,3 +33,21 @@
 ### Develop
 - I added these entries to the respective `_DATABASE` dictionaries and added factory methods.
 - Verified with unit tests that they can be instantiated and their properties are correct.
+
+## 2025-05-15 - Data audit for Player One Poseidon series
+
+### Observe
+- The Player One Poseidon-C Pro and Poseidon-M Pro entries in `apts/opticalequipment/camera/vendors/player_one.py` were missing detailed sensor specifications, limiting the utility of FoV and SNR calculations.
+- Backfocus (optical length) was incorrectly set to 6.5mm instead of the standard 17.5mm for these cooled DSO cameras.
+
+### Target
+- Priority 2: Add missing specifications for popular cameras in the internal database.
+
+### Calibrate
+- Poseidon-C/M Pro specs: Sony IMX571 sensor, 6252x4176 resolution, 3.76µm pixels, 23.5x15.7mm sensor size, 71.7ke- full well, 81%/91% QE, 1.0e- read noise, 650g mass, 17.5mm backfocus.
+- Citing: Manufacturer official specification manual for Poseidon series.
+
+### Develop
+- Updated `apts/opticalequipment/camera/vendors/player_one.py` with the accurate data.
+- Added `tests/unit/test_player_one_specs.py` to ensure data integrity.
+- Verified with `pytest`.
