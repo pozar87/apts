@@ -11,7 +11,7 @@ class Barlow(OpticalEquipment):
         if "magnification" not in entry: 
             mag = Utils.extract_number(name, prefix="x") 
             if mag: entry["magnification"] = mag 
-        return entry 
+        return super(Barlow, cls).normalize_database_entry(entry) 
 
     @classmethod
     def from_database(cls, entry):

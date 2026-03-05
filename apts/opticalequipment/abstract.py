@@ -19,6 +19,11 @@ class OpticalEquipment:
         Normalizes a database entry by ensuring it has consistent keys and guessed properties. 
         Default implementation just returns the entry as-is. 
         """ 
+        # Round all float values to 2 decimal places for cleaner display 
+        for key, value in entry.items(): 
+            if isinstance(value, float): 
+                entry[key] = round(value, 2) 
+
         return entry 
 
     @classmethod 

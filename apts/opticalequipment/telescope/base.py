@@ -33,7 +33,7 @@ class Telescope(OpticalEquipment):
         elif "focal_length_mm" not in entry and "focal_length" not in entry: 
             _, focal_length = Utils.guess_optical_properties(name) 
             if focal_length: entry["focal_length_mm"] = focal_length 
-        return entry 
+        return super(Telescope, cls).normalize_database_entry(entry) 
 
     _DATABASE = {}
 

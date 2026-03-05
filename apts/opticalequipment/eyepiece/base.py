@@ -17,7 +17,7 @@ class Eyepiece(OutputOpticalEqipment):
         if "field_of_view_deg" not in entry and "field_of_view" not in entry: 
             match = re.search(r"(\d+)°", name) or re.search(r"(\d+)\s*deg", name) 
             if match: entry["field_of_view_deg"] = float(match.group(1)) 
-        return entry 
+        return super(Eyepiece, cls).normalize_database_entry(entry) 
 
     _DATABASE = {}
 
