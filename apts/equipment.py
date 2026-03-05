@@ -17,6 +17,7 @@ from .opticalequipment import (
     OpticalEquipment,
 )
 from .optics import OpticalPath
+from .utils import ConnectionType
 from .utils import Utils as GenericUtils
 from .utils.plot import Utils as PlotUtils
 
@@ -219,8 +220,12 @@ class Equipment:
                         path.fov_height().magnitude,
                         path.fov_diagonal().magnitude,
                         exit_pupil_value,
-                        path.dawes_limit().magnitude if path.dawes_limit() is not None else numpy.nan,
-                        path.rayleigh_limit().magnitude if path.rayleigh_limit() is not None else numpy.nan,
+                        path.dawes_limit().magnitude
+                        if path.dawes_limit() is not None
+                        else numpy.nan,
+                        path.rayleigh_limit().magnitude
+                        if path.rayleigh_limit() is not None
+                        else numpy.nan,
                         path.ideal_planetary_focal_ratio() or numpy.nan,
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
@@ -658,12 +663,23 @@ class Equipment:
                     ):
                         # Match genders - only different genders can connect
                         in_gender = in_node_data.get(NodeLabels.CONNECTION_GENDER)
-                        if (
-                            connection_gender is None
-                            or in_gender is None
-                            or connection_gender == in_gender
+                        if connection_type not in [
+                            ConnectionType.F_1_25,
+                            ConnectionType.F_2,
+                        ]:
+                            if (
+                                connection_gender is None
+                                or in_gender is None
+                                or connection_gender == in_gender
+                            ):
+                                # Gender missing or same gender cannot connect
+                                continue
+                        elif (
+                            connection_gender is not None
+                            and in_gender is not None
+                            and connection_gender == in_gender
                         ):
-                            # Gender missing or same gender cannot connect
+                            # If genders are explicitly provided and same, still skip
                             continue
 
                         # Connect all outputs with all inputs, excluding connecting part to itself
