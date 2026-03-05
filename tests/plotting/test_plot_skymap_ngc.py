@@ -1,8 +1,7 @@
 import matplotlib
 
 matplotlib.use("Agg")
-from unittest.mock import MagicMock, patch
-from typing import cast
+from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
 import pytest

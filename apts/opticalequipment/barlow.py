@@ -8,10 +8,11 @@ class Barlow(OpticalEquipment):
         from ..utils import Utils 
         entry = entry.copy() 
         name = entry.get("name", "") 
-        if "magnification" not in entry: 
-            mag = Utils.extract_number(name, prefix="x") 
-            if mag: entry["magnification"] = mag 
-        return super(Barlow, cls).normalize_database_entry(entry) 
+        if "magnification" not in entry:
+            mag = Utils.extract_number(name, prefix="x")
+            if mag:
+                entry["magnification"] = mag
+        return super(Barlow, cls).normalize_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry):
