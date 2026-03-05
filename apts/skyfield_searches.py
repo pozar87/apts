@@ -10,6 +10,38 @@ from .constants import astronomy
 from .utils import planetary
 
 
+def find_solar_longitude_time(t0, t1, target_longitude):
+    """
+    Finds the exact time when the Sun reaches a specific ecliptic longitude.
+    """
+    ts = get_timescale()
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+
+    def solar_longitude_at(t):
+        # Solar longitude (λ⊙) is the ecliptic longitude of the Sun as seen from Earth.
+        # It must be calculated for a geocentric observer (earth.at(t)) observing the Sun.
+        # We use apparent position to include aberration and nutation, which is
+        # the standard for λ⊙ used in meteor shower prediction (apparent geocentric).
+        _, lon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon()
+        return lon.degrees
+
+    # We want to find where solar_longitude_at(t) == target_longitude
+    # Since longitude wraps at 360, we use a difference function
+    def longitude_difference(t):
+        diff = solar_longitude_at(t) - target_longitude
+        return (diff + 180) % 360 - 180
+
+    def abs_diff(t):
+        return abs(longitude_difference(t))
+
+    setattr(abs_diff, "step_days", 1.0)
+    times, _ = find_minima(t0, t1, abs_diff)
+
+    return times[0] if len(times) > 0 else None
+
+
 def find_golden_blue_hours(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -494,6 +526,7 @@ def find_conjunctions_between_moving_bodies(
     start_date,
     end_date,
     threshold_degrees=1.0,
+    precomputed_positions=None,
 ):
     """
     Finds conjunctions between a moving body and multiple other moving bodies.
@@ -505,7 +538,6 @@ def find_conjunctions_between_moving_bodies(
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    body1 = planetary.get_skyfield_obj(body1_name)
 
     # Dynamically adjust step size based on moving bodies
     # Using 15-minute resolution for the Moon for better conjunction accuracy
@@ -525,12 +557,42 @@ def find_conjunctions_between_moving_bodies(
         num_steps = 2
     times = ts.linspace(t0, t1, num_steps)
 
-    # Vectorized observation for body1
-    pos1 = observer.at(times).observe(body1)
+    # Use precomputed positions if available, otherwise observe
+    if precomputed_positions and body1_name.lower() in precomputed_positions:
+        # Check if length matches. Skyfield's Astrometric results store
+        # their timestamps in '.t', which is a Time object with a .shape.
+        pos1_all = precomputed_positions[body1_name.lower()]
+        # Verify both 't' attribute and that the length of the vectorized time array matches
+        if (
+            hasattr(pos1_all, "t")
+            and hasattr(pos1_all.t, "shape")
+            and len(pos1_all.t.shape) > 0
+            and pos1_all.t.shape[0] == len(times)
+        ):
+            pos1 = pos1_all
+        else:
+            body1 = planetary.get_skyfield_obj(body1_name)
+            pos1 = observer.at(times).observe(body1)
+    else:
+        body1 = planetary.get_skyfield_obj(body1_name)
+        pos1 = observer.at(times).observe(body1)
 
     events = []
     for name2, body2 in bodies2_data:
-        pos2 = observer.at(times).observe(body2)
+        if precomputed_positions and name2.lower() in precomputed_positions:
+            pos2_all = precomputed_positions[name2.lower()]
+            if (
+                hasattr(pos2_all, "t")
+                and hasattr(pos2_all.t, "shape")
+                and len(pos2_all.t.shape) > 0
+                and pos2_all.t.shape[0] == len(times)
+            ):
+                pos2 = pos2_all
+            else:
+                pos2 = observer.at(times).observe(body2)
+        else:
+            pos2 = observer.at(times).observe(body2)
+
         separations = pos1.separation_from(pos2).degrees
 
         # Identify local minima where separation is below threshold
@@ -1111,7 +1173,7 @@ def find_planet_alignments(observer, start_date, end_date):
     return events
 
 
-def find_culminations(observer, start_date, end_date):
+def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -1152,10 +1214,16 @@ def find_culminations(observer, start_date, end_date):
 
         for t, alt in zip(cast(Any, times), altitudes):
             if alt > 0:
-                # Visibility check: For non-solar objects, Sun must be below -6 degrees
-                sun_alt = observer.at(t).observe(sun).apparent().altaz()[0].degrees
+                # Visibility check: For non-solar objects, Sun must be below threshold
+                sun_alt = (
+                    observer.at(t)
+                    .observe(sun)
+                    .apparent()
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
                 visible = True
-                if simple_name != "Sun" and sun_alt > -6:
+                if simple_name != "Sun" and sun_alt > sun_alt_threshold:
                     visible = False
 
                 if visible:
@@ -1165,6 +1233,60 @@ def find_culminations(observer, start_date, end_date):
                             "event": "Culmination",
                             "object": simple_name,
                             "type": "Culmination",
+                            "altitude": float(alt),
+                        }
+                    )
+
+    return events
+
+
+def find_object_culminations(
+    observer, objects_data, start_date, end_date, sun_alt_threshold=-12
+):
+    """
+    Finds culminations for a list of objects (e.g. Messier catalog).
+    Vectorized over objects for speed.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_ephemeris())
+    sun = eph["sun"]
+
+    events = []
+    if not objects_data:
+        return events
+
+    for name, obj in objects_data:
+
+        def altitude(t):
+            return (
+                observer.at(t)
+                .observe(obj)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+
+        setattr(altitude, "step_days", 0.5)
+        times, altitudes = find_maxima(t0, t1, altitude)
+
+        for t, alt in zip(cast(Any, times), altitudes):
+            if alt > 15:  # Standard minimum altitude for good observation
+                sun_alt = (
+                    observer.at(t)
+                    .observe(sun)
+                    .apparent()
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
+                if sun_alt <= sun_alt_threshold:
+                    events.append(
+                        {
+                            "date": t.utc_datetime(),
+                            "event": "Culmination",
+                            "object": name,
+                            "type": "Messier Culmination",
                             "altitude": float(alt),
                         }
                     )
