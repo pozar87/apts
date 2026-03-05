@@ -2,7 +2,350 @@ from ....utils import Gender
 from ..base import Camera
 
 class NikonCamera(Camera):
-    _DATABASE = {'Nikon_D810A': {'brand': 'Nikon', 'name': 'D810A', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 980, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D750': {'brand': 'Nikon', 'name': 'D750', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 840, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5600': {'brand': 'Nikon', 'name': 'D5600', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 465, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D7500': {'brand': 'Nikon', 'name': 'D7500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 640, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3400': {'brand': 'Nikon', 'name': 'D3400', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 395, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5300': {'brand': 'Nikon', 'name': 'D5300', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 480, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D7200': {'brand': 'Nikon', 'name': 'D7200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 675, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D810': {'brand': 'Nikon', 'name': 'D810', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 880, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D850': {'brand': 'Nikon', 'name': 'D850', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1005, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D610': {'brand': 'Nikon', 'name': 'D610', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5500': {'brand': 'Nikon', 'name': 'D5500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 470, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3300': {'brand': 'Nikon', 'name': 'D3300', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 410, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D500': {'brand': 'Nikon', 'name': 'D500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 860, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z5': {'brand': 'Nikon', 'name': 'Z5', 'type': 'type_dslr', 'optical_length': 16, 'mass': 675, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z6': {'brand': 'Nikon', 'name': 'Z6', 'type': 'type_dslr', 'optical_length': 16, 'mass': 675, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z6_II': {'brand': 'Nikon', 'name': 'Z6 II', 'type': 'type_dslr', 'optical_length': 16, 'mass': 705, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z6_III': {'brand': 'Nikon', 'name': 'Z6 III', 'type': 'type_dslr', 'optical_length': 16, 'mass': 760, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z7': {'brand': 'Nikon', 'name': 'Z7', 'type': 'type_dslr', 'optical_length': 16, 'mass': 675, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z7_II': {'brand': 'Nikon', 'name': 'Z7 II', 'type': 'type_dslr', 'optical_length': 16, 'mass': 705, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z8': {'brand': 'Nikon', 'name': 'Z8', 'type': 'type_dslr', 'optical_length': 16, 'mass': 910, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z9': {'brand': 'Nikon', 'name': 'Z9', 'type': 'type_dslr', 'optical_length': 16, 'mass': 1340, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z30': {'brand': 'Nikon', 'name': 'Z30', 'type': 'type_dslr', 'optical_length': 16, 'mass': 405, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Z50': {'brand': 'Nikon', 'name': 'Z50', 'type': 'type_dslr', 'optical_length': 16, 'mass': 450, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Zf': {'brand': 'Nikon', 'name': 'Zf', 'type': 'type_dslr', 'optical_length': 16, 'mass': 710, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Zfc': {'brand': 'Nikon', 'name': 'Zfc', 'type': 'type_dslr', 'optical_length': 16, 'mass': 445, 'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D780': {'brand': 'Nikon', 'name': 'D780', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 840, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D7000': {'brand': 'Nikon', 'name': 'D7000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 690, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5100': {'brand': 'Nikon', 'name': 'D5100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 510, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3500': {'brand': 'Nikon', 'name': 'D3500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 415, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D40': {'brand': 'Nikon', 'name': 'D40', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 475, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D60': {'brand': 'Nikon', 'name': 'D60', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 580, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D70': {'brand': 'Nikon', 'name': 'D70', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 600, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D80': {'brand': 'Nikon', 'name': 'D80', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 625, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D90': {'brand': 'Nikon', 'name': 'D90', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 620, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D200': {'brand': 'Nikon', 'name': 'D200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 830, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D300': {'brand': 'Nikon', 'name': 'D300', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 825, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D7100': {'brand': 'Nikon', 'name': 'D7100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 675, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5000': {'brand': 'Nikon', 'name': 'D5000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 560, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3200': {'brand': 'Nikon', 'name': 'D3200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 455, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5200': {'brand': 'Nikon', 'name': 'D5200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 505, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D600': {'brand': 'Nikon', 'name': 'D600', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D4': {'brand': 'Nikon', 'name': 'D4', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1340, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D4S': {'brand': 'Nikon', 'name': 'D4S', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1350, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D5': {'brand': 'Nikon', 'name': 'D5', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1405, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D70s': {'brand': 'Nikon', 'name': 'D70s', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 610, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D50': {'brand': 'Nikon', 'name': 'D50', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 540, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3100': {'brand': 'Nikon', 'name': 'D3100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 455, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_D3000': {'brand': 'Nikon', 'name': 'D3000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 485, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Nikon_Df': {'brand': 'Nikon', 'name': 'Df', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 765, 'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}}
+    _DATABASE = {
+        'Nikon_D810A': {
+            'brand': 'Nikon',
+            'name': 'D810A',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 980,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 35.9,
+            'sensor_height_mm': 24.0,
+            'width': 7360,
+            'height': 4912,
+            'pixel_size_um': 4.88
+        },
+        'Nikon_D750': {
+            'brand': 'Nikon',
+            'name': 'D750',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 840,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 35.9,
+            'sensor_height_mm': 24.0,
+            'width': 6016,
+            'height': 4016,
+            'pixel_size_um': 5.97
+        },
+        'Nikon_D5600': {
+            'brand': 'Nikon',
+            'name': 'D5600',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 465,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.6,
+            'width': 6000,
+            'height': 4000,
+            'pixel_size_um': 3.92
+        },
+        'Nikon_D7500': {
+            'brand': 'Nikon',
+            'name': 'D7500',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 640,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.7,
+            'width': 5568,
+            'height': 3712,
+            'pixel_size_um': 4.22
+        },
+        'Nikon_D3400': {
+            'brand': 'Nikon',
+            'name': 'D3400',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 395,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.6,
+            'width': 6000,
+            'height': 4000,
+            'pixel_size_um': 3.92
+        },
+        'Nikon_D5300': {
+            'brand': 'Nikon',
+            'name': 'D5300',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 480,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.6,
+            'width': 6000,
+            'height': 4000,
+            'pixel_size_um': 3.92
+        },
+        'Nikon_D7200': {
+            'brand': 'Nikon',
+            'name': 'D7200',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 675,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.6,
+            'width': 6000,
+            'height': 4000,
+            'pixel_size_um': 3.92
+        },
+        'Nikon_D810': {
+            'brand': 'Nikon',
+            'name': 'D810',
+            'type': 'type_dslr',
+            'optical_length': 46.5,
+            'mass': 880,
+            'tside_thread': 'Nikon F',
+            'tside_gender': 'Female',
+            'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 24.0, 'width': 7360, 'height': 4912, 'pixel_size_um': 4.88
+        },
+        'Nikon_D850': {
+            'brand': 'Nikon', 'name': 'D850', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 915,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 8256, 'height': 5504, 'pixel_size_um': 4.35
+        },
+        'Nikon_D610': {
+            'brand': 'Nikon', 'name': 'D610', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 24.0, 'width': 6016, 'height': 4016, 'pixel_size_um': 5.97
+        },
+        'Nikon_D5500': {
+            'brand': 'Nikon', 'name': 'D5500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 420,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+        },
+        'Nikon_D3300': {
+            'brand': 'Nikon', 'name': 'D3300', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 430,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+        },
+        'Nikon_D500': {
+            'brand': 'Nikon', 'name': 'D500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.7, 'width': 5568, 'height': 3712, 'pixel_size_um': 4.22
+        },
+        'Nikon_Z5': {
+            'brand': 'Nikon', 'name': 'Z5', 'type': 'type_dslr', 'optical_length': 16, 'mass': 590,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6016, 'height': 4016, 'pixel_size_um': 5.97
+        },
+        'Nikon_Z6': {
+            'brand': 'Nikon', 'name': 'Z6', 'type': 'type_dslr', 'optical_length': 16, 'mass': 585,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6048, 'height': 4024, 'pixel_size_um': 5.94
+        },
+        'Nikon_Z6_II': {
+            'brand': 'Nikon', 'name': 'Z6 II', 'type': 'type_dslr', 'optical_length': 16, 'mass': 615,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6048, 'height': 4024, 'pixel_size_um': 5.94
+        },
+        'Nikon_Z6_III': {
+            'brand': 'Nikon', 'name': 'Z6 III', 'type': 'type_dslr', 'optical_length': 16, 'mass': 670,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6048, 'height': 4032, 'pixel_size_um': 5.94
+        },
+        'Nikon_Z7': {
+            'brand': 'Nikon', 'name': 'Z7', 'type': 'type_dslr', 'optical_length': 16, 'mass': 585,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 8256, 'height': 5504, 'pixel_size_um': 4.35
+        },
+        'Nikon_Z7_II': {
+            'brand': 'Nikon', 'name': 'Z7 II', 'type': 'type_dslr', 'optical_length': 16, 'mass': 615,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 8256, 'height': 5504, 'pixel_size_um': 4.35
+        },
+        'Nikon_Z8': {
+            'brand': 'Nikon', 'name': 'Z8', 'type': 'type_dslr', 'optical_length': 16, 'mass': 820,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 8256, 'height': 5504, 'pixel_size_um': 4.35
+        },
+        'Nikon_Z9': {
+            'brand': 'Nikon', 'name': 'Z9', 'type': 'type_dslr', 'optical_length': 16, 'mass': 1160,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 8256, 'height': 5504, 'pixel_size_um': 4.35
+        },
+        'Nikon_Z30': {
+            'brand': 'Nikon', 'name': 'Z30', 'type': 'type_dslr', 'optical_length': 16, 'mass': 350,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.7, 'width': 5568, 'height': 3712, 'pixel_size_um': 4.22
+        },
+        'Nikon_Z50': {
+            'brand': 'Nikon', 'name': 'Z50', 'type': 'type_dslr', 'optical_length': 16, 'mass': 395,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.7, 'width': 5568, 'height': 3712, 'pixel_size_um': 4.22
+        },
+        'Nikon_Zf': {
+            'brand': 'Nikon', 'name': 'Zf', 'type': 'type_dslr', 'optical_length': 16, 'mass': 630,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6048, 'height': 4032, 'pixel_size_um': 5.94
+        },
+        'Nikon_Zfc': {
+            'brand': 'Nikon', 'name': 'Zfc', 'type': 'type_dslr', 'optical_length': 16, 'mass': 390,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.7, 'width': 5568, 'height': 3712, 'pixel_size_um': 4.22
+        },
+        'Nikon_D780': {
+            'brand': 'Nikon', 'name': 'D780', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 755,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 6048, 'height': 4024, 'pixel_size_um': 5.94
+        },
+        'Nikon_D7000': {
+            'brand': 'Nikon', 'name': 'D7000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 690,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.6, 'width': 4928, 'height': 3264, 'pixel_size_um': 4.78
+        },
+        'Nikon_D5100': {
+            'brand': 'Nikon', 'name': 'D5100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 510,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.6, 'width': 4928, 'height': 3264, 'pixel_size_um': 4.78
+        },
+        'Nikon_D3500': {
+            'brand': 'Nikon', 'name': 'D3500', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 365,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+        },
+        'Nikon_D40': {
+            'brand': 'Nikon', 'name': 'D40', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 475,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.7, 'sensor_height_mm': 15.5, 'width': 3008, 'height': 2000, 'pixel_size_um': 7.8
+        },
+        'Nikon_D60': {
+            'brand': 'Nikon', 'name': 'D60', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 495,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 3872, 'height': 2592, 'pixel_size_um': 6.1
+        },
+        'Nikon_D70': {
+            'brand': 'Nikon', 'name': 'D70', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 600,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.7, 'sensor_height_mm': 15.6, 'width': 3008, 'height': 2000, 'pixel_size_um': 7.8
+        },
+        'Nikon_D80': {
+            'brand': 'Nikon', 'name': 'D80', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 585,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 3872, 'height': 2592, 'pixel_size_um': 6.1
+        },
+        'Nikon_D90': {
+            'brand': 'Nikon', 'name': 'D90', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 620,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 4288, 'height': 2848, 'pixel_size_um': 5.5
+        },
+        'Nikon_D200': {
+            'brand': 'Nikon', 'name': 'D200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 830,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 3872, 'height': 2592, 'pixel_size_um': 6.1
+        },
+        'Nikon_D300': {
+            'brand': 'Nikon', 'name': 'D300', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 825,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 4288, 'height': 2848, 'pixel_size_um': 5.5
+        },
+        'Nikon_D7100': {
+            'brand': 'Nikon', 'name': 'D7100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 675,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+        },
+        'Nikon_D5000': {
+            'brand': 'Nikon', 'name': 'D5000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 560,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 4288, 'height': 2848, 'pixel_size_um': 5.5
+        },
+        'Nikon_D3200': {
+            'brand': 'Nikon', 'name': 'D3200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 455,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.2, 'sensor_height_mm': 15.4, 'width': 6016, 'height': 4000, 'pixel_size_um': 3.85
+        },
+        'Nikon_D5200': {
+            'brand': 'Nikon', 'name': 'D5200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 505,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+        },
+        'Nikon_D600': {
+            'brand': 'Nikon', 'name': 'D600', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 24.0, 'width': 6016, 'height': 4016, 'pixel_size_um': 5.97
+        },
+        'Nikon_D4': {
+            'brand': 'Nikon', 'name': 'D4', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1180,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 36.0, 'sensor_height_mm': 23.9, 'width': 4928, 'height': 3280, 'pixel_size_um': 7.3
+        },
+        'Nikon_D4S': {
+            'brand': 'Nikon', 'name': 'D4S', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1180,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 36.0, 'sensor_height_mm': 23.9, 'width': 4928, 'height': 3280, 'pixel_size_um': 7.3
+        },
+        'Nikon_D5': {
+            'brand': 'Nikon', 'name': 'D5', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 1405,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 35.9, 'sensor_height_mm': 23.9, 'width': 5568, 'height': 3712, 'pixel_size_um': 6.45
+        },
+        'Nikon_D70s': {
+            'brand': 'Nikon', 'name': 'D70s', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 600,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.7, 'sensor_height_mm': 15.6, 'width': 3008, 'height': 2000, 'pixel_size_um': 7.8
+        },
+        'Nikon_D50': {
+            'brand': 'Nikon', 'name': 'D50', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 540,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.7, 'sensor_height_mm': 15.6, 'width': 3008, 'height': 2000, 'pixel_size_um': 7.8
+        },
+        'Nikon_D3100': {
+            'brand': 'Nikon', 'name': 'D3100', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 455,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.1, 'sensor_height_mm': 15.4, 'width': 4608, 'height': 3072, 'pixel_size_um': 5.0
+        },
+        'Nikon_D3000': {
+            'brand': 'Nikon', 'name': 'D3000', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 485,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.6, 'sensor_height_mm': 15.8, 'width': 3872, 'height': 2592, 'pixel_size_um': 6.1
+        },
+        'Nikon_Df': {
+            'brand': 'Nikon', 'name': 'Df', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 710,
+            'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 36.0, 'sensor_height_mm': 23.9, 'width': 4928, 'height': 3280, 'pixel_size_um': 7.3
+        }
+    }
 
     @classmethod
     def Nikon_D850(cls):

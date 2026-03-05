@@ -1,7 +1,62 @@
 from ..base import Camera
 
 class HasselbladCamera(Camera):
-    _DATABASE = {'Hasselblad_X2D_100C': {'brand': 'Hasselblad', 'name': 'X2D 100C', 'type': 'type_dslr', 'optical_length': 26.7, 'mass': 895, 'tside_thread': 'M42', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Hasselblad_X1D_II_50C': {'brand': 'Hasselblad', 'name': 'X1D II 50C', 'type': 'type_dslr', 'optical_length': 26.7, 'mass': 650, 'tside_thread': 'M42', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}, 'Hasselblad_907X_50C': {'brand': 'Hasselblad', 'name': '907X 50C', 'type': 'type_dslr', 'optical_length': 26.7, 'mass': 740, 'tside_thread': 'M42', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end'}}
+    _DATABASE = {
+        'Hasselblad_X2D_100C': {
+            'brand': 'Hasselblad',
+            'name': 'X2D 100C',
+            'type': 'type_dslr',
+            'optical_length': 26.7,
+            'mass': 895,
+            'tside_thread': 'M42',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 43.8,
+            'sensor_height_mm': 32.9,
+            'width': 11656,
+            'height': 8742,
+            'pixel_size_um': 3.76
+        },
+        'Hasselblad_X1D_II_50C': {
+            'brand': 'Hasselblad',
+            'name': 'X1D II 50C',
+            'type': 'type_dslr',
+            'optical_length': 26.7,
+            'mass': 650,
+            'tside_thread': 'M42',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 43.8,
+            'sensor_height_mm': 32.9,
+            'width': 8272,
+            'height': 6200,
+            'pixel_size_um': 5.3
+        },
+        'Hasselblad_907X_50C': {
+            'brand': 'Hasselblad',
+            'name': '907X 50C',
+            'type': 'type_dslr',
+            'optical_length': 26.7,
+            'mass': 740,
+            'tside_thread': 'M42',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 43.8,
+            'sensor_height_mm': 32.9,
+            'width': 8272,
+            'height': 6200,
+            'pixel_size_um': 5.3
+        }
+    }
 
     @classmethod
     def Hasselblad_X2D_100C(cls):
