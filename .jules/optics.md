@@ -85,3 +85,17 @@
     - Focuser: 1.25"
 - **Action:** Updated database entry with verified specs, corrected type and focuser size, and added source comment.
 - **Source URL:** https://www.celestron.com/products/nexstar-127slt-computerized-telescope
+
+## 2024-05-29 - Audit of Celestron AstroMaster 70AZ
+
+- **Item:** Celestron AstroMaster 70AZ Refractor Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 1500g, missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 70mm
+    - Focal Length: 900mm
+    - Central Obstruction: 0mm (Refractor)
+    - Mass (OTA): 2.9 lbs -> 1.31 kg -> 1310g
+    - Type: Refractor
+- **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
+- **Source URL:** https://www.celestron.com/products/astromaster-70az-telescope

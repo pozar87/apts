@@ -121,13 +121,84 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
+def find_lunar_planetary_occultations(observer, start_date, end_date):
+    """
+    Finds occultations of planets by the Moon for a specific observer.
+    Vectorized over time for each planet for precision and speed.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    moon = planetary.get_skyfield_obj("moon")
+
+    # Planets to check for occultations
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+
+    events = []
+
+    # Check every 2 minutes for precision
+    num_steps = int((t1 - t0) * 24 * 30)
+    if num_steps < 2:
+        return []
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Topocentric position for Moon
+    mpos = observer.at(times).observe(moon)
+    m_alt, _, m_dist = mpos.apparent().altaz()
+
+    # Calculate Moon's angular radius
+    moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+
+    for p_name in planets:
+        planet = planetary.get_skyfield_obj(p_name)
+        simple_name = planetary.get_simple_name(p_name)
+
+        # Topocentric observation of planet
+        ppos = observer.at(times).observe(planet)
+        separations = mpos.separation_from(ppos).degrees
+
+        # Occultation check: separation < Moon's radius AND Moon above horizon
+        occ_indices = np.where((separations < moon_angular_radius) & (m_alt.degrees > 0))[0]
+
+        if len(occ_indices) > 0:
+            # Group consecutive indices as one event
+            groups = np.split(occ_indices, np.where(np.diff(occ_indices) > 1)[0] + 1)
+            for group in groups:
+                # Find the index with the minimum separation in this group
+                min_idx = group[np.argmin(separations[group])]
+                events.append(
+                    {
+                        "date": times[min_idx].utc_datetime(),
+                        "object1": "Moon",
+                        "object2": simple_name,
+                    }
+                )
+
+    return events
+
+
 def find_highest_altitude(observer, planet, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
     def altitude(t):
-        return observer.at(t).observe(planet).apparent().altaz()[0].degrees
+        # Account for atmospheric refraction for high-precision altitude
+        return (
+            observer.at(t)
+            .observe(planet)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
 
     setattr(altitude, "step_days", 0.1)
     times, altitudes = find_maxima(t0, t1, altitude)
@@ -416,12 +487,78 @@ def find_conjunctions_with_stars(
     return events
 
 
+def find_conjunctions_between_moving_bodies(
+    observer,
+    body1_name,
+    bodies2_data,  # List of (name, Skyfield object)
+    start_date,
+    end_date,
+    threshold_degrees=1.0,
+):
+    """
+    Finds conjunctions between a moving body and multiple other moving bodies.
+    Vectorized over time for each pair.
+    """
+    if not bodies2_data:
+        return []
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    body1 = planetary.get_skyfield_obj(body1_name)
+
+    # Dynamically adjust step size based on moving bodies
+    # Using 15-minute resolution for the Moon for better conjunction accuracy
+    if "moon" == body1_name.lower() or any(
+        "moon" == name.lower() for name, _ in bodies2_data
+    ):
+        step = 0.01  # ~14.4 minutes
+    elif "mercury" == body1_name.lower() or any(
+        "mercury" == name.lower() for name, _ in bodies2_data
+    ):
+        step = 0.1  # ~2.4 hours
+    else:
+        step = 0.2  # ~4.8 hours
+
+    num_steps = int((t1 - t0) / step)
+    if num_steps < 2:
+        num_steps = 2
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Vectorized observation for body1
+    pos1 = observer.at(times).observe(body1)
+
+    events = []
+    for name2, body2 in bodies2_data:
+        pos2 = observer.at(times).observe(body2)
+        separations = pos1.separation_from(pos2).degrees
+
+        # Identify local minima where separation is below threshold
+        is_minima = (separations[1:-1] < separations[:-2]) & (
+            separations[1:-1] < separations[2:]
+        )
+        is_below_threshold = separations[1:-1] < threshold_degrees
+
+        minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
+
+        for idx in minima_indices:
+            events.append(
+                {
+                    "date": times[idx].utc_datetime(),
+                    "object2": name2,
+                    "separation_degrees": float(separations[idx]),
+                }
+            )
+
+    return events
+
+
 def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = planetary.get_skyfield_obj("moon")
-    earth = planetary.get_skyfield_obj("earth")
+    earth = cast(Any, planetary.get_skyfield_obj("earth"))
 
     target_stars = [
         "Sirius",
@@ -463,7 +600,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         ra_hours=np.array([s.ra.hours for s in star_objs_all]),
         dec_degrees=np.array([s.dec.degrees for s in star_objs_all])
     )
-    spos_at_t0_all = cast(Any, earth).at(t0).observe(stars_vector)
+    spos_at_t0_all = earth.at(t0).observe(stars_vector)
     lats, _, _ = spos_at_t0_all.ecliptic_latlon()
 
     # Filter using vectorized mask
@@ -479,32 +616,79 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         return []
     times = ts.linspace(t0, t1, num_steps)
 
-    # Topocentric position for accurate occultations
-    mpos = observer.at(times).observe(moon)
-    m_alt, _, m_dist = mpos.apparent().altaz()
+    # Coarse check every 20 minutes (1 in 10 points)
+    coarse_idx = np.arange(0, num_steps, 10)
+    coarse_times = times[coarse_idx]
 
-    # Calculate Moon's angular radius
-    moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+    # Topocentric position for Moon (coarse)
+    mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
+    m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
+    moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
+
+    # Unit vectors for Moon (coarse)
+    m_au_coarse = mpos_coarse.position.au
+    u_moon_coarse = m_au_coarse / np.linalg.norm(m_au_coarse, axis=0)
 
     for star_name, star_obj in star_objects:
-        # Topocentric observation of star
-        spos = observer.at(times).observe(star_obj)
-        separations = mpos.separation_from(spos).degrees
+        # Use ICRS position once (t0) for coarse filter - very fast.
+        # This filters out stars far from the Moon's path.
+        spos_star = earth.at(t0).observe(star_obj)
+        u_star = spos_star.position.au / np.linalg.norm(spos_star.position.au)
+
+        # Dot product for coarse separations
+        dot_coarse = u_star @ u_moon_coarse
+        sep_coarse = np.degrees(np.arccos(np.clip(dot_coarse, -1.0, 1.0)))
+
+        # Potential occultation: coarse separation < angular radius + small margin (for parallax/aberration)
+        # Moon parallax is up to ~1 deg, aberration is ~20 arcsec.
+        # Using Topocentric Moon and ICRS Star at t0, so only need to cover Star motion (aberration/parallax).
+        # Parallax for Stars is tiny (<1"), aberration ~20". Using 0.1 deg margin for safety.
+        potential_mask = (sep_coarse < moon_rad_coarse + 0.1) & (m_alt_coarse.degrees > -1)
+
+        if not potential_mask.any():
+            continue
+
+        # For potential candidates, perform high-precision check only near those windows
+        # Expand windows to ensure we don't miss transitions
+        window_indices = np.unique(
+            np.concatenate([
+                np.clip(coarse_idx[potential_mask] + offset, 0, num_steps - 1)
+                for offset in range(-15, 16) # +/- 30 mins around potential event
+            ])
+        )
+
+        if len(window_indices) == 0:
+            continue
+
+        fine_times = times[window_indices]
+        mpos_fine = observer.at(fine_times).observe(moon).apparent()
+        m_alt_fine, _, m_dist_fine = mpos_fine.altaz()
+        moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_fine.km))
+
+        # Topocentric observation of star for maximum precision
+        spos_fine = observer.at(fine_times).observe(star_obj).apparent()
+        separations = mpos_fine.separation_from(spos_fine).degrees
 
         # Occultation check: separation < angular radius AND Moon above horizon
-        occ_indices = np.where((separations < moon_angular_radius) & (m_alt.degrees > 0))[0]
+        occ_mask = (separations < moon_rad_fine) & (m_alt_fine.degrees > 0)
+        occ_indices_local = np.where(occ_mask)[0]
 
-        # We only want the moment of maximum occultation (minimum separation)
-        # for each occultation event. An event can span multiple hours.
-        if len(occ_indices) > 0:
+        if len(occ_indices_local) > 0:
+            # map back to global times indices
+            occ_indices_global = window_indices[occ_indices_local]
             # Group consecutive indices as one event
-            groups = np.split(occ_indices, np.where(np.diff(occ_indices) > 1)[0] + 1)
+            groups = np.split(occ_indices_global, np.where(np.diff(occ_indices_global) > 10)[0] + 1)
             for group in groups:
-                # Find the index with the minimum separation in this group
-                min_idx = group[np.argmin(separations[group])]
+                # To find min separation in this event, we need all separations for these indices
+                # Actually we already have separations for all window_indices
+                # Let's map global indices back to local (within window_indices)
+                local_group_indices = np.searchsorted(window_indices, group)
+                min_local_idx = local_group_indices[np.argmin(separations[local_group_indices])]
+                min_global_idx = window_indices[min_local_idx]
+
                 events.append(
                     {
-                        "date": times[min_idx].utc_datetime(),
+                        "date": times[min_global_idx].utc_datetime(),
                         "object1": "Moon",
                         "object2": star_name,
                     }
@@ -750,8 +934,9 @@ def find_solar_eclipses(observer, start_date, end_date):
 
         if d < rs + rm:
             # Visibility check: Is the Sun above the horizon for this observer?
-            sun_alt = s_pos.altaz()[0].degrees
-            if sun_alt <= -0.5:  # Account for refraction near horizon
+            # Account for atmospheric refraction for precise visibility check
+            sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+            if sun_alt <= 0:
                 continue
 
             # Classification
