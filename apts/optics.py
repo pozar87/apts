@@ -545,6 +545,71 @@ class OpticalPath:
 
         return signal / total_noise
 
+    def required_subs_for_snr(
+        self,
+        target_snr,
+        magnitude,
+        sqm,
+        exposure_time,
+        n_pix=4,
+        altitude=None,
+        extinction_k=0.2,
+    ):
+        """
+        Calculates the number of sub-exposures needed to reach a target SNR.
+        Formula derived from SNR equation: N = SNR^2 * (S + B + R) / S^2
+        Where S is signal, B is sky noise squared, R is read noise squared (all per sub).
+        """
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
+        sky_flux_val = self.sky_flux(sqm)
+
+        if (
+            obj_flux is None
+            or sky_flux_val is None
+            or not hasattr(self.output, "read_noise")
+            or self.output.read_noise is None
+        ):
+            return None
+
+        # Signal and noise per single sub
+        s = obj_flux * exposure_time
+        b = sky_flux_val * exposure_time * n_pix
+        r = (self.output.read_noise**2) * n_pix
+
+        if s <= 0:
+            return numpy.inf
+
+        n_required = (target_snr**2) * (s + b + r) / (s**2)
+        return float(numpy.ceil(n_required))
+
+    def required_integration_time(
+        self,
+        target_snr,
+        magnitude,
+        sqm,
+        exposure_time,
+        n_pix=4,
+        altitude=None,
+        extinction_k=0.2,
+    ):
+        """
+        Calculates the total integration time needed to reach a target SNR.
+        """
+        n_subs = self.required_subs_for_snr(
+            target_snr,
+            magnitude,
+            sqm,
+            exposure_time,
+            n_pix=n_pix,
+            altitude=altitude,
+            extinction_k=extinction_k,
+        )
+        if n_subs is None:
+            return None
+        return n_subs * exposure_time * get_unit_registry().second
+
     def optimum_sub_exposure(self, sqm):
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
@@ -561,6 +626,45 @@ class OpticalPath:
         # Time = 10 * ReadNoise^2 / Flux
         time = (10 * self.output.read_noise**2) / flux
         return time * get_unit_registry().second
+
+    def camera_limiting_magnitude(
+        self,
+        sqm,
+        total_integration_time,
+        sub_exposure_time,
+        target_snr=5.0,
+        n_pix=4,
+        altitude=None,
+        extinction_k=0.2,
+    ):
+        """
+        Calculates the limiting magnitude for a camera based on reaching a target SNR.
+        Uses binary search to find the magnitude where SNR equals target_snr.
+        Search range: 0.0 to 30.0 magnitude. Convergence: 0.01 magnitude.
+        """
+        low = 0.0
+        high = 30.0
+        n_subs = float(numpy.ceil(total_integration_time / sub_exposure_time))
+
+        for _ in range(12):  # 2^12 = 4096, plenty for 0.01 prec in 30 range
+            mid = (low + high) / 2
+            current_snr = self.snr(
+                mid,
+                sqm,
+                sub_exposure_time,
+                n_subs=n_subs,
+                n_pix=n_pix,
+                altitude=altitude,
+                extinction_k=extinction_k,
+            )
+            if current_snr is None:
+                return None
+            if current_snr > target_snr:
+                low = mid
+            else:
+                high = mid
+
+        return round(float(low), 2)
 
     def limiting_magnitude(self, sqm, integration_time):
         from .opticalequipment.camera import Camera

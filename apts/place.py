@@ -209,6 +209,15 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
+    def get_sqm(self) -> float:
+        """
+        Returns the approximate SQM value for the place based on its Bortle class.
+        """
+        bortle = self.get_light_pollution()
+        if bortle <= 0:
+            return 0.0
+        return LightPollution.bortle_to_sqm(bortle)
+
     def get_weather(
         self,
         provider_name: Optional[str] = None,
