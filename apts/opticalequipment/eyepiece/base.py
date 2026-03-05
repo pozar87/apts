@@ -24,13 +24,17 @@ class Eyepiece(OutputOpticalEqipment):
     @classmethod
     def from_database(cls, entry):
         from ...utils import Utils
-        brand = entry['brand']
-        name = entry['name']
+        entry = cls.normalize_database_entry(entry)
+        brand = entry.get('brand', 'Unknown')
+        name = entry.get('name', 'Unknown')
         vendor = f'{brand} {name}'
         tt = Utils.map_conn(entry.get('tside_thread'))
         tg = Utils.map_gender(entry.get('tside_gender'))
-        fl = Utils.extract_number(name) or 20
-        return cls(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
+        fl = entry.get('focal_length_mm', 20)
+        fov = entry.get('field_of_view_deg', 70)
+        mass = entry.get('mass', 0)
+        ol = entry.get('optical_length', 0)
+        return cls(fl, vendor=vendor, field_of_view=fov, connection_type=tt, connection_gender=tg or Gender.MALE, mass=mass, optical_length=ol)
 
     '\n  Class representing ocular\n  '
 
