@@ -45,6 +45,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             "nasa_comets": True,
             "planet_alignments": True,
             "lunar_planetary_occultations": True,
+            "messier_culminations": True,
             "golden_hour": True,
             "blue_hour": True,
             "culminations": True,
@@ -61,8 +62,8 @@ class TestAstronomicalEvents(unittest.TestCase):
 
         # Create a list of mock futures for all calculation methods
         # Counting how many 'if self.event_settings.get(...):' are in get_events()
-        # It's 24 blocks in get_events()
-        num_events = 24
+        # It's now 25 blocks in get_events()
+        num_events = 25
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
