@@ -1087,11 +1087,12 @@ class CanonCamera(Camera):
 
     @classmethod
     def Canon_EOS_Ra(cls):
-        return cls.from_database(cls._DATABASE['Canon_EOS_Ra'])
+        return cls.from_database(cls._DATABASE["Canon_EOS_Ra"])
 
+    @classmethod
     def Canon_EOS_30D(cls):
-        return cls.from_database(cls._DATABASE['Canon_EOS_30D'])
+        return cls.from_database(cls._DATABASE["Canon_EOS_30D"])
 
     @classmethod
     def Canon_EOS_20D(cls):
-        return cls.from_database(cls._DATABASE['Canon_EOS_20D'])
+        return cls.from_database(cls._DATABASE["Canon_EOS_20D"])

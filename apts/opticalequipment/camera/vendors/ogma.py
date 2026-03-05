@@ -385,68 +385,69 @@ class OgmaCamera(Camera):
 
     @classmethod
     def OGMA_OGC_533C_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_533C_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_533C_Pro"])
 
     @classmethod
     def OGMA_OGC_294C_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_294C_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_294C_Pro"])
 
     @classmethod
     def OGMA_OGC_571C_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_571C_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_571C_Pro"])
 
     @classmethod
     def OGMA_OGC_183C_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_183C_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_183C_Pro"])
 
     @classmethod
     def OGMA_OGC_585C(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_585C'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_585C"])
 
     @classmethod
     def OGMA_OGC_462C(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_462C'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_462C"])
 
     @classmethod
     def OGMA_OGC_678C(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_678C'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_678C"])
 
     @classmethod
     def OGMA_OGC_178C(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_178C'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_178C"])
 
     @classmethod
     def OGMA_OGC_533M_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_533M_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_533M_Pro"])
 
     @classmethod
     def OGMA_OGC_2600C_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_2600C_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_2600C_Pro"])
 
     @classmethod
     def OGMA_OGC_2600M_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_2600M_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_2600M_Pro"])
 
     @classmethod
     def OGMA_OGC_290MC(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_290MC'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_290MC"])
 
     @classmethod
     def OGMA_OGC_178MM(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_178MM'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_178MM"])
 
     @classmethod
     def OGMA_OGC_571M_Pro(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_571M_Pro'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_571M_Pro"])
 
     @classmethod
     def OGMA_OGC_2600C(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_2600C'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_2600C"])
 
     @classmethod
     def OGMA_OGC_2600M(cls):
-        return cls.from_database(cls._DATABASE['OGMA_OGC_2600M'])
+        return cls.from_database(cls._DATABASE["OGMA_OGC_2600M"])
 
+    @classmethod
     def OGMA_OGC_571C(cls):
         return cls.from_database(cls._DATABASE["OGMA_OGC_571C"])
 
