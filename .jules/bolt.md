@@ -33,3 +33,7 @@
 ## 2026-03-09 - [Skyfield Vectorized Observation Requirements]
 **Learning:** While Skyfield supports vectorization over Time objects, its `observe` method does not natively support a Python list of astronomical objects (e.g., Stars). To achieve full vectorization over multiple objects, one must initialize a single Skyfield object (like `Star`) using NumPy arrays for its coordinates (RA, Dec). This allows a single `observe` call to return a position vector for all objects at once, which is significantly faster than iterative observations.
 **Action:** When vectorizing searches over multiple celestial objects, always consolidate them into a single Skyfield object with array-backed coordinates instead of passing a list of objects to the observer.
+
+## 2026-03-10 - [Lazy Catalog Loading]
+**Learning:** Eagerly loading large astronomical catalogs (Messier, NGC, Bright Stars) during package import significantly increases startup time (e.g., from ~6.4s to ~3.7s). This "import penalty" can be eliminated by implementing lazy loading via property getters, ensuring that heavy I/O and data processing only occur when a catalog is actually needed.
+**Action:** Always implement lazy loading for large datasets (catalogs, ephemerides, etc.) in the library's core to ensure fast application startup and minimal memory footprint for lightweight scripts.
