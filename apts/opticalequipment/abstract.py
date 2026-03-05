@@ -10,6 +10,33 @@ from ..utils import ConnectionType
 
 
 class OpticalEquipment:
+
+    _DATABASE = {} 
+
+    @classmethod 
+    def normalize_database_entry(cls, entry: dict) -> dict: 
+        """ 
+        Normalizes a database entry by ensuring it has consistent keys and guessed properties. 
+        Default implementation just returns the entry as-is. 
+        """ 
+        # Round all float values to 2 decimal places for cleaner display 
+        for key, value in entry.items(): 
+            if isinstance(value, float): 
+                entry[key] = round(value, 2) 
+
+        return entry 
+
+    @classmethod 
+    def get_database_entries(cls) -> list: 
+        """ 
+        Returns all database entries for this class, normalized. 
+        """ 
+        if not hasattr(cls, "_DATABASE"): 
+            return [] 
+        if isinstance(cls._DATABASE, dict): 
+            return [cls.normalize_database_entry(e) for e in cls._DATABASE.values()] 
+        return [cls.normalize_database_entry(e) for e in cls._DATABASE] 
+
     """
     Basic class for optical equipment
     """

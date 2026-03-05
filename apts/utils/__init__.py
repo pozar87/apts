@@ -202,7 +202,7 @@ class Utils:
         if match:
             inches = float(match.group(1))
             if inches < 20:  # Heuristic for SCTs
-                aperture = inches * 25.4
+                aperture = round(inches * 25.4, 1)
 
         # Match 135mm f/2
         match = re.search(r"(\d+)mm", name)

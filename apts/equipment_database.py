@@ -59,11 +59,8 @@ class EquipmentDatabase:
     def __init__(self):
         self.db = []
         for cls in EQUIPMENT_CLASSES:
-            if hasattr(cls, "_DATABASE"):
-                if isinstance(cls._DATABASE, dict):
-                    self.db.extend(cls._DATABASE.values())
-                else:
-                    self.db.extend(cls._DATABASE)
+            if hasattr(cls, "get_database_entries"):
+                self.db.extend(cls.get_database_entries())
 
     def get_all(self) -> List[Dict[str, Any]]:
         return self.db

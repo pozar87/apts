@@ -5,18 +5,36 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
 class Eyepiece(OutputOpticalEqipment):
+    @classmethod 
+    def normalize_database_entry(cls, entry: dict) -> dict: 
+        from ...utils import Utils 
+        import re 
+        entry = entry.copy() 
+        name = entry.get("name", "") 
+        if "focal_length_mm" not in entry and "focal_length" not in entry: 
+            focal_length = Utils.extract_number(name) 
+            if focal_length: entry["focal_length_mm"] = focal_length 
+        if "field_of_view_deg" not in entry and "field_of_view" not in entry: 
+            match = re.search(r"(\d+)°", name) or re.search(r"(\d+)\s*deg", name) 
+            if match: entry["field_of_view_deg"] = float(match.group(1)) 
+        return super(Eyepiece, cls).normalize_database_entry(entry) 
+
     _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
         from ...utils import Utils
-        brand = entry['brand']
-        name = entry['name']
+        entry = cls.normalize_database_entry(entry)
+        brand = entry.get('brand', 'Unknown')
+        name = entry.get('name', 'Unknown')
         vendor = f'{brand} {name}'
         tt = Utils.map_conn(entry.get('tside_thread'))
         tg = Utils.map_gender(entry.get('tside_gender'))
-        fl = Utils.extract_number(name) or 20
-        return cls(fl, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.MALE)
+        fl = entry.get('focal_length_mm', 20)
+        fov = entry.get('field_of_view_deg', 70)
+        mass = entry.get('mass', 0)
+        ol = entry.get('optical_length', 0)
+        return cls(fl, vendor=vendor, field_of_view=fov, connection_type=tt, connection_gender=tg or Gender.MALE, mass=mass, optical_length=ol)
 
     '\n  Class representing ocular\n  '
 
