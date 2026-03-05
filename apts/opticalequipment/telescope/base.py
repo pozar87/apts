@@ -21,6 +21,20 @@ class TubeMaterial(Enum):
     GLASS_FIBER = 8e-06
 
 class Telescope(OpticalEquipment):
+    @classmethod 
+    def normalize_database_entry(cls, entry: dict) -> dict: 
+        from ...utils import Utils 
+        entry = entry.copy() 
+        name = entry.get("name", "") 
+        if "aperture_mm" not in entry and "aperture" not in entry: 
+            aperture, focal_length = Utils.guess_optical_properties(name) 
+            if aperture: entry["aperture_mm"] = aperture 
+            if focal_length: entry["focal_length_mm"] = focal_length 
+        elif "focal_length_mm" not in entry and "focal_length" not in entry: 
+            _, focal_length = Utils.guess_optical_properties(name) 
+            if focal_length: entry["focal_length_mm"] = focal_length 
+        return entry 
+
     _DATABASE = {}
 
     @classmethod

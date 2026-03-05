@@ -5,6 +5,20 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
 class Eyepiece(OutputOpticalEqipment):
+    @classmethod 
+    def normalize_database_entry(cls, entry: dict) -> dict: 
+        from ...utils import Utils 
+        import re 
+        entry = entry.copy() 
+        name = entry.get("name", "") 
+        if "focal_length_mm" not in entry and "focal_length" not in entry: 
+            focal_length = Utils.extract_number(name) 
+            if focal_length: entry["focal_length_mm"] = focal_length 
+        if "field_of_view_deg" not in entry and "field_of_view" not in entry: 
+            match = re.search(r"(\d+)°", name) or re.search(r"(\d+)\s*deg", name) 
+            if match: entry["field_of_view_deg"] = float(match.group(1)) 
+        return entry 
+
     _DATABASE = {}
 
     @classmethod
