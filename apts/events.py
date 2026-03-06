@@ -132,6 +132,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_alignments))
         if self.event_settings.get("lunar_planetary_occultations"):
             futures.append(executor.submit(self.calculate_lunar_planetary_occultations))
+        if self.event_settings.get("messier_culminations"):
+            futures.append(executor.submit(self.calculate_messier_culminations))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -283,6 +285,8 @@ class AstronomicalEvents:
             return 3
         if event_type == "Season":
             return 2
+        if event_type == "Messier Culmination":
+            return 2
         return 1
 
     def calculate_space_launches(self):
@@ -412,6 +416,22 @@ class AstronomicalEvents:
         }
         moon = "moon"
         moon_display_name = "Moon"
+        moon_obj = planetary.get_skyfield_obj(moon)
+
+        # Pre-compute positions for all bodies involved in conjunctions
+        # We use a 15-minute interval (0.01 days) to match the finest resolution used in searches
+        num_steps = int((self.end_date - self.start_date).total_seconds() / (15 * 60))
+        if num_steps < 2:
+            num_steps = 2
+        times = self.ts.linspace(self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps)
+
+        precomputed = {}
+        # Pre-observe all planets and the moon at the given times
+        # Note: self.observer.at(times).observe(obj) returns an Astrometric object
+        # that behaves like an array of positions.
+        for p, obj in planets_data.items():
+            precomputed[p.lower()] = self.observer.at(times).observe(obj)
+        precomputed[moon.lower()] = self.observer.at(times).observe(moon_obj)
 
         executor = self.executor
         futures = {}
@@ -429,6 +449,7 @@ class AstronomicalEvents:
                 self.start_date,
                 self.end_date,
                 threshold_degrees=5.0,
+                precomputed_positions=precomputed,
             )
             futures[future] = p1_name
 
@@ -444,6 +465,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=5.0,
+            precomputed_positions=precomputed,
         )
         futures[future_moon] = moon_display_name
 
@@ -491,27 +513,41 @@ class AstronomicalEvents:
     def calculate_meteor_showers(self):
         start_time = time.time()
         events = []
+        # Meteor shower peak solar longitudes (λ⊙) based on IMO/IAU standards
         showers = {
-            "Quadrantids": {"start": (1, 1), "peak": (1, 4), "end": (1, 5)},
-            "Lyrids": {"start": (4, 14), "peak": (4, 22), "end": (4, 30)},
-            "Eta Aquarids": {"start": (4, 19), "peak": (5, 6), "end": (5, 28)},
-            "Delta Aquarids": {"start": (7, 12), "peak": (7, 30), "end": (8, 23)},
-            "Perseids": {"start": (7, 17), "peak": (8, 12), "end": (8, 24)},
-            "Orionids": {"start": (10, 2), "peak": (10, 21), "end": (11, 7)},
-            "Leonids": {"start": (11, 6), "peak": (11, 17), "end": (11, 30)},
-            "Geminids": {"start": (12, 4), "peak": (12, 14), "end": (12, 17)},
-            "Ursids": {"start": (12, 17), "peak": (12, 22), "end": (12, 26)},
+            "Quadrantids": {"start": (1, 1), "peak_lon": 283.16, "end": (1, 5)},
+            "Lyrids": {"start": (4, 14), "peak_lon": 32.32, "end": (4, 30)},
+            "Eta Aquarids": {"start": (4, 19), "peak_lon": 45.5, "end": (5, 28)},
+            "Delta Aquarids": {"start": (7, 12), "peak_lon": 127.0, "end": (8, 23)},
+            "Perseids": {"start": (7, 17), "peak_lon": 140.0, "end": (8, 24)},
+            "Orionids": {"start": (10, 2), "peak_lon": 208.0, "end": (11, 7)},
+            "Leonids": {"start": (11, 6), "peak_lon": 235.27, "end": (11, 30)},
+            "Geminids": {"start": (12, 4), "peak_lon": 262.2, "end": (12, 17)},
+            "Ursids": {"start": (12, 17), "peak_lon": 270.7, "end": (12, 26)},
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
-            for shower, dates in showers.items():
+            for shower, data in showers.items():
                 start_date: datetime = datetime(
-                    year, dates["start"][0], dates["start"][1], tzinfo=utc
-                )
-                peak_date: datetime = datetime(
-                    year, dates["peak"][0], dates["peak"][1], tzinfo=utc
+                    year, data["start"][0], data["start"][1], tzinfo=utc
                 )
                 end_date: datetime = datetime(
-                    year, dates["end"][0], dates["end"][1], tzinfo=utc
+                    year, data["end"][0], data["end"][1], tzinfo=utc
+                )
+
+                # Use solar longitude to find high-precision peak time
+                t0 = self.ts.utc(year, data["start"][0], data["start"][1])
+                # Peak must be within the shower duration. Some showers cross year boundary (none of the major ones above though)
+                # But to be safe we search a window around the expected month.
+                t1 = self.ts.utc(year, data["end"][0], data["end"][1])
+                # Fix for showers crossing year boundary if any were added
+                if t1 < t0:
+                    t1 = self.ts.utc(year + 1, data["end"][0], data["end"][1])
+
+                peak_t = skyfield_searches.find_solar_longitude_time(
+                    t0, t1, data["peak_lon"]
+                )
+                peak_date = (
+                    peak_t.utc_datetime() if peak_t is not None else None
                 )
 
                 if self.start_date <= start_date <= self.end_date:
@@ -524,7 +560,7 @@ class AstronomicalEvents:
                     }
                     event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
                     events.append(event_data)
-                if self.start_date <= peak_date <= self.end_date:
+                if peak_date and self.start_date <= peak_date <= self.end_date:
                     event_data = {
                         "date": peak_date.astimezone(utc),
                         "event": "Meteor Shower",
@@ -899,6 +935,27 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = 2  # Frequent but useful
         logger.debug(f"--- calculate_culminations: {time.time() - start_time}s")
+        return events
+
+    def calculate_messier_culminations(self):
+        start_time = time.time()
+        # Check all Messier objects
+        messier_data = [
+            (row["Messier"], row["skyfield_object"])
+            for _, row in self.catalogs.MESSIER.iterrows()
+        ]
+
+        events = skyfield_searches.find_object_culminations(
+            self.observer,
+            messier_data,
+            self.start_date,
+            self.end_date,
+        )
+
+        for event in events:
+            event["rarity"] = self._get_rarity("Messier Culmination", event)
+
+        logger.debug(f"--- calculate_messier_culminations: {time.time() - start_time}s")
         return events
 
     def calculate_greatest_elongations(self):

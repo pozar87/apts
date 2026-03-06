@@ -31,6 +31,7 @@ class EventType(str, Enum):
     GREATEST_ELONGATIONS = "greatest_elongations"
     SEASONS = "seasons"
     LUNAR_PLANETARY_OCCULTATIONS = "lunar_planetary_occultations"
+    MESSIER_CULMINATIONS = "messier_culminations"
 
     def __str__(self):
         return self.value
