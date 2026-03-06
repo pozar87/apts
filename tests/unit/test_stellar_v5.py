@@ -1,5 +1,4 @@
 import pytest
-from datetime import datetime, timezone
 from typing import Any, cast
 
 from apts.cache import get_timescale
@@ -33,6 +32,7 @@ def test_planetary_projection_size():
 
     # Pixel scale: (3.75 / 4064) * 206265 = 0.19 arcsec/pixel
     scale = path.pixel_scale()
+    assert scale is not None
     assert scale.magnitude == pytest.approx(0.19, abs=0.01)
 
     # Jupiter size in pixels: 49.5 / 0.19 = ~260 pixels
