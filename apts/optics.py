@@ -763,6 +763,21 @@ class OpticalPath:
         p_size = p_size_q.to("micrometer").magnitude
         return k * p_size
 
+    def planetary_size_in_pixels(self, planet_name: str, time: Any) -> float | None:
+        """
+        Calculates the projected size of a planet on the sensor in pixels.
+        Uses the planet's angular diameter and the setup's pixel scale.
+        """
+        from .utils import planetary
+
+        angular_diameter = planetary.get_planet_angular_diameter(planet_name, time)
+        p_scale = self.pixel_scale()
+
+        if p_scale is None or p_scale.magnitude == 0:
+            return None
+
+        return float(angular_diameter / p_scale.magnitude)
+
     def rule_of_500(self):
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.

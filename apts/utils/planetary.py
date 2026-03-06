@@ -11,6 +11,7 @@ from skyfield import almanac
 
 from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
 from apts.i18n import language_context, gettext_
+from apts.constants import astronomy
 
 MINOR_PLANET_NAMES = {
     "ceres": "(1) Ceres",
@@ -77,6 +78,58 @@ APHELION_PERIHELION_PLANETS = [
     "makemake",
     "eris",
 ]
+
+PLANET_RADII_KM = {
+    "mercury": astronomy.MERCURY_RADIUS_KM,
+    "venus": astronomy.VENUS_RADIUS_KM,
+    "earth": astronomy.EARTH_RADIUS_KM,
+    "mars": astronomy.MARS_RADIUS_KM,
+    "jupiter": astronomy.JUPITER_RADIUS_KM,
+    "saturn": astronomy.SATURN_RADIUS_KM,
+    "uranus": astronomy.URANUS_RADIUS_KM,
+    "neptune": astronomy.NEPTUNE_RADIUS_KM,
+    "pluto": astronomy.PLUTO_RADIUS_KM,
+    "moon": astronomy.MOON_RADIUS_KM,
+    "sun": astronomy.SUN_RADIUS_KM,
+}
+
+
+def get_planet_radius_km(planet_name: str) -> float:
+    """
+    Returns the equatorial radius of a planet in km.
+    """
+    # Normalize name to simple name
+    simple_name = get_simple_name(planet_name).lower()
+    radius = PLANET_RADII_KM.get(simple_name)
+    if radius is None:
+        raise ValueError(f"Radius for object '{planet_name}' not found.")
+    return radius
+
+
+def get_planet_distance_km(planet_name: str, time: Any) -> float:
+    """
+    Returns the geocentric distance to the planet in km.
+    """
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+    return cast(Any, earth).at(time).observe(planet_obj).distance().km
+
+
+def get_planet_angular_diameter(planet_name: str, time: Any) -> float:
+    """
+    Returns the apparent angular diameter of the planet in arcseconds.
+    Formula: diameter = 2 * arcsin(Radius / Distance)
+    """
+    radius = get_planet_radius_km(planet_name)
+    distance = get_planet_distance_km(planet_name, time)
+
+    # Angular diameter in radians
+    # Using arcsin(R/D) gives the angular radius, so multiply by 2 for diameter.
+    alpha_rad = 2 * np.arcsin(radius / distance)
+
+    # Convert to arcseconds
+    return float(np.degrees(alpha_rad) * 3600.0)
 
 
 def get_simple_name(technical_name: str) -> str:

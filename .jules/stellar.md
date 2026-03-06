@@ -51,3 +51,24 @@
 - Updated `apts/opticalequipment/camera/vendors/player_one.py` with the accurate data.
 - Added `tests/unit/test_player_one_specs.py` to ensure data integrity.
 - Verified with `pytest`.
+
+## 2025-05-16 - Planetary Angular Size and Projection
+
+### Observe
+- Users need to know how large a planet will appear on their sensor to choose the right focal length/Barlow.
+- The library was missing physical radius data for major planets and the Moon, as well as functions to calculate apparent angular diameter.
+
+### Target
+- Priority 3: Implement a new utility function.
+- Added planetary size projection in pixels for imaging setups.
+
+### Calibrate
+- Radius data source: IAU 2015 Standards (already in `apts/constants/astronomy.py`, but not fully mapped).
+- Angular diameter formula: $\delta = 2 \arcsin(R/D)$ where R is radius and D is geocentric distance.
+- Integrated `planetary_size_in_pixels` into `OpticalPath`.
+
+### Develop
+- Mapped `PLANET_RADII_KM` in `apts/utils/planetary.py`.
+- Implemented `get_planet_angular_diameter` and `planetary_size_in_pixels`.
+- Conducted data audit for ZWO ASI224MC and updated its specs in `zwo.py` to resolve heuristic inaccuracies.
+- Verified with `tests/unit/test_stellar_v5.py` and regression tests.
