@@ -744,13 +744,21 @@ class ZwoCamera(Camera):
                    'brand': 'ZWO',
                    'cside_gender': '',
                    'cside_thread': '',
+                   'full_well_e': 19200,
+                   'height': 976,
                    'mass': 60,
                    'name': 'ASI224MC',
                    'optical_length': 12.5,
+                   'pixel_size_um': 3.75,
+                   'quantum_efficiency_pct': 80,
+                   'read_noise_e': 0.75,
                    'reversible': False,
+                   'sensor_height_mm': 3.6,
+                   'sensor_width_mm': 4.8,
                    'tside_gender': 'Female',
                    'tside_thread': 'CS',
-                   'type': 'type_camera'},
+                   'type': 'type_camera',
+                   'width': 1304},
  'ZWO_ASI_2400MC_Pro': {'bf_role': 'end',
                         'brand': 'ZWO',
                         'cside_gender': '',
@@ -2319,7 +2327,11 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI_224MC(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_224MC'])
+        """
+        Factory method for ZWO ASI224MC camera.
+        Sensor: Sony IMX224 (1/3")
+        """
+        return cls.from_database(cls._DATABASE["ZWO_ASI_224MC"])
 
     @classmethod
     def ZWO_ASI_290MM_Mini(cls):
