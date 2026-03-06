@@ -99,3 +99,17 @@
     - Type: Refractor
 - **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
 - **Source URL:** https://www.celestron.com/products/astromaster-70az-telescope
+
+## 2024-05-30 - Audit of Celestron AstroMaster 90AZ
+
+- **Item:** Celestron AstroMaster 90AZ Refractor Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 2200g, missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 90mm
+    - Focal Length: 1000mm
+    - Central Obstruction: 0mm (Refractor)
+    - Mass (OTA): 5 lbs -> 2.27 kg -> 2268g
+    - Type: Refractor
+- **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
+- **Source URL:** https://www.celestron.com/products/astromaster-90az-telescope
