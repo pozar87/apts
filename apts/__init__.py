@@ -5,7 +5,7 @@ import seaborn as sns
 
 from . import cache
 from .cache import download_all_data
-from .catalogs import Catalogs, initialize_catalogs
+from .catalogs import Catalogs
 
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only

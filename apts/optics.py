@@ -644,7 +644,7 @@ class OpticalPath:
         """
         low = 0.0
         high = 30.0
-        n_subs = float(numpy.ceil(total_integration_time / sub_exposure_time))
+        n_subs = int(numpy.ceil(total_integration_time / sub_exposure_time))
 
         for _ in range(12):  # 2^12 = 4096, plenty for 0.01 prec in 30 range
             mid = (low + high) / 2
