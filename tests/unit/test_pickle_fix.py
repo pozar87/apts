@@ -78,6 +78,9 @@ def test_ngc_pickle_get_visible():
     obs = Observation(place, equipment, conditions, target_date=target_date)
 
     ln = obs.local_ngc
+    # NGC uses lazy loading, so skyfield_object might not be there yet
+    # but we can force it by calling get_visible
+    _ = ln.get_visible(conditions, obs.start, obs.stop)
     assert "skyfield_object" in ln.objects.columns
 
     pickled_ln = pickle.dumps(ln)

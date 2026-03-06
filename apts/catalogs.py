@@ -125,9 +125,9 @@ def _load_ngc_with_units():
 
     # Optimization: We keep 'Magnitude' and 'Size' as raw floats/strings in the catalog
     # for performance. They are converted to Pint Quantities lazily in NGC.get_visible().
-    # This preserves the catalog data types while significantly speeding up load time.
-    ngc_df["Magnitude"] = magnitudes.values
-    ngc_df["Size"] = pd.to_numeric(ngc_df["Size"], errors="coerce")
+    # We use object dtype to avoid FutureWarnings when restoring Quantities.
+    ngc_df["Magnitude"] = magnitudes.values.astype(object)
+    ngc_df["Size"] = pd.to_numeric(ngc_df["Size"], errors="coerce").astype(object)
 
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]
