@@ -1,4 +1,7 @@
 from types import SimpleNamespace
+
+import pandas as pd
+
 from .objects import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
@@ -23,7 +26,6 @@ class NGC(Objects):
         # 14k Pint/Skyfield objects during catalog load.
 
         from skyfield.api import Star
-        import pandas as pd
 
         # 1. Determine magnitude threshold (handling Pint Quantities)
         limiting_magnitude = kwargs.get("limiting_magnitude")
