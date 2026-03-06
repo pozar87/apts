@@ -48,8 +48,10 @@ class TestNGC(unittest.TestCase):
         self.assertIsNone(none_obj)
 
     def test_get_skyfield_object(self):
-        # Find a row that has a skyfield object
-        valid_rows = self.ngc.objects[self.ngc.objects["skyfield_object"].notnull()]
+        # Find a row that has coordinates to reconstruct skyfield object
+        valid_rows = self.ngc.objects[self.ngc.objects["ra_hours"].notnull()]
+        # Reset skyfield_object to None to test restoration
+        self.ngc.objects.loc[valid_rows.index, "skyfield_object"] = None
         if not valid_rows.empty:
             row = valid_rows.iloc[0]
             obj = self.ngc.get_skyfield_object(row)

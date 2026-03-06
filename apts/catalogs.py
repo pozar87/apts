@@ -110,31 +110,24 @@ def _load_ngc_with_units():
     s_dec = cast(pd.Series, pd.to_numeric(decs_split[2], errors="coerce")).fillna(0)
     dec_degrees = cast(pd.Series, decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0))
 
-    # Pre-calculate Skyfield objects (vectorized list comprehension)
-    # Using raw floats before wrapping in Quantities saves significant overhead.
-    ngc_df["skyfield_object"] = [
-        Star(ra_hours=ra, dec_degrees=dec) if pd.notna(ra) and pd.notna(dec) else None
-        for ra, dec in zip(
-            cast(Iterable[Any], ra_hours), cast(Iterable[Any], dec_degrees)
-        )
-    ]
-
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
+    # Optimization: We skip eager creation of skyfield_object, Magnitude (Quantity)
+    # and Size (Quantity) for all 14k entries to save ~1s on catalog load.
+    # These are restored lazily only for visible objects in NGC.get_visible().
     ngc_df["ra_hours"] = ra_hours.values
     ngc_df["dec_degrees"] = dec_degrees.values
 
-    # Convert columns to quantities with units (vectorized)
-    # Optimization: list(values * unit) is ~7x faster than Series.apply(lambda x: x * unit)
-    ureg = get_unit_registry()
     magnitudes = cast(
         pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")
     ).fillna(99)
     ngc_df["Magnitude_float"] = magnitudes.values
-    ngc_df["Magnitude"] = list(magnitudes.values * ureg.mag)
-    ngc_df["Size"] = [
-        x * ureg.arcminute if pd.notna(x) else None for x in ngc_df["Size"]
-    ]
+
+    # Optimization: We keep 'Magnitude' and 'Size' as raw floats/strings in the catalog
+    # for performance. They are converted to Pint Quantities lazily in NGC.get_visible().
+    # This preserves the catalog data types while significantly speeding up load time.
+    ngc_df["Magnitude"] = magnitudes.values
+    ngc_df["Size"] = pd.to_numeric(ngc_df["Size"], errors="coerce")
 
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]
