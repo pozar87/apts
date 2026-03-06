@@ -36,6 +36,7 @@ class SmartTelescope(Telescope):
             pixel_size=entry.get("pixel_size_um"),
             read_noise=entry.get("read_noise_e"),
             quantum_efficiency=entry.get("quantum_efficiency_pct"),
+            full_well=entry.get("full_well_e"),
         )
 
     def __init__(
@@ -51,6 +52,7 @@ class SmartTelescope(Telescope):
         pixel_size=None,
         read_noise=None,
         quantum_efficiency=None,
+        full_well=None,
     ):
         super().__init__(
             aperture,
@@ -67,6 +69,7 @@ class SmartTelescope(Telescope):
         self.height = height
         self.read_noise = read_noise
         self.quantum_efficiency = quantum_efficiency
+        self.full_well = full_well
         if pixel_size is not None:
             self._pixel_size = cast(Any, pixel_size * ureg.micrometer)
         else:
@@ -91,20 +94,47 @@ class SmartTelescope(Telescope):
         )
         return size_mm.to(ureg.micrometer)
 
+    def _zoom_divider(self):
+        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
+
+    def field_of_view_width(self, telescope, zoom, barlow_magnification):
+        """
+        Calculates horizontal field of view in degrees using the accurate arctan formula.
+        """
+        f = (self.focal_length * barlow_magnification).to("mm").magnitude
+        d = self.sensor_width.to("mm").magnitude
+        if f == 0:
+            return 0 * get_unit_registry().deg
+        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
+    def field_of_view_height(self, telescope, zoom, barlow_magnification):
+        """
+        Calculates vertical field of view in degrees using the accurate arctan formula.
+        """
+        f = (self.focal_length * barlow_magnification).to("mm").magnitude
+        d = self.sensor_height.to("mm").magnitude
+        if f == 0:
+            return 0 * get_unit_registry().deg
+        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
+    def field_of_view_diagonal(self, telescope, zoom, barlow_magnification):
+        """
+        Calculates diagonal field of view in degrees using the accurate arctan formula.
+        """
+        f = (self.focal_length * barlow_magnification).to("mm").magnitude
+        d = numpy.sqrt(
+            self.sensor_width.to("mm").magnitude**2
+            + self.sensor_height.to("mm").magnitude**2
+        )
+        if f == 0:
+            return 0 * get_unit_registry().deg
+        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+
     def fov(self) -> Any:
         """
         Calculate the field of view for the smart telescope in degrees using the accurate arctan formula.
         """
-        return (
-            2
-            * numpy.degrees(
-                numpy.arctan(
-                    self.sensor_height.to("mm").magnitude
-                    / (2 * self.focal_length.to("mm").magnitude)
-                )
-            )
-            * get_unit_registry().deg
-        )
+        return self.field_of_view_height(self, 1.0, 1.0)
 
     def exit_pupil(self):
         return numpy.nan * get_unit_registry().mm
