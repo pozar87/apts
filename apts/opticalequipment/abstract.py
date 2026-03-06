@@ -11,7 +11,7 @@ from ..utils import ConnectionType
 
 class OpticalEquipment:
 
-    _DATABASE = {} 
+    _DATABASE: dict[Any, Any] = {} 
 
     @classmethod 
     def normalize_database_entry(cls, entry: dict) -> dict: 
@@ -34,8 +34,8 @@ class OpticalEquipment:
         if not hasattr(cls, "_DATABASE"): 
             return [] 
         if isinstance(cls._DATABASE, dict): 
-            return [cls.normalize_database_entry(e) for e in cls._DATABASE.values()] 
-        return [cls.normalize_database_entry(e) for e in cls._DATABASE] 
+            return [cls.normalize_database_entry(e) for e in cast(dict, cls._DATABASE).values()] 
+        return [cls.normalize_database_entry(e) for e in cast(list, cls._DATABASE)] 
 
     """
     Basic class for optical equipment

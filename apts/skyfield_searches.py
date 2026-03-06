@@ -14,8 +14,8 @@ def find_solar_longitude_time(t0, t1, target_longitude):
     """
     Finds the exact time when the Sun reaches a specific ecliptic longitude.
     """
-    ts = get_timescale()
-    eph = get_ephemeris()
+    from typing import Any, cast
+    eph = cast(Any, get_ephemeris())
     sun = eph["sun"]
     earth = eph["earth"]
 

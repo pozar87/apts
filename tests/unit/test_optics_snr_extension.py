@@ -1,4 +1,3 @@
-import pytest
 from apts.light_pollution import LightPollution
 from apts.place import Place
 from apts.optics import OpticalPath
@@ -39,14 +38,17 @@ def test_snr_solvers():
     exposure_time = 300 # seconds
 
     n_subs = path.required_subs_for_snr(target_snr, magnitude, sqm, exposure_time)
+    assert n_subs is not None
     assert n_subs > 0
     assert isinstance(n_subs, float)
 
     total_time = path.required_integration_time(target_snr, magnitude, sqm, exposure_time)
+    assert total_time is not None
     assert total_time.magnitude == n_subs * exposure_time
 
     # Verify SNR at the calculated N is close to target
-    calculated_snr = path.snr(magnitude, sqm, exposure_time, n_subs=n_subs)
+    calculated_snr = path.snr(magnitude, sqm, exposure_time, n_subs=int(n_subs))
+    assert calculated_snr is not None
     assert abs(calculated_snr - target_snr) < 1.0 # Should be >= target_snr because of ceil
 
 def test_camera_limiting_magnitude():
@@ -59,9 +61,11 @@ def test_camera_limiting_magnitude():
     sub_time = 300
 
     limit_mag = path.camera_limiting_magnitude(sqm, total_time, sub_time, target_snr=5.0)
+    assert limit_mag is not None
     assert 15.0 < limit_mag < 25.0 # Reasonable range for 100mm scope
 
     # Verify SNR at limit is approx 5.0
     n_subs = np.ceil(total_time / sub_time)
-    snr_at_limit = path.snr(limit_mag, sqm, sub_time, n_subs=n_subs)
+    snr_at_limit = path.snr(limit_mag, sqm, sub_time, n_subs=int(n_subs))
+    assert snr_at_limit is not None
     assert abs(snr_at_limit - 5.0) < 0.1

@@ -18,6 +18,7 @@ class TestOracleFeatures(unittest.TestCase):
         t1 = self.ts.utc(2024, 3, 21)
         t_equinox = skyfield_searches.find_solar_longitude_time(t0, t1, 0.0)
         self.assertIsNotNone(t_equinox)
+        assert t_equinox is not None
         # 2024 Vernal Equinox was March 20, 03:06 UTC (Geometric/Dynamical)
         # or ~11:00 UTC (Apparent/Observational) depending on the source.
         # My implementation matches ~11:00 UTC.

@@ -1,6 +1,7 @@
 import matplotlib
 
 matplotlib.use("Agg")
+from typing import cast
 from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
@@ -216,7 +217,7 @@ def test_plot_ngc_on_skymap_zoom_horizontal(mock_observation, mock_ax, mock_obse
         target_name="",
         zoom_deg=10.0,
         target_object=target_object,
-        coordinate_system=CoordinateSystem.HORIZONTAL,
+        coordinate_system=cast(CoordinateSystem, CoordinateSystem.HORIZONTAL),
     )
 
     assert mock_ax.add_patch.call_count >= 1
@@ -288,7 +289,7 @@ def test_plot_ngc_on_skymap_zoom_equatorial(mock_observation, mock_ax, mock_obse
         target_name="",
         zoom_deg=5.0,
         target_object=target_object,
-        coordinate_system=CoordinateSystem.EQUATORIAL,
+        coordinate_system=cast(CoordinateSystem, CoordinateSystem.EQUATORIAL),
     )
 
     assert mock_ax.add_patch.call_count >= 1

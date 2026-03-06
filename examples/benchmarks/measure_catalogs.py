@@ -9,7 +9,7 @@ sys.path.insert(0, os.getcwd())
 # Disable logging to avoid cluttering output
 logging.basicConfig(level=logging.ERROR)
 
-from apts.catalogs import Catalogs
+from apts.catalogs import Catalogs  # noqa: E402
 
 def measure_catalogs():
     start = time.time()
