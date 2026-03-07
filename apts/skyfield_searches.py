@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any, cast
 
 import numpy as np
@@ -276,6 +277,140 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     return events
 
 
+def find_jovian_moon_events(observer, start_date, end_date, eph=None):
+    """
+    Predicts Transits, Shadow Transits, Occultations, and Eclipses of Io, Europa, Ganymede, and Callisto.
+    Uses two-pass search with timing refinement for high precision.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    if eph is None:
+        from .cache import get_jovian_ephemeris
+
+        eph = cast(Any, get_jovian_ephemeris())
+    sun = eph["sun"]
+    jupiter = eph["jupiter barycenter"]
+
+    # IDs from jup310.bsp: Io(501), Europa(502), Ganymede(503), Callisto(504)
+    moons = {
+        "Io": eph[501],
+        "Europa": eph[502],
+        "Ganymede": eph[503],
+        "Callisto": eph[504],
+    }
+
+    events = []
+
+    # Coarse check every 5 minutes
+    num_steps = int((t1 - t0) * 24 * 12)
+    if num_steps < 2:
+        return []
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Pre-calculate Jupiter's position and radius (no deflectors for moons kernels compatibility)
+    j_pos_all = observer.at(times).observe(jupiter).apparent(deflectors=())
+    j_dist = j_pos_all.distance().km
+    j_radius = np.degrees(np.arcsin(astronomy.JUPITER_RADIUS_KM / j_dist))
+
+    # Jupiter's radius from Sun's perspective
+    j_from_sun = sun.at(times).observe(jupiter).apparent(deflectors=())
+    j_dist_from_sun = j_from_sun.distance().km
+    j_radius_from_sun = np.degrees(
+        np.arcsin(astronomy.JUPITER_RADIUS_KM / j_dist_from_sun)
+    )
+
+    for moon_name, moon_obj in moons.items():
+        # 1. Transits and Occultations (Observer's perspective)
+        m_pos_all = observer.at(times).observe(moon_obj).apparent(deflectors=())
+        separations = j_pos_all.separation_from(m_pos_all).degrees
+        m_dist = m_pos_all.distance().km
+        is_behind = m_dist > j_dist
+
+        in_front_mask = (separations < j_radius) & (~is_behind)
+        behind_mask = (separations < j_radius) & (is_behind)
+
+        # 2. Eclipses (Sun's perspective)
+        m_from_sun = sun.at(times).observe(moon_obj).apparent(deflectors=())
+        sep_from_sun = j_from_sun.separation_from(m_from_sun).degrees
+        m_dist_sun = m_from_sun.distance().km
+        is_between_sun_jup = m_dist_sun < j_dist_from_sun
+
+        shadow_mask = (sep_from_sun < j_radius_from_sun) & is_between_sun_jup
+        eclipse_mask = (sep_from_sun < j_radius_from_sun) & (~is_between_sun_jup)
+
+        masks = [
+            (in_front_mask, "Transit"),
+            (behind_mask, "Occultation"),
+            (shadow_mask, "Shadow Transit"),
+            (eclipse_mask, "Eclipse"),
+        ]
+
+        for mask, event_kind in masks:
+            if not mask.any():
+                continue
+            groups = np.split(
+                np.where(mask)[0], np.where(np.diff(np.where(mask)[0]) > 1)[0] + 1
+            )
+            for group in groups:
+                t_coarse_start = times[group[0]]
+                t_coarse_end = times[group[-1]]
+
+                # Visibility check: Jupiter above horizon at start
+                j_alt, _, _ = j_pos_all[group[0]].altaz()
+                if j_alt.degrees < 0:
+                    continue
+
+                def refine_boundary(t_coarse, event_kind):
+                    t_s = ts.utc(t_coarse.utc_datetime() - timedelta(minutes=10))
+                    t_e = ts.utc(t_coarse.utc_datetime() + timedelta(minutes=10))
+
+                    def boundary_func(t):
+                        if event_kind in ["Transit", "Occultation"]:
+                            j_p = observer.at(t).observe(jupiter).apparent(deflectors=())
+                            m_p = observer.at(t).observe(moon_obj).apparent(deflectors=())
+                            sep = j_p.separation_from(m_p).degrees
+                            r = np.degrees(
+                                np.arcsin(astronomy.JUPITER_RADIUS_KM / j_p.distance().km)
+                            )
+                        else:
+                            j_p_s = sun.at(t).observe(jupiter).apparent(deflectors=())
+                            m_p_s = sun.at(t).observe(moon_obj).apparent(deflectors=())
+                            sep = j_p_s.separation_from(m_p_s).degrees
+                            r = np.degrees(
+                                np.arcsin(
+                                    astronomy.JUPITER_RADIUS_KM / j_p_s.distance().km
+                                )
+                            )
+                        return abs(sep - r)
+
+                    setattr(boundary_func, "step_days", 0.002)
+                    found_times, _ = find_minima(t_s, t_e, boundary_func)
+                    return found_times[0] if len(found_times) > 0 else t_coarse
+
+                t_refined_start = refine_boundary(t_coarse_start, event_kind)
+                t_refined_end = refine_boundary(t_coarse_end, event_kind)
+
+                events.append(
+                    {
+                        "date": t_refined_start.utc_datetime(),
+                        "event": f"{moon_name} {event_kind} Start",
+                        "type": "Jovian Moon Event",
+                        "object": moon_name,
+                        "action": "Start",
+                    }
+                )
+                events.append(
+                    {
+                        "date": t_refined_end.utc_datetime(),
+                        "event": f"{moon_name} {event_kind} End",
+                        "type": "Jovian Moon Event",
+                        "object": moon_name,
+                        "action": "End",
+                    }
+                )
+
+    return events
 def find_moon_apogee_perigee(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -508,13 +643,42 @@ def find_conjunctions_with_stars(
         minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
         for idx in minima_indices:
-            events.append(
-                {
-                    "date": times[idx].utc_datetime(),
-                    "object2": name,
-                    "separation_degrees": float(star_separations[idx]),
-                }
+            # Refine the minimum time
+            t_min_coarse = times[idx]
+            # Search window: +/- 2 hours around coarse minimum to be safe
+            t_start_refine = ts.utc(t_min_coarse.utc_datetime() - timedelta(hours=2))
+            t_end_refine = ts.utc(t_min_coarse.utc_datetime() + timedelta(hours=2))
+
+            def separation_at(t):
+                # Use topocentric/apparent for refinement
+                b = observer.at(t).observe(body).apparent(deflectors=())
+                s = observer.at(t).observe(star_objs[i]).apparent(deflectors=())
+                return b.separation_from(s).degrees
+
+            setattr(separation_at, "step_days", 0.05)
+            refined_times, refined_seps = find_minima(
+                t_start_refine, t_end_refine, separation_at
             )
+
+            if len(refined_times) > 0:
+                # Pick the one closest to our coarse minimum
+                best_idx = np.argmin([abs(rt - t_min_coarse) for rt in refined_times])
+                events.append(
+                    {
+                        "date": refined_times[best_idx].utc_datetime(),
+                        "object2": name,
+                        "separation_degrees": float(refined_seps[best_idx]),
+                    }
+                )
+            else:
+                # Fallback to coarse if refinement fails (unlikely)
+                events.append(
+                    {
+                        "date": t_min_coarse.utc_datetime(),
+                        "object2": name,
+                        "separation_degrees": float(star_separations[idx]),
+                    }
+                )
 
     return events
 
@@ -604,13 +768,42 @@ def find_conjunctions_between_moving_bodies(
         minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
         for idx in minima_indices:
-            events.append(
-                {
-                    "date": times[idx].utc_datetime(),
-                    "object2": name2,
-                    "separation_degrees": float(separations[idx]),
-                }
+            # Refine the minimum time
+            t_min_coarse = times[idx]
+            # Search window: +/- 2 steps around coarse minimum
+            t_start_refine = ts.utc(t_min_coarse.utc_datetime() - timedelta(days=2 * step))
+            t_end_refine = ts.utc(t_min_coarse.utc_datetime() + timedelta(days=2 * step))
+
+            body1_obj = planetary.get_skyfield_obj(body1_name)
+
+            def separation_at(t):
+                # Use topocentric/apparent for refinement
+                b1 = observer.at(t).observe(body1_obj).apparent(deflectors=())
+                b2 = observer.at(t).observe(body2).apparent(deflectors=())
+                return b1.separation_from(b2).degrees
+
+            setattr(separation_at, "step_days", step / 2)
+            refined_times, refined_seps = find_minima(
+                t_start_refine, t_end_refine, separation_at
             )
+
+            if len(refined_times) > 0:
+                best_idx = np.argmin([abs(rt - t_min_coarse) for rt in refined_times])
+                events.append(
+                    {
+                        "date": refined_times[best_idx].utc_datetime(),
+                        "object2": name2,
+                        "separation_degrees": float(refined_seps[best_idx]),
+                    }
+                )
+            else:
+                events.append(
+                    {
+                        "date": t_min_coarse.utc_datetime(),
+                        "object2": name2,
+                        "separation_degrees": float(separations[idx]),
+                    }
+                )
 
     return events
 
@@ -731,7 +924,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         spos_fine = observer.at(fine_times).observe(star_obj).apparent()
         separations = mpos_fine.separation_from(spos_fine).degrees
 
-        # Occultation check: separation < angular radius AND Moon above horizon
+        # Occultation check: separation < moon_rad_fine AND Moon above horizon
         occ_mask = (separations < moon_rad_fine) & (m_alt_fine.degrees > 0)
         occ_indices_local = np.where(occ_mask)[0]
 
@@ -741,16 +934,32 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
             # Group consecutive indices as one event
             groups = np.split(occ_indices_global, np.where(np.diff(occ_indices_global) > 10)[0] + 1)
             for group in groups:
-                # To find min separation in this event, we need all separations for these indices
-                # Actually we already have separations for all window_indices
-                # Let's map global indices back to local (within window_indices)
+                # map global indices back to local (within window_indices)
                 local_group_indices = np.searchsorted(window_indices, group)
                 min_local_idx = local_group_indices[np.argmin(separations[local_group_indices])]
-                min_global_idx = window_indices[min_local_idx]
+                t_min_coarse = times[window_indices[min_local_idx]]
+
+                # Refine the minimum time
+                t_s = ts.utc(t_min_coarse.utc_datetime() - timedelta(minutes=5))
+                t_e = ts.utc(t_min_coarse.utc_datetime() + timedelta(minutes=5))
+
+                def occ_sep_at(t):
+                    m = observer.at(t).observe(moon).apparent(deflectors=())
+                    s = observer.at(t).observe(star_obj).apparent(deflectors=())
+                    return m.separation_from(s).degrees
+
+                setattr(occ_sep_at, "step_days", 0.001)
+                refined_times, _ = find_minima(t_s, t_e, occ_sep_at)
+
+                if len(refined_times) > 0:
+                    best_idx = np.argmin([abs(rt - t_min_coarse) for rt in refined_times])
+                    t_event = refined_times[best_idx]
+                else:
+                    t_event = t_min_coarse
 
                 events.append(
                     {
-                        "date": times[min_global_idx].utc_datetime(),
+                        "date": t_event.utc_datetime(),
                         "object1": "Moon",
                         "object2": star_name,
                     }

@@ -29,6 +29,19 @@ def get_ephemeris():
 
 
 @functools.lru_cache(maxsize=None)
+def get_jovian_ephemeris():
+    """
+    Returns an ephemeris object with Jovian satellite data merged in.
+    """
+    planet_path = data_loader.get_ephemeris_path()
+    jovian_path = data_loader.get_jovian_ephemeris_path()
+    eph = load(planet_path)
+    eph_jovian = load(jovian_path)
+    eph.segments.extend(eph_jovian.segments)
+    return eph
+
+
+@functools.lru_cache(maxsize=None)
 def get_hipparcos_data() -> pd.DataFrame:
     """
     Returns a cached Hipparcos catalog as a pandas DataFrame.
@@ -147,6 +160,7 @@ def download_all_data():
     Downloads all the necessary data files.
     """
     get_ephemeris()
+    get_jovian_ephemeris()
     get_hipparcos_data()
     get_mpcorb_data()
 
@@ -157,6 +171,7 @@ def clear_cache():
     """
     get_timescale.cache_clear()
     get_ephemeris.cache_clear()
+    get_jovian_ephemeris.cache_clear()
     get_hipparcos_data.cache_clear()
     get_mpcorb_data.cache_clear()
     get_nasa_comets_data.cache_clear()
