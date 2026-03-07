@@ -67,7 +67,7 @@ class Objects(ABC):
         if not start or not stop:
             return pd.DataFrame(columns=self.objects.columns)
 
-        max_magnitude = (
+        max_magnitude_q = (
             limiting_magnitude
             if limiting_magnitude is not None
             else (
@@ -76,6 +76,15 @@ class Objects(ABC):
                 else conditions.max_object_magnitude
             )
         )
+
+        # Ensure max_magnitude is a float for comparison with magnitude_values (which are floats)
+        # to avoid Pint DimensionalityError or slow Quantity comparisons.
+        max_mag_float = (
+            max_magnitude_q.magnitude
+            if hasattr(max_magnitude_q, "magnitude")
+            else max_magnitude_q
+        )
+
         # Optimization: use pre-calculated float magnitudes if available to avoid slow Pint apply
         if "Magnitude_float" in self.objects.columns:
             magnitude_values = self.objects["Magnitude_float"]
@@ -83,7 +92,7 @@ class Objects(ABC):
             magnitude_values = self.objects["Magnitude"].apply(
                 lambda x: x.magnitude if hasattr(x, "magnitude") else x
             )
-        candidate_objects = self.objects[magnitude_values < max_magnitude].copy()
+        candidate_objects = self.objects[magnitude_values < max_mag_float].copy()
 
         if candidate_objects.empty:
             return pd.DataFrame(columns=self.objects.columns)
@@ -290,6 +299,8 @@ class Objects(ABC):
                         df_to_compute=visible_candidate_objects,
                     )
                     # Update visible_candidate_objects with the new computed values
+                    # Note: we use update() because it only overwrites with non-null values,
+                    # which is important as the master catalog has None for computed fields.
                     # Ensure columns exist before update
                     for col in self.objects.columns:
                         if col not in visible_candidate_objects.columns:
@@ -559,7 +570,9 @@ class Objects(ABC):
         # Localize transits
         local_tz = observer.local_timezone
         transits = [
-            t.replace(tzinfo=pytz.UTC).astimezone(local_tz) if m else None
+            t.replace(tzinfo=pytz.UTC).astimezone(local_tz)
+            if m and pd.notna(t)
+            else None
             for t, m in zip(transit_times, valid_mask)
         ]
 
