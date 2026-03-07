@@ -608,7 +608,8 @@ def _plot_ngc_on_skymap(
     ),
 ):
     if zoom_deg is not None and target_object is not None:
-        visible_ngc = observation.local_ngc.objects.copy()
+        # Use direct reference to avoid costly copy of 14k entries
+        visible_ngc = observation.local_ngc.objects
     else:
         visible_ngc = observation.get_visible_ngc(
             star_magnitude_limit=star_magnitude_limit
@@ -616,8 +617,15 @@ def _plot_ngc_on_skymap(
 
     if not cast(pd.DataFrame, visible_ngc).empty:
         if zoom_deg is not None and target_object is not None:
-            ra_center_hours = target_object.ra.hours
-            dec_center_degrees = target_object.dec.degrees
+            if hasattr(target_object, "ra"):
+                ra_center_hours = target_object.ra.hours
+                dec_center_degrees = target_object.dec.degrees
+            else:
+                # It's a planet or other solar system body
+                ra_p, dec_p, _ = observer.observe(target_object).radec()
+                ra_center_hours = ra_p.hours
+                dec_center_degrees = dec_p.degrees
+
             deg_margin = zoom_deg * 2
             ra_margin_hours = deg_margin / 15.0
             ra_min = ra_center_hours - ra_margin_hours
@@ -625,28 +633,29 @@ def _plot_ngc_on_skymap(
             dec_min = dec_center_degrees - deg_margin
             dec_max = dec_center_degrees + deg_margin
 
-            visible_ngc["RA_parsed"] = visible_ngc["RA"].apply(_parse_ra)
-            visible_ngc["Dec_parsed"] = visible_ngc["Dec"].apply(_parse_dec)
-
+            # Optimization: use pre-calculated floats instead of slow RA/Dec parsing
             ngc_in_box = visible_ngc[
-                (visible_ngc["RA_parsed"] >= ra_min)
-                & (visible_ngc["RA_parsed"] <= ra_max)
-                & (visible_ngc["Dec_parsed"] >= dec_min)
-                & (visible_ngc["Dec_parsed"] <= dec_max)
+                (visible_ngc["ra_hours"] >= ra_min)
+                & (visible_ngc["ra_hours"] <= ra_max)
+                & (visible_ngc["dec_degrees"] >= dec_min)
+                & (visible_ngc["dec_degrees"] <= dec_max)
             ]
 
             if not ngc_in_box.empty:
-                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-                observed_center = observer.observe(center)
+                if hasattr(target_object, "ra"):
+                    center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+                    observed_center = observer.observe(center)
+                else:
+                    # It's a planet or other solar system body
+                    observed_center = observer.observe(target_object)
 
+                # Vectorized Skyfield observations (Optimization: avoids slow row-wise apply)
                 all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
-                observed_all_ngc = cast(Any, all_ngc_vectors).apply(observer.observe)
+                observed_all_ngc = observer.observe(all_ngc_vectors)
 
-                dist_center = observed_center.position.au
-                vec_all_ngc = cast(Any, observed_all_ngc).apply(lambda x: x.xyz.au)
-
-                vec_center_np = dist_center
-                vec_all_ngc_np = numpy.array(vec_all_ngc.tolist()).T
+                # Vectorized coordinate access (Optimization: avoids row-wise xyz.au calls)
+                vec_all_ngc_np = observed_all_ngc.position.au
+                vec_center_np = observed_center.position.au
 
                 dot_product = numpy.dot(vec_center_np, vec_all_ngc_np)
 
