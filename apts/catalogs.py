@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from importlib import resources
-from typing import Any, Iterable, cast
+from typing import cast
 
 import pandas as pd
 from skyfield.api import Star
@@ -126,8 +126,8 @@ def _load_ngc_with_units():
     # Optimization: We keep 'Magnitude' and 'Size' as raw floats/strings in the catalog
     # for performance. They are converted to Pint Quantities lazily in NGC.get_visible().
     # We use object dtype to avoid FutureWarnings when restoring Quantities.
-    ngc_df["Magnitude"] = magnitudes.values.astype(object)
-    ngc_df["Size"] = pd.to_numeric(ngc_df["Size"], errors="coerce").astype(object)
+    ngc_df["Magnitude"] = cast(pd.Series, magnitudes).astype(object)
+    ngc_df["Size"] = cast(pd.Series, pd.to_numeric(ngc_df["Size"], errors="coerce")).astype(object)
 
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]

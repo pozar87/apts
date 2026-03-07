@@ -19,7 +19,17 @@ class NGC(Objects):
             calculation_date  # Store calculation_date for lazy computation
         )
 
-    def get_visible(self, conditions, start, stop, **kwargs):
+    def get_visible(
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
+        limiting_magnitude=None,
+        **kwargs,
+    ) -> pd.DataFrame:
         # Override get_visible to lazily restore skyfield objects BEFORE
         # calculation and units AFTER calculation.
         # This is a major performance win for NGC as it avoids creating
@@ -28,8 +38,6 @@ class NGC(Objects):
         from skyfield.api import Star
 
         # 1. Determine magnitude threshold (handling Pint Quantities)
-        limiting_magnitude = kwargs.get("limiting_magnitude")
-        star_magnitude_limit = kwargs.get("star_magnitude_limit")
         max_magnitude_q = (
             limiting_magnitude
             if limiting_magnitude is not None
@@ -66,7 +74,16 @@ class NGC(Objects):
             ]
 
         # 3. Call super().get_visible to perform visibility calculations
-        visible = super().get_visible(conditions, start, stop, **kwargs)
+        visible = super().get_visible(
+            conditions,
+            start,
+            stop,
+            hours_margin=hours_margin,
+            sort_by=sort_by,
+            star_magnitude_limit=star_magnitude_limit,
+            limiting_magnitude=limiting_magnitude,
+            **kwargs,
+        )
 
         # 4. Restore Pint units for visible objects only and update master catalog
         if not visible.empty:
@@ -79,7 +96,7 @@ class NGC(Objects):
             restoration_mask = visible["Magnitude"].apply(
                 lambda x: not hasattr(x, "magnitude")
             )
-            if restoration_mask.any():
+            if bool(restoration_mask.any()):
                 indices_to_restore = visible.index[restoration_mask]
 
                 # Magnitude restoration
