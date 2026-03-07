@@ -725,6 +725,61 @@ class OpticalPath:
         t = k * (35 * n + 30 * p) / (f * cos_dec)
         return t * get_unit_registry().second
 
+    def field_rotation_rate(
+        self, altitude_degrees: float, azimuth_degrees: float, latitude_degrees: float
+    ) -> Any:
+        """
+        Calculates the rate of field rotation for an Alt-Az mount in arcseconds per second.
+        Formula: ω = ωe * cos(lat) * cos(az) / cos(alt)
+        Where ωe is the sidereal rate (15.041067"/s).
+        """
+        # Sidereal rate in arcseconds per second
+        omega_e = 15.041067
+
+        alt_rad = numpy.radians(min(altitude_degrees, 89.99))
+        az_rad = numpy.radians(azimuth_degrees)
+        lat_rad = numpy.radians(latitude_degrees)
+
+        omega = omega_e * numpy.cos(lat_rad) * numpy.cos(az_rad) / numpy.cos(alt_rad)
+        return omega * get_unit_registry().arcsecond / get_unit_registry().second
+
+    def max_exposure_alt_az(
+        self,
+        altitude_degrees: float,
+        azimuth_degrees: float,
+        latitude_degrees: float,
+        tolerance_pixels: float = 1.0,
+    ) -> Any | None:
+        """
+        Calculates the maximum exposure time to avoid star trailing due to field rotation on an Alt-Az mount.
+        Formula: t = (tolerance * 206265) / (rotation_rate_arcsec * distance_from_center_pixels)
+        """
+        rate_q = self.field_rotation_rate(
+            altitude_degrees, azimuth_degrees, latitude_degrees
+        )
+        rate = numpy.abs(rate_q.magnitude)
+
+        if rate < 1e-10:
+            return 3600 * get_unit_registry().second
+
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        # Distance from center to the furthest pixel (corner) in pixels
+        if hasattr(self.output, "width") and hasattr(self.output, "height"):
+            w = self.output.width
+            h = self.output.height
+            dist_pixels = numpy.sqrt(w**2 + h**2) / 2.0
+        else:
+            return None
+
+        # t = (tolerance * 206265) / (rate * dist_pixels)
+        t = (tolerance_pixels * 206265.0) / (rate * dist_pixels)
+        return t * get_unit_registry().second
+
     def dawes_limit(self) -> Any | None:
         """
         Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
