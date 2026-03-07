@@ -113,3 +113,18 @@
     - Type: Refractor
 - **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
 - **Source URL:** https://www.celestron.com/products/astromaster-90az-telescope
+
+## 2024-05-31 - Audit of Sky-Watcher Explorer 130P
+
+- **Item:** Sky-Watcher Explorer 130P Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** type: 'type_telescope', mass: 3200g, cside_thread: '2"', missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Sky-Watcher Official Technical Data):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 34.5mm (Verified via manufacturer technical specs)
+    - Mass (OTA): 3.66kg -> 3660g
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated database entry with verified specs, corrected type, mass, and focuser size, and added source comment.
+- **Source URL:** http://skywatcher.com/product/explorer-130p/ (and technical data via retailers)
