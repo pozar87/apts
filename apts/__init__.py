@@ -78,6 +78,7 @@ def preload_data():
     logger.info("Preloading ephemeris and other data...")
     cache.get_timescale()
     cache.get_ephemeris()
+    cache.get_jovian_ephemeris()
     cache.get_mpcorb_data()
     logger.info("Data preloading complete.")
 

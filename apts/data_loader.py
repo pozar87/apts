@@ -18,6 +18,13 @@ def get_ephemeris_path():
         )
 
 
+def get_jovian_ephemeris_path():
+    """
+    Returns the path to the Jovian satellites ephemeris file.
+    """
+    return "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp"
+
+
 def get_mpcorb_path():
     """
     Returns the path to the MPCORB data file based on the data mode.
