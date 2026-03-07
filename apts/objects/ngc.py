@@ -144,6 +144,15 @@ class NGC(Objects):
 
     def get_skyfield_object(self, obj):
         # Handle lazy skyfield_object restoration
+        # Case 1: DataFrame passed for vectorized Star creation
+        if isinstance(obj, pd.DataFrame):
+            from skyfield.api import Star
+            return Star(
+                ra_hours=obj["ra_hours"].to_numpy(),
+                dec_degrees=obj["dec_degrees"].to_numpy(),
+            )
+
+        # Case 2: Individual object (Series or dict)
         if "skyfield_object" in obj and pd.notna(obj["skyfield_object"]):
             return obj["skyfield_object"]
 

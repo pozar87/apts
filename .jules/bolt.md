@@ -37,3 +37,7 @@
 ## 2026-03-10 - [Lazy Catalog Loading]
 **Learning:** Eagerly loading large astronomical catalogs (Messier, NGC, Bright Stars) during package import significantly increases startup time (e.g., from ~6.4s to ~3.7s). This "import penalty" can be eliminated by implementing lazy loading via property getters, ensuring that heavy I/O and data processing only occur when a catalog is actually needed.
 **Action:** Always implement lazy loading for large datasets (catalogs, ephemerides, etc.) in the library's core to ensure fast application startup and minimal memory footprint for lightweight scripts.
+
+## 2026-03-11 - [Vectorized Skymap Plotting]
+**Learning:** Plotting thousands of objects (like the 14k NGC catalog) in a zoomed view can be a major bottleneck if the filtering or observation steps use row-wise `.apply()`. Replacing string-based coordinate parsing with pre-calculated floats and using a single vectorized `observer.observe()` call on the filtered subset (supported by an array-backed `Star` object) eliminates massive Python loop overhead.
+**Action:** Ensure all plotting utilities use vectorized coordinate access and bulk Skyfield observations for large catalogs. Support vectorized input in `get_skyfield_object` to facilitate this.
