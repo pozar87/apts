@@ -778,6 +778,69 @@ class OpticalPath:
 
         return float(angular_diameter / p_scale.magnitude)
 
+    def field_rotation_rate(
+        self, latitude_degrees: float, azimuth_degrees: float, altitude_degrees: float
+    ) -> Any | None:
+        """
+        Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
+        Formula: omega_rot = omega_e * cos(phi) * cos(Az) / cos(Alt)
+        Where omega_e is the sidereal rotation rate (15.041067"/s).
+        Source: "Field Rotation" by Bill Keel
+        """
+        # Sidereal rate in arcseconds per second
+        omega_e = 15.041067
+
+        phi = numpy.radians(latitude_degrees)
+        az = numpy.radians(azimuth_degrees)
+        alt = numpy.radians(min(altitude_degrees, 89.99))  # Avoid zenith singularity
+
+        rate = omega_e * numpy.cos(phi) * numpy.cos(az) / numpy.cos(alt)
+        return rate * (get_unit_registry().arcsecond / get_unit_registry().second)
+
+    def max_exposure_alt_az(
+        self,
+        latitude_degrees: float,
+        azimuth_degrees: float,
+        altitude_degrees: float,
+        tolerance_pixels: float = 1.0,
+    ) -> Any | None:
+        """
+        Calculates the maximum exposure time for an Alt-Az mount to avoid field rotation trailing.
+        The trailing is measured at the corner of the sensor.
+        Formula: t = tol / (R_pixels * omega_rot_rad_s)
+        Where R_pixels is the distance from the center to the corner in pixels.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        # Field rotation rate in arcsec/s
+        rate_q = self.field_rotation_rate(
+            latitude_degrees, azimuth_degrees, altitude_degrees
+        )
+        if rate_q is None:
+            return None
+
+        rate_arcsec_s = abs(rate_q.magnitude)
+        if rate_arcsec_s < 1e-10:
+            return 3600 * get_unit_registry().second
+
+        # Rotation rate in radians per second
+        rate_rad_s = rate_arcsec_s / 206265.0
+
+        # Distance from center to corner in pixels
+        w = self.output.width
+        h = self.output.height
+        r_pixels = numpy.sqrt((w / 2.0) ** 2 + (h / 2.0) ** 2)
+
+        if r_pixels == 0:
+            return 3600 * get_unit_registry().second
+
+        t = tolerance_pixels / (r_pixels * rate_rad_s)
+        return t * get_unit_registry().second
+
     def rule_of_500(self):
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.
