@@ -19,7 +19,17 @@ class NGC(Objects):
             calculation_date  # Store calculation_date for lazy computation
         )
 
-    def get_visible(self, conditions, start, stop, **kwargs):
+    def get_visible(
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
+        limiting_magnitude=None,
+        **kwargs,
+    ):
         # Override get_visible to lazily restore skyfield objects BEFORE
         # calculation and units AFTER calculation.
         # This is a major performance win for NGC as it avoids creating
@@ -53,7 +63,7 @@ class NGC(Objects):
             self.objects["skyfield_object"] = None
 
         missing_sky_mask = candidate_mask & self.objects["skyfield_object"].isnull()
-        if missing_sky_mask.any():
+        if bool(missing_sky_mask.any()):
             missing_indices = self.objects.index[missing_sky_mask]
             self.objects.loc[missing_indices, "skyfield_object"] = [
                 Star(ra_hours=ra, dec_degrees=dec)
@@ -79,7 +89,7 @@ class NGC(Objects):
             restoration_mask = visible["Magnitude"].apply(
                 lambda x: not hasattr(x, "magnitude")
             )
-            if restoration_mask.any():
+            if bool(restoration_mask.any()):
                 indices_to_restore = visible.index[restoration_mask]
 
                 # Magnitude restoration
