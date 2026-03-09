@@ -1,6 +1,8 @@
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+include = ["apts"]
+exclude = ["tests"]
 
 [tool.ruff]
 exclude = [".venv"]

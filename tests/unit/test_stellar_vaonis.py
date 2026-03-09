@@ -1,7 +1,6 @@
 import pytest
 from apts.opticalequipment.telescope.vendors.vaonis import VaonisTelescope
 from apts.opticalequipment.smart_telescope import SmartTelescope
-from apts.units import get_unit_registry
 
 def test_vaonis_stellina_specs():
     stellina = VaonisTelescope.Vaonis_Stellina()
