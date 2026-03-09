@@ -132,6 +132,25 @@ def get_planet_angular_diameter(planet_name: str, time: Any) -> float:
     return float(np.degrees(alpha_rad) * 3600.0)
 
 
+def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
+    """
+    Returns the illuminated fraction of a planet (0.0 to 1.0) for a given time.
+    Uses the phase angle 'i' between the Sun and Earth as seen from the planet.
+    Formula: k = (1 + cos(i)) / 2
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+
+    # Position of the planet as seen from Earth
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+    # Phase angle: angle Sun-Planet-Earth
+    i_rad = astrometric.phase_angle(sun).radians
+
+    return float((1 + np.cos(i_rad)) / 2)
+
+
 def get_simple_name(technical_name: str) -> str:
     """
     Returns the simple name for a given technical planet name.
