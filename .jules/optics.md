@@ -114,6 +114,19 @@
 - **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
 - **Source URL:** https://www.celestron.com/products/astromaster-90az-telescope
 
+## 2024-05-31 - Audit of Celestron PowerSeeker 127EQ
+
+- **Item:** Celestron PowerSeeker 127EQ Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 3200g, cside_thread: '1.25"', missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 127mm
+    - Focal Length: 1000mm
+    - Central Obstruction: 41mm (32% by diameter)
+    - Mass (OTA): 7.1 lbs -> 3.23 kg -> 3230g
+    - Type: Newtonian Reflector
+- **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
+- **Source URL:** https://www.celestron.com/products/powerseeker-127eq-telescope
 ## 2024-05-31 - Audit of Sky-Watcher Explorer 130P
 
 - **Item:** Sky-Watcher Explorer 130P Newtonian Telescope
