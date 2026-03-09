@@ -256,7 +256,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
                     {
                         "date": te.utc_datetime(),
                         "object": moon_name,
-                        "event": f"{state_names[y_prev]} End",
+                        "event": f"{state_names[int(y_prev)]} End",
                         "type": "Jovian Moon Event",
                     }
                 )
@@ -265,7 +265,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
                     {
                         "date": te.utc_datetime(),
                         "object": moon_name,
-                        "event": f"{state_names[ye]} Start",
+                        "event": f"{state_names[int(ye)]} Start",
                         "type": "Jovian Moon Event",
                     }
                 )

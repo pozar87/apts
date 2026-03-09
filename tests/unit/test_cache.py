@@ -1,4 +1,5 @@
 import pickle
+from unittest.mock import MagicMock
 from apts.place import Place
 from apts.equipment import Equipment
 from apts.objects.solar_objects import SolarObjects
@@ -97,3 +98,30 @@ class CacheTest(unittest.TestCase):
         mock_get_ephemeris.assert_called_once()
         mock_get_hipparcos_data.assert_called_once()
         mock_get_mpcorb_data.assert_called_once()
+
+    @patch("apts.cache.load")
+    @patch("apts.cache.get_ephemeris")
+    def test_get_jovian_ephemeris(self, mock_get_ephemeris, mock_load):
+        from apts.cache import get_jovian_ephemeris
+
+        # Mock base ephemeris
+        mock_eph = MagicMock()
+        mock_eph.segments = ["segment1"]
+        mock_get_ephemeris.return_value = mock_eph
+
+        # Mock Jovian ephemeris
+        mock_jovian = MagicMock()
+        mock_jovian.segments = ["segment2"]
+        mock_load.return_value = mock_jovian
+
+        # Clear cache before test
+        get_jovian_ephemeris.cache_clear()
+
+        # Call the function
+        merged_eph = get_jovian_ephemeris()
+
+        # Assertions
+        self.assertIn("segment1", merged_eph.segments)
+        self.assertIn("segment2", merged_eph.segments)
+        self.assertEqual(len(merged_eph.segments), 2)
+        mock_load.assert_called_once()
