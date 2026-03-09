@@ -667,7 +667,8 @@ def _plot_ngc_on_skymap(
 
                 separation_radians = numpy.arccos(cosine_angle)
                 separation = numpy.degrees(separation_radians)
-                nearby_mask = separation < zoom_deg
+                # Ensure nearby_mask is an array if separation is a scalar
+                nearby_mask = numpy.atleast_1d(separation < zoom_deg)
                 visible_ngc = ngc_in_box[nearby_mask]
             else:
                 visible_ngc = ngc_in_box
