@@ -671,6 +671,22 @@ def _plot_ngc_on_skymap(
                 visible_ngc = ngc_in_box
 
     if not cast(pd.DataFrame, visible_ngc).empty:
+        # Ensure coordinate columns exist (they should be in the catalog, but might be missing in tests)
+        if (
+            "ra_hours" not in visible_ngc.columns
+            or "dec_degrees" not in visible_ngc.columns
+        ):
+            visible_ngc = cast(pd.DataFrame, visible_ngc).copy()
+            if "RA_parsed" in visible_ngc.columns:
+                visible_ngc["ra_hours"] = visible_ngc["RA_parsed"]
+            else:
+                visible_ngc["ra_hours"] = visible_ngc["RA"].apply(_parse_ra)
+
+            if "Dec_parsed" in visible_ngc.columns:
+                visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
+            else:
+                visible_ngc["dec_degrees"] = visible_ngc["Dec"].apply(_parse_dec)
+
         # Optimization: Observe all visible NGC objects at once before plotting
         visible_ngc_copy = visible_ngc.copy()
         visible_ngc_copy["epoch_year"] = 2000.0
