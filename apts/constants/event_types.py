@@ -32,6 +32,7 @@ class EventType(str, Enum):
     SEASONS = "seasons"
     LUNAR_PLANETARY_OCCULTATIONS = "lunar_planetary_occultations"
     MESSIER_CULMINATIONS = "messier_culminations"
+    JOVIAN_MOON_EVENTS = "jovian_moon_events"
 
     def __str__(self):
         return self.value
