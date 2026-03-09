@@ -74,9 +74,7 @@ class OpticsUtils:
         """
         # Ensure altitude is at least 0 to avoid complex numbers/errors
         h = max(altitude_degrees, 0.0)
-        return 1.0 / (
-            numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364
-        )
+        return 1.0 / (numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364)
 
     @staticmethod
     def compute_field_of_view(telescope, barlows, output):
@@ -514,12 +512,21 @@ class OpticalPath:
         return flux  # e-/s total
 
     def snr(
-        self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4, altitude=None, extinction_k=0.2
+        self,
+        magnitude,
+        sqm,
+        exposure_time,
+        n_subs=1,
+        n_pix=4,
+        altitude=None,
+        extinction_k=0.2,
     ):
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
-        obj_flux = self.object_flux(magnitude, altitude=altitude, extinction_k=extinction_k)
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
         sky_flux_val = self.sky_flux(sqm)
 
         if (
@@ -762,6 +769,31 @@ class OpticalPath:
             return None
         p_size = p_size_q.to("micrometer").magnitude
         return k * p_size
+
+    def nyquist_focal_ratio(
+        self, wavelength_nm: float = 550, sampling_factor: float = 3.0
+    ) -> float | None:
+        """
+        Calculates the ideal focal ratio for a given wavelength and sampling factor based on the Nyquist criterion.
+        Formula: f/D = (p * s) / (1.22 * lambda)
+        Where p is pixel size (µm), s is sampling factor, and lambda is wavelength (µm).
+        A sampling factor of 2.0-3.0 is typically used for planetary imaging.
+        Source: Nyquist-Shannon sampling theorem applied to diffraction-limited optics.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        p_size_q = self.output.pixel_size()
+        if p_size_q is None:
+            return None
+
+        p_um = p_size_q.to("micrometer").magnitude
+        lambda_um = wavelength_nm / 1000.0
+
+        return (p_um * sampling_factor) / (1.22 * lambda_um)
 
     def planetary_size_in_pixels(self, planet_name: str, time: Any) -> float | None:
         """
