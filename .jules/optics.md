@@ -141,3 +141,18 @@
     - Focuser: 1.25"
 - **Action:** Updated database entry with verified specs, corrected type, mass, and focuser size, and added source comment.
 - **Source URL:** http://skywatcher.com/product/explorer-130p/ (and technical data via retailers)
+
+## 2024-05-31 - Audit of Sky-Watcher Heritage 130P variants
+
+- **Item:** Sky-Watcher Heritage 130P, Heritage 130P FlexTube, Heritage P130 FlexTube, Virtuoso GTi 130P, Starquest 130P, Star Discovery 130i
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** type: 'type_telescope', missing aperture, focal length, and central obstruction. Various mass values (3000g-3300g).
+- **Verified Specs (Source: Sky-Watcher Official Website / Manual):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 34.5mm
+    - Mass (OTA): 3.25 kg -> 3250g (Standard for FlexTube 130 variants)
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated all 130/650 Heritage/Tabletop variants with verified specs, corrected type, and added source comment.
+- **Source URL:** http://skywatcher.com/product/heritage-p130/
