@@ -10,21 +10,24 @@ from .constants import astronomy
 from .utils import planetary
 
 
-def find_solar_longitude_time(t0, t1, target_longitude):
+def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     """
     Finds the exact time when the Sun reaches a specific ecliptic longitude.
+    Default epoch is J2000.0 if not specified.
     """
     from typing import Any, cast
     eph = cast(Any, get_ephemeris())
     sun = eph["sun"]
     earth = eph["earth"]
+    ts = get_timescale()
+    target_epoch = epoch if epoch is not None else ts.utc(2000)
 
     def solar_longitude_at(t):
         # Solar longitude (λ⊙) is the ecliptic longitude of the Sun as seen from Earth.
         # It must be calculated for a geocentric observer (earth.at(t)) observing the Sun.
         # We use apparent position to include aberration and nutation, which is
         # the standard for λ⊙ used in meteor shower prediction (apparent geocentric).
-        _, lon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon()
+        _, lon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon(target_epoch)
         return lon.degrees
 
     # We want to find where solar_longitude_at(t) == target_longitude
@@ -149,6 +152,124 @@ def find_golden_blue_hours(observer, start_date, end_date):
             )
 
         y_prev = yi
+
+    return events
+
+
+def find_jovian_moon_events(observer, start_date, end_date):
+    """
+    Finds Jovian moon events (Transits, Shadows, Occultations, Eclipses)
+    for Io, Europa, Ganymede, and Callisto.
+    """
+    from .cache import get_jovian_ephemeris
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_jovian_ephemeris())
+
+    try:
+        jupiter = eph["jupiter barycenter"]
+        sun = eph["sun"]
+        # Map IDs to names
+        moon_map = {501: "Io", 502: "Europa", 503: "Ganymede", 504: "Callisto"}
+        moon_objs = {moon_id: eph[moon_id] for moon_id in moon_map}
+    except KeyError:
+        return []
+
+    events = []
+
+    # Process each moon
+    for moon_id, moon_name in moon_map.items():
+        moon_obj = moon_objs[moon_id]
+
+        def state_func(t):
+            # Vectorized state function for find_discrete
+            # Returns: 0: None, 1: Transit, 2: Occultation, 3: Shadow, 4: Eclipse
+            is_array = hasattr(t, "shape") and t.shape != ()
+            res = np.zeros(len(t) if is_array else 1, dtype=int)
+
+            # Jupiter observed from Earth
+            j_obs = observer.at(t).observe(jupiter).apparent()
+            alt, _, dist = j_obs.altaz()
+
+            # Moon observed from Earth
+            m_obs = observer.at(t).observe(moon_obj).apparent()
+            sep_e = j_obs.separation_from(m_obs).degrees
+            j_rad_e = np.degrees(np.arcsin(astronomy.JUPITER_RADIUS_KM / dist.km))
+
+            # Earth perspective
+            in_transit = (sep_e < j_rad_e) & (m_obs.distance().km < dist.km)
+            in_occultation = (sep_e < j_rad_e) & (m_obs.distance().km >= dist.km)
+
+            # Jupiter and Moon observed from Sun
+            j_sun = sun.at(t).observe(jupiter).apparent()
+            m_sun = sun.at(t).observe(moon_obj).apparent()
+            sep_s = j_sun.separation_from(m_sun).degrees
+            j_rad_s = np.degrees(
+                np.arcsin(astronomy.JUPITER_RADIUS_KM / j_sun.distance().km)
+            )
+
+            # Sun perspective
+            in_shadow = (sep_s < j_rad_s) & (m_sun.distance().km < j_sun.distance().km)
+            in_eclipse = (sep_s < j_rad_s) & (m_sun.distance().km >= j_sun.distance().km)
+
+            # Visibility from Earth (Jupiter above horizon)
+            visible = alt.degrees > 0
+
+            if hasattr(t, "shape"):
+                res[visible & in_transit] = 1
+                res[visible & in_occultation] = 2
+                res[visible & in_shadow] = 3
+                res[visible & in_eclipse] = 4
+            else:
+                if visible:
+                    if in_transit:
+                        res[0] = 1
+                    elif in_occultation:
+                        res[0] = 2
+                    elif in_shadow:
+                        res[0] = 3
+                    elif in_eclipse:
+                        res[0] = 4
+            return res
+
+        setattr(state_func, "step_days", 0.005)  # ~7.2 minutes
+        t_events, y_events = almanac.find_discrete(t0, t1, state_func)
+
+        if len(t_events) == 0:
+            continue
+
+        # Initial state
+        y_start = state_func(t0)
+        y_prev = y_start[0] if hasattr(y_start, "shape") else y_start
+        state_names = {
+            1: "Transit",
+            2: "Occultation",
+            3: "Shadow Transit",
+            4: "Eclipse",
+        }
+
+        for te, ye in zip(t_events, y_events):
+            if y_prev != 0:
+                events.append(
+                    {
+                        "date": te.utc_datetime(),
+                        "object": moon_name,
+                        "event": f"{state_names[y_prev]} End",
+                        "type": "Jovian Moon Event",
+                    }
+                )
+            if ye != 0:
+                events.append(
+                    {
+                        "date": te.utc_datetime(),
+                        "object": moon_name,
+                        "event": f"{state_names[ye]} Start",
+                        "type": "Jovian Moon Event",
+                    }
+                )
+            y_prev = ye
 
     return events
 
@@ -317,12 +438,10 @@ def find_conjunctions(
     p2 = planetary.get_skyfield_obj(p2_name)
 
     def separation(t):
-        return (
-            observer.at(t)
-            .observe(p1)
-            .separation_from(observer.at(t).observe(p2))
-            .degrees
-        )
+        # Use topocentric apparent positions to account for aberration and light deflection
+        p1_obs = observer.at(t).observe(p1).apparent()
+        p2_obs = observer.at(t).observe(p2).apparent()
+        return p1_obs.separation_from(p2_obs).degrees
 
     # Dynamically adjust step size based on moving bodies
     # Moon moves ~13 deg/day, Mercury ~1.3 deg/day
@@ -354,8 +473,9 @@ def find_oppositions(observer, planet_name, start_date, end_date):
     sun = planetary.get_skyfield_obj("sun")
 
     def ecliptic_longitude_difference(t):
-        planet_lon = observer.at(t).observe(planet).ecliptic_latlon()[1].degrees
-        sun_lon = observer.at(t).observe(sun).ecliptic_latlon()[1].degrees
+        # Use apparent topocentric positions for maximum observational accuracy
+        planet_lon = observer.at(t).observe(planet).apparent().ecliptic_latlon()[1].degrees
+        sun_lon = observer.at(t).observe(sun).apparent().ecliptic_latlon()[1].degrees
         diff = sun_lon - planet_lon
         return (diff + 180) % 360 - 180
 

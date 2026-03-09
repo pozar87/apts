@@ -1,4 +1,5 @@
 import functools
+import logging
 from skyfield.api import load, Loader
 from skyfield.data import hipparcos, mpc
 from .config import get_minor_planet_settings
@@ -26,6 +27,30 @@ def get_ephemeris():
     """
     path_or_url = data_loader.get_ephemeris_path()
     return load(path_or_url)
+
+
+@functools.lru_cache(maxsize=None)
+def get_jovian_ephemeris():
+    """
+    Returns a merged ephemeris containing both planetary and Jovian satellite data.
+    """
+    eph = get_ephemeris()
+    # jup310.bsp contains high-precision Galilean satellite orbits
+    # It was moved to a_old_versions on the NAIF server
+    jovian_path = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp"
+    try:
+        eph_jovian = load(jovian_path)
+        # Create a new SpiceKernel object or merge segments.
+        # In Skyfield, kernels can be merged by extending the .segments list.
+        # We perform a shallow copy of the main ephemeris to avoid polluting it globally
+        import copy
+
+        merged_eph = copy.copy(eph)
+        merged_eph.segments = list(eph.segments) + list(eph_jovian.segments)
+        return merged_eph
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Failed to load Jovian ephemeris: {e}")
+        return eph
 
 
 @functools.lru_cache(maxsize=None)
