@@ -61,7 +61,7 @@ class NGC(Objects):
             self.objects["skyfield_object"] = None
 
         missing_sky_mask = candidate_mask & self.objects["skyfield_object"].isnull()
-        if missing_sky_mask.any():
+        if bool(missing_sky_mask.any()):
             missing_indices = self.objects.index[missing_sky_mask]
             self.objects.loc[missing_indices, "skyfield_object"] = [
                 Star(ra_hours=ra, dec_degrees=dec)
