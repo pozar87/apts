@@ -156,3 +156,19 @@
     - Focuser: 1.25"
 - **Action:** Updated all 130/650 Heritage/Tabletop variants with verified specs, corrected type, and added source comment.
 - **Source URL:** http://skywatcher.com/product/heritage-p130/
+
+## 2024-05-31 - Audit of ZWO ASI664MC
+
+- **Item:** ZWO ASI664MC Color Camera
+- **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:** Incorrect resolution (3840x2160 instead of 2704x1536), incorrect pixel size (2.0µm instead of 2.9µm), incorrect full well capacity (35ke- instead of 36.5ke-), and incorrect backfocus (6.5mm instead of 12.5mm).
+- **Verified Specs (Source: ZWO Official Manual):**
+    - Sensor: Sony IMX664 (1/1.8")
+    - Resolution: 2704 x 1536
+    - Pixel Size: 2.9µm
+    - Sensor Dimensions: 7.841mm x 4.454mm
+    - Full Well: 36.5 ke- (36500e-)
+    - Read Noise: 0.46e-
+    - Backfocus: 12.5mm
+- **Action:** Updated database entry with verified specs and added source URL.
+- **Source URL:** https://www.bhphotovideo.com/lit_files/1114240.pdf (Official ZWO Product Manual)
