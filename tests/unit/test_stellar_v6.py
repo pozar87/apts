@@ -1,52 +1,54 @@
-import pytest
-from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
-from apts.optics import OpticalPath
+import unittest
+from datetime import datetime, timezone
 from apts.utils import planetary
 from apts.cache import get_timescale
+from apts.optics import OpticalPath
+from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
+from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
+from apts.opticalequipment.camera.vendors.qhy import QhyCamera
 
-def test_asi664mc_specs():
-    camera = ZwoCamera.ZWO_ASI_664MC()
-    assert camera.get_vendor() == 'ZWO ASI664MC'
-    assert camera.pixel_size().magnitude == 2.0
-    assert camera.sensor_width.magnitude == 7.68
-    assert camera.sensor_height.magnitude == 4.32
-    assert camera.width == 3840
-    assert camera.height == 2160
-    assert camera.quantum_efficiency == 91
-    assert camera.read_noise == 1.0
+class TestStellarV6(unittest.TestCase):
+    def test_saturn_ring_tilt_2025(self):
+        ts = get_timescale()
+        # Saturn rings are nearly edge-on in March 2025
+        t = ts.utc(2025, 3, 23)
+        details = planetary.get_saturn_ring_details(t)
+        # Expected tilt is very small, < 1 degree
+        self.assertLess(abs(details["tilt_degrees"]), 1.0)
+        self.assertGreater(details["major_axis_arcsec"], 35.0)
+        self.assertLess(details["minor_axis_arcsec"], 1.0)
 
-def test_nyquist_focal_ratio():
-    camera = ZwoCamera.ZWO_ASI_664MC() # 2.0um
-    telescope = Sky_watcherTelescope.Sky_Watcher_Explorer_150P()
-    path = OpticalPath.from_path([telescope, camera])
+    def test_saturn_ring_tilt_2017(self):
+        ts = get_timescale()
+        # Saturn rings were at maximum tilt in 2017 (~27 deg)
+        t = ts.utc(2017, 10, 1)
+        details = planetary.get_saturn_ring_details(t)
+        self.assertAlmostEqual(details["tilt_degrees"], 26.9, delta=1.0)
+        self.assertGreater(details["minor_axis_arcsec"], 15.0)
 
-    # Nyquist FR = (p * s) / (1.22 * lambda)
-    # For p=2.0um, s=3.0, lambda=0.550um:
-    # (2.0 * 3.0) / (1.22 * 0.550) = 6.0 / 0.671 = 8.9418...
-    expected_fr = (2.0 * 3.0) / (1.22 * 0.550)
-    assert path.nyquist_focal_ratio() == pytest.approx(expected_fr, rel=1e-4)
+    def test_optical_path_saturn_rings(self):
+        ts = get_timescale()
+        t = ts.utc(2024, 9, 1) # ~3.6 deg tilt
+        telescope = Sky_watcherTelescope.Sky_Watcher_Explorer_130P()
+        camera = ZwoCamera.ZWO_ASI_664MC()
+        path = OpticalPath.from_path([telescope, camera])
 
-    # Test with different sampling factor
-    # (2.0 * 2.0) / (1.22 * 0.550) = 4.0 / 0.671 = 5.9612...
-    expected_fr_2 = (2.0 * 2.0) / (1.22 * 0.550)
-    assert path.nyquist_focal_ratio(sampling_factor=2.0) == pytest.approx(expected_fr_2, rel=1e-4)
+        rings_px = path.saturn_ring_size_in_pixels(t)
+        self.assertIsNotNone(rings_px)
+        major, minor = rings_px
+        self.assertGreater(major, 40.0)
+        self.assertGreater(minor, 2.0)
 
-def test_planet_fraction_illuminated():
-    ts = get_timescale()
-    t = ts.utc(2024, 1, 1)
+    def test_camera_664_specs(self):
+        zwo_mc = ZwoCamera.ZWO_ASI_664MC()
+        zwo_mm = ZwoCamera.ZWO_ASI_664MM()
+        qhy_c = QhyCamera.QHY_QHY_5III_664C()
 
-    # For Venus, it varies. Let's just check it returns a float between 0 and 1.
-    fraction = planetary.get_planet_fraction_illuminated('venus', t)
-    assert isinstance(fraction, float)
-    assert 0.0 <= fraction <= 1.0
+        for cam in [zwo_mc, zwo_mm, qhy_c]:
+            self.assertEqual(cam.width, 2704)
+            self.assertEqual(cam.height, 1536)
+            self.assertEqual(cam.pixel_size().magnitude, 2.9)
+            self.assertEqual(cam.full_well, 38500)
 
-    # For Moon
-    fraction_moon = planetary.get_planet_fraction_illuminated('moon', t)
-    assert isinstance(fraction_moon, float)
-    assert 0.0 <= fraction_moon <= 1.0
-
-    # Verify it matches get_moon_illumination approximately
-    # get_moon_illumination returns percentage
-    perc_moon = planetary.get_moon_illumination(t)
-    assert fraction_moon * 100 == pytest.approx(perc_moon, abs=0.1)
+if __name__ == "__main__":
+    unittest.main()

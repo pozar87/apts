@@ -1697,6 +1697,48 @@ class QhyCamera(Camera):
             'read_noise_e': 0.8,
             'full_well_e': 38200
         },
+        'QHY_QHY_5III_664C': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 664C',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.84,
+            'sensor_height_mm': 4.45,
+            'width': 2704,
+            'height': 1536,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.46,
+            'full_well_e': 38500
+        },
+        'QHY_QHY_5III_664M': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 664M',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.84,
+            'sensor_height_mm': 4.45,
+            'width': 2704,
+            'height': 1536,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.46,
+            'full_well_e': 38500
+        },
         'QHY_QHY_5III_678C': {
             'brand': 'QHY',
             'name': 'QHY 5III 678C',
@@ -2185,6 +2227,14 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_5III_662C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_662C'])
+
+    @classmethod
+    def QHY_QHY_5III_664C(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_664C'])
+
+    @classmethod
+    def QHY_QHY_5III_664M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_664M'])
 
     @classmethod
     def QHY_QHY_600M_M42_Adapter(cls):
