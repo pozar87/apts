@@ -56,3 +56,33 @@ class TestNGC(unittest.TestCase):
             row = valid_rows.iloc[0]
             obj = self.ngc.get_skyfield_object(row)
             self.assertIsNotNone(obj)
+
+    def test_ngc_get_visible_lazy_restoration(self):
+        # 1. Reset catalog to ensure lazy state
+        self.ngc.objects["skyfield_object"] = None
+        # We also need to ensure Magnitude and Size are in raw float/object form
+        # But catalogs.NGC might already have been restored by other tests.
+        # Let's force it for this instance.
+        self.ngc.objects["Magnitude"] = self.ngc.objects["Magnitude_float"].values.astype(object)
+
+        # 2. Define conditions and time
+        from apts.conditions import Conditions
+        from apts.units import get_unit_registry
+        ureg = get_unit_registry()
+        conditions = Conditions()
+        conditions.max_object_magnitude = 10 * ureg.mag
+        conditions.min_object_altitude = 20 * ureg.degree
+
+        start = datetime.datetime(2025, 2, 19, 20, 0, 0, tzinfo=pytz.UTC)
+        stop = datetime.datetime(2025, 2, 19, 22, 0, 0, tzinfo=pytz.UTC)
+
+        # 3. Call get_visible
+        visible = self.ngc.get_visible(conditions, start, stop)
+
+        # 4. Verify restoration
+        if not visible.empty:
+            # Check a visible object in master catalog
+            idx = visible.index[0]
+            self.assertIsNotNone(self.ngc.objects.loc[idx, "skyfield_object"])
+            self.assertTrue(hasattr(self.ngc.objects.loc[idx, "Magnitude"], "magnitude"))
+            self.assertTrue(hasattr(visible.loc[idx, "Magnitude"], "magnitude"))

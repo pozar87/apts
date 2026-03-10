@@ -72,3 +72,23 @@
 - Implemented `get_planet_angular_diameter` and `planetary_size_in_pixels`.
 - Conducted data audit for ZWO ASI224MC and updated its specs in `zwo.py` to resolve heuristic inaccuracies.
 - Verified with `tests/unit/test_stellar_v5.py` and regression tests.
+
+## 2025-05-17 - Alt-Az Field Rotation Calculation
+
+### Observe
+- Smart telescopes and Alt-Az mounts are increasingly popular, but users often struggle with field rotation limits.
+- The library was missing a way to predict the rotation rate and max exposure time before blur occurs.
+
+### Target
+- Priority 3: Implement a new utility function.
+- Added `field_rotation_rate` and `max_exposure_alt_az` to `OpticalPath`.
+
+### Calibrate
+- Formula: $\frac{dq}{dt} = \omega_e \frac{\cos(\phi) \cos(Az)}{\cos(h)}$ where $\omega_e$ is sidereal rotation rate, $\phi$ is latitude, $Az$ is azimuth, and $h$ is altitude.
+- Source: Jean Meeus, *Astronomical Algorithms*.
+- Blur tolerance is calculated at the sensor's corner (half-diagonal) for the worst-case scenario.
+
+### Develop
+- Implemented in `apts/optics.py`.
+- Verified with `tests/unit/test_field_rotation.py`.
+- Benchmarked for Seestar S50 at 45° lat/alt: ~12.5s limit for 1px blur.

@@ -19,7 +19,17 @@ class NGC(Objects):
             calculation_date  # Store calculation_date for lazy computation
         )
 
-    def get_visible(self, conditions, start, stop, **kwargs):
+    def get_visible(
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
+        limiting_magnitude=None,
+        **kwargs,
+    ) -> pd.DataFrame:
         # Override get_visible to lazily restore skyfield objects BEFORE
         # calculation and units AFTER calculation.
         # This is a major performance win for NGC as it avoids creating
@@ -28,8 +38,6 @@ class NGC(Objects):
         from skyfield.api import Star
 
         # 1. Determine magnitude threshold (handling Pint Quantities)
-        limiting_magnitude = kwargs.get("limiting_magnitude")
-        star_magnitude_limit = kwargs.get("star_magnitude_limit")
         max_magnitude_q = (
             limiting_magnitude
             if limiting_magnitude is not None
@@ -53,7 +61,7 @@ class NGC(Objects):
             self.objects["skyfield_object"] = None
 
         missing_sky_mask = candidate_mask & self.objects["skyfield_object"].isnull()
-        if missing_sky_mask.any():
+        if bool(missing_sky_mask.any()):
             missing_indices = self.objects.index[missing_sky_mask]
             self.objects.loc[missing_indices, "skyfield_object"] = [
                 Star(ra_hours=ra, dec_degrees=dec)
@@ -66,7 +74,16 @@ class NGC(Objects):
             ]
 
         # 3. Call super().get_visible to perform visibility calculations
-        visible = super().get_visible(conditions, start, stop, **kwargs)
+        visible = super().get_visible(
+            conditions,
+            start,
+            stop,
+            hours_margin=hours_margin,
+            sort_by=sort_by,
+            star_magnitude_limit=star_magnitude_limit,
+            limiting_magnitude=limiting_magnitude,
+            **kwargs,
+        )
 
         # 4. Restore Pint units for visible objects only and update master catalog
         if not visible.empty:
@@ -79,7 +96,7 @@ class NGC(Objects):
             restoration_mask = visible["Magnitude"].apply(
                 lambda x: not hasattr(x, "magnitude")
             )
-            if restoration_mask.any():
+            if bool(restoration_mask.any()):
                 indices_to_restore = visible.index[restoration_mask]
 
                 # Magnitude restoration
@@ -144,6 +161,15 @@ class NGC(Objects):
 
     def get_skyfield_object(self, obj):
         # Handle lazy skyfield_object restoration
+        # Case 1: DataFrame passed for vectorized Star creation
+        if isinstance(obj, pd.DataFrame):
+            from skyfield.api import Star
+            return Star(
+                ra_hours=obj["ra_hours"].to_numpy(),
+                dec_degrees=obj["dec_degrees"].to_numpy(),
+            )
+
+        # Case 2: Individual object (Series or dict)
         if "skyfield_object" in obj and pd.notna(obj["skyfield_object"]):
             return obj["skyfield_object"]
 

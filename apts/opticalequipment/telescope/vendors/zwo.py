@@ -37,15 +37,15 @@ class ZwoTelescope(Telescope):
             'name': 'Seestar S30 Pro',
             'type': 'type_smart_telescope',
             'aperture': 30,
-            'focal_length': 160,
-            'sensor_width': 11.136,
-            'sensor_height': 6.264,
+            'focal_length': 150,
+            'sensor_width': 11.14,
+            'sensor_height': 6.26,
             'width': 3840,
             'height': 2160,
             'mass': 1650,
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 91,
-            'read_noise_e': 0.6
+            'read_noise_e': 0.7
         }
     }
 

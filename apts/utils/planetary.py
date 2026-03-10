@@ -132,6 +132,86 @@ def get_planet_angular_diameter(planet_name: str, time: Any) -> float:
     return float(np.degrees(alpha_rad) * 3600.0)
 
 
+def get_saturn_pole(time: Any) -> tuple[float, float]:
+    """
+    Returns Saturn's North Pole coordinates (RA, Dec) in degrees for the given time.
+    Uses the IAU 2015 model.
+    """
+    # Time in Julian centuries from J2000.0
+    T = (time.tdb - 2451545.0) / 36525.0
+    # alpha_0 = 40.589 - 0.036 * T
+    # delta_0 = 83.537 - 0.004 * T
+    return 40.589 - 0.036 * T, 83.537 - 0.004 * T
+
+
+def get_saturn_ring_details(time: Any) -> dict:
+    """
+    Calculates Saturn's ring inclination (tilt) and angular dimensions.
+    Tilt 'B' is the geocentric latitude of the Earth relative to the ring plane.
+    Formula source: Explanatory Supplement to the Astronomical Almanac.
+    """
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    saturn = eph["saturn barycenter"]
+
+    # Geocentric observation of Saturn (ICRS)
+    astrometric = cast(Any, earth).at(time).observe(saturn)
+    # Unit vector from Saturn to Earth
+    v_sat_earth = -astrometric.position.au / astrometric.distance().au
+
+    # Saturn's pole in J2000.0
+    alpha_p_deg, delta_p_deg = get_saturn_pole(time)
+    alpha_p = np.radians(alpha_p_deg)
+    delta_p = np.radians(delta_p_deg)
+
+    # Pole unit vector
+    p = np.array(
+        [
+            np.cos(delta_p) * np.cos(alpha_p),
+            np.cos(delta_p) * np.sin(alpha_p),
+            np.sin(delta_p),
+        ]
+    )
+
+    # sin(B) is the dot product of the pole vector and the Saturn-Earth vector
+    sin_B = np.dot(p, v_sat_earth)
+    B_rad = np.arcsin(np.clip(sin_B, -1.0, 1.0))
+    B_deg = float(np.degrees(B_rad))
+
+    # Major axis (outer edge of A ring)
+    dist_km = astrometric.distance().km
+    radius_km = astronomy.SATURN_RING_OUTER_RADIUS_KM
+    major_arcsec = float(2 * np.degrees(np.arcsin(radius_km / dist_km)) * 3600.0)
+
+    # Minor axis
+    minor_arcsec = major_arcsec * abs(np.sin(B_rad))
+
+    return {
+        "tilt_degrees": B_deg,
+        "major_axis_arcsec": major_arcsec,
+        "minor_axis_arcsec": minor_arcsec,
+    }
+
+
+def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
+    """
+    Returns the illuminated fraction of a planet (0.0 to 1.0) for a given time.
+    Uses the phase angle 'i' between the Sun and Earth as seen from the planet.
+    Formula: k = (1 + cos(i)) / 2
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+
+    # Position of the planet as seen from Earth
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+    # Phase angle: angle Sun-Planet-Earth
+    i_rad = astrometric.phase_angle(sun).radians
+
+    return float((1 + np.cos(i_rad)) / 2)
+
+
 def get_simple_name(technical_name: str) -> str:
     """
     Returns the simple name for a given technical planet name.

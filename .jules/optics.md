@@ -113,3 +113,62 @@
     - Type: Refractor
 - **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
 - **Source URL:** https://www.celestron.com/products/astromaster-90az-telescope
+
+## 2024-05-31 - Audit of Celestron PowerSeeker 127EQ
+
+- **Item:** Celestron PowerSeeker 127EQ Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 3200g, cside_thread: '1.25"', missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 127mm
+    - Focal Length: 1000mm
+    - Central Obstruction: 41mm (32% by diameter)
+    - Mass (OTA): 7.1 lbs -> 3.23 kg -> 3230g
+    - Type: Newtonian Reflector
+- **Action:** Updated database entry with verified specs, corrected type and mass, and added source comment.
+- **Source URL:** https://www.celestron.com/products/powerseeker-127eq-telescope
+## 2024-05-31 - Audit of Sky-Watcher Explorer 130P
+
+- **Item:** Sky-Watcher Explorer 130P Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** type: 'type_telescope', mass: 3200g, cside_thread: '2"', missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Sky-Watcher Official Technical Data):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 34.5mm (Verified via manufacturer technical specs)
+    - Mass (OTA): 3.66kg -> 3660g
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated database entry with verified specs, corrected type, mass, and focuser size, and added source comment.
+- **Source URL:** http://skywatcher.com/product/explorer-130p/ (and technical data via retailers)
+
+## 2024-05-31 - Audit of Sky-Watcher Heritage 130P variants
+
+- **Item:** Sky-Watcher Heritage 130P, Heritage 130P FlexTube, Heritage P130 FlexTube, Virtuoso GTi 130P, Starquest 130P, Star Discovery 130i
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** type: 'type_telescope', missing aperture, focal length, and central obstruction. Various mass values (3000g-3300g).
+- **Verified Specs (Source: Sky-Watcher Official Website / Manual):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 34.5mm
+    - Mass (OTA): 3.25 kg -> 3250g (Standard for FlexTube 130 variants)
+    - Type: Newtonian Reflector
+    - Focuser: 1.25"
+- **Action:** Updated all 130/650 Heritage/Tabletop variants with verified specs, corrected type, and added source comment.
+- **Source URL:** http://skywatcher.com/product/heritage-p130/
+
+## 2024-05-31 - Audit of ZWO ASI664MC
+
+- **Item:** ZWO ASI664MC Color Camera
+- **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:** Incorrect resolution (3840x2160 instead of 2704x1536), incorrect pixel size (2.0µm instead of 2.9µm), incorrect full well capacity (35ke- instead of 36.5ke-), and incorrect backfocus (6.5mm instead of 12.5mm).
+- **Verified Specs (Source: ZWO Official Manual):**
+    - Sensor: Sony IMX664 (1/1.8")
+    - Resolution: 2704 x 1536
+    - Pixel Size: 2.9µm
+    - Sensor Dimensions: 7.841mm x 4.454mm
+    - Full Well: 36.5 ke- (36500e-)
+    - Read Noise: 0.46e-
+    - Backfocus: 12.5mm
+- **Action:** Updated database entry with verified specs and added source URL.
+- **Source URL:** https://www.bhphotovideo.com/lit_files/1114240.pdf (Official ZWO Product Manual)

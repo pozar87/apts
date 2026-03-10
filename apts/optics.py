@@ -74,9 +74,7 @@ class OpticsUtils:
         """
         # Ensure altitude is at least 0 to avoid complex numbers/errors
         h = max(altitude_degrees, 0.0)
-        return 1.0 / (
-            numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364
-        )
+        return 1.0 / (numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364)
 
     @staticmethod
     def compute_field_of_view(telescope, barlows, output):
@@ -514,12 +512,21 @@ class OpticalPath:
         return flux  # e-/s total
 
     def snr(
-        self, magnitude, sqm, exposure_time, n_subs=1, n_pix=4, altitude=None, extinction_k=0.2
+        self,
+        magnitude,
+        sqm,
+        exposure_time,
+        n_subs=1,
+        n_pix=4,
+        altitude=None,
+        extinction_k=0.2,
     ):
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
-        obj_flux = self.object_flux(magnitude, altitude=altitude, extinction_k=extinction_k)
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
         sky_flux_val = self.sky_flux(sqm)
 
         if (
@@ -763,6 +770,31 @@ class OpticalPath:
         p_size = p_size_q.to("micrometer").magnitude
         return k * p_size
 
+    def nyquist_focal_ratio(
+        self, wavelength_nm: float = 550, sampling_factor: float = 3.0
+    ) -> float | None:
+        """
+        Calculates the ideal focal ratio for a given wavelength and sampling factor based on the Nyquist criterion.
+        Formula: f/D = (p * s) / (1.22 * lambda)
+        Where p is pixel size (µm), s is sampling factor, and lambda is wavelength (µm).
+        A sampling factor of 2.0-3.0 is typically used for planetary imaging.
+        Source: Nyquist-Shannon sampling theorem applied to diffraction-limited optics.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        p_size_q = self.output.pixel_size()
+        if p_size_q is None:
+            return None
+
+        p_um = p_size_q.to("micrometer").magnitude
+        lambda_um = wavelength_nm / 1000.0
+
+        return (p_um * sampling_factor) / (1.22 * lambda_um)
+
     def planetary_size_in_pixels(self, planet_name: str, time: Any) -> float | None:
         """
         Calculates the projected size of a planet on the sensor in pixels.
@@ -777,6 +809,89 @@ class OpticalPath:
             return None
 
         return float(angular_diameter / p_scale.magnitude)
+
+    def saturn_ring_size_in_pixels(
+        self, time: Any
+    ) -> tuple[float, float] | None:
+        """
+        Calculates the projected size of Saturn's rings on the sensor in pixels.
+        Returns a tuple (major_axis_pixels, minor_axis_pixels).
+        """
+        from .utils import planetary
+
+        details = planetary.get_saturn_ring_details(time)
+        p_scale = self.pixel_scale()
+
+        if p_scale is None or p_scale.magnitude == 0:
+            return None
+
+        major = details["major_axis_arcsec"] / p_scale.magnitude
+        minor = details["minor_axis_arcsec"] / p_scale.magnitude
+
+        return float(major), float(minor)
+
+    def field_rotation_rate(
+        self, latitude_deg: float, altitude_deg: float, azimuth_deg: float
+    ) -> Any:
+        """
+        Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
+        Formula: dq/dt = omega_e * cos(latitude) * cos(azimuth) / cos(altitude)
+        where omega_e is Earth's sidereal rotation rate (~15.041 "/s).
+        Source: Meeus, Astronomical Algorithms
+        """
+        # Earth's sidereal rotation rate in arcseconds per second
+        omega_e = 15.041067
+
+        lat_rad = numpy.radians(latitude_deg)
+        # Division by zero at zenith (altitude 90) for Alt-Az mounts
+        alt_rad = numpy.radians(min(altitude_deg, 89.99))
+        az_rad = numpy.radians(azimuth_deg)
+
+        # Field rotation rate in arcseconds per second
+        rate = omega_e * numpy.cos(lat_rad) * numpy.cos(az_rad) / numpy.cos(alt_rad)
+
+        return rate * (get_unit_registry().arcsecond / get_unit_registry().second)
+
+    def max_exposure_alt_az(
+        self,
+        latitude_deg: float,
+        altitude_deg: float,
+        azimuth_deg: float,
+        tolerance_px: float = 1.0,
+    ) -> Any | None:
+        """
+        Calculates the maximum exposure time (seconds) to avoid field rotation blur
+        on an Alt-Az mount, based on the sensor geometry and rotation rate.
+        The blur is calculated for the corner of the sensor (worst case).
+        """
+        rate_q = self.field_rotation_rate(latitude_deg, altitude_deg, azimuth_deg)
+        rate = abs(rate_q.magnitude)
+
+        if rate < 1e-9:
+            # Essentially zero rotation
+            return 3600.0 * get_unit_registry().second
+
+        # Distance from center to corner in pixels
+        if not hasattr(self.output, "width") or not hasattr(self.output, "height"):
+            return None
+
+        r_pixels = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
+
+        if r_pixels == 0:
+            return None
+
+        # Maximum rotation angle allowed for the given pixel tolerance
+        # theta = s / r (for small angles, in radians)
+        # where s is blur distance in pixels, r is distance from center in pixels
+        max_theta_rad = tolerance_px / r_pixels
+
+        # Convert max rotation angle to arcseconds
+        max_theta_arcsec = numpy.degrees(max_theta_rad) * 3600.0
+
+        # Time = angle / rate
+        t = max_theta_arcsec / rate
+
+        return t * get_unit_registry().second
 
     def rule_of_500(self):
         """

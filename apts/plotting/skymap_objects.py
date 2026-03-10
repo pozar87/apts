@@ -608,7 +608,8 @@ def _plot_ngc_on_skymap(
     ),
 ):
     if zoom_deg is not None and target_object is not None:
-        visible_ngc = observation.local_ngc.objects.copy()
+        # Use direct reference to avoid costly copy of 14k entries
+        visible_ngc = observation.local_ngc.objects
     else:
         visible_ngc = observation.get_visible_ngc(
             star_magnitude_limit=star_magnitude_limit
@@ -616,8 +617,15 @@ def _plot_ngc_on_skymap(
 
     if not cast(pd.DataFrame, visible_ngc).empty:
         if zoom_deg is not None and target_object is not None:
-            ra_center_hours = target_object.ra.hours
-            dec_center_degrees = target_object.dec.degrees
+            if hasattr(target_object, "ra"):
+                ra_center_hours = target_object.ra.hours
+                dec_center_degrees = target_object.dec.degrees
+            else:
+                # It's a planet or other solar system body
+                ra_p, dec_p, _ = observer.observe(target_object).radec()
+                ra_center_hours = ra_p.hours
+                dec_center_degrees = dec_p.degrees
+
             deg_margin = zoom_deg * 2
             ra_margin_hours = deg_margin / 15.0
             ra_min = ra_center_hours - ra_margin_hours
