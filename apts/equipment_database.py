@@ -94,7 +94,7 @@ class EquipmentDatabase:
         if "binocular" in name.lower():
             return Binoculars.from_database(entry)
 
-        if tp in ["type_telescope", "type_refractor", "type_camera_lens"]:
+        if tp in ["type_telescope", "type_refractor", "refractor", "newtonian_reflector", "schmidt_cassegrain", "maksutov_cassegrain", "catadioptric", "type_camera_lens"]:
             return Telescope.from_database(entry)
         if tp in ["type_camera", "type_dslr"]:
             return Camera.from_database(entry)
