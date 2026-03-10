@@ -1,8 +1,6 @@
 import pytest
-import numpy as np
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
-from apts.units import get_unit_registry
 
 def test_field_rotation_rate():
     # Setup: Seestar S50

@@ -1,5 +1,7 @@
 import functools
 import logging
+import copy
+from typing import Any, cast
 from skyfield.api import load, Loader
 from skyfield.data import hipparcos, mpc
 from .config import get_minor_planet_settings
@@ -39,14 +41,13 @@ def get_jovian_ephemeris():
     # It was moved to a_old_versions on the NAIF server
     jovian_path = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp"
     try:
-        eph_jovian = load(jovian_path)
+        eph_jovian = cast(Any, load(jovian_path))
         # Create a new SpiceKernel object or merge segments.
         # In Skyfield, kernels can be merged by extending the .segments list.
         # We perform a shallow copy of the main ephemeris to avoid polluting it globally
-        import copy
 
-        merged_eph = copy.copy(eph)
-        merged_eph.segments = list(eph.segments) + list(eph_jovian.segments)
+        merged_eph = cast(Any, copy.copy(eph))
+        merged_eph.segments = list(cast(Any, eph).segments) + list(eph_jovian.segments)
         return merged_eph
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to load Jovian ephemeris: {e}")
@@ -184,4 +185,5 @@ def clear_cache():
     get_ephemeris.cache_clear()
     get_hipparcos_data.cache_clear()
     get_mpcorb_data.cache_clear()
+    get_jovian_ephemeris.cache_clear()
     get_nasa_comets_data.cache_clear()
