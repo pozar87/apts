@@ -2005,6 +2005,27 @@ class QhyCamera(Camera):
             'width': 1296,
             'height': 1032,
             'pixel_size_um': 5.0
+        },
+        'QHY_QHY5III664M': {
+            'brand': 'QHY',
+            'name': 'QHY5III664M',
+            'type': 'type_camera',
+            'optical_length': 6.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.68,
+            'sensor_height_mm': 4.32,
+            'width': 3840,
+            'height': 2160,
+            'pixel_size_um': 2.0,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 1.0,
+            'full_well_e': 35000
         }
     }
 
@@ -2407,3 +2428,7 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_174C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_174C'])
+
+    @classmethod
+    def QHY_QHY5III664M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY5III664M'])
