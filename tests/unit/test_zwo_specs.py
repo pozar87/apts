@@ -49,8 +49,8 @@ class TestZwoUpdates(unittest.TestCase):
 
     def test_asi664_specs(self):
         cam = ZwoCamera.ZWO_ASI_664MC()
-        self.assertEqual(cam.sensor_width.to('mm').magnitude, 7.841)
-        self.assertEqual(cam.sensor_height.to('mm').magnitude, 4.454)
+        self.assertEqual(cam.sensor_width.to('mm').magnitude, 7.84)
+        self.assertEqual(cam.sensor_height.to('mm').magnitude, 4.45)
         self.assertEqual(cam.width, 2704)
         self.assertEqual(cam.height, 1536)
         self.assertEqual(cam.pixel_size().to('micrometer').magnitude, 2.9)

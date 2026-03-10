@@ -1,9 +1,7 @@
 import pytest
-import numpy as np
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-from apts.units import get_unit_registry
 
 def test_field_rotation_rate():
     # Setup a simple optical path
@@ -40,3 +38,15 @@ def test_max_exposure_alt_az():
 
     max_exp = path.max_exposure_alt_az(45, 45, 0, tolerance_px=1.0)
     assert max_exp.magnitude == pytest.approx(12.45, rel=1e-2)
+
+def test_zwo_asi664mc_specs():
+    camera = ZwoCamera.ZWO_ASI_664MC()
+    assert camera.vendor == "ZWO ASI664MC"
+    assert camera.sensor_width.magnitude == 7.84
+    assert camera.sensor_height.magnitude == 4.45
+    assert camera.width == 2704
+    assert camera.height == 1536
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.full_well == 36500
+    assert camera.quantum_efficiency == 91
+    assert camera.read_noise == 0.46

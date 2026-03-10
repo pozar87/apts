@@ -732,6 +732,66 @@ class OpticalPath:
         t = k * (35 * n + 30 * p) / (f * cos_dec)
         return t * get_unit_registry().second
 
+    def field_rotation_rate(
+        self, latitude_deg: float, azimuth_deg: float, altitude_deg: float
+    ) -> Any:
+        """
+        Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
+        Formula: omega_rot = omega_earth * cos(lat) * cos(az) / cos(alt)
+        Where omega_earth is the sidereal rotation rate (15.041067 "/s).
+        Source: "Field Rotation" - Bill Keicher
+        """
+        # Sidereal rotation rate in arcseconds per second
+        omega_earth = 15.041067
+
+        phi = numpy.radians(latitude_deg)
+        az = numpy.radians(azimuth_deg)
+        alt = numpy.radians(
+            min(altitude_deg, 89.99)
+        )  # Avoid division by zero at zenith
+
+        rate = omega_earth * numpy.cos(phi) * numpy.cos(az) / numpy.cos(alt)
+        return abs(rate) * (get_unit_registry().arcsecond / get_unit_registry().second)
+
+    def max_exposure_alt_az(
+        self,
+        latitude_deg: float,
+        azimuth_deg: float,
+        altitude_deg: float,
+        tolerance_pixels: float = 1.0,
+    ) -> Any | None:
+        """
+        Calculates the maximum exposure time for an Alt-Az mount to avoid field rotation trailing.
+        The calculation is based on the movement of the furthest pixel from the sensor center (the corners).
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        # Field rotation rate in arcsec/s
+        rot_rate_q = self.field_rotation_rate(latitude_deg, azimuth_deg, altitude_deg)
+        if rot_rate_q is None:
+            return None
+        rot_rate = rot_rate_q.to("arcsecond/second").magnitude
+
+        if rot_rate < 1e-10:
+            return 3600 * get_unit_registry().second
+
+        # Pixel scale in arcsec/pixel
+        p_scale = self.pixel_scale()
+        if p_scale is None:
+            return None
+
+        # Distance from center to corner in pixels
+        # r = sqrt((width/2)^2 + (height/2)^2)
+        r = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
+
+        t = (tolerance_pixels * 206265.0) / (r * rot_rate)
+
+        return t * get_unit_registry().second
+
     def dawes_limit(self) -> Any | None:
         """
         Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
@@ -810,9 +870,7 @@ class OpticalPath:
 
         return float(angular_diameter / p_scale.magnitude)
 
-    def saturn_ring_size_in_pixels(
-        self, time: Any
-    ) -> tuple[float, float] | None:
+    def saturn_ring_size_in_pixels(self, time: Any) -> tuple[float, float] | None:
         """
         Calculates the projected size of Saturn's rings on the sensor in pixels.
         Returns a tuple (major_axis_pixels, minor_axis_pixels).
@@ -829,69 +887,6 @@ class OpticalPath:
         minor = details["minor_axis_arcsec"] / p_scale.magnitude
 
         return float(major), float(minor)
-
-    def field_rotation_rate(
-        self, latitude_deg: float, altitude_deg: float, azimuth_deg: float
-    ) -> Any:
-        """
-        Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
-        Formula: dq/dt = omega_e * cos(latitude) * cos(azimuth) / cos(altitude)
-        where omega_e is Earth's sidereal rotation rate (~15.041 "/s).
-        Source: Meeus, Astronomical Algorithms
-        """
-        # Earth's sidereal rotation rate in arcseconds per second
-        omega_e = 15.041067
-
-        lat_rad = numpy.radians(latitude_deg)
-        # Division by zero at zenith (altitude 90) for Alt-Az mounts
-        alt_rad = numpy.radians(min(altitude_deg, 89.99))
-        az_rad = numpy.radians(azimuth_deg)
-
-        # Field rotation rate in arcseconds per second
-        rate = omega_e * numpy.cos(lat_rad) * numpy.cos(az_rad) / numpy.cos(alt_rad)
-
-        return rate * (get_unit_registry().arcsecond / get_unit_registry().second)
-
-    def max_exposure_alt_az(
-        self,
-        latitude_deg: float,
-        altitude_deg: float,
-        azimuth_deg: float,
-        tolerance_pixels: float = 1.0,
-    ) -> Any | None:
-        """
-        Calculates the maximum exposure time (seconds) to avoid field rotation blur
-        on an Alt-Az mount, based on the sensor geometry and rotation rate.
-        The blur is calculated for the corner of the sensor (worst case).
-        """
-        rate_q = self.field_rotation_rate(latitude_deg, altitude_deg, azimuth_deg)
-        rate = abs(rate_q.magnitude)
-
-        if rate < 1e-9:
-            # Essentially zero rotation
-            return 3600.0 * get_unit_registry().second
-
-        # Distance from center to corner in pixels
-        if not hasattr(self.output, "width") or not hasattr(self.output, "height"):
-            return None
-
-        r_pixels = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
-
-        if r_pixels == 0:
-            return None
-
-        # Maximum rotation angle allowed for the given pixel tolerance
-        # theta = s / r (for small angles, in radians)
-        # where s is blur distance in pixels, r is distance from center in pixels
-        max_theta_rad = tolerance_pixels / r_pixels
-
-        # Convert max rotation angle to arcseconds
-        max_theta_arcsec = numpy.degrees(max_theta_rad) * 3600.0
-
-        # Time = angle / rate
-        t = max_theta_arcsec / rate
-
-        return t * get_unit_registry().second
 
     def rule_of_500(self):
         """
