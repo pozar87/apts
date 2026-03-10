@@ -58,6 +58,7 @@ class AstronomicalEvents:
         self.event_settings["golden_hour"] = False
         self.event_settings["blue_hour"] = False
         self.event_settings["culminations"] = False
+        self.event_settings["jovian_moon_events"] = False
         
         # Override with config settings if present
         for key, value in config_settings.items():
@@ -134,6 +135,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_lunar_planetary_occultations))
         if self.event_settings.get("messier_culminations"):
             futures.append(executor.submit(self.calculate_messier_culminations))
+        if self.event_settings.get("jovian_moon_events"):
+            futures.append(executor.submit(self.calculate_jovian_moon_events))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -287,6 +290,8 @@ class AstronomicalEvents:
             return 2
         if event_type == "Messier Culmination":
             return 2
+        if event_type == "Jovian Moon Event":
+            return 3
         return 1
 
     def calculate_space_launches(self):
@@ -956,6 +961,16 @@ class AstronomicalEvents:
             event["rarity"] = self._get_rarity("Messier Culmination", event)
 
         logger.debug(f"--- calculate_messier_culminations: {time.time() - start_time}s")
+        return events
+
+    def calculate_jovian_moon_events(self):
+        start_time = time.time()
+        events = skyfield_searches.find_jovian_moon_events(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Jovian Moon Event", event)
+        logger.debug(f"--- calculate_jovian_moon_events: {time.time() - start_time}s")
         return events
 
     def calculate_greatest_elongations(self):
