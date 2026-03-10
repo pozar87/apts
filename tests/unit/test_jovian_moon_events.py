@@ -1,12 +1,14 @@
 import unittest
 from datetime import datetime, timezone
-from apts.place import Place
-from apts.events import AstronomicalEvents
-from apts.constants.event_types import EventType
-from apts.skyfield_searches import find_jovian_moon_events, find_solar_longitude_time
+
 from apts.cache import get_timescale
+from apts.constants.event_types import EventType
+from apts.events import AstronomicalEvents
+from apts.place import Place
+from apts.skyfield_searches import find_jovian_moon_events, find_solar_longitude_time
 
 utc = timezone.utc
+
 
 class JovianMoonEventsTest(unittest.TestCase):
     def setUp(self):
@@ -20,7 +22,9 @@ class JovianMoonEventsTest(unittest.TestCase):
 
     def test_find_jovian_moon_events(self):
         # Test the search function directly
-        events = find_jovian_moon_events(self.place.observer, self.start_date, self.end_date)
+        events = find_jovian_moon_events(
+            self.place.observer, self.start_date, self.end_date
+        )
 
         # It's highly likely there are some events in a 24h period for 4 moons.
         # Even if not, we check it doesn't crash and returns a list.
@@ -37,7 +41,7 @@ class JovianMoonEventsTest(unittest.TestCase):
             self.place,
             self.start_date,
             self.end_date,
-            events_to_calculate=[EventType.JOVIAN_MOON_EVENTS]
+            events_to_calculate=[EventType.JOVIAN_MOON_EVENTS],
         )
         df = ae.get_events()
 
@@ -61,9 +65,13 @@ class JovianMoonEventsTest(unittest.TestCase):
         self.assertIsNotNone(t_date)
 
         # They should differ by a few hours due to precession (approx 8.2 hours for 24 years)
-        diff_minutes = abs((t_j2000.utc_datetime() - t_date.utc_datetime()).total_seconds()) / 60.0
+        assert t_j2000 is not None and t_date is not None
+        diff_minutes = (
+            abs((t_j2000.utc_datetime() - t_date.utc_datetime()).total_seconds()) / 60.0
+        )
         self.assertGreater(diff_minutes, 450.0)
         self.assertLess(diff_minutes, 550.0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2075,20 +2075,19 @@ class ZwoCamera(Camera):
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.46,
             "reversible": False,
-            "sensor_height_mm": 4.454,
-            "sensor_width_mm": 7.841,
+            "sensor_height_mm": 4.45,
+            "sensor_width_mm": 7.84,
             "tside_gender": "Female",
             "tside_thread": "M42",
             "type": "type_camera",
             "width": 2704,
         },  # Verified via ZWO official product manual: https://www.bhphotovideo.com/lit_files/1114240.pdf
-        },
         "ZWO_ASI_664MM": {
             "bf_role": "end",
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 38500,
+            "full_well_e": 36500,
             "height": 1536,
             "mass": 126,
             "name": "ASI664MM",
@@ -3065,8 +3064,4 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI_585MC_Pro(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_585MC_Pro'])
-
-    @classmethod
-    def ZWO_ASI_664MC(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_664MC'])
+        return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_Pro"])

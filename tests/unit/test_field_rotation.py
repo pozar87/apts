@@ -11,17 +11,17 @@ def test_field_rotation_rate():
 
     # 1. At latitude 45, looking North (Az=0) at altitude 45
     # rate = omega_e * cos(45) * cos(0) / cos(45) = omega_e
-    rate = path.field_rotation_rate(45.0, 45.0, 0.0)
+    rate = path.field_rotation_rate(45.0, 0.0, 45.0)
     assert pytest.approx(rate.magnitude, 1e-6) == omega_e
 
     # 2. At Equator (lat=0), looking East (Az=90)
     # rate = omega_e * cos(0) * cos(90) / cos(alt) = 0
-    rate = path.field_rotation_rate(0.0, 30.0, 90.0)
+    rate = path.field_rotation_rate(0.0, 90.0, 30.0)
     assert pytest.approx(rate.magnitude, 1e-6) == 0.0
 
     # 3. At North Pole (lat=90)
     # rate = omega_e * cos(90) * ... = 0
-    rate = path.field_rotation_rate(90.0, 45.0, 180.0)
+    rate = path.field_rotation_rate(90.0, 180.0, 45.0)
     assert pytest.approx(rate.magnitude, 1e-6) == 0.0
 
 def test_max_exposure_alt_az():
@@ -38,10 +38,10 @@ def test_max_exposure_alt_az():
     # At lat 45, az 0, alt 45, rate = 15.041 "/s
     # T = 187.25 / 15.041 approx 12.45s
 
-    t_max = path.max_exposure_alt_az(45.0, 45.0, 0.0, tolerance_px=1.0)
+    t_max = path.max_exposure_alt_az(45.0, 0.0, 45.0, tolerance_pixels=1.0)
     assert t_max is not None
     assert pytest.approx(t_max.magnitude, 0.1) == 12.45
 
     # Very low rate should give high exposure cap
-    t_max_low = path.max_exposure_alt_az(0.0, 30.0, 90.0)
+    t_max_low = path.max_exposure_alt_az(0.0, 90.0, 30.0)
     assert t_max_low.magnitude == 3600.0
