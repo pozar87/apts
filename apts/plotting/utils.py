@@ -20,17 +20,26 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_parallactic_angle(
-    latitude_deg: float, declination: "Angle", azimuth: "Angle"
+    latitude_deg: float, declination: Any, azimuth: Any
 ) -> float:
     """Calculates the parallactic angle in degrees."""
-    if abs(declination.degrees) > 89.99:  # type: ignore
+    dec_deg = (
+        declination.degrees if hasattr(declination, "degrees") else float(declination)
+    )
+    if abs(dec_deg) > 89.99:
         return 0.0
 
     lat_rad = numpy.deg2rad(latitude_deg)
-    dec_rad = declination.radians  # type: ignore
-    az_rad = azimuth.radians  # type: ignore
+    dec_rad = (
+        declination.radians if hasattr(declination, "radians") else numpy.deg2rad(dec_deg)
+    )
+    az_rad = (
+        azimuth.radians
+        if hasattr(azimuth, "radians")
+        else numpy.deg2rad(azimuth)
+    )
 
-    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)  # type: ignore
+    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
     sin_q = numpy.clip(sin_q, -1.0, 1.0)
     q_rad = numpy.arcsin(sin_q)
     return numpy.rad2deg(q_rad)

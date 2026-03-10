@@ -60,6 +60,8 @@ def test_plot_ngc_on_skymap_basic(mock_observation, mock_ax, mock_observer):
                 "PosAng": 35.0,
                 "Mag": 3.44,
                 "Type": "Galaxy",
+                "ra_hours": 0.712,
+                "dec_degrees": 41.269,
             },
             {
                 "NGC": "NGC 1976",
@@ -69,6 +71,8 @@ def test_plot_ngc_on_skymap_basic(mock_observation, mock_ax, mock_observer):
                 "PosAng": 0.0,
                 "Mag": 4.0,
                 "Type": "Nebula",
+                "ra_hours": 5.588,
+                "dec_degrees": -5.39,
             },
         ]
     )
@@ -116,6 +120,8 @@ def test_plot_ngc_on_skymap_polar(mock_observation, mock_ax, mock_observer):
                 "PosAng": 35.0,
                 "Mag": 3.44,
                 "Type": "Galaxy",
+                "ra_hours": 0.712,
+                "dec_degrees": 41.269,
             }
         ]
     )
@@ -204,7 +210,9 @@ def test_plot_ngc_on_skymap_zoom_horizontal(mock_observation, mock_ax, mock_obse
         from skyfield.api import Star as SkyfieldStar
 
         if isinstance(obj, SkyfieldStar):
-            return mock_observed_target
+            # Check if it's the target or the NGC stars
+            # In these tests, we can just return mock_observed_ngc which has everything mocked
+            return mock_observed_ngc
         return mock_observed_ngc
 
     mock_observer.observe.side_effect = observe_side_effect
@@ -244,6 +252,8 @@ def test_plot_ngc_on_skymap_zoom_equatorial(mock_observation, mock_ax, mock_obse
                 "MinAx": 63.0,
                 "PosAng": 35.0,
                 "Mag": 3.44,
+                "ra_hours": 0.712,
+                "dec_degrees": 41.269,
             }
         ]
     )
@@ -278,7 +288,7 @@ def test_plot_ngc_on_skymap_zoom_equatorial(mock_observation, mock_ax, mock_obse
         from skyfield.api import Star as SkyfieldStar
 
         if isinstance(obj, SkyfieldStar):
-            return mock_observed_target
+            return mock_observed_ngc
         return mock_observed_ngc
 
     mock_observer.observe.side_effect = observe_side_effect

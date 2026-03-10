@@ -633,7 +633,14 @@ def _plot_ngc_on_skymap(
             dec_min = dec_center_degrees - deg_margin
             dec_max = dec_center_degrees + deg_margin
 
-            # Optimization: use pre-calculated floats instead of slow RA/Dec parsing
+            # Optimization: use pre-calculated float coords from catalog
+            if (
+                "ra_hours" not in visible_ngc.columns
+                or "dec_degrees" not in visible_ngc.columns
+            ):
+                visible_ngc["ra_hours"] = visible_ngc["RA"].apply(_parse_ra)
+                visible_ngc["dec_degrees"] = visible_ngc["Dec"].apply(_parse_dec)
+
             ngc_in_box = visible_ngc[
                 (visible_ngc["ra_hours"] >= ra_min)
                 & (visible_ngc["ra_hours"] <= ra_max)
@@ -642,20 +649,17 @@ def _plot_ngc_on_skymap(
             ]
 
             if not ngc_in_box.empty:
-                if hasattr(target_object, "ra"):
-                    center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
-                    observed_center = observer.observe(center)
-                else:
-                    # It's a planet or other solar system body
-                    observed_center = observer.observe(target_object)
+                # Use target object's position directly
+                observed_center = observer.observe(target_object)
 
-                # Vectorized Skyfield observations (Optimization: avoids slow row-wise apply)
-                all_ngc_vectors = observation.local_ngc.get_skyfield_object(ngc_in_box)
-                observed_all_ngc = observer.observe(all_ngc_vectors)
+                # Vectorized Skyfield observation for separation calculation
+                ngc_in_box_copy = ngc_in_box.copy()
+                ngc_in_box_copy["epoch_year"] = 2000.0
+                all_ngc_stars = SkyfieldStar.from_dataframe(ngc_in_box_copy)
+                observed_all_ngc = observer.observe(all_ngc_stars)
 
-                # Vectorized coordinate access (Optimization: avoids row-wise xyz.au calls)
-                vec_all_ngc_np = observed_all_ngc.position.au
                 vec_center_np = observed_center.position.au
+                vec_all_ngc_np = observed_all_ngc.position.au
 
                 dot_product = numpy.dot(vec_center_np, vec_all_ngc_np)
 
@@ -667,72 +671,104 @@ def _plot_ngc_on_skymap(
 
                 separation_radians = numpy.arccos(cosine_angle)
                 separation = numpy.degrees(separation_radians)
-                # Ensure nearby_mask is an array if separation is a scalar
                 nearby_mask = numpy.atleast_1d(separation < zoom_deg)
-                visible_ngc = ngc_in_box[nearby_mask]
+                # Use integer indexing to avoid KeyError with boolean arrays on some pandas versions
+                # or when indexing with MagicMocks in tests.
+                visible_ngc = ngc_in_box.iloc[numpy.where(nearby_mask)[0]].copy()
             else:
                 visible_ngc = ngc_in_box
 
     if not cast(pd.DataFrame, visible_ngc).empty:
-        for _, n_obj in cast(pd.DataFrame, visible_ngc).iterrows():
+        # Ensure coordinate columns exist (they should be in the catalog, but might be missing in tests)
+        if (
+            "ra_hours" not in visible_ngc.columns
+            or "dec_degrees" not in visible_ngc.columns
+        ):
+            visible_ngc = cast(pd.DataFrame, visible_ngc).copy()
+            if "RA_parsed" in visible_ngc.columns:
+                visible_ngc["ra_hours"] = visible_ngc["RA_parsed"]
+            else:
+                visible_ngc["ra_hours"] = visible_ngc["RA"].apply(_parse_ra)
+
+            if "Dec_parsed" in visible_ngc.columns:
+                visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
+            else:
+                visible_ngc["dec_degrees"] = visible_ngc["Dec"].apply(_parse_dec)
+
+        # Optimization: Observe all visible NGC objects at once before plotting
+        visible_ngc_copy = visible_ngc.copy()
+        visible_ngc_copy["epoch_year"] = 2000.0
+        ngc_stars = SkyfieldStar.from_dataframe(visible_ngc_copy)
+        all_positions = observer.observe(ngc_stars).apparent()
+        alt_all_deg = numpy.atleast_1d(all_positions.altaz()[0].degrees)
+        az_all_deg = numpy.atleast_1d(all_positions.altaz()[1].degrees)
+        ra_all_hours = numpy.atleast_1d(all_positions.radec()[0].hours)
+        dec_all_deg = numpy.atleast_1d(all_positions.radec()[1].degrees)
+        ra_all_rad = numpy.atleast_1d(all_positions.radec()[0].radians)
+
+        # Reset index to ensure i matches the position in all_positions arrays
+        visible_ngc_plot = cast(pd.DataFrame, visible_ngc).reset_index(drop=True)
+        for i, (_, n_obj) in enumerate(visible_ngc_plot.iterrows()):
             ngc_name = n_obj[ObjectTableLabels.NGC]
             if bool(pd.isna(ngc_name)):
                 ngc_name = n_obj[ObjectTableLabels.NAME]
             if ngc_name == target_name:
                 continue
-            ngc_object = observation.local_ngc.get_skyfield_object(n_obj)
-            if ngc_object:
-                alt, az, _ = observer.observe(ngc_object).apparent().altaz()
-                ra, dec, _ = observer.observe(ngc_object).apparent().radec()
-                if bool(numpy.any(alt.degrees > 0)):
-                    width_arcmin = n_obj.get("Size")
-                    if bool(pd.isna(width_arcmin)):
-                        width_arcmin = n_obj.get("MajAx", 1.0)
-                    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-                    width_deg = float(width_arcmin or 1.0) / 60.0
 
-                    height_arcmin = n_obj.get("MinAx")
-                    if bool(pd.isna(height_arcmin)):
-                        height_arcmin = width_arcmin
-                    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-                    height_deg = float(height_arcmin or 1.0) / 60.0
+            alt_deg = float(alt_all_deg[i])
+            az_deg = float(az_all_deg[i])
+            ra_hours = float(ra_all_hours[i])
+            dec_deg = float(dec_all_deg[i])
+            ra_rad = float(ra_all_rad[i])
 
-                    pos_angle = n_obj.get("PosAng")
-                    if bool(pd.isna(pos_angle)):
-                        pos_angle = 0.0
-                    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
-                    pos_angle = float(pos_angle or 0.0)
+            if alt_deg > 0:
+                width_arcmin = n_obj.get("Size")
+                if bool(pd.isna(width_arcmin)):
+                    width_arcmin = n_obj.get("MajAx", 1.0)
+                width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
+                width_deg = float(width_arcmin or 1.0) / 60.0
 
-                    dec = ngc_object.dec
-                    parallactic_angle = calculate_parallactic_angle(
-                        observation.place.lat, dec, az
-                    )
-                    angle = calculate_ellipse_angle(
-                        pos_angle,
-                        parallactic_angle,
-                        coordinate_system,
-                        flipped_horizontally,
-                        flipped_vertically,
-                    )
-                    magnitude = n_obj.get("Mag")
-                    face_color = get_brightness_color(magnitude)
-                    _plot_celestial_object(
-                        ax,
-                        name=cast(str, ngc_name),
-                        alt_deg=cast(float, alt.degrees),
-                        az_deg=cast(float, az.degrees),
-                        ra_hours=cast(float, ra.hours),
-                        dec_deg=cast(float, dec.degrees),
-                        width_deg=width_deg,
-                        height_deg=height_deg,
-                        angle=angle,
-                        face_color=face_color,
-                        edge_color="green",
-                        is_polar=is_polar,
-                        ra_rad=ra.radians,
-                        coordinate_system=coordinate_system,
-                        is_sh=observation.place.lat_decimal < 0,
-                    )
+                height_arcmin = n_obj.get("MinAx")
+                if bool(pd.isna(height_arcmin)):
+                    height_arcmin = width_arcmin
+                height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
+                height_deg = float(height_arcmin or 1.0) / 60.0
+
+                pos_angle = n_obj.get("PosAng")
+                if bool(pd.isna(pos_angle)):
+                    pos_angle = 0.0
+                pos_angle = getattr(pos_angle, "magnitude", pos_angle)
+                pos_angle = float(pos_angle or 0.0)
+
+                parallactic_angle = calculate_parallactic_angle(
+                    observation.place.lat, dec_deg, az_deg
+                )
+                angle = calculate_ellipse_angle(
+                    pos_angle,
+                    parallactic_angle,
+                    coordinate_system,
+                    flipped_horizontally,
+                    flipped_vertically,
+                )
+                magnitude = n_obj.get("Mag")
+                face_color = get_brightness_color(magnitude)
+                _plot_celestial_object(
+                    ax,
+                    name=cast(str, ngc_name),
+                    alt_deg=alt_deg,
+                    az_deg=az_deg,
+                    ra_hours=ra_hours,
+                    dec_deg=dec_deg,
+                    width_deg=width_deg,
+                    height_deg=height_deg,
+                    angle=angle,
+                    face_color=face_color,
+                    edge_color="green",
+                    is_polar=is_polar,
+                    ra_rad=ra_rad,
+                    coordinate_system=coordinate_system,
+                    is_sh=observation.place.lat_decimal < 0,
+                )
 
 
 def _plot_planets_on_skymap(
