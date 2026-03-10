@@ -810,6 +810,26 @@ class OpticalPath:
 
         return float(angular_diameter / p_scale.magnitude)
 
+    def saturn_ring_size_in_pixels(
+        self, time: Any
+    ) -> tuple[float, float] | None:
+        """
+        Calculates the projected size of Saturn's rings on the sensor in pixels.
+        Returns a tuple (major_axis_pixels, minor_axis_pixels).
+        """
+        from .utils import planetary
+
+        details = planetary.get_saturn_ring_details(time)
+        p_scale = self.pixel_scale()
+
+        if p_scale is None or p_scale.magnitude == 0:
+            return None
+
+        major = details["major_axis_arcsec"] / p_scale.magnitude
+        minor = details["minor_axis_arcsec"] / p_scale.magnitude
+
+        return float(major), float(minor)
+
     def field_rotation_rate(
         self, latitude_deg: float, altitude_deg: float, azimuth_deg: float
     ) -> Any:
