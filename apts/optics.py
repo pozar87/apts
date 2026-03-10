@@ -919,4 +919,3 @@ class OpticalPath:
             t = 500 / f_actual
 
         return t * get_unit_registry().second
-
