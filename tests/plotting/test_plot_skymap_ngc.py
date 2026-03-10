@@ -252,8 +252,6 @@ def test_plot_ngc_on_skymap_zoom_equatorial(mock_observation, mock_ax, mock_obse
                 "MinAx": 63.0,
                 "PosAng": 35.0,
                 "Mag": 3.44,
-                "ra_hours": 0.712,
-                "dec_degrees": 41.269,
             }
         ]
     )
