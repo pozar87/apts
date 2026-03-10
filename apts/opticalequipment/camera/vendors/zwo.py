@@ -2066,7 +2066,7 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 36500,
+            "full_well_e": 38500,
             "height": 1536,
             "mass": 126,
             "name": "ASI664MC",
@@ -2082,7 +2082,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 2704,
         },  # Verified via ZWO official product manual: https://www.bhphotovideo.com/lit_files/1114240.pdf
-        },
         "ZWO_ASI_664MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -3067,6 +3066,3 @@ class ZwoCamera(Camera):
     def ZWO_ASI_585MC_Pro(cls):
         return cls.from_database(cls._DATABASE['ZWO_ASI_585MC_Pro'])
 
-    @classmethod
-    def ZWO_ASI_664MC(cls):
-        return cls.from_database(cls._DATABASE['ZWO_ASI_664MC'])

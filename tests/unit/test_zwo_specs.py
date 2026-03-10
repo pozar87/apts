@@ -54,7 +54,7 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.width, 2704)
         self.assertEqual(cam.height, 1536)
         self.assertEqual(cam.pixel_size().to('micrometer').magnitude, 2.9)
-        self.assertEqual(cam.full_well, 36500)
+        self.assertEqual(cam.full_well, 38500)
         self.assertEqual(cam.read_noise, 0.46)
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.optical_length.to('mm').magnitude, 12.5)

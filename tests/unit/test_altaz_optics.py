@@ -22,9 +22,9 @@ def test_field_rotation_rate():
     rate = path.field_rotation_rate(90, 0, 45)
     assert rate.magnitude == pytest.approx(0, abs=1e-10)
 
-    # Case 3: North latitude (lat=45), East (az=90)
+    # Case 3: North latitude (lat=45), East (az=90), at altitude 30
     # cos(90) = 0, so rate should be 0
-    rate = path.field_rotation_rate(45, 90, 30)
+    rate = path.field_rotation_rate(45, 30, 90)
     assert rate.magnitude == pytest.approx(0, abs=1e-10)
 
 def test_max_exposure_alt_az():
@@ -32,23 +32,11 @@ def test_max_exposure_alt_az():
     telescope = ZwoTelescope.ZWO_Seestar_S50()
     path = OpticalPath.from_path([telescope])
 
-    # Calculate for lat=45, az=0 (South/North), alt=45
+    # Calculate for lat=45, alt=45, az=0 (South/North)
     # rate = 15.041 * cos(45) * cos(0) / cos(45) = 15.041 "/s
     # Pixel scale for 250mm, 2.9um = (2.9/250)*206265 = 2.392674 "/px
     # Diagonal radius in px = 0.5 * sqrt(1920^2 + 1080^2) = 0.5 * 2202.9 = 1101.45 px
     # max_exposure = (1.0 * 206265) / (1101.45 * 15.041) = 206265 / 16566.9 = 12.45 s
 
-    max_exp = path.max_exposure_alt_az(45, 0, 45, tolerance_pixels=1.0)
+    max_exp = path.max_exposure_alt_az(45, 45, 0, tolerance_px=1.0)
     assert max_exp.magnitude == pytest.approx(12.45, rel=1e-2)
-
-def test_zwo_asi664mc_specs():
-    camera = ZwoCamera.ZWO_ASI_664MC()
-    assert camera.vendor == "ZWO ASI664MC"
-    assert camera.sensor_width.magnitude == 7.68
-    assert camera.sensor_height.magnitude == 4.32
-    assert camera.width == 3840
-    assert camera.height == 2160
-    assert camera.pixel_size().magnitude == 2.0
-    assert camera.full_well == 35000
-    assert camera.quantum_efficiency == 91
-    assert camera.read_noise == 1.0

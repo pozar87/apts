@@ -35,10 +35,10 @@ def test_max_exposure_alt_az():
     # max_theta_rad = 1.0 / 1101.45 approx 0.0009078 rad
     # max_theta_arcsec = deg(0.0009078) * 3600 approx 187.25"
 
-    # At lat 45, az 0, alt 45, rate = 15.041 "/s
+    # At lat 45, alt 45, az 0, rate = 15.041 "/s
     # T = 187.25 / 15.041 approx 12.45s
 
-    t_max = path.max_exposure_alt_az(45.0, 45.0, 0.0, tolerance_px=1.0)
+    t_max = path.max_exposure_alt_az(45.0, 45.0, 0.0, tolerance_pixels=1.0)
     assert t_max is not None
     assert pytest.approx(t_max.magnitude, 0.1) == 12.45
 
