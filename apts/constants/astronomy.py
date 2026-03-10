@@ -15,5 +15,9 @@ PLUTO_RADIUS_KM = 1188.3
 MOON_RADIUS_KM = 1737.4
 SUN_RADIUS_KM = 695700.0
 
+# Saturn Ring dimensions (A ring outer edge)
+# Source: PDS Rings Node / Cassini Team
+SATURN_RING_OUTER_RADIUS_KM = 136775.0
+
 # Astronomical Unit in km
 AU_KM = 149597870.7
