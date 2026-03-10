@@ -353,6 +353,38 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.hour, 10)
         self.assertAlmostEqual(sun_culmination.iloc[0]["altitude"], 61.2, delta=0.5)
 
+    @patch("apts.events.skyfield_searches.find_conjunctions_between_moving_bodies")
+    def test_conjunction_precomputation_usage(self, mock_find_conj):
+        # Set a date range
+        start_date = datetime(2023, 1, 1, tzinfo=utc)
+        end_date = datetime(2023, 1, 2, tzinfo=utc)
+
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.CONJUNCTIONS],
+        )
+
+        # Act
+        events_calculator.get_events()
+
+        # Assert
+        # Check that find_conjunctions_between_moving_bodies was called with precomputed_positions
+        self.assertGreater(mock_find_conj.call_count, 0)
+        for call in mock_find_conj.call_args_list:
+            kwargs = call.kwargs
+            self.assertIn("precomputed_positions", kwargs)
+            self.assertIsNotNone(kwargs["precomputed_positions"])
+            # Verify one of the precomputed positions exists
+            self.assertIn("moon", kwargs["precomputed_positions"])
+
+            # Verify the precomputed position's time array matches the expected length for 0.01 step
+            # duration = 1 day = 86400s. step = 0.01 * 86400 = 864s.
+            # num_steps = 86400 / 864 = 100
+            pos = kwargs["precomputed_positions"]["moon"]
+            self.assertEqual(len(pos.t), 100)
+
 
 if __name__ == "__main__":
     unittest.main()

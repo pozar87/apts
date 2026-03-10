@@ -137,6 +137,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_messier_culminations))
         if self.event_settings.get("jovian_moon_events"):
             futures.append(executor.submit(self.calculate_jovian_moon_events))
+        if self.event_settings.get("saturn_ring_crossings"):
+            futures.append(executor.submit(self.calculate_saturn_ring_crossings))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -424,8 +426,9 @@ class AstronomicalEvents:
         moon_obj = planetary.get_skyfield_obj(moon)
 
         # Pre-compute positions for all bodies involved in conjunctions
-        # We use a 15-minute interval (0.01 days) to match the finest resolution used in searches
-        num_steps = int((self.end_date - self.start_date).total_seconds() / (15 * 60))
+        # Using 0.01 days (~14.4 minutes) to match the Moon's resolution in searches
+        step = 0.01
+        num_steps = int((self.end_date - self.start_date).total_seconds() / (step * 86400))
         if num_steps < 2:
             num_steps = 2
         times = self.ts.linspace(self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps)
@@ -971,6 +974,19 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Jovian Moon Event", event)
         logger.debug(f"--- calculate_jovian_moon_events: {time.time() - start_time}s")
+        return events
+
+    def calculate_saturn_ring_crossings(self):
+        start_time = time.time()
+        events = skyfield_searches.find_saturn_ring_crossings(
+            self.start_date, self.end_date
+        )
+        for event in events:
+            # Ensure date is timezone-aware UTC
+            event["date"] = event["date"].astimezone(utc)
+            # These are extremely rare (every 13-15 years), so rarity 5
+            event["rarity"] = 5
+        logger.debug(f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s")
         return events
 
     def calculate_greatest_elongations(self):

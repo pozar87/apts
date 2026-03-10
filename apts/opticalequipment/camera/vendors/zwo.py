@@ -2082,7 +2082,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 2704,
         },  # Verified via ZWO official product manual: https://www.bhphotovideo.com/lit_files/1114240.pdf
-        },
         "ZWO_ASI_664MM": {
             "bf_role": "end",
             "brand": "ZWO",
