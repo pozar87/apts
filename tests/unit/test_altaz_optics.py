@@ -44,11 +44,11 @@ def test_max_exposure_alt_az():
 def test_zwo_asi664mc_specs():
     camera = ZwoCamera.ZWO_ASI_664MC()
     assert camera.vendor == "ZWO ASI664MC"
-    assert camera.sensor_width.magnitude == 7.68
-    assert camera.sensor_height.magnitude == 4.32
-    assert camera.width == 3840
-    assert camera.height == 2160
-    assert camera.pixel_size().magnitude == 2.0
-    assert camera.full_well == 35000
+    assert camera.sensor_width.magnitude == 7.84
+    assert camera.sensor_height.magnitude == 4.45
+    assert camera.width == 2704
+    assert camera.height == 1536
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.full_well == 36500
     assert camera.quantum_efficiency == 91
-    assert camera.read_noise == 1.0
+    assert camera.read_noise == 0.46

@@ -734,11 +734,11 @@ class OpticalPath:
 
     def field_rotation_rate(
         self, latitude_deg: float, azimuth_deg: float, altitude_deg: float
-    ) -> Any | None:
+    ) -> Any:
         """
         Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
         Formula: omega_rot = omega_earth * cos(lat) * cos(az) / cos(alt)
-        Where omega_earth is the sidereal rotation rate (15.041 "/s).
+        Where omega_earth is the sidereal rotation rate (15.041067 "/s).
         Source: "Field Rotation" - Bill Keicher
         """
         # Sidereal rotation rate in arcseconds per second
@@ -746,7 +746,9 @@ class OpticalPath:
 
         phi = numpy.radians(latitude_deg)
         az = numpy.radians(azimuth_deg)
-        alt = numpy.radians(min(altitude_deg, 89.99))  # Avoid division by zero at zenith
+        alt = numpy.radians(
+            min(altitude_deg, 89.99)
+        )  # Avoid division by zero at zenith
 
         rate = omega_earth * numpy.cos(phi) * numpy.cos(az) / numpy.cos(alt)
         return abs(rate) * (get_unit_registry().arcsecond / get_unit_registry().second)
@@ -868,9 +870,7 @@ class OpticalPath:
 
         return float(angular_diameter / p_scale.magnitude)
 
-    def saturn_ring_size_in_pixels(
-        self, time: Any
-    ) -> tuple[float, float] | None:
+    def saturn_ring_size_in_pixels(self, time: Any) -> tuple[float, float] | None:
         """
         Calculates the projected size of Saturn's rings on the sensor in pixels.
         Returns a tuple (major_axis_pixels, minor_axis_pixels).
@@ -941,13 +941,13 @@ class OpticalPath:
         # Maximum rotation angle allowed for the given pixel tolerance
         # theta = s / r (for small angles, in radians)
         # where s is blur distance in pixels, r is distance from center in pixels
-        max_theta_rad = tolerance_px / r_pixels
+        max_theta_rad = tolerance_pixels / r
 
         # Convert max rotation angle to arcseconds
         max_theta_arcsec = numpy.degrees(max_theta_rad) * 3600.0
 
         # Time = angle / rate
-        t = max_theta_arcsec / rate
+        t = max_theta_arcsec / rot_rate
 
         return t * get_unit_registry().second
 
