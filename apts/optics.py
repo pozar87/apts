@@ -888,69 +888,6 @@ class OpticalPath:
 
         return float(major), float(minor)
 
-    def field_rotation_rate(
-        self, latitude_deg: float, altitude_deg: float, azimuth_deg: float
-    ) -> Any:
-        """
-        Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
-        Formula: dq/dt = omega_e * cos(latitude) * cos(azimuth) / cos(altitude)
-        where omega_e is Earth's sidereal rotation rate (~15.041 "/s).
-        Source: Meeus, Astronomical Algorithms
-        """
-        # Earth's sidereal rotation rate in arcseconds per second
-        omega_e = 15.041067
-
-        lat_rad = numpy.radians(latitude_deg)
-        # Division by zero at zenith (altitude 90) for Alt-Az mounts
-        alt_rad = numpy.radians(min(altitude_deg, 89.99))
-        az_rad = numpy.radians(azimuth_deg)
-
-        # Field rotation rate in arcseconds per second
-        rate = omega_e * numpy.cos(lat_rad) * numpy.cos(az_rad) / numpy.cos(alt_rad)
-
-        return rate * (get_unit_registry().arcsecond / get_unit_registry().second)
-
-    def max_exposure_alt_az(
-        self,
-        latitude_deg: float,
-        altitude_deg: float,
-        azimuth_deg: float,
-        tolerance_px: float = 1.0,
-    ) -> Any | None:
-        """
-        Calculates the maximum exposure time (seconds) to avoid field rotation blur
-        on an Alt-Az mount, based on the sensor geometry and rotation rate.
-        The blur is calculated for the corner of the sensor (worst case).
-        """
-        rate_q = self.field_rotation_rate(latitude_deg, altitude_deg, azimuth_deg)
-        rate = abs(rate_q.magnitude)
-
-        if rate < 1e-9:
-            # Essentially zero rotation
-            return 3600.0 * get_unit_registry().second
-
-        # Distance from center to corner in pixels
-        if not hasattr(self.output, "width") or not hasattr(self.output, "height"):
-            return None
-
-        r_pixels = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
-
-        if r_pixels == 0:
-            return None
-
-        # Maximum rotation angle allowed for the given pixel tolerance
-        # theta = s / r (for small angles, in radians)
-        # where s is blur distance in pixels, r is distance from center in pixels
-        max_theta_rad = tolerance_pixels / r
-
-        # Convert max rotation angle to arcseconds
-        max_theta_arcsec = numpy.degrees(max_theta_rad) * 3600.0
-
-        # Time = angle / rate
-        t = max_theta_arcsec / rot_rate
-
-        return t * get_unit_registry().second
-
     def rule_of_500(self):
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.
@@ -982,3 +919,4 @@ class OpticalPath:
             t = 500 / f_actual
 
         return t * get_unit_registry().second
+
