@@ -3065,4 +3065,8 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI_585MC_Pro(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_Pro"])
+        return cls.from_database(cls._DATABASE['ZWO_ASI_585MC_Pro'])
+
+    @classmethod
+    def ZWO_ASI_664MC(cls):
+        return cls.from_database(cls._DATABASE['ZWO_ASI_664MC'])
