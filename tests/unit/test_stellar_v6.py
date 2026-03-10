@@ -1,10 +1,12 @@
 import unittest
-from apts.utils import planetary
+
 from apts.cache import get_timescale
-from apts.optics import OpticalPath
-from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
-from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
 from apts.opticalequipment.camera.vendors.qhy import QhyCamera
+from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
+from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
+from apts.optics import OpticalPath
+from apts.utils import planetary
+
 
 class TestStellarV6(unittest.TestCase):
     def test_saturn_ring_tilt_2025(self):
@@ -27,13 +29,14 @@ class TestStellarV6(unittest.TestCase):
 
     def test_optical_path_saturn_rings(self):
         ts = get_timescale()
-        t = ts.utc(2024, 9, 1) # ~3.6 deg tilt
+        t = ts.utc(2024, 9, 1)  # ~3.6 deg tilt
         telescope = Sky_watcherTelescope.Sky_Watcher_Explorer_130P()
         camera = ZwoCamera.ZWO_ASI_664MC()
         path = OpticalPath.from_path([telescope, camera])
 
         rings_px = path.saturn_ring_size_in_pixels(t)
         self.assertIsNotNone(rings_px)
+        assert rings_px is not None
         major, minor = rings_px
         self.assertGreater(major, 40.0)
         self.assertGreater(minor, 2.0)
@@ -51,6 +54,7 @@ class TestStellarV6(unittest.TestCase):
                 self.assertEqual(cam.full_well, 36500)
             else:
                 self.assertEqual(cam.full_well, 38500)
+
 
 if __name__ == "__main__":
     unittest.main()
