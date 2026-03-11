@@ -70,6 +70,10 @@ iss_flybys = false
 tiangong_flybys = false
 solar_eclipses = false
 lunar_eclipses = false
+
+[data]
+# Use smaller Jovian ephemeris for testing
+jovian_ephemeris_url = https://github.com/skyfield-api/python-skyfield-data/raw/master/skyfield_data/data/jup310.bsp
 """)
 
     # Set environment variable to point to our test config

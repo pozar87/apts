@@ -234,6 +234,20 @@ def get_data_settings() -> str:
     return config.get("data", "mode", fallback="light")
 
 
+def get_jovian_ephemeris_url() -> str:
+    """
+    Reads the Jovian ephemeris URL from the [data] section.
+
+    Returns:
+        str: The URL to download the Jovian ephemeris from.
+    """
+    # Default is the official jup310.bsp which is high-precision but large (~1.1GB)
+    # A smaller alternative (20MB, 1900-2050) is available from skyfield-data:
+    # https://github.com/skyfield-api/python-skyfield-data/raw/master/skyfield_data/data/jup310.bsp
+    default_url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp"
+    return config.get("data", "jovian_ephemeris_url", fallback=default_url)
+
+
 def get_performance_settings() -> dict:
     """
     Reads performance settings from the [performance] section.
