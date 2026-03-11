@@ -1421,6 +1421,48 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertFalse(results_missing[0]["is_good_hour"])
         self.assertIn("Aurora 0.0% below limit of 10%", results_missing[0]["reasons"])
 
+    def test_get_hourly_weather_analysis_boundary_conditions(self):
+        """Test that weather values exactly at the threshold are considered good."""
+        # Setup conditions
+        self.obs.conditions.max_clouds = 20
+        self.obs.conditions.max_precipitation_probability = 10
+        self.obs.conditions.max_precipitation_intensity = 5
+        self.obs.conditions.max_wind = 15
+        self.obs.conditions.min_temperature = 0
+        self.obs.conditions.max_temperature = 25
+        self.obs.conditions.min_visibility = 10
+        self.obs.conditions.max_moon_illumination = 50
+
+        # Create data with values exactly at thresholds
+        data_rows = [
+            {
+                "time": self.obs.start,
+                "cloudCover": 20,  # Exactly at max
+                "precipIntensity": 5,  # Exactly at max
+                "aurora": 0,
+                "precipProbability": 10,  # Exactly at max
+                "windSpeed": 15,  # Exactly at max
+                "temperature": 25,  # Exactly at max
+                "visibility": 10,  # Exactly at min
+                "moonIllumination": 50,  # Exactly at max
+                "fog": self.obs.conditions.max_fog,  # Exactly at max
+                "Altitude": 10,  # Add altitude to satisfy moon illumination check
+            }
+        ]
+        mock_weather_df = pd.DataFrame(data_rows)
+        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+
+        # Use 100% goodness required to check is_weather_good boundary as well
+        self.obs.conditions.min_weather_goodness = 100
+
+        # Mock moon illumination calculation to match the threshold exactly
+        with patch("apts.observations.get_moon_illumination", return_value=50.0):
+            results = self.obs.get_hourly_weather_analysis()
+
+            # Assertions
+            self.assertTrue(results[0]["is_good_hour"], f"Boundary values should be good. Reasons: {results[0].get('reasons')}")
+            self.assertTrue(self.obs.is_weather_good(), "Observation should be good when goodness is exactly at min_weather_goodness")
+
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
     def setUp(self):
