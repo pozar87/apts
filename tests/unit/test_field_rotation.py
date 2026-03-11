@@ -1,13 +1,15 @@
 import pytest
-from apts.optics import OpticalPath
+
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+from apts.optics import OpticalPath
+
 
 def test_field_rotation_rate():
     # Setup: Seestar S50
     telescope = ZwoTelescope.ZWO_Seestar_S50()
     path = OpticalPath.from_path([telescope])
 
-    omega_e = 15.041067 # arcsec/s
+    omega_e = 15.041067  # arcsec/s
 
     # 1. At latitude 45, looking North (Az=0) at altitude 45
     # rate = omega_e * cos(45) * cos(0) / cos(45) = omega_e
@@ -23,6 +25,7 @@ def test_field_rotation_rate():
     # rate = omega_e * cos(90) * ... = 0
     rate = path.field_rotation_rate(90.0, 180.0, 45.0)
     assert pytest.approx(rate.magnitude, 1e-6) == 0.0
+
 
 def test_max_exposure_alt_az():
     # Setup: Seestar S50
@@ -44,4 +47,5 @@ def test_max_exposure_alt_az():
 
     # Very low rate should give high exposure cap
     t_max_low = path.max_exposure_alt_az(0.0, 90.0, 30.0)
+    assert t_max_low is not None
     assert t_max_low.magnitude == 3600.0
