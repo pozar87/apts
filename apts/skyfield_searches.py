@@ -687,6 +687,11 @@ def find_conjunctions_with_stars(
     star_names = [name for name, _ in star_data]
     star_objs = [obj for _, obj in star_data]
 
+    stars_vector = Star(
+        ra_hours=np.array([s.ra.hours for s in star_objs]),
+        dec_degrees=np.array([s.dec.degrees for s in star_objs]),
+    )
+
     # Vectorized observation for stars at all times to account for aberration and parallax
     # This results in a (3, N, M) array if we could observe all stars at all times vectorized.
     # Skyfield supports Star(ra, dec).at(times). However, we have N stars and M times.
@@ -1548,7 +1553,7 @@ def find_greatest_elongations(observer, start_date, end_date):
             events.append(
                 {
                     "date": t.utc_datetime(),
-                    "event": f"Greatest {direction} Elongation",
+                    "event": f"{planetary.get_simple_name(p_name)} Greatest {direction} Elongation",
                     "object": planetary.get_simple_name(p_name),
                     "type": "Greatest Elongation",
                     "separation_degrees": float(sep),
