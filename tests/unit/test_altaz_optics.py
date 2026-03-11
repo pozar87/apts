@@ -1,12 +1,14 @@
 import pytest
-from apts.optics import OpticalPath
-from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
+from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+from apts.optics import OpticalPath
+
 
 def test_field_rotation_rate():
     # Setup a simple optical path
     # Use a generic telescope and camera
-    telescope = ZwoTelescope.ZWO_Seestar_S50() # SmartTelescope
+    telescope = ZwoTelescope.ZWO_Seestar_S50()  # SmartTelescope
     path = OpticalPath.from_path([telescope])
 
     # Earth sidereal rate ~15.041 "/s
@@ -25,6 +27,7 @@ def test_field_rotation_rate():
     rate = path.field_rotation_rate(45, 90, 30)
     assert rate.magnitude == pytest.approx(0, abs=1e-10)
 
+
 def test_max_exposure_alt_az():
     # Use Seestar S50 specs: 250mm FL, IMX462 (5.6x3.2mm, 1920x1080, 2.9um)
     telescope = ZwoTelescope.ZWO_Seestar_S50()
@@ -37,7 +40,9 @@ def test_max_exposure_alt_az():
     # max_exposure = (1.0 * 206265) / (1101.45 * 15.041) = 206265 / 16566.9 = 12.45 s
 
     max_exp = path.max_exposure_alt_az(45, 0, 45, tolerance_pixels=1.0)
+    assert max_exp is not None
     assert max_exp.magnitude == pytest.approx(12.45, rel=1e-2)
+
 
 def test_zwo_asi664mc_specs():
     camera = ZwoCamera.ZWO_ASI_664MC()
