@@ -172,3 +172,18 @@
     - Backfocus: 12.5mm
 - **Action:** Updated database entry with verified specs and added source URL.
 - **Source URL:** https://www.bhphotovideo.com/lit_files/1114240.pdf (Official ZWO Product Manual)
+
+## 2024-06-01 - Audit of Celestron StarSense Explorer DX 130
+
+- **Item:** Celestron StarSense Explorer DX 130 Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** type: 'type_telescope', mass: 5000g, missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: Celestron Official Website):**
+    - Aperture: 130mm
+    - Focal Length: 650mm
+    - Central Obstruction: 45mm (34% by diameter)
+    - Mass (OTA): 8.8 lbs -> 3.99 kg -> 3990g
+    - Type: Newtonian Reflector
+    - Focuser: 2" (with 1.25" adapter typically, but tube side is 2" for these DX models)
+- **Action:** Updated database entry with verified specs and added source comment.
+- **Source URL:** https://www.celestron.com/products/starsense-explorer-dx-130az
