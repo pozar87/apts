@@ -89,6 +89,10 @@ PLANET_RADII_KM = {
     "uranus": astronomy.URANUS_RADIUS_KM,
     "neptune": astronomy.NEPTUNE_RADIUS_KM,
     "pluto": astronomy.PLUTO_RADIUS_KM,
+    "ceres": astronomy.CERES_RADIUS_KM,
+    "haumea": astronomy.HAUMEA_RADIUS_KM,
+    "makemake": astronomy.MAKEMAKE_RADIUS_KM,
+    "eris": astronomy.ERIS_RADIUS_KM,
     "moon": astronomy.MOON_RADIUS_KM,
     "sun": astronomy.SUN_RADIUS_KM,
 }

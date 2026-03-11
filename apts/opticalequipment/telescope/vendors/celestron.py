@@ -70,7 +70,28 @@ class CelestronTelescope(Telescope):
         'Celestron_StarSense_Explorer_DX_130': {'brand': 'Celestron', 'name': 'StarSense Explorer DX 130', 'type': 'type_telescope', 'optical_length': 0, 'mass': 5000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
         'Celestron_StarSense_Explorer_LT_114': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 114', 'type': 'type_telescope', 'optical_length': 0, 'mass': 4000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
         'Celestron_StarSense_Explorer_LT_80AZ': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 80AZ', 'type': 'type_telescope', 'optical_length': 0, 'mass': 1800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
+        'Celestron_Origin': {
+            'brand': 'Celestron',
+            'name': 'Origin',
+            'type': 'type_smart_telescope',
+            'aperture': 152,
+            'focal_length': 335,
+            'sensor_width': 7.43,
+            'sensor_height': 4.99,
+            'width': 3096,
+            'height': 2080,
+            'mass': 18870,
+            'pixel_size_um': 2.4,
+            'quantum_efficiency_pct': 80,
+            'read_noise_e': 1.4,
+            'full_well_e': 15000
+        },
     }
+
+    @classmethod
+    def Celestron_Origin(cls):
+        from ...smart_telescope import SmartTelescope
+        return SmartTelescope.from_database(cls._DATABASE['Celestron_Origin'])
 
     @classmethod
     def Celestron_Advanced_VX_11_SCT(cls):
