@@ -2010,7 +2010,7 @@ class QhyCamera(Camera):
             'brand': 'QHY',
             'name': 'QHY5III664M',
             'type': 'type_camera',
-            'optical_length': 6.5,
+            'optical_length': 12.5,
             'mass': 90,
             'tside_thread': 'CS',
             'tside_gender': 'Female',
@@ -2018,14 +2018,14 @@ class QhyCamera(Camera):
             'cside_gender': '',
             'reversible': False,
             'bf_role': 'end',
-            'sensor_width_mm': 7.68,
-            'sensor_height_mm': 4.32,
-            'width': 3840,
-            'height': 2160,
-            'pixel_size_um': 2.0,
+            'sensor_width_mm': 7.84,
+            'sensor_height_mm': 4.45,
+            'width': 2704,
+            'height': 1536,
+            'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 91,
-            'read_noise_e': 1.0,
-            'full_well_e': 35000
+            'read_noise_e': 0.46,
+            'full_well_e': 38500
         }
     }
 
