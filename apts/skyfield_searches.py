@@ -1553,7 +1553,7 @@ def find_greatest_elongations(observer, start_date, end_date):
             events.append(
                 {
                     "date": t.utc_datetime(),
-                    "event": f"Greatest {direction} Elongation",
+                    "event": f"{planetary.get_simple_name(p_name)} Greatest {direction} Elongation",
                     "object": planetary.get_simple_name(p_name),
                     "type": "Greatest Elongation",
                     "separation_degrees": float(sep),
