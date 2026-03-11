@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Any, cast
 
 import numpy as np
@@ -1089,15 +1090,43 @@ def _find_satellite_flybys(
         }
 
         # Find rise and set times for this pass
+        # If they are not in the 'times' list (because they fell outside the search window),
+        # we try to find them by searching a small window around the culmination.
         if i > 0 and events[i - 1] == 0:
             event_data["rise_time"] = times[i - 1].utc_datetime()
         else:
-            continue
+            # Rise happened before start_date? Search up to 30 mins before culmination.
+            t_search_start = ts.utc(culmination_time.utc_datetime() - timedelta(minutes=30))
+            t_search_end = culmination_time
+            r_times, r_events = satellite.find_events(
+                topos_observer,
+                t_search_start,
+                t_search_end,
+                altitude_degrees=rise_altitude_threshold,
+            )
+            r_indices = [idx for idx, code in enumerate(r_events) if code == 0]
+            if r_indices:
+                event_data["rise_time"] = r_times[r_indices[-1]].utc_datetime()
+            else:
+                event_data["rise_time"] = None
 
         if i < len(events) - 1 and events[i + 1] == 2:
             event_data["set_time"] = times[i + 1].utc_datetime()
         else:
-            continue
+            # Set will happen after end_date? Search up to 30 mins after culmination.
+            t_search_start = culmination_time
+            t_search_end = ts.utc(culmination_time.utc_datetime() + timedelta(minutes=30))
+            s_times, s_events = satellite.find_events(
+                topos_observer,
+                t_search_start,
+                t_search_end,
+                altitude_degrees=rise_altitude_threshold,
+            )
+            s_indices = [idx for idx, code in enumerate(s_events) if code == 2]
+            if s_indices:
+                event_data["set_time"] = s_times[s_indices[0]].utc_datetime()
+            else:
+                event_data["set_time"] = None
 
         events_list.append(event_data)
 
