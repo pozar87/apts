@@ -1,18 +1,19 @@
 import pickle
-from unittest.mock import MagicMock
-from apts.place import Place
-from apts.equipment import Equipment
-from apts.objects.solar_objects import SolarObjects
-from apts.objects.messier import Messier
-from apts.observations import Observation
-from apts.opticalequipment import Telescope, Eyepiece
 import unittest
+from unittest.mock import MagicMock, patch
+
 import pint
 import pytest
-from apts.units import ureg
+
 from apts import catalogs
-from unittest.mock import patch
-from apts.cache import get_mpcorb_data, download_all_data
+from apts.cache import download_all_data, get_mpcorb_data
+from apts.equipment import Equipment
+from apts.objects.messier import Messier
+from apts.objects.solar_objects import SolarObjects
+from apts.observations import Observation
+from apts.opticalequipment import Eyepiece, Telescope
+from apts.place import Place
+from apts.units import ureg
 
 
 class CacheTest(unittest.TestCase):
@@ -91,13 +92,19 @@ class CacheTest(unittest.TestCase):
     @patch("apts.cache.get_ephemeris")
     @patch("apts.cache.get_hipparcos_data")
     @patch("apts.cache.get_mpcorb_data")
+    @patch("apts.cache.get_jovian_ephemeris")
     def test_download_all_data(
-        self, mock_get_mpcorb_data, mock_get_hipparcos_data, mock_get_ephemeris
+        self,
+        mock_get_jovian_ephemeris,
+        mock_get_mpcorb_data,
+        mock_get_hipparcos_data,
+        mock_get_ephemeris,
     ):
         download_all_data()
         mock_get_ephemeris.assert_called_once()
         mock_get_hipparcos_data.assert_called_once()
         mock_get_mpcorb_data.assert_called_once()
+        mock_get_jovian_ephemeris.assert_called_once()
 
     @patch("apts.cache.load")
     @patch("apts.cache.get_ephemeris")
@@ -121,7 +128,11 @@ class CacheTest(unittest.TestCase):
         merged_eph = get_jovian_ephemeris()
 
         # Assertions
-        self.assertIn("segment1", merged_eph.segments)
-        self.assertIn("segment2", merged_eph.segments)
-        self.assertEqual(len(merged_eph.segments), 2)
+        segments = getattr(merged_eph, "segments")
+        self.assertIn("segment1", segments)
+        self.assertIn("segment2", segments)
+        self.assertEqual(len(segments), 2)
         mock_load.assert_called_once()
+
+        # Clear cache after test to avoid leaking mocks
+        get_jovian_ephemeris.cache_clear()

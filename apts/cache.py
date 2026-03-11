@@ -11,8 +11,8 @@ import pandas as pd
 from skyfield.api import Loader, load
 from skyfield.data import hipparcos, mpc
 
-from . import config, data_loader
-from .config import get_minor_planet_settings
+from . import data_loader
+from .config import get_jovian_ephemeris_url, get_minor_planet_settings
 
 
 @functools.lru_cache(maxsize=None)
@@ -42,7 +42,7 @@ def get_jovian_ephemeris():
     # High-precision Galilean satellite orbits from SPICE kernel.
     # We default to jup310.bsp (1.1GB), but it can be overridden in config
     # to a smaller alternative (e.g. from skyfield-data).
-    jovian_path = config.get("jovian_ephemeris", "url")
+    jovian_path = get_jovian_ephemeris_url()
     try:
         eph_jovian = cast(Any, load(jovian_path))
         # Create a new SpiceKernel object or merge segments.
