@@ -1,16 +1,18 @@
-import functools
-import logging
 import copy
-from typing import Any, cast
-from skyfield.api import load, Loader
-from skyfield.data import hipparcos, mpc
-from .config import get_minor_planet_settings
-from . import data_loader
-import re
-import pandas as pd
-import zlib
+import functools
 import io
+import logging
 import os
+import re
+import zlib
+from typing import Any, cast
+
+import pandas as pd
+from skyfield.api import Loader, load
+from skyfield.data import hipparcos, mpc
+
+from . import config, data_loader
+from .config import get_minor_planet_settings
 
 
 @functools.lru_cache(maxsize=None)
@@ -37,9 +39,10 @@ def get_jovian_ephemeris():
     Returns a merged ephemeris containing both planetary and Jovian satellite data.
     """
     eph = get_ephemeris()
-    # jup310.bsp contains high-precision Galilean satellite orbits
-    # It was moved to a_old_versions on the NAIF server
-    jovian_path = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp"
+    # High-precision Galilean satellite orbits from SPICE kernel.
+    # We default to jup310.bsp (1.1GB), but it can be overridden in config
+    # to a smaller alternative (e.g. from skyfield-data).
+    jovian_path = config.get("jovian_ephemeris", "url")
     try:
         eph_jovian = cast(Any, load(jovian_path))
         # Create a new SpiceKernel object or merge segments.
@@ -154,8 +157,8 @@ def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
     Returns a cached comets catalog as a pandas DataFrame.
     Data is from NASA NeoWs API.
     """
-    from .nasa_api import NasaAPI
     from .config import get_api_key
+    from .nasa_api import NasaAPI
 
     api_key = get_api_key("nasa")
     nasa_api = NasaAPI(api_key)
@@ -175,6 +178,7 @@ def download_all_data():
     get_ephemeris()
     get_hipparcos_data()
     get_mpcorb_data()
+    get_jovian_ephemeris()
 
 
 def clear_cache():

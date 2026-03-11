@@ -189,6 +189,26 @@ def add_config_path(path, priority=False):
 
 **Impact**: More efficient configuration loading and easier test setup.
 
+### 8. Configurable Jovian Ephemeris
+
+**Problem**: The default `jup310.bsp` kernel used for Jupiter's moon events is extremely large (~1.1GB), which can be a significant burden for download and storage.
+
+**Solution**:
+- Made the Jovian ephemeris URL configurable in the `[data]` section of the configuration file.
+- Users can now switch to a smaller excerpt if high precision or a vast time range is not required.
+
+**Implementation**:
+In `apts/config.py`, a new `get_jovian_ephemeris_url()` function was added. Users can override the default in their `apts.ini`:
+
+```ini
+[data]
+# Default: https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp (1.1GB)
+# Smaller alternative (20MB, 1900-2050):
+jovian_ephemeris_url = https://github.com/skyfield-api/python-skyfield-data/raw/master/skyfield_data/data/jup310.bsp
+```
+
+**Impact**: Allows users to reduce the data footprint of the Jovian moon calculations by over 98% (from 1.1GB to 20MB) when the smaller excerpt is used.
+
 ## Performance Analysis Results
 
 ### Cache Performance Analysis
