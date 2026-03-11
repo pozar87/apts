@@ -397,6 +397,97 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     return events
 
 
+def find_saturn_ring_crossings(start_date, end_date):
+    """
+    Finds when Earth or the Sun crosses Saturn's ring plane.
+    Earth crossing: rings appear edge-on as seen from Earth.
+    Sun crossing: Sun illuminates rings edge-on (equinox on Saturn).
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_ephemeris())
+    earth = eph["earth"]
+    sun = eph["sun"]
+    saturn = eph["saturn barycenter"]
+
+    def get_tilt(t, observer_obj):
+        # Geocentric observation of Saturn (ICRS)
+        astrometric = observer_obj.at(t).observe(saturn)
+        # Unit vector from Saturn to observer
+        v_sat_obs = -astrometric.position.au / astrometric.distance().au
+
+        # Saturn's pole in J2000.0
+        alpha_p_deg, delta_p_deg = planetary.get_saturn_pole(t)
+        alpha_p = np.radians(alpha_p_deg)
+        delta_p = np.radians(delta_p_deg)
+
+        # Pole unit vector
+        p = np.array(
+            [
+                np.cos(delta_p) * np.cos(alpha_p),
+                np.cos(delta_p) * np.sin(alpha_p),
+                np.sin(delta_p),
+            ]
+        )
+
+        # sin(B) is the dot product of the pole vector and the Saturn-observer vector
+        # Handle both scalar and array 't'
+        if hasattr(t, "shape") and t.shape != ():
+            # p and v_sat_obs are vectors over time.
+            # p is (3, N), v_sat_obs is (3, N)
+            # Actually get_saturn_pole returns alpha, delta which might be scalars if t is Time object?
+            # Let's be safe.
+            sin_B = np.sum(p * v_sat_obs, axis=0)
+        else:
+            sin_B = np.dot(p, v_sat_obs)
+
+        return sin_B
+
+    def earth_tilt(t):
+        return get_tilt(t, earth)
+
+    def sun_tilt(t):
+        return get_tilt(t, sun)
+
+    # Use find_discrete to find zero crossings
+    # We need a state function that changes sign at zero
+    def earth_crossing_state(t):
+        return (earth_tilt(t) > 0).astype(int)
+
+    def sun_crossing_state(t):
+        return (sun_tilt(t) > 0).astype(int)
+
+    # Saturn's orbit is ~29 years, so these events are rare.
+    # Step size of 30 days is safe for finding crossings.
+    setattr(earth_crossing_state, "step_days", 30.0)
+    setattr(sun_crossing_state, "step_days", 30.0)
+
+    events = []
+
+    t_e, y_e = almanac.find_discrete(t0, t1, earth_crossing_state)
+    for ti in t_e:
+        events.append(
+            {
+                "date": ti.utc_datetime(),
+                "event": "Saturn Ring Plane Crossing (Earth)",
+                "type": "Saturn Ring Crossing",
+            }
+        )
+
+    t_s, y_s = almanac.find_discrete(t0, t1, sun_crossing_state)
+    for ti in t_s:
+        events.append(
+            {
+                "date": ti.utc_datetime(),
+                "event": "Saturn Ring Plane Crossing (Sun)",
+                "type": "Saturn Ring Crossing",
+            }
+        )
+
+    return events
+
+
 def find_moon_apogee_perigee(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -587,7 +678,7 @@ def find_conjunctions_with_stars(
     times = ts.linspace(t0, t1, num_hours)
 
     # Vectorized observation for moving body (e.g. Moon)
-    pos_body = observer.at(times).observe(body)
+    pos_body = observer.at(times).observe(body).apparent()
     # Unit vectors for body at all times: (3, M)
     body_au = pos_body.position.au
     u_body = body_au / np.linalg.norm(body_au, axis=0)
@@ -596,20 +687,21 @@ def find_conjunctions_with_stars(
     star_names = [name for name, _ in star_data]
     star_objs = [obj for _, obj in star_data]
 
-    stars_vector = Star(
-        ra_hours=np.array([s.ra.hours for s in star_objs]),
-        dec_degrees=np.array([s.dec.degrees for s in star_objs]),
-    )
+    # Vectorized observation for stars at all times to account for aberration and parallax
+    # This results in a (3, N, M) array if we could observe all stars at all times vectorized.
+    # Skyfield supports Star(ra, dec).at(times). However, we have N stars and M times.
 
-    # Observe all stars at once at t0. Negligible accuracy loss for fixed stars.
-    spos_all = observer.at(t0).observe(stars_vector)
-    # Unit vectors for stars: (3, N)
-    stars_au = spos_all.position.au
-    u_stars = stars_au / np.linalg.norm(stars_au, axis=0)
+    # To keep it efficient but accurate, we will process stars in a loop if N is small,
+    # or use a more clever approach. Since we are looking for conjunctions with SPECIFIC stars,
+    # let's observe the star vector at each time step.
 
-    # Dot product between all stars and all times: (N, 3) @ (3, M) -> (N, M)
-    # This represents cos(angular_separation)
-    dot_products = u_stars.T @ u_body
+    # Skyfield cannot observe a vector of stars at a vector of times if both have length > 1.
+    # We must loop over stars but can still vectorize over time for each star.
+    dot_products = np.zeros((len(star_objs), len(times)))
+    for i, star_obj in enumerate(star_objs):
+        pos_star = observer.at(times).observe(star_obj).apparent()
+        u_star = pos_star.position.au / np.linalg.norm(pos_star.position.au, axis=0)
+        dot_products[i] = np.einsum('kj,kj->j', u_star, u_body)
 
     # Angular separation in degrees: acos(dot_product)
     # Using clip to avoid NaNs due to floating point precision
