@@ -26,6 +26,7 @@ class GreatestElongationsTest(unittest.TestCase):
         self.assertGreater(len(venus_events), 0)
 
         event = venus_events.iloc[0]
+        self.assertEqual(event["event"], "Venus Greatest Eastern Elongation")
         self.assertEqual(event["direction"], "Eastern")
         self.assertEqual(event["date"].year, 2025)
         self.assertEqual(event["date"].month, 1)
@@ -48,6 +49,7 @@ class GreatestElongationsTest(unittest.TestCase):
         self.assertGreater(len(mercury_events), 0)
 
         event = mercury_events.iloc[0]
+        self.assertEqual(event["event"], "Mercury Greatest Western Elongation")
         self.assertEqual(event["direction"], "Western")
         self.assertEqual(event["date"].year, 2024)
         self.assertEqual(event["date"].month, 1)
