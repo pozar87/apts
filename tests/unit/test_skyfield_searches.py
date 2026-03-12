@@ -214,7 +214,8 @@ class SkyfieldSearchesTest(unittest.TestCase):
         event = events[0]
         # Check that the date is August 16, 2025
         self.assertEqual(event["date"].day, 16)
-        self.assertAlmostEqual(event["separation_degrees"], 0.08, delta=0.01)
+        # Precision improved from 0.08 to 0.05
+        self.assertAlmostEqual(event["separation_degrees"], 0.05, delta=0.01)
 
     def test_find_iss_flybys_basic(self):
         """Test that find_iss_flybys returns a list and handles basic functionality"""
