@@ -136,6 +136,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_lunar_planetary_occultations))
         if self.event_settings.get("messier_culminations"):
             futures.append(executor.submit(self.calculate_messier_culminations))
+        if self.event_settings.get("planet_messier_conjunctions"):
+            futures.append(executor.submit(self.calculate_planet_messier_conjunctions))
         if self.event_settings.get("jovian_moon_events"):
             futures.append(executor.submit(self.calculate_jovian_moon_events))
         if self.event_settings.get("saturn_ring_crossings"):
@@ -222,6 +224,7 @@ class AstronomicalEvents:
         if event_type in [
             "Conjunction",
             "Moon-Messier Conjunction",
+            "Planet-Messier Conjunction",
             "Moon-Star Conjunction",
         ]:
             sep = data.get("separation_degrees", 5.0)
@@ -948,6 +951,53 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = 2  # Frequent but useful
         logger.debug(f"--- calculate_culminations: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_messier_conjunctions(self):
+        start_time = time.time()
+        # Conjunctions between major planets and all Messier objects
+        planets = ["mercury", "venus", "mars barycenter", "jupiter barycenter", "saturn barycenter"]
+
+        star_data = [
+            (row["Messier"], row["skyfield_object"]) for _, row in self.catalogs.MESSIER.iterrows()
+        ]
+
+        events = []
+        executor = self.executor
+        futures = {}
+
+        for p_name in planets:
+            future = executor.submit(
+                skyfield_searches.find_conjunctions_with_stars,
+                self.observer,
+                p_name,
+                star_data,
+                self.start_date,
+                self.end_date,
+                threshold_degrees=2.0,
+            )
+            futures[future] = planetary.get_simple_name(p_name)
+
+        for future in as_completed(futures):
+            p_simple_name = futures[future]
+            conjunctions = future.result()
+            for conj in conjunctions:
+                event_data = {
+                    "date": conj["date"].astimezone(utc),
+                    "event": "Conjunction",
+                    "object1": p_simple_name,
+                    "object2": conj["object2"],
+                    "separation_degrees": conj["separation_degrees"],
+                    "type": "Planet-Messier Conjunction",
+                }
+                event_data["rarity"] = self._get_rarity(
+                    "Planet-Messier Conjunction", event_data
+                )
+                events.append(event_data)
+
+        logger.debug(
+            f"--- calculate_planet_messier_conjunctions: {time.time() - start_time}s"
+        )
         return events
 
     def calculate_messier_culminations(self):

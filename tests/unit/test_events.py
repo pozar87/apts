@@ -206,6 +206,35 @@ class EventsTest(unittest.TestCase):
         self.assertTrue(any(perseids_events["phase"] == "Peak"))
         self.assertTrue(any(perseids_events["phase"] == "End"))
 
+    def test_calculate_planet_messier_conjunctions(self):
+        # Mars-M35 conjunction in 2021: around April 26-27
+        start_date = datetime(2021, 4, 25, tzinfo=utc)
+        end_date = datetime(2021, 4, 28, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_MESSIER_CONJUNCTIONS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Check for Mars-M35 conjunction
+        mars_m35_conjunction = events_df[
+            (events_df["type"] == "Planet-Messier Conjunction")
+            & (events_df["object1"] == "Mars")
+            & (events_df["object2"] == "M35")
+        ]
+
+        self.assertGreater(len(mars_m35_conjunction), 0)
+        # Check date
+        event_date = mars_m35_conjunction.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2021)
+        self.assertEqual(event_date.month, 4)
+        self.assertIn(event_date.day, [26, 27])
+        self.assertLess(mars_m35_conjunction.iloc[0]["separation_degrees"], 1.0)
+        # 1.0 < 1.2, so rarity should be 3 based on _get_rarity logic
+        self.assertEqual(mars_m35_conjunction.iloc[0]["rarity"], 3)
+
     def test_calculate_oppositions(self):
         # Mars opposition in 2022: December 8
         start_date = datetime(2022, 12, 1, tzinfo=utc)

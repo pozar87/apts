@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, cast
+from typing import Any, cast, Iterable
 
 import numpy as np
 from skyfield import almanac, eclipselib
@@ -299,7 +299,7 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     events = []
 
     # Check every 2 minutes for precision
-    num_steps = int((t1 - t0) * 24 * 30)
+    num_steps = int((t1.tt - t0.tt) * 24 * 30)
     if num_steps < 2:
         return []
     times = ts.linspace(t0, t1, num_steps)
@@ -489,6 +489,36 @@ def find_saturn_ring_crossings(start_date, end_date):
     return events
 
 
+def _refine_conjunction(observer, obj1, obj2, t_coarse):
+    """
+    Refines a conjunction time using find_minima for sub-second precision.
+    Uses topocentric apparent positions.
+    """
+    ts = get_timescale()
+    # Search window: +/- 30 minutes around the coarse time
+    t0 = ts.utc(t_coarse.utc_datetime() - timedelta(minutes=30))
+    t1 = ts.utc(t_coarse.utc_datetime() + timedelta(minutes=30))
+
+    def separation_func(t):
+        p1 = observer.at(t).observe(obj1).apparent()
+        p2 = observer.at(t).observe(obj2).apparent()
+        return p1.separation_from(p2).degrees
+
+    # find_minima is an iterative solver that finds the local minimum
+    # with high precision (usually better than 1 second).
+    setattr(separation_func, "step_days", 0.01)  # ~14 minutes
+    times, separations = find_minima(t0, t1, separation_func)
+
+    if len(times) > 0:
+        # Find the minimum closest to our coarse estimate
+        diffs = [abs((t.tt - t_coarse.tt)) for t in times]
+        idx = np.argmin(diffs)
+        return times[idx], separations[idx]
+
+    # Fallback to coarse time if no minimum found in the window
+    return t_coarse, separation_func(t_coarse)
+
+
 def find_moon_apogee_perigee(start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -551,7 +581,9 @@ def find_conjunctions(
     events = []
     for t, s in zip(times, separations):
         if threshold_degrees is None or s < threshold_degrees:
-            events.append({"date": t.utc_datetime(), "separation_degrees": s})
+            # Refine the conjunction for sub-second precision
+            t_refined, s_refined = _refine_conjunction(observer, p1, p2, t)
+            events.append({"date": t_refined.utc_datetime(), "separation_degrees": float(s_refined)})
 
     return events
 
@@ -680,9 +712,6 @@ def find_conjunctions_with_stars(
 
     # Vectorized observation for moving body (e.g. Moon)
     pos_body = observer.at(times).observe(body).apparent()
-    # Unit vectors for body at all times: (3, M)
-    body_au = pos_body.position.au
-    u_body = body_au / np.linalg.norm(body_au, axis=0)
 
     # Prepare vectorized Star objects
     star_names = [name for name, _ in star_data]
@@ -698,19 +727,19 @@ def find_conjunctions_with_stars(
 
     # Skyfield cannot observe a vector of stars at a vector of times if both have length > 1.
     # We must loop over stars but can still vectorize over time for each star.
-    dot_products = np.zeros((len(star_objs), len(times)))
+    separations = np.zeros((len(star_objs), len(times)))
     for i, star_obj in enumerate(star_objs):
+        # IMPORTANT: Both must be observed from the SAME observer at the SAME times.
+        # body is observed as 'pos_body'.
+        # star must be observed as well.
         pos_star = observer.at(times).observe(star_obj).apparent()
-        u_star = pos_star.position.au / np.linalg.norm(pos_star.position.au, axis=0)
-        dot_products[i] = np.einsum('kj,kj->j', u_star, u_body)
+        separations[i] = pos_body.separation_from(pos_star).degrees
 
-    # Angular separation in degrees: acos(dot_product)
-    # Using clip to avoid NaNs due to floating point precision
-    separations = np.degrees(np.arccos(np.clip(dot_products, -1.0, 1.0)))
-
+    # Angular separation in degrees
     events = []
     for i, name in enumerate(star_names):
         star_separations = separations[i]
+        star_obj = star_objs[i]
 
         # Identify local minima where separation is below threshold
         is_minima = (star_separations[1:-1] < star_separations[:-2]) & (
@@ -721,11 +750,13 @@ def find_conjunctions_with_stars(
         minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
         for idx in minima_indices:
+            # Refine the conjunction for sub-second precision
+            t_refined, s_refined = _refine_conjunction(observer, body, star_obj, times[idx])
             events.append(
                 {
-                    "date": times[idx].utc_datetime(),
+                    "date": t_refined.utc_datetime(),
                     "object2": name,
-                    "separation_degrees": float(star_separations[idx]),
+                    "separation_degrees": float(s_refined),
                 }
             )
 
@@ -771,6 +802,7 @@ def find_conjunctions_between_moving_bodies(
     times = ts.linspace(t0, t1, num_steps)
 
     # Use precomputed positions if available, otherwise observe
+    body1 = planetary.get_skyfield_obj(body1_name)
     if precomputed_positions and body1_name.lower() in precomputed_positions:
         # Check if length matches. Skyfield's Astrometric results store
         # their timestamps in '.t', which is a Time object with a .shape.
@@ -784,10 +816,8 @@ def find_conjunctions_between_moving_bodies(
         ):
             pos1 = pos1_all
         else:
-            body1 = planetary.get_skyfield_obj(body1_name)
             pos1 = observer.at(times).observe(body1)
     else:
-        body1 = planetary.get_skyfield_obj(body1_name)
         pos1 = observer.at(times).observe(body1)
 
     events = []
@@ -817,11 +847,13 @@ def find_conjunctions_between_moving_bodies(
         minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
         for idx in minima_indices:
+            # Refine the conjunction for sub-second precision
+            t_refined, s_refined = _refine_conjunction(observer, body1, body2, times[idx])
             events.append(
                 {
-                    "date": times[idx].utc_datetime(),
+                    "date": t_refined.utc_datetime(),
                     "object2": name2,
-                    "separation_degrees": float(separations[idx]),
+                    "separation_degrees": float(s_refined),
                 }
             )
 
@@ -1523,10 +1555,11 @@ def find_object_culminations(
         num_days = int(t1 - t0) + 1
         day_offsets = np.arange(-1, num_days + 1)
         # Using 12:00 UTC as a stable reference point for each day
+        t0_dt = cast(Any, t0.utc_datetime())
         t_refs = ts.utc(
-            t0.utc_datetime().year,
-            t0.utc_datetime().month,
-            t0.utc_datetime().day + day_offsets,
+            t0_dt.year,
+            t0_dt.month,
+            t0_dt.day + day_offsets,
             12,
         )
 
@@ -1562,7 +1595,7 @@ def find_object_culminations(
             # High-precision refinement (usually one iteration is enough for stars)
             refined_t_est_tt = np.zeros(num_fixed)
             for i in range(num_fixed):
-                ti = t_est[i]
+                ti = cast(Any, t_est)[i]
                 si = fixed_objects[i][1]
                 ra_now = (
                     observer.at(ti).observe(si).apparent().radec(epoch="date")[0].hours
@@ -1616,7 +1649,7 @@ def find_object_culminations(
             final_times = t_final[valid_mask]
             final_alts = alts_final[valid_mask]
 
-            for t, name, alt in zip(final_times, final_names, final_alts):
+            for t, name, alt in zip(cast(Iterable[Any], final_times), final_names, final_alts):
                 events.append(
                     {
                         "date": t.utc_datetime(),
