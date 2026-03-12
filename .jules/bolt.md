@@ -41,3 +41,7 @@
 ## 2026-03-11 - [Vectorized Skymap Plotting]
 **Learning:** Plotting thousands of objects (like the 14k NGC catalog) in a zoomed view can be a major bottleneck if the filtering or observation steps use row-wise `.apply()`. Replacing string-based coordinate parsing with pre-calculated floats and using a single vectorized `observer.observe()` call on the filtered subset (supported by an array-backed `Star` object) eliminates massive Python loop overhead.
 **Action:** Ensure all plotting utilities use vectorized coordinate access and bulk Skyfield observations for large catalogs. Support vectorized input in `get_skyfield_object` to facilitate this.
+
+## 2025-05-15 - [Vectorized Time Grids and Shared Pre-computation]
+**Learning:** In Skyfield-based searches, passing precomputed position arrays (Astrometric objects) to other search functions requires strict alignment of the time grid. Instead of rejecting mismatches, search functions should "adopt" the time grid from the precomputed data (e.g., using `times = pos.t`). This guarantees 100% cache hits and eliminates broadcasting errors during vectorized operations.
+**Action:** Always design shared pre-computation layers to provide a reference time grid that consumer functions prioritize over their own default resolutions.

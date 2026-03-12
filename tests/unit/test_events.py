@@ -379,9 +379,9 @@ class EventsTest(unittest.TestCase):
             # Verify one of the precomputed positions exists
             self.assertIn("moon", kwargs["precomputed_positions"])
 
-            # Verify the precomputed position's time array matches the expected length for 2-min step
-            # duration = 1 day = 86400s. step = 1/720 day = 120s.
-            # num_steps = 86400 / 120 = 720
+            # Verify the precomputed position's time array matches the expected length for 2-minute resolution
+            # duration = 1 day = 1440 minutes. resolution = 2 minutes.
+            # num_steps = 1440 / 2 = 720
             pos = kwargs["precomputed_positions"]["moon"]
             self.assertEqual(len(pos.t), 720)
 

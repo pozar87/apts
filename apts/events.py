@@ -88,61 +88,53 @@ class AstronomicalEvents:
     def shutdown(self):
         self.executor.shutdown(wait=True)
 
-    def _precompute_positions(self):
-        """
-        Pre-computes topocentric positions for the Moon and planets to be shared
-        across different event predictors. Uses 2-minute resolution to satisfy
-        both conjunction and occultation requirements.
-        """
-        # 2-minute resolution: 1 day = 720 steps
-        step_days = 1.0 / 720.0
-        num_steps = int((self.end_date - self.start_date).total_seconds() / (step_days * 86400))
+    def _precompute_positions(self, resolution_minutes=2):
+        """Pre-computes topocentric positions for all major bodies."""
+        # Major bodies used in conjunctions and occultations
+        body_names = [
+            "moon",
+            "mercury",
+            "venus",
+            "mars barycenter",
+            "jupiter barycenter",
+            "saturn barycenter",
+            "uranus barycenter",
+            "neptune barycenter",
+        ]
+
+        # Calculate time grid
+        # 2-minute resolution is high enough for occultations and conjunctions
+        num_steps = int(
+            (self.end_date - self.start_date).total_seconds() / (resolution_minutes * 60)
+        )
         if num_steps < 2:
             num_steps = 2
-        times = self.ts.linspace(self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps)
+
+        times = self.ts.linspace(
+            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps
+        )
 
         precomputed = {}
-
-        # Determine what we need to precompute based on enabled events
-        needs_moon = any(
-            self.event_settings.get(e)
-            for e in [
-                "conjunctions",
-                "lunar_occultations",
-                "moon_messier_conjunctions",
-                "moon_star_conjunctions",
-                "lunar_planetary_occultations",
-            ]
-        )
-
-        needs_planets = any(
-            self.event_settings.get(e)
-            for e in ["conjunctions", "lunar_planetary_occultations"]
-        )
-
-        if needs_moon:
-            logger.debug("Pre-computing Moon positions...")
-            moon_obj = planetary.get_skyfield_obj("moon")
-            precomputed["moon"] = self.observer.at(times).observe(moon_obj)
-
-        if needs_planets:
-            logger.debug("Pre-computing planet positions...")
-            for p in planetary.CONJUNCTION_PLANETS:
-                obj = planetary.get_skyfield_obj(p)
-                # Key names match what find_ functions expect (lowercase, no barycenter)
-                key = p.replace(" barycenter", "").lower()
-                precomputed[key] = self.observer.at(times).observe(obj)
+        for name in body_names:
+            obj = planetary.get_skyfield_obj(name)
+            pos = self.observer.at(times).observe(obj).apparent()
+            # Store with technical name
+            precomputed[name.lower()] = pos
+            # Also store with simple name if it differs, for flexible lookup
+            simple_name = planetary.get_simple_name(name).lower()
+            if simple_name != name.lower():
+                precomputed[simple_name] = pos
 
         return precomputed
 
     def get_events(self):
         start_time = time.time()
         executor = self.executor
-
-        # Shared pre-computation of positions
+        futures = []
+        # Pre-compute positions once to be shared among all predictors
+        # This significantly reduces overhead for Moon/Planet searches
         precomputed = self._precompute_positions()
 
-        futures = []
         if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
         if self.event_settings.get("conjunctions"):
@@ -471,7 +463,7 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_moon_phases: {time.time() - start_time}s")
         return events
 
-    def calculate_conjunctions(self, precomputed_positions=None):
+    def calculate_conjunctions(self, precomputed=None):
         start_time = time.time()
         events = []
         planets_data = {
@@ -496,7 +488,7 @@ class AstronomicalEvents:
                 self.start_date,
                 self.end_date,
                 threshold_degrees=5.0,
-                precomputed_positions=precomputed_positions,
+                precomputed_positions=precomputed,
             )
             futures[future] = p1_name
 
@@ -512,7 +504,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=5.0,
-            precomputed_positions=precomputed_positions,
+            precomputed_positions=precomputed,
         )
         futures[future_moon] = moon_display_name
 
@@ -661,14 +653,14 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_highest_altitudes: {time.time() - start_time}s")
         return events
 
-    def calculate_lunar_occultations(self, precomputed_positions=None):
+    def calculate_lunar_occultations(self, precomputed=None):
         start_time = time.time()
         events = skyfield_searches.find_lunar_occultations(
             self.observer,
             self.catalogs.BRIGHT_STARS,
             self.start_date,
             self.end_date,
-            precomputed_positions=precomputed_positions,
+            precomputed_positions=precomputed,
         )
         for event in events:
             event["type"] = "Lunar Occultation"
@@ -677,13 +669,13 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
         return events
 
-    def calculate_lunar_planetary_occultations(self, precomputed_positions=None):
+    def calculate_lunar_planetary_occultations(self, precomputed=None):
         start_time = time.time()
         events = skyfield_searches.find_lunar_planetary_occultations(
             self.observer,
             self.start_date,
             self.end_date,
-            precomputed_positions=precomputed_positions,
+            precomputed_positions=precomputed,
         )
         for event in events:
             event["type"] = "Lunar Planetary Occultation"
@@ -754,7 +746,7 @@ class AstronomicalEvents:
         )
         return events
 
-    def calculate_moon_messier_conjunctions(self, precomputed_positions=None):
+    def calculate_moon_messier_conjunctions(self, precomputed=None):
         start_time = time.time()
         messier_objects_to_check = [
             "M1",
@@ -851,7 +843,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=4.0,
-            precomputed_positions=precomputed_positions,
+            precomputed_positions=precomputed,
         )
 
         events = []
@@ -874,7 +866,7 @@ class AstronomicalEvents:
         )
         return events
 
-    def calculate_moon_star_conjunctions(self, precomputed_positions=None):
+    def calculate_moon_star_conjunctions(self, precomputed=None):
         start_time = time.time()
 
         # Filter stars close to the ecliptic (within 10 degrees)
@@ -904,7 +896,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=5.0,
-            precomputed_positions=precomputed_positions,
+            precomputed_positions=precomputed,
         )
 
         events = []
