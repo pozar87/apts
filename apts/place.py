@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     t0 = ts.utc(start_date)
     t1 = ts.utc(start_date + datetime.timedelta(days=2))
 
@@ -79,7 +79,7 @@ def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
 def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start - datetime.timedelta(days=2))
     t1 = ts.utc(start)
@@ -99,7 +99,7 @@ def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
 def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start)
     t1 = ts.utc(start + datetime.timedelta(days=2))
@@ -117,7 +117,7 @@ def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
 def _next_setting_time_utc(lat, lon, elevation, obj_name, start):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start)
     t1 = ts.utc(start + datetime.timedelta(days=2))
@@ -135,7 +135,7 @@ def _next_setting_time_utc(lat, lon, elevation, obj_name, start):
 def _previous_rising_time_utc(lat, lon, elevation, obj_name, start):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation)
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start - datetime.timedelta(days=2))
     t1 = ts.utc(start)
@@ -188,7 +188,7 @@ class Place:
         self.name = name
         self.elevation = elevation
         self.location = Topos(
-            latitude_degrees=lat, longitude_degrees=lon, elevation_m=elevation
+            latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation)
         )
         self.observer = self.eph["earth"] + self.location
         # Sun

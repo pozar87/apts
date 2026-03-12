@@ -139,6 +139,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_jovian_moon_events))
         if self.event_settings.get("saturn_ring_crossings"):
             futures.append(executor.submit(self.calculate_saturn_ring_crossings))
+        if self.event_settings.get("jupiter_grs_transits"):
+            futures.append(executor.submit(self.calculate_jupiter_grs_transits))
         if self.event_settings.get("planet_messier_conjunctions"):
             futures.append(executor.submit(self.calculate_planet_messier_conjunctions))
 
@@ -297,6 +299,8 @@ class AstronomicalEvents:
             return 2
         if event_type == "Jovian Moon Event":
             return 3
+        if event_type == "Jupiter GRS Transit":
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -979,18 +983,6 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_jovian_moon_events: {time.time() - start_time}s")
         return events
 
-    def calculate_planet_messier_conjunctions(self):
-        start_time = time.time()
-        events = skyfield_searches.find_planet_messier_conjunctions(
-            self.observer, self.start_date, self.end_date
-        )
-        for event in events:
-            event["rarity"] = self._get_rarity("Planet-Messier Conjunction", event)
-        logger.debug(
-            f"--- calculate_planet_messier_conjunctions: {time.time() - start_time}s"
-        )
-        return events
-
     def calculate_saturn_ring_crossings(self):
         start_time = time.time()
         events = skyfield_searches.find_saturn_ring_crossings(
@@ -1020,4 +1012,26 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Season", event)
         logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
+        return events
+
+    def calculate_jupiter_grs_transits(self):
+        start_time = time.time()
+        events = skyfield_searches.find_jupiter_grs_transits(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
+        logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_messier_conjunctions(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_messier_conjunctions(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet-Messier Conjunction", event)
+        logger.debug(
+            f"--- calculate_planet_messier_conjunctions: {time.time() - start_time}s"
+        )
         return events

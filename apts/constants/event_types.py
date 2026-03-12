@@ -34,6 +34,7 @@ class EventType(str, Enum):
     MESSIER_CULMINATIONS = "messier_culminations"
     JOVIAN_MOON_EVENTS = "jovian_moon_events"
     SATURN_RING_CROSSINGS = "saturn_ring_crossings"
+    JUPITER_GRS_TRANSITS = "jupiter_grs_transits"
     PLANET_MESSIER_CONJUNCTIONS = "planet_messier_conjunctions"
 
     def __str__(self):
