@@ -139,6 +139,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_jovian_moon_events))
         if self.event_settings.get("saturn_ring_crossings"):
             futures.append(executor.submit(self.calculate_saturn_ring_crossings))
+        if self.event_settings.get("jupiter_grs_transits"):
+            futures.append(executor.submit(self.calculate_jupiter_grs_transits))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -294,6 +296,8 @@ class AstronomicalEvents:
             return 2
         if event_type == "Jovian Moon Event":
             return 3
+        if event_type == "Jupiter GRS Transit":
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -987,6 +991,18 @@ class AstronomicalEvents:
             # These are extremely rare (every 13-15 years), so rarity 5
             event["rarity"] = 5
         logger.debug(f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s")
+        return events
+
+    def calculate_jupiter_grs_transits(self):
+        start_time = time.time()
+        events = skyfield_searches.find_jupiter_grs_transits(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            # Ensure date is timezone-aware UTC
+            event["date"] = event["date"].astimezone(utc)
+            event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
+        logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
         return events
 
     def calculate_greatest_elongations(self):

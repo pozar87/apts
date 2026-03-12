@@ -398,6 +398,70 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     return events
 
 
+def find_jupiter_grs_transits(
+    observer, start_date, end_date, grs_longitude=astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+):
+    """
+    Finds when Jupiter's Great Red Spot (GRS) transits the Central Meridian (System II).
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    jupiter = planetary.get_skyfield_obj("jupiter barycenter")
+    sun = planetary.get_skyfield_obj("sun")
+
+    def cml_difference(t):
+        # Handle both scalar and array Time objects
+        if hasattr(t, "shape") and t.shape != ():
+            # find_minima might pass an array
+            return np.array(
+                [
+                    (planetary.get_jupiter_system_ii_longitude(ti) - grs_longitude + 180)
+                    % 360
+                    - 180
+                    for ti in t
+                ]
+            )
+        else:
+            diff = planetary.get_jupiter_system_ii_longitude(t) - grs_longitude
+            return (diff + 180) % 360 - 180
+
+    def abs_diff(t):
+        return np.abs(cml_difference(t))
+
+    # Jupiter rotates every ~9.9 hours (~0.41 days).
+    # A step of 0.1 days (~2.4 hours) is safe to find every transit.
+    setattr(abs_diff, "step_days", 0.1)
+    times, _ = find_minima(t0, t1, abs_diff)
+
+    events = []
+    for t in times:
+        # Check visibility: Jupiter above horizon and Sun below -6 degrees
+        j_obs = observer.at(t).observe(jupiter).apparent()
+        alt, _, _ = j_obs.altaz()
+
+        if alt.degrees > 0:
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+
+            if sun_alt <= -6:
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": "Jupiter GRS Transit",
+                        "object": "Jupiter",
+                        "type": "Jupiter GRS Transit",
+                    }
+                )
+
+    return events
+
+
 def find_saturn_ring_crossings(start_date, end_date):
     """
     Finds when Earth or the Sun crosses Saturn's ring plane.
@@ -437,8 +501,6 @@ def find_saturn_ring_crossings(start_date, end_date):
         if hasattr(t, "shape") and t.shape != ():
             # p and v_sat_obs are vectors over time.
             # p is (3, N), v_sat_obs is (3, N)
-            # Actually get_saturn_pole returns alpha, delta which might be scalars if t is Time object?
-            # Let's be safe.
             sin_B = np.sum(p * v_sat_obs, axis=0)
         else:
             sin_B = np.dot(p, v_sat_obs)

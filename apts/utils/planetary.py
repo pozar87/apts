@@ -5,6 +5,7 @@ import numpy as np
 from types import SimpleNamespace
 from typing import Any, cast
 
+import ephem
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
 from skyfield import almanac
@@ -214,6 +215,17 @@ def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
     i_rad = astrometric.phase_angle(sun).radians
 
     return float((1 + np.cos(i_rad)) / 2)
+
+
+def get_jupiter_system_ii_longitude(time: Any) -> float:
+    """
+    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
+    Uses ephem for calculation.
+    """
+    j = ephem.Jupiter()
+    j.compute(time.utc_datetime())
+    # ephem returns longitude in radians, convert to degrees
+    return float(np.degrees(j.cmlII))
 
 
 def get_simple_name(technical_name: str) -> str:
