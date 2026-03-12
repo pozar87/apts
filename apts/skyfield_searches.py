@@ -1743,55 +1743,66 @@ def find_seasons(start_date, end_date):
         )
     return events
 
-
-def find_jupiter_grs_transits(observer, start_date, end_date):
+def find_jupiter_grs_transits(
+    observer, start_date, end_date, grs_longitude=astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+):
     """
-    Finds transits of Jupiter's Great Red Spot (GRS) across the central meridian.
-    The GRS is visible for about 1 hour before and after the transit.
+    Finds when Jupiter's Great Red Spot (GRS) transits the Central Meridian (System II).
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     jupiter = planetary.get_skyfield_obj("jupiter barycenter")
-    target_lon = astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+    sun = planetary.get_skyfield_obj("sun")
 
-    def grs_longitude_difference(t):
-        # We handle both scalar and array Time objects from Skyfield
+    def cml_difference(t):
+        # Handle both scalar and array Time objects
         if hasattr(t, "shape") and t.shape != ():
-            # For array, we must loop as planetary.get_jupiter_system_ii_longitude
-            # uses ephem which is not vectorized for this.
-            res = np.array([grs_longitude_difference(ti) for ti in t])
-            return res
-
-        current_lon = planetary.get_jupiter_system_ii_longitude(t)
-        diff = current_lon - target_lon
-        # Wrap to -180 to 180
-        return (diff + 180) % 360 - 180
+            # find_minima might pass an array
+            return np.array(
+                [
+                    (planetary.get_jupiter_system_ii_longitude(ti) - grs_longitude + 180)
+                    % 360
+                    - 180
+                    for ti in t
+                ]
+            )
+        else:
+            diff = planetary.get_jupiter_system_ii_longitude(t) - grs_longitude
+            return (diff + 180) % 360 - 180
 
     def abs_diff(t):
-        return abs(grs_longitude_difference(t))
+        return np.abs(cml_difference(t))
 
-    # Jupiter rotation period is ~9.9 hours. GRS transits every 9.9 hours.
-    # Step size of 2 hours is safe to find the minimum.
-    setattr(abs_diff, "step_days", 0.08)  # ~1.9 hours
-
+    # Jupiter rotates every ~9.9 hours (~0.41 days).
+    # A step of 0.1 days (~2.4 hours) is safe to find every transit.
+    setattr(abs_diff, "step_days", 0.1)
     times, _ = find_minima(t0, t1, abs_diff)
 
     events = []
     for t in times:
-        # Check if Jupiter is above horizon during transit
+        # Check visibility: Jupiter above horizon and Sun below -6 degrees
         j_obs = observer.at(t).observe(jupiter).apparent()
         alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
         if alt.degrees > 0:
-            events.append(
-                {
-                    "date": t.utc_datetime(),
-                    "event": "Jupiter Great Red Spot Transit",
-                    "object": "Jupiter",
-                    "type": "Jupiter GRS Transit",
-                    "altitude": float(alt.degrees),
-                }
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
             )
+
+            if sun_alt <= -6:
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": "Jupiter Great Red Spot Transit",
+                        "object": "Jupiter",
+                        "type": "Jupiter GRS Transit",
+                        "altitude": float(alt.degrees),
+                    }
+                )
 
     return events
