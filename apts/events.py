@@ -14,6 +14,7 @@ from skyfield import almanac
 from skyfield.api import Star, Topos
 
 from . import cache, skyfield_searches
+from .constants import astronomy
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 from .config import get_event_settings
@@ -993,18 +994,6 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s")
         return events
 
-    def calculate_jupiter_grs_transits(self):
-        start_time = time.time()
-        events = skyfield_searches.find_jupiter_grs_transits(
-            self.observer, self.start_date, self.end_date
-        )
-        for event in events:
-            # Ensure date is timezone-aware UTC
-            event["date"] = event["date"].astimezone(utc)
-            event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
-        logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
-        return events
-
     def calculate_greatest_elongations(self):
         start_time = time.time()
         events = skyfield_searches.find_greatest_elongations(
@@ -1023,10 +1012,12 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
         return events
 
-    def calculate_jupiter_grs_transits(self):
+    def calculate_jupiter_grs_transits(self, grs_longitude: Optional[float] = None):
         start_time = time.time()
+        # Default to constant if not provided
+        lon = grs_longitude if grs_longitude is not None else astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
         events = skyfield_searches.find_jupiter_grs_transits(
-            self.observer, self.start_date, self.end_date
+            self.observer, self.start_date, self.end_date, grs_longitude=lon
         )
         for event in events:
             event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)

@@ -6,7 +6,6 @@ import numpy as np
 from types import SimpleNamespace
 from typing import Any, cast
 
-import ephem
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
 from skyfield import almanac
@@ -218,17 +217,6 @@ def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
     return float((1 + np.cos(i_rad)) / 2)
 
 
-def get_jupiter_system_ii_longitude(time: Any) -> float:
-    """
-    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
-    Uses ephem for calculation.
-    """
-    j = ephem.Jupiter()
-    j.compute(time.utc_datetime())
-    # ephem returns longitude in radians, convert to degrees
-    return float(np.degrees(j.cmlII))
-
-
 def get_simple_name(technical_name: str) -> str:
     """
     Returns the simple name for a given technical planet name.
@@ -401,12 +389,15 @@ def get_reverse_translated_planet_names(language: str) -> dict:
             reverse_map[translated_name] = name
     return reverse_map
 
-def get_jupiter_system_ii_longitude(t):
+# Global instance of Jupiter for efficient longitude calculation
+_JUPITER_EPHEM = ephem.Jupiter()
+
+
+def get_jupiter_system_ii_longitude(time: Any) -> float:
     """
-    Calculates the System II central meridian longitude of Jupiter.
-    Uses ephem (PyEphem) for calculation.
+    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
+    Uses ephem for calculation.
     """
-    jup = ephem.Jupiter()
-    # Convert Skyfield Time to PyEphem date (UTC)
-    jup.compute(t.utc_datetime())
-    return float(jup.cmlII) * 180.0 / np.pi
+    _JUPITER_EPHEM.compute(time.utc_datetime())
+    # ephem returns longitude in radians, convert to degrees
+    return float(np.degrees(_JUPITER_EPHEM.cmlII))

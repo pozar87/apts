@@ -26,6 +26,7 @@ SATURN_RING_OUTER_RADIUS_KM = 136775.0
 # Astronomical Unit in km
 AU_KM = 149597870.7
 
-# Current approximate System II longitude of Jupiter's Great Red Spot (2024)
-# Note: GRS drifts over time (approx. +2 degrees per month)
-JUPITER_GRS_LONGITUDE_SYSTEM_II = 15.0
+# Jupiter Great Red Spot (GRS) Longitude in System II (degrees)
+# Note: This value drifts over time and should be updated annually.
+# Value for early 2025 is approximately 66 degrees.
+JUPITER_GRS_LONGITUDE_SYSTEM_II = 66.0
