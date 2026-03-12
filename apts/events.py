@@ -139,6 +139,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_jovian_moon_events))
         if self.event_settings.get("saturn_ring_crossings"):
             futures.append(executor.submit(self.calculate_saturn_ring_crossings))
+        if self.event_settings.get("planet_messier_conjunctions"):
+            futures.append(executor.submit(self.calculate_planet_messier_conjunctions))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
@@ -220,6 +222,7 @@ class AstronomicalEvents:
             "Conjunction",
             "Moon-Messier Conjunction",
             "Moon-Star Conjunction",
+            "Planet-Messier Conjunction",
         ]:
             sep = data.get("separation_degrees", 5.0)
             if sep < 0.15:
@@ -974,6 +977,18 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Jovian Moon Event", event)
         logger.debug(f"--- calculate_jovian_moon_events: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_messier_conjunctions(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_messier_conjunctions(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet-Messier Conjunction", event)
+        logger.debug(
+            f"--- calculate_planet_messier_conjunctions: {time.time() - start_time}s"
+        )
         return events
 
     def calculate_saturn_ring_crossings(self):
