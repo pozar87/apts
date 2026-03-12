@@ -275,7 +275,9 @@ def find_jovian_moon_events(observer, start_date, end_date):
     return events
 
 
-def find_lunar_planetary_occultations(observer, start_date, end_date):
+def find_lunar_planetary_occultations(
+    observer, start_date, end_date, precomputed_positions=None
+):
     """
     Finds occultations of planets by the Moon for a specific observer.
     Vectorized over time for each planet for precision and speed.
@@ -283,7 +285,6 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    moon = planetary.get_skyfield_obj("moon")
 
     # Planets to check for occultations
     planets = [
@@ -298,25 +299,33 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
 
     events = []
 
-    # Check every 2 minutes for precision
-    num_steps = int((t1 - t0) * 24 * 30)
-    if num_steps < 2:
-        return []
-    times = ts.linspace(t0, t1, num_steps)
-
     # Topocentric position for Moon
-    mpos = observer.at(times).observe(moon)
+    if precomputed_positions and "moon" in precomputed_positions:
+        mpos = precomputed_positions["moon"]
+        times = mpos.t
+    else:
+        # Check every 2 minutes for precision
+        num_steps = int((t1 - t0) * 24 * 30)
+        if num_steps < 2:
+            num_steps = 2
+        times = ts.linspace(t0, t1, num_steps)
+        moon = planetary.get_skyfield_obj("moon")
+        mpos = observer.at(times).observe(moon)
+
     m_alt, _, m_dist = mpos.apparent().altaz()
 
     # Calculate Moon's angular radius
     moon_angular_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
 
     for p_name in planets:
-        planet = planetary.get_skyfield_obj(p_name)
-        simple_name = planetary.get_simple_name(p_name)
+        planet_key = p_name.replace(" barycenter", "").lower()
+        if precomputed_positions and planet_key in precomputed_positions:
+            ppos = precomputed_positions[planet_key]
+        else:
+            planet = planetary.get_skyfield_obj(p_name)
+            ppos = observer.at(times).observe(planet)
 
-        # Topocentric observation of planet
-        ppos = observer.at(times).observe(planet)
+        simple_name = planetary.get_simple_name(p_name)
         separations = mpos.separation_from(ppos).degrees
 
         # Occultation check: separation < Moon's radius AND Moon above horizon
@@ -630,6 +639,7 @@ def find_conjunctions_with_star(
     start_date,
     end_date,
     threshold_degrees=1.0,
+    precomputed_positions=None,
 ):
     """
     Finds conjunctions between a moving body and a fixed star.
@@ -642,6 +652,7 @@ def find_conjunctions_with_star(
         start_date,
         end_date,
         threshold_degrees,
+        precomputed_positions=precomputed_positions,
     )
 
     # Remove the object2 key for backward compatibility
@@ -659,6 +670,7 @@ def find_conjunctions_with_stars(
     start_date,
     end_date,
     threshold_degrees=1.0,
+    precomputed_positions=None,
 ):
     """
     Finds conjunctions between a moving body and multiple fixed stars.
@@ -670,16 +682,21 @@ def find_conjunctions_with_stars(
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    body = planetary.get_skyfield_obj(body_name)
-
-    # Hourly check
-    num_hours = int((t1 - t0) * 24)
-    if num_hours < 2:
-        return []
-    times = ts.linspace(t0, t1, num_hours)
 
     # Vectorized observation for moving body (e.g. Moon)
-    pos_body = observer.at(times).observe(body).apparent()
+    # Use precomputed positions if available
+    if precomputed_positions and body_name.lower() in precomputed_positions:
+        pos_body = precomputed_positions[body_name.lower()]
+        times = pos_body.t
+    else:
+        # Hourly check
+        num_hours = int((t1 - t0) * 24)
+        if num_hours < 2:
+            num_hours = 2
+        times = ts.linspace(t0, t1, num_hours)
+        body = planetary.get_skyfield_obj(body_name)
+        pos_body = observer.at(times).observe(body).apparent()
+
     # Unit vectors for body at all times: (3, M)
     body_au = pos_body.position.au
     u_body = body_au / np.linalg.norm(body_au, axis=0)
@@ -688,21 +705,21 @@ def find_conjunctions_with_stars(
     star_names = [name for name, _ in star_data]
     star_objs = [obj for _, obj in star_data]
 
-    # Vectorized observation for stars at all times to account for aberration and parallax
-    # This results in a (3, N, M) array if we could observe all stars at all times vectorized.
-    # Skyfield supports Star(ra, dec).at(times). However, we have N stars and M times.
+    # Optimization: To avoid (N stars * M times) Skyfield observations, we observe all stars
+    # at the middle of the interval in ICRF. This is extremely fast and accurate enough
+    # (~ arcseconds error) for finding conjunctions within a few degrees threshold.
+    t_mid = times[len(times) // 2]
+    stars_vector = Star(
+        ra_hours=np.array([s.ra.hours for s in star_objs]),
+        dec_degrees=np.array([s.dec.degrees for s in star_objs]),
+    )
+    # Observe from Earth barycenter for ICRF unit vectors
+    eph = get_ephemeris()
+    pos_stars = eph["earth"].at(t_mid).observe(stars_vector)
+    u_stars = pos_stars.position.au / np.linalg.norm(pos_stars.position.au, axis=0)
 
-    # To keep it efficient but accurate, we will process stars in a loop if N is small,
-    # or use a more clever approach. Since we are looking for conjunctions with SPECIFIC stars,
-    # let's observe the star vector at each time step.
-
-    # Skyfield cannot observe a vector of stars at a vector of times if both have length > 1.
-    # We must loop over stars but can still vectorize over time for each star.
-    dot_products = np.zeros((len(star_objs), len(times)))
-    for i, star_obj in enumerate(star_objs):
-        pos_star = observer.at(times).observe(star_obj).apparent()
-        u_star = pos_star.position.au / np.linalg.norm(pos_star.position.au, axis=0)
-        dot_products[i] = np.einsum('kj,kj->j', u_star, u_body)
+    # Dot products for all stars at all times: (N, M) = (N, 3) @ (3, M)
+    dot_products = u_stars.T @ u_body
 
     # Angular separation in degrees: acos(dot_product)
     # Using clip to avoid NaNs due to floating point precision
@@ -752,57 +769,35 @@ def find_conjunctions_between_moving_bodies(
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    # Dynamically adjust step size based on moving bodies
-    # Using 15-minute resolution for the Moon for better conjunction accuracy
-    if "moon" == body1_name.lower() or any(
-        "moon" == name.lower() for name, _ in bodies2_data
-    ):
-        step = 0.01  # ~14.4 minutes
-    elif "mercury" == body1_name.lower() or any(
-        "mercury" == name.lower() for name, _ in bodies2_data
-    ):
-        step = 0.1  # ~2.4 hours
-    else:
-        step = 0.2  # ~4.8 hours
-
-    num_steps = int((t1 - t0) / step)
-    if num_steps < 2:
-        num_steps = 2
-    times = ts.linspace(t0, t1, num_steps)
-
-    # Use precomputed positions if available, otherwise observe
+    # Use precomputed positions if available
     if precomputed_positions and body1_name.lower() in precomputed_positions:
-        # Check if length matches. Skyfield's Astrometric results store
-        # their timestamps in '.t', which is a Time object with a .shape.
-        pos1_all = precomputed_positions[body1_name.lower()]
-        # Verify both 't' attribute and that the length of the vectorized time array matches
-        if (
-            hasattr(pos1_all, "t")
-            and hasattr(pos1_all.t, "shape")
-            and len(pos1_all.t.shape) > 0
-            and pos1_all.t.shape[0] == len(times)
-        ):
-            pos1 = pos1_all
-        else:
-            body1 = planetary.get_skyfield_obj(body1_name)
-            pos1 = observer.at(times).observe(body1)
+        pos1 = precomputed_positions[body1_name.lower()]
+        times = pos1.t
     else:
+        # Dynamically adjust step size based on moving bodies
+        # Using 15-minute resolution for the Moon for better conjunction accuracy
+        if "moon" == body1_name.lower() or any(
+            "moon" == name.lower() for name, _ in bodies2_data
+        ):
+            step = 0.01  # ~14.4 minutes
+        elif "mercury" == body1_name.lower() or any(
+            "mercury" == name.lower() for name, _ in bodies2_data
+        ):
+            step = 0.1  # ~2.4 hours
+        else:
+            step = 0.2  # ~4.8 hours
+
+        num_steps = int((t1 - t0) / step)
+        if num_steps < 2:
+            num_steps = 2
+        times = ts.linspace(t0, t1, num_steps)
         body1 = planetary.get_skyfield_obj(body1_name)
         pos1 = observer.at(times).observe(body1)
 
     events = []
     for name2, body2 in bodies2_data:
         if precomputed_positions and name2.lower() in precomputed_positions:
-            pos2_all = precomputed_positions[name2.lower()]
-            if (
-                hasattr(pos2_all, "t")
-                and hasattr(pos2_all.t, "shape")
-                and len(pos2_all.t.shape) > 0
-                and pos2_all.t.shape[0] == len(times)
-            ):
-                pos2 = pos2_all
-            else:
-                pos2 = observer.at(times).observe(body2)
+            pos2 = precomputed_positions[name2.lower()]
         else:
             pos2 = observer.at(times).observe(body2)
 
@@ -828,11 +823,12 @@ def find_conjunctions_between_moving_bodies(
     return events
 
 
-def find_lunar_occultations(observer, bright_stars, start_date, end_date):
+def find_lunar_occultations(
+    observer, bright_stars, start_date, end_date, precomputed_positions=None
+):
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    moon = planetary.get_skyfield_obj("moon")
     earth = cast(Any, planetary.get_skyfield_obj("earth"))
 
     target_stars = [
@@ -885,18 +881,25 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         for i in np.where(mask)[0]
     ]
 
-    # Check every 2 minutes for precision
-    num_steps = int((t1 - t0) * 24 * 30)
-    if num_steps < 2:
-        return []
-    times = ts.linspace(t0, t1, num_steps)
-
-    # Coarse check every 20 minutes (1 in 10 points)
-    coarse_idx = np.arange(0, num_steps, 10)
-    coarse_times = times[coarse_idx]
-
     # Topocentric position for Moon (coarse)
-    mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
+    if precomputed_positions and "moon" in precomputed_positions:
+        mpos_full = precomputed_positions["moon"]
+        times = mpos_full.t
+        num_steps = len(times)
+        coarse_idx = np.arange(0, num_steps, 10)
+        coarse_times = times[coarse_idx]
+        mpos_coarse = mpos_full[coarse_idx].apparent()
+    else:
+        # Check every 2 minutes for precision
+        num_steps = int((t1 - t0) * 24 * 30)
+        if num_steps < 2:
+            num_steps = 2
+        times = ts.linspace(t0, t1, num_steps)
+        # Coarse check every 20 minutes (1 in 10 points)
+        coarse_idx = np.arange(0, num_steps, 10)
+        coarse_times = times[coarse_idx]
+        moon = planetary.get_skyfield_obj("moon")
+        mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
     m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
     moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
 
@@ -936,7 +939,13 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
             continue
 
         fine_times = times[window_indices]
-        mpos_fine = observer.at(fine_times).observe(moon).apparent()
+        if precomputed_positions and "moon" in precomputed_positions:
+            mpos_full = precomputed_positions["moon"]
+            mpos_fine = mpos_full[window_indices].apparent()
+        else:
+            moon = planetary.get_skyfield_obj("moon")
+            mpos_fine = observer.at(fine_times).observe(moon).apparent()
+
         m_alt_fine, _, m_dist_fine = mpos_fine.altaz()
         moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_fine.km))
 
