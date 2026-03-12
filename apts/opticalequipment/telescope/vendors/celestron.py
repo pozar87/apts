@@ -68,8 +68,9 @@ class CelestronTelescope(Telescope):
         'Celestron_StarBright_XLT_C6_A_XLT': {'brand': 'Celestron', 'name': 'StarBright XLT C6-A-XLT', 'type': 'schmidt_cassegrain', 'optical_length': 0, 'mass': 4540, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'SC (Schmidt-Cassegrain)', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 150, 'focal_length_mm': 1500, 'central_obstruction_mm': 56}, # Verified via Celestron official specs (4.54 kg)
         'Celestron_StarSense_Explorer_8_SCT': {'brand': 'Celestron', 'name': 'StarSense Explorer 8" SCT', 'type': 'schmidt_cassegrain', 'optical_length': 0, 'mass': 5670, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'SC (Schmidt-Cassegrain)', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 203.2, 'focal_length_mm': 2032, 'central_obstruction_mm': 64}, # Verified via Celestron official specs (5.67 kg)
         'Celestron_StarSense_Explorer_DX_130': {'brand': 'Celestron', 'name': 'StarSense Explorer DX 130', 'type': 'newtonian_reflector', 'optical_length': 0, 'mass': 3990, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 130, 'focal_length_mm': 650, 'central_obstruction_mm': 45}, # Verified via Celestron official specs (3.99 kg / 8.8 lbs OTA) https://www.celestron.com/products/starsense-explorer-dx-130az
-        'Celestron_StarSense_Explorer_LT_114': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 114', 'type': 'type_telescope', 'optical_length': 0, 'mass': 4000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
-        'Celestron_StarSense_Explorer_LT_80AZ': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 80AZ', 'type': 'type_telescope', 'optical_length': 0, 'mass': 1800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
+        'Celestron_StarSense_Explorer_LT_114': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 114AZ', 'type': 'newtonian_reflector', 'optical_length': 0, 'mass': 2990, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 114, 'focal_length_mm': 1000, 'central_obstruction_mm': 44}, # Verified via Celestron official specs (2.99 kg / 6.6 lbs OTA) https://www.celestron.com/products/starsense-explorer-lt-114az
+        'Celestron_StarSense_Explorer_LT_127': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 127AZ', 'type': 'newtonian_reflector', 'optical_length': 0, 'mass': 3440, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 127, 'focal_length_mm': 1000, 'central_obstruction_mm': 41}, # Verified via Celestron official specs (3.44 kg / 7.6 lbs OTA) https://www.celestron.com/products/starsense-explorer-lt-127az
+        'Celestron_StarSense_Explorer_LT_80AZ': {'brand': 'Celestron', 'name': 'StarSense Explorer LT 80AZ', 'type': 'refractor', 'optical_length': 0, 'mass': 2450, 'tside_thread': '', 'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 80, 'focal_length_mm': 900, 'central_obstruction_mm': 0}, # Verified via Celestron official specs (2.45 kg / 5.4 lbs OTA) https://www.celestron.com/products/starsense-explorer-lt-80az
         'Celestron_Origin': {
             'brand': 'Celestron',
             'name': 'Origin',
@@ -360,6 +361,10 @@ class CelestronTelescope(Telescope):
     @classmethod
     def Celestron_StarSense_Explorer_LT_114(cls):
         return cls.from_database(cls._DATABASE['Celestron_StarSense_Explorer_LT_114'])
+
+    @classmethod
+    def Celestron_StarSense_Explorer_LT_127(cls):
+        return cls.from_database(cls._DATABASE['Celestron_StarSense_Explorer_LT_127'])
 
     @classmethod
     def Celestron_StarSense_Explorer_LT_80AZ(cls):
