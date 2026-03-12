@@ -1523,10 +1523,11 @@ def find_object_culminations(
         num_days = int(t1 - t0) + 1
         day_offsets = np.arange(-1, num_days + 1)
         # Using 12:00 UTC as a stable reference point for each day
+        t0_dt = cast(Any, t0.utc_datetime())
         t_refs = ts.utc(
-            t0.utc_datetime().year,
-            t0.utc_datetime().month,
-            t0.utc_datetime().day + day_offsets,
+            t0_dt.year,
+            t0_dt.month,
+            t0_dt.day + day_offsets,
             12,
         )
 
@@ -1616,7 +1617,7 @@ def find_object_culminations(
             final_times = t_final[valid_mask]
             final_alts = alts_final[valid_mask]
 
-            for t, name, alt in zip(final_times, final_names, final_alts):
+            for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
                 events.append(
                     {
                         "date": t.utc_datetime(),

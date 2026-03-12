@@ -1,4 +1,3 @@
-import pytest
 from datetime import datetime, timezone
 from apts.place import Place
 from apts.events import AstronomicalEvents
