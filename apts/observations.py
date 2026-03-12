@@ -359,7 +359,7 @@ class Observation:
             self.effective_date if self.effective_date is not None else self.place.date
         )
         moon_illumination = get_moon_illumination(date_for_illumination)
-        if moon_illumination < conditions.max_moon_illumination:
+        if moon_illumination <= conditions.max_moon_illumination:
             return True
 
         # Illumination is too high, check if moon is up during observation window
@@ -412,7 +412,7 @@ class Observation:
 
         return (
             self._compute_weather_goodness(conditions=conditions)
-            > effective_conditions.min_weather_goodness
+            >= effective_conditions.min_weather_goodness
         )
 
     def plot_weather(
@@ -823,7 +823,7 @@ class Observation:
                 reasons = []
 
                 if pd.isna(row.cloudCover) or not (
-                    row.cloudCover < effective_conditions.max_clouds
+                    row.cloudCover <= effective_conditions.max_clouds
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -832,7 +832,7 @@ class Observation:
                     )
                 if pd.isna(row.precipProbability) or not (
                     row.precipProbability
-                    < effective_conditions.max_precipitation_probability
+                    <= effective_conditions.max_precipitation_probability
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -843,7 +843,7 @@ class Observation:
                     )
                 if pd.isna(row.precipIntensity) or not (
                     row.precipIntensity
-                    < effective_conditions.max_precipitation_intensity
+                    <= effective_conditions.max_precipitation_intensity
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -853,7 +853,7 @@ class Observation:
                         % {"precip_intens": f"{row.precipIntensity:.1f}"}
                     )
                 if pd.isna(row.windSpeed) or not (
-                    row.windSpeed < effective_conditions.max_wind
+                    row.windSpeed <= effective_conditions.max_wind
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -862,8 +862,8 @@ class Observation:
                     )
                 if pd.isna(row.temperature) or not (
                     effective_conditions.min_temperature
-                    < row.temperature
-                    < effective_conditions.max_temperature
+                    <= row.temperature
+                    <= effective_conditions.max_temperature
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -871,7 +871,7 @@ class Observation:
                         % {"temp": f"{row.temperature:.1f}"}
                     )
                 if pd.isna(row.visibility) or not (
-                    row.visibility > effective_conditions.min_visibility
+                    row.visibility >= effective_conditions.min_visibility
                 ):
                     is_good_hour = False
                     reasons.append(
@@ -890,7 +890,7 @@ class Observation:
                 if (
                     row["Altitude"] > 0
                     and not row.moonIllumination
-                    < effective_conditions.max_moon_illumination
+                    <= effective_conditions.max_moon_illumination
                 ):
                     is_good_hour = False
                     reasons.append(
