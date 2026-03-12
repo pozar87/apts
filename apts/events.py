@@ -1022,3 +1022,13 @@ class AstronomicalEvents:
             event["rarity"] = self._get_rarity("Season", event)
         logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
         return events
+
+    def calculate_jupiter_grs_transits(self):
+        start_time = time.time()
+        events = skyfield_searches.find_jupiter_grs_transits(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
+        logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
+        return events

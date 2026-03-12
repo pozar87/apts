@@ -1,3 +1,4 @@
+import ephem
 import re
 from datetime import timedelta
 
@@ -399,3 +400,13 @@ def get_reverse_translated_planet_names(language: str) -> dict:
             translated_name = gettext_(name)
             reverse_map[translated_name] = name
     return reverse_map
+
+def get_jupiter_system_ii_longitude(t):
+    """
+    Calculates the System II central meridian longitude of Jupiter.
+    Uses ephem (PyEphem) for calculation.
+    """
+    jup = ephem.Jupiter()
+    # Convert Skyfield Time to PyEphem date (UTC)
+    jup.compute(t.utc_datetime())
+    return float(jup.cmlII) * 180.0 / np.pi

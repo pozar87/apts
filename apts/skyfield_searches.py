@@ -1548,7 +1548,7 @@ def find_object_culminations(
 ):
     """
     Finds culminations for a list of objects (e.g. Messier catalog).
-    Vectorized over objects for speed.
+    Vectorized over objects using an analytical approach (LST == RA) for fixed objects.
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -1560,9 +1560,139 @@ def find_object_culminations(
     if not objects_data:
         return events
 
+    # Separate fixed objects (e.g. Stars, DSOs) from moving objects (e.g. Planets)
+    fixed_objects = []
+    moving_objects = []
     for name, obj in objects_data:
+        # Fixed objects are typically Star instances with a constant RA/Dec
+        if hasattr(obj, "ra"):
+            fixed_objects.append((name, obj))
+        else:
+            moving_objects.append((name, obj))
 
-        def altitude(t):
+    # 1. Process fixed objects with vectorized analytical approach
+    if fixed_objects:
+        # Extract observer longitude from the VectorSum object (used for LST calculation)
+        lon_hours = 0.0
+        for vf in observer.vector_functions:
+            if hasattr(vf, "longitude"):
+                lon_hours = vf.longitude.hours
+                break
+
+        # Generate reference points for each day in the interval.
+        # We include one extra day before and after to ensure we don't miss culminations
+        # near the boundaries of the interval.
+        num_days = int(t1 - t0) + 1
+        day_offsets = np.arange(-1, num_days + 1)
+        # Using 12:00 UTC as a stable reference point for each day
+        t_refs = ts.utc(
+            t0.utc_datetime().year,
+            t0.utc_datetime().month,
+            t0.utc_datetime().day + day_offsets,
+            12,
+        )
+
+        names_fixed = [f[0] for f in fixed_objects]
+        num_fixed = len(fixed_objects)
+        ra_fixed = np.array([obj.ra.hours for _, obj in fixed_objects])
+        dec_fixed = np.array([obj.dec.degrees for _, obj in fixed_objects])
+
+        # Consolidate all fixed objects into a single vectorized Star object
+        stars_vector = Star(ra_hours=ra_fixed, dec_degrees=dec_fixed)
+
+        all_t_culm_tt = []
+
+        # Optimization: Loop over days while vectorizing over all objects (N objects per day)
+        for t_ref in t_refs:
+            # Estimate apparent RA at mid-day for all objects (using epoch='date' for LST)
+            ra_hours = (
+                observer.at(t_ref)
+                .observe(stars_vector)
+                .apparent()
+                .radec(epoch="date")[0]
+                .hours
+            )
+
+            # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
+            target_gast = (ra_hours - lon_hours) % 24
+            diff_gast = (target_gast - t_ref.gast) % 24
+
+            # Convert sidereal interval to UT (approx. factor 1.0027379)
+            t_est_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
+            t_est = ts.tt_jd(t_est_tt)
+
+            # High-precision refinement (usually one iteration is enough for stars)
+            refined_t_est_tt = np.zeros(num_fixed)
+            for i in range(num_fixed):
+                ti = t_est[i]
+                si = fixed_objects[i][1]
+                ra_now = (
+                    observer.at(ti).observe(si).apparent().radec(epoch="date")[0].hours
+                )
+                target_gast_i = (ra_now - lon_hours) % 24
+                diff = (target_gast_i - ti.gast + 12) % 24 - 12
+                refined_t_est_tt[i] = ti.tt + (diff / 1.002737909) / 24.0
+
+            all_t_culm_tt.append(refined_t_est_tt)
+
+        # Flatten all potential culminations
+        t_culms_all_tt = np.concatenate(all_t_culm_tt)
+        obj_indices_all = np.tile(np.arange(num_fixed), len(t_refs))
+
+        # Filter culminations that fall within the requested window
+        mask_window = (t_culms_all_tt >= t0.tt) & (t_culms_all_tt <= t1.tt)
+
+        t_final_tt = t_culms_all_tt[mask_window]
+        t_final = ts.tt_jd(t_final_tt)
+        obj_indices_final = obj_indices_all[mask_window]
+
+        if len(t_final) > 0:
+            # Observe each culmination for altitude and sun visibility check.
+            # Since we have K different times and K different stars, we loop.
+            # K is typically ~len(Messier catalog) * num_days, but many are below horizon.
+            alts_final = np.zeros(len(t_final))
+            sun_alts = np.zeros(len(t_final))
+
+            for j in range(len(t_final)):
+                tj = t_final[j]
+                sj = fixed_objects[obj_indices_final[j]][1]
+                alts_final[j] = (
+                    observer.at(tj)
+                    .observe(sj)
+                    .apparent()
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
+                sun_alts[j] = (
+                    observer.at(tj)
+                    .observe(sun)
+                    .apparent()
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
+
+            # Visibility threshold: Altitude > 15 deg and Sun below threshold
+            valid_mask = (alts_final > 15) & (sun_alts <= sun_alt_threshold)
+
+            final_names = [names_fixed[i] for i in obj_indices_final[valid_mask]]
+            final_times = t_final[valid_mask]
+            final_alts = alts_final[valid_mask]
+
+            for t, name, alt in zip(final_times, final_names, final_alts):
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": "Culmination",
+                        "object": name,
+                        "type": "Messier Culmination",
+                        "altitude": float(alt),
+                    }
+                )
+
+    # 2. Process moving objects with the traditional iterative solver
+    for name, obj in moving_objects:
+
+        def altitude_func(t):
             return (
                 observer.at(t)
                 .observe(obj)
@@ -1571,11 +1701,11 @@ def find_object_culminations(
                 .degrees
             )
 
-        setattr(altitude, "step_days", 0.5)
-        times, altitudes = find_maxima(t0, t1, altitude)
+        setattr(altitude_func, "step_days", 0.5)
+        times, altitudes = find_maxima(t0, t1, altitude_func)
 
         for t, alt in zip(cast(Any, times), altitudes):
-            if alt > 15:  # Standard minimum altitude for good observation
+            if alt > 15:
                 sun_alt = (
                     observer.at(t)
                     .observe(sun)
@@ -1670,4 +1800,56 @@ def find_seasons(start_date, end_date):
                 "type": "Season",
             }
         )
+    return events
+
+def find_jupiter_grs_transits(observer, start_date, end_date):
+    """
+    Finds transits of Jupiter's Great Red Spot (GRS) across the central meridian.
+    The GRS is visible for about 1 hour before and after the transit.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    jupiter = planetary.get_skyfield_obj("jupiter barycenter")
+    target_lon = astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+
+    def grs_longitude_difference(t):
+        # We handle both scalar and array Time objects from Skyfield
+        if hasattr(t, "shape") and t.shape != ():
+            # For array, we must loop as planetary.get_jupiter_system_ii_longitude
+            # uses ephem which is not vectorized for this.
+            res = np.array([grs_longitude_difference(ti) for ti in t])
+            return res
+
+        current_lon = planetary.get_jupiter_system_ii_longitude(t)
+        diff = current_lon - target_lon
+        # Wrap to -180 to 180
+        return (diff + 180) % 360 - 180
+
+    def abs_diff(t):
+        return abs(grs_longitude_difference(t))
+
+    # Jupiter rotation period is ~9.9 hours. GRS transits every 9.9 hours.
+    # Step size of 2 hours is safe to find the minimum.
+    setattr(abs_diff, "step_days", 0.08)  # ~1.9 hours
+
+    times, _ = find_minima(t0, t1, abs_diff)
+
+    events = []
+    for t in times:
+        # Check if Jupiter is above horizon during transit
+        j_obs = observer.at(t).observe(jupiter).apparent()
+        alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+        if alt.degrees > 0:
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": "Jupiter Great Red Spot Transit",
+                    "object": "Jupiter",
+                    "type": "Jupiter GRS Transit",
+                    "altitude": float(alt.degrees),
+                }
+            )
+
     return events

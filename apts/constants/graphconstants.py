@@ -305,4 +305,6 @@ _TRANSLATABLE_STRINGS = [
     _("Haumea"),
     _("Makemake"),
     _("Eris"),
+    _("Jupiter Great Red Spot Transit"),
+    _("Jupiter GRS Transit"),
 ]
