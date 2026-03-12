@@ -187,3 +187,39 @@
     - Focuser: 2" (with 1.25" adapter typically, but tube side is 2" for these DX models)
 - **Action:** Updated database entry with verified specs and added source comment.
 - **Source URL:** https://www.celestron.com/products/starsense-explorer-dx-130az
+
+## 2024-06-02 - Audit of Celestron StarSense Explorer LT series
+
+- **Items:** Celestron StarSense Explorer LT 114AZ, LT 127AZ, LT 80AZ
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:**
+    - LT 114AZ: type: 'type_telescope', mass: 4000g, focuser: 2", missing aperture/focal/CO.
+    - LT 127AZ: Missing from database.
+    - LT 80AZ: type: 'type_telescope', mass: 1800g, missing aperture/focal/CO.
+- **Verified Specs (Source: Celestron Official Website):**
+    - **LT 114AZ:**
+        - Aperture: 114mm
+        - Focal Length: 1000mm
+        - Central Obstruction: 44mm (38% by diameter)
+        - Mass (OTA): 6.6 lbs -> 2.99 kg -> 2990g
+        - Type: Newtonian Reflector
+        - Focuser: 1.25"
+    - **LT 127AZ:**
+        - Aperture: 127mm
+        - Focal Length: 1000mm
+        - Central Obstruction: 41mm (32% by diameter)
+        - Mass (OTA): 7.6 lbs -> 3.44 kg -> 3440g
+        - Type: Newtonian Reflector
+        - Focuser: 1.25"
+    - **LT 80AZ:**
+        - Aperture: 80mm
+        - Focal Length: 900mm
+        - Central Obstruction: 0mm (Refractor)
+        - Mass (OTA): 5.4 lbs -> 2.45 kg -> 2450g
+        - Type: Refractor
+        - Focuser: 1.25"
+- **Action:** Updated LT 114AZ and LT 80AZ with verified specs; added LT 127AZ with full verified specs. Added source comments.
+- **Source URLs:**
+    - https://www.celestron.com/products/starsense-explorer-lt-114az
+    - https://www.celestron.com/products/starsense-explorer-lt-127az
+    - https://www.celestron.com/products/starsense-explorer-lt-80az
