@@ -1609,3 +1609,55 @@ def find_seasons(start_date, end_date):
             }
         )
     return events
+
+def find_jupiter_grs_transits(observer, start_date, end_date):
+    """
+    Finds transits of Jupiter's Great Red Spot (GRS) across the central meridian.
+    The GRS is visible for about 1 hour before and after the transit.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    jupiter = planetary.get_skyfield_obj("jupiter barycenter")
+    target_lon = astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+
+    def grs_longitude_difference(t):
+        # We handle both scalar and array Time objects from Skyfield
+        if hasattr(t, "shape") and t.shape != ():
+            # For array, we must loop as planetary.get_jupiter_system_ii_longitude
+            # uses ephem which is not vectorized for this.
+            res = np.array([grs_longitude_difference(ti) for ti in t])
+            return res
+
+        current_lon = planetary.get_jupiter_system_ii_longitude(t)
+        diff = current_lon - target_lon
+        # Wrap to -180 to 180
+        return (diff + 180) % 360 - 180
+
+    def abs_diff(t):
+        return abs(grs_longitude_difference(t))
+
+    # Jupiter rotation period is ~9.9 hours. GRS transits every 9.9 hours.
+    # Step size of 2 hours is safe to find the minimum.
+    setattr(abs_diff, "step_days", 0.08)  # ~1.9 hours
+
+    times, _ = find_minima(t0, t1, abs_diff)
+
+    events = []
+    for t in times:
+        # Check if Jupiter is above horizon during transit
+        j_obs = observer.at(t).observe(jupiter).apparent()
+        alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+        if alt.degrees > 0:
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": "Jupiter Great Red Spot Transit",
+                    "object": "Jupiter",
+                    "type": "Jupiter GRS Transit",
+                    "altitude": float(alt.degrees),
+                }
+            )
+
+    return events

@@ -53,6 +53,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             "seasons": True,
             "jovian_moon_events": True,
             "saturn_ring_crossings": True,
+            "jupiter_grs_transits": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -64,8 +65,8 @@ class TestAstronomicalEvents(unittest.TestCase):
 
         # Create a list of mock futures for all calculation methods
         # Counting how many 'if self.event_settings.get(...):' are in get_events()
-        # It's now 27 blocks in get_events()
-        num_events = 27
+        # It's now 28 blocks in get_events()
+        num_events = 28
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
