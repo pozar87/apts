@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from typing import Any, cast, List, Tuple, Optional, Dict
+from datetime import timedelta
+from typing import Any, cast
 
 import numpy as np
 from skyfield import almanac, eclipselib
@@ -937,36 +937,90 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         return []
     times = ts.linspace(t0, t1, num_steps)
 
+    # Coarse check every 20 minutes (1 in 10 points)
+    coarse_idx = np.arange(0, num_steps, 10)
+    coarse_times = times[coarse_idx]
+
+    # Topocentric position for Moon (coarse)
+    mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
+    m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
+    moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
+
+    # Unit vectors for Moon (coarse)
+    m_au_coarse = mpos_coarse.position.au
+    u_moon_coarse = m_au_coarse / np.linalg.norm(m_au_coarse, axis=0)
+
     for star_name, star_obj in star_objects:
+        # Use ICRS position once (t0) for coarse filter - very fast.
+        # This filters out stars far from the Moon's path.
+        spos_star = earth.at(t0).observe(star_obj)
+        u_star = spos_star.position.au / np.linalg.norm(spos_star.position.au)
 
-        def is_occulted(t):
-            m = observer.at(t).observe(moon).apparent()
-            s = observer.at(t).observe(star_obj).apparent()
-            sep = m.separation_from(s).degrees
-            dist = m.distance().km
-            rad = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / dist))
-            alt, _, _ = m.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-            return (sep < rad) & (alt.degrees > 0)
+        # Dot product for coarse separations
+        dot_coarse = u_star @ u_moon_coarse
+        sep_coarse = np.degrees(np.arccos(np.clip(dot_coarse, -1.0, 1.0)))
 
-        setattr(is_occulted, "step_days", 0.05)
-        t_occ, y_occ = almanac.find_discrete(t0, t1, is_occulted)
+        # Potential occultation: coarse separation < angular radius + small margin (for parallax/aberration)
+        # Moon parallax is up to ~1 deg, aberration is ~20 arcsec.
+        # Using Topocentric Moon and ICRS Star at t0, so only need to cover Star motion (aberration/parallax).
+        # Parallax for Stars is tiny (<1"), aberration ~20". Using 0.1 deg margin for safety.
+        potential_mask = (sep_coarse < moon_rad_coarse + 0.1) & (m_alt_coarse.degrees > -1)
 
-        for i in range(0, len(t_occ), 2):
-            if i + 1 < len(t_occ):
-                ingress_t = t_occ[i]
-                egress_t = t_occ[i + 1]
-                mid_t = ts.from_datetime(
-                    ingress_t.utc_datetime()
-                    + (egress_t.utc_datetime() - ingress_t.utc_datetime()) / 2
-                )
+        if not potential_mask.any():
+            continue
+
+        # For potential candidates, perform high-precision check only near those windows
+        # Expand windows to ensure we don't miss transitions
+        window_indices = np.unique(
+            np.concatenate([
+                np.clip(coarse_idx[potential_mask] + offset, 0, num_steps - 1)
+                for offset in range(-15, 16) # +/- 30 mins around potential event
+            ])
+        )
+
+        if len(window_indices) == 0:
+            continue
+
+        fine_times = times[window_indices]
+        mpos_fine = observer.at(fine_times).observe(moon).apparent()
+        m_alt_fine, _, m_dist_fine = mpos_fine.altaz()
+        moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_fine.km))
+
+        # Topocentric observation of star for maximum precision
+        spos_fine = observer.at(fine_times).observe(star_obj).apparent()
+        separations = mpos_fine.separation_from(spos_fine).degrees
+
+        # Occultation check: separation < angular radius AND Moon above horizon
+        occ_mask = (separations < moon_rad_fine) & (m_alt_fine.degrees > 0)
+        occ_indices_local = np.where(occ_mask)[0]
+
+        if len(occ_indices_local) > 0:
+            # map back to global times indices
+            occ_indices_global = window_indices[occ_indices_local]
+            # Group consecutive indices as one event
+            groups = np.split(occ_indices_global, np.where(np.diff(occ_indices_global) > 10)[0] + 1)
+            for group in groups:
+                # To find min separation in this event, we need all separations for these indices
+                # Actually we already have separations for all window_indices
+                # Let's map global indices back to local (within window_indices)
+                local_group_indices = np.searchsorted(window_indices, group)
+                min_local_idx = local_group_indices[np.argmin(separations[local_group_indices])]
+                min_global_idx = window_indices[min_local_idx]
+
+                mid_t = times[min_global_idx]
                 refined_t, _ = _refine_conjunction(observer, moon, star_obj, mid_t)
+
+                # We need ingress/egress for the event dict
+                ingress_idx = group[0]
+                egress_idx = group[-1]
+
                 events.append(
                     {
                         "date": refined_t.utc_datetime(),
                         "object1": "Moon",
                         "object2": star_name,
-                        "ingress_time": ingress_t.utc_datetime(),
-                        "egress_time": egress_t.utc_datetime(),
+                        "ingress_time": times[ingress_idx].utc_datetime(),
+                        "egress_time": times[egress_idx].utc_datetime(),
                         "type": "Lunar Occultation",
                         "event": "Lunar Occultation",
                     }
@@ -1030,8 +1084,8 @@ def _find_satellite_flybys(
         satellites = load.tle_file(stations_url)
         satellite = next(s for s in satellites if s.name == satellite_name)
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Could not load TLE for {satellite_name}: {e}")
+        # Could be network error, or satellite not in file
+        print(f"Could not load TLEs for {satellite_name}: {e}")
         return []
 
     # Find rise/culmination/set events above `rise_altitude_threshold`
@@ -1387,12 +1441,12 @@ def find_planet_alignments(observer, start_date, end_date):
             # Find the best day in [start_i, end_i)
             # "Best" means max k, then min arc
             window = daily_results[start_i:end_i]
-            max_k = max(w[0] for w in window)
+            max_k_in_window = max(w[0] for w in window)
 
             best_j = -1
             min_arc = 360
             for j, (k, arc, _) in enumerate(window):
-                if k == max_k:
+                if k == max_k_in_window:
                     if arc < min_arc:
                         min_arc = arc
                         best_j = j
@@ -1743,55 +1797,66 @@ def find_seasons(start_date, end_date):
         )
     return events
 
-
-def find_jupiter_grs_transits(observer, start_date, end_date):
+def find_jupiter_grs_transits(
+    observer, start_date, end_date, grs_longitude=astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+):
     """
-    Finds transits of Jupiter's Great Red Spot (GRS) across the central meridian.
-    The GRS is visible for about 1 hour before and after the transit.
+    Finds when Jupiter's Great Red Spot (GRS) transits the Central Meridian (System II).
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     jupiter = planetary.get_skyfield_obj("jupiter barycenter")
-    target_lon = astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+    sun = planetary.get_skyfield_obj("sun")
 
-    def grs_longitude_difference(t):
-        # We handle both scalar and array Time objects from Skyfield
+    def cml_difference(t):
+        # Handle both scalar and array Time objects
         if hasattr(t, "shape") and t.shape != ():
-            # For array, we must loop as planetary.get_jupiter_system_ii_longitude
-            # uses ephem which is not vectorized for this.
-            res = np.array([grs_longitude_difference(ti) for ti in t])
-            return res
-
-        current_lon = planetary.get_jupiter_system_ii_longitude(t)
-        diff = current_lon - target_lon
-        # Wrap to -180 to 180
-        return (diff + 180) % 360 - 180
+            # find_minima might pass an array
+            return np.array(
+                [
+                    (planetary.get_jupiter_system_ii_longitude(ti) - grs_longitude + 180)
+                    % 360
+                    - 180
+                    for ti in t
+                ]
+            )
+        else:
+            diff = planetary.get_jupiter_system_ii_longitude(t) - grs_longitude
+            return (diff + 180) % 360 - 180
 
     def abs_diff(t):
-        return abs(grs_longitude_difference(t))
+        return np.abs(cml_difference(t))
 
-    # Jupiter rotation period is ~9.9 hours. GRS transits every 9.9 hours.
-    # Step size of 2 hours is safe to find the minimum.
-    setattr(abs_diff, "step_days", 0.08)  # ~1.9 hours
-
+    # Jupiter rotates every ~9.9 hours (~0.41 days).
+    # A step of 0.1 days (~2.4 hours) is safe to find every transit.
+    setattr(abs_diff, "step_days", 0.1)
     times, _ = find_minima(t0, t1, abs_diff)
 
     events = []
     for t in times:
-        # Check if Jupiter is above horizon during transit
+        # Check visibility: Jupiter above horizon and Sun below -6 degrees
         j_obs = observer.at(t).observe(jupiter).apparent()
         alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
         if alt.degrees > 0:
-            events.append(
-                {
-                    "date": t.utc_datetime(),
-                    "event": "Jupiter Great Red Spot Transit",
-                    "object": "Jupiter",
-                    "type": "Jupiter GRS Transit",
-                    "altitude": float(alt.degrees),
-                }
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
             )
+
+            if sun_alt <= -6:
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "event": "Jupiter Great Red Spot Transit",
+                        "object": "Jupiter",
+                        "type": "Jupiter GRS Transit",
+                        "altitude": float(alt.degrees),
+                    }
+                )
 
     return events
