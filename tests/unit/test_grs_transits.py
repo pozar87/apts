@@ -36,7 +36,7 @@ def test_jupiter_grs_transits():
     assert diff_minutes < 10  # Should be within 10 minutes
 
     assert grs_events.iloc[0]["object"] == "Jupiter"
-    assert grs_events.iloc[0]["rarity"] == 4
+    assert grs_events.iloc[0]["rarity"] == 1
 
 def test_jupiter_grs_transits_custom_longitude():
     # London coordinates

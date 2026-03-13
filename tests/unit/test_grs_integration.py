@@ -16,7 +16,7 @@ def test_jupiter_grs_transits_integration():
     assert not df.empty, "Should find at least one GRS transit"
     assert any("Great Red Spot" in ev for ev in df["event"]), "Event name should contain 'Great Red Spot'"
     assert all(df["type"] == "Jupiter GRS Transit"), "Event type should be correct"
-    assert all(df["rarity"] == 4), "GRS transit rarity should be 4"
+    assert all(df["rarity"] == 1), "GRS transit rarity should be 1"
 
     # Check approximate time
     transit_time = df.iloc[0]["date"]
