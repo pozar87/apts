@@ -301,7 +301,7 @@ class AstronomicalEvents:
         if event_type == "Jovian Moon Event":
             return 3
         if event_type == "Jupiter GRS Transit":
-            return 1
+            return 4
         return 1
 
     def calculate_space_launches(self):
