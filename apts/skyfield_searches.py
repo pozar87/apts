@@ -455,6 +455,31 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     return events
 
 
+def find_planet_messier_conjunctions(observer, start_date, end_date):
+    """Finds conjunctions between major planets and Messier objects."""
+    from .catalogs import Catalogs
+    catalogs = Catalogs()
+    planets = ["mercury", "venus", "mars barycenter", "jupiter barycenter", "saturn barycenter", "uranus barycenter", "neptune barycenter"]
+    messier_data = [(row["Messier"], row["skyfield_object"]) for _, row in catalogs.MESSIER.iterrows()]
+
+    events = []
+    for p_name in planets:
+        planet_obj = planetary.get_skyfield_obj(p_name)
+        simple_name = planetary.get_simple_name(p_name)
+        # 3.0 degrees threshold for planet-DSO conjunctions
+        conjunctions = find_conjunctions_with_stars(observer, p_name, messier_data, start_date, end_date, threshold_degrees=3.0)
+        for conj in conjunctions:
+            events.append({
+                "date": conj["date"],
+                "event": "Conjunction",
+                "object1": simple_name,
+                "object2": conj["object2"],
+                "separation_degrees": conj["separation_degrees"],
+                "type": "Planet-Messier Conjunction",
+            })
+    return events
+
+
 def find_saturn_ring_crossings(start_date, end_date):
     """
     Finds when Earth or the Sun crosses Saturn's ring plane.
@@ -1613,10 +1638,11 @@ def find_object_culminations(
         num_days = int(t1 - t0) + 1
         day_offsets = np.arange(-1, num_days + 1)
         # Using 12:00 UTC as a stable reference point for each day
+        t0_dt = cast(Any, t0.utc_datetime())
         t_refs = ts.utc(
-            t0.utc_datetime().year,
-            t0.utc_datetime().month,
-            t0.utc_datetime().day + day_offsets,
+            t0_dt.year,
+            t0_dt.month,
+            t0_dt.day + day_offsets,
             12,
         )
 
@@ -1706,7 +1732,7 @@ def find_object_culminations(
             final_times = t_final[valid_mask]
             final_alts = alts_final[valid_mask]
 
-            for t, name, alt in zip(final_times, final_names, final_alts):
+            for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
                 events.append(
                     {
                         "date": t.utc_datetime(),
