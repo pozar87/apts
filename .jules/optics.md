@@ -223,3 +223,18 @@
     - https://www.celestron.com/products/starsense-explorer-lt-114az
     - https://www.celestron.com/products/starsense-explorer-lt-127az
     - https://www.celestron.com/products/starsense-explorer-lt-80az
+
+## 2024-06-03 - Audit of Sky-Watcher Explorer 150P
+
+- **Item:** Sky-Watcher Explorer 150P Newtonian Telescope
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** type: 'type_telescope', mass: 5200g, cside_thread: '2"', missing aperture, focal length, and central obstruction.
+- **Verified Specs (Source: APM Telescopes / Manufacturer Technical Data):**
+    - Aperture: 150mm
+    - Focal Length: 750mm (f/5)
+    - Central Obstruction: 47mm
+    - Mass (OTA): 5.9 kg -> 5900g
+    - Type: Newtonian Reflector
+    - Focuser: 1.25" (Standard visual model has 1.25" focuser)
+- **Action:** Updated database entry with verified specs, corrected type, mass, and focuser size, and added source comment.
+- **Source URL:** https://www.apm-telescopes.net/en/skywatcher-explorer-150p-newtonian-reflector-ota
