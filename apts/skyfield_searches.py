@@ -339,10 +339,18 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
         setattr(is_occulted, "step_days", 0.05)
         t_occ, y_occ = almanac.find_discrete(t0, t1, is_occulted)
 
-        for i in range(0, len(t_occ), 2):
-            if i + 1 < len(t_occ):
-                ingress_t = t_occ[i]
-                egress_t = t_occ[i + 1]
+        # Handle cases where the occultation starts before t0 or ends after t1
+        t_list = list(t_occ)
+        if is_occulted(t0):
+            t_list.insert(0, t0)
+
+        if len(t_list) % 2 != 0:
+            t_list.append(t1)
+
+        for i in range(0, len(t_list), 2):
+            if i + 1 < len(t_list):
+                ingress_t = t_list[i]
+                egress_t = t_list[i + 1]
                 # Mid-point for conjunction refinement if needed
                 mid_t = ts.from_datetime(
                     ingress_t.utc_datetime()
