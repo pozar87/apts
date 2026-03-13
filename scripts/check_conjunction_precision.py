@@ -3,7 +3,6 @@ import numpy as np
 from apts.place import Place
 from apts.events import AstronomicalEvents
 from apts.constants.event_types import EventType
-from apts.skyfield_searches import find_conjunctions_between_moving_bodies
 from apts.cache import get_timescale, get_ephemeris
 from skyfield.api import Topos
 

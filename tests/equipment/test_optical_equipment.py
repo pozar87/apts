@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from apts.opticalequipment.abstract import OpticalEquipment, OutputOpticalEqipment
+from apts.opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
 from apts.opticalequipment.barlow import Barlow
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.telescope import Telescope
@@ -50,7 +50,7 @@ def test_optical_equipment_init_with_nan_vendor():
 
 
 def test_output_optical_equipment_exit_pupil_with_invalid_telescop():
-    output_eq = OutputOpticalEqipment(focal_length=25, vendor="Test Eyepiece")
+    output_eq = OutputOpticalEquipment(focal_length=25, vendor="Test Eyepiece")
     # Test with various invalid telescop objects
     assert np.isnan(
         cast(
@@ -76,7 +76,7 @@ def test_output_optical_equipment_exit_pupil_with_invalid_telescop():
 
 
 def test_output_optical_equipment_exit_pupil_with_invalid_zoom():
-    output_eq = OutputOpticalEqipment(focal_length=25, vendor="Test Eyepiece")
+    output_eq = OutputOpticalEquipment(focal_length=25, vendor="Test Eyepiece")
     telescop = MagicMock(aperture=150 * ureg.mm)
     # Test with various invalid zoom values
     assert np.isnan(
@@ -93,7 +93,7 @@ def test_output_optical_equipment_exit_pupil_with_invalid_zoom():
 
 
 def test_output_optical_equipment_brightness_with_invalid_telescop():
-    output_eq = OutputOpticalEqipment(focal_length=25, vendor="Test Eyepiece")
+    output_eq = OutputOpticalEquipment(focal_length=25, vendor="Test Eyepiece")
     # Test with various invalid telescop objects
     assert np.isnan(
         cast(
@@ -119,7 +119,7 @@ def test_output_optical_equipment_brightness_with_invalid_telescop():
 
 
 def test_output_optical_equipment_brightness_with_invalid_zoom():
-    output_eq = OutputOpticalEqipment(focal_length=25, vendor="Test Eyepiece")
+    output_eq = OutputOpticalEquipment(focal_length=25, vendor="Test Eyepiece")
     telescop = MagicMock(aperture=150 * ureg.mm)
     # Test with various invalid zoom values
     assert np.isnan(

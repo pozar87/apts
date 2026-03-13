@@ -217,11 +217,13 @@ def find_jovian_moon_events(observer, start_date, end_date):
             res = np.zeros(len(t) if is_array else 1, dtype=int)
 
             # Jupiter observed from Earth
-            j_obs = observer.at(t).observe(jupiter).apparent()
+            # We turn off light deflection by Saturn to avoid requiring Saturn ephemeris
+            # which is often not included in Jovian moon kernels.
+            j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
             alt, _, dist = j_obs.altaz()
 
             # Moon observed from Earth
-            m_obs = observer.at(t).observe(moon_obj).apparent()
+            m_obs = observer.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
             sep_e = j_obs.separation_from(m_obs).degrees
             j_rad_e = np.degrees(np.arcsin(astronomy.JUPITER_RADIUS_KM / dist.km))
 
@@ -230,8 +232,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             in_occultation = (sep_e < j_rad_e) & (m_obs.distance().km >= dist.km)
 
             # Jupiter and Moon observed from Sun
-            j_sun = sun.at(t).observe(jupiter).apparent()
-            m_sun = sun.at(t).observe(moon_obj).apparent()
+            j_sun = sun.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+            m_sun = sun.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
             sep_s = j_sun.separation_from(m_sun).degrees
             j_rad_s = np.degrees(
                 np.arcsin(astronomy.JUPITER_RADIUS_KM / j_sun.distance().km)

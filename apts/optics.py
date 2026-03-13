@@ -157,25 +157,19 @@ class OpticalPath:
         )
 
     def fov_width(self):
-        if hasattr(self.output, "field_of_view_width"):
-            return self.output.field_of_view_width(
-                self.telescope, self.zoom(), self.effective_barlow()
-            )
-        return self.fov()
+        return self.output.field_of_view_width(
+            self.telescope, self.zoom(), self.effective_barlow()
+        )
 
     def fov_height(self):
-        if hasattr(self.output, "field_of_view_height"):
-            return self.output.field_of_view_height(
-                self.telescope, self.zoom(), self.effective_barlow()
-            )
-        return self.fov()
+        return self.output.field_of_view_height(
+            self.telescope, self.zoom(), self.effective_barlow()
+        )
 
     def fov_diagonal(self):
-        if hasattr(self.output, "field_of_view_diagonal"):
-            return self.output.field_of_view_diagonal(
-                self.telescope, self.zoom(), self.effective_barlow()
-            )
-        return self.fov()
+        return self.output.field_of_view_diagonal(
+            self.telescope, self.zoom(), self.effective_barlow()
+        )
 
     def airmass(self, altitude_degrees):
         """

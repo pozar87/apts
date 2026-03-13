@@ -5,6 +5,7 @@ from apts.cache import get_timescale
 from apts.constants.event_types import EventType
 from apts.events import AstronomicalEvents
 from apts.place import Place
+from unittest.mock import patch
 from apts.skyfield_searches import find_jovian_moon_events, find_solar_longitude_time
 
 utc = timezone.utc
@@ -12,13 +13,22 @@ utc = timezone.utc
 
 class JovianMoonEventsTest(unittest.TestCase):
     def setUp(self):
+        # Point to the local jup365.bsp which is more robust
+        from apts.config import config
+        if not config.has_section("data"):
+            config.add_section("data")
+        config.set("data", "jovian_ephemeris_url", "data/jup365.bsp")
+
         # Warsaw
         self.place = Place(lat=52.2297, lon=21.0122)
         # A known time with Jovian moon events might be useful,
         # but let's just pick a window and see if it runs and finds something.
         # Jupiter is well placed in late 2024.
-        self.start_date = datetime(2024, 12, 1, 0, 0, tzinfo=utc)
-        self.end_date = datetime(2024, 12, 2, 0, 0, tzinfo=utc)
+        # December 1st, 2024:
+        # Io transit starts around 14:00 UTC
+        # Europa shadow transit starts around 18:00 UTC
+        self.start_date = datetime(2024, 12, 1, 12, 0, tzinfo=utc)
+        self.end_date = datetime(2024, 12, 1, 23, 59, tzinfo=utc)
 
     def test_find_jovian_moon_events(self):
         # Test the search function directly
@@ -29,8 +39,10 @@ class JovianMoonEventsTest(unittest.TestCase):
         # It's highly likely there are some events in a 24h period for 4 moons.
         # Even if not, we check it doesn't crash and returns a list.
         self.assertIsInstance(events, list)
+        print(f"Found {len(events)} Jovian moon events")
         if len(events) > 0:
             for event in events:
+                print(f"Event: {event}")
                 self.assertIn("object", event)
                 self.assertIn("event", event)
                 self.assertEqual(event["type"], "Jovian Moon Event")
