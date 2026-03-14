@@ -882,6 +882,98 @@ class OpticalPath:
 
         return float(major), float(minor)
 
+    def psf_peak_fraction(self, seeing_arcsec: float) -> float:
+        """
+        Calculates the fraction of a star's light falling into the peak pixel.
+        Assumes a Gaussian Point Spread Function (PSF) centered on the pixel.
+        Formula: f = erf(pixel_scale * sqrt(ln(2)) / seeing)^2
+        Source: Gaussian distribution properties.
+        """
+        import math
+
+        scale = self.pixel_scale()
+        if scale is None or seeing_arcsec <= 0:
+            return 1.0
+
+        w = scale.magnitude
+        # k = sqrt(ln(2)) approx 0.83255
+        k = numpy.sqrt(numpy.log(2))
+        fraction = math.erf(w * k / seeing_arcsec) ** 2
+        return float(fraction)
+
+    def saturation_magnitude(
+        self,
+        exposure_time: float,
+        seeing_arcsec: float = 2.0,
+        altitude: float | None = None,
+        extinction_k: float = 0.2,
+    ) -> float | None:
+        """
+        Calculates the magnitude of a star that would just saturate the sensor's peak pixel.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if (
+            not isinstance(self.output, (Camera, SmartTelescope))
+            or self.output.full_well is None
+        ):
+            return None
+
+        f_peak = self.psf_peak_fraction(seeing_arcsec)
+        if f_peak <= 0:
+            return None
+
+        # Max total electrons allowed from the star to not exceed full well in peak pixel
+        max_total_e = self.output.full_well / f_peak
+        max_rate = max_total_e / exposure_time
+
+        # We find magnitude 'm' such that object_flux(m, ...) == max_rate
+        # Reference magnitude for scaling
+        ref_mag = 10.0
+        ref_flux = self.object_flux(
+            ref_mag, altitude=altitude, extinction_k=extinction_k
+        )
+        if ref_flux is None or ref_flux == 0:
+            return None
+
+        # Relationship: flux1 / flux2 = 10 ** (0.4 * (mag2 - mag1))
+        # max_rate / ref_flux = 10 ** (0.4 * (ref_mag - m_sat))
+        m_sat = ref_mag - 2.5 * numpy.log10(max_rate / ref_flux)
+        return float(m_sat)
+
+    def saturation_time(
+        self,
+        magnitude: float,
+        seeing_arcsec: float = 2.0,
+        altitude: float | None = None,
+        extinction_k: float = 0.2,
+    ) -> Any:
+        """
+        Calculates the maximum exposure time before a star of the given magnitude saturates.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if (
+            not isinstance(self.output, (Camera, SmartTelescope))
+            or self.output.full_well is None
+        ):
+            return None
+
+        f_peak = self.psf_peak_fraction(seeing_arcsec)
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
+
+        if obj_flux is None or obj_flux == 0:
+            return None
+
+        peak_rate = obj_flux * f_peak  # e-/s in peak pixel
+        t_sat = self.output.full_well / peak_rate
+
+        return t_sat * get_unit_registry().second
+
     def rule_of_500(self):
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.

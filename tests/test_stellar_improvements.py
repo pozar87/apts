@@ -296,3 +296,77 @@ def test_eclipse_rarity_and_naming():
 
     assert "Total Solar Eclipse" in eclipse_event["event"]
     assert eclipse_event["rarity"] == 5
+
+
+def test_psf_peak_fraction():
+    """Test the PSF peak fraction calculation logic."""
+    from unittest.mock import MagicMock
+
+    class DummyQuantity:
+        def __init__(self, value):
+            self.magnitude = value
+
+    mock_output = MagicMock()
+    mock_telescope = MagicMock()
+
+    path = OpticalPath(mock_telescope, [], [], [], [], mock_output)
+    path.pixel_scale = MagicMock(return_value=DummyQuantity(2.392674))
+
+    # If seeing == pixel scale, fraction should be erf(sqrt(ln2))**2 approx 0.551
+    # Actually, with the Gaussian model:
+    # sigma = seeing / (2 * sqrt(2 * ln2))
+    # fraction = erf(pixel_scale / (sqrt(2) * 2 * sigma))**2
+    # sigma = seeing / 2.355
+    # erf(pixel_scale * 2.355 / (seeing * sqrt(8)))**2
+    # = erf(pixel_scale * sqrt(ln2) / seeing)**2
+    # For seeing = pixel scale, erf(sqrt(ln2))**2 = 0.579072 (using math.erf)
+    f_peak = path.psf_peak_fraction(seeing_arcsec=2.392674)
+    assert f_peak == pytest.approx(0.579072, rel=1e-5)
+
+
+def test_saturation_logic():
+    """Test saturation magnitude and time calculations."""
+    from unittest.mock import MagicMock
+
+    from apts.opticalequipment.camera import Camera
+
+    class DummyQuantity:
+        def __init__(self, value):
+            self.magnitude = value
+
+    mock_camera = MagicMock(spec=Camera)
+    mock_camera.full_well = 12000
+
+    mock_telescope = MagicMock()
+
+    path = OpticalPath(mock_telescope, [], [], [], [], mock_camera)
+    path.pixel_scale = MagicMock(return_value=DummyQuantity(2.0))
+    # Mock object_flux: flux(mag) = 1000 * 10**(0.4 * (10 - mag))
+    path.object_flux = MagicMock(
+        side_effect=lambda mag, **kwargs: 1000.0 * 10 ** (0.4 * (10.0 - mag))
+    )
+
+    # psf_peak_fraction(seeing=2.0) with scale=2.0 is 0.579072
+    # flux = 12000 / (0.579072 * exposure)
+    # for 1s: flux = 20722.8
+    # 20722.8 = 1000 * 10**(0.4 * (10 - m))
+    # 20.7228 = 10**(0.4 * (10 - m))
+    # log10(20.7228) = 1.3164
+    # 1.3164 / 0.4 = 3.291
+    # 10 - m = 3.291 -> m = 6.709
+    m_sat = path.saturation_magnitude(exposure_time=1.0, seeing_arcsec=2.0)
+    assert m_sat == pytest.approx(6.709, abs=0.01)
+
+    # saturation_time for mag 10 star (flux=1000)
+    # peak_rate = 1000 * 0.579072 = 579.072
+    # time = 12000 / 579.072 = 20.723
+    t_sat = path.saturation_time(magnitude=10.0, seeing_arcsec=2.0)
+    assert t_sat.magnitude == pytest.approx(20.723, abs=0.1)
+
+
+def test_seestar_s50_specs():
+    from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
+
+    s50_entry = ZwoTelescope._DATABASE["ZWO_Seestar_S50"]
+    assert s50_entry["sensor_width"] == 5.6144
+    assert s50_entry["full_well_e"] == 12000

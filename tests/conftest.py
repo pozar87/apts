@@ -118,10 +118,14 @@ def preload_expensive_data():
     """Pre-load expensive data once per test session to avoid repeated loading."""
     # Load expensive cached data at session start with test config
     # This will use the limited dwarf planet set from test config
-    get_timescale()
-    get_ephemeris()
-    get_mpcorb_data()  # Now loads only limited set from test config
-    get_hipparcos_data()
+    try:
+        get_timescale()
+        get_ephemeris()
+        get_mpcorb_data()  # Now loads only limited set from test config
+        get_hipparcos_data()
+    except (OSError, Exception):
+        # In environments without internet access, skipping download
+        pass
     return True
 
 
