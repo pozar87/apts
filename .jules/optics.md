@@ -238,3 +238,23 @@
     - Focuser: 1.25" (Standard visual model has 1.25" focuser)
 - **Action:** Updated database entry with verified specs, corrected type, mass, and focuser size, and added source comment.
 - **Source URL:** https://www.apm-telescopes.net/en/skywatcher-explorer-150p-newtonian-reflector-ota
+
+## 2024-06-04 - Audit of Sky-Watcher Skyliner series
+
+- **Items:** Sky-Watcher Skyliner 150P, 200P, 250P, 300P and their FlexTube/variants.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:** Generic `type_telescope` type. Missing explicit aperture, focal length, and central obstruction. Mass values were rounded or inaccurate.
+- **Verified Specs (Sources: Sky-Watcher Official, First Light Optics, Agena Astro):**
+    - **Skyliner 150P:** 153mm / 1200mm (f/8), CO 34.5mm, Mass 5.9kg OTA.
+    - **Skyliner 200P (inc. FlexTube):** 203mm / 1200mm (f/6), CO 47mm, Mass 11kg OTA.
+    - **Skyliner 250P:** 254mm / 1200mm (f/4.7), CO 58mm, Mass 12.5kg OTA.
+    - **Skyliner 250P FlexTube:** 254mm / 1200mm (f/4.7), CO 58mm, Mass 15kg OTA.
+    - **Skyliner 300P:** 305mm / 1500mm (f/4.9), CO 70mm, Mass 19.5kg OTA.
+    - **Skyliner 300P FlexTube:** 305mm / 1500mm (f/4.9), CO 70mm, Mass 21kg OTA.
+    - **Skyliner 350P FlexTube:** 355mm / 1650mm (f/4.65), CO 83mm, Mass 23.5kg OTA.
+    - **Skyliner 400P:** 406mm / 1800mm (f/4.4), CO 102mm, Mass 38kg OTA.
+- **Action:** Updated all models with verified physical specs, set type to `newtonian_reflector`, and added source comments. Verified with `scripts/verify_skyliner_specs.py`.
+- **Source URLs:**
+    - https://www.skywatcherusa.com/products/sky-watcher-classic-200p
+    - https://www.firstlightoptics.com/dobsonians/skywatcher-skyliner-150p-dobsonian.html
+    - https://agenaastro.com/sky-watcher-14-goto-collapsible-dobsonian-telescope-s11830.html
