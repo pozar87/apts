@@ -92,3 +92,25 @@
 - Implemented in `apts/optics.py`.
 - Verified with `tests/unit/test_field_rotation.py`.
 - Benchmarked for Seestar S50 at 45° lat/alt: ~12.5s limit for 1px blur.
+
+## 2025-05-18 - Apparent Magnitude for Solar System Bodies
+
+### Observe
+- Astrophotographers need to know the brightness of their targets (Sun, Moon, planets) to plan exposure times and check for potential sensor saturation.
+- The library was missing a unified way to calculate apparent magnitudes for these objects.
+
+### Target
+- Priority 3: Implement a new utility function.
+- Added `get_planet_magnitude` to `apts/utils/planetary.py` and exposed it via `OpticalPath.planetary_magnitude`.
+
+### Calibrate
+- **Major Planets:** Uses Skyfield's `magnitudelib`, which implements the Mallama & Hilton (2018) model.
+- **The Moon:** Implements the Krisciunas & Schaefer (1991) phase-based model: $V = -12.73 + 0.026 |\alpha| + 4 \cdot 10^{-9} \alpha^4$, with a $5 \log_{10}(\Delta / 384400)$ distance correction.
+- **The Sun:** Uses a standard inverse-square law: $V = -26.74 + 5 \log_{10}(d_{AU})$.
+- Source: Krisciunas & Schaefer (1991), Mallama & Hilton (2018), IAU 2015 Standards.
+
+### Develop
+- Integrated into `apts/utils/planetary.py`.
+- Added convenience method in `apts/optics.py`.
+- Verified with `tests/unit/test_planetary_magnitude.py`.
+- All 364 unit tests passed after compiling locale binary files.
