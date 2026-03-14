@@ -1,10 +1,10 @@
 from ..constants import OpticalType, GraphConstants
 from ..i18n import gettext_ as _
 from ..units import get_unit_registry
-from .abstract import OpticalEquipment
+from .abstract import OutputOpticalEquipment
 
 
-class Binoculars(OpticalEquipment):
+class Binoculars(OutputOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
         from ..utils import Utils
@@ -46,6 +46,10 @@ class Binoculars(OpticalEquipment):
     def __str__(self):
         # Format: <vendor> <magnification>x<objective_diameter>
         return f"{self.get_vendor()} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}"
+
+    def field_of_view(self, telescope, zoom, barlow_magnification):
+        # True Field of View = Apparent FOV / Magnification
+        return self.apparent_fov_deg / self.magnification
 
     def fov(self):
         # True Field of View = Apparent FOV / Magnification

@@ -1,11 +1,11 @@
 import numpy
 from typing import Any, cast
-from ..abstract import OutputOpticalEqipment
+from ..abstract import OutputOpticalEquipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
-class Camera(OutputOpticalEqipment):
+class Camera(OutputOpticalEquipment):
     _DATABASE = {}
 
     @classmethod
@@ -51,7 +51,7 @@ class Camera(OutputOpticalEqipment):
     '\n  Class representing DSLR camera mounted via T2 adapter\n  '
 
     def __init__(self, sensor_width: float, sensor_height: float, width: int, height: int, vendor: str = 'unknown camera', connection_type: ConnectionType = ConnectionType.T2, connection_gender: Gender = Gender.FEMALE, pixel_size: float | None = None, read_noise: float | None = None, full_well: float | None = None, quantum_efficiency: float | None = None, backfocus: float | None = None, mass: float = 0, optical_length: float = 0):
-        super(Camera, self).__init__(0, vendor, mass=mass, optical_length=optical_length)
+        super().__init__(0, vendor, mass=mass, optical_length=optical_length)
         self.connection_type = connection_type
         self.connection_gender = connection_gender
         self.sensor_width = cast(Any, sensor_width * get_unit_registry().mm)
@@ -116,7 +116,7 @@ class Camera(OutputOpticalEqipment):
         return OpticalType.IMAGE
 
     def register(self, equipment):
-        super(Camera, self)._register(equipment)
+        super()._register(equipment)
         self._register_input(equipment, self.connection_type, self.connection_gender)
         equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 

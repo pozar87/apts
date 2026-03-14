@@ -180,9 +180,9 @@ class IntermediateOpticalEquipment(OpticalEquipment):
             self._register_output(equipment, self.out_connection_type, self.out_gender)
 
 
-class OutputOpticalEqipment(OpticalEquipment):
+class OutputOpticalEquipment(OpticalEquipment):
     def __init__(self, focal_length, vendor, optical_length=0, mass=0):
-        super(OutputOpticalEqipment, self).__init__(
+        super().__init__(
             focal_length, vendor, optical_length=optical_length, mass=mass
         )
 
@@ -190,13 +190,25 @@ class OutputOpticalEqipment(OpticalEquipment):
         """Indicates if the output is primarily for visual observation."""
         return True  # Default for eyepieces etc.
 
-    def exit_pupil(self, telescop, zoom):
+    def field_of_view_width(self, telescope, zoom, barlow_magnification):
+        """Calculates horizontal field of view."""
+        return self.field_of_view(telescope, zoom, barlow_magnification)
+
+    def field_of_view_height(self, telescope, zoom, barlow_magnification):
+        """Calculates vertical field of view."""
+        return self.field_of_view(telescope, zoom, barlow_magnification)
+
+    def field_of_view_diagonal(self, telescope, zoom, barlow_magnification):
+        """Calculates diagonal field of view."""
+        return self.field_of_view(telescope, zoom, barlow_magnification)
+
+    def exit_pupil(self, telescope, zoom):
         ureg = get_unit_registry()
         # Default unit for exit pupil if telescope aperture is problematic
         default_mm_unit = ureg.mm
 
-        # Validate telescop.aperture
-        aperture = getattr(telescop, "aperture", None)
+        # Validate telescope.aperture
+        aperture = getattr(telescope, "aperture", None)
         if (
             aperture is None
             or not hasattr(aperture, "units")
@@ -222,17 +234,17 @@ class OutputOpticalEqipment(OpticalEquipment):
         # However, we rely on the try-except and dimensionality check below for broader safety.
 
         try:
-            result = telescop.aperture / zoom
+            result = telescope.aperture / zoom
             # Ensure result has the same dimensionality as aperture (length)
             # This is a safeguard; Pint should ensure this if zoom is dimensionless.
             # If zoom has units, this check becomes more critical.
-            if result.dimensionality != telescop.aperture.dimensionality:
+            if result.dimensionality != telescope.aperture.dimensionality:
                 return np.nan * aperture_units
             return result
         except Exception:  # Catch any error during division (e.g., unexpected Pint issue, DimensionalityError)
             return np.nan * aperture_units
 
-    def brightness(self, telescop, zoom):
+    def brightness(self, telescope, zoom):
         ureg = get_unit_registry()
         if not self.is_visual_output():
             return np.nan * ureg.dimensionless
@@ -247,7 +259,7 @@ class OutputOpticalEqipment(OpticalEquipment):
             # If zoom is 0, exit pupil is infinite/undefined. NaN is appropriate.
             return np.nan * ureg.dimensionless
 
-        ep_val = self.exit_pupil(telescop, zoom)  # This is now robust
+        ep_val = self.exit_pupil(telescope, zoom)  # This is now robust
 
         # After calling exit_pupil, ep_val should always be a Quantity.
         # Check if its magnitude is NaN (this means exit_pupil determined a NaN result).

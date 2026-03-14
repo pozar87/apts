@@ -49,8 +49,10 @@ def get_jovian_ephemeris():
         # In Skyfield, kernels can be merged by extending the .segments list.
         # We perform a shallow copy of the main ephemeris to avoid polluting it globally
 
-        merged_eph = cast(Any, copy.copy(eph))
-        merged_eph.segments = list(cast(Any, eph).segments) + list(eph_jovian.segments)
+        # For Jovian satellites, we prioritize the Jovian kernel
+        # We perform a shallow copy of the Jovian ephemeris and add planetary segments
+        merged_eph = cast(Any, copy.copy(eph_jovian))
+        merged_eph.segments = list(eph_jovian.segments) + list(cast(Any, eph).segments)
         return merged_eph
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to load Jovian ephemeris: {e}")

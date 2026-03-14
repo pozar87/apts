@@ -1,10 +1,10 @@
 from ..constants import GraphConstants, OpticalType
 from ..i18n import gettext_ as _
 from ..units import get_unit_registry
-from .abstract import OpticalEquipment
+from .abstract import OutputOpticalEquipment
 
 
-class NakedEye(OpticalEquipment):
+class NakedEye(OutputOpticalEquipment):
     """
     Class representing the naked eye
     """
@@ -31,6 +31,9 @@ class NakedEye(OpticalEquipment):
 
     def __str__(self):
         return f"{self.get_vendor()} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}"  # pyright: ignore
+
+    def field_of_view(self, telescope, zoom, barlow_magnification):
+        return self.apparent_fov_deg / self.magnification
 
     def fov(self):
         return self.apparent_fov_deg / self.magnification
