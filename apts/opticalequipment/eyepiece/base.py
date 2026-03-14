@@ -49,7 +49,7 @@ class Eyepiece(OutputOpticalEquipment):
     def _zoom_divider(self):
         return self.focal_length
 
-    def field_of_view(self, telescop, zoom, barlow_magnification):
+    def field_of_view(self, telescope, zoom, barlow_magnification):
         return self._field_of_view / zoom
 
     def output_type(self):

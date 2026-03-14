@@ -39,10 +39,8 @@ class JovianMoonEventsTest(unittest.TestCase):
         # It's highly likely there are some events in a 24h period for 4 moons.
         # Even if not, we check it doesn't crash and returns a list.
         self.assertIsInstance(events, list)
-        print(f"Found {len(events)} Jovian moon events")
         if len(events) > 0:
             for event in events:
-                print(f"Event: {event}")
                 self.assertIn("object", event)
                 self.assertIn("event", event)
                 self.assertEqual(event["type"], "Jovian Moon Event")
