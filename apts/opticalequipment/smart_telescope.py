@@ -94,6 +94,15 @@ class SmartTelescope(Telescope):
         )
         return size_mm.to(ureg.micrometer)
 
+    def dynamic_range(self) -> float | None:
+        """
+        Calculates the dynamic range of the smart telescope sensor in stops.
+        Formula: DR = log2(full_well / read_noise)
+        """
+        if self.full_well is None or self.read_noise is None or self.read_noise == 0:
+            return None
+        return float(numpy.log2(self.full_well / self.read_noise))
+
     def _zoom_divider(self):
         return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
 
