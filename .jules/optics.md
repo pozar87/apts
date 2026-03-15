@@ -258,3 +258,22 @@
     - https://www.skywatcherusa.com/products/sky-watcher-classic-200p
     - https://www.firstlightoptics.com/dobsonians/skywatcher-skyliner-150p-dobsonian.html
     - https://agenaastro.com/sky-watcher-14-goto-collapsible-dobsonian-telescope-s11830.html
+
+## 2024-06-05 - Audit of Celestron Omni XLT series
+
+- **Items:** Celestron Omni XLT 102, 120, 127 SCT, 150, 150R
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** Generic `type_telescope` type for most. Missing explicit aperture, focal length, and central obstruction. Placeholder or inaccurate mass values.
+- **Verified Specs (Source: Celestron Official Website):**
+    - **Omni XLT 102:** 102mm / 1000mm (f/9.8), CO 0mm, Mass 4.31kg (9.5 lbs). Type: Refractor.
+    - **Omni XLT 120:** 120mm / 1000mm (f/8.33), CO 0mm, Mass 5.67kg (12.5 lbs). Type: Refractor.
+    - **Omni XLT 127 SCT:** 127mm / 1250mm (f/9.84), CO 40mm, Mass 2.95kg (6.5 lbs). Type: Schmidt-Cassegrain.
+    - **Omni XLT 150:** 150mm / 750mm (f/5), CO 47mm, Mass 5.44kg (12 lbs). Type: Newtonian Reflector.
+    - **Omni XLT 150R:** 150mm / 750mm (f/5), CO 0mm, Mass 7.26kg (16 lbs). Type: Refractor.
+- **Action:** Updated all models with verified physical specs, set correct optical types, and added source comments.
+- **Source URLs:**
+    - https://www.celestron.com/products/omni-xlt-102-telescope
+    - https://www.celestron.com/products/omni-xlt-120-telescope
+    - https://www.celestron.com/products/omni-xlt-127-telescope
+    - https://www.celestron.com/products/omni-xlt-150-telescope
+    - https://www.celestron.com/products/omni-xlt-150-refractor-telescope
