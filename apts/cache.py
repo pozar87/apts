@@ -14,6 +14,8 @@ from skyfield.data import hipparcos, mpc
 from . import data_loader
 from .config import get_jovian_ephemeris_url, get_minor_planet_settings
 
+logger = logging.getLogger(__name__)
+
 
 @functools.lru_cache(maxsize=None)
 def get_timescale():
@@ -71,8 +73,27 @@ def get_hipparcos_data() -> pd.DataFrame:
 
     # Use the skyfield loader to cache the file to disk
     loader = Loader(data_dir)
-    with loader.open(hipparcos.URL) as f:
-        return hipparcos.load_dataframe(f)
+    try:
+        # Check if file exists locally first to avoid unnecessary downloads
+        # and potential connection issues with the Strasbourg Data Center.
+        filename = hipparcos.URL.split("/")[-1]
+        path = os.path.join(data_dir, filename)
+        if os.path.exists(path):
+            with loader.open(hipparcos.URL) as f:
+                return hipparcos.load_dataframe(f)
+
+        # Attempt download with a shorter timeout if possible via Loader (actually Loader doesn't expose timeout)
+        # We wrap in a try-except to provide better error messages and handle Refused connections.
+        with loader.open(hipparcos.URL) as f:
+            return hipparcos.load_dataframe(f)
+    except Exception as e:
+        logger.error(
+            f"Failed to load Hipparcos catalog from {hipparcos.URL}: {e}. "
+            "If this is a network issue, try running 'python scripts/download_catalogs.py' "
+            "to manually fetch the required files."
+        )
+        # Fallback to an empty DataFrame if loading fails, to allow other parts of the system to function
+        return pd.DataFrame(columns=["magnitude", "ra_degrees", "dec_degrees", "parallax_mas"])
 
 
 @functools.lru_cache(maxsize=None)
