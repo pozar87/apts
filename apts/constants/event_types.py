@@ -36,6 +36,7 @@ class EventType(str, Enum):
     SATURN_RING_CROSSINGS = "saturn_ring_crossings"
     JUPITER_GRS_TRANSITS = "jupiter_grs_transits"
     PLANET_MESSIER_CONJUNCTIONS = "planet_messier_conjunctions"
+    PLANET_STAR_CONJUNCTIONS = "planet_star_conjunctions"
 
     def __str__(self):
         return self.value
