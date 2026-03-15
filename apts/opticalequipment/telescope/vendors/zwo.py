@@ -15,7 +15,8 @@ class ZwoTelescope(Telescope):
             'mass': 2500,
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 80,
-            'read_noise_e': 1.0
+            'read_noise_e': 1.0,
+            'full_well_e': 12000
         },
         'ZWO_Seestar_S30': {
             'brand': 'ZWO',
@@ -30,7 +31,8 @@ class ZwoTelescope(Telescope):
             'mass': 1650,
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 91,
-            'read_noise_e': 0.8
+            'read_noise_e': 0.8,
+            'full_well_e': 54000
         },
         'ZWO_Seestar_S30_Pro': {
             'brand': 'ZWO',
@@ -45,7 +47,8 @@ class ZwoTelescope(Telescope):
             'mass': 1650,
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 91,
-            'read_noise_e': 0.7
+            'read_noise_e': 0.7,
+            'full_well_e': 54000
         }
     }
 

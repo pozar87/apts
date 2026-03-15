@@ -1,4 +1,5 @@
 import functools
+import math
 import operator
 from typing import Any
 
@@ -913,3 +914,93 @@ class OpticalPath:
             t = 500 / f_actual
 
         return t * get_unit_registry().second
+
+    def psf_peak_fraction(self, seeing: float) -> float | None:
+        """
+        Calculates the fraction of light from a point source that falls into the central pixel,
+        assuming a Gaussian Point Spread Function (PSF).
+        Formula: f = erf(pixel_scale * sqrt(ln2) / seeing)^2
+        Where 'seeing' is the Full Width at Half Maximum (FWHM) in arcseconds.
+        """
+        scale = self.pixel_scale()
+        if scale is None or seeing <= 0:
+            return None
+
+        # f = erf(L * sqrt(ln2) / FWHM)^2
+        # where L is pixel scale and FWHM is seeing.
+        arg = (scale.magnitude * math.sqrt(math.log(2))) / seeing
+        fraction = math.erf(arg) ** 2
+        return float(fraction)
+
+    def saturation_time(
+        self, magnitude, seeing, altitude=None, extinction_k=0.2
+    ) -> Any | None:
+        """
+        Calculates the maximum exposure time before the central pixel of a point source saturates.
+        Based on the full-well capacity of the sensor and the Gaussian PSF model.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        if self.output.full_well is None:
+            return None
+
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
+        f = self.psf_peak_fraction(seeing)
+
+        if obj_flux is None or f is None or obj_flux <= 0 or f <= 0:
+            return None
+
+        # S_peak = flux * t * f
+        # t = full_well / (flux * f)
+        t = self.output.full_well / (obj_flux * f)
+        return t * get_unit_registry().second
+
+    def saturation_magnitude(
+        self, exposure_time, seeing, altitude=None, extinction_k=0.2
+    ) -> float | None:
+        """
+        Calculates the magnitude of a point source that would just saturate the sensor
+        at the given exposure time and seeing conditions.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        if self.output.full_well is None:
+            return None
+
+        f = self.psf_peak_fraction(seeing)
+        if f is None or f <= 0 or exposure_time <= 0:
+            return None
+
+        # target_flux = full_well / (t * f)
+        target_flux = self.output.full_well / (exposure_time * f)
+
+        # flux = 0.005 * 10^(0.4 * (21.83 - m_eff)) * Area * QE * Transmission
+        # We can find m_eff using binary search or analytical inversion.
+        # Since we have object_flux(m), we know object_flux(0)
+        flux_at_zero = self.object_flux(0.0, altitude=None, extinction_k=0.0)
+        if flux_at_zero is None:
+            return None
+
+        # target_flux = flux_at_zero * 10^(-0.4 * m_eff)
+        # 10^(-0.4 * m_eff) = target_flux / flux_at_zero
+        # -0.4 * m_eff = log10(target_flux / flux_at_zero)
+        # m_eff = -2.5 * log10(target_flux / flux_at_zero)
+        m_eff = -2.5 * math.log10(target_flux / flux_at_zero)
+
+        if altitude is not None:
+            # m_eff = m + k * X
+            # m = m_eff - k * X
+            airmass_val = self.airmass(altitude)
+            return float(m_eff - extinction_k * airmass_val)
+
+        return float(m_eff)

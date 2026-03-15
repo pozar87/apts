@@ -1,3 +1,11 @@
+import sys
+from unittest.mock import MagicMock
+
+# Mock problematic dependencies before importing apts
+sys.modules["cairo"] = MagicMock()
+sys.modules["pycairo"] = MagicMock()
+sys.modules["seaborn"] = MagicMock()
+
 import numpy
 from typing import Any, cast
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
@@ -46,3 +54,8 @@ def test_seestar_s50_flux():
     assert o_flux is not None
     assert s_flux > 0
     assert o_flux > 0
+
+if __name__ == "__main__":
+    test_seestar_s50_optics()
+    test_seestar_s50_flux()
+    print("All smart telescope optics tests passed!")
