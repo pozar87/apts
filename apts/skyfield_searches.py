@@ -183,6 +183,60 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
+def find_planet_star_conjunctions(observer, start_date, end_date):
+    """Finds conjunctions between major planets and bright stars."""
+    from .catalogs import Catalogs
+
+    catalogs = Catalogs()
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+
+    # Observe all stars at once using a vectorized Star object to filter close to ecliptic
+    ts = get_timescale()
+    t_ref = ts.utc(start_date)
+
+    star_objs_all = catalogs.BRIGHT_STARS["skyfield_object"].tolist()
+    star_names_all = catalogs.BRIGHT_STARS["Name"].tolist()
+
+    stars_vector = Star(
+        ra_hours=np.array([s.ra.hours for s in star_objs_all]),
+        dec_degrees=np.array([s.dec.degrees for s in star_objs_all]),
+    )
+    spos_at_t_ref = observer.at(t_ref).observe(stars_vector)
+    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
+
+    # Planets stay within ~7 degrees of the ecliptic (except Pluto, which is not in this list)
+    mask = np.abs(lats.degrees) < 10.0
+    star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
+
+    events = []
+    for p_name in planets:
+        simple_name = planetary.get_simple_name(p_name)
+        # 2.0 degree threshold for planet-star conjunctions
+        conjunctions = find_conjunctions_with_stars(
+            observer, p_name, star_data, start_date, end_date, threshold_degrees=2.0
+        )
+        for conj in conjunctions:
+            events.append(
+                {
+                    "date": conj["date"],
+                    "event": "Conjunction",
+                    "object1": simple_name,
+                    "object2": conj["object2"],
+                    "separation_degrees": conj["separation_degrees"],
+                    "type": "Planet-Star Conjunction",
+                }
+            )
+    return events
+
+
 def find_jovian_moon_events(observer, start_date, end_date):
     """
     Finds Jovian moon events (Transits, Shadows, Occultations, Eclipses)
@@ -338,7 +392,7 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
             alt, _, _ = m.altaz(temperature_C=10.0, pressure_mbar=1013.25)
             return (sep < rad) & (alt.degrees > 0)
 
-        setattr(is_occulted, "step_days", 0.05)
+        setattr(is_occulted, "step_days", 0.005)
         t_occ, y_occ = almanac.find_discrete(t0, t1, is_occulted)
 
         # Handle cases where the occultation starts before t0 or ends after t1
@@ -1343,7 +1397,7 @@ def find_solar_eclipses(observer, start_date, end_date):
         sep = s.separation_from(m).degrees
         return sep - (s_radius + m_radius)
 
-    setattr(solar_separation, "step_days", 0.05)
+    setattr(solar_separation, "step_days", 0.005)
     times, _ = find_minima(t0, t1, solar_separation)
 
     events = []
