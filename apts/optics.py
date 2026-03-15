@@ -378,6 +378,18 @@ class OpticalPath:
         ) * 206265
         return scale * get_unit_registry().arcsecond
 
+    def dynamic_range(self) -> float | None:
+        """
+        Returns the dynamic range of the sensor in stops.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        return self.output.dynamic_range()
+
     def sampling(self, seeing: float) -> str | None:
         """
         Calculates the sampling status based on the resolution limit and the pixel scale.
