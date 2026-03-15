@@ -249,6 +249,34 @@ class TestOptics(unittest.TestCase):
         c.pixel_size.return_value = None
         self.assertIsNone(path.ideal_planetary_focal_ratio())
 
+    def test_required_subs_for_snr(self):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Mock object_flux and sky_flux
+        # If signal s=10, background b=5, read noise squared r=4
+        # target_snr = 5
+        # n_required = 5^2 * (10 + 5 + 4) / 10^2 = 25 * 19 / 100 = 4.75 -> ceil -> 5
+        path.object_flux = MagicMock(return_value=1.0)  # e-/s
+        path.sky_flux = MagicMock(return_value=0.5)  # e-/s/pixel
+        c.read_noise = 2.0  # e- (r = 4)
+
+        exposure_time = 10.0
+        # s = 1.0 * 10.0 = 10.0
+        # b = 0.5 * 10.0 * 1 = 5.0 (n_pix=1)
+        # r = 2.0^2 * 1 = 4.0 (n_pix=1)
+
+        n_subs = path.required_subs_for_snr(
+            target_snr=5.0,
+            magnitude=10.0,
+            sqm=21.0,
+            exposure_time=exposure_time,
+            n_pix=1
+        )
+
+        self.assertEqual(n_subs, 5.0)
+
 
 if __name__ == "__main__":
     unittest.main()

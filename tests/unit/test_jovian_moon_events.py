@@ -5,7 +5,6 @@ from apts.cache import get_timescale
 from apts.constants.event_types import EventType
 from apts.events import AstronomicalEvents
 from apts.place import Place
-from unittest.mock import patch
 from apts.skyfield_searches import find_jovian_moon_events, find_solar_longitude_time
 
 utc = timezone.utc
