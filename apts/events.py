@@ -14,10 +14,10 @@ from skyfield import almanac
 from skyfield.api import Star, Topos
 
 from . import cache, skyfield_searches
-from .constants import astronomy
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 from .config import get_event_settings
+from .constants import astronomy
 from .constants.event_types import EventType
 from .i18n import gettext_
 from .utils import planetary
@@ -50,24 +50,24 @@ class AstronomicalEvents:
         self.events = []
         # Load global settings from config
         config_settings = get_event_settings()
-        
+
         # Default settings: most are True, some expensive ones are False
-        self.event_settings = {
-            event.value: True for event in EventType
-        }
+        self.event_settings = {event.value: True for event in EventType}
         # Disable expensive events by default
         self.event_settings["golden_hour"] = False
         self.event_settings["blue_hour"] = False
         self.event_settings["culminations"] = False
         self.event_settings["jovian_moon_events"] = False
-        
+
         # Override with config settings if present
         for key, value in config_settings.items():
             if key in self.event_settings:
                 self.event_settings[key] = value
-        
-        logger.debug(f"AstronomicalEvents initialized. Config-based settings: {self.event_settings}")
-        
+
+        logger.debug(
+            f"AstronomicalEvents initialized. Config-based settings: {self.event_settings}"
+        )
+
         if events_to_calculate is not None:
             # If a list of events is provided, it should explicitly enable those
             # but ONLY if they are not explicitly disabled in config.
@@ -81,7 +81,7 @@ class AstronomicalEvents:
                 new_settings[e_str] = config_settings.get(e_str, True)
             self.event_settings = new_settings
             logger.debug(f"Final event_settings after override: {self.event_settings}")
-        
+
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
 
@@ -148,7 +148,9 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_star_conjunctions))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
-        if self.event_settings.get("golden_hour", False) or self.event_settings.get("blue_hour", False):
+        if self.event_settings.get("golden_hour", False) or self.event_settings.get(
+            "blue_hour", False
+        ):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
         if self.event_settings.get("culminations", False):
             futures.append(executor.submit(self.calculate_culminations))
@@ -439,10 +441,14 @@ class AstronomicalEvents:
         # Pre-compute positions for all bodies involved in conjunctions
         # Using 0.01 days (~14.4 minutes) to match the Moon's resolution in searches
         step = 0.01
-        num_steps = int((self.end_date - self.start_date).total_seconds() / (step * 86400))
+        num_steps = int(
+            (self.end_date - self.start_date).total_seconds() / (step * 86400)
+        )
         if num_steps < 2:
             num_steps = 2
-        times = self.ts.linspace(self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps)
+        times = self.ts.linspace(
+            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps
+        )
 
         precomputed = {}
         # Pre-observe all planets and the moon at the given times
@@ -565,9 +571,7 @@ class AstronomicalEvents:
                 peak_t = skyfield_searches.find_solar_longitude_time(
                     t0, t1, data["peak_lon"]
                 )
-                peak_date = (
-                    peak_t.utc_datetime() if peak_t is not None else None
-                )
+                peak_date = peak_t.utc_datetime() if peak_t is not None else None
 
                 if self.start_date <= start_date <= self.end_date:
                     event_data = {
@@ -997,7 +1001,9 @@ class AstronomicalEvents:
             event["date"] = event["date"].astimezone(utc)
             # These are extremely rare (every 13-15 years), so rarity 5
             event["rarity"] = 5
-        logger.debug(f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s")
+        logger.debug(
+            f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s"
+        )
         return events
 
     def calculate_greatest_elongations(self):
@@ -1030,22 +1036,14 @@ class AstronomicalEvents:
         )
         return events
 
-    def calculate_planet_star_conjunctions(self):
-        start_time = time.time()
-        events = skyfield_searches.find_planet_star_conjunctions(
-            self.observer, self.start_date, self.end_date
-        )
-        for event in events:
-            event["rarity"] = self._get_rarity("Planet-Star Conjunction", event)
-        logger.debug(
-            f"--- calculate_planet_star_conjunctions: {time.time() - start_time}s"
-        )
-        return events
-
     def calculate_jupiter_grs_transits(self, grs_longitude: Optional[float] = None):
         start_time = time.time()
         # Default to constant if not provided
-        lon = grs_longitude if grs_longitude is not None else astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+        lon = (
+            grs_longitude
+            if grs_longitude is not None
+            else astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+        )
         events = skyfield_searches.find_jupiter_grs_transits(
             self.observer, self.start_date, self.end_date, grs_longitude=lon
         )
