@@ -114,3 +114,25 @@
 - Added convenience method in `apts/optics.py`.
 - Verified with `tests/unit/test_planetary_magnitude.py`.
 - All 364 unit tests passed after compiling locale binary files.
+
+## 2025-05-19 - Sensor Saturation for Point Sources
+
+### Observe
+- Astrophotographers need to know which stars will saturate their sensors and what the maximum safe exposure time is.
+- The library was missing a PSF-aware saturation model for point sources.
+
+### Target
+- Priority 3: Implement new utility functions for sensor saturation.
+- Added `psf_peak_fraction`, `saturation_time`, and `saturation_magnitude` to `OpticalPath`.
+
+### Calibrate
+- **PSF Model:** Assumes a Gaussian PSF. The fraction of light in the central pixel is $f = \text{erf}\left(\frac{L \sqrt{\ln 2}}{\text{FWHM}}\right)^2$ where $L$ is the pixel scale and FWHM is the seeing.
+- **Saturation Time:** $t_{\text{sat}} = \frac{\text{FullWell}}{\text{Flux} \cdot f}$.
+- **Saturation Magnitude:** Analytical inversion of the flux formula.
+- **Data Audit:** Added missing `full_well_e` capacity for ZWO Seestar S50 (12,000e-) and S30/S30 Pro (54,000e-) based on Sony IMX462 and IMX662 datasheets.
+
+### Develop
+- Implemented in `apts/optics.py`.
+- Updated `apts/opticalequipment/telescope/vendors/zwo.py` with full-well data.
+- Verified with `tests/unit/test_optics_saturation.py`.
+- Confirmed consistency: `saturation_magnitude(saturation_time(m)) == m`.

@@ -29,7 +29,7 @@ mock_package('matplotlib.cm')
 mock_package('matplotlib.dates')
 mock_package('matplotlib.font_manager')
 
-from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
+from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope  # noqa: E402
 
 def verify():
     skyliners = [

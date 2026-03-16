@@ -42,7 +42,7 @@ def check_conjunction_precision():
         print(f"Separation at predicted time: {sep_at_predicted:.6f} degrees")
 
         # Check nearby times
-        times = ts.utc(2020, 12, 21, 18, 20 + np.linspace(-30, 30, 601) / 60.0)
+        times = ts.utc(2020, 12, 21, 18, 20 + np.linspace(-30, 30, 601) / 60.0)  # type: ignore
         seps = [get_sep(ti) for ti in times]
         min_sep = min(seps)
         min_time = times[np.argmin(seps)].utc_datetime()

@@ -38,7 +38,7 @@ class NakedEye(OutputOpticalEquipment):
     def fov(self):
         return self.apparent_fov_deg / self.magnification
 
-    def exit_pupil(self):
+    def exit_pupil(self, telescope=None, zoom=None):
         return self.objective_diameter / self.magnification
 
     def dawes_limit(self):
@@ -60,7 +60,7 @@ class NakedEye(OutputOpticalEquipment):
 
         return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)  # pyright: ignore
 
-    def brightness(self):
+    def brightness(self, telescope=None, zoom=None):
         return (self.exit_pupil().to("mm").magnitude / 7) ** 2 * 100  # pyright: ignore
 
     def register(self, equipment):

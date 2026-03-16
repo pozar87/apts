@@ -94,6 +94,20 @@ class OpticalEquipment:
     def type(self):
         return self._type
 
+    def dynamic_range(self) -> float | None:
+        """
+        Calculates the dynamic range of the equipment sensor in stops.
+        Formula: log2(full_well / read_noise)
+        """
+        import numpy
+
+        full_well = getattr(self, "full_well", None)
+        read_noise = getattr(self, "read_noise", None)
+
+        if full_well is not None and read_noise is not None and read_noise > 0:
+            return float(numpy.log2(float(full_well) / float(read_noise)))
+        return None
+
     def label(self):
         return str(self)
 
@@ -189,6 +203,10 @@ class OutputOpticalEquipment(OpticalEquipment):
     def is_visual_output(self) -> bool:
         """Indicates if the output is primarily for visual observation."""
         return True  # Default for eyepieces etc.
+
+    def field_of_view(self, telescope, zoom, barlow_magnification):
+        """Calculates field of view."""
+        raise NotImplementedError("Subclasses must implement field_of_view")
 
     def field_of_view_width(self, telescope, zoom, barlow_magnification):
         """Calculates horizontal field of view."""

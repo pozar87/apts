@@ -49,7 +49,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 500,
             "name": "ASI071MC Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -64,7 +64,7 @@ class ZwoCamera(Camera):
             "height": 3284,
             "mass": 530,
             "name": "ASI071MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.78,
             "quantum_efficiency_pct": 50,
             "read_noise_e": 2.3,
@@ -98,7 +98,7 @@ class ZwoCamera(Camera):
             "height": 3284,
             "mass": 530,
             "name": "ASI071MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.78,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 2.3,
@@ -130,7 +130,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 780,
             "name": "ASI094MC Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -145,7 +145,7 @@ class ZwoCamera(Camera):
             "height": 4928,
             "mass": 800,
             "name": "ASI094MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.88,
             "quantum_efficiency_pct": 56,
             "read_noise_e": 2.1,
@@ -166,7 +166,7 @@ class ZwoCamera(Camera):
             "height": 4928,
             "mass": 800,
             "name": "ASI094MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.88,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 2.1,
@@ -276,7 +276,7 @@ class ZwoCamera(Camera):
             "height": 4032,
             "mass": 1400,
             "name": "ASI128MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 5.97,
             "quantum_efficiency_pct": 53,
             "read_noise_e": 2.5,
@@ -297,7 +297,7 @@ class ZwoCamera(Camera):
             "height": 4032,
             "mass": 1400,
             "name": "ASI128MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 5.97,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 2.5,
@@ -378,7 +378,7 @@ class ZwoCamera(Camera):
             "height": 3520,
             "mass": 380,
             "name": "ASI1600MC Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.8,
             "quantum_efficiency_pct": 60,
             "read_noise_e": 1.2,
@@ -399,7 +399,7 @@ class ZwoCamera(Camera):
             "height": 3520,
             "mass": 410,
             "name": "ASI1600MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.8,
             "quantum_efficiency_pct": 60,
             "read_noise_e": 1.2,
@@ -454,7 +454,7 @@ class ZwoCamera(Camera):
             "height": 3520,
             "mass": 380,
             "name": "ASI1600MM Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.8,
             "quantum_efficiency_pct": 60,
             "read_noise_e": 1.2,
@@ -475,7 +475,7 @@ class ZwoCamera(Camera):
             "height": 3520,
             "mass": 410,
             "name": "ASI1600MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.8,
             "quantum_efficiency_pct": 60,
             "read_noise_e": 1.2,
@@ -645,7 +645,7 @@ class ZwoCamera(Camera):
             "height": 3672,
             "mass": 340,
             "name": "ASI183MC Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 2.4,
             "quantum_efficiency_pct": 84,
             "read_noise_e": 1.6,
@@ -666,7 +666,7 @@ class ZwoCamera(Camera):
             "height": 3672,
             "mass": 410,
             "name": "ASI183MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 2.4,
             "quantum_efficiency_pct": 84,
             "read_noise_e": 1.6,
@@ -698,7 +698,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 420,
             "name": "ASI183MC Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -734,7 +734,7 @@ class ZwoCamera(Camera):
             "height": 3672,
             "mass": 340,
             "name": "ASI183MM Cool",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 2.4,
             "quantum_efficiency_pct": 84,
             "read_noise_e": 1.6,
@@ -755,7 +755,7 @@ class ZwoCamera(Camera):
             "height": 3672,
             "mass": 410,
             "name": "ASI183MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 2.4,
             "quantum_efficiency_pct": 84,
             "read_noise_e": 1.6,
@@ -787,7 +787,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 420,
             "name": "ASI183MM Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -870,7 +870,7 @@ class ZwoCamera(Camera):
             "height": 4042,
             "mass": 1000,
             "name": "ASI2400MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 5.94,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.1,
@@ -904,7 +904,7 @@ class ZwoCamera(Camera):
             "height": 4042,
             "mass": 1000,
             "name": "ASI2400MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 5.94,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.1,
@@ -936,9 +936,9 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 4176,
-            "mass": 730,
+            "mass": 800,
             "name": "ASI2600MC Duo",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.0,
@@ -959,7 +959,7 @@ class ZwoCamera(Camera):
             "height": 4176,
             "mass": 720,
             "name": "ASI2600MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.0,
@@ -1004,7 +1004,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 730,
             "name": "ASI2600MC Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -1017,9 +1017,9 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 4176,
-            "mass": 730,
+            "mass": 800,
             "name": "ASI2600MM Duo",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.0,
@@ -1040,7 +1040,7 @@ class ZwoCamera(Camera):
             "height": 4176,
             "mass": 720,
             "name": "ASI2600MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.0,
@@ -1087,7 +1087,7 @@ class ZwoCamera(Camera):
             "height": 4176,
             "mass": 730,
             "name": "ASI2600MM Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.0,
@@ -1215,7 +1215,7 @@ class ZwoCamera(Camera):
             "height": 2822,
             "mass": 478,
             "name": "ASI294MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.63,
             "quantum_efficiency_pct": 75,
             "read_noise_e": 1.2,
@@ -1260,7 +1260,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 480,
             "name": "ASI294MC Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -1296,7 +1296,7 @@ class ZwoCamera(Camera):
             "height": 2822,
             "mass": 478,
             "name": "ASI294MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 4.63,
             "quantum_efficiency_pct": 90,
             "read_noise_e": 1.2,
@@ -1328,7 +1328,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 480,
             "name": "ASI294MM Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -1573,7 +1573,7 @@ class ZwoCamera(Camera):
             "height": 3008,
             "mass": 450,
             "name": "ASI533MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.0,
@@ -1618,7 +1618,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 460,
             "name": "ASI533MC Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "M42",
@@ -1654,7 +1654,7 @@ class ZwoCamera(Camera):
             "height": 3008,
             "mass": 450,
             "name": "ASI533MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.0,
@@ -1688,7 +1688,7 @@ class ZwoCamera(Camera):
             "height": 3008,
             "mass": 460,
             "name": "ASI533MM Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.0,
@@ -1756,7 +1756,7 @@ class ZwoCamera(Camera):
             "height": 2160,
             "mass": 470,
             "name": "ASI585MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.7,
@@ -1840,7 +1840,7 @@ class ZwoCamera(Camera):
             "height": 6388,
             "mass": 1010,
             "name": "ASI6200MC Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.2,
@@ -1887,7 +1887,7 @@ class ZwoCamera(Camera):
             "height": 6388,
             "mass": 1020,
             "name": "ASI6200MC Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.2,
@@ -1908,7 +1908,7 @@ class ZwoCamera(Camera):
             "height": 6388,
             "mass": 1010,
             "name": "ASI6200MM Pro",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.2,
@@ -1955,7 +1955,7 @@ class ZwoCamera(Camera):
             "height": 6388,
             "mass": 1020,
             "name": "ASI6200MM Pro v2",
-            "optical_length": 6.5,
+            "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 1.2,
@@ -2293,40 +2293,11 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI294MC_PRO(cls):
-        """
-        Factory method for ZWO ASI294MC Pro camera.
-        Sensor: Sony IMX294 (4/3")
-        """
-        return cls(
-            19.1,
-            13.0,
-            4144,
-            2822,
-            "ZWO ASI294MC Pro",
-            pixel_size=4.63,
-            read_noise=1.2,
-            full_well=63700,
-            quantum_efficiency=75,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_294MC_Pro"])
 
     @classmethod
     def ZWO_ASI294MM_PRO(cls):
-        """
-        Factory method for ZWO ASI294MM Pro camera.
-        Sensor: Sony IMX492 (4/3")
-        Defaulting to Bin2 mode.
-        """
-        return cls(
-            19.1,
-            13.0,
-            4144,
-            2822,
-            "ZWO ASI294MM Pro",
-            pixel_size=4.63,
-            read_noise=1.2,
-            full_well=66000,
-            quantum_efficiency=90,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_294MM_Pro"])
 
     @classmethod
     def ZWO_ASI585MC(cls):
@@ -2334,185 +2305,39 @@ class ZwoCamera(Camera):
 
     @classmethod
     def ZWO_ASI2600MC_PRO(cls):
-        """
-        Factory method for ZWO ASI2600MC Pro camera.
-        Sensor: Sony IMX571 (APS-C)
-        """
-        return cls(
-            23.5,
-            15.7,
-            6248,
-            4176,
-            "ZWO ASI2600MC Pro",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=80,
-            mass=720,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Pro"])
 
     @classmethod
     def ZWO_ASI2600MM_PRO(cls):
-        """
-        Factory method for ZWO ASI2600MM Pro camera.
-        Sensor: Sony IMX571 (Mono APS-C)
-        """
-        return cls(
-            23.5,
-            15.7,
-            6248,
-            4176,
-            "ZWO ASI2600MM Pro",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=91,
-            mass=720,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Pro"])
 
     @classmethod
     def ZWO_ASI2600MC_DUO(cls):
-        """
-        Factory method for ZWO ASI2600MC Duo camera.
-        Main Sensor: Sony IMX571 (APS-C)
-        Guide Sensor: Sony IMX220
-        """
-        return cls(
-            23.5,
-            15.7,
-            6248,
-            4176,
-            "ZWO ASI2600MC Duo",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=80,
-            mass=800,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Duo"])
 
     @classmethod
     def ZWO_ASI2600MM_DUO(cls):
-        """
-        Factory method for ZWO ASI2600MM Duo camera.
-        Main Sensor: Sony IMX571 (Mono APS-C)
-        Guide Sensor: Sony IMX220
-        """
-        return cls(
-            23.5,
-            15.7,
-            6248,
-            4176,
-            "ZWO ASI2600MM Duo",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=91,
-            mass=800,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Duo"])
 
     @classmethod
     def ZWO_ASI1600MM_PRO(cls):
-        """
-        Factory method for ZWO ASI1600MM Pro camera.
-        Sensor: Panasonic MN34230 (4/3")
-        """
-        return cls(
-            17.7,
-            13.4,
-            4656,
-            3520,
-            "ZWO ASI1600MM Pro",
-            pixel_size=3.8,
-            read_noise=1.2,
-            full_well=20000,
-            quantum_efficiency=60,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_1600MM_Pro"])
 
     @classmethod
     def ZWO_ASI533MC_PRO(cls):
-        """
-        Factory method for ZWO ASI533MC Pro camera.
-        Sensor: Sony IMX533 (1" Square)
-        """
-        return cls(
-            11.31,
-            11.31,
-            3008,
-            3008,
-            "ZWO ASI533MC Pro",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=80,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_533MC_Pro"])
 
     @classmethod
     def ZWO_ASI533MM_PRO(cls):
-        """
-        Factory method for ZWO ASI533MM Pro camera.
-        Sensor: Sony IMX533 (Mono 1" Square)
-        """
-        return cls(
-            11.31,
-            11.31,
-            3008,
-            3008,
-            "ZWO ASI533MM Pro",
-            pixel_size=3.76,
-            read_noise=1.0,
-            full_well=50000,
-            quantum_efficiency=91,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_533MM_Pro"])
 
     @classmethod
     def ZWO_ASI6200MM_PRO(cls):
-        """
-        Factory method for ZWO ASI6200MM Pro camera.
-        Sensor: Sony IMX455 (Full-Frame Mono)
-        """
-        return cls(
-            36.0,
-            24.0,
-            9576,
-            6388,
-            "ZWO ASI6200MM Pro",
-            pixel_size=3.76,
-            read_noise=1.2,
-            full_well=51400,
-            quantum_efficiency=91,
-            mass=1010,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_6200MM_Pro"])
 
     @classmethod
     def ZWO_ASI6200MC_PRO(cls):
-        """
-        Factory method for ZWO ASI6200MC Pro camera.
-        Sensor: Sony IMX455 (Full-Frame Color)
-        """
-        return cls(
-            36.0,
-            24.0,
-            9576,
-            6388,
-            "ZWO ASI6200MC Pro",
-            pixel_size=3.76,
-            read_noise=1.2,
-            full_well=51400,
-            quantum_efficiency=80,
-            mass=1010,
-            backfocus=17.5,
-            optical_length=17.5,
-        )
+        return cls.from_database(cls._DATABASE["ZWO_ASI_6200MC_Pro"])
 
     @classmethod
     def ZWO_ASI_183MC_Pro(cls):

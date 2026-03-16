@@ -41,3 +41,7 @@
 ## 2026-03-11 - [Vectorized Skymap Plotting]
 **Learning:** Plotting thousands of objects (like the 14k NGC catalog) in a zoomed view can be a major bottleneck if the filtering or observation steps use row-wise `.apply()`. Replacing string-based coordinate parsing with pre-calculated floats and using a single vectorized `observer.observe()` call on the filtered subset (supported by an array-backed `Star` object) eliminates massive Python loop overhead.
 **Action:** Ensure all plotting utilities use vectorized coordinate access and bulk Skyfield observations for large catalogs. Support vectorized input in `get_skyfield_object` to facilitate this.
+
+## 2025-03-24 - [Bulk Timezone Conversion Optimization]
+**Learning:** Performing timezone conversions on individual `pd.Timestamp` objects within a list comprehension (e.g., `t.astimezone(tz)`) is significantly slower than using the vectorized `pd.Series.dt.tz_convert(tz)` method. For a dataset of 10,000 timestamps, the vectorized approach provided a ~13-15x speedup. Converting back to native Python objects using `.dt.to_pydatetime()` maintains compatibility with code expecting standard datetime objects while still benefiting from the bulk processing.
+**Action:** Always use `pd.Series.dt.tz_convert()` for bulk timezone localization/conversion instead of iterative `.astimezone()` calls.

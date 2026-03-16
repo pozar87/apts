@@ -385,6 +385,34 @@ class EventsTest(unittest.TestCase):
             pos = kwargs["precomputed_positions"]["moon"]
             self.assertEqual(len(pos.t), 100)
 
+    def test_calculate_planet_star_conjunctions(self):
+        # Venus-Regulus conjunction in 2024: Aug 5
+        start_date = datetime(2024, 8, 4, tzinfo=utc)
+        end_date = datetime(2024, 8, 7, tzinfo=utc)
+
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_STAR_CONJUNCTIONS],
+        )
+        events_df = events_calculator.get_events()
+
+        # Find Venus-Regulus conjunction
+        conjunction = events_df[
+            (events_df["type"] == "Planet-Star Conjunction")
+            & (events_df["object1"] == "Venus")
+            & (events_df["object2"] == "Regulus")
+        ]
+
+        self.assertGreater(len(conjunction), 0)
+        event_date = conjunction.iloc[0]["date"]
+        self.assertEqual(event_date.year, 2024)
+        self.assertEqual(event_date.month, 8)
+        self.assertEqual(event_date.day, 5)
+        self.assertAlmostEqual(conjunction.iloc[0]["separation_degrees"], 1.02, delta=0.01)
+        self.assertEqual(conjunction.iloc[0]["rarity"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
