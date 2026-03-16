@@ -34,22 +34,38 @@ class Eyepiece(OutputOpticalEquipment):
         tg = Utils.map_gender(entry.get('tside_gender'))
         fl = entry.get('focal_length_mm', 20)
         fov = entry.get('field_of_view_deg', 70)
+        fs = entry.get('field_stop_mm')
         mass = entry.get('mass', 0)
         ol = entry.get('optical_length', 0)
-        return cls(fl, vendor=vendor, field_of_view=fov, connection_type=tt, connection_gender=tg or Gender.MALE, mass=mass, optical_length=ol)
+        return cls(fl, vendor=vendor, field_of_view=fov, field_stop=fs, connection_type=tt, connection_gender=tg or Gender.MALE, mass=mass, optical_length=ol)
 
     '\n  Class representing ocular\n  '
 
-    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0, optical_length=0):
+    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, field_stop=None, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0, optical_length=0):
         super().__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self._connection_type = connection_type
         self._connection_gender = connection_gender
         self._field_of_view = cast(Any, field_of_view * get_unit_registry().deg)
+        self.field_stop = cast(Any, field_stop * get_unit_registry().mm) if field_stop is not None else None
 
     def _zoom_divider(self):
         return self.focal_length
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
+        """
+        Calculates true field of view (TFoV).
+        If field stop diameter is available, it uses the accurate formula:
+        TFoV = 2 * atan(field_stop / (2 * focal_length_eff))
+        Otherwise, it falls back to the Apparent Field of View (AFoV) formula:
+        TFoV = AFoV / magnification
+        """
+        if self.field_stop is not None:
+            import numpy
+            f_eff = (telescope.focal_length * barlow_magnification).to('mm').magnitude
+            fs = self.field_stop.to('mm').magnitude
+            if f_eff > 0:
+                return 2 * numpy.degrees(numpy.arctan(fs / (2 * f_eff))) * get_unit_registry().deg
+
         return self._field_of_view / zoom
 
     def output_type(self):
