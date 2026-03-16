@@ -6,11 +6,9 @@ sys.modules["cairo"] = MagicMock()
 sys.modules["pycairo"] = MagicMock()
 sys.modules["seaborn"] = MagicMock()
 
-import pytest
-import numpy as np
-from apts.optics import OpticalPath
-from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
-from apts.units import get_unit_registry
+import pytest  # noqa: E402
+from apts.optics import OpticalPath  # noqa: E402
+from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope  # noqa: E402
 
 def test_psf_peak_fraction():
     # Setup a common configuration (e.g., Seestar S50)
