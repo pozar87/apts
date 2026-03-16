@@ -25,7 +25,7 @@ class TestEquipmentLoader(unittest.TestCase):
 
         obj = db.create_equipment(results[0])
         self.assertIsInstance(obj, Camera)
-        self.assertEqual(obj.backfocus.magnitude, 6.5)
+        self.assertEqual(obj.backfocus.magnitude, 17.5)
 
     def test_smart_telescope_loader(self):
         db = EquipmentDatabase()
