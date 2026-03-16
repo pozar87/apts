@@ -94,20 +94,6 @@ class OpticalEquipment:
     def type(self):
         return self._type
 
-    def dynamic_range(self) -> float | None:
-        """
-        Calculates the dynamic range of the equipment sensor in stops.
-        Formula: log2(full_well / read_noise)
-        """
-        import numpy
-
-        full_well = getattr(self, "full_well", None)
-        read_noise = getattr(self, "read_noise", None)
-
-        if full_well is not None and read_noise is not None and read_noise > 0:
-            return float(numpy.log2(float(full_well) / float(read_noise)))
-        return None
-
     def label(self):
         return str(self)
 
