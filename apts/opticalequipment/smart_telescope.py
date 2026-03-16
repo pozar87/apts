@@ -96,10 +96,11 @@ class SmartTelescope(Telescope):
 
     def dynamic_range(self) -> float | None:
         """
-        Calculates the dynamic range of the smart telescope sensor in stops.
-        Formula: DR = log2(full_well / read_noise)
+        Calculates the sensor's dynamic range in stops.
+        Formula: DR = log2(Full Well Capacity / Read Noise)
+        Source: https://en.wikipedia.org/wiki/Dynamic_range#Digital_photography
         """
-        if self.full_well is None or self.read_noise is None or self.read_noise == 0:
+        if self.full_well is None or self.read_noise is None or self.read_noise <= 0:
             return None
         return float(numpy.log2(self.full_well / self.read_noise))
 
