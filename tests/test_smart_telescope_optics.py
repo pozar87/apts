@@ -6,10 +6,10 @@ sys.modules["cairo"] = MagicMock()
 sys.modules["pycairo"] = MagicMock()
 sys.modules["seaborn"] = MagicMock()
 
-import numpy
-from typing import Any, cast
-from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
-from apts.optics import OpticalPath
+import numpy  # noqa: E402
+from typing import Any, cast  # noqa: E402
+from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope  # noqa: E402
+from apts.optics import OpticalPath  # noqa: E402
 
 def test_seestar_s50_optics():
     seestar = ZwoTelescope.ZWO_Seestar_S50()
