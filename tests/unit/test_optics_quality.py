@@ -1,5 +1,4 @@
 import numpy
-import pytest
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.smart_telescope import SmartTelescope
 from apts.opticalequipment.telescope import Telescope

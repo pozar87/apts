@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
 
 def test_zwo_cooled_backfocus_consistency():

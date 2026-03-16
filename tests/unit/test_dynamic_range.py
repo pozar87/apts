@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from typing import Any, cast
 from apts.opticalequipment.camera.base import Camera
 from apts.opticalequipment.smart_telescope import SmartTelescope
 from apts.opticalequipment.telescope.base import Telescope

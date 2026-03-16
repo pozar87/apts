@@ -1,9 +1,12 @@
 import functools
 import math
 import operator
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy
+
+if TYPE_CHECKING:
+    from pint import Quantity
 
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
@@ -12,7 +15,7 @@ from .units import get_unit_registry
 
 class OpticsUtils:
     @staticmethod
-    def expand(path):
+    def expand(path: list) -> tuple[Any, list, list, list, list, Any]:
         from .opticalequipment.barlow import Barlow
         from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.filter import Filter
@@ -49,13 +52,13 @@ class OpticsUtils:
         return (telescope, barlows, diagonals, filters, others, output)
 
     @staticmethod
-    def barlows_multiplications(barlows_list):
+    def barlows_multiplications(barlows_list: list[Any]) -> float:
         barlows = [barlow.magnification for barlow in barlows_list]
         # Multiply all barlows
-        return functools.reduce(operator.mul, barlows, 1)
+        return float(functools.reduce(operator.mul, barlows, 1))
 
     @staticmethod
-    def compute_zoom(telescope, barlows, output):
+    def compute_zoom(telescope: Any, barlows: list[Any], output: Any) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -66,7 +69,7 @@ class OpticsUtils:
         return telescope.focal_length * magnification / output._zoom_divider()
 
     @staticmethod
-    def calculate_airmass(altitude_degrees):
+    def calculate_airmass(altitude_degrees: float) -> float:
         """
         Calculates the relative airmass using the Kasten-Young (1989) formula.
         Formula: X = 1 / (sin(h) + 0.50572 * (h + 6.07995)^-1.6364)
@@ -78,7 +81,9 @@ class OpticsUtils:
         return 1.0 / (numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364)
 
     @staticmethod
-    def compute_field_of_view(telescope, barlows, output):
+    def compute_field_of_view(
+        telescope: Any, barlows: list[Any], output: Any
+    ) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -116,13 +121,13 @@ class OpticalPath:
         )
         return cls(telescope, barlows, diagonals, filters, others, output)
 
-    def zoom(self):
+    def zoom(self) -> "Quantity":
         return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
 
-    def effective_barlow(self):
-        return OpticsUtils.barlows_multiplications(self.barlows)
+    def effective_barlow(self) -> float:
+        return float(OpticsUtils.barlows_multiplications(self.barlows))
 
-    def label(self):
+    def label(self) -> str:
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -136,7 +141,7 @@ class OpticalPath:
             + [str(self.output)]
         )
 
-    def length(self):
+    def length(self) -> int:
         from .opticalequipment.smart_telescope import SmartTelescope
 
         # For binoculars, path is [Binoculars], expanded to (Binoculars, [], Binoculars)
@@ -152,33 +157,35 @@ class OpticalPath:
             + len(self.others)
         )
 
-    def fov(self):
+    def fov(self) -> "Quantity":
         return OpticsUtils.compute_field_of_view(
             self.telescope, self.barlows, self.output
         )
 
-    def fov_width(self):
+    def fov_width(self) -> "Quantity":
         return self.output.field_of_view_width(
             self.telescope, self.zoom(), self.effective_barlow()
         )
 
-    def fov_height(self):
+    def fov_height(self) -> "Quantity":
         return self.output.field_of_view_height(
             self.telescope, self.zoom(), self.effective_barlow()
         )
 
-    def fov_diagonal(self):
+    def fov_diagonal(self) -> "Quantity":
         return self.output.field_of_view_diagonal(
             self.telescope, self.zoom(), self.effective_barlow()
         )
 
-    def airmass(self, altitude_degrees):
+    def airmass(self, altitude_degrees: float) -> float:
         """
         Calculates the relative airmass for a given altitude in degrees.
         """
-        return OpticsUtils.calculate_airmass(altitude_degrees)
+        return float(OpticsUtils.calculate_airmass(altitude_degrees))
 
-    def atmospheric_extinction(self, magnitude, altitude_degrees, extinction_k=0.2):
+    def atmospheric_extinction(
+        self, magnitude: float, altitude_degrees: float, extinction_k: float = 0.2
+    ) -> float:
         """
         Calculates the apparent magnitude of an object accounting for atmospheric extinction.
         Formula: m_apparent = m_zero + k * X
@@ -188,7 +195,9 @@ class OpticalPath:
         airmass_val = self.airmass(altitude_degrees)
         return magnitude + extinction_k * airmass_val
 
-    def atmospheric_dispersion(self, altitude_degrees, lambda1_nm=400, lambda2_nm=700):
+    def atmospheric_dispersion(
+        self, altitude_degrees: float, lambda1_nm: float = 400, lambda2_nm: float = 700
+    ) -> "Quantity":
         """
         Calculates the atmospheric dispersion (angular separation) between two wavelengths
         at a given altitude using the Peck and Reeder (1972) refractive index formula.
@@ -217,7 +226,7 @@ class OpticalPath:
 
         return dispersion_arcsec * get_unit_registry().arcsecond
 
-    def brightness(self):
+    def brightness(self) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -235,7 +244,7 @@ class OpticalPath:
 
         return brightness
 
-    def exit_pupil(self):
+    def exit_pupil(self) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -255,18 +264,18 @@ class OpticalPath:
         # return a zero quantity to avoid crashes, though this indicates a data problem.
         return 0 * get_unit_registry().mm
 
-    def elements(self):
+    def elements(self) -> frozenset[Any]:
         """
         Return immutable set of elements - used for removing redundant optical paths
         """
-        elements = set((self.telescope, self.output))
+        elements: set[Any] = set((self.telescope, self.output))
         elements |= set(self.barlows)
         elements |= set(self.diagonals)
         elements |= set(self.filters)
         elements |= set(self.others)
         return frozenset(elements)
 
-    def total_mass(self):
+    def total_mass(self) -> "Quantity":
         from .opticalequipment.abstract import OpticalEquipment
 
         all_equipment: set[OpticalEquipment] = set()
@@ -290,7 +299,7 @@ class OpticalPath:
                 total += mass
         return total
 
-    def backfocus_gap(self):
+    def backfocus_gap(self) -> Optional["Quantity"]:
         """
         Calculate the backfocus gap.
         Returns a Quantity (distance) or None if no backfocus requirement is defined.
@@ -362,7 +371,7 @@ class OpticalPath:
 
         return (flipped_horizontally, flipped_vertically)
 
-    def pixel_scale(self) -> Any | None:
+    def pixel_scale(self) -> Optional["Quantity"]:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -418,7 +427,7 @@ class OpticalPath:
         """
         return self.sampling(seeing)
 
-    def critical_focus_zone(self, wavelength=550):
+    def critical_focus_zone(self, wavelength: float = 550) -> Optional["Quantity"]:
         if not hasattr(self.telescope, "focal_ratio"):
             return None
         # wavelength in nm
@@ -427,7 +436,7 @@ class OpticalPath:
         cfz = 2.44 * (wavelength / 1000.0) * (fr**2)
         return cfz * get_unit_registry().micrometer
 
-    def thermal_drift(self, delta_t):
+    def thermal_drift(self, delta_t: float) -> Optional["Quantity"]:
         if (
             not hasattr(self.telescope, "tube_material")
             or self.telescope.tube_material is None
@@ -439,7 +448,7 @@ class OpticalPath:
         drift = length * alpha * delta_t
         return drift * get_unit_registry().mm
 
-    def sky_flux(self, sqm):
+    def sky_flux(self, sqm: float) -> Optional[float]:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -470,7 +479,12 @@ class OpticalPath:
         )
         return flux  # e-/s/pixel
 
-    def object_flux(self, magnitude, altitude=None, extinction_k=0.2):
+    def object_flux(
+        self,
+        magnitude: float,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -508,14 +522,14 @@ class OpticalPath:
 
     def snr(
         self,
-        magnitude,
-        sqm,
-        exposure_time,
-        n_subs=1,
-        n_pix=4,
-        altitude=None,
-        extinction_k=0.2,
-    ):
+        magnitude: float,
+        sqm: float,
+        exposure_time: float,
+        n_subs: int = 1,
+        n_pix: int = 4,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -549,14 +563,14 @@ class OpticalPath:
 
     def required_subs_for_snr(
         self,
-        target_snr,
-        magnitude,
-        sqm,
-        exposure_time,
-        n_pix=4,
-        altitude=None,
-        extinction_k=0.2,
-    ):
+        target_snr: float,
+        magnitude: float,
+        sqm: float,
+        exposure_time: float,
+        n_pix: int = 4,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
         """
         Calculates the number of sub-exposures needed to reach a target SNR.
         Formula derived from SNR equation: N = SNR^2 * (S + B + R) / S^2
@@ -588,14 +602,14 @@ class OpticalPath:
 
     def required_integration_time(
         self,
-        target_snr,
-        magnitude,
-        sqm,
-        exposure_time,
-        n_pix=4,
-        altitude=None,
-        extinction_k=0.2,
-    ):
+        target_snr: float,
+        magnitude: float,
+        sqm: float,
+        exposure_time: float,
+        n_pix: int = 4,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional["Quantity"]:
         """
         Calculates the total integration time needed to reach a target SNR.
         """
@@ -612,7 +626,7 @@ class OpticalPath:
             return None
         return n_subs * exposure_time * get_unit_registry().second
 
-    def optimum_sub_exposure(self, sqm):
+    def optimum_sub_exposure(self, sqm: float) -> Optional["Quantity"]:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -631,14 +645,14 @@ class OpticalPath:
 
     def camera_limiting_magnitude(
         self,
-        sqm,
-        total_integration_time,
-        sub_exposure_time,
-        target_snr=5.0,
-        n_pix=4,
-        altitude=None,
-        extinction_k=0.2,
-    ):
+        sqm: float,
+        total_integration_time: float,
+        sub_exposure_time: float,
+        target_snr: float = 5.0,
+        n_pix: int = 4,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
         """
         Calculates the limiting magnitude for a camera based on reaching a target SNR.
         Uses binary search to find the magnitude where SNR equals target_snr.
@@ -668,7 +682,7 @@ class OpticalPath:
 
         return round(float(low), 2)
 
-    def limiting_magnitude(self, sqm, integration_time):
+    def limiting_magnitude(self, sqm: float, integration_time: float) -> float:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -729,7 +743,7 @@ class OpticalPath:
 
     def field_rotation_rate(
         self, latitude_deg: float, azimuth_deg: float, altitude_deg: float
-    ) -> Any:
+    ) -> "Quantity":
         """
         Calculates the field rotation rate for an Alt-Az mount in arcseconds per second.
         Formula: omega_rot = omega_earth * cos(lat) * cos(az) / cos(alt)
@@ -754,7 +768,7 @@ class OpticalPath:
         azimuth_deg: float,
         altitude_deg: float,
         tolerance_pixels: float = 1.0,
-    ) -> Any | None:
+    ) -> Optional["Quantity"]:
         """
         Calculates the maximum exposure time for an Alt-Az mount to avoid field rotation trailing.
         The calculation is based on the movement of the furthest pixel from the sensor center (the corners).
@@ -787,7 +801,7 @@ class OpticalPath:
 
         return t * get_unit_registry().second
 
-    def dawes_limit(self) -> Any | None:
+    def dawes_limit(self) -> Optional["Quantity"]:
         """
         Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture.
@@ -796,7 +810,9 @@ class OpticalPath:
             return self.telescope.dawes_limit()
         return None
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550) -> Any | None:
+    def rayleigh_limit(
+        self, wavelength_nm: float | int = 550
+    ) -> Optional["Quantity"]:
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture and the provided wavelength (default 550nm).
@@ -850,7 +866,7 @@ class OpticalPath:
 
         return (p_um * sampling_factor) / (1.22 * lambda_um)
 
-    def planetary_size_in_pixels(self, planet_name: str, time: Any) -> float | None:
+    def planetary_size_in_pixels(self, planet_name: str, time: Any) -> Optional[float]:
         """
         Calculates the projected size of a planet on the sensor in pixels.
         Uses the planet's angular diameter and the setup's pixel scale.
@@ -865,7 +881,9 @@ class OpticalPath:
 
         return float(angular_diameter / p_scale.magnitude)
 
-    def saturn_ring_size_in_pixels(self, time: Any) -> tuple[float, float] | None:
+    def saturn_ring_size_in_pixels(
+        self, time: Any
+    ) -> Optional[tuple[float, float]]:
         """
         Calculates the projected size of Saturn's rings on the sensor in pixels.
         Returns a tuple (major_axis_pixels, minor_axis_pixels).
@@ -883,7 +901,7 @@ class OpticalPath:
 
         return float(major), float(minor)
 
-    def rule_of_500(self):
+    def rule_of_500(self) -> "Quantity":
         """
         Calculates the maximum exposure time to avoid star trailing using the classic Rule of 500.
         Formula: t = 500 / (F_actual * crop_factor)
@@ -944,8 +962,12 @@ class OpticalPath:
         return float(fraction)
 
     def saturation_time(
-        self, magnitude, seeing, altitude=None, extinction_k=0.2
-    ) -> Any | None:
+        self,
+        magnitude: float,
+        seeing: float,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional["Quantity"]:
         """
         Calculates the maximum exposure time before the central pixel of a point source saturates.
         Based on the full-well capacity of the sensor and the Gaussian PSF model.
@@ -973,8 +995,12 @@ class OpticalPath:
         return t * get_unit_registry().second
 
     def saturation_magnitude(
-        self, exposure_time, seeing, altitude=None, extinction_k=0.2
-    ) -> float | None:
+        self,
+        exposure_time: float,
+        seeing: float,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
         """
         Calculates the magnitude of a point source that would just saturate the sensor
         at the given exposure time and seeing conditions.
