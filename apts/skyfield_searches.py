@@ -221,7 +221,8 @@ def find_planet_star_conjunctions(
     spos_at_t_ref = observer.at(t_ref).observe(stars_vector)
     lats, _, _ = spos_at_t_ref.ecliptic_latlon()
 
-    mask = np.abs(lats.degrees) < 10.0
+    # Planets stay within ~7 degrees of the ecliptic (except Pluto, which is not in this list)
+    mask = np.abs(lats.degrees) < 7.0
     star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
 
     events = []

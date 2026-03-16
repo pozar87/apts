@@ -1053,3 +1053,15 @@ class AstronomicalEvents:
             event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
         logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
         return events
+
+    def calculate_planet_star_conjunctions(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_star_conjunctions(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet-Star Conjunction", event)
+        logger.debug(
+            f"--- calculate_planet_star_conjunctions: {time.time() - start_time}s"
+        )
+        return events
