@@ -362,6 +362,12 @@ class OpticalPath:
 
         return (flipped_horizontally, flipped_vertically)
 
+    def dynamic_range(self) -> float | None:
+        """
+        Returns the dynamic range of the output equipment in stops.
+        """
+        return self.output.dynamic_range()
+
     def pixel_scale(self) -> Any | None:
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
