@@ -183,6 +183,53 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
+def find_stationary_points(observer, planet_name, start_date, end_date):
+    """
+    Finds when a planet becomes stationary in Right Ascension (transitioning
+    between direct and retrograde motion).
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    planet = planetary.get_skyfield_obj(planet_name)
+
+    def ra_velocity(t):
+        # We want to find where d(RA)/dt = 0
+        # Use a small delta for numerical differentiation
+        dt = 0.001  # ~1.4 minutes
+        t_minus = ts.tt_jd(t.tt - dt)
+        t_plus = ts.tt_jd(t.tt + dt)
+
+        ra1 = observer.at(t_minus).observe(planet).apparent().radec(epoch="date")[0].hours
+        ra2 = observer.at(t_plus).observe(planet).apparent().radec(epoch="date")[0].hours
+
+        # Handle wrap-around at 24h
+        diff = (ra2 - ra1 + 12) % 24 - 12
+        return diff / (2 * dt)
+
+    # Stationary points occur when RA velocity is zero.
+    # We search for zero-crossings of the velocity.
+    def ra_state(t):
+        return (ra_velocity(t) > 0).astype(int)
+
+    # Planets stay retrograde for weeks/months, so 2 days step is safe.
+    setattr(ra_state, "step_days", 2.0)
+    times, codes = almanac.find_discrete(t0, t1, ra_state)
+
+    events = []
+    for t, code in zip(times, codes):
+        direction = "Stationary (Direct)" if code == 1 else "Stationary (Retrograde)"
+        events.append(
+            {
+                "date": t.utc_datetime(),
+                "event": direction,
+                "object": planetary.get_simple_name(planet_name),
+                "type": "Planet Stationary Point",
+            }
+        )
+    return events
+
+
 def find_planet_star_conjunctions(
     observer,
     start_date,
@@ -288,7 +335,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             # We turn off light deflection by Saturn to avoid requiring Saturn ephemeris
             # which is often not included in Jovian moon kernels.
             j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
-            alt, _, dist = j_obs.altaz()
+            # Include atmospheric refraction for high-precision visibility check
+            alt, _, dist = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
             # Moon observed from Earth
             m_obs = observer.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
@@ -313,8 +361,17 @@ def find_jovian_moon_events(observer, start_date, end_date):
                 m_sun.distance().km >= j_sun.distance().km
             )
 
-            # Visibility from Earth (Jupiter above horizon)
-            visible = alt.degrees > 0
+            # Sun altitude for visibility check
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+
+            # Visibility from Earth: Jupiter above horizon and Sun below -6 degrees
+            visible = (alt.degrees > 0) & (sun_alt <= -6)
 
             if hasattr(t, "shape"):
                 res[visible & in_transit] = 1
@@ -322,7 +379,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
                 res[visible & in_shadow] = 3
                 res[visible & in_eclipse] = 4
             else:
-                if visible:
+                if visible[0] if hasattr(visible, "shape") else visible:
                     if in_transit:
                         res[0] = 1
                     elif in_occultation:
@@ -394,6 +451,8 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     ]
     events = []
 
+    sun = planetary.get_skyfield_obj("sun")
+
     for p_name in planets:
         planet = planetary.get_skyfield_obj(p_name)
         simple_name = planetary.get_simple_name(p_name)
@@ -404,7 +463,14 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
             sep = m.separation_from(p).degrees
             rad = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m.distance().km))
             alt, _, _ = m.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-            return (sep < rad) & (alt.degrees > 0)
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+            return (sep < rad) & (alt.degrees > 0) & (sun_alt <= -6)
 
         setattr(is_occulted, "step_days", 0.005)
         t_occ, y_occ = almanac.find_discrete(t0, t1, is_occulted)
@@ -810,6 +876,7 @@ def find_conjunctions_with_stars(
     start_date,
     end_date,
     threshold_degrees=1.0,
+    precomputed_positions=None,
 ):
     """
     Finds conjunctions between a moving body and multiple fixed stars.
@@ -821,7 +888,6 @@ def find_conjunctions_with_stars(
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    body = planetary.get_skyfield_obj(body_name)
 
     # Hourly check
     num_hours = int((t1 - t0) * 24)
@@ -829,8 +895,25 @@ def find_conjunctions_with_stars(
         return []
     times = ts.linspace(t0, t1, num_hours)
 
-    # Vectorized observation for moving body (e.g. Moon)
-    pos_body = observer.at(times).observe(body).apparent()
+    # Always get the body object as it is used for refinement later
+    body = planetary.get_skyfield_obj(body_name)
+
+    # Use precomputed positions if available, otherwise observe
+    if precomputed_positions and body_name.lower() in precomputed_positions:
+        pos_body_all = precomputed_positions[body_name.lower()]
+        # Verify length matches
+        if (
+            hasattr(pos_body_all, "t")
+            and hasattr(pos_body_all.t, "shape")
+            and len(pos_body_all.t.shape) > 0
+            and pos_body_all.t.shape[0] == len(times)
+        ):
+            pos_body = pos_body_all
+        else:
+            pos_body = observer.at(times).observe(body).apparent()
+    else:
+        pos_body = observer.at(times).observe(body).apparent()
+
     # Unit vectors for body at all times: (3, M)
     body_au = pos_body.position.au
     u_body = body_au / np.linalg.norm(body_au, axis=0)
@@ -1113,8 +1196,21 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
         spos_fine = observer.at(fine_times).observe(star_obj).apparent()
         separations = mpos_fine.separation_from(spos_fine).degrees
 
-        # Occultation check: separation < angular radius AND Moon above horizon
-        occ_mask = (separations < moon_rad_fine) & (m_alt_fine.degrees > 0)
+        # Sun altitude for visibility check
+        sun_alts = (
+            observer.at(fine_times)
+            .observe(planetary.get_skyfield_obj("sun"))
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+
+        # Occultation check: separation < angular radius AND Moon above horizon AND Sun below -6 degrees
+        occ_mask = (
+            (separations < moon_rad_fine)
+            & (m_alt_fine.degrees > 0)
+            & (sun_alts <= -6)
+        )
         occ_indices_local = np.where(occ_mask)[0]
 
         if len(occ_indices_local) > 0:

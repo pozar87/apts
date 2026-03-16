@@ -92,6 +92,20 @@ class AstronomicalEvents:
         start_time = time.time()
         executor = self.executor
         futures = []
+
+        # Pre-compute positions for moving bodies often used in multiple searches
+        # to improve overall calculation efficiency.
+        # Currently, the Moon is used in many conjunction searches.
+        num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
+        precomputed = {}
+        if num_hours >= 2:
+            times = self.ts.linspace(
+                self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
+            )
+            moon_obj = planetary.get_skyfield_obj("moon")
+            # Using .apparent() to share high-precision positions
+            precomputed["moon"] = self.observer.at(times).observe(moon_obj).apparent()
+
         if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
         if self.event_settings.get("conjunctions"):
@@ -113,9 +127,13 @@ class AstronomicalEvents:
                 executor.submit(self.calculate_mercury_inferior_conjunctions)
             )
         if self.event_settings.get("moon_messier_conjunctions"):
-            futures.append(executor.submit(self.calculate_moon_messier_conjunctions))
+            futures.append(
+                executor.submit(self.calculate_moon_messier_conjunctions, precomputed)
+            )
         if self.event_settings.get("moon_star_conjunctions"):
-            futures.append(executor.submit(self.calculate_moon_star_conjunctions))
+            futures.append(
+                executor.submit(self.calculate_moon_star_conjunctions, precomputed)
+            )
         if self.event_settings.get("space_launches"):
             futures.append(executor.submit(self.calculate_space_launches))
         if self.event_settings.get("space_events"):
@@ -146,6 +164,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_messier_conjunctions))
         if self.event_settings.get("planet_star_conjunctions"):
             futures.append(executor.submit(self.calculate_planet_star_conjunctions))
+        if self.event_settings.get("planet_stationary_points"):
+            futures.append(executor.submit(self.calculate_planet_stationary_points))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -307,6 +327,8 @@ class AstronomicalEvents:
             return 3
         if event_type == "Jupiter GRS Transit":
             return 1
+        if event_type == "Planet Stationary Point":
+            return 3
         return 1
 
     def calculate_space_launches(self):
@@ -728,7 +750,7 @@ class AstronomicalEvents:
         )
         return events
 
-    def calculate_moon_messier_conjunctions(self):
+    def calculate_moon_messier_conjunctions(self, precomputed_positions=None):
         start_time = time.time()
         messier_objects_to_check = [
             "M1",
@@ -825,6 +847,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=4.0,
+            precomputed_positions=precomputed_positions,
         )
 
         events = []
@@ -847,7 +870,7 @@ class AstronomicalEvents:
         )
         return events
 
-    def calculate_moon_star_conjunctions(self):
+    def calculate_moon_star_conjunctions(self, precomputed_positions=None):
         start_time = time.time()
 
         # Filter stars close to the ecliptic (within 10 degrees)
@@ -877,6 +900,7 @@ class AstronomicalEvents:
             self.start_date,
             self.end_date,
             threshold_degrees=5.0,
+            precomputed_positions=precomputed_positions,
         )
 
         events = []
@@ -1061,5 +1085,34 @@ class AstronomicalEvents:
             event["rarity"] = self._get_rarity("Planet-Star Conjunction", event)
         logger.debug(
             f"--- calculate_planet_star_conjunctions: {time.time() - start_time}s"
+        )
+        return events
+
+    def calculate_planet_stationary_points(self):
+        start_time = time.time()
+        events = []
+        planets = [
+            "mercury",
+            "venus",
+            "mars barycenter",
+            "jupiter barycenter",
+            "saturn barycenter",
+            "uranus barycenter",
+            "neptune barycenter",
+            "pluto barycenter",
+        ]
+        # Optimization: Avoid nested executor submission to prevent potential deadlocks
+        for p in planets:
+            found_events = skyfield_searches.find_stationary_points(
+                self.observer,
+                p,
+                self.start_date,
+                self.end_date,
+            )
+            for event in found_events:
+                event["rarity"] = self._get_rarity("Planet Stationary Point", event)
+            events.extend(found_events)
+        logger.debug(
+            f"--- calculate_planet_stationary_points: {time.time() - start_time}s"
         )
         return events
