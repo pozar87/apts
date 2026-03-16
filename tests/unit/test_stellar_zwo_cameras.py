@@ -35,7 +35,7 @@ class TestStellarZwoCameras(unittest.TestCase):
         self.assertEqual(cam.width, 3840)
         self.assertEqual(cam.full_well, 40000)
         self.assertEqual(cam.mass.to('gram').magnitude, 470)
-        self.assertEqual(cam.optical_length.to('mm').magnitude, 6.5)
+        self.assertEqual(cam.optical_length.to('mm').magnitude, 17.5)
 
 if __name__ == '__main__':
     unittest.main()
