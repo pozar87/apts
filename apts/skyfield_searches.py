@@ -183,8 +183,16 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
-def find_planet_star_conjunctions(observer, start_date, end_date):
-    """Finds conjunctions between major planets and bright stars."""
+def find_planet_star_conjunctions(
+    observer,
+    start_date,
+    end_date,
+    threshold_degrees=2.0,
+):
+    """
+    Finds conjunctions between major planets and bright stars.
+    Vectorized over stars for each planet for high performance.
+    """
     from .catalogs import Catalogs
 
     catalogs = Catalogs()
@@ -198,7 +206,8 @@ def find_planet_star_conjunctions(observer, start_date, end_date):
         "neptune barycenter",
     ]
 
-    # Observe all stars at once using a vectorized Star object to filter close to ecliptic
+    # Filter stars close to the ecliptic (within 10 degrees)
+    # The planets stay close to the ecliptic (mostly within 7 degrees)
     ts = get_timescale()
     t_ref = ts.utc(start_date)
 
@@ -213,15 +222,19 @@ def find_planet_star_conjunctions(observer, start_date, end_date):
     lats, _, _ = spos_at_t_ref.ecliptic_latlon()
 
     # Planets stay within ~7 degrees of the ecliptic (except Pluto, which is not in this list)
-    mask = np.abs(lats.degrees) < 10.0
+    mask = np.abs(lats.degrees) < 7.0
     star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
 
     events = []
     for p_name in planets:
         simple_name = planetary.get_simple_name(p_name)
-        # 2.0 degree threshold for planet-star conjunctions
         conjunctions = find_conjunctions_with_stars(
-            observer, p_name, star_data, start_date, end_date, threshold_degrees=2.0
+            observer,
+            p_name,
+            star_data,
+            start_date,
+            end_date,
+            threshold_degrees=threshold_degrees,
         )
         for conj in conjunctions:
             events.append(
@@ -234,6 +247,7 @@ def find_planet_star_conjunctions(observer, start_date, end_date):
                     "type": "Planet-Star Conjunction",
                 }
             )
+
     return events
 
 

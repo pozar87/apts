@@ -258,3 +258,48 @@
     - https://www.skywatcherusa.com/products/sky-watcher-classic-200p
     - https://www.firstlightoptics.com/dobsonians/skywatcher-skyliner-150p-dobsonian.html
     - https://agenaastro.com/sky-watcher-14-goto-collapsible-dobsonian-telescope-s11830.html
+
+## 2024-06-05 - Audit of Celestron Omni XLT series
+
+- **Items:** Celestron Omni XLT 102, 120, 127 SCT, 150, 150R
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:** Generic `type_telescope` type for most. Missing explicit aperture, focal length, and central obstruction. Placeholder or inaccurate mass values.
+- **Verified Specs (Source: Celestron Official Website):**
+    - **Omni XLT 102:** 102mm / 1000mm (f/9.8), CO 0mm, Mass 4.31kg (9.5 lbs). Type: Refractor.
+    - **Omni XLT 120:** 120mm / 1000mm (f/8.33), CO 0mm, Mass 5.67kg (12.5 lbs). Type: Refractor.
+    - **Omni XLT 127 SCT:** 127mm / 1250mm (f/9.84), CO 40mm, Mass 2.95kg (6.5 lbs). Type: Schmidt-Cassegrain.
+    - **Omni XLT 150:** 150mm / 750mm (f/5), CO 47mm, Mass 5.44kg (12 lbs). Type: Newtonian Reflector.
+    - **Omni XLT 150R:** 150mm / 750mm (f/5), CO 0mm, Mass 7.26kg (16 lbs). Type: Refractor.
+- **Action:** Updated all models with verified physical specs, set correct optical types, and added source comments.
+- **Source URLs:**
+    - https://www.celestron.com/products/omni-xlt-102-telescope
+    - https://www.celestron.com/products/omni-xlt-120-telescope
+    - https://www.celestron.com/products/omni-xlt-127-telescope
+    - https://www.celestron.com/products/omni-xlt-150-telescope
+    - https://www.celestron.com/products/omni-xlt-150-refractor-telescope
+
+## 2024-06-06 - Audit of Celestron OTA and Beginner series
+
+- **Items:** Celestron C6, C8, C9.25, C11, C14 OTA assemblies, FirstScope 76, and Inspire 100AZ.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/celestron.py`
+- **Initial State:**
+    - OTA models had generic `type_telescope` type, missing aperture/focal/CO, and rounded/inaccurate mass values.
+    - FirstScope 76: missing aperture/focal/CO, incorrect mass (1000g).
+    - Inspire 100AZ: missing aperture/focal/CO, incorrect mass (3500g).
+- **Verified Specs (Source: Celestron Official Website):**
+    - **C6 OTA:** 150/1500mm, CO 56mm, Mass 4.54kg (10 lbs). Type: Schmidt-Cassegrain.
+    - **C8 OTA:** 203.2/2032mm, CO 64mm, Mass 5.67kg (12.5 lbs). Type: Schmidt-Cassegrain.
+    - **C9.25 OTA:** 234.95/2350mm, CO 85mm, Mass 9.07kg (20 lbs). Type: Schmidt-Cassegrain.
+    - **C11 OTA:** 279.4/2800mm, CO 95mm, Mass 12.47kg (27.5 lbs). Type: Schmidt-Cassegrain.
+    - **C14 OTA:** 355.6/3910mm, CO 114mm, Mass 20.41kg (45 lbs). Type: Schmidt-Cassegrain.
+    - **FirstScope 76:** 76/300mm, CO 28mm, Mass 0.64kg (1.4 lbs OTA). Type: Newtonian Reflector.
+    - **Inspire 100AZ:** 100/660mm, CO 0mm, Mass 2.2kg (4.9 lbs OTA). Type: Refractor.
+- **Action:** Updated all models with verified physical specs and documentation sources. Created `tests/unit/test_celestron_ota_specs.py` for verification.
+- **Source URLs:**
+    - https://www.celestron.com/products/c6-optical-tube-assembly-cg-5-dovetail
+    - https://www.celestron.com/products/c8-optical-tube-assembly-cg-5-dovetail
+    - https://www.celestron.com/products/c9-1-4-optical-tube-assembly-cg-5-dovetail
+    - https://www.celestron.com/products/c11-optical-tube-assembly-cge-dovetail
+    - https://www.celestron.com/products/c14-optical-tube-assembly-cge-dovetail
+    - https://www.celestron.com/products/firstscope-telescope
+    - https://www.celestron.com/products/inspire-100az-refractor-telescope

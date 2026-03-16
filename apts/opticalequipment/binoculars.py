@@ -55,7 +55,7 @@ class Binoculars(OutputOpticalEquipment):
         # True Field of View = Apparent FOV / Magnification
         return self.apparent_fov_deg / self.magnification
 
-    def exit_pupil(self):
+    def exit_pupil(self, telescope=None, zoom=None):
         return self.objective_diameter / self.magnification
 
     def dawes_limit(self):
@@ -93,7 +93,7 @@ class Binoculars(OutputOpticalEquipment):
 
         return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)
 
-    def brightness(self):
+    def brightness(self, telescope=None, zoom=None):
         # Relative brightness: (Exit Pupil (mm) / 7mm)^2 * 100
         # Assuming 7mm is the max human eye pupil diameter
         return (self.exit_pupil().to("mm").magnitude / 7) ** 2 * 100

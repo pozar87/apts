@@ -190,6 +190,10 @@ class OutputOpticalEquipment(OpticalEquipment):
         """Indicates if the output is primarily for visual observation."""
         return True  # Default for eyepieces etc.
 
+    def field_of_view(self, telescope, zoom, barlow_magnification):
+        """Calculates field of view."""
+        raise NotImplementedError("Subclasses must implement field_of_view")
+
     def field_of_view_width(self, telescope, zoom, barlow_magnification):
         """Calculates horizontal field of view."""
         return self.field_of_view(telescope, zoom, barlow_magnification)
