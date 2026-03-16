@@ -927,6 +927,17 @@ class OpticalPath:
 
         return t * get_unit_registry().second
 
+    def dynamic_range(self) -> float | None:
+        """
+        Calculates the dynamic range of the camera or smart telescope in the optical path.
+        """
+        from .opticalequipment.camera import Camera
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if isinstance(self.output, (Camera, SmartTelescope)):
+            return self.output.dynamic_range()
+        return None
+
     def psf_peak_fraction(self, seeing: float) -> float | None:
         """
         Calculates the fraction of light from a point source that falls into the central pixel,
