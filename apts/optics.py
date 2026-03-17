@@ -407,7 +407,7 @@ class OpticalPath:
         ) * 206265
         return scale * get_unit_registry().arcsecond
 
-    def sampling(self, seeing: float) -> str | None:
+    def sampling(self, seeing: float) -> Optional[str]:
         """
         Calculates the sampling status based on the resolution limit and the pixel scale.
         The resolution limit is the larger of the atmospheric seeing and the telescope's diffraction limit (Rayleigh limit).
@@ -441,7 +441,7 @@ class OpticalPath:
         else:
             return "Over-sampled"
 
-    def sampling_status(self, seeing: float = 2.0) -> str | None:
+    def sampling_status(self, seeing: float = 2.0) -> Optional[str]:
         """
         Returns the sampling status as a string for a given seeing in arcseconds.
         """
@@ -646,7 +646,19 @@ class OpticalPath:
             return None
         return n_subs * exposure_time * get_unit_registry().second
 
-    def optimum_sub_exposure(self, sqm: float) -> Optional["Quantity"]:
+    def optimum_sub_exposure(
+        self, sqm: float, swamp_factor: float = 10.0
+    ) -> Optional["Quantity"]:
+        """
+        Calculates the exposure time at which the sky noise (shot noise from the sky background)
+        becomes dominant over the sensor's read noise by a given 'swamp factor'.
+
+        A common rule of thumb is a swamp factor of 10.0, meaning sky noise power is 10x
+        the read noise power (sky noise is ~3.16x read noise), resulting in a
+        signal-to-noise ratio loss of only ~5% compared to an infinite exposure.
+
+        Formula: t = (swamp_factor * read_noise^2) / sky_flux
+        """
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -657,10 +669,10 @@ class OpticalPath:
             or self.output.read_noise is None
         ):
             return None
-        # Time where SkyNoise^2 = 10 * ReadNoise^2
+        # Time where SkyNoise^2 = swamp_factor * ReadNoise^2
         # SkyNoise^2 = Flux * Time
-        # Time = 10 * ReadNoise^2 / Flux
-        time = (10 * self.output.read_noise**2) / flux
+        # Time = swamp_factor * ReadNoise^2 / Flux
+        time = (swamp_factor * self.output.read_noise**2) / flux
         return time * get_unit_registry().second
 
     def camera_limiting_magnitude(
@@ -761,6 +773,32 @@ class OpticalPath:
         t = k * (35 * n + 30 * p) / (f * cos_dec)
         return t * get_unit_registry().second
 
+    def estimated_star_trailing(
+        self, exposure_time: float, declination: float = 0
+    ) -> Optional[float]:
+        """
+        Estimates the amount of star trailing in pixels for a given exposure time and declination
+        assuming a stationary (non-tracking) mount.
+
+        Formula: trailing_pixels = (sidereal_rate * exposure_time * cos(declination)) / pixel_scale
+        Where sidereal_rate is ~15.041 arcseconds per second.
+        """
+        scale_q = self.pixel_scale()
+        if scale_q is None:
+            return None
+
+        scale = scale_q.magnitude  # arcsec/pixel
+        if scale == 0:
+            return 0.0
+
+        # Sidereal rotation rate in arcseconds per second
+        sidereal_rate = 15.041067
+
+        cos_dec = math.cos(math.radians(declination))
+        trailing_arcsec = sidereal_rate * exposure_time * cos_dec
+
+        return float(trailing_arcsec / scale)
+
     def field_rotation_rate(
         self, latitude_deg: float, azimuth_deg: float, altitude_deg: float
     ) -> "Quantity":
@@ -857,7 +895,7 @@ class OpticalPath:
         diameter = 2.44 * lambda_um * fr
         return diameter * get_unit_registry().micrometer
 
-    def ideal_planetary_focal_ratio(self, k: float = 5.0) -> float | None:
+    def ideal_planetary_focal_ratio(self, k: float = 5.0) -> Optional[float]:
         """
         Calculates the ideal focal ratio for planetary imaging based on the pixel size.
         Rule of thumb: Ideal focal ratio is between 3x and 5x the pixel size in microns.
@@ -879,7 +917,7 @@ class OpticalPath:
 
     def nyquist_focal_ratio(
         self, wavelength_nm: float = 550, sampling_factor: float = 3.0
-    ) -> float | None:
+    ) -> Optional[float]:
         """
         Calculates the ideal focal ratio for a given wavelength and sampling factor based on the Nyquist criterion.
         Formula: f/D = (p * s) / (1.22 * lambda)
@@ -969,7 +1007,7 @@ class OpticalPath:
 
         return t * get_unit_registry().second
 
-    def dynamic_range(self) -> float | None:
+    def dynamic_range(self) -> Optional[float]:
         """
         Calculates the dynamic range of the camera or smart telescope in the optical path.
         """
@@ -980,7 +1018,7 @@ class OpticalPath:
             return self.output.dynamic_range()
         return None
 
-    def psf_peak_fraction(self, seeing: float) -> float | None:
+    def psf_peak_fraction(self, seeing: float) -> Optional[float]:
         """
         Calculates the fraction of light from a point source that falls into the central pixel,
         assuming a Gaussian Point Spread Function (PSF).

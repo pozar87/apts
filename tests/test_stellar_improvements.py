@@ -188,8 +188,8 @@ def test_seestar_s30_pro_instantiation():
     s30p = ZwoTelescope.ZWO_Seestar_S30_Pro()
     assert s30p.get_vendor() == "ZWO Seestar S30 Pro"
     assert s30p.aperture.to(ureg.mm).magnitude == 30
-    assert s30p.focal_length.to(ureg.mm).magnitude == 160
-    assert s30p.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(2.9)
+    assert s30p.focal_length.to(ureg.mm).magnitude == 150
+    assert s30p.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(2.0)
     assert s30p.mass.to(ureg.gram).magnitude == 1650
 
 

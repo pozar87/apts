@@ -1530,6 +1530,27 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3840,
         },
+        "ZWO_ASI_585MM_Pro": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 40000,
+            "height": 2160,
+            "mass": 470,
+            "name": "ASI585MM Pro",
+            "optical_length": 17.5,
+            "pixel_size_um": 2.9,
+            "quantum_efficiency_pct": 91,
+            "read_noise_e": 0.7,
+            "reversible": False,
+            "sensor_height_mm": 6.26,
+            "sensor_width_mm": 11.13,
+            "tside_gender": "Female",
+            "tside_thread": "M42",
+            "type": "type_camera",
+            "width": 3840,
+        },
         "ZWO_ASI_485MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -2890,3 +2911,7 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI_585MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_Pro"])
+
+    @classmethod
+    def ZWO_ASI_585MM_Pro(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_585MM_Pro"])
