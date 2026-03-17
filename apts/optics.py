@@ -821,6 +821,22 @@ class OpticalPath:
             return self.telescope.rayleigh_limit(wavelength_nm=wavelength_nm)
         return None
 
+    def airy_disk_diameter(self, wavelength_nm: float = 550) -> Optional["Quantity"]:
+        """
+        Calculates the physical diameter of the Airy disk (first dark ring) in micrometers.
+        Formula: D = 2.44 * lambda * f/D
+        Where lambda is the wavelength and f/D is the effective focal ratio.
+        This represents the diffraction-limited spot size on the focal plane.
+        """
+        if not hasattr(self.telescope, "focal_ratio"):
+            return None
+        # Effective focal ratio
+        fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
+        # wavelength in nm -> micron
+        lambda_um = wavelength_nm / 1000.0
+        diameter = 2.44 * lambda_um * fr
+        return diameter * get_unit_registry().micrometer
+
     def ideal_planetary_focal_ratio(self, k: float = 5.0) -> float | None:
         """
         Calculates the ideal focal ratio for planetary imaging based on the pixel size.
