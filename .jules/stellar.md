@@ -136,3 +136,23 @@
 - Updated `apts/opticalequipment/telescope/vendors/zwo.py` with full-well data.
 - Verified with `tests/unit/test_optics_saturation.py`.
 - Confirmed consistency: `saturation_magnitude(saturation_time(m)) == m`.
+
+## 2025-05-20 - Airy Disk Diameter Calculation
+
+### Observe
+- Astrophotographers need to compare the physical size of the diffraction-limited spot (Airy disk) with their sensor's pixel size to determine if they are diffraction-limited or sensor-limited.
+- The library was missing a direct way to calculate the Airy disk diameter on the focal plane.
+
+### Target
+- Priority 3: Implement a new utility function.
+- Added `airy_disk_diameter` to `OpticalPath`.
+
+### Calibrate
+- Formula: $D_{Airy} = 2.44 \cdot \lambda \cdot f/D$ where $\lambda$ is wavelength and $f/D$ is the effective focal ratio.
+- Source: Fundamental optics formula for circular aperture diffraction.
+- Returns a `pint.Quantity` in micrometers.
+
+### Develop
+- Implemented in `apts/optics.py`.
+- Verified with `tests/unit/test_airy_disk.py`.
+- Example: f/10 at 550nm yields ~13.42µm.
