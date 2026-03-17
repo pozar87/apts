@@ -229,7 +229,7 @@ class Equipment:
                         path.ideal_planetary_focal_ratio() or numpy.nan,
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
-                        path.length(),  # length() in OpticalPath returns int
+                        path.elements(),  # length() in OpticalPath returns int
                         flipped_horizontally,
                         flipped_vertically,
                         pixel_scale_magnitude,
