@@ -298,7 +298,8 @@ class NikonCamera(Camera):
         'Nikon_D5200': {
             'brand': 'Nikon', 'name': 'D5200', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 505,
             'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
-            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.6, 'width': 6000, 'height': 4000, 'pixel_size_um': 3.92,
+            'read_noise_e': 2.4, 'full_well_e': 33927, 'quantum_efficiency_pct': 52
         },
         'Nikon_D600': {
             'brand': 'Nikon', 'name': 'D600', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 760,
