@@ -275,6 +275,26 @@ class OpticalPath:
         elements |= set(self.others)
         return frozenset(elements)
 
+    def component_list(self) -> list[Any]:
+        """
+        Return ordered list of all optical components in the path.
+        """
+        from .opticalequipment.binoculars import Binoculars
+        from .opticalequipment.naked_eye import NakedEye
+        from .opticalequipment.smart_telescope import SmartTelescope
+
+        if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
+            return [self.telescope]
+
+        return (
+            [self.telescope]
+            + self.barlows
+            + self.diagonals
+            + self.filters
+            + self.others
+            + [self.output]
+        )
+
     def total_mass(self) -> "Quantity":
         from .opticalequipment.abstract import OpticalEquipment
 

@@ -14,6 +14,7 @@ class EquipmentTableLabels:
     RANGE = "Range"
     BRIGHTNESS = "Brightness"
     ELEMENTS = "Elements"
+    COMPONENTS = "Components"
     FLIPPED_HORIZONTALLY = "Flipped Horizontally"
     FLIPPED_VERTICALLY = "Flipped Vertically"
     PIXEL_SCALE = "Pixel scale"
