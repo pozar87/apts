@@ -24,6 +24,33 @@ from apts.utils import ConnectionType
 from tests import setup_equipment
 
 
+def test_equipment_data_components_column():
+    e = Equipment()
+    t = Telescope(150, 750, vendor="TestTelescope")
+    b = Barlow(2, vendor="TestBarlow")
+    ey = Eyepiece(10, vendor="TestEyepiece")
+    
+    e.register(t)
+    e.register(b)
+    e.register(ey)
+    
+    data = e.data()
+    
+    # Filter for the path with all three components
+    # Elements should be 3
+    # Components should be [t, b, ey]
+    full_path_row = data[data[EquipmentTableLabels.ELEMENTS] == 3].iloc[0]
+    
+    assert full_path_row[EquipmentTableLabels.ELEMENTS] == 3
+    components = full_path_row[EquipmentTableLabels.COMPONENTS]
+    assert isinstance(components, list)
+    assert len(components) == 3
+    assert components[0] == t
+    assert components[1] == b
+    assert components[2] == ey
+    assert EquipmentTableLabels.COMPONENTS in data.columns
+
+
 def test_flipped_view():
     # Telescope only is flipped horizontally and vertically
     e = Equipment()

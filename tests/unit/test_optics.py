@@ -65,7 +65,7 @@ class TestOptics(unittest.TestCase):
         zoom = path.zoom()
         self.assertEqual(cast(Any, zoom).magnitude, 10)
 
-    def test_optical_path_elements(self):
+    def test_optical_path_elements(self) -> None:
         t = MagicMock()
         e = MagicMock()
         b = MagicMock()
@@ -74,7 +74,27 @@ class TestOptics(unittest.TestCase):
         elements = path.elements()
         self.assertEqual(elements, frozenset({t, e, b}))
 
-    def test_get_image_orientation_binos(self):
+    def test_optical_path_component_list(self) -> None:
+        t = MagicMock(spec=Telescope)
+        e = MagicMock(spec=Eyepiece)
+        b = MagicMock(spec=Barlow)
+        d = MagicMock(spec=Diagonal)
+        f = MagicMock(spec=Filter)
+        
+        # Order: Telescope, Barlows, Diagonals, Filters, Others, Output
+        path = OpticalPath(t, [b], [d], [f], [], e)
+        
+        components = path.component_list()
+        self.assertEqual(components, [t, b, d, f, e])
+
+    def test_optical_path_component_list_binos(self) -> None:
+        binos = MagicMock(spec=Binoculars)
+        path = OpticalPath(binos, [], [], [], [], binos)
+        
+        components = path.component_list()
+        self.assertEqual(components, [binos])
+
+    def test_get_image_orientation_binos(self) -> None:
         binos = MagicMock(spec=Binoculars)
         path = OpticalPath(binos, [], [], [], [], binos)
         self.assertEqual(path.get_image_orientation(), (False, False))

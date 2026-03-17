@@ -116,6 +116,7 @@ class Equipment:
             EquipmentTableLabels.RANGE,
             EquipmentTableLabels.BRIGHTNESS,
             EquipmentTableLabels.ELEMENTS,
+            EquipmentTableLabels.COMPONENTS,
             EquipmentTableLabels.FLIPPED_HORIZONTALLY,
             EquipmentTableLabels.FLIPPED_VERTICALLY,
             EquipmentTableLabels.PIXEL_SCALE,
@@ -229,7 +230,8 @@ class Equipment:
                         path.ideal_planetary_focal_ratio() or numpy.nan,
                         path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
                         path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
-                        path.elements(),  # length() in OpticalPath returns int
+                        path.length(),  # length() in OpticalPath returns int
+                        path.component_list(),  # component_list() in OpticalPath returns list of objects
                         flipped_horizontally,
                         flipped_vertically,
                         pixel_scale_magnitude,
