@@ -1,6 +1,7 @@
 import unittest
+from datetime import datetime
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from apts.optics import OpticsUtils, OpticalPath
 from apts.opticalequipment.binoculars import Binoculars
 from apts.units import get_unit_registry
@@ -276,6 +277,46 @@ class TestOptics(unittest.TestCase):
         )
 
         self.assertEqual(n_subs, 5.0)
+
+    @patch("apts.utils.planetary.get_planet_angular_diameter")
+    def test_planetary_size_in_pixels(self, mock_diameter):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Mock pixel scale to be 1.0 arcsec/pixel
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 1.0
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+
+            # Mock angular diameter to be 45.0 arcseconds (Jupiter)
+            mock_diameter.return_value = 45.0
+
+            size = path.planetary_size_in_pixels("jupiter", datetime(2025, 1, 1))
+            self.assertEqual(size, 45.0)
+
+    @patch("apts.utils.planetary.get_saturn_ring_details")
+    def test_saturn_ring_size_in_pixels(self, mock_details):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Mock pixel scale to be 0.5 arcsec/pixel
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 0.5
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+
+            # Mock ring details
+            mock_details.return_value = {
+                "major_axis_arcsec": 40.0,
+                "minor_axis_arcsec": 15.0
+            }
+
+            major, minor = path.saturn_ring_size_in_pixels(datetime(2025, 1, 1))
+            # 40.0 / 0.5 = 80.0
+            # 15.0 / 0.5 = 30.0
+            self.assertEqual(major, 80.0)
+            self.assertEqual(minor, 30.0)
 
 
 if __name__ == "__main__":
