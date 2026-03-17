@@ -55,6 +55,12 @@ class Binoculars(OutputOpticalEquipment):
         # True Field of View = Apparent FOV / Magnification
         return self.apparent_fov_deg / self.magnification
 
+    def _zoom_divider(self):
+        # For binoculars, the focal length is not typically used for zoom calculations.
+        # But if compute_zoom is called, it returns telescope.focal_length * mag / output._zoom_divider().
+        # For consistency, return a value that makes the math work, or just follow Eyepiece's pattern.
+        return self.focal_length
+
     def exit_pupil(self, telescope=None, zoom=None):
         return self.objective_diameter / self.magnification
 
