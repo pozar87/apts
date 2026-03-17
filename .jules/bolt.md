@@ -45,3 +45,7 @@
 ## 2025-03-24 - [Bulk Timezone Conversion Optimization]
 **Learning:** Performing timezone conversions on individual `pd.Timestamp` objects within a list comprehension (e.g., `t.astimezone(tz)`) is significantly slower than using the vectorized `pd.Series.dt.tz_convert(tz)` method. For a dataset of 10,000 timestamps, the vectorized approach provided a ~13-15x speedup. Converting back to native Python objects using `.dt.to_pydatetime()` maintains compatibility with code expecting standard datetime objects while still benefiting from the bulk processing.
 **Action:** Always use `pd.Series.dt.tz_convert()` for bulk timezone localization/conversion instead of iterative `.astimezone()` calls.
+
+## 2025-03-25 - [Vectorized Weather Condition Evaluation]
+**Learning:** Evaluating multiple weather conditions (thresholds) on large datasets using `iterrows()` is extremely slow. Replacing it with vectorized Pandas boolean masks for the initial "good/bad" pass and then using `.to_dict('records')` on the bad-hour subset for localized string generation provides a ~2.6x to ~4x speedup. Iterating over a list of dicts is significantly faster than using `.iloc` inside a Python loop for small subsets.
+**Action:** Use vectorized boolean masks for bulk condition checks. If row-specific logic (like string formatting) is still needed, apply it only to filtered subsets converted to Python primitives (e.g., list of dicts).
