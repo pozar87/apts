@@ -303,3 +303,29 @@
     - https://www.celestron.com/products/c14-optical-tube-assembly-cge-dovetail
     - https://www.celestron.com/products/firstscope-telescope
     - https://www.celestron.com/products/inspire-100az-refractor-telescope
+
+## 2024-06-07 - Audit of Meade LX85, LX200, and LX600 ACF series
+
+- **Items:** Meade LX85 ACF 6", 8"; LX200 ACF 8", 10", 12", 14", 16"; LX600 ACF 10", 12", 14".
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/meade.py`
+- **Initial State:**
+    - Rounded aperture values (e.g., 203mm for 8", 254mm for 10").
+    - Rounded or inaccurate focal lengths (e.g., 2000mm for LX200 8", should be 2032mm).
+    - Rounded mass values for several models.
+- **Verified Specs (Sources: Meade Official Manuals, Agena Astro, OPT Telescopes):**
+    - **LX85 ACF 6":** 152.4mm / 1524mm, CO 56mm, Mass 4.49kg (9.9 lbs OTA).
+    - **LX85 ACF 8":** 203.2mm / 2032mm, CO 76mm, Mass 5.76kg (12.7 lbs OTA).
+    - **LX200 ACF 8":** 203.2mm / 2032mm, CO 76mm, Mass 6.35kg (14 lbs OTA).
+    - **LX200 ACF 10":** 254.0mm / 2540mm, CO 94mm, Mass 11.79kg (26 lbs OTA).
+    - **LX200 ACF 12":** 304.8mm / 3048mm, CO 102mm, Mass 16.33kg (36 lbs OTA).
+    - **LX200 ACF 14":** 355.6mm / 3556mm, CO 117mm, Mass 22.68kg (50 lbs OTA).
+    - **LX200 ACF 16":** 406.4mm / 4064mm, CO 127mm, Mass 30.39kg (67 lbs OTA).
+    - **LX600 ACF 10" (f/8):** 254.0mm / 2032mm, CO 121mm, Mass 12.25kg (27 lbs OTA).
+    - **LX600 ACF 12" (f/8):** 304.8mm / 2438mm, CO 146mm (48% dia), Mass 16.78kg (37 lbs OTA).
+    - **LX600 ACF 14" (f/8):** 355.6mm / 2845mm, CO 171mm (48% dia), Mass 23.13kg (51 lbs OTA).
+- **Action:** Updated all models with verified physical specs and accurate mass/obstruction data. Added source comments. Created `tests/unit/test_meade_specs.py` for verification.
+- **Source URLs:**
+    - https://agenaastro.com/meade-lx200-telescope-specifications.html
+    - https://agenaastro.com/meade-lx600-telescope-specifications.html
+    - https://optcorp.com/products/lx85-6-acf-ota-only
+    - https://eu.levenhuk.com/catalogue/telescopes/meade-lx85-8-acf-ota/
