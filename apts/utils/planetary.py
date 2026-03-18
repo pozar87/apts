@@ -1,6 +1,6 @@
 import ephem
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 from types import SimpleNamespace
@@ -398,6 +398,35 @@ def get_jupiter_system_ii_longitude(time: Any) -> float:
     Returns Jupiter's Central Meridian Longitude (System II) in degrees.
     Uses ephem for calculation.
     """
-    _JUPITER_EPHEM.compute(time.utc_datetime())
+    # Calculate light-travel time from Jupiter to Earth
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    jupiter = eph["jupiter barycenter"]
+
+    # Position of Jupiter as seen from Earth
+    astrometric = cast(Any, earth).at(time).observe(jupiter)
+    lt_days = astrometric.light_time
+
+    # Account for light-travel time by subtracting it from the observation time
+    # This evaluates the rotation state of Jupiter at the moment the light left it.
+    # Note: We must re-instantiate ephem.Jupiter to ensure 'compute' doesn't use
+    # cached internal values that might interfere with light-time adjustment.
+    t_light = time.utc_datetime() - timedelta(days=lt_days)
+
+    j = ephem.Jupiter(t_light)
     # ephem returns longitude in radians, convert to degrees
-    return float(np.degrees(_JUPITER_EPHEM.cmlII))
+    return float(np.degrees(float(j.cmlII)))
+
+
+def get_jupiter_grs_longitude(time: Any) -> float:
+    """
+    Returns the projected longitude of the Great Red Spot (System II) for a given time.
+    Uses a linear drift model based on recent observations.
+    Reference: 79.6° on 2026-03-18 with a drift of approx +0.8° per month.
+    """
+    ref_date = datetime(2026, 3, 18, tzinfo=timezone.utc)
+    ref_lon = 79.6
+    drift_per_day = 0.8 / 30.44  # approx 0.8 degrees per month
+
+    dt = (time.utc_datetime() - ref_date).total_seconds() / 86400.0
+    return (ref_lon + dt * drift_per_day) % 360

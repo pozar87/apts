@@ -2027,11 +2027,64 @@ def find_seasons(start_date, end_date):
     return events
 
 
+def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_degrees=2.0):
+    """
+    Finds conjunctions between planets and the Sun.
+    Distinguishes between inferior and superior conjunctions for inner planets.
+    """
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+
+    conjunctions = []
+    for p_name in planets:
+        planet_conjs = find_conjunctions(
+            observer, p_name, "sun", start_date, end_date, threshold_degrees
+        )
+        simple_name = planetary.get_simple_name(p_name)
+
+        for conj in planet_conjs:
+            t = get_timescale().from_datetime(conj["date"])
+            p_obj = planetary.get_skyfield_obj(p_name)
+            sun_obj = planetary.get_skyfield_obj("sun")
+
+            # Get distances to determine conjunction type
+            p_dist = observer.at(t).observe(p_obj).distance().au
+            sun_dist = observer.at(t).observe(sun_obj).distance().au
+
+            if p_name in ["mercury", "venus"]:
+                if p_dist < sun_dist:
+                    kind = "Inferior Conjunction"
+                else:
+                    kind = "Superior Conjunction"
+            else:
+                kind = "Conjunction"
+
+            conj.update(
+                {
+                    "event": f"{simple_name} Solar {kind}",
+                    "object1": simple_name,
+                    "object2": "Sun",
+                    "type": "Planet Solar Conjunction",
+                    "conjunction_kind": kind,
+                }
+            )
+            conjunctions.append(conj)
+
+    return conjunctions
+
+
 def find_jupiter_grs_transits(
     observer,
     start_date,
     end_date,
-    grs_longitude=astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II,
+    grs_longitude=None,
 ):
     """
     Finds when Jupiter's Great Red Spot (GRS) transits the Central Meridian (System II).
@@ -2050,7 +2103,11 @@ def find_jupiter_grs_transits(
                 [
                     (
                         planetary.get_jupiter_system_ii_longitude(ti)
-                        - grs_longitude
+                        - (
+                            grs_longitude
+                            if grs_longitude is not None
+                            else planetary.get_jupiter_grs_longitude(ti)
+                        )
                         + 180
                     )
                     % 360
@@ -2059,7 +2116,12 @@ def find_jupiter_grs_transits(
                 ]
             )
         else:
-            diff = planetary.get_jupiter_system_ii_longitude(t) - grs_longitude
+            lon = (
+                grs_longitude
+                if grs_longitude is not None
+                else planetary.get_jupiter_grs_longitude(t)
+            )
+            diff = planetary.get_jupiter_system_ii_longitude(t) - lon
             return (diff + 180) % 360 - 180
 
     def abs_diff(t):
