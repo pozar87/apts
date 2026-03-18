@@ -1122,9 +1122,10 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     star_names_all = stars_to_check["Name"].tolist()
 
     # Observe all stars at once using a vectorized Star object
+    # Optimization: use pre-calculated float columns instead of list comprehension over Star objects
     stars_vector = Star(
-        ra_hours=np.array([s.ra.hours for s in star_objs_all]),
-        dec_degrees=np.array([s.dec.degrees for s in star_objs_all]),
+        ra_hours=stars_to_check["ra_hours"].to_numpy(),
+        dec_degrees=stars_to_check["dec_degrees"].to_numpy(),
     )
     spos_at_t0_all = earth.at(t0).observe(stars_vector)
     lats, _, _ = spos_at_t0_all.ecliptic_latlon()
