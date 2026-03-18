@@ -882,9 +882,10 @@ class AstronomicalEvents:
         star_names_all = self.catalogs.BRIGHT_STARS["Name"].tolist()
 
         # Observe all stars at once using a vectorized Star object
+        # Optimization: use pre-calculated float columns instead of list comprehension over Star objects
         stars_vector = Star(
-            ra_hours=np.array([s.ra.hours for s in star_objs_all]),
-            dec_degrees=np.array([s.dec.degrees for s in star_objs_all]),
+            ra_hours=self.catalogs.BRIGHT_STARS["ra_hours"].to_numpy(),
+            dec_degrees=self.catalogs.BRIGHT_STARS["dec_degrees"].to_numpy(),
         )
         spos_at_t_ref = self.observer.at(t_ref).observe(stars_vector)
         lats, _, _ = spos_at_t_ref.ecliptic_latlon()
