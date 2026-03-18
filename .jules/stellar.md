@@ -156,3 +156,23 @@
 - Implemented in `apts/optics.py`.
 - Verified with `tests/unit/test_airy_disk.py`.
 - Example: f/10 at 550nm yields ~13.42µm.
+
+## 2026-03-18 - Jupiter GRS Longitude and Virtuoso GTi Specs
+
+### Observe
+- The `JUPITER_GRS_LONGITUDE_SYSTEM_II` constant was outdated (66.0, from early 2025). GRS drifts ~16°/year.
+- The Sky-Watcher Virtuoso GTi 150P database entry used generic types and lacked explicit optical specs.
+
+### Target
+- Priority 1: Correct an inaccuracy in a physical constant.
+- Priority 2: Add/correct popular equipment specifications.
+
+### Calibrate
+- **Jupiter GRS:** Projected transit at ~12:21 UTC on March 18, 2026 (Project Pluto). Calculated CML II at this time is ~79.6°. Setting constant to 80.0.
+- **Virtuoso GTi 150P:** 150mm aperture, 750mm focal length, 48mm secondary diameter (32% obstruction). Newtonian reflector design.
+- Source: Project Pluto (GRS), Manufacturer official specs (Virtuoso).
+
+### Develop
+- Updated `apts/constants/astronomy.py` with the corrected GRS longitude and updated the comment.
+- Updated `apts/opticalequipment/telescope/vendors/sky_watcher.py` with verified Virtuoso GTi 150P specifications.
+- Verified hardware spec parsing and GRS transit predictor with unit tests.

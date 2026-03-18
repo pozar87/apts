@@ -1019,17 +1019,20 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'newtonian_reflector'},  # Verified via Sky-Watcher official specs http://skywatcher.com/product/heritage-p130/
-        'Sky_Watcher_Virtuoso_GTi_150P': {'bf_role': '',
+        'Sky_Watcher_Virtuoso_GTi_150P': {'aperture_mm': 150,
+         'bf_role': '',
          'brand': 'Sky-Watcher',
+         'central_obstruction_mm': 48,
          'cside_gender': 'Female',
          'cside_thread': '2"',
+         'focal_length_mm': 750,
          'mass': 4800,
          'name': 'Virtuoso GTi 150P',
          'optical_length': 0,
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_telescope'},
+         'type': 'newtonian_reflector'},  # Verified via manufacturer specs
     }
 
     @classmethod
