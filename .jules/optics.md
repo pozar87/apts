@@ -329,3 +329,29 @@
     - https://agenaastro.com/meade-lx600-telescope-specifications.html
     - https://optcorp.com/products/lx85-6-acf-ota-only
     - https://eu.levenhuk.com/catalogue/telescopes/meade-lx85-8-acf-ota/
+
+## 2024-06-08 - Audit of Takahashi Telescopes
+
+- **Items:** Takahashi FSQ, FC, TSA, TOA, Epsilon, and Mewlon series.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/takahashi.py`
+- **Initial State:**
+    - Refractors missing explicit `central_obstruction_mm: 0`.
+    - Epsilon series had incorrect or missing central obstruction values (secondary minor axis).
+    - Some mass values were slightly off or rounded.
+- **Verified Specs (Sources: Takahashi Europe, Takahashi America, Agena Astro, Astronomics):**
+    - **FSQ-85EDP:** Aperture 85mm, FL 450mm, Mass 3.6kg OTA, CO 0mm.
+    - **FSQ-106ED:** Aperture 106mm, FL 530mm, Mass 6.8kg OTA, CO 0mm.
+    - **Epsilon-130D:** Aperture 130mm, FL 430mm, CO 63mm.
+    - **Epsilon-160ED:** Aperture 160mm, FL 530mm, CO 63mm.
+    - **Epsilon-180ED:** Aperture 180mm, FL 500mm, Mass 10.7kg, CO 80mm.
+    - **Mewlon-180C:** Aperture 180mm, FL 2160mm, CO 54mm (30% dia).
+    - **Mewlon-210:** Aperture 210mm, FL 2415mm, CO 65mm (31% dia).
+- **Action:** Updated all Takahashi models with verified physical specs, explicit central obstruction values, and added source comments. Verified with `tests/unit/test_takahashi_specs.py`.
+- **Source URLs:**
+    - https://takahashi-europe.com/catalog/refractors/wide-field-astrographs/fsq-85edx
+    - https://takahashi-europe.com/catalog/refractors/wide-field-astrographs/fsq-106edx4
+    - https://takahashi-europe.com/catalog/reflectors/epsilon/epsilon-130d
+    - https://takahashi-europe.com/catalog/reflectors/epsilon/epsilon-160ed
+    - https://takahashi-europe.com/catalog/reflectors/epsilon/epsilon-180ed
+    - https://takahashi-europe.com/catalog/reflectors/mewlon/mewlon-180c
+    - https://takahashi-europe.com/catalog/reflectors/mewlon/mewlon-210
