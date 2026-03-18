@@ -738,14 +738,26 @@ class OpticalPath:
 
         return base + time_factor + sqm_factor
 
-    def npf_rule(self, declination: float = 0, k: float = 1.0) -> Optional["Quantity"]:
+    def npf_rule(
+        self, declination: float = 0, k: float = 1.0, simplified: bool = False
+    ) -> Optional["Quantity"]:
         """
         Calculates the maximum exposure time to avoid star trailing using the NPF rule.
         The NPF rule is more accurate than the 'Rule of 500' for modern high-resolution sensors.
-        Formula: t = k * (35 * N + 30 * P) / (F * cos(declination))
-        Where N is f-number, P is pixel pitch (microns), F is focal length (mm),
-        and k is a tolerance factor (default 1.0 for pinpoint stars).
-        Source: Frédéric Michaud
+
+        Two versions are available:
+        1. Complete (default): t = k * (16.9 * N + 0.10 * F + 13.7 * P) / (F * cos(dec))
+        2. Simplified: t = k * (35 * N + 30 * P) / (F * cos(dec))
+
+        Where:
+        - N: f-number (focal ratio)
+        - P: pixel pitch in micrometers (µm)
+        - F: focal length in millimeters (mm)
+        - dec: declination of the target in degrees
+        - k: tolerance factor (1.0 for pinpoint stars, up to 3.0 for slightly elongated)
+
+        Source: Frédéric Michaud, Société Astronomique du Havre (SAH)
+        https://sahavre.fr/wp/regle-npf-rule/
         """
         if not hasattr(self.output, "pixel_size") or not hasattr(
             self.telescope, "focal_ratio"
@@ -772,7 +784,11 @@ class OpticalPath:
             # We return a 1-hour cap (3600s) to avoid infinity.
             return 3600 * get_unit_registry().second
 
-        t = k * (35 * n + 30 * p) / (f * cos_dec)
+        if simplified:
+            t = k * (35 * n + 30 * p) / (f * cos_dec)
+        else:
+            t = k * (16.9 * n + 0.10 * f + 13.7 * p) / (f * cos_dec)
+
         return t * get_unit_registry().second
 
     def estimated_star_trailing(

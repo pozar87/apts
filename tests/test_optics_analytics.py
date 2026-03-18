@@ -49,12 +49,21 @@ def test_npf_rule():
     c = Camera(36, 24, 6000, 4000, pixel_size=3.76)
     path = OpticalPath(t, [], [], [], [], c)
 
+    # Complete NPF (default)
     # N = 5, P = 3.76, F = 750, dec = 0
-    # t = (35 * 5 + 30 * 3.76) / (750 * cos(0))
-    # t = (175 + 112.8) / 750 = 287.8 / 750 = 0.3837 seconds
+    # t = (16.9 * 5 + 0.10 * 750 + 13.7 * 3.76) / (750 * cos(0))
+    # t = (84.5 + 75.0 + 51.512) / 750 = 211.012 / 750 = 0.28135 seconds
     npf = path.npf_rule(declination=0)
     assert npf is not None
-    assert numpy.isclose(cast(Any, npf).to("second").magnitude, 0.3837, atol=0.001)
+    assert numpy.isclose(cast(Any, npf).to("second").magnitude, 0.28135, atol=0.0001)
+
+    # Simplified NPF
+    # t = (35 * 5 + 30 * 3.76) / 750 = 0.3837 seconds
+    npf_simple = path.npf_rule(declination=0, simplified=True)
+    assert npf_simple is not None
+    assert numpy.isclose(
+        cast(Any, npf_simple).to("second").magnitude, 0.3837, atol=0.001
+    )
 
 
 def test_npf_rule_zero_focal_length():
