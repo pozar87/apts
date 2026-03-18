@@ -168,6 +168,10 @@ class OpticalEquipment:
 
 
 class IntermediateOpticalEquipment(OpticalEquipment):
+    """
+    Base class for intermediate optical equipment like Barlows, Diagonals, Filters, etc.
+    """
+
     def __init__(
         self,
         vendor,
@@ -219,6 +223,10 @@ class OutputOpticalEquipment(OpticalEquipment):
     def field_of_view_diagonal(self, telescope, zoom, barlow_magnification):
         """Calculates diagonal field of view."""
         return self.field_of_view(telescope, zoom, barlow_magnification)
+
+    def _zoom_divider(self) -> Any:
+        """Returns the zoom divider for this equipment."""
+        raise NotImplementedError("Subclasses must implement _zoom_divider")
 
     def exit_pupil(self, telescope, zoom):
         ureg = get_unit_registry()

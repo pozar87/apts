@@ -107,6 +107,9 @@ class SmartTelescope(Telescope):
     def _zoom_divider(self):
         return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
 
+    def field_of_view(self, telescope, zoom, barlow_magnification):
+        return self.field_of_view_height(telescope, zoom, barlow_magnification)
+
     def field_of_view_width(self, telescope, zoom, barlow_magnification):
         """
         Calculates horizontal field of view in degrees using the accurate arctan formula.

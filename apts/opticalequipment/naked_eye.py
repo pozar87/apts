@@ -35,6 +35,9 @@ class NakedEye(OutputOpticalEquipment):
     def field_of_view(self, telescope, zoom, barlow_magnification):
         return self.apparent_fov_deg / self.magnification
 
+    def _zoom_divider(self):
+        return self.focal_length
+
     def fov(self):
         return self.apparent_fov_deg / self.magnification
 

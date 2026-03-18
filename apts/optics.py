@@ -1,12 +1,14 @@
 import functools
 import math
 import operator
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union, Sequence, cast
 
 import numpy
 
 if TYPE_CHECKING:
     from pint import Quantity
+    from .opticalequipment.abstract import OpticalEquipment, IntermediateOpticalEquipment, OutputOpticalEquipment
+    from .opticalequipment.smart_telescope import SmartTelescope
 
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
@@ -15,11 +17,11 @@ from .units import get_unit_registry
 
 class OpticsUtils:
     @staticmethod
-    def expand(path: list) -> tuple[Any, list, list, list, list, Any]:
+    def expand(path: Sequence["OpticalEquipment"]) -> tuple[Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], Sequence[Any], Sequence[Any], Sequence[Any], Sequence[Any], Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]]:
         from .opticalequipment.barlow import Barlow
         from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.filter import Filter
-        from .opticalequipment.reducer import Corrector, Flattener, Reducer
+        from .opticalequipment.reducer.base import Corrector, Flattener, Reducer
         from .opticalequipment.smart_telescope import SmartTelescope
 
         # First item in the path should be the telescope or binoculars
@@ -31,7 +33,7 @@ class OpticsUtils:
         # Original logic for telescopes
         telescope = main_optic
         # Last item in the path is output
-        output = path[-1]
+        output = cast("OutputOpticalEquipment", path[-1])
         # Intermediate elements
         intermediate = path[1:-1]
         # We treat Reducer, Flattener, and Corrector similarly to Barlow for magnification purposes
@@ -52,13 +54,13 @@ class OpticsUtils:
         return (telescope, barlows, diagonals, filters, others, output)
 
     @staticmethod
-    def barlows_multiplications(barlows_list: list[Any]) -> float:
+    def barlows_multiplications(barlows_list: Sequence[Any]) -> float:
         barlows = [barlow.magnification for barlow in barlows_list]
         # Multiply all barlows
         return float(functools.reduce(operator.mul, barlows, 1))
 
     @staticmethod
-    def compute_zoom(telescope: Any, barlows: list[Any], output: Any) -> "Quantity":
+    def compute_zoom(telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], barlows: Sequence[Any], output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -82,7 +84,7 @@ class OpticsUtils:
 
     @staticmethod
     def compute_field_of_view(
-        telescope: Any, barlows: list[Any], output: Any
+        telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], barlows: Sequence[Any], output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]
     ) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -736,7 +738,7 @@ class OpticalPath:
 
         return base + time_factor + sqm_factor
 
-    def npf_rule(self, declination: float = 0, k: float = 1.0) -> Any | None:
+    def npf_rule(self, declination: float = 0, k: float = 1.0) -> Optional["Quantity"]:
         """
         Calculates the maximum exposure time to avoid star trailing using the NPF rule.
         The NPF rule is more accurate than the 'Rule of 500' for modern high-resolution sensors.

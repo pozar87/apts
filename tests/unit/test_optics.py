@@ -338,6 +338,26 @@ class TestOptics(unittest.TestCase):
             self.assertEqual(major, 80.0)
             self.assertEqual(minor, 30.0)
 
+    def test_estimated_star_trailing(self):
+        t = MagicMock(spec=Telescope)
+        c = MagicMock(spec=Camera)
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Mock pixel scale to be 1.0 arcsec/pixel
+        with MagicMock() as mock_scale:
+            mock_scale.magnitude = 1.0
+            path.pixel_scale = MagicMock(return_value=mock_scale)
+
+            # exposure_time = 10s, declination = 0
+            # trailing = (15.041 * 10 * cos(0)) / 1.0 = 150.41
+            trailing = path.estimated_star_trailing(10.0, 0.0)
+            self.assertAlmostEqual(trailing, 150.41, places=2)
+
+            # exposure_time = 10s, declination = 60 (cos(60)=0.5)
+            # trailing = (15.041 * 10 * 0.5) / 1.0 = 75.205
+            trailing_60 = path.estimated_star_trailing(10.0, 60.0)
+            self.assertAlmostEqual(trailing_60, 75.205, places=3)
+
 
 if __name__ == "__main__":
     unittest.main()
