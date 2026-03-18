@@ -76,15 +76,21 @@ def test_npf_rule_with_k():
     camera = cast(Any, Camera).ZWO_ASI2600MM_PRO()  # 3.76um
     path = OpticalPath(telescope, [], [], [], [], camera)
 
-    # Declination 0
-    t1 = path.npf_rule(declination=0, k=1.0)
+    # Declination 0 (Complete NPF - Default)
     # n=6, p=3.76, f=480
-    # t = (35*6 + 30*3.76) / 480 = (210 + 112.8) / 480 = 322.8 / 480 = 0.6725
-    assert cast(Any, t1).magnitude == pytest.approx(0.6725)
+    # t = (16.9*6 + 0.10*480 + 13.7*3.76) / 480
+    # t = (101.4 + 48.0 + 51.512) / 480 = 200.912 / 480 = 0.4185666...
+    t1 = path.npf_rule(declination=0, k=1.0)
+    assert cast(Any, t1).magnitude == pytest.approx(0.41856666666666664)
 
-    # With k=2.0
+    # Simplified NPF
+    # t = (35*6 + 30*3.76) / 480 = 322.8 / 480 = 0.6725
+    t1_s = path.npf_rule(declination=0, k=1.0, simplified=True)
+    assert cast(Any, t1_s).magnitude == pytest.approx(0.6725)
+
+    # With k=2.0 (Complete)
     t2 = path.npf_rule(declination=0, k=2.0)
-    assert cast(Any, t2).magnitude == pytest.approx(1.345)
+    assert cast(Any, t2).magnitude == pytest.approx(0.8371333333333333)
 
     # At the pole
     t_pole = path.npf_rule(declination=90)

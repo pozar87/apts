@@ -131,14 +131,36 @@ class TestOptics(unittest.TestCase):
 
         path = OpticalPath(t, [], [], [], [], c)
 
-        # NPF = (35*5.6 + 30*3.76) / 400 = (196 + 112.8) / 400 = 308.8 / 400 = 0.772
+        # Complete NPF (default)
+        # NPF = (16.9*5.6 + 0.10*400 + 13.7*3.76) / 400
+        # NPF = (94.64 + 40.0 + 51.512) / 400 = 186.152 / 400 = 0.46538
         npf = path.npf_rule()
-        self.assertAlmostEqual(cast(Any, npf).magnitude, 0.772, places=3)
+        self.assertAlmostEqual(cast(Any, npf).magnitude, 0.46538, places=5)
         self.assertEqual(cast(Any, npf).units, get_unit_registry().second)
 
         # With declination 60 degrees (cos(60) = 0.5)
-        # NPF = 0.772 / 0.5 = 1.544
+        # NPF = 0.46538 / 0.5 = 0.93076
         npf_60 = path.npf_rule(declination=60)
+        self.assertAlmostEqual(cast(Any, npf_60).magnitude, 0.93076, places=5)
+
+    def test_npf_rule_simplified(self):
+        t = MagicMock(spec=Telescope)
+        t.focal_length = 400 * get_unit_registry().mm
+        t.focal_ratio.return_value = 5.6 * get_unit_registry().dimensionless
+
+        c = MagicMock(spec=Camera)
+        c.pixel_size.return_value = 3.76 * get_unit_registry().micrometer
+
+        path = OpticalPath(t, [], [], [], [], c)
+
+        # Simplified NPF
+        # NPF = (35*5.6 + 30*3.76) / 400 = (196 + 112.8) / 400 = 308.8 / 400 = 0.772
+        npf = path.npf_rule(simplified=True)
+        self.assertAlmostEqual(cast(Any, npf).magnitude, 0.772, places=3)
+        self.assertEqual(cast(Any, npf).units, get_unit_registry().second)
+
+        # With declination 60 degrees
+        npf_60 = path.npf_rule(declination=60, simplified=True)
         self.assertAlmostEqual(cast(Any, npf_60).magnitude, 1.544, places=3)
 
     def test_rule_of_500(self):
