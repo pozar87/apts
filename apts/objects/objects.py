@@ -123,9 +123,8 @@ class Objects(ABC):
                 azimuth_values = altaz_df["Azimuth"].apply(
                     lambda x: x.magnitude if hasattr(x, "magnitude") else x
                 )
-                altitude_condition = altitude_values > conditions.min_object_altitude
-                az_condition = self._is_azimuth_in_range(azimuth_values, conditions)
-                if cast(Any, (altitude_condition & az_condition).any()):
+                visible_condition = conditions.is_visible(azimuth_values, altitude_values)
+                if cast(Any, visible_condition.any()):
                     visible_objects_indices.append(index)
 
             visible_candidate_objects = cast(
@@ -180,7 +179,7 @@ class Objects(ABC):
                 max_alt_deg += self._refraction(max_alt_deg)
 
                 # Only process stars that can potentially reach the minimum altitude
-                potential_mask = max_alt_deg > conditions.min_object_altitude
+                potential_mask = max_alt_deg > conditions.horizon.get_min_altitude()
 
                 if np.any(potential_mask):
                     # Ensure stars_indices is an array before masking
@@ -224,22 +223,17 @@ class Objects(ABC):
                     true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
                     apparent_alt_deg = true_alt_deg + self._refraction(true_alt_deg)
 
-                    # Determine altitude visibility
-                    alt_ok = apparent_alt_deg > conditions.min_object_altitude
-
-                    # Determine azimuth visibility
+                    # Determine azimuth
                     # tan(Az) = sin(H) / (cos(H) sin(lat) - tan(dec) cos(lat))
-                    # x = cos(H) sin(lat) - tan(dec) cos(lat)
-                    # y = sin(H)
-                    # Az = atan2(y, x) + 180 (to match Skyfield's 0-360 North=0 East=90)
                     x = cos_h * sin_lat - tan_dec * cos_lat
                     y = sin_h
                     az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
 
-                    az_ok = self._is_azimuth_in_range(az_deg, conditions)
+                    # Determine visibility using conditions
+                    visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
 
                     # Combine and check if visible at ANY time point
-                    visible_mask[active_stars_indices] = np.any(alt_ok & az_ok, axis=1)
+                    visible_mask[active_stars_indices] = np.any(visible_at_times, axis=1)
 
             observer = self.place.observer
             # Optimization: move observer.at(check_times) out of the loop
@@ -253,10 +247,9 @@ class Objects(ABC):
                 alt_deg = alt.degrees
                 az_deg = az.degrees
 
-                alt_ok = alt_deg > conditions.min_object_altitude
-                az_ok = self._is_azimuth_in_range(az_deg, conditions)
+                visible_at_times = conditions.is_visible(az_deg, alt_deg)
 
-                if cast(Any, (alt_ok & az_ok).any()):
+                if cast(Any, visible_at_times.any()):
                     visible_mask[i] = True
 
             visible_candidate_objects: pd.DataFrame = cast(
@@ -316,23 +309,6 @@ class Objects(ABC):
             visible = visible.sort_values(by=sort_by, ascending=True)
 
         return visible
-
-    def _is_azimuth_in_range(self, azimuth_series, conditions):
-        min_az = (
-            conditions.min_object_azimuth.magnitude
-            if hasattr(conditions.min_object_azimuth, "magnitude")
-            else conditions.min_object_azimuth
-        )
-        max_az = (
-            conditions.max_object_azimuth.magnitude
-            if hasattr(conditions.max_object_azimuth, "magnitude")
-            else conditions.max_object_azimuth
-        )
-
-        if min_az > max_az:
-            return (azimuth_series >= min_az) | (azimuth_series <= max_az)
-        else:
-            return (azimuth_series >= min_az) & (azimuth_series <= max_az)
 
     @staticmethod
     def fixed_body(RA, Dec):

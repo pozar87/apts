@@ -42,6 +42,8 @@ class DefaultConditions:
     TWILIGHT = Twilight.NAUTICAL
     # Minimal aurora
     MIN_AURORA = 0  # [%], range [0,100]
+    # Path to horizon file (.hrz)
+    HORIZON_FILE: Optional[str] = None
 
 
 class Conditions:
@@ -69,6 +71,7 @@ class Conditions:
         max_moon_illumination: float = DefaultConditions.MAX_MOON_ILLUMINATION,
         twilight: Twilight = DefaultConditions.TWILIGHT,
         min_aurora: float = DefaultConditions.MIN_AURORA,
+        horizon_file: Optional[str] = DefaultConditions.HORIZON_FILE,
     ):
         self.max_clouds = max_clouds
         self.max_precipitation_probability = max_precipitation_probability
@@ -88,3 +91,48 @@ class Conditions:
         self.max_moon_illumination = max_moon_illumination
         self.twilight = twilight
         self.min_aurora = min_aurora
+        self.horizon_file = horizon_file
+        self._horizon = None
+
+    @property
+    def horizon(self):
+        if self._horizon is None:
+            from apts.horizon import Horizon
+
+            self._horizon = Horizon(self.horizon_file, self.min_object_altitude)
+        return self._horizon
+
+    def is_visible(self, azimuth, altitude):
+        """
+        Check if an object at a given azimuth and altitude is visible.
+        If a horizon file is provided, it is used for the check.
+        Otherwise, simple min_object_altitude and min/max_object_azimuth are used.
+        """
+        if self.horizon_file:
+            return self.horizon.is_visible(azimuth, altitude)
+
+        # Fallback to simple min/max
+        min_alt = (
+            self.min_object_altitude.magnitude
+            if hasattr(self.min_object_altitude, "magnitude")
+            else self.min_object_altitude
+        )
+        min_az = (
+            self.min_object_azimuth.magnitude
+            if hasattr(self.min_object_azimuth, "magnitude")
+            else self.min_object_azimuth
+        )
+        max_az = (
+            self.max_object_azimuth.magnitude
+            if hasattr(self.max_object_azimuth, "magnitude")
+            else self.max_object_azimuth
+        )
+
+        alt_ok = altitude > min_alt
+
+        if min_az > max_az:
+            az_ok = (azimuth >= min_az) | (azimuth <= max_az)
+        else:
+            az_ok = (azimuth >= min_az) & (azimuth <= max_az)
+
+        return alt_ok & az_ok

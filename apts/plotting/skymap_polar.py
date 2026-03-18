@@ -98,67 +98,92 @@ def _generate_polar_skymap(
     )
 
     if coordinate_system == CoordinateSystem.HORIZONTAL:
-        r_inner_good = 0
-        r_outer_good = 90 - observation.conditions.min_object_altitude
-
-        min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
-        max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
-
-        if (r_outer_good > 0) or not (
-            float(observation.conditions.min_object_azimuth) == 0.0
-            and float(observation.conditions.max_object_azimuth) == 360.0
-        ):
-            if min_az_rad > max_az_rad:  # Crosses North
-                theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
-                ax.fill_between(
-                    theta1,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-                theta2 = numpy.linspace(0, max_az_rad, 50)
-                ax.fill_between(
-                    theta2,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-            else:
-                theta = numpy.linspace(min_az_rad, max_az_rad, 100)
-                ax.fill_between(
-                    theta,
-                    r_inner_good,
-                    r_outer_good,
-                    color=good_condition_color,
-                    alpha=0.1,
-                )
-
-        if r_outer_good > 0:
+        theta = numpy.linspace(0, 2 * numpy.pi, 200)
+        az_deg = numpy.rad2deg(theta)
+        
+        # Get the visibility mask for a range of altitudes at each azimuth
+        # In a polar plot, r = 90 - altitude. We want to find the boundary altitude.
+        # For the simple case, the boundary is the horizon altitude.
+        if observation.conditions.horizon_file:
+            horizon_alt = observation.conditions.horizon.get_altitude(az_deg)
+            r_outer_good = 90 - horizon_alt
+            
+            ax.fill_between(
+                theta,
+                0,
+                r_outer_good,
+                color=good_condition_color,
+                alpha=0.1,
+            )
             ax.plot(
-                numpy.linspace(0, 2 * numpy.pi, 100),
-                [90 - observation.conditions.min_object_altitude] * 100,
+                theta,
+                r_outer_good,
                 color=style["GRID_COLOR"],
                 linestyle="--",
                 linewidth=1,
             )
-            ax.text(
-                numpy.deg2rad(90),
-                90 - observation.conditions.min_object_altitude,
-                f"{observation.conditions.min_object_altitude}°",
-                ha="center",
-                va="bottom",
-                color=style["TEXT_COLOR"],
-                fontsize=10,
-                bbox=dict(
-                    facecolor=style["AXES_FACE_COLOR"],
-                    edgecolor="none",
-                    boxstyle="round,pad=0.2",
-                ),
-            )
+        else:
+            r_inner_good = 0
+            r_outer_good = 90 - observation.conditions.min_object_altitude
 
-        if not (
+            min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
+            max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
+
+            if (r_outer_good > 0) or not (
+                float(observation.conditions.min_object_azimuth) == 0.0
+                and float(observation.conditions.max_object_azimuth) == 360.0
+            ):
+                if min_az_rad > max_az_rad:  # Crosses North
+                    theta1 = numpy.linspace(min_az_rad, 2 * numpy.pi, 50)
+                    ax.fill_between(
+                        theta1,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                    theta2 = numpy.linspace(0, max_az_rad, 50)
+                    ax.fill_between(
+                        theta2,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+                else:
+                    theta_range = numpy.linspace(min_az_rad, max_az_rad, 100)
+                    ax.fill_between(
+                        theta_range,
+                        r_inner_good,
+                        r_outer_good,
+                        color=good_condition_color,
+                        alpha=0.1,
+                    )
+
+            if r_outer_good > 0:
+                ax.plot(
+                    numpy.linspace(0, 2 * numpy.pi, 100),
+                    [90 - observation.conditions.min_object_altitude] * 100,
+                    color=style["GRID_COLOR"],
+                    linestyle="--",
+                    linewidth=1,
+                )
+                ax.text(
+                    numpy.deg2rad(90),
+                    90 - observation.conditions.min_object_altitude,
+                    f"{observation.conditions.min_object_altitude}°",
+                    ha="center",
+                    va="bottom",
+                    color=style["TEXT_COLOR"],
+                    fontsize=10,
+                    bbox=dict(
+                        facecolor=style["AXES_FACE_COLOR"],
+                        edgecolor="none",
+                        boxstyle="round,pad=0.2",
+                    ),
+                )
+
+        if not observation.conditions.horizon_file and not (
             float(observation.conditions.min_object_azimuth) == 0.0
             and float(observation.conditions.max_object_azimuth) == 360.0
         ):
@@ -204,18 +229,8 @@ def _generate_polar_skymap(
         alt_deg_grid = cast(Any, alt.degrees).reshape(theta_grid.shape)
         az_deg_grid = cast(Any, az.degrees).reshape(theta_grid.shape)
 
-        # Check conditions
-        min_alt = float(observation.conditions.min_object_altitude)
-        min_az = float(observation.conditions.min_object_azimuth)
-        max_az = float(observation.conditions.max_object_azimuth)
-
-        # Create a mask for "good" conditions
-        alt_mask = alt_deg_grid >= min_alt
-        if min_az <= max_az:
-            az_mask = (az_deg_grid >= min_az) & (az_deg_grid <= max_az)
-        else:  # Azimuth range crosses 0/360
-            az_mask = (az_deg_grid >= min_az) | (az_deg_grid <= max_az)
-        good_mask = alt_mask & az_mask
+        # Use the centralized is_visible method which handles both simple constraints and horizon files
+        good_mask = observation.conditions.is_visible(az_deg_grid, alt_deg_grid)
 
         # Use contourf to shade the "good" area
         # We plot where the mask is True (1)
