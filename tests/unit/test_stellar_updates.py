@@ -1,7 +1,9 @@
 import unittest
+
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
 from apts.optics import OpticalPath
+
 
 class TestStellarUpdates(unittest.TestCase):
     def test_seestar_s30_pro_specs(self):
@@ -36,8 +38,8 @@ class TestStellarUpdates(unittest.TestCase):
     def test_estimated_star_trailing(self):
         # Setup: 500mm focal length, 3.76um pixels
         # Pixel scale = (3.76 / 500) * 206265 = 1.551 arcsec/pixel
-        from apts.opticalequipment.telescope import Telescope
         from apts.opticalequipment.camera import Camera
+        from apts.opticalequipment.telescope import Telescope
 
         tele = Telescope(80, 500, vendor="Test Scope")
         cam = Camera(23.5, 15.7, 6248, 4176, vendor="Test Cam", pixel_size=3.76)
@@ -47,7 +49,8 @@ class TestStellarUpdates(unittest.TestCase):
         # In 10 seconds, movement is 150.41"
         # Trailing in pixels = 150.41 / 1.551 = 96.97 pixels
         trailing = path.estimated_star_trailing(exposure_time=10, declination=0)
-        self.assertAlmostEqual(trailing, 96.97, places=1)
+        self.assertIsNotNone(trailing)
+        self.assertAlmostEqual(trailing.magnitude, 96.97, places=1)
 
         # At Dec 60, cos(60) = 0.5, movement is 75.205"
         # Trailing = 75.205 / 1.551 = 48.48 pixels
@@ -55,13 +58,21 @@ class TestStellarUpdates(unittest.TestCase):
         self.assertAlmostEqual(trailing_60, 48.48, places=1)
 
     def test_optimum_sub_exposure_with_swamp(self):
-        from apts.opticalequipment.telescope import Telescope
         from apts.opticalequipment.camera import Camera
+        from apts.opticalequipment.telescope import Telescope
 
         tele = Telescope(80, 500, vendor="Test Scope")
         # Read noise 1.0e-, QE 80%
-        cam = Camera(23.5, 15.7, 6248, 4176, vendor="Test Cam", pixel_size=3.76,
-                    read_noise=1.0, quantum_efficiency=80.0)
+        cam = Camera(
+            23.5,
+            15.7,
+            6248,
+            4176,
+            vendor="Test Cam",
+            pixel_size=3.76,
+            read_noise=1.0,
+            quantum_efficiency=80.0,
+        )
         path = OpticalPath.from_path([tele, cam])
 
         sqm = 21.0
@@ -73,6 +84,7 @@ class TestStellarUpdates(unittest.TestCase):
         self.assertIsNotNone(t10)
         self.assertIsNotNone(t20)
         self.assertAlmostEqual(t20.magnitude, 2.0 * t10.magnitude, places=4)
+
 
 if __name__ == "__main__":
     unittest.main()
