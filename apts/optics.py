@@ -1194,3 +1194,10 @@ class OpticalPath:
         """
         from .utils import planetary
         return planetary.get_moon_position_angle_bright_limb(time)
+
+    def planetary_magnitude(self, planet_name: str, time: Any) -> float:
+        """
+        Calculates the apparent magnitude of a planet, the Moon, or the Sun.
+        """
+        from .utils import planetary
+        return planetary.get_planet_magnitude(planet_name, time)
