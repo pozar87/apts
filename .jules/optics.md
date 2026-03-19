@@ -355,3 +355,25 @@
     - https://takahashi-europe.com/catalog/reflectors/epsilon/epsilon-180ed
     - https://takahashi-europe.com/catalog/reflectors/mewlon/mewlon-180c
     - https://takahashi-europe.com/catalog/reflectors/mewlon/mewlon-210
+
+## 2024-06-09 - Audit of Sky-Watcher Specialty and Desktop series
+
+- **Items:** Sky-Watcher SkyMax (90, 102, 127, 150, 180), Heritage (76, 100P), Star Discovery (150P, 150i, 200P), Stargate (450P, 500P), AZ-EQ Newtonians, Starquest 80MC, Black Diamond ED, and Equinox series.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:**
+    - Many models used generic `type_telescope` type.
+    - Missing aperture, focal length, and central obstruction values.
+    - Inaccurate or placeholder mass values.
+- **Verified Specs (Sources: Sky-Watcher USA, First Light Optics, Agena Astro, Scope Views):**
+    - **SkyMax 90/102/127/150/180:** Corrected Maksutov-Cassegrain specs and central obstructions (e.g., 180 Pro: 180/2700mm, CO 52mm).
+    - **Heritage 76/100P:** Added missing physical specs (e.g., 100P: 100/400mm, CO 34mm, 1.1kg OTA).
+    - **Star Discovery 150P/200P:** Corrected Newtonian specs (e.g., 150P: 150/750mm, CO 47mm, 4.9kg OTA).
+    - **Stargate 450P/500P:** Added verified large-aperture specs (e.g., 500P: 508/2000mm, CO 136mm, 65kg assembled).
+    - **Black Diamond ED & Equinox:** Verified refractor specs and masses.
+    - **Starquest 80MC:** Corrected to Maksutov-Cassegrain (80/1000mm, CO 26mm).
+- **Action:** Updated 23 Sky-Watcher models with verified physical specs, correct optical types, and accurate mass data. Added source comments. Verified with `tests/unit/test_sky_watcher_specs.py`.
+- **Source URLs:**
+    - https://www.skywatcherusa.com/products/sky-watcher-skymax-180
+    - https://www.firstlightoptics.com/telescopes-in-stock/skywatcher-heritage-76-mini-dobsonian.html
+    - https://agenaastro.com/skywatcher-18-stargate-dobsonian-telescope-goto-s11920.html
+    - http://www.scopeviews.co.uk/SWEq80ED.htm
