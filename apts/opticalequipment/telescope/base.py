@@ -79,7 +79,7 @@ class Telescope(OpticalEquipment):
         return cls(aperture or 80, focal_length or 500, vendor=vendor, connection_type=ct, connection_gender=cg or Gender.FEMALE, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
     '\n    Class representing telescope\n    '
 
-    def __init__(self, aperture, focal_length, vendor='unknown telescope', connection_type=ConnectionType.F_1_25, t2_output=False, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0, optical_length=0, connection_gender=Gender.FEMALE, central_obstruction=0):
+    def __init__(self, aperture, focal_length, vendor='unknown telescope', connection_type=ConnectionType.F_1_25, t2_output=False, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0.0, optical_length=0.0, connection_gender=Gender.FEMALE, central_obstruction=0.0):
         super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self.aperture = cast(Any, aperture * get_unit_registry().mm)
         self.central_obstruction = cast(Any, central_obstruction * get_unit_registry().mm)

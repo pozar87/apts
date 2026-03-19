@@ -51,7 +51,9 @@ def _generate_zoom_skymap(
 ):
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
     target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
-    if coordinate_system == CoordinateSystem.HORIZONTAL and target_alt.degrees < 0:
+    if coordinate_system == CoordinateSystem.HORIZONTAL and not observation.conditions.is_visible(
+        target_az.degrees, target_alt.degrees
+    ):
         fig, ax = pyplot.subplots(figsize=(10, 10))
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
         ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -89,6 +91,28 @@ def _generate_zoom_skymap(
         ax.set_xlim(target_az.degrees - half_zoom, target_az.degrees + half_zoom)
         ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
         ax.set_aspect("equal", adjustable="box")
+
+        # Plot horizon line if available
+        if observation.conditions.horizon_file:
+            az_view = numpy.linspace(
+                target_az.degrees - half_zoom, target_az.degrees + half_zoom, 100
+            )
+            horizon_alt = observation.conditions.horizon.get_altitude(az_view)
+            ax.plot(
+                az_view,
+                horizon_alt,
+                color=style["GRID_COLOR"],
+                linestyle="--",
+                linewidth=1,
+            )
+            # Shade the area below horizon
+            ax.fill_between(
+                az_view,
+                target_alt.degrees - half_zoom,
+                horizon_alt,
+                color="black",
+                alpha=0.3,
+            )
     else:  # Equatorial
         ax.set_xlabel(gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"])
         ax.set_ylabel(gettext_("Declination (°)"), color=style["TEXT_COLOR"])

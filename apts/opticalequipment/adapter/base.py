@@ -18,7 +18,7 @@ class Adapter(IntermediateOpticalEquipment):
         cg = Utils.map_gender(entry.get('cside_gender'))
         return cls(vendor, optical_length=ol, mass=mass, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
 
-    def __init__(self, vendor, optical_length=0, mass=0, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
+    def __init__(self, vendor, optical_length=0.0, mass=0.0, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
         super(Adapter, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
         self._type = OpticalType.ADAPTER
 
@@ -39,6 +39,6 @@ class Spacer(IntermediateOpticalEquipment):
         cg = Utils.map_gender(entry.get('cside_gender'))
         return cls(vendor, optical_length=ol, mass=mass, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
 
-    def __init__(self, vendor, optical_length=0, mass=0, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
+    def __init__(self, vendor, optical_length=0.0, mass=0.0, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
         super(Spacer, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
         self._type = OpticalType.SPACER

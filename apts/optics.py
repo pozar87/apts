@@ -7,7 +7,7 @@ import numpy
 
 if TYPE_CHECKING:
     from pint import Quantity
-    from .opticalequipment.abstract import OpticalEquipment, IntermediateOpticalEquipment, OutputOpticalEquipment
+    from .opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
     from .opticalequipment.smart_telescope import SmartTelescope
 
 from .opticalequipment.binoculars import Binoculars

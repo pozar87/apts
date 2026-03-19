@@ -41,7 +41,7 @@ class Eyepiece(OutputOpticalEquipment):
 
     '\n  Class representing ocular\n  '
 
-    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, field_stop=None, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0, optical_length=0):
+    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, field_stop=None, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0.0, optical_length=0.0):
         super().__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
         self._connection_type = connection_type
         self._connection_gender = connection_gender

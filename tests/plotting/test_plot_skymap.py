@@ -1489,6 +1489,7 @@ def test_plot_planets_with_rise_set_times():
     from datetime import datetime
     from unittest.mock import MagicMock
 
+    import numpy as np
     import pandas as pd
     import pytz
     from matplotlib import pyplot as plt
@@ -1507,6 +1508,7 @@ def test_plot_planets_with_rise_set_times():
     mock_observation.time_limit = mock_observation.stop
     mock_observation.conditions = MagicMock()
     mock_observation.conditions.min_object_altitude = 10
+    mock_observation.conditions.is_visible.return_value = np.array([], dtype=bool)
 
     # 2. Mock visible planets DataFrame with Timestamp objects
     planets_data = {
@@ -1523,7 +1525,7 @@ def test_plot_planets_with_rise_set_times():
 
     # Mock the get_altaz_curve to return an empty df to simplify the test
     mock_observation.place.get_altaz_curve.return_value = pd.DataFrame(
-        {"Time": [], "Altitude": []}
+        {"Time": [], "Altitude": [], "Azimuth": [], "Time_dt": []}
     )
     mock_observation.local_planets.get_skyfield_object.return_value = MagicMock()
 

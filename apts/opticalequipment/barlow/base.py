@@ -50,8 +50,8 @@ class Barlow(OpticalEquipment):
         in_gender=Gender.MALE,
         out_gender=Gender.FEMALE,
         t2_output=False,
-        mass=0,
-        optical_length=0,
+        mass=0.0,
+        optical_length=0.0,
     ):
         super(Barlow, self).__init__(
             0, vendor, mass=mass, optical_length=optical_length
