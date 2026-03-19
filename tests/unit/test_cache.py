@@ -6,7 +6,7 @@ import pint
 import pytest
 
 from apts import catalogs
-from apts.cache import download_all_data, get_mpcorb_data
+from apts.cache import download_all_data, get_hipparcos_data, get_mpcorb_data
 from apts.equipment import Equipment
 from apts.objects.messier import Messier
 from apts.objects.solar_objects import SolarObjects
@@ -105,6 +105,31 @@ class CacheTest(unittest.TestCase):
         mock_get_hipparcos_data.assert_called_once()
         mock_get_mpcorb_data.assert_called_once()
         mock_get_jovian_ephemeris.assert_called_once()
+
+    @patch("apts.cache.Loader")
+    def test_get_hipparcos_data_failure(self, mock_loader_class):
+        # Mock loader.open to raise an exception
+        mock_loader_instance = mock_loader_class.return_value
+        mock_loader_instance.open.side_effect = Exception("Network error")
+
+        # Clear cache before test
+        get_hipparcos_data.cache_clear()
+
+        # Call the function
+        df = get_hipparcos_data()
+
+        # Assertions
+        self.assertTrue(df.empty)
+        expected_columns = [
+            "magnitude",
+            "ra_degrees",
+            "dec_degrees",
+            "parallax_mas",
+        ]
+        self.assertListEqual(list(df.columns), expected_columns)
+
+        # Clear cache after test to avoid leaking mocks
+        get_hipparcos_data.cache_clear()
 
     @patch("apts.cache.load")
     @patch("apts.cache.get_ephemeris")
