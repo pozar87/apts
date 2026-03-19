@@ -31,7 +31,8 @@ def test_jupiter_grs_transits():
 
     # Check the transit time for the first event
     transit_time = grs_events.iloc[0]["date"]
-    expected_time = datetime(2026, 3, 18, 2, 26, tzinfo=timezone.utc)
+    # With light-time correction (~40 mins), expected time shifts from 02:26 to ~03:06
+    expected_time = datetime(2026, 3, 18, 3, 6, tzinfo=timezone.utc)
 
     diff_minutes = abs((transit_time - expected_time).total_seconds()) / 60.0
     assert diff_minutes < 10  # Should be within 10 minutes
@@ -54,15 +55,15 @@ def test_jupiter_grs_transits_custom_longitude():
     # Test with custom longitude (e.g., 15.0 instead of default)
     # A transit at 15.0 should happen approx (80-15)/360 * 9.9 hours earlier than at 80.0
     # 65/360 * 9.9 = 1.7875 hours = 107 minutes
-    # 02:26 - 107 mins = 00:39
-    # (Note: we use the 02:26 transit as the anchor since it was the first one found in the search window)
+    # Original (no LT): 02:26 - 107 mins = 00:39
+    # With LT correction (~40 mins): 03:06 - 107 mins = 01:19
     events = events_calculator.calculate_jupiter_grs_transits(grs_longitude=15.0)
 
     assert len(events) >= 1
-    # Depending on visibility, we might get the 00:39 one.
-    # Let's find the one closest to 00:39.
-    transit_time = min(events, key=lambda e: abs((e["date"] - datetime(2026, 3, 18, 0, 39, tzinfo=timezone.utc)).total_seconds()))["date"]
+    # Depending on visibility, we might get the 01:19 one.
+    # Let's find the one closest to 01:19.
+    transit_time = min(events, key=lambda e: abs((e["date"] - datetime(2026, 3, 18, 1, 19, tzinfo=timezone.utc)).total_seconds()))["date"]
 
-    expected_time = datetime(2026, 3, 18, 0, 39, tzinfo=timezone.utc)
+    expected_time = datetime(2026, 3, 18, 1, 19, tzinfo=timezone.utc)
     diff_minutes = abs((transit_time - expected_time).total_seconds()) / 60.0
     assert diff_minutes < 10

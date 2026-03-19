@@ -166,6 +166,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_star_conjunctions))
         if self.event_settings.get("planet_stationary_points"):
             futures.append(executor.submit(self.calculate_planet_stationary_points))
+        if self.event_settings.get("planet_solar_conjunctions"):
+            futures.append(executor.submit(self.calculate_planet_solar_conjunctions))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -328,6 +330,8 @@ class AstronomicalEvents:
         if event_type == "Jupiter GRS Transit":
             return 1
         if event_type == "Planet Stationary Point":
+            return 3
+        if event_type == "Planet Solar Conjunction":
             return 3
         return 1
 
@@ -1063,14 +1067,8 @@ class AstronomicalEvents:
 
     def calculate_jupiter_grs_transits(self, grs_longitude: Optional[float] = None):
         start_time = time.time()
-        # Default to constant if not provided
-        lon = (
-            grs_longitude
-            if grs_longitude is not None
-            else astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
-        )
         events = skyfield_searches.find_jupiter_grs_transits(
-            self.observer, self.start_date, self.end_date, grs_longitude=lon
+            self.observer, self.start_date, self.end_date, grs_longitude=grs_longitude
         )
         for event in events:
             event["rarity"] = self._get_rarity("Jupiter GRS Transit", event)
@@ -1115,5 +1113,17 @@ class AstronomicalEvents:
             events.extend(found_events)
         logger.debug(
             f"--- calculate_planet_stationary_points: {time.time() - start_time}s"
+        )
+        return events
+
+    def calculate_planet_solar_conjunctions(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_solar_conjunctions(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet Solar Conjunction", event)
+        logger.debug(
+            f"--- calculate_planet_solar_conjunctions: {time.time() - start_time}s"
         )
         return events
