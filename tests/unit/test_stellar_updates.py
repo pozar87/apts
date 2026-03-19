@@ -50,12 +50,13 @@ class TestStellarUpdates(unittest.TestCase):
         # Trailing in pixels = 150.41 / 1.551 = 96.97 pixels
         trailing = path.estimated_star_trailing(exposure_time=10, declination=0)
         self.assertIsNotNone(trailing)
-        self.assertAlmostEqual(trailing.magnitude, 96.97, places=1)
+        self.assertAlmostEqual(trailing, 96.97, places=1)  # type: ignore
 
         # At Dec 60, cos(60) = 0.5, movement is 75.205"
         # Trailing = 75.205 / 1.551 = 48.48 pixels
         trailing_60 = path.estimated_star_trailing(exposure_time=10, declination=60)
-        self.assertAlmostEqual(trailing_60, 48.48, places=1)
+        self.assertIsNotNone(trailing_60)
+        self.assertAlmostEqual(trailing_60, 48.48, places=1)  # type: ignore
 
     def test_optimum_sub_exposure_with_swamp(self):
         from apts.opticalequipment.camera import Camera
@@ -83,7 +84,7 @@ class TestStellarUpdates(unittest.TestCase):
         # Strengthen assertion: ensure results are not None and correctly scaled
         self.assertIsNotNone(t10)
         self.assertIsNotNone(t20)
-        self.assertAlmostEqual(t20.magnitude, 2.0 * t10.magnitude, places=4)
+        self.assertAlmostEqual(t20.magnitude, 2.0 * t10.magnitude, places=4)  # type: ignore
 
 
 if __name__ == "__main__":
