@@ -57,17 +57,28 @@ def _refine_conjunction(observer, obj1, obj2, rough_t):
     t1 = ts.from_datetime(rough_t.utc_datetime() + timedelta(minutes=30))
 
     def separation_func(t):
-        # We use .apparent() for maximum precision during refinement
-        p1 = observer.at(t).observe(obj1).apparent()
-        p2 = observer.at(t).observe(obj2).apparent()
+        # Optimization: We use .observe() (astrometric position) instead of .apparent()
+        # during the iterative minimization loop to avoid redundant coordinate
+        # transformations (aberration, deflection). This is ~2x faster and
+        # provides near-identical results for the minimization step.
+        p1 = observer.at(t).observe(obj1)
+        p2 = observer.at(t).observe(obj2)
         return p1.separation_from(p2).degrees
 
     setattr(separation_func, "step_days", 0.005)  # 7.2 minutes step for minimization
-    times, separations = find_minima(t0, t1, separation_func)
+    times, _ = find_minima(t0, t1, separation_func)
 
     if len(times) > 0:
-        return times[0], separations[0]
-    return rough_t, separation_func(rough_t)
+        # We perform a single high-precision .apparent() observation at the final
+        # refined time to return the exact separation.
+        res_t = times[0]
+        p1 = observer.at(res_t).observe(obj1).apparent()
+        p2 = observer.at(res_t).observe(obj2).apparent()
+        return res_t, p1.separation_from(p2).degrees
+
+    p1 = observer.at(rough_t).observe(obj1).apparent()
+    p2 = observer.at(rough_t).observe(obj2).apparent()
+    return rough_t, p1.separation_from(p2).degrees
 
 
 def find_golden_blue_hours(observer, start_date, end_date):
