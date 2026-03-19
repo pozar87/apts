@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from apts.observations import Observation
 from apts.place import Place
 from apts.equipment import Equipment
-from apts.conditions import Conditions
 from unittest.mock import MagicMock
 
 def benchmark():

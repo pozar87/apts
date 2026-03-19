@@ -4,6 +4,7 @@ from tests import setup_southern_observation
 from apts.objects.solar_objects import SolarObjects
 from apts.place import Place
 from apts.constants import ObjectTableLabels
+from apts.conditions import Conditions
 
 
 class TestSolarObjects(unittest.TestCase):
@@ -60,7 +61,6 @@ class TestSolarObjects(unittest.TestCase):
 
     def test_dwarf_planet_magnitude_and_filtering(self):
         """Test that dwarf planet magnitude is calculated and filtering works."""
-        from types import SimpleNamespace
         from datetime import timedelta
         import pandas as pd
 
@@ -106,7 +106,7 @@ class TestSolarObjects(unittest.TestCase):
             )
 
         # Case A: Magnitude limit is higher than Ceres' magnitude, so it should be visible
-        conditions_high = SimpleNamespace(
+        conditions_high = Conditions(
             max_object_magnitude=ceres_mag + 1,
             min_object_altitude=0,  # No altitude constraint for simplicity
             min_object_azimuth=0,
@@ -123,7 +123,7 @@ class TestSolarObjects(unittest.TestCase):
         )
 
         # Case B: Magnitude limit is lower than Ceres' magnitude, so it should be filtered out
-        conditions_low = SimpleNamespace(
+        conditions_low = Conditions(
             max_object_magnitude=ceres_mag - 1,
             min_object_altitude=0,
             min_object_azimuth=0,

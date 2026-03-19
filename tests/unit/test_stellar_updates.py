@@ -1,9 +1,7 @@
 import unittest
-import numpy as np
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
 from apts.opticalequipment.telescope.vendors.zwo import ZwoTelescope
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 
 class TestStellarUpdates(unittest.TestCase):
     def test_seestar_s30_pro_specs(self):

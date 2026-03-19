@@ -801,6 +801,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
             {
                 "Time": list(self.observation.place.ts.linspace(t0, t1, 10)),
                 "Altitude": [10, 20, 30, 40, 50, 40, 30, 20, 10, 0],
+                "Azimuth": [180] * 10,
             }
         )
         mock_get_altitude_curve.return_value = mock_curve_df
