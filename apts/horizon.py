@@ -1,19 +1,20 @@
 import os
-from typing import Any, Union
+from typing import Optional, Union
 import numpy as np
 from scipy.interpolate import interp1d
 
 
 class Horizon:
-    def __init__(self, file_path: str = None, min_altitude: float = 0.0):
+    def __init__(self, file_path: Optional[str] = None, min_altitude: float = 0.0):
         self.file_path = file_path
         self.min_altitude = float(min_altitude)
         self.azimuths = np.array([0.0, 360.0])
         self.altitudes = np.array([self.min_altitude, self.min_altitude])
         if file_path and os.path.exists(file_path):
             self._load_from_file(file_path)
+        # Using any to avoid pyright issue with "extrapolate" literal
         self._interp = interp1d(
-            self.azimuths, self.altitudes, kind="linear", fill_value="extrapolate"
+            self.azimuths, self.altitudes, kind="linear", fill_value="extrapolate" # type: ignore
         )
 
     def _load_from_file(self, file_path: str):

@@ -101,6 +101,10 @@ def _generate_polar_skymap(
         theta = numpy.linspace(0, 2 * numpy.pi, 200)
         az_deg = numpy.rad2deg(theta)
         
+        # We need these later for plotting the min/max azimuth lines
+        min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
+        max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
+
         # Get the visibility mask for a range of altitudes at each azimuth
         # In a polar plot, r = 90 - altitude. We want to find the boundary altitude.
         # For the simple case, the boundary is the horizon altitude.
@@ -125,9 +129,6 @@ def _generate_polar_skymap(
         else:
             r_inner_good = 0
             r_outer_good = 90 - observation.conditions.min_object_altitude
-
-            min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
-            max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
 
             if (r_outer_good > 0) or not (
                 float(observation.conditions.min_object_azimuth) == 0.0
@@ -237,7 +238,7 @@ def _generate_polar_skymap(
         ax.contourf(
             theta_grid,
             r_grid,
-            good_mask.astype(int),
+            numpy.array(good_mask).astype(int),
             levels=[0.5, 1.5],
             colors=[good_condition_color],
             alpha=0.1,

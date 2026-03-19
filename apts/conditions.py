@@ -112,21 +112,9 @@ class Conditions:
             return self.horizon.is_visible(azimuth, altitude)
 
         # Fallback to simple min/max
-        min_alt = (
-            self.min_object_altitude.magnitude
-            if hasattr(self.min_object_altitude, "magnitude")
-            else self.min_object_altitude
-        )
-        min_az = (
-            self.min_object_azimuth.magnitude
-            if hasattr(self.min_object_azimuth, "magnitude")
-            else self.min_object_azimuth
-        )
-        max_az = (
-            self.max_object_azimuth.magnitude
-            if hasattr(self.max_object_azimuth, "magnitude")
-            else self.max_object_azimuth
-        )
+        min_alt = getattr(self.min_object_altitude, "magnitude", self.min_object_altitude)
+        min_az = getattr(self.min_object_azimuth, "magnitude", self.min_object_azimuth)
+        max_az = getattr(self.max_object_azimuth, "magnitude", self.max_object_azimuth)
 
         alt_ok = altitude > min_alt
 
