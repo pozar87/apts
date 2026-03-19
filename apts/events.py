@@ -168,6 +168,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_stationary_points))
         if self.event_settings.get("planet_solar_conjunctions"):
             futures.append(executor.submit(self.calculate_planet_solar_conjunctions))
+        if self.event_settings.get("lunar_features"):
+            futures.append(executor.submit(self.calculate_lunar_features))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -333,6 +335,8 @@ class AstronomicalEvents:
             return 3
         if event_type == "Planet Solar Conjunction":
             return 3
+        if event_type == "Lunar Feature":
+            return 4
         return 1
 
     def calculate_space_launches(self):
@@ -1126,4 +1130,14 @@ class AstronomicalEvents:
         logger.debug(
             f"--- calculate_planet_solar_conjunctions: {time.time() - start_time}s"
         )
+        return events
+
+    def calculate_lunar_features(self):
+        start_time = time.time()
+        events = skyfield_searches.find_lunar_features(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Lunar Feature", event)
+        logger.debug(f"--- calculate_lunar_features: {time.time() - start_time}s")
         return events
