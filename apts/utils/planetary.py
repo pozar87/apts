@@ -430,3 +430,59 @@ def get_jupiter_grs_longitude(time: Any) -> float:
 
     dt = (time.utc_datetime() - ref_date).total_seconds() / 86400.0
     return (ref_lon + dt * drift_per_day) % 360
+
+def get_planet_phase_angle(planet_name: str, time: Any) -> float:
+    """
+    Returns the phase angle of a planet in degrees.
+    The phase angle is the angle Sun-Planet-Earth.
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+    return float(astrometric.phase_angle(sun).degrees)
+
+
+def get_moon_libration(time: Any) -> tuple[float, float]:
+    """
+    Returns the Moon's libration in longitude and latitude in degrees.
+    """
+    # Use PyEphem for libration
+    m = ephem.Moon(time.utc_datetime())
+    return float(np.degrees(m.libration_long)), float(np.degrees(m.libration_lat))
+
+
+def get_moon_position_angle_bright_limb(time: Any) -> float:
+    """
+    Returns the position angle of the Moon's bright limb in degrees.
+    This is the orientation of the line from the Moon's center to the midpoint
+    of the illuminated limb, measured counterclockwise from North.
+    """
+    # Calculate using Skyfield
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+    moon = eph["moon"]
+
+    t = time
+    astrometric_moon = earth.at(t).observe(moon).apparent()
+    astrometric_sun = earth.at(t).observe(sun).apparent()
+
+    # Position angle of the bright limb
+    # Reference: https://rhodesmill.org/skyfield/api-almanac.html#skyfield.almanac.fraction_illuminated
+    # Actually Skyfield doesn't have it directly in almanac,
+    # but we can calculate it from the relative positions.
+
+    ra_m, dec_m, _ = astrometric_moon.radec()
+    ra_s, dec_s, _ = astrometric_sun.radec()
+
+    # Formula from Meeus, Astronomical Algorithms, Chapter 48
+    # tan(X) = cos(dec_s) * sin(ra_s - ra_m) / (cos(dec_m) * sin(dec_s) - sin(dec_m) * cos(dec_s) * cos(ra_s - ra_m))
+
+    num = np.cos(dec_s.radians) * np.sin(ra_s.radians - ra_m.radians)
+    den = np.cos(dec_m.radians) * np.sin(dec_s.radians) - np.sin(dec_m.radians) * np.cos(dec_s.radians) * np.cos(ra_s.radians - ra_m.radians)
+
+    pa_rad = np.arctan2(num, den)
+    return float(np.degrees(pa_rad) % 360)

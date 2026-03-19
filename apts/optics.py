@@ -1133,3 +1133,24 @@ class OpticalPath:
             return float(m_eff - extinction_k * airmass_val)
 
         return float(m_eff)
+
+    def planetary_phase_angle(self, planet_name: str, time: Any) -> float:
+        """
+        Calculates the phase angle (Sun-Object-Earth) for a planet or the Moon.
+        """
+        from .utils import planetary
+        return planetary.get_planet_phase_angle(planet_name, time)
+
+    def moon_libration(self, time: Any) -> tuple[float, float]:
+        """
+        Calculates the Moon's libration in longitude and latitude in degrees.
+        """
+        from .utils import planetary
+        return planetary.get_moon_libration(time)
+
+    def moon_position_angle_bright_limb(self, time: Any) -> float:
+        """
+        Calculates the position angle of the Moon's bright limb in degrees.
+        """
+        from .utils import planetary
+        return planetary.get_moon_position_angle_bright_limb(time)
