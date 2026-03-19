@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
-from skyfield import almanac
+from skyfield import almanac, magnitudelib
 
 from apts.cache import get_ephemeris, get_mpcorb_data, get_timescale
 from apts.i18n import language_context, gettext_
@@ -443,6 +443,51 @@ def get_planet_phase_angle(planet_name: str, time: Any) -> float:
 
     astrometric = cast(Any, earth).at(time).observe(planet_obj)
     return float(astrometric.phase_angle(sun).degrees)
+
+
+def get_planet_magnitude(planet_name: str, time: Any) -> float:
+    """
+    Calculates the apparent visual magnitude (V) for a planet, the Moon, or the Sun.
+
+    - Major Planets: Uses Mallama & Hilton (2018) model via Skyfield.
+    - The Moon: Uses Krisciunas & Schaefer (1991) phase-based model with distance correction.
+    - The Sun: Uses standard inverse-square law based on AU distance.
+
+    Sources:
+    - Mallama, A., & Hilton, J. L. (2018). Computing Apparent Planetary Magnitudes for The Astronomical Almanac.
+    - Krisciunas, K., & Schaefer, B. E. (1991). A model of the brightness of moonlight.
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    earth = eph["earth"]
+
+    name_norm = get_simple_name(planet_name).lower()
+
+    if name_norm == "sun":
+        # Sun magnitude: M = -26.74 at 1 AU
+        dist_au = cast(Any, earth).at(time).observe(sun).distance().au
+        return float(-26.74 + 5 * np.log10(dist_au))
+
+    if name_norm == "moon":
+        # Moon magnitude using Krisciunas & Schaefer (1991)
+        # alpha is the phase angle Sun-Moon-Earth in degrees
+        alpha = get_planet_phase_angle("moon", time)
+        # V(R, alpha) = -12.73 + 0.026 * |alpha| + 4e-9 * alpha^4
+        v_base = -12.73 + 0.026 * abs(alpha) + 4.0e-9 * (alpha**4)
+
+        # Distance correction: delta is distance in km
+        dist_km = get_moon_distance(time)
+        # correction = 5 * log10(dist / 384400)
+        v_dist = 5 * np.log10(dist_km / 384400.0)
+        return float(v_base + v_dist)
+
+    # Major planets and others supported by skyfield
+    planet_obj = get_skyfield_obj(planet_name)
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+
+    # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
+    # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
+    return float(magnitudelib.planetary_magnitude(astrometric))
 
 
 def get_moon_libration(time: Any) -> tuple[float, float]:
