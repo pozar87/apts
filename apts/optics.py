@@ -471,6 +471,14 @@ class OpticalPath:
         return drift * get_unit_registry().mm
 
     def sky_flux(self, sqm: float) -> Optional[float]:
+        """
+        Calculates the sky background flux in electrons per second per pixel.
+        Assumes an L-band (clear) filter equivalent and a zero point where a 21.83 mag/arcsec^2
+        sky produces a specific reference flux.
+
+        :param sqm: Sky Quality Meter reading in mag/arcsec^2.
+        :return: Sky flux in e-/s/pixel.
+        """
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -490,7 +498,7 @@ class OpticalPath:
 
         pixel_area_arcsec2 = scale.magnitude**2
 
-        # Formula
+        # Formula: Reference flux scaled by aperture, QE, and sky brightness
         flux = (
             0.005
             * 10 ** (0.4 * (21.83 - sqm))
@@ -507,6 +515,15 @@ class OpticalPath:
         altitude: Optional[float] = None,
         extinction_k: float = 0.2,
     ) -> Optional[float]:
+        """
+        Calculates the total integrated flux from an object in electrons per second.
+        The calculation is based on the object's magnitude and the setup's aperture and QE.
+
+        :param magnitude: Apparent magnitude of the object.
+        :param altitude: Optional altitude in degrees to account for atmospheric extinction.
+        :param extinction_k: Atmospheric extinction coefficient (default 0.2).
+        :return: Total integrated object flux in e-/s.
+        """
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -531,7 +548,7 @@ class OpticalPath:
         for f in self.filters:
             transmission *= f.transmission
 
-        # Total flux from the object
+        # Total integrated flux from the object
         # Based on the same zero point as sky_flux
         flux = (
             0.005
@@ -551,7 +568,23 @@ class OpticalPath:
         n_pix: int = 4,
         altitude: Optional[float] = None,
         extinction_k: float = 0.2,
+        in_db: bool = False,
     ) -> Optional[float]:
+        """
+        Calculates the Signal-to-Noise Ratio (SNR) for an object in the given optical path.
+        The model accounts for object shot noise, sky background shot noise, and sensor read noise.
+        It assumes aperture photometry where the object signal is integrated over `n_pix` pixels.
+
+        :param magnitude: Apparent magnitude of the object.
+        :param sqm: Sky Quality Meter reading in mag/arcsec^2.
+        :param exposure_time: Exposure time per sub-exposure in seconds.
+        :param n_subs: Number of sub-exposures stacked.
+        :param n_pix: Number of pixels over which the object signal is integrated (default 4).
+        :param altitude: Optional altitude in degrees for atmospheric extinction.
+        :param extinction_k: Atmospheric extinction coefficient (default 0.2).
+        :param in_db: If True, returns SNR in decibels (20 * log10).
+        :return: SNR (dimensionless linear ratio or dB).
+        """
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -581,7 +614,14 @@ class OpticalPath:
         if total_noise == 0:
             return 0.0
 
-        return signal / total_noise
+        snr_linear = signal / total_noise
+
+        if in_db:
+            if snr_linear <= 0:
+                return -numpy.inf
+            return 20.0 * numpy.log10(snr_linear)
+
+        return snr_linear
 
     def required_subs_for_snr(
         self,

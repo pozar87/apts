@@ -1,9 +1,10 @@
+import pytest
+import numpy as np
 from apts.light_pollution import LightPollution
 from apts.place import Place
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-import numpy as np
 
 def test_bortle_to_sqm():
     # Test midpoints
@@ -69,3 +70,47 @@ def test_camera_limiting_magnitude():
     snr_at_limit = path.snr(limit_mag, sqm, sub_time, n_subs=int(n_subs))
     assert snr_at_limit is not None
     assert abs(snr_at_limit - 5.0) < 0.1
+
+def test_snr_db_conversion():
+    telescope = Sky_watcherTelescope.Sky_Watcher_Esprit_100ED()
+    camera = ZwoCamera.ZWO_ASI2600MC_PRO()
+    path = OpticalPath.from_path([telescope, camera])
+
+    magnitude = 15.0
+    sqm = 21.0
+    exposure_time = 60
+
+    snr_linear = path.snr(magnitude, sqm, exposure_time, in_db=False)
+    snr_db = path.snr(magnitude, sqm, exposure_time, in_db=True)
+
+    assert snr_linear is not None
+    assert snr_db is not None
+    # SNR in dB should be 20 * log10(SNR_linear)
+    assert snr_db == pytest.approx(20.0 * np.log10(snr_linear))
+
+    # Test edge case: SNR <= 0
+    # Zero exposure time ensures zero signal and thus zero SNR
+    snr_zero_linear = path.snr(magnitude, sqm, exposure_time=0.0)
+    snr_zero_db = path.snr(magnitude, sqm, exposure_time=0.0, in_db=True)
+    assert snr_zero_linear == 0.0
+    assert snr_zero_db == -np.inf
+
+def test_snr_extinction_verification():
+    # Verify that SNR calculation accounts for atmospheric extinction
+    telescope = Sky_watcherTelescope.Sky_Watcher_Esprit_100ED()
+    camera = ZwoCamera.ZWO_ASI2600MC_PRO()
+    path = OpticalPath.from_path([telescope, camera])
+
+    magnitude = 10.0
+    sqm = 21.0
+    exposure_time = 60
+
+    # Zenith (altitude 90, airmass 1.0)
+    snr_zenith = path.snr(magnitude, sqm, exposure_time, altitude=90.0, extinction_k=0.2)
+    # Near horizon (altitude 10, airmass ~5.6)
+    snr_low = path.snr(magnitude, sqm, exposure_time, altitude=10.0, extinction_k=0.2)
+
+    assert snr_zenith is not None
+    assert snr_low is not None
+    # Extinction should make the star fainter at lower altitudes, thus lower SNR
+    assert snr_zenith > snr_low
