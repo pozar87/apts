@@ -243,7 +243,7 @@
 
 - **Items:** Sky-Watcher Skyliner 150P, 200P, 250P, 300P and their FlexTube/variants.
 - **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
-- **Initial State:** Generic `type_telescope` type. Missing explicit aperture, focal length, and central obstruction. Mass values were rounded or inaccurate.
+- **Initial State:** Generic `type_telescope` type for most. Missing explicit aperture, focal length, and central obstruction. Mass values were rounded or inaccurate.
 - **Verified Specs (Sources: Sky-Watcher Official, First Light Optics, Agena Astro):**
     - **Skyliner 150P:** 153mm / 1200mm (f/8), CO 34.5mm, Mass 5.9kg OTA.
     - **Skyliner 200P (inc. FlexTube):** 203mm / 1200mm (f/6), CO 47mm, Mass 11kg OTA.
@@ -375,5 +375,26 @@
 - **Source URLs:**
     - https://www.skywatcherusa.com/products/sky-watcher-skymax-180
     - https://www.firstlightoptics.com/telescopes-in-stock/skywatcher-heritage-76-mini-dobsonian.html
-    - https://agenaastro.com/skywatcher-18-stargate-dobsonian-telescope-goto-s11920.html
+    - https://agenaastro.com/sky-watcher-18-stargate-dobsonian-telescope-goto-s11920.html
     - http://www.scopeviews.co.uk/SWEq80ED.htm
+
+## 2024-06-10 - Audit of William Optics Telescopes
+
+- **Items:** William Optics RedCat 51, GT153, Pleiades 68, Pleiades 111.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/william_optics.py`
+- **Initial State:**
+    - RedCat 51 mass was 1800g (actual 3.2 lbs / 1.45kg).
+    - GT153 focal length was 1056mm (actual 1188mm) and mass 8400g (actual 13.5kg).
+    - Pleiades 68 focal length was 260mm (actual 258.4mm) and mass 3800g (actual 2.98kg OTA).
+    - Pleiades 111 was missing from the database.
+- **Verified Specs (Source: William Optics Official & Support Documentation):**
+    - **RedCat 51:** Aperture 51mm, FL 250mm, Mass 1.45kg OTA, CO 0mm.
+    - **GT153:** Aperture 153mm, FL 1188mm, Mass 13.5kg OTA, CO 0mm.
+    - **Pleiades 68:** Aperture 68mm, FL 258.4mm, Mass 2.98kg OTA, CO 0mm.
+    - **Pleiades 111:** Aperture 111mm, FL 528mm, Mass 7.95kg OTA, CO 0mm.
+- **Action:** Updated RedCat 51, GT153, and Pleiades 68 with verified physical specs. Added Pleiades 111 with verified specs. Ensured all refractor models have explicit `central_obstruction_mm: 0` and correct optical type. Added source comments. Verified with `tests/unit/test_william_optics_specs.py`.
+- **Source URLs:**
+    - https://support.williamoptics.com/products/gran-turismo-153
+    - https://support.williamoptics.com/products/pleiades-68
+    - https://williamoptics.com/products/pleiades-111
+    - https://astrobackyard.com/william-optics-redcat-51/
