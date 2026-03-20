@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.william_optics import William_opticsTelescope
 
 def test_william_optics_gt153_specs():

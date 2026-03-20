@@ -17,7 +17,6 @@ from . import cache, skyfield_searches
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 from .config import get_event_settings
-from .constants import astronomy
 from .constants.event_types import EventType
 from .i18n import gettext_
 from .utils import planetary
