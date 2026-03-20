@@ -176,3 +176,24 @@
 - Updated `apts/constants/astronomy.py` with the corrected GRS longitude and updated the comment.
 - Updated `apts/opticalequipment/telescope/vendors/sky_watcher.py` with verified Virtuoso GTi 150P specifications.
 - Verified hardware spec parsing and GRS transit predictor with unit tests.
+
+## 2025-05-21 - Solar Physical Details and SQA55 Specs
+
+### Observe
+- Solar astrophotographers need physical orientation data (Position Angle, Heliographic Latitude, Carrington Longitude) to track sunspots and solar features.
+- The popular Askar SQA55 Petzval refractor was missing from the database.
+- The ZWO ASI664MC full-well specification was slightly inaccurate (36.5ke- vs 38.5ke-).
+
+### Target
+- Priority 3: Implement new solar utility functions.
+- Priority 2: Add missing popular telescope and correct camera data.
+
+### Calibrate
+- **Solar Physical Details:** Uses formulas from Jean Meeus, *Astronomical Algorithms*, Chapter 29. Accuracy is ~0.01° for elements and ~0.05° for final values.
+- **Askar SQA55:** 55mm aperture, 264mm focal length (f/4.8), 1.84kg mass. Petzval design.
+- **ZWO ASI664MC/MM:** Corrected full-well to 38,500e- per official ZWO specs.
+
+### Develop
+- Implemented `get_sun_physical_details` in `apts/utils/planetary.py` and exposed via `OpticalPath`.
+- Updated `askar.py` and `zwo.py` with verified specifications.
+- Verified with `tests/unit/test_solar_physical.py` (Meeus Example 29.a benchmark) and `tests/unit/test_stellar_v7.py`.
