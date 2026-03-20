@@ -50,10 +50,7 @@ class TestStellarV6(unittest.TestCase):
             self.assertEqual(cam.width, 2704)
             self.assertEqual(cam.height, 1536)
             self.assertEqual(cam.pixel_size().magnitude, 2.9)
-            if "ZWO" in cam.vendor:
-                self.assertEqual(cam.full_well, 36500)
-            else:
-                self.assertEqual(cam.full_well, 38500)
+            self.assertEqual(cam.full_well, 38500)
 
 
 if __name__ == "__main__":
