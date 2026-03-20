@@ -44,6 +44,8 @@ class DefaultConditions:
     MIN_AURORA = 0  # [%], range [0,100]
     # Path to horizon file (.hrz)
     HORIZON_FILE: Optional[str] = None
+    # Content of horizon file
+    HORIZON_CONTENT: Optional[str] = None
 
 
 class Conditions:
@@ -72,6 +74,7 @@ class Conditions:
         twilight: Twilight = DefaultConditions.TWILIGHT,
         min_aurora: float = DefaultConditions.MIN_AURORA,
         horizon_file: Optional[str] = DefaultConditions.HORIZON_FILE,
+        horizon_content: Optional[str] = DefaultConditions.HORIZON_CONTENT,
     ):
         self.max_clouds = max_clouds
         self.max_precipitation_probability = max_precipitation_probability
@@ -92,6 +95,7 @@ class Conditions:
         self.twilight = twilight
         self.min_aurora = min_aurora
         self.horizon_file = horizon_file
+        self.horizon_content = horizon_content
         self._horizon = None
 
     @property
@@ -99,7 +103,7 @@ class Conditions:
         if self._horizon is None:
             from apts.horizon import Horizon
 
-            self._horizon = Horizon(self.horizon_file, self.min_object_altitude)
+            self._horizon = Horizon(self.horizon_file, self.min_object_altitude, content=self.horizon_content)
         return self._horizon
 
     def is_visible(self, azimuth, altitude):
@@ -108,7 +112,7 @@ class Conditions:
         If a horizon file is provided, it is used for the check.
         Otherwise, simple min_object_altitude and min/max_object_azimuth are used.
         """
-        if self.horizon_file:
+        if self.horizon_content or self.horizon_file:
             return self.horizon.is_visible(azimuth, altitude)
 
         # Fallback to simple min/max
