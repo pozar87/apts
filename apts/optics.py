@@ -1201,3 +1201,11 @@ class OpticalPath:
         """
         from .utils import planetary
         return planetary.get_planet_magnitude(planet_name, time)
+
+    def planetary_surface_brightness(self, planet_name: str, time: Any) -> float:
+        """
+        Calculates the average surface brightness of a planet, the Moon, or the Sun
+        in mag/arcsec².
+        """
+        from .utils import planetary
+        return planetary.get_planet_surface_brightness(planet_name, time)

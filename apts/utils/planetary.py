@@ -490,6 +490,38 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float:
     return float(magnitudelib.planetary_magnitude(astrometric))
 
 
+def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
+    """
+    Calculates the average surface brightness of a celestial body (Sun, Moon, or planets)
+    in magnitudes per square arcsecond (mag/arcsec²).
+
+    Formula: S = V + 2.5 * log10(Area)
+    Where V is the integrated apparent magnitude and Area is the illuminated
+    visual area in square arcseconds.
+
+    Sources:
+    - Wikipedia: Surface Brightness
+    - Explanatory Supplement to the Astronomical Almanac
+    """
+    v = get_planet_magnitude(planet_name, time)
+    d = get_planet_angular_diameter(planet_name, time)
+
+    name_norm = get_simple_name(planet_name).lower()
+    if name_norm == "sun":
+        k = 1.0
+    else:
+        k = get_planet_fraction_illuminated(planet_name, time)
+
+    # Area of illuminated portion of the disk in arcsec^2
+    # Area = pi * (radius)^2 * k
+    area = np.pi * (d / 2.0) ** 2 * k
+
+    if area <= 0:
+        return float("inf")
+
+    return float(v + 2.5 * np.log10(area))
+
+
 def get_moon_libration(time: Any) -> tuple[float, float]:
     """
     Returns the Moon's libration in longitude and latitude in degrees.
