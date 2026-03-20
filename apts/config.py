@@ -12,6 +12,7 @@ config = configparser.ConfigParser()
 
 # Define potential config file locations (can be modified at runtime)
 config_paths = [
+    "./apts.ini",
     "./examples/apts.ini",  # Relative to project root if run from there
     os.path.expanduser("~/.config/apts/apts.ini"),
 ]
@@ -135,7 +136,7 @@ def get_event_settings() -> dict:
                     event_settings[option] = config.getboolean("events", option)
                 except Exception as e:
                     logger.error(f"Error reading option {option} in [events]: {e}")
-    
+
     return event_settings
 
 
