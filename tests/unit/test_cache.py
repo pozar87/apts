@@ -161,3 +161,24 @@ class CacheTest(unittest.TestCase):
 
         # Clear cache after test to avoid leaking mocks
         get_jovian_ephemeris.cache_clear()
+
+    @pytest.mark.clear_mpcorb
+    @patch("apts.cache.get_minor_planet_settings")
+    def test_get_mpcorb_data_empty(self, mock_get_settings):
+        # Mock settings to return a planet that doesn't exist in our small test data
+        mock_get_settings.return_value = ["NONEXISTENT"]
+
+        # Call the function
+        # We need to clear the cache first because get_mpcorb_data is cached
+        get_mpcorb_data.cache_clear()
+        df = get_mpcorb_data()
+
+        # Assertions
+        self.assertTrue(df.empty)
+        self.assertEqual(df.index.name, "designation")
+        # Check some of the expected columns
+        self.assertIn("semimajor_axis_au", df.columns)
+        self.assertIn("eccentricity", df.columns)
+
+        # Clear cache after test
+        get_mpcorb_data.cache_clear()

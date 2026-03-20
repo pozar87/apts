@@ -93,7 +93,9 @@ def get_hipparcos_data() -> pd.DataFrame:
             "to manually fetch the required files."
         )
         # Fallback to an empty DataFrame if loading fails, to allow other parts of the system to function
-        return pd.DataFrame(columns=["magnitude", "ra_degrees", "dec_degrees", "parallax_mas"])
+        return pd.DataFrame(
+            columns=cast(Any, ["magnitude", "ra_degrees", "dec_degrees", "parallax_mas"])
+        )
 
 
 @functools.lru_cache(maxsize=None)

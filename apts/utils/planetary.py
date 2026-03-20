@@ -512,8 +512,8 @@ def get_moon_position_angle_bright_limb(time: Any) -> float:
     moon = eph["moon"]
 
     t = time
-    astrometric_moon = earth.at(t).observe(moon).apparent()
-    astrometric_sun = earth.at(t).observe(sun).apparent()
+    astrometric_moon = cast(Any, earth).at(t).observe(moon).apparent()
+    astrometric_sun = cast(Any, earth).at(t).observe(sun).apparent()
 
     # Position angle of the bright limb
     # Reference: https://rhodesmill.org/skyfield/api-almanac.html#skyfield.almanac.fraction_illuminated
