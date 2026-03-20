@@ -2170,3 +2170,85 @@ def find_jupiter_grs_transits(
                 )
 
     return events
+
+def find_lunar_features(observer, start_date, end_date):
+    """
+    Finds transient lunar features (Lunar X and Straight Wall) based on colongitude.
+    Lunar X: Colongitude approx 358 degrees (around First Quarter).
+    Straight Wall (Rupes Recta): Colongitude approx 178 degrees (8 days after New Moon).
+    """
+    import ephem
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    sun = planetary.get_skyfield_obj("sun")
+    moon_sf = planetary.get_skyfield_obj("moon")
+
+    # Features to track: (Name, Target Colongitude)
+    features = [
+        ("Lunar X", 358.0),
+        ("Straight Wall (Rupes Recta)", 178.0),
+    ]
+
+    events = []
+    m = ephem.Moon()
+
+    def get_colong(t_sf):
+        m.compute(t_sf.utc_datetime())
+        return float(m.colong) * 180.0 / np.pi
+
+    # Check every 2.4 hours
+    num_steps = int((t1 - t0) * 10)
+    if num_steps < 2:
+        return []
+
+    times = ts.linspace(t0, t1, num_steps)
+
+    # Precompute colongitudes for efficiency
+    colongs = np.array([get_colong(t) for t in times])
+
+    for name, target_colong in features:
+        # Handle wrap-around for 358
+        diffs = (colongs - target_colong + 180) % 360 - 180
+
+        # Find zero crossings (rising edge only to avoid false positives at target+180)
+        crossings = np.where((diffs[:-1] < 0) & (diffs[1:] > 0))[0]
+
+        for idx in crossings:
+            # Refine crossing time
+            # Simple linear interpolation for refinement
+            t_low = times[idx]
+            t_high = times[idx + 1]
+            d_low = diffs[idx]
+            d_high = diffs[idx+1]
+
+            # If it crosses 0, d_low and d_high have different signs
+            t_mid_jd = t_low.tt + (t_high.tt - t_low.tt) * (-d_low / (d_high - d_low))
+            t_refined = ts.tt_jd(t_mid_jd)
+
+            # Visibility check at refined time
+            # Lunar features are visible if the Moon is above the horizon
+            # and the Sun is below -6 degrees.
+            m_pos = observer.at(t_refined).observe(moon_sf).apparent()
+            alt, _, _ = m_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+            if alt.degrees > 0:
+                sun_alt = (
+                    observer.at(t_refined)
+                    .observe(sun)
+                    .apparent()
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
+
+                if sun_alt <= -6:
+                    events.append({
+                        "date": t_refined.utc_datetime(),
+                        "event": name,
+                        "object": "Moon",
+                        "type": "Lunar Feature",
+                        "altitude": float(alt.degrees),
+                        "colongitude": get_colong(t_refined)
+                    })
+
+    return events

@@ -57,6 +57,8 @@ class TestAstronomicalEvents(unittest.TestCase):
             "planet_messier_conjunctions": True,
             "planet_star_conjunctions": True,
             "planet_stationary_points": True,
+            "planet_solar_conjunctions": True,
+            "lunar_features": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -82,7 +84,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         # 30: culminations
         # 31: greatest_elongations
         # 32: seasons
-        num_events = 32
+        # 33: lunar_features
+        num_events = 33
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
