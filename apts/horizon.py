@@ -5,17 +5,47 @@ from scipy.interpolate import interp1d
 
 
 class Horizon:
-    def __init__(self, file_path: Optional[str] = None, min_altitude: float = 0.0):
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        min_altitude: float = 0.0,
+        content: Optional[str] = None,
+    ):
         self.file_path = file_path
         self.min_altitude = float(min_altitude)
         self.azimuths = np.array([0.0, 360.0])
         self.altitudes = np.array([self.min_altitude, self.min_altitude])
-        if file_path and os.path.exists(file_path):
+        if content:
+            self._load_from_content(content)
+        elif file_path and os.path.exists(file_path):
             self._load_from_file(file_path)
         # Using any to avoid pyright issue with "extrapolate" literal
         self._interp = interp1d(
-            self.azimuths, self.altitudes, kind="linear", fill_value="extrapolate" # type: ignore
+            self.azimuths,
+            self.altitudes,
+            kind="linear",
+            fill_value="extrapolate",  # type: ignore
         )
+
+    def _load_from_content(self, content: str):
+        az = []
+        alt = []
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith(("#", ";")):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    az.append(float(parts[0]))
+                    alt.append(float(parts[1]))
+                except ValueError:
+                    continue
+
+        if not az:
+            return
+
+        self._process_data(az, alt)
 
     def _load_from_file(self, file_path: str):
         if file_path.lower().endswith(".ini"):
@@ -57,6 +87,9 @@ class Horizon:
         if not az:
             return
 
+        self._process_data(az, alt)
+
+    def _process_data(self, az: list[float], alt: list[float]):
         # Ensure sorted
         data = sorted(zip(az, alt))
         az, alt = map(list, zip(*data))
