@@ -2091,6 +2091,96 @@ def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_deg
     return conjunctions
 
 
+def find_planet_planet_occultations(observer, start_date, end_date):
+    """
+    Finds occultations of one planet by another.
+    Extremely rare events.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+
+    events = []
+    # Check all pairs of planets
+    for i, p1_name in enumerate(planets):
+        for p2_name in planets[i + 1 :]:
+            p1_obj = planetary.get_skyfield_obj(p1_name)
+            p2_obj = planetary.get_skyfield_obj(p2_name)
+
+            def separation(t):
+                # Use topocentric apparent positions
+                # Optimization: for coarse search, we could use .observe()
+                p1_obs = observer.at(t).observe(p1_obj).apparent()
+                p2_obs = observer.at(t).observe(p2_obj).apparent()
+                sep = p1_obs.separation_from(p2_obs).degrees
+
+                # Calculate angular radii
+                r1 = np.degrees(
+                    np.arcsin(
+                        planetary.get_planet_radius_km(p1_name) / p1_obs.distance().km
+                    )
+                )
+                r2 = np.degrees(
+                    np.arcsin(
+                        planetary.get_planet_radius_km(p2_name) / p2_obs.distance().km
+                    )
+                )
+
+                return sep - (r1 + r2)
+
+            # Step of 0.5 days is safe for these slow events
+            setattr(separation, "step_days", 0.5)
+            times, _ = find_minima(t0, t1, separation)
+
+            for t in times:
+                # Refine
+                refined_t, refined_sep = _refine_conjunction(observer, p1_obj, p2_obj, t)
+
+                p1_obs = observer.at(refined_t).observe(p1_obj).apparent()
+                p2_obs = observer.at(refined_t).observe(p2_obj).apparent()
+
+                r1 = np.degrees(
+                    np.arcsin(
+                        planetary.get_planet_radius_km(p1_name) / p1_obs.distance().km
+                    )
+                )
+                r2 = np.degrees(
+                    np.arcsin(
+                        planetary.get_planet_radius_km(p2_name) / p2_obs.distance().km
+                    )
+                )
+
+                if refined_sep < (r1 + r2):
+                    # Determine which planet is in front
+                    if p1_obs.distance().km < p2_obs.distance().km:
+                        occulting = planetary.get_simple_name(p1_name)
+                        occulted = planetary.get_simple_name(p2_name)
+                    else:
+                        occulting = planetary.get_simple_name(p2_name)
+                        occulted = planetary.get_simple_name(p1_name)
+
+                    events.append(
+                        {
+                            "date": refined_t.utc_datetime(),
+                            "event": f"{occulting} occults {occulted}",
+                            "object1": occulting,
+                            "object2": occulted,
+                            "separation_degrees": float(refined_sep),
+                            "type": "Planet-Planet Occultation",
+                        }
+                    )
+    return events
+
+
 def find_jupiter_grs_transits(
     observer,
     start_date,

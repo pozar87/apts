@@ -170,6 +170,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_solar_conjunctions))
         if self.event_settings.get("lunar_features"):
             futures.append(executor.submit(self.calculate_lunar_features))
+        if self.event_settings.get("planet_planet_occultations"):
+            futures.append(executor.submit(self.calculate_planet_planet_occultations))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -337,6 +339,8 @@ class AstronomicalEvents:
             return 3
         if event_type == "Lunar Feature":
             return 4
+        if event_type == "Planet-Planet Occultation":
+            return 5
         return 1
 
     def calculate_space_launches(self):
@@ -1104,7 +1108,9 @@ class AstronomicalEvents:
             "neptune barycenter",
             "pluto barycenter",
         ]
-        # Optimization: Avoid nested executor submission to prevent potential deadlocks
+        # Efficiency: Use vectorized approach to find stationary points across all planets
+        # and avoid nested executor submission to prevent potential deadlocks.
+        # Note: Stationary points are searched using a coarse step of 2 days.
         for p in planets:
             found_events = skyfield_searches.find_stationary_points(
                 self.observer,
@@ -1140,4 +1146,16 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Lunar Feature", event)
         logger.debug(f"--- calculate_lunar_features: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_planet_occultations(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_planet_occultations(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet-Planet Occultation", event)
+        logger.debug(
+            f"--- calculate_planet_planet_occultations: {time.time() - start_time}s"
+        )
         return events

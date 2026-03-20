@@ -64,5 +64,51 @@ class OracleImprovementsTest(unittest.TestCase):
         antares_conj = events_df[events_df["object2"] == "Antares"]
         self.assertGreater(len(antares_conj), 0)
 
+    def test_sunset_precision_default_horizon(self):
+        # Test that the default sunset uses the refraction/semi-diameter offset
+        from datetime import date
+        target_date = date(2024, 6, 21)
+
+        # Sunset with 0 degree horizon
+        sunset_0 = self.place.sunset_time(target_date=target_date, horizon_degrees=0.0)
+        # Sunset with default -0.8333 degree horizon
+        sunset_default = self.place.sunset_time(target_date=target_date)
+
+        # In summer at high latitudes, the difference is significant
+        diff_seconds = (sunset_default - sunset_0).total_seconds()
+        self.assertGreater(diff_seconds, 120) # At least 2 minutes
+        self.assertLess(diff_seconds, 600)    # But not more than 10 minutes
+
+    def test_planet_planet_occultation_rarity(self):
+        # Verify rarity 5 is assigned to Planet-Planet Occultation
+        start_date = datetime(2024, 1, 1, tzinfo=utc)
+        end_date = datetime(2024, 1, 2, tzinfo=utc)
+        events = AstronomicalEvents(self.place, start_date, end_date)
+
+        rarity = events._get_rarity("Planet-Planet Occultation", {})
+        self.assertEqual(rarity, 5)
+
+    def test_calculate_planet_planet_occultations_integration(self):
+        from unittest.mock import patch
+        with patch('apts.skyfield_searches.find_planet_planet_occultations') as mock_find:
+            mock_find.return_value = [{
+                "date": datetime(2024, 1, 1, 12, 0, tzinfo=utc),
+                "event": "Venus occults Jupiter",
+                "object1": "Venus",
+                "object2": "Jupiter",
+                "separation_degrees": 0.001,
+                "type": "Planet-Planet Occultation"
+            }]
+
+            start_date = datetime(2024, 1, 1, tzinfo=utc)
+            end_date = datetime(2024, 1, 2, tzinfo=utc)
+            events_engine = AstronomicalEvents(self.place, start_date, end_date,
+                                              events_to_calculate=[EventType.PLANET_PLANET_OCCULTATIONS])
+
+            df = events_engine.get_events()
+            self.assertFalse(df.empty)
+            self.assertEqual(df.iloc[0]['event'], "Venus occults Jupiter")
+            self.assertEqual(df.iloc[0]['rarity'], 5)
+
 if __name__ == "__main__":
     unittest.main()

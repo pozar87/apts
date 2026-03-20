@@ -76,14 +76,17 @@ def _get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
 
 
 @lru_cache(maxsize=1024)
-def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
+def _previous_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
     ts = get_timescale()
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start - datetime.timedelta(days=2))
     t1 = ts.utc(start)
-    f = almanac.risings_and_settings(eph, obj, location)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
     t, y = almanac.find_discrete(t0, t1, f)
 
     if t is None:
@@ -96,14 +99,17 @@ def _previous_setting_time_utc(lat, lon, elevation, obj_name, start):
 
 
 @lru_cache(maxsize=1024)
-def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
+def _next_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
     ts = get_timescale()
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start)
     t1 = ts.utc(start + datetime.timedelta(days=2))
-    f = almanac.risings_and_settings(eph, obj, location)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
     t, y = almanac.find_discrete(t0, t1, f)
 
     if t is not None:
@@ -114,14 +120,17 @@ def _next_rising_time_utc(lat, lon, elevation, obj_name, start):
 
 
 @lru_cache(maxsize=1024)
-def _next_setting_time_utc(lat, lon, elevation, obj_name, start):
+def _next_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
     ts = get_timescale()
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start)
     t1 = ts.utc(start + datetime.timedelta(days=2))
-    f = almanac.risings_and_settings(eph, obj, location)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
     t, y = almanac.find_discrete(t0, t1, f)
 
     if t is not None:
@@ -132,14 +141,17 @@ def _next_setting_time_utc(lat, lon, elevation, obj_name, start):
 
 
 @lru_cache(maxsize=1024)
-def _previous_rising_time_utc(lat, lon, elevation, obj_name, start):
+def _previous_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
     ts = get_timescale()
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
     t0 = ts.utc(start - datetime.timedelta(days=2))
     t1 = ts.utc(start)
-    f = almanac.risings_and_settings(eph, obj, location)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
     t, y = almanac.find_discrete(t0, t1, f)
 
     if t is None:
@@ -239,33 +251,53 @@ class Place:
             force=force,
         )
 
-    def _previous_setting_time(self, obj_name, start):
+    def _previous_setting_time(self, obj_name, start, horizon_degrees=None):
         res = _previous_setting_time_utc(
-            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            obj_name,
+            start,
+            horizon_degrees=horizon_degrees,
         )
         if res:
             return res.astimezone(self.local_timezone)
         return None
 
-    def _next_setting_time(self, obj_name, start):
+    def _next_setting_time(self, obj_name, start, horizon_degrees=None):
         res = _next_setting_time_utc(
-            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            obj_name,
+            start,
+            horizon_degrees=horizon_degrees,
         )
         if res:
             return res.astimezone(self.local_timezone)
         return None
 
-    def _previous_rising_time(self, obj_name, start):
+    def _previous_rising_time(self, obj_name, start, horizon_degrees=None):
         res = _previous_rising_time_utc(
-            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            obj_name,
+            start,
+            horizon_degrees=horizon_degrees,
         )
         if res:
             return res.astimezone(self.local_timezone)
         return None
 
-    def _next_rising_time(self, obj_name, start):
+    def _next_rising_time(self, obj_name, start, horizon_degrees=None):
         res = _next_rising_time_utc(
-            self.lat_decimal, self.lon_decimal, self.elevation, obj_name, start
+            self.lat_decimal,
+            self.lon_decimal,
+            self.elevation,
+            obj_name,
+            start,
+            horizon_degrees=horizon_degrees,
         )
         if res:
             return res.astimezone(self.local_timezone)
@@ -275,6 +307,9 @@ class Place:
         if start_search_from:
             return start_search_from
         elif target_date:
+            if isinstance(target_date, datetime.datetime):
+                # Ensure we handle both date and datetime
+                target_date = target_date.date()
             local_start_of_day = datetime.datetime.combine(
                 target_date, datetime.time.min
             ).replace(tzinfo=self.local_timezone)
@@ -300,38 +335,46 @@ class Place:
         target_date=None,
         start_search_from: Optional[datetime.datetime] = None,
         twilight: Optional[Twilight] = None,
+        horizon_degrees: float = -0.8333,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "set")
-        return self._next_setting_time("sun", start=start_date)
+        return self._next_setting_time("sun", start=start_date, horizon_degrees=horizon_degrees)
 
     def sunrise_time(
         self,
         target_date=None,
         start_search_from: Optional[datetime.datetime] = None,
         twilight: Optional[Twilight] = None,
+        horizon_degrees: float = -0.8333,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "rise")
-        return self._next_rising_time("sun", start=start_date)
+        return self._next_rising_time("sun", start=start_date, horizon_degrees=horizon_degrees)
 
     def moonset_time(
         self,
         target_date=None,
         start_search_from: Optional[datetime.datetime] = None,
+        horizon_degrees: float = -0.8333,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
-        return self._next_setting_time("moon", start=start_date)
+        return self._next_setting_time(
+            "moon", start=start_date, horizon_degrees=horizon_degrees
+        )
 
     def moonrise_time(
         self,
         target_date=None,
         start_search_from: Optional[datetime.datetime] = None,
+        horizon_degrees: float = -0.8333,
     ):
         start_date = self._get_start_date(target_date, start_search_from)
-        return self._next_rising_time("moon", start=start_date)
+        return self._next_rising_time(
+            "moon", start=start_date, horizon_degrees=horizon_degrees
+        )
 
     def _moon_phase_letter(self) -> str:
         phase_angle = almanac.moon_phase(self.eph, self.date)
