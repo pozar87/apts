@@ -393,42 +393,53 @@ def get_reverse_translated_planet_names(language: str) -> dict:
 _JUPITER_EPHEM = ephem.Jupiter()
 
 
-def get_jupiter_system_ii_longitude(time: Any) -> float:
+def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
     """
     Returns Jupiter's Central Meridian Longitude (System II) in degrees.
-    Uses ephem for calculation.
+    Uses ephem for calculation. Supports both scalar and array Skyfield Time objects.
     """
     # Calculate light-travel time from Jupiter to Earth
     eph = get_ephemeris()
     earth = eph["earth"]
     jupiter = eph["jupiter barycenter"]
 
-    # Position of Jupiter as seen from Earth
+    # Vectorized position of Jupiter as seen from Earth
     astrometric = cast(Any, earth).at(time).observe(jupiter)
     lt_days = astrometric.light_time
 
     # Account for light-travel time by subtracting it from the observation time
     # This evaluates the rotation state of Jupiter at the moment the light left it.
-    # Note: We must re-instantiate ephem.Jupiter to ensure 'compute' doesn't use
-    # cached internal values that might interfere with light-time adjustment.
-    t_light = time.utc_datetime() - timedelta(days=lt_days)
+    if hasattr(time, "shape") and time.shape:
+        # Array of times
+        res = []
+        for i, t in enumerate(time):
+            t_light = t.utc_datetime() - timedelta(days=lt_days[i])
+            j = ephem.Jupiter(t_light)
+            res.append(float(np.degrees(float(j.cmlII))))
+        return np.array(res)
+    else:
+        # Scalar time
+        t_light = time.utc_datetime() - timedelta(days=lt_days)
+        j = ephem.Jupiter(t_light)
+        return float(np.degrees(float(j.cmlII)))
 
-    j = ephem.Jupiter(t_light)
-    # ephem returns longitude in radians, convert to degrees
-    return float(np.degrees(float(j.cmlII)))
 
-
-def get_jupiter_grs_longitude(time: Any) -> float:
+def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
     """
     Returns the projected longitude of the Great Red Spot (System II) for a given time.
     Uses a linear drift model based on recent observations.
     Reference: 79.6° on 2026-03-18 with a drift of approx +0.8° per month.
+    Supports both scalar and array Skyfield Time objects.
     """
-    ref_date = datetime(2026, 3, 18, tzinfo=timezone.utc)
+    # Reference epoch: 2026-03-18 00:00:00 UTC
     ref_lon = 79.6
     drift_per_day = 0.8 / 30.44  # approx 0.8 degrees per month
 
-    dt = (time.utc_datetime() - ref_date).total_seconds() / 86400.0
+    # Use .tt (Terrestrial Time) for precise day counting
+    ts = get_timescale()
+    ref_tt = ts.utc(2026, 3, 18).tt
+    dt = time.tt - ref_tt
+
     return (ref_lon + dt * drift_per_day) % 360
 
 def get_planet_phase_angle(planet_name: str, time: Any) -> float:
