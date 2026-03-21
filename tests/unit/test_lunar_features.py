@@ -1,20 +1,10 @@
-import pytest
 from datetime import datetime, timezone
 from apts.events import AstronomicalEvents
 from apts.place import Place
 from apts.constants.event_types import EventType
-import apts.skyfield_searches as skyfield_searches
 from unittest.mock import patch
 
 def test_lunar_features_logic():
-    # Observer in middle of the Pacific to ensure visibility
-    place = Place(
-        name="Pacific",
-        lat=0,
-        lon=-150,
-        elevation=0
-    )
-
     # Check Lunar X in Jan 2026
     # (Found at 2026-01-25 05:37 UTC)
     start_date = datetime(2026, 1, 24, tzinfo=timezone.utc)

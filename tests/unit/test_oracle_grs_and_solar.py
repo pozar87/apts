@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import numpy as np
 from apts.events import AstronomicalEvents
 from apts.place import Place
