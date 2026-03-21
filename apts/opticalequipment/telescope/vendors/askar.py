@@ -22,6 +22,7 @@ class AskarTelescope(Telescope):
         'Askar_140APO': {'brand': 'Askar', 'name': '140APO', 'type': 'type_refractor', 'optical_length': 0, 'mass': 10000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M68', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 140, 'focal_length_mm': 980},
         'Askar_120APO': {'brand': 'Askar', 'name': '120APO', 'type': 'type_refractor', 'optical_length': 0, 'mass': 6500, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M68', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 120, 'focal_length_mm': 840},
         'Askar_ACL200': {'brand': 'Askar', 'name': 'ACL200', 'type': 'type_camera_lens', 'optical_length': 0, 'mass': 1800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 50, 'focal_length_mm': 200},
+        'Askar_SQA55': {'brand': 'Askar', 'name': 'SQA55', 'type': 'type_refractor', 'optical_length': 0, 'mass': 1840, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 55, 'focal_length_mm': 264}, # Verified via specs
     }
 
     @classmethod
@@ -103,3 +104,7 @@ class AskarTelescope(Telescope):
     @classmethod
     def Askar_ACL200(cls):
         return cls.from_database(cls._DATABASE['Askar_ACL200'])
+
+    @classmethod
+    def Askar_SQA55(cls):
+        return cls.from_database(cls._DATABASE['Askar_SQA55'])
