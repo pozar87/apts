@@ -27,6 +27,7 @@ SATURN_RING_OUTER_RADIUS_KM = 136775.0
 AU_KM = 149597870.7
 
 # Jupiter Great Red Spot (GRS) Longitude in System II (degrees)
-# Note: This value drifts over time and should be updated annually.
-# Value for early 2026 is approximately 80 degrees.
+# Note: This is a reference value for early 2026 (approx 80.0°).
+# The library uses a dynamic drift model in `apts.utils.planetary.get_jupiter_grs_longitude`
+# for high-precision transit predictions.
 JUPITER_GRS_LONGITUDE_SYSTEM_II = 80.0
