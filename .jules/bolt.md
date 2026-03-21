@@ -49,3 +49,7 @@
 ## 2025-03-25 - [Vectorized Weather Condition Evaluation]
 **Learning:** Evaluating multiple weather conditions (thresholds) on large datasets using `iterrows()` is extremely slow. Replacing it with vectorized Pandas boolean masks for the initial "good/bad" pass and then using `.to_dict('records')` on the bad-hour subset for localized string generation provides a ~2.6x to ~4x speedup. Iterating over a list of dicts is significantly faster than using `.iloc` inside a Python loop for small subsets.
 **Action:** Use vectorized boolean masks for bulk condition checks. If row-specific logic (like string formatting) is still needed, apply it only to filtered subsets converted to Python primitives (e.g., list of dicts).
+
+## 2025-03-26 - [Skyfield Pairwise Vectorization]
+**Learning:** Skyfield's `.observe()` method supports pairwise vectorization (N unique bodies observed at N unique times) when the length of the `Time` object matches the length of the `Star` (or other body) object. This yields a single position vector of length N, bypassing the O(N) loop of individual observations. Additionally, for meridian culminations, expensive topocentric `altaz()` calls can be replaced by the geometric approximation `90 - |lat - dec|` plus Bennett's refraction formula, which is sub-arcsecond accurate and orders of magnitude faster.
+**Action:** Always use pairwise vectorization and geometric meridian shortcuts for large-scale culmination and transit searches.

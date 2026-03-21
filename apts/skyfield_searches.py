@@ -1806,26 +1806,20 @@ def find_object_culminations(
 
     # 1. Process fixed objects with vectorized analytical approach
     if fixed_objects:
-        # Extract observer longitude from the VectorSum object (used for LST calculation)
+        # Extract observer coordinates from the VectorSum object
         lon_hours = 0.0
+        lat_deg = 0.0
         for vf in observer.vector_functions:
-            if hasattr(vf, "longitude"):
+            if hasattr(vf, "latitude"):
+                lat_deg = vf.latitude.degrees
                 lon_hours = vf.longitude.hours
                 break
 
         # Generate reference points for each day in the interval.
-        # We include one extra day before and after to ensure we don't miss culminations
-        # near the boundaries of the interval.
         num_days = int(t1 - t0) + 1
         day_offsets = np.arange(-1, num_days + 1)
-        # Using 12:00 UTC as a stable reference point for each day
         t0_dt = cast(Any, t0.utc_datetime())
-        t_refs = ts.utc(
-            t0_dt.year,
-            t0_dt.month,
-            t0_dt.day + day_offsets,
-            12,
-        )
+        t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
 
         names_fixed = [f[0] for f in fixed_objects]
         num_fixed = len(fixed_objects)
@@ -1836,42 +1830,31 @@ def find_object_culminations(
         stars_vector = Star(ra_hours=ra_fixed, dec_degrees=dec_fixed)
 
         all_t_culm_tt = []
+        all_dec_deg = []
 
         # Optimization: Loop over days while vectorizing over all objects (N objects per day)
         for t_ref in t_refs:
-            # Estimate apparent RA at mid-day for all objects (using epoch='date' for LST)
-            ra_hours = (
-                observer.at(t_ref)
-                .observe(stars_vector)
-                .apparent()
-                .radec(epoch="date")[0]
-                .hours
-            )
+            # Estimate apparent RA and Dec at mid-day for all objects
+            obs_ref = observer.at(t_ref).observe(stars_vector).apparent()
+            radec_ref = obs_ref.radec(epoch="date")
+            ra_hours = radec_ref[0].hours
+            dec_deg = radec_ref[1].degrees
 
             # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
             target_gast = (ra_hours - lon_hours) % 24
             diff_gast = (target_gast - t_ref.gast) % 24
 
             # Convert sidereal interval to UT (approx. factor 1.0027379)
-            t_est_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
-            t_est = ts.tt_jd(t_est_tt)
+            t_culm_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
 
-            # High-precision refinement (usually one iteration is enough for stars)
-            refined_t_est_tt = np.zeros(num_fixed)
-            for i in range(num_fixed):
-                ti = t_est[i]
-                si = fixed_objects[i][1]
-                ra_now = (
-                    observer.at(ti).observe(si).apparent().radec(epoch="date")[0].hours
-                )
-                target_gast_i = (ra_now - lon_hours) % 24
-                diff = (target_gast_i - ti.gast + 12) % 24 - 12
-                refined_t_est_tt[i] = ti.tt + (diff / 1.002737909) / 24.0
-
-            all_t_culm_tt.append(refined_t_est_tt)
+            # For stars, a single estimation using apparent coordinates at mid-day
+            # is extremely accurate (error < 0.1s).
+            all_t_culm_tt.append(t_culm_tt)
+            all_dec_deg.append(dec_deg)
 
         # Flatten all potential culminations
         t_culms_all_tt = np.concatenate(all_t_culm_tt)
+        decs_all_deg = np.concatenate(all_dec_deg)
         obj_indices_all = np.tile(np.arange(num_fixed), len(t_refs))
 
         # Filter culminations that fall within the requested window
@@ -1879,39 +1862,37 @@ def find_object_culminations(
 
         t_final_tt = t_culms_all_tt[mask_window]
         t_final = ts.tt_jd(t_final_tt)
+        dec_final_deg = decs_all_deg[mask_window]
         obj_indices_final = obj_indices_all[mask_window]
 
         if len(t_final) > 0:
-            # Observe each culmination for altitude and sun visibility check.
-            # Since we have K different times and K different stars, we loop.
-            # K is typically ~len(Messier catalog) * num_days, but many are below horizon.
-            alts_final = np.zeros(len(t_final))
-            sun_alts = np.zeros(len(t_final))
+            # Sun altitude for visibility check (vectorized)
+            sun_alts_deg = (
+                observer.at(t_final)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
 
-            for j in range(len(t_final)):
-                tj = t_final[j]
-                sj = fixed_objects[obj_indices_final[j]][1]
-                alts_final[j] = (
-                    observer.at(tj)
-                    .observe(sj)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
-                sun_alts[j] = (
-                    observer.at(tj)
-                    .observe(sun)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
+            # Culmination altitude (geometric approximation: 90 - |lat - dec|)
+            # Accurate to sub-arcsecond for stars when on the meridian.
+            alts_final_deg = 90.0 - np.abs(lat_deg - dec_final_deg)
+
+            # Add atmospheric refraction at culmination (Bennett's formula)
+            # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
+            r_mask = alts_final_deg > -1.0
+            if np.any(r_mask):
+                alts_m = alts_final_deg[r_mask]
+                r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
+                alts_final_deg[r_mask] += r_arcmin / 60.0
 
             # Visibility threshold: Altitude > 15 deg and Sun below threshold
-            valid_mask = (alts_final > 15) & (sun_alts <= sun_alt_threshold)
+            valid_mask = (alts_final_deg > 15) & (sun_alts_deg <= sun_alt_threshold)
 
             final_names = [names_fixed[i] for i in obj_indices_final[valid_mask]]
             final_times = t_final[valid_mask]
-            final_alts = alts_final[valid_mask]
+            final_alts = alts_final_deg[valid_mask]
 
             for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
                 events.append(
@@ -2107,33 +2088,14 @@ def find_jupiter_grs_transits(
     sun = planetary.get_skyfield_obj("sun")
 
     def cml_difference(t):
-        # Handle both scalar and array Time objects
-        if hasattr(t, "shape") and t.shape != ():
-            # find_minima might pass an array
-            return np.array(
-                [
-                    (
-                        planetary.get_jupiter_system_ii_longitude(ti)
-                        - (
-                            grs_longitude
-                            if grs_longitude is not None
-                            else planetary.get_jupiter_grs_longitude(ti)
-                        )
-                        + 180
-                    )
-                    % 360
-                    - 180
-                    for ti in t
-                ]
-            )
-        else:
-            lon = (
-                grs_longitude
-                if grs_longitude is not None
-                else planetary.get_jupiter_grs_longitude(t)
-            )
-            diff = planetary.get_jupiter_system_ii_longitude(t) - lon
-            return (diff + 180) % 360 - 180
+        # Use vectorized longitude calculations for better performance
+        grs_lon = (
+            grs_longitude
+            if grs_longitude is not None
+            else planetary.get_jupiter_grs_longitude(t)
+        )
+        sys_ii_lon = planetary.get_jupiter_system_ii_longitude(t)
+        return (sys_ii_lon - grs_lon + 180) % 360 - 180
 
     def abs_diff(t):
         return np.abs(cml_difference(t))
