@@ -531,3 +531,19 @@ def get_moon_position_angle_bright_limb(time: Any) -> float:
 
     pa_rad = np.arctan2(num, den)
     return float(np.degrees(pa_rad) % 360)
+
+def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
+    """
+    Calculates the average surface brightness of a planet, the Moon, or the Sun
+    in magnitudes per square arcsecond.
+    Formula: S = V + 2.5 * log10(Area)
+    where V is the apparent magnitude and Area is the disk area in square arcseconds.
+    """
+    mag = get_planet_magnitude(planet_name, time)
+    # Diameter in arcseconds
+    diameter = get_planet_angular_diameter(planet_name, time)
+
+    # Area of the disk in square arcseconds
+    area = np.pi * (diameter / 2.0)**2
+
+    return float(mag + 2.5 * np.log10(area))
