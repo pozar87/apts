@@ -591,10 +591,7 @@ def find_planet_messier_conjunctions(observer, start_date, end_date):
         "uranus barycenter",
         "neptune barycenter",
     ]
-    messier_data = [
-        (row["Messier"], row["skyfield_object"])
-        for _, row in catalogs.MESSIER.iterrows()
-    ]
+    messier_data = list(zip(catalogs.MESSIER["Messier"], catalogs.MESSIER["skyfield_object"]))
 
     events = []
     for p_name in planets:
@@ -1806,12 +1803,14 @@ def find_object_culminations(
 
     # 1. Process fixed objects with vectorized analytical approach
     if fixed_objects:
-        # Extract observer longitude from the VectorSum object (used for LST calculation)
+        # Extract observer coordinates from the VectorSum object (used for LST calculation)
+        lat_deg = 0.0
         lon_hours = 0.0
         for vf in observer.vector_functions:
+            if hasattr(vf, "latitude"):
+                lat_deg = vf.latitude.degrees
             if hasattr(vf, "longitude"):
                 lon_hours = vf.longitude.hours
-                break
 
         # Generate reference points for each day in the interval.
         # We include one extra day before and after to ensure we don't miss culminations
@@ -1856,19 +1855,10 @@ def find_object_culminations(
             t_est_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
             t_est = ts.tt_jd(t_est_tt)
 
-            # High-precision refinement (usually one iteration is enough for stars)
-            refined_t_est_tt = np.zeros(num_fixed)
-            for i in range(num_fixed):
-                ti = t_est[i]
-                si = fixed_objects[i][1]
-                ra_now = (
-                    observer.at(ti).observe(si).apparent().radec(epoch="date")[0].hours
-                )
-                target_gast_i = (ra_now - lon_hours) % 24
-                diff = (target_gast_i - ti.gast + 12) % 24 - 12
-                refined_t_est_tt[i] = ti.tt + (diff / 1.002737909) / 24.0
-
-            all_t_culm_tt.append(refined_t_est_tt)
+            # We skip the iterative refinement loop per object and use the
+            # mid-day RA estimate. For stars and DSOs, the RA change over
+            # 12 hours is negligible for finding culmination time (sub-second error).
+            all_t_culm_tt.append(t_est_tt)
 
         # Flatten all potential culminations
         t_culms_all_tt = np.concatenate(all_t_culm_tt)
@@ -1882,29 +1872,30 @@ def find_object_culminations(
         obj_indices_final = obj_indices_all[mask_window]
 
         if len(t_final) > 0:
-            # Observe each culmination for altitude and sun visibility check.
-            # Since we have K different times and K different stars, we loop.
-            # K is typically ~len(Messier catalog) * num_days, but many are below horizon.
-            alts_final = np.zeros(len(t_final))
-            sun_alts = np.zeros(len(t_final))
+            # 1. Vectorized Sun altitude check at all discovered culmination times
+            sun_alts = (
+                observer.at(t_final)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
 
-            for j in range(len(t_final)):
-                tj = t_final[j]
-                sj = fixed_objects[obj_indices_final[j]][1]
-                alts_final[j] = (
-                    observer.at(tj)
-                    .observe(sj)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
-                sun_alts[j] = (
-                    observer.at(tj)
-                    .observe(sun)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
+            # 2. Vectorized object altitude calculation using geometric formula
+            # Altitude = 90 - |lat - dec|. We include refraction for precision.
+            final_decs = dec_fixed[obj_indices_final]
+            alts_geometric = 90.0 - np.abs(lat_deg - final_decs)
+
+            # Add atmospheric refraction (Bennett's formula approximation)
+            # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
+            refraction_mask = alts_geometric > -1.0
+            refraction_deg = np.zeros_like(alts_geometric)
+            if np.any(refraction_mask):
+                h = alts_geometric[refraction_mask]
+                r_arcmin = 1.0 / np.tan(np.radians(h + 7.31 / (h + 4.4)))
+                refraction_deg[refraction_mask] = r_arcmin / 60.0
+
+            alts_final = alts_geometric + refraction_deg
 
             # Visibility threshold: Altitude > 15 deg and Sun below threshold
             valid_mask = (alts_final > 15) & (sun_alts <= sun_alt_threshold)

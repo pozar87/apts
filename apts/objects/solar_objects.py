@@ -68,7 +68,11 @@ class SolarObjects(Objects):
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
-        name_to_use = obj.get("TechnicalName", obj.Name)
+        if isinstance(obj, dict):
+            name_to_use = obj.get("TechnicalName", obj.get(ObjectTableLabels.NAME))
+        else:
+            name_to_use = obj.get("TechnicalName", obj.Name)
+
         try:
             return self._get_skyfield_object_cached(name_to_use)
         except (ValueError, KeyError):
@@ -129,11 +133,9 @@ class SolarObjects(Objects):
         # For elongation, use apparent position of Sun for consistency with planets
         sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
 
-        # Optimization: Combine Ephem and Skyfield calculations into a single loop
-        # to minimize iterrows() overhead.
-        for _, row in computed_df.iterrows():
-            object_name = cast(str, row[ObjectTableLabels.NAME])
-
+        # Optimization: Combine Ephem and Skyfield calculations into a single loop.
+        # We zip the required columns to avoid the overhead of Pandas iterrows().
+        for object_name in computed_df[ObjectTableLabels.NAME]:
             # --- Ephem Calculation ---
             if object_name in MINOR_PLANET_NAMES.values():
                 try:
@@ -200,7 +202,8 @@ class SolarObjects(Objects):
                     phases.append(np.nan)
 
             # --- Skyfield Calculation ---
-            sky_obj = self.get_skyfield_object(row)
+            # Using a dict to satisfy get_skyfield_object interface while avoiding Series overhead
+            sky_obj = self.get_skyfield_object({ObjectTableLabels.NAME: object_name})
             sky_objs.append(sky_obj)
             if sky_obj:
                 pos = obs_at_t.observe(sky_obj).apparent()
