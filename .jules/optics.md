@@ -398,3 +398,30 @@
     - https://support.williamoptics.com/products/pleiades-68
     - https://williamoptics.com/products/pleiades-111
     - https://astrobackyard.com/william-optics-redcat-51/
+
+## 2024-06-11 - Audit of GSO Ritchey-Chrétien, Newtonian, and Dobson series
+
+- **Items:** GSO RC (6, 8, 10, 12), GSO Newtonian (6" f/5, 8" f/4, 8" f/5), and GSO Dobson (6, 8, 10, 12).
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/gso.py`
+- **Initial State:**
+    - All models missing `central_obstruction_mm`.
+    - Many mass values were rounded or slightly off.
+    - RC 6 focal length was correct (1370mm), but mass was placeholder (5400g).
+- **Verified Specs (Sources: Agena Astro, Optical Universe, APM Telescopes, Teleskop-Service):**
+    - **RC 6":** 152mm / 1370mm, CO 71mm, Mass 5.58kg.
+    - **RC 8":** 203mm / 1624mm, CO 85mm, Mass 7.5kg.
+    - **RC 10":** 254mm / 2000mm, CO 110mm, Mass 15kg.
+    - **RC 12":** 304mm / 2432mm, CO 130mm, Mass 21kg.
+    - **Newton 6" f/5:** 150mm / 750mm, CO 50mm, Mass 5.9kg OTA.
+    - **Newton 8" f/4:** 200mm / 800mm, CO 70mm, Mass 8.9kg (OTA + acc).
+    - **Newton 8" f/5:** 200mm / 1000mm, CO 63mm, Mass 9kg.
+    - **Dobson 6":** 152mm / 1200mm, CO 42mm, Mass 8.3kg OTA.
+    - **Dobson 8":** 203mm / 1200mm, CO 47mm, Mass 11.1kg OTA.
+    - **Dobson 10":** 254mm / 1250mm, CO 64mm, Mass 18kg OTA.
+    - **Dobson 12":** 305mm / 1520mm, CO 70mm, Mass 21.7kg OTA.
+- **Action:** Updated all GSO models with verified physical specs, explicit central obstruction values, and added source comments. Created `tests/unit/test_gso_specs.py` for verification.
+- **Source URLs:**
+    - https://agenaastro.com/gso-8in-f4-newtonian-imaging-reflector-ota-eaf-focuser.html
+    - https://agenaastro.com/gso-6in-f5-newtonian-reflector-ota.html
+    - https://www.opticaluniversescientificinstrument.com/products/gso-6-ritchey-chretien-telescope
+    - https://www.apm-telescopes.net/en/gso-dobson-teleskop-250c-offnung-10-zoll-mit-hochwertigem-crayford-auszug
