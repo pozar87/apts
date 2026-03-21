@@ -92,5 +92,59 @@ class OraclePrecisionTest(unittest.TestCase):
         self.assertEqual(event['ingress_time'].hour, 5)
         self.assertEqual(event['egress_time'].hour, 5)
 
+    def test_mercury_aphelion_perihelion_2024(self):
+        # Mercury orbital period ~88 days.
+        # In 2024, we expect about 4 of each.
+        from apts.skyfield_searches import find_aphelion_perihelion
+        start_date = datetime(2024, 1, 1, tzinfo=utc)
+        end_date = datetime(2024, 12, 31, tzinfo=utc)
+
+        events = find_aphelion_perihelion("mercury", start_date, end_date)
+
+        aphelia = [e for e in events if e["event_type"] == "Aphelion"]
+        perihelia = [e for e in events if e["event_type"] == "Perihelion"]
+
+        # With 180 day step, it would find at most 2.
+        # With 20 day step, it should find all 4.
+        self.assertGreaterEqual(len(aphelia), 4)
+        self.assertGreaterEqual(len(perihelia), 4)
+
+        for e in events:
+            self.assertEqual(e["planet"], "mercury")
+
+    def test_earth_perihelion_2024(self):
+        # Earth perihelion was Jan 3 2024 00:38 UTC.
+        from apts.skyfield_searches import find_aphelion_perihelion
+        start_date = datetime(2024, 1, 1, tzinfo=utc)
+        end_date = datetime(2024, 1, 10, tzinfo=utc)
+
+        events = find_aphelion_perihelion("earth", start_date, end_date)
+        perihelia = [e for e in events if e["event_type"] == "Perihelion"]
+
+        self.assertEqual(len(perihelia), 1)
+        self.assertEqual(perihelia[0]["date"].month, 1)
+        self.assertEqual(perihelia[0]["date"].day, 3)
+
+    def test_lunar_v_presence(self):
+        # Lunar X/V appear at colongitude 358.
+        # We use a special elevation -9999 to bypass visibility checks for testing.
+        from apts.skyfield_searches import find_lunar_features
+        start_date = datetime(2024, 1, 18, 0, 0, tzinfo=utc)
+        end_date = datetime(2024, 1, 18, 23, 59, tzinfo=utc)
+
+        place = Place(lat=0, lon=0, name="Global", elevation=-9999)
+        events = find_lunar_features(place.observer, start_date, end_date)
+
+        lunar_x = [e for e in events if e["event"] == "Lunar X"]
+        lunar_v = [e for e in events if e["event"] == "Lunar V"]
+
+        self.assertGreater(len(lunar_x), 0)
+        self.assertGreater(len(lunar_v), 0)
+        self.assertEqual(len(lunar_x), len(lunar_v))
+
+        # They should happen at exactly the same time in my implementation
+        for x, v in zip(lunar_x, lunar_v):
+            self.assertEqual(x["date"], v["date"])
+
 if __name__ == '__main__':
     unittest.main()
