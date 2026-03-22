@@ -412,17 +412,20 @@ def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
     # This evaluates the rotation state of Jupiter at the moment the light left it.
     if hasattr(time, "shape") and time.shape:
         # Array of times
-        res = []
-        for i, t in enumerate(time):
-            t_light = t.utc_datetime() - timedelta(days=lt_days[i])
-            j = ephem.Jupiter(t_light)
-            res.append(float(np.degrees(float(j.cmlII))))
-        return np.array(res)
+        # Optimization: Pre-calculate datetimes in bulk to avoid many small Time objects.
+        # Reuse global ephem Jupiter instance.
+        uts = time.utc_datetime()
+        res = np.zeros(len(uts))
+        for i, ut in enumerate(uts):
+            t_light = ut - timedelta(days=lt_days[i])
+            _JUPITER_EPHEM.compute(t_light)
+            res[i] = float(np.degrees(float(_JUPITER_EPHEM.cmlII)))
+        return res
     else:
         # Scalar time
         t_light = time.utc_datetime() - timedelta(days=lt_days)
-        j = ephem.Jupiter(t_light)
-        return float(np.degrees(float(j.cmlII)))
+        _JUPITER_EPHEM.compute(t_light)
+        return float(np.degrees(float(_JUPITER_EPHEM.cmlII)))
 
 
 def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:

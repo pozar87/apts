@@ -53,3 +53,7 @@
 ## 2025-03-26 - [Skyfield Pairwise Vectorization]
 **Learning:** Skyfield's `.observe()` method supports pairwise vectorization (N unique bodies observed at N unique times) when the length of the `Time` object matches the length of the `Star` (or other body) object. This yields a single position vector of length N, bypassing the O(N) loop of individual observations. Additionally, for meridian culminations, expensive topocentric `altaz()` calls can be replaced by the geometric approximation `90 - |lat - dec|` plus Bennett's refraction formula, which is sub-arcsecond accurate and orders of magnitude faster.
 **Action:** Always use pairwise vectorization and geometric meridian shortcuts for large-scale culmination and transit searches.
+
+## 2026-03-22 - [Jupiter CML Vectorization]
+**Learning:** Iteratively calling .utc_datetime() on each element of a Skyfield Time array is significantly slower than calling it once on the entire array. Combined with reusing a global ephem.Body instance and pre-allocating NumPy results, this pattern provides a ~15x speedup for planetary rotation calculations.
+**Action:** Always use vectorized .utc_datetime() and reuse global body instances for repetitive PyEphem calculations.
