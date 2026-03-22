@@ -1,6 +1,6 @@
 import ephem
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import numpy as np
 from types import SimpleNamespace

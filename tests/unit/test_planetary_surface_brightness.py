@@ -1,6 +1,3 @@
-import pytest
-import numpy as np
-from datetime import datetime, timezone
 from apts.utils import planetary
 from apts.cache import get_timescale
 from apts.optics import OpticalPath

@@ -1,6 +1,5 @@
 import datetime
 from apts.place import Place
-from skyfield.api import load, Topos
 from skyfield import almanac
 from apts.cache import get_ephemeris, get_timescale
 

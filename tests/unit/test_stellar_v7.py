@@ -1,7 +1,5 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.askar import AskarTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-from apts.units import get_unit_registry
 
 def test_askar_sqa55_specs():
     scope = AskarTelescope.Askar_SQA55()

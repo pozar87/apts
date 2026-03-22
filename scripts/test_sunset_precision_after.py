@@ -1,7 +1,5 @@
 import datetime
 from apts.place import Place
-from skyfield.api import load, Topos
-from skyfield import almanac
 from apts.cache import get_ephemeris, get_timescale
 
 ts = get_timescale()
@@ -17,5 +15,8 @@ print(f"Sunset (0 deg): {sunset_0}")
 sunset_ref = p.sunset_time(target_date=start.date())
 print(f"Sunset (-0.8333 deg): {sunset_ref}")
 
-diff = (sunset_ref - sunset_0).total_seconds()
-print(f"Difference: {diff} seconds ({diff/60:.2f} minutes)")
+if sunset_ref is not None and sunset_0 is not None:
+    diff = (sunset_ref - sunset_0).total_seconds()
+    print(f"Difference: {diff} seconds ({diff/60:.2f} minutes)")
+else:
+    print("Could not calculate sunset.")
