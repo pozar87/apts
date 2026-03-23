@@ -446,3 +446,31 @@
     - https://explorescientific.com/products/ed102-fcd-100
     - https://explorescientific.com/products/16-truss-tube-dobsonian
     - https://telescopescanada.ca/products/explore-scientific-firstlight-6-inch-maksutov-cassegrain-ota-only-fl-mc1521900
+
+## 2026-03-23 - Audit of Sharpstar Telescopes
+
+- **Items:** Sharpstar 61EDPH II, 61EDPH III, 76EDPH II, 94EDPH II, 140PH, 13028HNT, 15028HNT, 20032HNT.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sharpstar.py`
+- **Initial State:**
+    - Refractors (61EDPH II, 76EDPH II, 94EDPH II, 140PH) were missing `central_obstruction_mm`.
+    - 94EDPH II mass was 4400g (gross weight), corrected to 3300g (net).
+    - 15028HNT mass was 5950g (gross weight), corrected to 4450g (net).
+    - 15028HNT and 20032HNT were missing `central_obstruction_mm`.
+    - 61EDPH III and 13028HNT were missing from the database.
+- **Verified Specs (Source: Sharpstar Official Website / High Point Scientific / First Light Optics):**
+    - **61EDPH II:** Aperture 61mm, FL 335mm, Mass 1.5kg, CO 0mm.
+    - **61EDPH III:** Aperture 61mm, FL 360mm, Mass 1.48kg, CO 0mm.
+    - **76EDPH II:** Aperture 76mm, FL 418mm, Mass 2.3kg, CO 0mm.
+    - **94EDPH II:** Aperture 94mm, FL 517mm, Mass 3.3kg, CO 0mm.
+    - **140PH:** Aperture 140mm, FL 910mm, Mass 10.1kg, CO 0mm.
+    - **13028HNT:** Aperture 130mm, FL 364mm, Mass 3.2kg, CO 65mm.
+    - **15028HNT:** Aperture 150mm, FL 420mm, Mass 4.45kg, CO 70mm.
+    - **20032HNT:** Aperture 200mm, FL 640mm, Mass 8.0kg, CO 90mm.
+- **Action:** Updated all Sharpstar models with verified physical specs, explicit central obstruction values, corrected masses (converting gross weight to net weight), and added missing models. Added source comments. Verified with `tests/unit/test_sharpstar_specs.py`.
+- **Source URLs:**
+    - https://www.sharpstar-optics.com/Products_1/72.html
+    - https://www.sharpstar-optics.com/Products_1/20.html
+    - https://www.sharpstar-optics.com/Products_1/27.html
+    - https://all-startelescope.com/products/sharpstar-94edph
+    - https://www.sharpstar-optics.com/Products_1/50.html
+    - https://astronomytechnologytoday.com/2020/11/12/sharpstar-20032pnt/

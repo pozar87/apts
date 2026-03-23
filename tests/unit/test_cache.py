@@ -125,6 +125,8 @@ class CacheTest(unittest.TestCase):
             "ra_degrees",
             "dec_degrees",
             "parallax_mas",
+            "ra_hours",
+            "epoch_year",
         ]
         self.assertListEqual(list(df.columns), expected_columns)
 
