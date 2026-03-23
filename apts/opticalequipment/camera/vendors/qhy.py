@@ -2031,35 +2031,19 @@ class QhyCamera(Camera):
 
     @classmethod
     def QHY_QHY_600M(cls):
-        """
-        Factory method for QHY 600M camera.
-        Sensor: Sony IMX455 (Full-Frame Mono)
-        """
-        return cls(36.0, 24.0, 9576, 6388, 'QHY QHY 600M', pixel_size=3.76, read_noise=1.2, full_well=51000, quantum_efficiency=91, mass=1050, backfocus=17.5, optical_length=17.5)
+        return cls.from_database(cls._DATABASE['QHY_QHY_600M'])
 
     @classmethod
     def QHY_QHY_600C(cls):
-        """
-        Factory method for QHY 600C camera.
-        Sensor: Sony IMX455 (Full-Frame Color)
-        """
-        return cls(36.0, 24.0, 9576, 6388, 'QHY QHY 600C', pixel_size=3.76, read_noise=1.2, full_well=51000, quantum_efficiency=80, mass=1050, backfocus=17.5, optical_length=17.5)
+        return cls.from_database(cls._DATABASE['QHY_QHY_600C'])
 
     @classmethod
     def QHY_QHY_268M(cls):
-        """
-        Factory method for QHY 268M camera.
-        Sensor: Sony IMX571 (APS-C Mono)
-        """
-        return cls(23.5, 15.7, 6248, 4176, 'QHY QHY 268M', pixel_size=3.76, read_noise=1.1, full_well=51000, quantum_efficiency=91, mass=800, backfocus=17.5, optical_length=17.5)
+        return cls.from_database(cls._DATABASE['QHY_QHY_268M'])
 
     @classmethod
     def QHY_QHY_268C(cls):
-        """
-        Factory method for QHY 268C camera.
-        Sensor: Sony IMX571 (APS-C Color)
-        """
-        return cls(23.5, 15.7, 6248, 4176, 'QHY QHY 268C', pixel_size=3.76, read_noise=1.1, full_well=51000, quantum_efficiency=81, mass=800, backfocus=17.5, optical_length=17.5)
+        return cls.from_database(cls._DATABASE['QHY_QHY_268C'])
 
     @classmethod
     def QHY_QHY_600M_Pro(cls):
