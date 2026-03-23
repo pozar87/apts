@@ -1013,14 +1013,23 @@ class OpticalPath:
 
         return (p_um * sampling_factor) / (1.22 * lambda_um)
 
-    def planetary_size_in_pixels(self, planet_name: str, time: Any) -> Optional[float]:
+    def planetary_size_in_pixels(
+        self, planet_name: str, time: Any, which: str = "equatorial"
+    ) -> Optional[float]:
         """
         Calculates the projected size of a planet on the sensor in pixels.
         Uses the planet's angular diameter and the setup's pixel scale.
+
+        :param planet_name: Name of the planet (e.g., 'Jupiter').
+        :param time: Skyfield Time object.
+        :param which: 'equatorial' (default), 'polar', or 'apparent_polar'.
+                      'apparent_polar' accounts for the planet's tilt towards Earth.
         """
         from .utils import planetary
 
-        angular_diameter = planetary.get_planet_angular_diameter(planet_name, time)
+        angular_diameter = planetary.get_planet_angular_diameter(
+            planet_name, time, which=which
+        )
         p_scale = self.pixel_scale()
 
         if p_scale is None or p_scale.magnitude == 0:
@@ -1216,6 +1225,13 @@ class OpticalPath:
         """
         from .utils import planetary
         return planetary.get_planet_magnitude(planet_name, time)
+
+    def planetary_phase(self, planet_name: str, time: Any) -> float:
+        """
+        Calculates the illuminated fraction of a planet or the Moon as a percentage (0-100).
+        """
+        from .utils import planetary
+        return planetary.get_planet_phase(planet_name, time)
 
     def planetary_surface_brightness(self, planet_name: str, time: Any) -> float:
         """

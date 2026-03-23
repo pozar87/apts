@@ -2031,19 +2031,19 @@ class QhyCamera(Camera):
 
     @classmethod
     def QHY_QHY_600M(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_600M'])
+        return cls.from_database(cls._DATABASE["QHY_QHY_600M"])
 
     @classmethod
     def QHY_QHY_600C(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_600C'])
+        return cls.from_database(cls._DATABASE["QHY_QHY_600C"])
 
     @classmethod
     def QHY_QHY_268M(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_268M'])
+        return cls.from_database(cls._DATABASE["QHY_QHY_268M"])
 
     @classmethod
     def QHY_QHY_268C(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_268C'])
+        return cls.from_database(cls._DATABASE["QHY_QHY_268C"])
 
     @classmethod
     def QHY_QHY_600M_Pro(cls):
