@@ -80,12 +80,12 @@ def get_hipparcos_data() -> pd.DataFrame:
         path = os.path.join(data_dir, filename)
         if os.path.exists(path):
             with loader.open(hipparcos.URL) as f:
-                return hipparcos.load_dataframe(f)
-
-        # Attempt download with a shorter timeout if possible via Loader (actually Loader doesn't expose timeout)
-        # We wrap in a try-except to provide better error messages and handle Refused connections.
-        with loader.open(hipparcos.URL) as f:
-            return hipparcos.load_dataframe(f)
+                df = hipparcos.load_dataframe(f)
+        else:
+            # Attempt download with a shorter timeout if possible via Loader (actually Loader doesn't expose timeout)
+            # We wrap in a try-except to provide better error messages and handle Refused connections.
+            with loader.open(hipparcos.URL) as f:
+                df = hipparcos.load_dataframe(f)
     except Exception as e:
         logger.error(
             f"Failed to load Hipparcos catalog from {hipparcos.URL}: {e}. "
@@ -93,9 +93,28 @@ def get_hipparcos_data() -> pd.DataFrame:
             "to manually fetch the required files."
         )
         # Fallback to an empty DataFrame if loading fails, to allow other parts of the system to function
-        return pd.DataFrame(
-            columns=cast(Any, ["magnitude", "ra_degrees", "dec_degrees", "parallax_mas"])
+        df = pd.DataFrame(
+            columns=cast(
+                Any,
+                [
+                    "magnitude",
+                    "ra_degrees",
+                    "dec_degrees",
+                    "parallax_mas",
+                    "ra_hours",
+                    "epoch_year",
+                ],
+            )
         )
+
+    # Ensure necessary columns exist for plotting consistency
+    if not df.empty:
+        if "ra_hours" not in df.columns and "ra_degrees" in df.columns:
+            df["ra_hours"] = df["ra_degrees"] / 15.0
+        if "epoch_year" not in df.columns:
+            df["epoch_year"] = 1991.25
+
+    return df
 
 
 @functools.lru_cache(maxsize=None)
