@@ -99,6 +99,15 @@ PLANET_RADII_KM = {
     "sun": astronomy.SUN_RADIUS_KM,
 }
 
+PLANET_POLAR_RADII_KM = {
+    "earth": astronomy.EARTH_POLAR_RADIUS_KM,
+    "mars": astronomy.MARS_POLAR_RADIUS_KM,
+    "jupiter": astronomy.JUPITER_POLAR_RADIUS_KM,
+    "saturn": astronomy.SATURN_POLAR_RADIUS_KM,
+    "uranus": astronomy.URANUS_POLAR_RADIUS_KM,
+    "neptune": astronomy.NEPTUNE_POLAR_RADIUS_KM,
+}
+
 
 def get_planet_radius_km(planet_name: str) -> float:
     """
@@ -112,26 +121,109 @@ def get_planet_radius_km(planet_name: str) -> float:
     return radius
 
 
-def get_planet_distance_km(planet_name: str, time: Any) -> float:
+def get_planet_distance_km(
+    planet_name: str, time: Any, observer: Any = None
+) -> float:
     """
-    Returns the geocentric distance to the planet in km.
+    Returns the geocentric (or topocentric) distance to the planet in km.
     """
+    eph = get_ephemeris()
+    obs_obj = observer if observer is not None else eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+    return cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
+
+
+def get_planet_pole_coords(planet_name: str, time: Any) -> tuple[float, float]:
+    """
+    Returns the planet's North Pole coordinates (RA, Dec) in degrees for the given time.
+    Uses the IAU 2015 model.
+    """
+    # Time in Julian centuries from J2000.0
+    T = (time.tdb - 2451545.0) / 36525.0
+    name_norm = get_simple_name(planet_name).lower()
+
+    if name_norm == "mars":
+        return 317.68143 - 0.1061 * T, 52.88650 - 0.0609 * T
+    if name_norm == "jupiter":
+        return 268.05659 - 0.00649 * T, 64.49530 + 0.00331 * T
+    if name_norm == "saturn":
+        return get_saturn_pole(time)
+    if name_norm == "uranus":
+        return 257.311, -15.175
+    if name_norm == "neptune":
+        return 299.36, 43.46
+
+    # Default to Earth pole (approx) or raise error
+    if name_norm == "earth":
+        return 0.0, 90.0
+
+    raise ValueError(f"Pole coordinates for '{planet_name}' not supported.")
+
+
+def get_sub_observer_latitude(planet_name: str, time: Any) -> float:
+    """
+    Calculates the sub-observer latitude (planetocentric latitude of the Earth) in degrees.
+    This represents the tilt of the planet's equator relative to the observer.
+    """
+    # Geocentric observation (sufficient for sub-observer latitude calculation)
     eph = get_ephemeris()
     earth = eph["earth"]
     planet_obj = get_skyfield_obj(planet_name)
-    return cast(Any, earth).at(time).observe(planet_obj).distance().km
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+    ra_rad, dec_rad, _ = astrometric.radec()
+
+    alpha_rad = ra_rad.radians
+    delta_rad = dec_rad.radians
+
+    alpha0_deg, delta0_deg = get_planet_pole_coords(planet_name, time)
+    alpha0_rad = np.radians(alpha0_deg)
+    delta0_rad = np.radians(delta0_deg)
+
+    # Formula for sub-observer latitude De:
+    # sin(De) = sin(delta0)*sin(delta) + cos(delta0)*cos(delta)*cos(alpha0 - alpha)
+    sin_De = np.sin(delta0_rad) * np.sin(delta_rad) + np.cos(delta0_rad) * np.cos(
+        delta_rad
+    ) * np.cos(alpha0_rad - alpha_rad)
+    De_rad = np.arcsin(np.clip(sin_De, -1.0, 1.0))
+
+    return float(np.degrees(De_rad))
 
 
-def get_planet_angular_diameter(planet_name: str, time: Any) -> float:
+def get_planet_angular_diameter(
+    planet_name: str, time: Any, which: str = "equatorial", observer: Any = None
+) -> float:
     """
     Returns the apparent angular diameter of the planet in arcseconds.
-    Formula: diameter = 2 * arcsin(Radius / Distance)
+
+    Parameters:
+    - which: 'equatorial' (default), 'polar', or 'apparent_polar'.
+      'apparent_polar' accounts for the planet's tilt (sub-observer latitude).
+    - observer: Optional Skyfield observer for topocentric correction.
     """
-    radius = get_planet_radius_km(planet_name)
-    distance = get_planet_distance_km(planet_name, time)
+    radius_eq = get_planet_radius_km(planet_name)
+    distance = get_planet_distance_km(planet_name, time, observer=observer)
+
+    if which == "equatorial":
+        radius = radius_eq
+    else:
+        # Get polar radius
+        simple_name = get_simple_name(planet_name).lower()
+        radius_pol = PLANET_POLAR_RADII_KM.get(simple_name, radius_eq)
+
+        if which == "polar":
+            radius = radius_pol
+        elif which == "apparent_polar":
+            # Apparent polar diameter depends on tilt
+            # Formula: r_app = r_eq * sqrt(1 - e^2 * cos^2(De))
+            # where e^2 = (r_eq^2 - r_pol^2) / r_eq^2
+            De = get_sub_observer_latitude(planet_name, time)
+            De_rad = np.radians(De)
+            e_sq = (radius_eq**2 - radius_pol**2) / (radius_eq**2)
+            radius = radius_eq * np.sqrt(1 - e_sq * np.cos(De_rad) ** 2)
+        else:
+            raise ValueError(f"Invalid 'which' parameter: {which}")
 
     # Angular diameter in radians
-    # Using arcsin(R/D) gives the angular radius, so multiply by 2 for diameter.
     alpha_rad = 2 * np.arcsin(radius / distance)
 
     # Convert to arcseconds
@@ -471,6 +563,13 @@ def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
     dt = time.tt - ref_tt
 
     return (ref_lon + dt * drift_per_day) % 360
+
+def get_planet_phase(planet_name: str, time: Any) -> float:
+    """
+    Returns the illuminated fraction of the planet as a percentage (0-100).
+    """
+    return get_planet_fraction_illuminated(planet_name, time) * 100.0
+
 
 def get_planet_phase_angle(planet_name: str, time: Any) -> float:
     """

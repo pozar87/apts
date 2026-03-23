@@ -219,3 +219,26 @@
 - Exposed `jupiter_cml` via the `OpticalPath` class in `apts/optics.py`.
 - Updated `apts/opticalequipment/telescope/vendors/svbony.py` with the new models.
 - Verified with `tests/unit/test_jupiter_cml.py` and `tests/unit/test_svbony_122_specs.py`.
+
+## 2025-05-23 - High-accuracy planetary geometry and phase
+
+### Observe
+- Astrophotographers need accurate planetary dimensions for framing, especially for highly oblate planets like Jupiter and Saturn.
+- The library was missing polar radius data and the ability to calculate the apparent polar diameter, which varies with the planet's tilt relative to Earth.
+- Users also needed a simple way to get the planetary phase as a percentage for targets like Venus.
+
+### Target
+- Priority 1: Correct an inaccuracy (or omission) in astronomical formulas and data.
+- Improving planetary angular size calculations to account for oblateness and orientation.
+
+### Calibrate
+- **Polar Radii:** Added IAU 2015 standard values for Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.
+- **Physical Orientation:** Implemented `get_sub_observer_latitude` using the IAU 2015 pole models to calculate the tilt ($D_E$).
+- **Apparent Polar Diameter:** Implemented the formula $d_p = d_{eq} \sqrt{1 - (2f - f^2) \cos^2(D_E)}$ where $f$ is the flattening.
+- **Planetary Phase:** Added a percentage-based (0-100) illuminated fraction helper.
+- Source: IAU 2015 Standards, *Explanatory Supplement to the Astronomical Almanac*.
+
+### Develop
+- Updated `apts/constants/astronomy.py`, `apts/utils/planetary.py`, and `apts/optics.py`.
+- Verified with `tests/unit/test_planetary_geometry.py`.
+- Example: Jupiter apparent polar diameter is ~6.5% smaller than equatorial.
