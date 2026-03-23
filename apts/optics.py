@@ -228,21 +228,6 @@ class OpticalPath:
 
         return dispersion_arcsec * get_unit_registry().arcsecond
 
-    def atmospheric_dispersion_in_pixels(
-        self, altitude_degrees: float, lambda1_nm: float = 400, lambda2_nm: float = 700
-    ) -> Optional[float]:
-        """
-        Calculates the atmospheric dispersion in pixels for the current optical path.
-        Useful for planetary imaging to determine if an Atmospheric Dispersion Corrector (ADC) is needed.
-        """
-        dispersion = self.atmospheric_dispersion(altitude_degrees, lambda1_nm, lambda2_nm)
-        scale = self.pixel_scale()
-        if scale is None or scale.magnitude == 0:
-            return None
-        return float(
-            dispersion.to("arcsecond").magnitude / scale.to("arcsecond").magnitude
-        )
-
     def brightness(self) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -1225,16 +1210,16 @@ class OpticalPath:
         from .utils import planetary
         return planetary.get_planet_surface_brightness(planet_name, time)
 
-    def jupiter_cml(self, time: Any, system: int = 2) -> Union[float, numpy.ndarray]:
-        """
-        Calculates Jupiter's Central Meridian Longitude (CML) for the specified system (1 or 2).
-        """
-        from .utils import planetary
-        return planetary.get_jupiter_cml(time, system)
-
     def sun_physical_details(self, time: Any) -> dict:
         """
         Calculates the physical details of the Sun (P, B0, L0).
         """
         from .utils import planetary
         return planetary.get_sun_physical_details(time)
+
+    def jupiter_cml(self, time: Any, system: int = 2) -> Union[float, numpy.ndarray]:
+        """
+        Returns Jupiter's Central Meridian Longitude for the specified system (1 or 2).
+        """
+        from .utils import planetary
+        return planetary.get_jupiter_cml(time, system)

@@ -194,60 +194,6 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
-def find_venus_greatest_brilliancy(observer, start_date, end_date):
-    """
-    Finds when Venus reaches its greatest brilliancy (minimum apparent magnitude).
-    """
-    from skyfield import magnitudelib
-    ts = get_timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-    venus = planetary.get_skyfield_obj("venus")
-
-    # For planetary magnitude, we use geocentric position (earth.at(t))
-    # to match standard almanac definitions for greatest brilliancy.
-    earth = get_ephemeris()["earth"]
-
-    def magnitude(t):
-        astrometric = earth.at(t).observe(venus)
-        return magnitudelib.planetary_magnitude(astrometric)
-
-    # Venus greatest brilliancy occurs every ~584 days.
-    # A step of 30 days is safe to find the minimum.
-    setattr(magnitude, "step_days", 30.0)
-    times, values = find_minima(t0, t1, magnitude)
-
-    events = []
-    for t, mag in zip(times, values):
-        # Calculate altitude and visibility at the observer's location
-        v_obs = observer.at(t).observe(venus).apparent()
-        alt, _, _ = v_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-
-        # Sun altitude for visibility check
-        sun = planetary.get_skyfield_obj("sun")
-        sun_alt = (
-            observer.at(t)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
-
-        events.append(
-            {
-                "date": t.utc_datetime(),
-                "event": "Venus Greatest Brilliancy",
-                "object": "Venus",
-                "type": "Venus Greatest Brilliancy",
-                "magnitude": float(mag),
-                "altitude": float(alt.degrees),
-                "sun_altitude": float(sun_alt),
-            }
-        )
-
-    return events
-
-
 def find_stationary_points(observer, planet_name, start_date, end_date):
     """
     Finds when a planet becomes stationary in Right Ascension (transitioning
@@ -300,7 +246,6 @@ def find_planet_star_conjunctions(
     start_date,
     end_date,
     threshold_degrees=2.0,
-    precomputed_positions=None,
 ):
     """
     Finds conjunctions between major planets and bright stars.
@@ -348,7 +293,6 @@ def find_planet_star_conjunctions(
             start_date,
             end_date,
             threshold_degrees=threshold_degrees,
-            precomputed_positions=precomputed_positions,
         )
         for conj in conjunctions:
             events.append(
@@ -644,9 +588,7 @@ def find_aphelion_perihelion(planet_name, start_date, end_date):
     return events
 
 
-def find_planet_messier_conjunctions(
-    observer, start_date, end_date, precomputed_positions=None
-):
+def find_planet_messier_conjunctions(observer, start_date, end_date):
     """Finds conjunctions between major planets and Messier objects."""
     from .catalogs import Catalogs
 
@@ -670,13 +612,7 @@ def find_planet_messier_conjunctions(
         simple_name = planetary.get_simple_name(p_name)
         # 3.0 degrees threshold for planet-DSO conjunctions
         conjunctions = find_conjunctions_with_stars(
-            observer,
-            p_name,
-            messier_data,
-            start_date,
-            end_date,
-            threshold_degrees=3.0,
-            precomputed_positions=precomputed_positions,
+            observer, p_name, messier_data, start_date, end_date, threshold_degrees=3.0
         )
         for conj in conjunctions:
             events.append(

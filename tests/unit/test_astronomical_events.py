@@ -87,8 +87,7 @@ class TestAstronomicalEvents(unittest.TestCase):
         # 32: seasons
         # 33: lunar_features
         # 34: planet_planet_occultations
-        # 35: venus_greatest_brilliancy
-        num_events = 35
+        num_events = 34
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []

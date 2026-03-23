@@ -418,13 +418,43 @@ def _get_jupiter_cml_internal(time: Any, attr: str) -> float | np.ndarray:
         for i, ut in enumerate(uts):
             t_light = ut - timedelta(days=lt_days[i])
             _JUPITER_EPHEM.compute(t_light)
-            res[i] = float(np.degrees(float(_JUPITER_EPHEM.cmlII)))
+            res[i] = float(np.degrees(float(getattr(_JUPITER_EPHEM, attr))))
         return res
     else:
         # Scalar time
         t_light = time.utc_datetime() - timedelta(days=lt_days)
         _JUPITER_EPHEM.compute(t_light)
-        return float(np.degrees(float(_JUPITER_EPHEM.cmlII)))
+        return float(np.degrees(float(getattr(_JUPITER_EPHEM, attr))))
+
+
+def get_jupiter_system_i_longitude(time: Any) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude (System I) in degrees.
+    System I is used for the equatorial region.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    return _get_jupiter_cml_internal(time, "cmlI")
+
+
+def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
+    System II is used for the temperate regions (including the GRS).
+    Supports both scalar and array Skyfield Time objects.
+    """
+    return _get_jupiter_cml_internal(time, "cmlII")
+
+
+def get_jupiter_cml(time: Any, system: int = 2) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude for the specified system (1 or 2).
+    """
+    if system == 1:
+        return get_jupiter_system_i_longitude(time)
+    elif system == 2:
+        return get_jupiter_system_ii_longitude(time)
+    else:
+        raise ValueError("Only System I (1) and System II (2) are supported for Jupiter CML.")
 
 
 def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
