@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.explore_scientific import Explore_scientificTelescope
 from apts.opticalequipment.telescope.base import TelescopeType
 

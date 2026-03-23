@@ -394,10 +394,9 @@ def get_reverse_translated_planet_names(language: str) -> dict:
 _JUPITER_EPHEM = ephem.Jupiter()
 
 
-def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
+def _get_jupiter_cml_internal(time: Any, attr: str) -> float | np.ndarray:
     """
-    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
-    Uses ephem for calculation. Supports both scalar and array Skyfield Time objects.
+    Internal helper for Jupiter Central Meridian Longitude calculation.
     """
     # Calculate light-travel time from Jupiter to Earth
     eph = get_ephemeris()
