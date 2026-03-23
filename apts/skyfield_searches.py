@@ -11,6 +11,216 @@ from .constants import astronomy
 from .utils import planetary
 
 
+def find_meteor_showers(observer, start_date, end_date):
+    """
+    Finds meteor shower peaks and calculates radiant visibility for a given observer.
+    """
+    from datetime import datetime
+    ts = get_timescale()
+    t0_utc = ts.utc(start_date)
+    t1_utc = ts.utc(end_date)
+    utc = start_date.tzinfo
+    eph = get_ephemeris()
+    sun = eph["sun"]
+
+    showers = {
+        "Quadrantids": {
+            "start": (1, 1),
+            "peak_lon": 283.16,
+            "end": (1, 5),
+            "radiant": (15.3, 49.0),
+        },
+        "Lyrids": {
+            "start": (4, 14),
+            "peak_lon": 32.32,
+            "end": (4, 30),
+            "radiant": (18.1, 34.0),
+        },
+        "Eta Aquarids": {
+            "start": (4, 19),
+            "peak_lon": 45.5,
+            "end": (5, 28),
+            "radiant": (22.5, -1.0),
+        },
+        "Delta Aquarids": {
+            "start": (7, 12),
+            "peak_lon": 127.0,
+            "end": (8, 23),
+            "radiant": (22.6, -16.0),
+        },
+        "Perseids": {
+            "start": (7, 17),
+            "peak_lon": 140.0,
+            "end": (8, 24),
+            "radiant": (3.1, 58.0),
+        },
+        "Orionids": {
+            "start": (10, 2),
+            "peak_lon": 208.0,
+            "end": (11, 7),
+            "radiant": (6.3, 16.0),
+        },
+        "Leonids": {
+            "start": (11, 6),
+            "peak_lon": 235.27,
+            "end": (11, 30),
+            "radiant": (10.2, 22.0),
+        },
+        "Geminids": {
+            "start": (12, 4),
+            "peak_lon": 262.2,
+            "end": (12, 17),
+            "radiant": (7.5, 33.0),
+        },
+        "Ursids": {
+            "start": (12, 17),
+            "peak_lon": 270.7,
+            "end": (12, 26),
+            "radiant": (14.5, 76.0),
+        },
+    }
+
+    events = []
+    peak_candidates = []
+
+    for year in range(start_date.year, end_date.year + 1):
+        for shower, data in showers.items():
+            s_date = datetime(year, data["start"][0], data["start"][1], tzinfo=utc)
+            e_date = datetime(year, data["end"][0], data["end"][1], tzinfo=utc)
+
+            # Handle showers crossing year boundary
+            t_s = ts.utc(year, data["start"][0], data["start"][1])
+            t_e = ts.utc(year, data["end"][0], data["end"][1])
+            if t_e < t_s:
+                t_e = ts.utc(year + 1, data["end"][0], data["end"][1])
+
+            peak_t = find_solar_longitude_time(t_s, t_e, data["peak_lon"])
+            peak_date = peak_t.utc_datetime() if peak_t is not None else None
+
+            if start_date <= s_date <= end_date:
+                events.append({
+                    "date": s_date,
+                    "event": "Meteor Shower",
+                    "shower_name": shower,
+                    "phase": "Start",
+                    "type": "Meteor Shower",
+                })
+
+            if peak_date and start_date <= peak_date <= end_date:
+                peak_candidates.append({
+                    "peak_t": peak_t,
+                    "peak_date": peak_date,
+                    "shower_name": shower,
+                    "radiant": data["radiant"]
+                })
+
+            if start_date <= e_date <= end_date:
+                events.append({
+                    "date": e_date,
+                    "event": "Meteor Shower",
+                    "shower_name": shower,
+                    "phase": "End",
+                    "type": "Meteor Shower",
+                })
+
+    if peak_candidates:
+        # Oracle: Vectorized visibility check for all peaks
+        peak_times = ts.from_datetimes([p["peak_date"] for p in peak_candidates])
+        ra_list = np.array([p["radiant"][0] for p in peak_candidates])
+        dec_list = np.array([p["radiant"][1] for p in peak_candidates])
+
+        radiants_vector = Star(ra_hours=ra_list, dec_degrees=dec_list)
+
+        # Calculate radiant altitudes in bulk
+        radiant_alts, _, _ = (
+            observer.at(peak_times)
+            .observe(radiants_vector)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+
+        # Calculate Sun altitudes in bulk
+        sun_alts, _, _ = (
+            observer.at(peak_times)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+
+        for i, p in enumerate(peak_candidates):
+            r_alt = radiant_alts.degrees[i]
+            s_alt = sun_alts.degrees[i]
+            is_visible = r_alt > 0 and s_alt <= -6
+
+            events.append({
+                "date": p["peak_date"],
+                "event": "Meteor Shower",
+                "shower_name": p["shower_name"],
+                "phase": "Peak",
+                "type": "Meteor Shower",
+                "altitude": float(r_alt),
+                "is_visible": bool(is_visible),
+            })
+
+    return events
+
+
+def find_supermoons(start_date, end_date):
+    """
+    Finds Supermoons (Perigee-Syzygy events).
+    A Supermoon is defined here as a Full Moon occurring when the Moon is within
+    90% of its closest approach (perigee) for a given orbit.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = get_ephemeris()
+    moon = planetary.get_skyfield_obj("moon")
+    earth = planetary.get_skyfield_obj("earth")
+
+    # 1. Find all Full Moons in the range
+    f = almanac.moon_phases(eph)
+    t_phases, y_phases = almanac.find_discrete(t0, t1, f)
+    full_moons = [t for t, y in zip(t_phases, y_phases) if y == 2]
+
+    events = []
+    for t_full in full_moons:
+        # 2. For each Full Moon, find the nearest perigee and apogee to determine the 90% threshold
+        # Search window: +/- 15 days around the full moon
+        t_start = ts.tt_jd(t_full.tt - 15)
+        t_end = ts.tt_jd(t_full.tt + 15)
+
+        def distance_to_earth(t):
+            return cast(Any, earth).at(t).observe(moon).distance().km
+
+        setattr(distance_to_earth, "step_days", 1.0)
+        t_max, v_max = find_maxima(t_start, t_end, distance_to_earth)
+        t_min, v_min = find_minima(t_start, t_end, distance_to_earth)
+
+        if len(v_min) > 0 and len(v_max) > 0:
+            perigee_dist = v_min[0]
+            apogee_dist = v_max[0]
+
+            # Distance at the moment of Full Moon
+            current_dist = distance_to_earth(t_full)
+
+            # Supermoon threshold (90% between apogee and perigee)
+            # Threshold = Perigee + 0.1 * (Apogee - Perigee)
+            threshold = perigee_dist + 0.1 * (apogee_dist - perigee_dist)
+
+            if current_dist <= threshold:
+                events.append({
+                    "date": t_full.utc_datetime(),
+                    "event": "Supermoon",
+                    "object": "Moon",
+                    "type": "Supermoon",
+                    "distance_km": float(current_dist),
+                    "perigee_distance_km": float(perigee_dist)
+                })
+
+    return events
+
+
 def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     """
     Finds the exact time when the Sun reaches a specific ecliptic longitude.
@@ -1245,6 +1455,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     coarse_times = times[coarse_idx]
 
     # Topocentric position for Moon (coarse)
+    # Refraction is not critical here for the coarse filter
     mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
     m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
     moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
@@ -1290,12 +1501,31 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
         fine_times = times[window_indices]
         mpos_fine = observer.at(fine_times).observe(moon).apparent()
-        m_alt_fine, _, m_dist_fine = mpos_fine.altaz()
+        m_alt_fine, _, m_dist_fine = mpos_fine.altaz(
+            temperature_C=10.0, pressure_mbar=1013.25
+        )
         moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_fine.km))
 
         # Topocentric observation of star for maximum precision
+        # Oracle: use apparent position to match refracted Moon position
         spos_fine = observer.at(fine_times).observe(star_obj).apparent()
-        separations = mpos_fine.separation_from(spos_fine).degrees
+
+        # Calculate separation from refracted positions
+        # Skyfield's separation_from handles apparent positions correctly.
+        # However, to be extra precise we should ensure we are comparing
+        # refracted Moon to refracted Star.
+        # .altaz() with temperature/pressure already accounts for refraction.
+        # For separation, we compare positions in the observer's local frame.
+
+        m_alt, m_az, _ = mpos_fine.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        s_alt, s_az, _ = spos_fine.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+        # Vectorized angular separation using Haversine-like formula on Alt/Az
+        d_alt = m_alt.radians - s_alt.radians
+        d_az = m_az.radians - s_az.radians
+
+        a = np.sin(d_alt/2)**2 + np.cos(m_alt.radians) * np.cos(s_alt.radians) * np.sin(d_az/2)**2
+        separations = np.degrees(2 * np.arcsin(np.sqrt(np.clip(a, 0, 1))))
 
         # Sun altitude for visibility check
         sun_alts = (
@@ -1303,14 +1533,13 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
             .observe(planetary.get_skyfield_obj("sun"))
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
         )
 
         # Occultation check: separation < angular radius AND Moon above horizon AND Sun below -6 degrees
         occ_mask = (
             (separations < moon_rad_fine)
-            & (m_alt_fine.degrees > 0)
-            & (sun_alts <= -6)
+            & (m_alt.degrees > 0)
+            & (sun_alts.degrees <= -6)
         )
         occ_indices_local = np.where(occ_mask)[0]
 
@@ -1428,7 +1657,10 @@ def _find_satellite_flybys(
 
         # Sun altitude (dark-sky check)
         sun_alt, _, _ = (
-            vector_observer.at(culmination_time).observe(sun).apparent().altaz()
+            vector_observer.at(culmination_time)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
         )
         if sun_alt.degrees > -18:  # not dark enough
             continue
@@ -1439,7 +1671,7 @@ def _find_satellite_flybys(
         topocentric = sat - obs
 
         # Altitude, azimuth, distance
-        alt, az, distance = topocentric.altaz()
+        alt, az, distance = topocentric.altaz(temperature_C=10.0, pressure_mbar=1013.25)
         if alt.degrees < peak_altitude_threshold:
             continue
 
