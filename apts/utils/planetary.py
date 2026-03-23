@@ -1,6 +1,6 @@
 import ephem
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import numpy as np
 from types import SimpleNamespace
@@ -31,6 +31,7 @@ PLANET_NAMES = {
     "uranus barycenter": "Uranus",
     "neptune barycenter": "Neptune",
     "sun": "Sun",
+    "earth": "Earth",
     "ceres": "Ceres",
     "pluto barycenter": "Pluto",
     "haumea": "Haumea",
@@ -72,7 +73,7 @@ APHELION_PERIHELION_PLANETS = [
     "saturn barycenter",
     "uranus barycenter",
     "neptune barycenter",
-    "moon",
+    "earth",
     "ceres",
     "pluto barycenter",
     "haumea",
@@ -393,42 +394,82 @@ def get_reverse_translated_planet_names(language: str) -> dict:
 _JUPITER_EPHEM = ephem.Jupiter()
 
 
-def get_jupiter_system_ii_longitude(time: Any) -> float:
+def _get_jupiter_cml_internal(time: Any, attr: str) -> float | np.ndarray:
     """
-    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
-    Uses ephem for calculation.
+    Internal helper for Jupiter Central Meridian Longitude calculation.
     """
     # Calculate light-travel time from Jupiter to Earth
     eph = get_ephemeris()
     earth = eph["earth"]
     jupiter = eph["jupiter barycenter"]
 
-    # Position of Jupiter as seen from Earth
+    # Vectorized position of Jupiter as seen from Earth
     astrometric = cast(Any, earth).at(time).observe(jupiter)
     lt_days = astrometric.light_time
 
     # Account for light-travel time by subtracting it from the observation time
     # This evaluates the rotation state of Jupiter at the moment the light left it.
-    # Note: We must re-instantiate ephem.Jupiter to ensure 'compute' doesn't use
-    # cached internal values that might interfere with light-time adjustment.
-    t_light = time.utc_datetime() - timedelta(days=lt_days)
+    if hasattr(time, "shape") and time.shape:
+        # Array of times
+        res = []
+        for i, t in enumerate(time):
+            t_light = t.utc_datetime() - timedelta(days=lt_days[i])
+            j = ephem.Jupiter(t_light)
+            res.append(float(np.degrees(float(getattr(j, attr)))))
+        return np.array(res)
+    else:
+        # Scalar time
+        t_light = time.utc_datetime() - timedelta(days=lt_days)
+        j = ephem.Jupiter(t_light)
+        return float(np.degrees(float(getattr(j, attr))))
 
-    j = ephem.Jupiter(t_light)
-    # ephem returns longitude in radians, convert to degrees
-    return float(np.degrees(float(j.cmlII)))
+
+def get_jupiter_system_i_longitude(time: Any) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude (System I) in degrees.
+    System I is used for the equatorial region.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    return _get_jupiter_cml_internal(time, "cmlI")
 
 
-def get_jupiter_grs_longitude(time: Any) -> float:
+def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude (System II) in degrees.
+    System II is used for the temperate regions (including the GRS).
+    Supports both scalar and array Skyfield Time objects.
+    """
+    return _get_jupiter_cml_internal(time, "cmlII")
+
+
+def get_jupiter_cml(time: Any, system: int = 2) -> float | np.ndarray:
+    """
+    Returns Jupiter's Central Meridian Longitude for the specified system (1 or 2).
+    """
+    if system == 1:
+        return get_jupiter_system_i_longitude(time)
+    elif system == 2:
+        return get_jupiter_system_ii_longitude(time)
+    else:
+        raise ValueError("Only System I (1) and System II (2) are supported for Jupiter CML.")
+
+
+def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
     """
     Returns the projected longitude of the Great Red Spot (System II) for a given time.
     Uses a linear drift model based on recent observations.
     Reference: 79.6° on 2026-03-18 with a drift of approx +0.8° per month.
+    Supports both scalar and array Skyfield Time objects.
     """
-    ref_date = datetime(2026, 3, 18, tzinfo=timezone.utc)
+    # Reference epoch: 2026-03-18 00:00:00 UTC
     ref_lon = 79.6
     drift_per_day = 0.8 / 30.44  # approx 0.8 degrees per month
 
-    dt = (time.utc_datetime() - ref_date).total_seconds() / 86400.0
+    # Use .tt (Terrestrial Time) for precise day counting
+    ts = get_timescale()
+    ref_tt = ts.utc(2026, 3, 18).tt
+    dt = time.tt - ref_tt
+
     return (ref_lon + dt * drift_per_day) % 360
 
 def get_planet_phase_angle(planet_name: str, time: Any) -> float:
@@ -488,6 +529,38 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float:
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
     # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
     return float(magnitudelib.planetary_magnitude(astrometric))
+
+
+def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
+    """
+    Calculates the average surface brightness of a celestial body (Sun, Moon, or planets)
+    in magnitudes per square arcsecond (mag/arcsec²).
+
+    Formula: S = V + 2.5 * log10(Area)
+    Where V is the integrated apparent magnitude and Area is the illuminated
+    visual area in square arcseconds.
+
+    Sources:
+    - Wikipedia: Surface Brightness
+    - Explanatory Supplement to the Astronomical Almanac
+    """
+    v = get_planet_magnitude(planet_name, time)
+    d = get_planet_angular_diameter(planet_name, time)
+
+    name_norm = get_simple_name(planet_name).lower()
+    if name_norm == "sun":
+        k = 1.0
+    else:
+        k = get_planet_fraction_illuminated(planet_name, time)
+
+    # Area of illuminated portion of the disk in arcsec^2
+    # Area = pi * (radius)^2 * k
+    area = np.pi * (d / 2.0) ** 2 * k
+
+    if area <= 0:
+        return float("inf")
+
+    return float(v + 2.5 * np.log10(area))
 
 
 def get_moon_libration(time: Any) -> tuple[float, float]:

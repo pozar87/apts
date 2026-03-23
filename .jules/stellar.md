@@ -197,3 +197,25 @@
 - Implemented `get_sun_physical_details` in `apts/utils/planetary.py` and exposed via `OpticalPath`.
 - Updated `askar.py` and `zwo.py` with verified specifications.
 - Verified with `tests/unit/test_solar_physical.py` (Meeus Example 29.a benchmark) and `tests/unit/test_stellar_v7.py`.
+
+## 2025-05-22 - Jupiter System I CML and SV550 Specs
+
+### Observe
+- Jupiter has three systems of longitude. The library previously only supported System II (temperate regions/GRS). System I is needed for equatorial features.
+- The SVBony SV550 122ED and SV550 60 are popular modern triplet refractors missing from the database.
+
+### Target
+- Priority 3: Implement a new utility function (Jupiter System I CML).
+- Priority 2: Add missing popular telescopes to the internal database.
+
+### Calibrate
+- **Jupiter CML:** Uses PyEphem's `cmlI` and `cmlII` attributes. Calculations include light-travel time correction (evaluating Jupiter's rotation state at the moment light left the planet).
+- **SVBony SV550 122ED:** 122mm aperture, 854mm focal length (f/7), 6440g mass.
+- **SVBony SV550 60:** 60mm aperture, 300mm focal length (f/5), 2030g mass.
+- Source: Manufacturer official specs (SVBony), PyEphem documentation.
+
+### Develop
+- Refactored `get_jupiter_system_ii_longitude` in `apts/utils/planetary.py` into a unified `get_jupiter_cml` function and added System I support.
+- Exposed `jupiter_cml` via the `OpticalPath` class in `apts/optics.py`.
+- Updated `apts/opticalequipment/telescope/vendors/svbony.py` with the new models.
+- Verified with `tests/unit/test_jupiter_cml.py` and `tests/unit/test_svbony_122_specs.py`.

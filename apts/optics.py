@@ -1202,6 +1202,21 @@ class OpticalPath:
         from .utils import planetary
         return planetary.get_planet_magnitude(planet_name, time)
 
+    def planetary_surface_brightness(self, planet_name: str, time: Any) -> float:
+        """
+        Calculates the average surface brightness of a planet, the Moon, or the Sun
+        in mag/arcsec².
+        """
+        from .utils import planetary
+        return planetary.get_planet_surface_brightness(planet_name, time)
+
+    def jupiter_cml(self, time: Any, system: int = 2) -> Union[float, numpy.ndarray]:
+        """
+        Calculates Jupiter's Central Meridian Longitude (CML) for the specified system (1 or 2).
+        """
+        from .utils import planetary
+        return planetary.get_jupiter_cml(time, system)
+
     def sun_physical_details(self, time: Any) -> dict:
         """
         Calculates the physical details of the Sun (P, B0, L0).

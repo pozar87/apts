@@ -398,3 +398,51 @@
     - https://support.williamoptics.com/products/pleiades-68
     - https://williamoptics.com/products/pleiades-111
     - https://astrobackyard.com/william-optics-redcat-51/
+
+## 2024-06-11 - Audit of GSO Ritchey-Chrétien, Newtonian, and Dobson series
+
+- **Items:** GSO RC (6, 8, 10, 12), GSO Newtonian (6" f/5, 8" f/4, 8" f/5), and GSO Dobson (6, 8, 10, 12).
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/gso.py`
+- **Initial State:**
+    - All models missing `central_obstruction_mm`.
+    - Many mass values were rounded or slightly off.
+    - RC 6 focal length was correct (1370mm), but mass was placeholder (5400g).
+- **Verified Specs (Sources: Agena Astro, Optical Universe, APM Telescopes, Teleskop-Service):**
+    - **RC 6":** 152mm / 1370mm, CO 71mm, Mass 5.58kg.
+    - **RC 8":** 203mm / 1624mm, CO 85mm, Mass 7.5kg.
+    - **RC 10":** 254mm / 2000mm, CO 110mm, Mass 15kg.
+    - **RC 12":** 304mm / 2432mm, CO 130mm, Mass 21kg.
+    - **Newton 6" f/5:** 150mm / 750mm, CO 50mm, Mass 5.9kg OTA.
+    - **Newton 8" f/4:** 200mm / 800mm, CO 70mm, Mass 8.9kg (OTA + acc).
+    - **Newton 8" f/5:** 200mm / 1000mm, CO 63mm, Mass 9kg.
+    - **Dobson 6":** 152mm / 1200mm, CO 42mm, Mass 8.3kg OTA.
+    - **Dobson 8":** 203mm / 1200mm, CO 47mm, Mass 11.1kg OTA.
+    - **Dobson 10":** 254mm / 1250mm, CO 64mm, Mass 18kg OTA.
+    - **Dobson 12":** 305mm / 1520mm, CO 70mm, Mass 21.7kg OTA.
+- **Action:** Updated all GSO models with verified physical specs, explicit central obstruction values, and added source comments. Created `tests/unit/test_gso_specs.py` for verification.
+- **Source URLs:**
+    - https://agenaastro.com/gso-8in-f4-newtonian-imaging-reflector-ota-eaf-focuser.html
+    - https://agenaastro.com/gso-6in-f5-newtonian-reflector-ota.html
+    - https://www.opticaluniversescientificinstrument.com/products/gso-6-ritchey-chretien-telescope
+    - https://www.apm-telescopes.net/en/gso-dobson-teleskop-250c-offnung-10-zoll-mit-hochwertigem-crayford-auszug
+
+## 2026-03-03 - Audit of Explore Scientific Telescopes
+
+- **Items:** Explore Scientific ED FCD100 series (80, 102, 127, 152), Essential series (80, 102, 127), AR series (102, 127, 152), FirstLight Newtonians (114, 130, 152, 203), FirstLight Maksutovs (100, 127, 152), Truss Dobs (10", 12", 16"), and Comet Hunter 152 Mak-Newt.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/explore_scientific.py`
+- **Initial State:**
+    - Many models used generic `type_refractor` or `newtonian_reflector` without specific central obstruction.
+    - Missing aperture, focal length, and central obstruction values for several models.
+    - Mass values were rounded or generic (e.g., 3500g for multiple models).
+- **Verified Specs (Source: Explore Scientific Official Website / Manuals):**
+    - **ED80/102/127/152 FCD100:** Corrected masses (e.g., 102: 4.94kg) and ensured `central_obstruction_mm: 0`.
+    - **FirstLight 130mm Newtonian:** 130/600mm, CO 45mm, Mass 3175g (7 lbs).
+    - **FirstLight 152mm Mak:** 152/1900mm, CO 47mm, Mass 7710g (17 lbs).
+    - **Truss Dobs:** Corrected CO values (10": 61.5mm, 12": 63mm, 16": 88mm) and OTA masses.
+    - **Comet Hunter 152 Mak-Newt:** 152/731mm, CO 49mm, Mass 6.9kg.
+- **Action:** Updated all Explore Scientific models with verified physical specs, explicit central obstruction values, and added missing models. Created `tests/unit/test_explore_scientific_specs.py` for verification.
+- **Source URLs:**
+    - https://explorescientific.com/products/explore-firstlight-130mm-newtonian-telescope-fl-n130600
+    - https://explorescientific.com/products/ed102-fcd-100
+    - https://explorescientific.com/products/16-truss-tube-dobsonian
+    - https://telescopescanada.ca/products/explore-scientific-firstlight-6-inch-maksutov-cassegrain-ota-only-fl-mc1521900

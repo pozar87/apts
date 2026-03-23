@@ -59,6 +59,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             "planet_stationary_points": True,
             "planet_solar_conjunctions": True,
             "lunar_features": True,
+            "planet_planet_occultations": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -85,7 +86,9 @@ class TestAstronomicalEvents(unittest.TestCase):
         # 31: greatest_elongations
         # 32: seasons
         # 33: lunar_features
-        num_events = 33
+        # 34: planet_planet_occultations
+        # 35: venus_greatest_brilliancy
+        num_events = 35
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []

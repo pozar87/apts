@@ -17,7 +17,6 @@ from . import cache, skyfield_searches
 from .cache import get_ephemeris, get_timescale
 from .catalogs import Catalogs
 from .config import get_event_settings
-from .constants import astronomy
 from .constants.event_types import EventType
 from .i18n import gettext_
 from .utils import planetary
@@ -37,6 +36,16 @@ class AstronomicalEvents:
         end_date,
         events_to_calculate: Optional[List[EventType]] = None,
     ):
+        # Oracle Persona Boundary: restrict predictions to +/- 100 years.
+        current_year = datetime.now(timezone.utc).year
+        if (
+            abs(start_date.year - current_year) > 100
+            or abs(end_date.year - current_year) > 100
+        ):
+            raise ValueError(
+                f"Oracle: Prediction range restricted to +/- 100 years from current date ({current_year})."
+            )
+
         self.place = place
         self.start_date = start_date.astimezone(utc)  # Ensure start_date is UTC
         self.end_date = end_date.astimezone(utc)  # Ensure end_date is UTC
@@ -106,6 +115,13 @@ class AstronomicalEvents:
             # Using .apparent() to share high-precision positions
             precomputed["moon"] = self.observer.at(times).observe(moon_obj).apparent()
 
+            # Pre-compute positions for major planets
+            for p_name in planetary.CONJUNCTION_PLANETS:
+                p_obj = planetary.get_skyfield_obj(p_name)
+                precomputed[p_name.lower()] = (
+                    self.observer.at(times).observe(p_obj).apparent()
+                )
+
         if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
         if self.event_settings.get("conjunctions"):
@@ -161,15 +177,23 @@ class AstronomicalEvents:
         if self.event_settings.get("jupiter_grs_transits"):
             futures.append(executor.submit(self.calculate_jupiter_grs_transits))
         if self.event_settings.get("planet_messier_conjunctions"):
-            futures.append(executor.submit(self.calculate_planet_messier_conjunctions))
+            futures.append(
+                executor.submit(self.calculate_planet_messier_conjunctions, precomputed)
+            )
         if self.event_settings.get("planet_star_conjunctions"):
-            futures.append(executor.submit(self.calculate_planet_star_conjunctions))
+            futures.append(
+                executor.submit(self.calculate_planet_star_conjunctions, precomputed)
+            )
         if self.event_settings.get("planet_stationary_points"):
             futures.append(executor.submit(self.calculate_planet_stationary_points))
         if self.event_settings.get("planet_solar_conjunctions"):
             futures.append(executor.submit(self.calculate_planet_solar_conjunctions))
         if self.event_settings.get("lunar_features"):
             futures.append(executor.submit(self.calculate_lunar_features))
+        if self.event_settings.get("planet_planet_occultations"):
+            futures.append(executor.submit(self.calculate_planet_planet_occultations))
+        if self.event_settings.get("venus_great_brilliancy"):
+            futures.append(executor.submit(self.calculate_venus_greatest_brilliancy))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -337,7 +361,23 @@ class AstronomicalEvents:
             return 3
         if event_type == "Lunar Feature":
             return 4
+        if event_type == "Planet-Planet Occultation":
+            return 5
+        if event_type == "Venus Greatest Brilliancy":
+            return 4
         return 1
+
+    def calculate_venus_greatest_brilliancy(self):
+        start_time = time.time()
+        events = skyfield_searches.find_venus_greatest_brilliancy(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Venus Greatest Brilliancy", event)
+        logger.debug(
+            f"--- calculate_venus_greatest_brilliancy: {time.time() - start_time}s"
+        )
+        return events
 
     def calculate_space_launches(self):
         start_time = time.time()
@@ -568,17 +608,62 @@ class AstronomicalEvents:
     def calculate_meteor_showers(self):
         start_time = time.time()
         events = []
-        # Meteor shower peak solar longitudes (λ⊙) based on IMO/IAU standards
+        # Meteor shower peak solar longitudes (λ⊙) and radiant (RA, Dec) based on IMO/IAU standards
         showers = {
-            "Quadrantids": {"start": (1, 1), "peak_lon": 283.16, "end": (1, 5)},
-            "Lyrids": {"start": (4, 14), "peak_lon": 32.32, "end": (4, 30)},
-            "Eta Aquarids": {"start": (4, 19), "peak_lon": 45.5, "end": (5, 28)},
-            "Delta Aquarids": {"start": (7, 12), "peak_lon": 127.0, "end": (8, 23)},
-            "Perseids": {"start": (7, 17), "peak_lon": 140.0, "end": (8, 24)},
-            "Orionids": {"start": (10, 2), "peak_lon": 208.0, "end": (11, 7)},
-            "Leonids": {"start": (11, 6), "peak_lon": 235.27, "end": (11, 30)},
-            "Geminids": {"start": (12, 4), "peak_lon": 262.2, "end": (12, 17)},
-            "Ursids": {"start": (12, 17), "peak_lon": 270.7, "end": (12, 26)},
+            "Quadrantids": {
+                "start": (1, 1),
+                "peak_lon": 283.16,
+                "end": (1, 5),
+                "radiant": (15.3, 49.0),
+            },
+            "Lyrids": {
+                "start": (4, 14),
+                "peak_lon": 32.32,
+                "end": (4, 30),
+                "radiant": (18.1, 34.0),
+            },
+            "Eta Aquarids": {
+                "start": (4, 19),
+                "peak_lon": 45.5,
+                "end": (5, 28),
+                "radiant": (22.5, -1.0),
+            },
+            "Delta Aquarids": {
+                "start": (7, 12),
+                "peak_lon": 127.0,
+                "end": (8, 23),
+                "radiant": (22.6, -16.0),
+            },
+            "Perseids": {
+                "start": (7, 17),
+                "peak_lon": 140.0,
+                "end": (8, 24),
+                "radiant": (3.1, 58.0),
+            },
+            "Orionids": {
+                "start": (10, 2),
+                "peak_lon": 208.0,
+                "end": (11, 7),
+                "radiant": (6.3, 16.0),
+            },
+            "Leonids": {
+                "start": (11, 6),
+                "peak_lon": 235.27,
+                "end": (11, 30),
+                "radiant": (10.2, 22.0),
+            },
+            "Geminids": {
+                "start": (12, 4),
+                "peak_lon": 262.2,
+                "end": (12, 17),
+                "radiant": (7.5, 33.0),
+            },
+            "Ursids": {
+                "start": (12, 17),
+                "peak_lon": 270.7,
+                "end": (12, 26),
+                "radiant": (14.5, 76.0),
+            },
         }
         for year in range(self.start_date.year, self.end_date.year + 1):
             for shower, data in showers.items():
@@ -614,12 +699,31 @@ class AstronomicalEvents:
                     event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
                     events.append(event_data)
                 if peak_date and self.start_date <= peak_date <= self.end_date:
+                    # Calculate visibility at peak
+                    # 1. Radiant altitude
+                    radiant_ra, radiant_dec = data["radiant"]
+                    radiant_obj = Star(ra_hours=radiant_ra, dec_degrees=radiant_dec)
+                    t_peak = self.ts.from_datetime(peak_date)
+                    radiant_alt, _, _ = (
+                        self.observer.at(t_peak).observe(radiant_obj).apparent().altaz()
+                    )
+
+                    # 2. Sun altitude for darkness check
+                    sun = planetary.get_skyfield_obj("sun")
+                    sun_alt, _, _ = (
+                        self.observer.at(t_peak).observe(sun).apparent().altaz()
+                    )
+
+                    is_visible = radiant_alt.degrees > 0 and sun_alt.degrees <= -6
+
                     event_data = {
                         "date": peak_date.astimezone(utc),
                         "event": "Meteor Shower",
                         "shower_name": shower,
                         "phase": "Peak",
                         "type": "Meteor Shower",
+                        "altitude": float(radiant_alt.degrees),
+                        "is_visible": bool(is_visible),
                     }
                     event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
                     events.append(event_data)
@@ -1055,10 +1159,13 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_seasons: {time.time() - start_time}s")
         return events
 
-    def calculate_planet_messier_conjunctions(self):
+    def calculate_planet_messier_conjunctions(self, precomputed_positions=None):
         start_time = time.time()
         events = skyfield_searches.find_planet_messier_conjunctions(
-            self.observer, self.start_date, self.end_date
+            self.observer,
+            self.start_date,
+            self.end_date,
+            precomputed_positions=precomputed_positions,
         )
         for event in events:
             event["rarity"] = self._get_rarity("Planet-Messier Conjunction", event)
@@ -1077,10 +1184,13 @@ class AstronomicalEvents:
         logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
         return events
 
-    def calculate_planet_star_conjunctions(self):
+    def calculate_planet_star_conjunctions(self, precomputed_positions=None):
         start_time = time.time()
         events = skyfield_searches.find_planet_star_conjunctions(
-            self.observer, self.start_date, self.end_date
+            self.observer,
+            self.start_date,
+            self.end_date,
+            precomputed_positions=precomputed_positions,
         )
         for event in events:
             event["rarity"] = self._get_rarity("Planet-Star Conjunction", event)
@@ -1102,7 +1212,9 @@ class AstronomicalEvents:
             "neptune barycenter",
             "pluto barycenter",
         ]
-        # Optimization: Avoid nested executor submission to prevent potential deadlocks
+        # Efficiency: Use vectorized approach to find stationary points across all planets
+        # and avoid nested executor submission to prevent potential deadlocks.
+        # Note: Stationary points are searched using a coarse step of 2 days.
         for p in planets:
             found_events = skyfield_searches.find_stationary_points(
                 self.observer,
@@ -1138,4 +1250,16 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Lunar Feature", event)
         logger.debug(f"--- calculate_lunar_features: {time.time() - start_time}s")
+        return events
+
+    def calculate_planet_planet_occultations(self):
+        start_time = time.time()
+        events = skyfield_searches.find_planet_planet_occultations(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planet-Planet Occultation", event)
+        logger.debug(
+            f"--- calculate_planet_planet_occultations: {time.time() - start_time}s"
+        )
         return events
