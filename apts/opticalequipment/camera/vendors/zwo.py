@@ -2091,7 +2091,7 @@ class ZwoCamera(Camera):
             "height": 1536,
             "mass": 126,
             "name": "ASI664MC",
-            "optical_length": 12.5,
+            "optical_length": 6.5,
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.46,
