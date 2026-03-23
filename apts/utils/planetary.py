@@ -172,16 +172,22 @@ def get_sub_observer_latitude(planet_name: str, time: Any) -> float:
     astrometric = cast(Any, earth).at(time).observe(planet_obj)
     ra_rad, dec_rad, _ = astrometric.radec()
 
+    # Correct for light time for the pole orientation
+    ts = get_timescale()
+    t_eval = ts.tt_jd(time.tt - astrometric.light_time)
+
     alpha_rad = ra_rad.radians
     delta_rad = dec_rad.radians
 
-    alpha0_deg, delta0_deg = get_planet_pole_coords(planet_name, time)
+    alpha0_deg, delta0_deg = get_planet_pole_coords(planet_name, t_eval)
     alpha0_rad = np.radians(alpha0_deg)
     delta0_rad = np.radians(delta0_deg)
 
     # Formula for sub-observer latitude De:
-    # sin(De) = sin(delta0)*sin(delta) + cos(delta0)*cos(delta)*cos(alpha0 - alpha)
-    sin_De = np.sin(delta0_rad) * np.sin(delta_rad) + np.cos(delta0_rad) * np.cos(
+    # sin(De) = -sin(delta0)*sin(delta) - cos(delta0)*cos(delta)*cos(alpha0 - alpha)
+    # This represents the latitude of the sub-observer point.
+    # Reference: Explanatory Supplement to the Astronomical Almanac.
+    sin_De = -np.sin(delta0_rad) * np.sin(delta_rad) - np.cos(delta0_rad) * np.cos(
         delta_rad
     ) * np.cos(alpha0_rad - alpha_rad)
     De_rad = np.arcsin(np.clip(sin_De, -1.0, 1.0))
@@ -544,6 +550,56 @@ def get_jupiter_cml(time: Any, system: int = 2) -> float | np.ndarray:
         return get_jupiter_system_ii_longitude(time)
     else:
         raise ValueError("Only System I (1) and System II (2) are supported for Jupiter CML.")
+
+
+def get_mars_cml(time: Any) -> float | np.ndarray:
+    """
+    Returns Mars' Central Meridian Longitude (CML) in degrees.
+    Uses the IAU 2015 model. Longitude increases westward.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    mars = eph["mars barycenter"]
+
+    # Observation of Mars from Earth (includes light-time correction)
+    astrometric = cast(Any, earth).at(time).observe(mars)
+    lt_days = astrometric.light_time
+
+    # Rotation state of Mars when light left it
+    ts = get_timescale()
+    t_eval = ts.tt_jd(time.tt - lt_days)
+
+    # Mars pole at evaluation time
+    alpha0_deg, delta0_deg = get_planet_pole_coords("mars", t_eval)
+    alpha0 = np.radians(alpha0_deg)
+    delta0 = np.radians(delta0_deg)
+
+    # Direction from Mars(t-lt) to Earth(t) in ICRS
+    v_me = -astrometric.position.au
+
+    if hasattr(time, "shape") and time.shape:
+        u_v = v_me / np.linalg.norm(v_me, axis=0)
+    else:
+        u_v = v_me / np.linalg.norm(v_me)
+
+    # Transform to Mars-centric frame (Z to North Pole, X to Ascending Node)
+    # The sub-observer longitude from the node is atan2(y, x)
+    x = u_v[0] * (-np.sin(alpha0)) + u_v[1] * np.cos(alpha0)
+    y = (
+        u_v[0] * (-np.sin(delta0) * np.cos(alpha0))
+        + u_v[1] * (-np.sin(delta0) * np.sin(alpha0))
+        + u_v[2] * np.cos(delta0)
+    )
+
+    phi = np.degrees(np.arctan2(y, x))
+
+    # IAU 2015 W: angle from node to prime meridian (increasing eastward)
+    d = t_eval.tt - 2451545.0
+    W = (176.630 + 350.89198226 * d) % 360
+
+    # CML = (W - phi) mod 360 (increasing westward)
+    return (W - phi) % 360
 
 
 def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:

@@ -1248,6 +1248,13 @@ class OpticalPath:
         from .utils import planetary
         return planetary.get_jupiter_cml(time, system)
 
+    def mars_cml(self, time: Any) -> Union[float, numpy.ndarray]:
+        """
+        Calculates Mars' Central Meridian Longitude (CML).
+        """
+        from .utils import planetary
+        return planetary.get_mars_cml(time)
+
     def sun_physical_details(self, time: Any) -> dict:
         """
         Calculates the physical details of the Sun (P, B0, L0).
