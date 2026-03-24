@@ -867,10 +867,10 @@ def find_planet_messier_conjunctions(
         "uranus barycenter",
         "neptune barycenter",
     ]
-    messier_data = [
-        (row["Messier"], row["skyfield_object"])
-        for _, row in catalogs.MESSIER.iterrows()
-    ]
+    # Optimization: replace iterrows() with zip() for better performance
+    messier_data = list(
+        zip(catalogs.MESSIER["Messier"], catalogs.MESSIER["skyfield_object"])
+    )
 
     events = []
     for p_name in planets:

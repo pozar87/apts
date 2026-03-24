@@ -29,6 +29,15 @@ utc = timezone.utc
 
 
 class AstronomicalEvents:
+    # Optimization: Only pre-compute positions if any conjunction-related events are enabled
+    # to avoid significant overhead when only basic events (like Moon phases) are requested.
+    CONJUNCTION_EVENTS = [
+        "moon_messier_conjunctions",
+        "moon_star_conjunctions",
+        "planet_messier_conjunctions",
+        "planet_star_conjunctions",
+    ]
+
     def __init__(
         self,
         place,
@@ -104,23 +113,23 @@ class AstronomicalEvents:
 
         # Pre-compute positions for moving bodies often used in multiple searches
         # to improve overall calculation efficiency.
-        # Currently, the Moon is used in many conjunction searches.
-        num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
         precomputed = {}
-        if num_hours >= 2:
-            times = self.ts.linspace(
-                self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
-            )
-            moon_obj = planetary.get_skyfield_obj("moon")
-            # Using .apparent() to share high-precision positions
-            precomputed["moon"] = self.observer.at(times).observe(moon_obj).apparent()
-
-            # Pre-compute positions for major planets
-            for p_name in planetary.CONJUNCTION_PLANETS:
-                p_obj = planetary.get_skyfield_obj(p_name)
-                precomputed[p_name.lower()] = (
-                    self.observer.at(times).observe(p_obj).apparent()
+        if any(self.event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
+            num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
+            if num_hours >= 2:
+                times = self.ts.linspace(
+                    self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
                 )
+                moon_obj = planetary.get_skyfield_obj("moon")
+                # Using .apparent() to share high-precision positions
+                precomputed["moon"] = self.observer.at(times).observe(moon_obj).apparent()
+
+                # Pre-compute positions for major planets
+                for p_name in planetary.CONJUNCTION_PLANETS:
+                    p_obj = planetary.get_skyfield_obj(p_name)
+                    precomputed[p_name.lower()] = (
+                        self.observer.at(times).observe(p_obj).apparent()
+                    )
 
         if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
@@ -830,9 +839,7 @@ class AstronomicalEvents:
             self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
         ]
 
-        star_data = [
-            (row["Messier"], row["skyfield_object"]) for _, row in messier_df.iterrows()
-        ]
+        star_data = list(zip(messier_df["Messier"], messier_df["skyfield_object"]))
 
         conjunctions = skyfield_searches.find_conjunctions_with_stars(
             self.observer,
@@ -921,12 +928,15 @@ class AstronomicalEvents:
         events = []
         try:
             comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
-            for _, comet in comets.iterrows():
+            # Optimization: replace iterrows() with zip() for better performance
+            for name, close_approach_data in zip(
+                comets["name"], comets["close_approach_data"]
+            ):
                 event_data = {
                     "date": parse_date(
-                        comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
+                        close_approach_data[0]["close_approach_date_full"]  # type: ignore
                     ).astimezone(utc),
-                    "event": comet["name"],
+                    "event": name,
                     "type": "Comet",
                 }
                 event_data["rarity"] = self._get_rarity("Comet", event_data)
@@ -982,10 +992,13 @@ class AstronomicalEvents:
     def calculate_messier_culminations(self):
         start_time = time.time()
         # Check all Messier objects
-        messier_data = [
-            (row["Messier"], row["skyfield_object"])
-            for _, row in self.catalogs.MESSIER.iterrows()
-        ]
+        # Optimization: replace iterrows() with zip() for better performance
+        messier_data = list(
+            zip(
+                self.catalogs.MESSIER["Messier"],
+                self.catalogs.MESSIER["skyfield_object"],
+            )
+        )
 
         events = skyfield_searches.find_object_culminations(
             self.observer,
