@@ -265,3 +265,27 @@
 - Integrated `max_planetary_rotation_duration` into `OpticalPath` in `apts/optics.py`.
 - Verified with `tests/unit/test_planetary_rotation.py`.
 - Benchmarks: Jupiter at 0.1"/px scale allows ~24s for 1px blur; Mars at same scale allows ~200s.
+
+## 2025-05-25 - Data audit for Player One Ceres and Xena series
+
+### Observe
+- The Player One Ceres-C and Ceres-M entries in `apts/opticalequipment/camera/vendors/player_one.py` were using inaccurate specifications.
+- Popular new models like the Xena 585M and Ceres 462M were missing from the database.
+- Backfocus (optical length) for these uncooled guiding cameras was incorrectly set or inconsistent.
+
+### Target
+- Priority 2: Add missing popular cameras and correct existing equipment specifications.
+
+### Calibrate
+- **Xena 585M:** Sony IMX585 mono, 3856x2180, 2.9µm pixels, 47ke- full well, 91% QE, 0.7e- read noise, 11.2x6.3mm chip, 7.5mm backfocus, 65g mass.
+- **Ceres 462M:** Sony IMX462 mono, 1944x1096, 2.9µm pixels, 12ke- full well, 91% QE, 0.7e- read noise, 5.6x3.2mm chip, 7.5mm backfocus, 65g mass.
+- **Ceres-C:** Updated to verified IMX224 specs (19.4ke- full well, 80% QE, 0.74e- read noise, 7.5mm backfocus).
+- **Ceres-M:** Corrected from IMX462 specs to accurate AR0130 specs (1284x964, 18ke- full well, 80% QE, 3.6e- read noise, 7.5mm backfocus).
+- Source: Player One Astronomy official product pages and manuals.
+
+### Develop
+- Updated `apts/opticalequipment/camera/vendors/player_one.py` with the accurate data.
+- Standardized the 7.5mm back focal length for the "Dwarf Planet" series.
+- Added factory methods for the new models.
+- Updated `tests/unit/test_player_one_specs.py` with the new/verified specifications.
+- All 9 Player One specification tests passed.
