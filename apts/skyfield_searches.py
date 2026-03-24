@@ -124,22 +124,8 @@ def find_meteor_showers(observer, start_date, end_date):
                 })
 
     if peak_candidates:
-        # Oracle: Vectorized visibility check for all peaks
+        # Calculate Sun altitudes in bulk (one body at multiple times is supported)
         peak_times = ts.from_datetimes([p["peak_date"] for p in peak_candidates])
-        ra_list = np.array([p["radiant"][0] for p in peak_candidates])
-        dec_list = np.array([p["radiant"][1] for p in peak_candidates])
-
-        radiants_vector = Star(ra_hours=ra_list, dec_degrees=dec_list)
-
-        # Calculate radiant altitudes in bulk
-        radiant_alts, _, _ = (
-            observer.at(peak_times)
-            .observe(radiants_vector)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        )
-
-        # Calculate Sun altitudes in bulk
         sun_alts, _, _ = (
             observer.at(peak_times)
             .observe(sun)
@@ -148,9 +134,20 @@ def find_meteor_showers(observer, start_date, end_date):
         )
 
         for i, p in enumerate(peak_candidates):
-            r_alt = radiant_alts.degrees[i]
+            # For radiants, we observe individually to avoid pairwise N-to-N vectorization
+            # issues in Skyfield for Star objects.
+            radiant_ra, radiant_dec = p["radiant"]
+            radiant_obj = Star(ra_hours=radiant_ra, dec_degrees=radiant_dec)
+
+            r_alt, _, _ = (
+                observer.at(p["peak_t"])
+                .observe(radiant_obj)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            )
+
             s_alt = sun_alts.degrees[i]
-            is_visible = r_alt > 0 and s_alt <= -6
+            is_visible = r_alt.degrees > 0 and s_alt <= -6
 
             events.append({
                 "date": p["peak_date"],
@@ -158,7 +155,7 @@ def find_meteor_showers(observer, start_date, end_date):
                 "shower_name": p["shower_name"],
                 "phase": "Peak",
                 "type": "Meteor Shower",
-                "altitude": float(r_alt),
+                "altitude": float(r_alt.degrees),
                 "is_visible": bool(is_visible),
             })
 
