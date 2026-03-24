@@ -474,3 +474,24 @@
     - https://all-startelescope.com/products/sharpstar-94edph
     - https://www.sharpstar-optics.com/Products_1/50.html
     - https://astronomytechnologytoday.com/2020/11/12/sharpstar-20032pnt/
+
+## 2026-03-24 - Audit of Vixen Telescopes
+
+- **Items:** Vixen VC200L, VMC200L, R200SS, SD81S, SD103S, SD115S, AX103S, FL55SS, VSD100.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/vixen.py`
+- **Initial State:**
+    - VC200L central obstruction was 75mm.
+    - Refractors were missing explicit `central_obstruction_mm: 0`.
+    - Some formatting inconsistencies.
+- **Verified Specs (Source: Vixen Official Website / B&H Photo / Bintel Australia):**
+    - **VC200L:** Aperture 200mm, FL 1800mm, Mass 6.0kg, CO 77mm.
+    - **VMC200L:** Aperture 200mm, FL 1950mm, Mass 5.9kg, CO 80mm.
+    - **R200SS:** Aperture 200mm, FL 800mm, Mass 5.3kg, CO 65mm.
+    - **Refractors (SD81S, SD103S, SD115S, AX103S, FL55SS, VSD100):** Ensured `central_obstruction_mm: 0` and verified OTA masses.
+- **Action:** Updated all Vixen models with verified physical specs and source comments. Updated VC200L central obstruction to 77mm based on technical spec data. Verified with `tests/unit/test_vixen_specs.py`.
+- **Source URLs:**
+    - https://global.vixen.co.jp/en/product/2632_02/
+    - https://global.vixen.co.jp/en/product/58291_0/
+    - https://www.bresser.com/p/vixen-r200ss-reflector-telescope-X000315
+    - https://global.vixen.co.jp/en/product/37102_4/
+    - https://global.vixen.co.jp/en/product/37103_1/
