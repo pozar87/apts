@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.sharpstar import SharpstarTelescope
 
 def test_sharpstar_61edph_ii():

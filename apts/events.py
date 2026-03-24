@@ -948,9 +948,9 @@ class AstronomicalEvents:
             self.catalogs.MESSIER["Messier"].isin(messier_objects_to_check)
         ]
 
-        star_data = [
-            (row["Messier"], row["skyfield_object"]) for _, row in messier_df.iterrows()
-        ]
+        # Optimization: Avoid slow iterrows() for catalog processing.
+        # Prefer zip() for attribute extraction to avoid Series instantiation overhead.
+        star_data = list(zip(messier_df["Messier"], messier_df["skyfield_object"]))
 
         conjunctions = skyfield_searches.find_conjunctions_with_stars(
             self.observer,
@@ -1039,7 +1039,9 @@ class AstronomicalEvents:
         events = []
         try:
             comets = cache.get_nasa_comets_data(self.start_date, self.end_date)
-            for _, comet in comets.iterrows():
+            # Optimization: Use to_dict('records') for dictionary-based iteration
+            # which is significantly faster than iterrows() for small datasets.
+            for comet in comets.to_dict("records"):
                 event_data = {
                     "date": parse_date(
                         comet["close_approach_data"][0]["close_approach_date_full"]  # type: ignore
@@ -1100,10 +1102,10 @@ class AstronomicalEvents:
     def calculate_messier_culminations(self):
         start_time = time.time()
         # Check all Messier objects
-        messier_data = [
-            (row["Messier"], row["skyfield_object"])
-            for _, row in self.catalogs.MESSIER.iterrows()
-        ]
+        # Optimization: Avoid iterrows() by using zip() for attribute extraction.
+        messier_data = list(
+            zip(self.catalogs.MESSIER["Messier"], self.catalogs.MESSIER["skyfield_object"])
+        )
 
         events = skyfield_searches.find_object_culminations(
             self.observer,
