@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.svbony import SvbonyTelescope
 from apts.units import get_unit_registry
 

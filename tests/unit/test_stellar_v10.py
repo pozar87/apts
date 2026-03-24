@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.askar import AskarTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera

@@ -194,7 +194,7 @@ def find_golden_blue_hours(observer, start_date, end_date):
     return events
 
 
-def find_venus_greatest_brilliancy(observer, start_date, end_date):
+def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any):
     """
     Finds when Venus reaches its greatest brilliancy (minimum apparent magnitude).
     """
@@ -206,7 +206,7 @@ def find_venus_greatest_brilliancy(observer, start_date, end_date):
 
     # For planetary magnitude, we use geocentric position (earth.at(t))
     # to match standard almanac definitions for greatest brilliancy.
-    earth = get_ephemeris()["earth"]
+    earth = cast(Any, get_ephemeris()["earth"])
 
     def magnitude(t):
         astrometric = earth.at(t).observe(venus)
