@@ -1261,3 +1261,51 @@ class OpticalPath:
         """
         from .utils import planetary
         return planetary.get_sun_physical_details(time)
+
+    def max_planetary_rotation_duration(
+        self, planet_name: str, time: Any, tolerance_pixels: float = 1.0
+    ) -> Optional["Quantity"]:
+        """
+        Calculates the maximum recording duration (in seconds) before planetary rotation
+        causes a blur exceeding the given pixel tolerance.
+        Useful for planetary imagers (lucky imaging) to determine when to start a new capture
+        or use tools like WinJUPOS for de-rotation.
+        """
+        from .utils import planetary
+
+        scale_q = self.pixel_scale()
+        if scale_q is None:
+            return None
+
+        scale = scale_q.to("arcsecond").magnitude
+
+        # Equatorial angular radius (half of diameter)
+        r_eq = (
+            planetary.get_planet_angular_diameter(planet_name, time, which="equatorial")
+            / 2.0
+        )
+
+        # Sidereal rotation period in seconds
+        period = planetary.get_planet_rotation_period(planet_name)
+
+        # Sub-observer latitude (tilt)
+        try:
+            de_deg = planetary.get_sub_observer_latitude(planet_name, time)
+            cos_de = math.cos(math.radians(de_deg))
+        except ValueError:
+            # Fallback for planets without pole models (e.g., Mercury, Venus)
+            cos_de = 1.0
+
+        if r_eq <= 0 or period <= 0:
+            return None
+
+        # Angular velocity of a point at the center of the disk as seen from Earth (arcsec/s)
+        # v_arcsec = (2 * pi * r_eq_arcsec * cos(De)) / T
+        omega = (2.0 * math.pi * r_eq * cos_de) / period
+
+        if omega <= 1e-12:
+            return 3600 * get_unit_registry().second  # Cap at 1 hour for very slow rotators
+
+        t_max = (tolerance_pixels * scale) / omega
+
+        return t_max * get_unit_registry().second
