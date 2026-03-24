@@ -194,6 +194,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_planet_planet_occultations))
         if self.event_settings.get("venus_great_brilliancy"):
             futures.append(executor.submit(self.calculate_venus_greatest_brilliancy))
+        if self.event_settings.get("supermoons"):
+            futures.append(executor.submit(self.calculate_supermoons))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -228,6 +230,7 @@ class AstronomicalEvents:
             "separation_degrees",
             "phase",
             "shower_name",
+            "distance_km",
         ]
 
         if not self.events:
@@ -365,6 +368,8 @@ class AstronomicalEvents:
             return 5
         if event_type == "Venus Greatest Brilliancy":
             return 4
+        if event_type == "Supermoon":
+            return 3
         return 1
 
     def calculate_venus_greatest_brilliancy(self):
@@ -607,136 +612,13 @@ class AstronomicalEvents:
 
     def calculate_meteor_showers(self):
         start_time = time.time()
-        events = []
-        # Meteor shower peak solar longitudes (λ⊙) and radiant (RA, Dec) based on IMO/IAU standards
-        showers = {
-            "Quadrantids": {
-                "start": (1, 1),
-                "peak_lon": 283.16,
-                "end": (1, 5),
-                "radiant": (15.3, 49.0),
-            },
-            "Lyrids": {
-                "start": (4, 14),
-                "peak_lon": 32.32,
-                "end": (4, 30),
-                "radiant": (18.1, 34.0),
-            },
-            "Eta Aquarids": {
-                "start": (4, 19),
-                "peak_lon": 45.5,
-                "end": (5, 28),
-                "radiant": (22.5, -1.0),
-            },
-            "Delta Aquarids": {
-                "start": (7, 12),
-                "peak_lon": 127.0,
-                "end": (8, 23),
-                "radiant": (22.6, -16.0),
-            },
-            "Perseids": {
-                "start": (7, 17),
-                "peak_lon": 140.0,
-                "end": (8, 24),
-                "radiant": (3.1, 58.0),
-            },
-            "Orionids": {
-                "start": (10, 2),
-                "peak_lon": 208.0,
-                "end": (11, 7),
-                "radiant": (6.3, 16.0),
-            },
-            "Leonids": {
-                "start": (11, 6),
-                "peak_lon": 235.27,
-                "end": (11, 30),
-                "radiant": (10.2, 22.0),
-            },
-            "Geminids": {
-                "start": (12, 4),
-                "peak_lon": 262.2,
-                "end": (12, 17),
-                "radiant": (7.5, 33.0),
-            },
-            "Ursids": {
-                "start": (12, 17),
-                "peak_lon": 270.7,
-                "end": (12, 26),
-                "radiant": (14.5, 76.0),
-            },
-        }
-        for year in range(self.start_date.year, self.end_date.year + 1):
-            for shower, data in showers.items():
-                start_date: datetime = datetime(
-                    year, data["start"][0], data["start"][1], tzinfo=utc
-                )
-                end_date: datetime = datetime(
-                    year, data["end"][0], data["end"][1], tzinfo=utc
-                )
-
-                # Use solar longitude to find high-precision peak time
-                t0 = self.ts.utc(year, data["start"][0], data["start"][1])
-                # Peak must be within the shower duration. Some showers cross year boundary (none of the major ones above though)
-                # But to be safe we search a window around the expected month.
-                t1 = self.ts.utc(year, data["end"][0], data["end"][1])
-                # Fix for showers crossing year boundary if any were added
-                if t1 < t0:
-                    t1 = self.ts.utc(year + 1, data["end"][0], data["end"][1])
-
-                peak_t = skyfield_searches.find_solar_longitude_time(
-                    t0, t1, data["peak_lon"]
-                )
-                peak_date = peak_t.utc_datetime() if peak_t is not None else None
-
-                if self.start_date <= start_date <= self.end_date:
-                    event_data = {
-                        "date": start_date.astimezone(utc),
-                        "event": "Meteor Shower",
-                        "shower_name": shower,
-                        "phase": "Start",
-                        "type": "Meteor Shower",
-                    }
-                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
-                    events.append(event_data)
-                if peak_date and self.start_date <= peak_date <= self.end_date:
-                    # Calculate visibility at peak
-                    # 1. Radiant altitude
-                    radiant_ra, radiant_dec = data["radiant"]
-                    radiant_obj = Star(ra_hours=radiant_ra, dec_degrees=radiant_dec)
-                    t_peak = self.ts.from_datetime(peak_date)
-                    radiant_alt, _, _ = (
-                        self.observer.at(t_peak).observe(radiant_obj).apparent().altaz()
-                    )
-
-                    # 2. Sun altitude for darkness check
-                    sun = planetary.get_skyfield_obj("sun")
-                    sun_alt, _, _ = (
-                        self.observer.at(t_peak).observe(sun).apparent().altaz()
-                    )
-
-                    is_visible = radiant_alt.degrees > 0 and sun_alt.degrees <= -6
-
-                    event_data = {
-                        "date": peak_date.astimezone(utc),
-                        "event": "Meteor Shower",
-                        "shower_name": shower,
-                        "phase": "Peak",
-                        "type": "Meteor Shower",
-                        "altitude": float(radiant_alt.degrees),
-                        "is_visible": bool(is_visible),
-                    }
-                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
-                    events.append(event_data)
-                if self.start_date <= end_date <= self.end_date:
-                    event_data = {
-                        "date": end_date.astimezone(utc),
-                        "event": "Meteor Shower",
-                        "shower_name": shower,
-                        "phase": "End",
-                        "type": "Meteor Shower",
-                    }
-                    event_data["rarity"] = self._get_rarity("Meteor Shower", event_data)
-                    events.append(event_data)
+        events = skyfield_searches.find_meteor_showers(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            # Ensure dates are timezone-aware UTC
+            event["date"] = event["date"].astimezone(utc)
+            event["rarity"] = self._get_rarity("Meteor Shower", event)
         logger.debug(f"--- calculate_meteor_showers: {time.time() - start_time}s")
         return events
 
@@ -1264,4 +1146,14 @@ class AstronomicalEvents:
         logger.debug(
             f"--- calculate_planet_planet_occultations: {time.time() - start_time}s"
         )
+        return events
+
+    def calculate_supermoons(self):
+        start_time = time.time()
+        events = skyfield_searches.find_supermoons(self.start_date, self.end_date)
+        for event in events:
+            # Ensure date is timezone-aware UTC
+            event["date"] = event["date"].astimezone(utc)
+            event["rarity"] = self._get_rarity("Supermoon", event)
+        logger.debug(f"--- calculate_supermoons: {time.time() - start_time}s")
         return events
