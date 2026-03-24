@@ -108,6 +108,18 @@ PLANET_POLAR_RADII_KM = {
     "neptune": astronomy.NEPTUNE_POLAR_RADIUS_KM,
 }
 
+PLANET_ROTATION_PERIODS_S = {
+    "mercury": astronomy.MERCURY_ROTATION_PERIOD_S,
+    "venus": astronomy.VENUS_ROTATION_PERIOD_S,
+    "earth": astronomy.EARTH_ROTATION_PERIOD_S,
+    "mars": astronomy.MARS_ROTATION_PERIOD_S,
+    "jupiter": astronomy.JUPITER_ROTATION_PERIOD_S,
+    "saturn": astronomy.SATURN_ROTATION_PERIOD_S,
+    "uranus": astronomy.URANUS_ROTATION_PERIOD_S,
+    "neptune": astronomy.NEPTUNE_ROTATION_PERIOD_S,
+    "pluto": astronomy.PLUTO_ROTATION_PERIOD_S,
+}
+
 
 def get_planet_radius_km(planet_name: str) -> float:
     """
@@ -119,6 +131,19 @@ def get_planet_radius_km(planet_name: str) -> float:
     if radius is None:
         raise ValueError(f"Radius for object '{planet_name}' not found.")
     return radius
+
+
+def get_planet_rotation_period(planet_name: str) -> float:
+    """
+    Returns the sidereal rotation period of a planet in seconds.
+    """
+    simple_name = get_simple_name(planet_name).lower()
+    period = PLANET_ROTATION_PERIODS_S.get(simple_name)
+    if period is None:
+        raise ValueError(
+            f"Sidereal rotation period for object '{planet_name}' not found."
+        )
+    return period
 
 
 def get_planet_distance_km(

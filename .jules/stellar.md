@@ -242,3 +242,26 @@
 - Updated `apts/constants/astronomy.py`, `apts/utils/planetary.py`, and `apts/optics.py`.
 - Verified with `tests/unit/test_planetary_geometry.py`.
 - Example: Jupiter apparent polar diameter is ~6.5% smaller than equatorial.
+
+## 2025-05-24 - Planetary Rotation Blur Limit
+
+### Observe
+- Planetary imagers (lucky imaging) need to know how long they can record a video before the planet's rotation causes visible blur in the final stacked image.
+- The library was missing constants for planetary rotation periods and a method to calculate this duration limit based on the setup's pixel scale and target planet.
+
+### Target
+- Priority 3: Implement a new utility function.
+- Added `max_planetary_rotation_duration` to `OpticalPath`.
+
+### Calibrate
+- **Rotation Periods:** Added sidereal rotation periods for Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto to `apts/constants/astronomy.py`. Derived from IAU 2015 rotation rates ($W$).
+- **Formula:** $t_{max} = \frac{\text{Tolerance} \cdot \text{PixelScale}}{\text{EquatorialAngularVelocity}}$, where $\omega = \frac{2\pi \cdot R_{eq}}{T_{sidereal}}$.
+- The blur is most severe at the center of the planet's disk (equator).
+- Source: IAU 2015 Standards, Archinal et al. (2018).
+
+### Develop
+- Updated `astronomy.py` with rotation period constants.
+- Implemented `get_planet_rotation_period` in `apts/utils/planetary.py`.
+- Integrated `max_planetary_rotation_duration` into `OpticalPath` in `apts/optics.py`.
+- Verified with `tests/unit/test_planetary_rotation.py`.
+- Benchmarks: Jupiter at 0.1"/px scale allows ~24s for 1px blur; Mars at same scale allows ~200s.

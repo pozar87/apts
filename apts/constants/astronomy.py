@@ -35,6 +35,19 @@ SATURN_RING_OUTER_RADIUS_KM = 136775.0
 # Astronomical Unit in km
 AU_KM = 149597870.7
 
+# Sidereal Rotation Period in seconds
+# Sources: IAU 2015 Standards / Archinal et al. (2018)
+# Calculated from rotation rate W (deg/day): T = (360 / |W|) * 86400
+MERCURY_ROTATION_PERIOD_S = 5067033.9
+VENUS_ROTATION_PERIOD_S = 20996797.0
+EARTH_ROTATION_PERIOD_S = 86164.1
+MARS_ROTATION_PERIOD_S = 88642.7
+JUPITER_ROTATION_PERIOD_S = 35729.7
+SATURN_ROTATION_PERIOD_S = 38362.4
+URANUS_ROTATION_PERIOD_S = 62064.0
+NEPTUNE_ROTATION_PERIOD_S = 57996.0
+PLUTO_ROTATION_PERIOD_S = 551856.1
+
 # Jupiter Great Red Spot (GRS) Longitude in System II (degrees)
 # Note: This is a reference value for early 2026 (approx 80.0°).
 # The library uses a dynamic drift model in `apts.utils.planetary.get_jupiter_grs_longitude`
