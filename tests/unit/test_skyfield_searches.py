@@ -100,6 +100,22 @@ class SkyfieldSearchesTest(unittest.TestCase):
         )
         self.assertIsInstance(events, list)
 
+    def test_find_supermoons(self):
+        # August 2023 had two supermoons (August 1 and August 31)
+        start_date = datetime(2023, 8, 1, tzinfo=utc)
+        end_date = datetime(2023, 9, 1, tzinfo=utc)
+        events = skyfield_searches.find_supermoons(start_date, end_date)
+        self.assertIsInstance(events, list)
+        self.assertEqual(len(events), 2)
+        # Verify the dates (day only to be safe with UTC)
+        days = sorted([e["date"].day for e in events])
+        self.assertEqual(days, [1, 31])
+        for event in events:
+            self.assertEqual(event["event"], "Supermoon")
+            self.assertEqual(event["object"], "Moon")
+            self.assertIn("distance_km", event)
+            self.assertIn("perigee_distance_km", event)
+
     def test_find_conjunctions(self):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 3, 31, tzinfo=utc)
