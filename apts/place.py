@@ -1,5 +1,6 @@
 import datetime
 import logging
+import math
 from functools import lru_cache
 from importlib import resources
 from math import copysign as copysign
@@ -28,6 +29,7 @@ from .utils.planetary import (
     get_moon_distance,
     get_moon_illumination,
     get_moon_phase_name,
+    get_planet_magnitude,
 )
 from .weather import Weather
 
@@ -221,14 +223,108 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
-    def get_sqm(self) -> float:
+    def get_sqm(self, time: Optional[Any] = None) -> float:
         """
-        Returns the approximate SQM value for the place based on its Bortle class.
+        Returns the approximate SQM value for the place based on its Bortle class,
+        accounting for Sun, Moon, and cloud cover if weather data is available.
         """
+        target_time = time if time is not None else self.date
         bortle = self.get_light_pollution()
         if bortle <= 0:
             return 0.0
-        return LightPollution.bortle_to_sqm(bortle)
+
+        sqm_base = LightPollution.bortle_to_sqm(bortle)
+        b_total = 10 ** (-0.4 * sqm_base)
+
+        # Sun contribution
+        sun_alt = (
+            self.observer.at(target_time).observe(self.sun).apparent().altaz()[0].degrees
+        )
+        if sun_alt > -18:
+            # Simplified twilight model: brightness increases as sun rises
+            # At -18 deg, it's roughly base starlight. At -6, it's much brighter.
+            # Using: SQM_sun = 21.8 - (18 + sun_alt) * 0.65
+            b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alt) * 0.65))
+            b_total += b_sun
+
+        # Moon contribution
+        moon_alt = (
+            self.observer.at(target_time)
+            .observe(self.moon)
+            .apparent()
+            .altaz()[0]
+            .degrees
+        )
+        if moon_alt > 0:
+            mag_m = get_planet_magnitude("moon", target_time)
+            # Simplified moon model
+            # Zenith brightness model for Moon: SQM_moon_zenith = mag_m + 31
+            # Combined with sine altitude factor
+            b_moon = 10 ** (-0.4 * (mag_m + 31)) * np.sin(np.radians(moon_alt))
+            b_total += b_moon
+
+        # Cloud cover effect
+        cloud_cover = 0
+        if (
+            self.weather is not None
+            and self.weather.data is not None
+            and not self.weather.data.empty
+        ):
+            # Find nearest time in weather data
+            # target_time is Skyfield Time, convert to datetime
+            dt = target_time.utc_datetime()
+            # weather.data['time'] is timezone-aware
+            # We need to ensure dt is timezone-aware too
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+
+            # Simple nearest neighbor
+            idx = (self.weather.data["time"] - dt).abs().idxmin()
+            cloud_cover = float(self.weather.data.loc[idx, "cloudCover"])
+
+        if bortle > 4:
+            # Urban: clouds reflect city lights
+            b_total *= 1 + 2 * (cloud_cover / 100.0)
+        else:
+            # Dark site: clouds block starlight
+            b_total *= 1 - 0.5 * (cloud_cover / 100.0)
+
+        sqm = -2.5 * math.log10(max(b_total, 1e-10))
+        return min(max(sqm, 10.0), 22.0)
+
+    def get_seeing(self, time: Optional[Any] = None) -> float:
+        """
+        Estimates the astronomical seeing in arcseconds based on weather conditions.
+        """
+        target_time = time if time is not None else self.date
+        s = 1.5  # Base seeing
+
+        if (
+            self.weather is not None
+            and self.weather.data is not None
+            and not self.weather.data.empty
+        ):
+            dt = target_time.utc_datetime()
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            idx = (self.weather.data["time"] - dt).abs().idxmin()
+
+            wind_speed = float(self.weather.data.loc[idx, "windSpeed"])
+            humidity = float(self.weather.data.loc[idx, "humidity"])
+            cloud_cover = float(self.weather.data.loc[idx, "cloudCover"])
+
+            # Wind penalty: turbulence increases with wind
+            s += max(0, (wind_speed - 15) / 50.0)
+
+            # Humidity penalty: haze and instability
+            if humidity > 80:
+                s += (humidity - 80) / 40.0
+
+            # Cloud penalty: correlation with instability
+            if cloud_cover > 50:
+                s += 0.3
+
+        return min(max(s, 0.5), 5.0)
 
     def get_weather(
         self,
