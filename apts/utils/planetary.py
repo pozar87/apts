@@ -176,7 +176,14 @@ def get_planet_pole_coords(planet_name: str, time: Any) -> tuple[float, float]:
     if name_norm == "uranus":
         return 257.311, -15.175
     if name_norm == "neptune":
-        return 299.36, 43.46
+        # IAU 2015 model for Neptune (including nutation)
+        # N = 357.85 + 52.316 * T
+        # alpha = 299.36 + 0.70 sin N
+        # delta = 43.46 - 0.51 cos N
+        N_rad = np.radians(357.85 + 52.316 * T)
+        alpha = 299.36 + 0.70 * np.sin(N_rad)
+        delta = 43.46 - 0.51 * np.cos(N_rad)
+        return alpha, delta
 
     # Default to Earth pole (approx) or raise error
     if name_norm == "earth":
@@ -513,6 +520,61 @@ def get_reverse_translated_planet_names(language: str) -> dict:
             reverse_map[translated_name] = name
     return reverse_map
 
+def _get_planet_cml_iau_model(
+    planet_name: str, time: Any, w0: float, wd: float
+) -> float | np.ndarray:
+    """
+    Internal helper for planetary Central Meridian Longitude calculation using IAU models.
+    W = w0 + wd * d (degrees), where d is days from J2000.0 (TT).
+    Longitude increases westward.
+    """
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    planet_obj = get_skyfield_obj(planet_name)
+
+    # Observation of planet from Earth (includes light-time correction)
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+    lt_days = astrometric.light_time
+
+    # Rotation state of planet when light left it
+    ts = get_timescale()
+    t_eval = ts.tt_jd(time.tt - lt_days)
+
+    # Planet pole at evaluation time
+    alpha0_deg, delta0_deg = get_planet_pole_coords(planet_name, t_eval)
+    alpha0 = np.radians(alpha0_deg)
+    delta0 = np.radians(delta0_deg)
+
+    # Direction from Planet(t-lt) to Earth(t) in ICRS
+    v_pe = -astrometric.position.au
+
+    if hasattr(time, "shape") and time.shape:
+        # Vectorized norm for array times
+        norms = np.linalg.norm(v_pe, axis=0)
+        u_v = v_pe / norms
+    else:
+        # Scalar time
+        u_v = v_pe / np.linalg.norm(v_pe)
+
+    # Transform to planet-centric frame (Z to North Pole, X to Ascending Node)
+    # The sub-observer longitude from the node is atan2(y, x)
+    x = u_v[0] * (-np.sin(alpha0)) + u_v[1] * np.cos(alpha0)
+    y = (
+        u_v[0] * (-np.sin(delta0) * np.cos(alpha0))
+        + u_v[1] * (-np.sin(delta0) * np.sin(alpha0))
+        + u_v[2] * np.cos(delta0)
+    )
+
+    phi = np.degrees(np.arctan2(y, x))
+
+    # IAU W: angle from node to prime meridian (increasing eastward)
+    d = t_eval.tt - 2451545.0
+    W = (w0 + wd * d) % 360
+
+    # CML = (W - phi) mod 360 (increasing westward)
+    return (W - phi) % 360
+
+
 # Global instance of Jupiter for efficient longitude calculation
 _JUPITER_EPHEM = ephem.Jupiter()
 
@@ -569,14 +631,45 @@ def get_jupiter_system_ii_longitude(time: Any) -> float | np.ndarray:
 
 def get_jupiter_cml(time: Any, system: int = 2) -> float | np.ndarray:
     """
-    Returns Jupiter's Central Meridian Longitude for the specified system (1 or 2).
+    Returns Jupiter's Central Meridian Longitude for the specified system (1, 2 or 3).
+    System I/II use PyEphem's model. System III uses IAU 2015 model.
     """
     if system == 1:
         return get_jupiter_system_i_longitude(time)
     elif system == 2:
         return get_jupiter_system_ii_longitude(time)
+    elif system == 3:
+        # IAU 2015/Archinal et al. (2018) System III: w0 = 284.95, wd = 870.5360000
+        return _get_planet_cml_iau_model("jupiter barycenter", time, 284.95, 870.5360)
     else:
-        raise ValueError("Only System I (1) and System II (2) are supported for Jupiter CML.")
+        raise ValueError(
+            "Only System I (1), II (2), and III (3) are supported for Jupiter CML."
+        )
+
+
+def get_saturn_cml(time: Any, system: int = 3) -> float | np.ndarray:
+    """
+    Returns Saturn's Central Meridian Longitude (CML) in degrees for the specified system.
+    System I: Equatorial region (w0=38.90, wd=844.3000000)
+    System II: Intermediate latitudes (w0=40.30, wd=812.0000000)
+    System III: Magnetic field/Radio rotation (w0=38.90, wd=810.7939024)
+    Uses the IAU 2015/Archinal et al. (2018) model. Longitude increases westward.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    # IAU 2015/Archinal et al. (2018) parameters for Saturn
+    if system == 1:
+        # System I: w0 = 38.90, wd = 844.3000000
+        return _get_planet_cml_iau_model("saturn barycenter", time, 38.90, 844.30)
+    elif system == 2:
+        # System II: w0 = 40.30, wd = 812.0000000
+        return _get_planet_cml_iau_model("saturn barycenter", time, 40.30, 812.0)
+    elif system == 3:
+        # System III: w0 = 38.90, wd = 810.7939024
+        return _get_planet_cml_iau_model("saturn barycenter", time, 38.90, 810.7939024)
+    else:
+        raise ValueError(
+            "Only System I (1), II (2), and III (3) are supported for Saturn CML."
+        )
 
 
 def get_mars_cml(time: Any) -> float | np.ndarray:
@@ -585,48 +678,9 @@ def get_mars_cml(time: Any) -> float | np.ndarray:
     Uses the IAU 2015 model. Longitude increases westward.
     Supports both scalar and array Skyfield Time objects.
     """
-    eph = get_ephemeris()
-    earth = eph["earth"]
-    mars = eph["mars barycenter"]
-
-    # Observation of Mars from Earth (includes light-time correction)
-    astrometric = cast(Any, earth).at(time).observe(mars)
-    lt_days = astrometric.light_time
-
-    # Rotation state of Mars when light left it
-    ts = get_timescale()
-    t_eval = ts.tt_jd(time.tt - lt_days)
-
-    # Mars pole at evaluation time
-    alpha0_deg, delta0_deg = get_planet_pole_coords("mars", t_eval)
-    alpha0 = np.radians(alpha0_deg)
-    delta0 = np.radians(delta0_deg)
-
-    # Direction from Mars(t-lt) to Earth(t) in ICRS
-    v_me = -astrometric.position.au
-
-    if hasattr(time, "shape") and time.shape:
-        u_v = v_me / np.linalg.norm(v_me, axis=0)
-    else:
-        u_v = v_me / np.linalg.norm(v_me)
-
-    # Transform to Mars-centric frame (Z to North Pole, X to Ascending Node)
-    # The sub-observer longitude from the node is atan2(y, x)
-    x = u_v[0] * (-np.sin(alpha0)) + u_v[1] * np.cos(alpha0)
-    y = (
-        u_v[0] * (-np.sin(delta0) * np.cos(alpha0))
-        + u_v[1] * (-np.sin(delta0) * np.sin(alpha0))
-        + u_v[2] * np.cos(delta0)
-    )
-
-    phi = np.degrees(np.arctan2(y, x))
-
-    # IAU 2015 W: angle from node to prime meridian (increasing eastward)
-    d = t_eval.tt - 2451545.0
-    W = (176.630 + 350.89198226 * d) % 360
-
-    # CML = (W - phi) mod 360 (increasing westward)
-    return (W - phi) % 360
+    # IAU 2015/Archinal et al. (2018) parameters for Mars
+    # W = 176.630 + 350.89198226 * d
+    return _get_planet_cml_iau_model("mars barycenter", time, 176.630, 350.89198226)
 
 
 def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
