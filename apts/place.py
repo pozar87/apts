@@ -243,8 +243,8 @@ class Place:
         if sun_alt > -18:
             # Simplified twilight model: brightness increases as sun rises
             # At -18 deg, it's roughly base starlight. At -6, it's much brighter.
-            # Using: SQM_sun = 21.8 - (18 + sun_alt) * 1.2
-            b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alt) * 1.2))
+            # Using: SQM_sun = 21.8 - (18 + sun_alt) * 0.65
+            b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alt) * 0.65))
             b_total += b_sun
 
         # Moon contribution
@@ -257,8 +257,10 @@ class Place:
         )
         if moon_alt > 0:
             mag_m = get_planet_magnitude("moon", target_time)
-            # Simplified moon model: B_moon ~ 10^-0.4(mag+13) * sin(alt)
-            b_moon = 10 ** (-0.4 * (mag_m + 13)) * np.sin(np.radians(moon_alt))
+            # Simplified moon model
+            # Zenith brightness model for Moon: SQM_moon_zenith = mag_m + 31
+            # Combined with sine altitude factor
+            b_moon = 10 ** (-0.4 * (mag_m + 31)) * np.sin(np.radians(moon_alt))
             b_total += b_moon
 
         # Cloud cover effect

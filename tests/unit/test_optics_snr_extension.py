@@ -22,8 +22,12 @@ def test_bortle_to_sqm():
     assert LightPollution.bortle_to_sqm(10.0) == 16.0
 
 def test_place_get_sqm():
+    import datetime
     # Krakow (roughly)
-    place = Place(50.06, 19.94, "Krakow")
+    # Use a fixed date/time at night to avoid Sun/Moon brightness hitting the caps
+    # On 2024-01-11 00:00 UTC, both Sun and Moon are below horizon in Krakow.
+    date = datetime.datetime(2024, 1, 11, 0, 0, 0, tzinfo=datetime.timezone.utc)
+    place = Place(50.06, 19.94, "Krakow", date=date)
     # This should trigger light pollution calculation
     sqm = place.get_sqm()
     assert 16.0 <= sqm <= 22.0
