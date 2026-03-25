@@ -914,13 +914,17 @@ def find_saturn_ring_crossings(start_date, end_date):
     saturn = eph["saturn barycenter"]
 
     def get_tilt(t, observer_obj):
-        # Geocentric observation of Saturn (ICRS)
-        astrometric = observer_obj.at(t).observe(saturn)
-        # Unit vector from Saturn to observer
-        v_sat_obs = -astrometric.position.au / astrometric.distance().au
+        # Oracle: use astrometric positions for maximum consistency and accuracy.
+        # This includes light-time correction for the position of Saturn.
+        # We ensure a stable observation by using the center of the observer body.
+        pos = observer_obj.at(t).observe(saturn)
+        v_sat_obs = -pos.position.au / pos.distance().au
 
-        # Saturn's pole in J2000.0
-        alpha_p_deg, delta_p_deg = planetary.get_saturn_pole(t)
+        # Oracle: evaluate pole orientation at the time the light left Saturn.
+        t_eval = get_timescale().tt_jd(t.tt - pos.light_time)
+
+        # Saturn's pole in J2000.0 at evaluated time
+        alpha_p_deg, delta_p_deg = planetary.get_saturn_pole(t_eval)
         alpha_p = np.radians(alpha_p_deg)
         delta_p = np.radians(delta_p_deg)
 
@@ -2543,11 +2547,11 @@ def find_jupiter_grs_transits(
 
 def find_lunar_features(observer, start_date, end_date):
     """
-    Finds transient lunar features (Lunar X and Straight Wall) based on colongitude.
-    Lunar X: Colongitude approx 358 degrees (around First Quarter).
-    Straight Wall (Rupes Recta): Colongitude approx 178 degrees (8 days after New Moon).
+    Finds transient lunar features based on colongitude.
+    Lunar X/V: Colongitude approx 358 degrees (around First Quarter).
+    Straight Wall: Colongitude approx 178 degrees (1 day after First Quarter).
+    Golden Handle: Colongitude approx 15 degrees (2 days after First Quarter).
     """
-    import ephem
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -2559,74 +2563,61 @@ def find_lunar_features(observer, start_date, end_date):
         ("Lunar X", 358.0),
         ("Lunar V", 358.0),
         ("Straight Wall (Rupes Recta)", 178.0),
+        ("Golden Handle (Mountains of Jura)", 15.0),
     ]
 
     events = []
-    m = ephem.Moon()
 
-    def get_colong(t_sf):
-        m.compute(t_sf.utc_datetime())
-        return float(m.colong) * 180.0 / np.pi
-
-    # Check every 2.4 hours
+    # Check every 2.4 hours for coarse search
     num_steps = int((t1 - t0) * 10)
     if num_steps < 2:
-        return []
+        num_steps = 2
 
     times = ts.linspace(t0, t1, num_steps)
 
-    # Precompute colongitudes for efficiency
-    colongs = np.array([get_colong(t) for t in times])
+    # Precompute colongitudes for efficiency using high-precision Skyfield model
+    colongs = planetary.get_moon_colongitude(times)
+
+    # Extract elevation from observer once
+    elevation = 0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "elevation"):
+            elevation = vf.elevation.m
+            break
 
     for name, target_colong in features:
-        # Handle wrap-around for 358
+        # Handle wrap-around
         diffs = (colongs - target_colong + 180) % 360 - 180
 
-        # Find zero crossings (rising edge only to avoid false positives at target+180)
+        # Find zero crossings (rising edge only)
         crossings = np.where((diffs[:-1] < 0) & (diffs[1:] > 0))[0]
 
         for idx in crossings:
-            # Refine crossing time
-            # Simple linear interpolation for refinement
+            # Refine crossing time using linear interpolation
             t_low = times[idx]
             t_high = times[idx + 1]
             d_low = diffs[idx]
-            d_high = diffs[idx+1]
+            d_high = diffs[idx + 1]
 
-            # If it crosses 0, d_low and d_high have different signs
             t_mid_jd = t_low.tt + (t_high.tt - t_low.tt) * (-d_low / (d_high - d_low))
             t_refined = ts.tt_jd(t_mid_jd)
 
             # Visibility check at refined time
-            # Lunar features are visible if the Moon is above the horizon
-            # and the Sun is below -6 degrees.
             m_pos = observer.at(t_refined).observe(moon_sf).apparent()
             alt, _, _ = m_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            # Optimization: Use geocentric position for Lunar Feature identification
-            # when no observer location is provided or for global event listing.
-            # But the signature requires an observer.
-            # For testing and global catalogs, we skip altitude check if elevation is -9999.
-            # (Arbitrary marker for 'skip visibility check')
-
-            # Extract elevation from observer
-            elevation = 0
-            for vf in observer.vector_functions:
-                if hasattr(vf, "elevation"):
-                    elevation = vf.elevation.m
-                    break
-
             is_visible = alt.degrees > 0
 
+            # Lazy evaluate sun altitude for darkness check
             def check_dark():
-                sun_alt = (
+                s_alt = (
                     observer.at(t_refined)
                     .observe(sun)
                     .apparent()
                     .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                     .degrees
                 )
-                return sun_alt <= -6
+                return s_alt <= -6
 
             if elevation == -9999 or (is_visible and check_dark()):
                 events.append({
@@ -2635,7 +2626,7 @@ def find_lunar_features(observer, start_date, end_date):
                     "object": "Moon",
                     "type": "Lunar Feature",
                     "altitude": float(alt.degrees),
-                    "colongitude": get_colong(t_refined)
+                    "colongitude": float(planetary.get_moon_colongitude(t_refined))
                 })
 
     return events
