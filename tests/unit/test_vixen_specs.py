@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.vixen import VixenTelescope
 
 def test_vixen_vc200l_specs():
