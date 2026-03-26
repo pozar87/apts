@@ -2543,11 +2543,11 @@ def find_jupiter_grs_transits(
 
 def find_lunar_features(observer, start_date, end_date):
     """
-    Finds transient lunar features (Lunar X and Straight Wall) based on colongitude.
-    Lunar X: Colongitude approx 358 degrees (around First Quarter).
-    Straight Wall (Rupes Recta): Colongitude approx 178 degrees (8 days after New Moon).
+    Finds transient lunar features based on selenographic colongitude.
+    - Lunar X and Lunar V: approx 358.0° (First Quarter).
+    - Golden Handle: approx 15.0° (2 days after First Quarter).
+    - Straight Wall (Sunrise): approx 11.0° (1 day after First Quarter).
     """
-    import ephem
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
@@ -2555,87 +2555,80 @@ def find_lunar_features(observer, start_date, end_date):
     moon_sf = planetary.get_skyfield_obj("moon")
 
     # Features to track: (Name, Target Colongitude)
+    # Target values represent the moment the feature becomes prominently visible
+    # due to sunlight hitting its high points while the base is in shadow.
     features = [
         ("Lunar X", 358.0),
         ("Lunar V", 358.0),
-        ("Straight Wall (Rupes Recta)", 178.0),
+        ("Golden Handle", 15.0),
+        ("Straight Wall (Rupes Recta)", 11.0),
     ]
 
     events = []
-    m = ephem.Moon()
 
-    def get_colong(t_sf):
-        m.compute(t_sf.utc_datetime())
-        return float(m.colong) * 180.0 / np.pi
-
-    # Check every 2.4 hours
+    # Check every 2.4 hours (10 steps per day) for coarse search
     num_steps = int((t1 - t0) * 10)
     if num_steps < 2:
         return []
 
     times = ts.linspace(t0, t1, num_steps)
 
-    # Precompute colongitudes for efficiency
-    colongs = np.array([get_colong(t) for t in times])
+    # Precompute colongitudes for efficiency using the vectorized IAU 2015 model
+    colongs = planetary.get_moon_colongitude(times)
+
+    # Extract elevation from observer once
+    observer_elevation = 0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "elevation"):
+            observer_elevation = vf.elevation.m
+            break
 
     for name, target_colong in features:
-        # Handle wrap-around for 358
+        # Handle wrap-around
         diffs = (colongs - target_colong + 180) % 360 - 180
 
-        # Find zero crossings (rising edge only to avoid false positives at target+180)
+        # Find zero crossings (rising edge corresponds to sunrise at that colongitude)
         crossings = np.where((diffs[:-1] < 0) & (diffs[1:] > 0))[0]
 
         for idx in crossings:
-            # Refine crossing time
-            # Simple linear interpolation for refinement
+            # Refine crossing time using linear interpolation
             t_low = times[idx]
             t_high = times[idx + 1]
             d_low = diffs[idx]
-            d_high = diffs[idx+1]
+            d_high = diffs[idx + 1]
 
-            # If it crosses 0, d_low and d_high have different signs
             t_mid_jd = t_low.tt + (t_high.tt - t_low.tt) * (-d_low / (d_high - d_low))
             t_refined = ts.tt_jd(t_mid_jd)
 
             # Visibility check at refined time
-            # Lunar features are visible if the Moon is above the horizon
-            # and the Sun is below -6 degrees.
-            m_pos = observer.at(t_refined).observe(moon_sf).apparent()
-            alt, _, _ = m_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            # Oracle: use refracted positions for topocentric visibility
+            m_obs = observer.at(t_refined).observe(moon_sf).apparent()
+            m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            # Optimization: Use geocentric position for Lunar Feature identification
-            # when no observer location is provided or for global event listing.
-            # But the signature requires an observer.
-            # For testing and global catalogs, we skip altitude check if elevation is -9999.
-            # (Arbitrary marker for 'skip visibility check')
-
-            # Extract elevation from observer
-            elevation = 0
-            for vf in observer.vector_functions:
-                if hasattr(vf, "elevation"):
-                    elevation = vf.elevation.m
-                    break
-
-            is_visible = alt.degrees > 0
-
+            # Lazy check for darkness only if Moon is visible
             def check_dark():
-                sun_alt = (
+                s_alt = (
                     observer.at(t_refined)
                     .observe(sun)
                     .apparent()
                     .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                     .degrees
                 )
-                return sun_alt <= -6
+                return s_alt <= -6
 
-            if elevation == -9999 or (is_visible and check_dark()):
-                events.append({
-                    "date": t_refined.utc_datetime(),
-                    "event": name,
-                    "object": "Moon",
-                    "type": "Lunar Feature",
-                    "altitude": float(alt.degrees),
-                    "colongitude": get_colong(t_refined)
-                })
+            # Special elevation -9999 bypasses topocentric checks for global indexing
+            if observer_elevation == -9999 or (m_alt.degrees > 0 and check_dark()):
+                events.append(
+                    {
+                        "date": t_refined.utc_datetime(),
+                        "event": name,
+                        "object": "Moon",
+                        "type": "Lunar Feature",
+                        "altitude": float(m_alt.degrees),
+                        "colongitude": float(
+                            planetary.get_moon_colongitude(t_refined)
+                        ),
+                    }
+                )
 
     return events

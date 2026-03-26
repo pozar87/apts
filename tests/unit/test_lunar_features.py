@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timezone
 from apts.events import AstronomicalEvents
 from apts.place import Place
@@ -48,3 +49,26 @@ def test_lunar_features_logic():
     assert not lunar_x.empty
     assert lunar_x.iloc[0]["type"] == "Lunar Feature"
     assert lunar_x.iloc[0]["rarity"] == 4
+
+def test_golden_handle_detection():
+    # Golden Handle approx 2 days after First Quarter (colongitude 15.0)
+    # First Quarter: 2026-01-25. GH: approx 2026-01-27
+    start_date = datetime(2026, 1, 26, tzinfo=timezone.utc)
+    end_date = datetime(2026, 1, 28, tzinfo=timezone.utc)
+
+    # Use global observer (skip topocentric checks)
+    place_test = Place(name="Global", lat=0, lon=0, elevation=-9999)
+
+    events = AstronomicalEvents(
+        place_test,
+        start_date,
+        end_date,
+        events_to_calculate=[EventType.LUNAR_FEATURES]
+    )
+
+    df = events.get_events()
+    gh = df[df["event"] == "Golden Handle"]
+
+    assert not gh.empty
+    assert gh.iloc[0]["type"] == "Lunar Feature"
+    assert pytest.approx(gh.iloc[0]["colongitude"], abs=0.5) == 15.0
