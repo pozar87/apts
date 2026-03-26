@@ -149,11 +149,36 @@ class Telescope(OpticalEquipment):
         other_aperture *= get_unit_registry().mm
         return self.effective_aperture() ** 2 / other_aperture ** 2
 
+    def highest_useful_magnification(self) -> float:
+        """
+        Calculate the theoretical highest useful magnification for the telescope.
+        Rule of thumb: 2.0x aperture in mm (or 50x per inch of aperture).
+        Above this limit, the image usually becomes blurry and loses contrast due to diffraction.
+        Source: Sidgwick, J. B. (1971), "Amateur Astronomer's Handbook".
+        """
+        return float(self.aperture.magnitude * 2.0)
+
+    def lowest_useful_magnification(self, pupil_diameter_mm: float = 7.0) -> float:
+        """
+        Calculate the theoretical lowest useful magnification for the telescope.
+        Formula: aperture / pupil_diameter.
+        Assuming a 7.0mm dark-adapted human eye pupil. Lower magnifications result
+        in an exit pupil larger than the eye, wasting gathered light.
+        Source: Sidgwick, J. B. (1971), "Amateur Astronomer's Handbook".
+        """
+        return float(self.aperture.magnitude / pupil_diameter_mm)
+
     def min_useful_zoom(self):
-        return self.aperture.magnitude / 6
+        """
+        Returns the minimum useful magnification.
+        """
+        return self.lowest_useful_magnification()
 
     def max_useful_zoom(self):
-        return self.aperture.magnitude * 2.5
+        """
+        Returns the maximum useful magnification.
+        """
+        return self.highest_useful_magnification()
 
     def register(self, equipment):
         """

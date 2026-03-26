@@ -145,17 +145,7 @@ class Equipment:
                 is_binoculars = isinstance(path.telescope, Binoculars) or is_naked_eye
 
                 # Calculate useful_zoom
-                useful_zoom_value = True  # Default for binoculars and naked eye
-                if not is_binoculars:
-                    if hasattr(path.telescope, "max_useful_zoom"):
-                        # max_useful_zoom() on Telescope returns a float, zoom() is a Quantity
-                        useful_zoom_value = (
-                            path.zoom().magnitude < path.telescope.max_useful_zoom()
-                        )
-                    else:
-                        useful_zoom_value = (
-                            False  # Should not happen for Telescope objects
-                        )
+                useful_zoom_value = path.is_magnification_useful()
 
                 # Get output type. For Binoculars, path.output is the Binocular instance.
                 output_type_value = path.output.output_type()
