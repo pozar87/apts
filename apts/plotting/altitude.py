@@ -80,49 +80,58 @@ def generate_plot_messier(
             )
             return fig
 
-        plotted_types = {}
-
+        # Vectorized property extraction to avoid slow iterrows()
+        # Ensure numeric columns are floats to avoid Pint/Quantity overhead
         for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, "Height"]:
-            if col in messier_df.columns and hasattr(
-                messier_df[col].iloc[0], "magnitude"
+            if col in messier_df.columns:
+                messier_df[col] = [
+                    getattr(x, "magnitude", x) for x in messier_df[col].values
+                ]
+
+        # Handle missing Height
+        if "Height" not in messier_df.columns:
+            messier_df["Height"] = messier_df[ObjectTableLabels.WIDTH]
+        else:
+            messier_df["Height"] = messier_df["Height"].fillna(
+                messier_df[ObjectTableLabels.WIDTH]
+            )
+
+        # Vectorized marker size: marker area (s) as width * height
+        messier_df["marker_size"] = (
+            messier_df[ObjectTableLabels.WIDTH] * messier_df["Height"]
+        )
+
+        # Determine colors (Type is often already translated in get_visible_messier)
+        types = (
+            messier_df["Type"].fillna("Other")
+            if "Type" in messier_df.columns
+            else pd.Series("Other", index=messier_df.index)
+        )
+        messier_df["TranslatedType"] = [gettext_(t) for t in types]
+        messier_df["color"] = [
+            get_messier_color(t, effective_dark_mode)
+            for t in messier_df["TranslatedType"]
+        ]
+
+        # Filter out objects without a valid transit time in the window
+        plot_df = messier_df[messier_df[ObjectTableLabels.TRANSIT].notna()].copy()
+
+        if not plot_df.empty:
+            # Single vectorized scatter call for all objects
+            ax.scatter(
+                plot_df[ObjectTableLabels.TRANSIT],
+                plot_df[ObjectTableLabels.ALTITUDE],
+                s=plot_df["marker_size"],
+                marker="o",
+                c=plot_df["color"],
+            )
+
+            # Annotation loop optimized to avoid iterrows()
+            for text, x, y in zip(
+                plot_df[ObjectTableLabels.MESSIER],
+                plot_df[ObjectTableLabels.TRANSIT],
+                plot_df[ObjectTableLabels.ALTITUDE],
             ):
-                messier_df[col] = messier_df[col].apply(
-                    lambda x: x.magnitude if hasattr(x, "magnitude") else x
-                )
-
-        transits = []
-        altitudes = []
-        sizes = []
-        colors = []
-        labels = []
-
-        for _, obj in messier_df.iterrows():
-            transit = obj[ObjectTableLabels.TRANSIT]
-            if bool(pd.notna(transit)):
-                altitude = obj[ObjectTableLabels.ALTITUDE]
-                obj_type = gettext_(obj.get("Type", "Other"))
-                width = obj[ObjectTableLabels.WIDTH]
-                height = obj["Height"] if "Height" in obj else width
-                messier_id = obj[ObjectTableLabels.MESSIER]
-                # Calculate marker area (s) as width * height
-                # Original logic: marker_size = sqrt(width*height); s = marker_size**2
-                s_size = width * height
-
-                color = get_messier_color(obj_type, effective_dark_mode)
-                plotted_types[obj_type] = color
-
-                transits.append(transit)
-                altitudes.append(altitude)
-                sizes.append(s_size)
-                colors.append(color)
-                labels.append((messier_id, transit, altitude))
-
-        if transits:
-            # Single vectorized scatter call
-            ax.scatter(transits, altitudes, s=sizes, marker="o", c=colors)
-
-            # Annotation loop remains necessary
-            for text, x, y in labels:
                 ax.annotate(
                     text,
                     (x, y),
@@ -130,6 +139,14 @@ def generate_plot_messier(
                     textcoords="offset points",
                     color=style["TEXT_COLOR"],
                 )
+
+            # Collect unique types for legend
+            unique_rows = plot_df.drop_duplicates(subset=["TranslatedType"])
+            plotted_types = dict(
+                zip(unique_rows["TranslatedType"], unique_rows["color"])
+            )
+        else:
+            plotted_types = {}
 
         if observation.start is not None and observation.time_limit is not None:
             ax.set_xlim(

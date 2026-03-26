@@ -17,8 +17,6 @@ def find_meteor_showers(observer, start_date, end_date):
     """
     from datetime import datetime
     ts = get_timescale()
-    t0_utc = ts.utc(start_date)
-    t1_utc = ts.utc(end_date)
     utc = start_date.tzinfo
     eph = get_ephemeris()
     sun = eph["sun"]
@@ -2547,10 +2545,10 @@ def find_jupiter_grs_transits(
 
 def find_lunar_features(observer, start_date, end_date):
     """
-    Finds transient lunar features based on colongitude.
-    Lunar X/V: Colongitude approx 358 degrees (around First Quarter).
-    Straight Wall: Colongitude approx 178 degrees (1 day after First Quarter).
-    Golden Handle: Colongitude approx 15 degrees (2 days after First Quarter).
+    Finds transient lunar features based on selenographic colongitude.
+    - Lunar X and Lunar V: approx 358.0° (First Quarter).
+    - Golden Handle: approx 15.0° (2 days after First Quarter).
+    - Straight Wall (Sunrise): approx 11.0° (1 day after First Quarter).
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -2559,37 +2557,39 @@ def find_lunar_features(observer, start_date, end_date):
     moon_sf = planetary.get_skyfield_obj("moon")
 
     # Features to track: (Name, Target Colongitude)
+    # Target values represent the moment the feature becomes prominently visible
+    # due to sunlight hitting its high points while the base is in shadow.
     features = [
         ("Lunar X", 358.0),
         ("Lunar V", 358.0),
-        ("Straight Wall (Rupes Recta)", 178.0),
         ("Golden Handle (Mountains of Jura)", 15.0),
+        ("Straight Wall (Rupes Recta)", 11.0),
     ]
 
     events = []
 
-    # Check every 2.4 hours for coarse search
+    # Check every 2.4 hours (10 steps per day) for coarse search
     num_steps = int((t1 - t0) * 10)
     if num_steps < 2:
         num_steps = 2
 
     times = ts.linspace(t0, t1, num_steps)
 
-    # Precompute colongitudes for efficiency using high-precision Skyfield model
+    # Precompute colongitudes for efficiency using the vectorized IAU 2015 model
     colongs = planetary.get_moon_colongitude(times)
 
     # Extract elevation from observer once
-    elevation = 0
+    observer_elevation = 0
     for vf in observer.vector_functions:
         if hasattr(vf, "elevation"):
-            elevation = vf.elevation.m
+            observer_elevation = vf.elevation.m
             break
 
     for name, target_colong in features:
         # Handle wrap-around
         diffs = (colongs - target_colong + 180) % 360 - 180
 
-        # Find zero crossings (rising edge only)
+        # Find zero crossings (rising edge corresponds to sunrise at that colongitude)
         crossings = np.where((diffs[:-1] < 0) & (diffs[1:] > 0))[0]
 
         for idx in crossings:
@@ -2603,12 +2603,11 @@ def find_lunar_features(observer, start_date, end_date):
             t_refined = ts.tt_jd(t_mid_jd)
 
             # Visibility check at refined time
-            m_pos = observer.at(t_refined).observe(moon_sf).apparent()
-            alt, _, _ = m_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            # Oracle: use refracted positions for topocentric visibility
+            m_obs = observer.at(t_refined).observe(moon_sf).apparent()
+            m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            is_visible = alt.degrees > 0
-
-            # Lazy evaluate sun altitude for darkness check
+            # Lazy check for darkness only if Moon is visible
             def check_dark():
                 s_alt = (
                     observer.at(t_refined)
@@ -2619,14 +2618,17 @@ def find_lunar_features(observer, start_date, end_date):
                 )
                 return s_alt <= -6
 
-            if elevation == -9999 or (is_visible and check_dark()):
-                events.append({
-                    "date": t_refined.utc_datetime(),
-                    "event": name,
-                    "object": "Moon",
-                    "type": "Lunar Feature",
-                    "altitude": float(alt.degrees),
-                    "colongitude": float(planetary.get_moon_colongitude(t_refined))
-                })
+            # Special elevation -9999 bypasses topocentric checks for global indexing
+            if observer_elevation == -9999 or (m_alt.degrees > 0 and check_dark()):
+                events.append(
+                    {
+                        "date": t_refined.utc_datetime(),
+                        "event": name,
+                        "object": "Moon",
+                        "type": "Lunar Feature",
+                        "altitude": float(m_alt.degrees),
+                        "colongitude": float(planetary.get_moon_colongitude(t_refined)),
+                    }
+                )
 
     return events

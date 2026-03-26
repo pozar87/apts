@@ -115,11 +115,10 @@ def _plot_bright_stars_on_skymap(
 
         ax.scatter(az_zoomed_deg, alt_zoomed_deg, s=40, color=star_color, marker="*")
 
-        for i in range(len(df_zoomed)):
-            star = df_zoomed.iloc[i]  # type: ignore
+        for name, x, y in zip(df_zoomed["Name"], az_zoomed_deg, alt_zoomed_deg):
             ax.annotate(
-                star["Name"],
-                (az_zoomed_deg[i], alt_zoomed_deg[i]),
+                name,
+                (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color=star_color,
@@ -145,11 +144,10 @@ def _plot_bright_stars_on_skymap(
 
         ax.scatter(ra_zoomed, dec_zoomed, s=40, color=star_color, marker="*")
 
-        for i in range(len(df_zoomed)):
-            star = df_zoomed.iloc[i]  # type: ignore
+        for name, x, y in zip(df_zoomed["Name"], ra_zoomed, dec_zoomed):
             ax.annotate(
-                star["Name"],
-                (ra_zoomed[i], dec_zoomed[i]),
+                name,
+                (x, y),
                 textcoords="offset points",
                 xytext=(5, 5),
                 color=star_color,
@@ -165,11 +163,12 @@ def _plot_bright_stars_on_skymap(
                     color=star_color,
                     marker="*",
                 )
-                for i in range(len(df_visible)):
-                    star = df_visible.iloc[i]  # type: ignore
+                for name, x, y in zip(
+                    df_visible["Name"], az_visible_rad, 90 - alt_visible_deg
+                ):
                     ax.annotate(
-                        star["Name"],
-                        (az_visible_rad[i], 90 - alt_visible_deg[i]),
+                        name,
+                        (x, y),
                         textcoords="offset points",
                         xytext=(5, 5),
                         color=star_color,
@@ -189,14 +188,11 @@ def _plot_bright_stars_on_skymap(
                     color=star_color,
                     marker="*",
                 )
-                for i in range(len(df_visible)):
-                    star = df_visible.iloc[i]  # type: ignore
+                ra_rad_visible = ra.radians[visible_mask]
+                for name, x, y in zip(df_visible["Name"], ra_rad_visible, radius):
                     ax.annotate(
-                        star["Name"],
-                        (
-                            ra.radians[visible_mask][i],
-                            radius[i],
-                        ),
+                        name,
+                        (x, y),
                         textcoords="offset points",
                         xytext=(5, 5),
                         color=star_color,
@@ -210,11 +206,10 @@ def _plot_bright_stars_on_skymap(
                 color=star_color,
                 marker="*",
             )
-            for i in range(len(df_visible)):
-                star = df_visible.iloc[i]  # type: ignore
+            for name, x, y in zip(df_visible["Name"], az_visible_deg, alt_visible_deg):
                 ax.annotate(
-                    star["Name"],
-                    (az_visible_deg[i], alt_visible_deg[i]),
+                    name,
+                    (x, y),
                     textcoords="offset points",
                     xytext=(5, 5),
                     color=star_color,
@@ -700,72 +695,132 @@ def _plot_ngc_on_skymap(
         visible_ngc_copy["epoch_year"] = 2000.0
         ngc_stars = SkyfieldStar.from_dataframe(visible_ngc_copy)
         all_positions = observer.observe(ngc_stars).apparent()
-        alt_all_deg = numpy.atleast_1d(all_positions.altaz()[0].degrees)
-        az_all_deg = numpy.atleast_1d(all_positions.altaz()[1].degrees)
-        ra_all_hours = numpy.atleast_1d(all_positions.radec()[0].hours)
-        dec_all_deg = numpy.atleast_1d(all_positions.radec()[1].degrees)
-        ra_all_rad = numpy.atleast_1d(all_positions.radec()[0].radians)
+
+        def to_array(val, n):
+            arr = numpy.atleast_1d(val)
+            if arr.size == 1 and n > 1:
+                return numpy.full(n, arr[0])
+            return arr
+
+        num_objects = len(visible_ngc)
+        alt_all_deg = to_array(all_positions.altaz()[0].degrees, num_objects)
+        az_all_deg = to_array(all_positions.altaz()[1].degrees, num_objects)
+        ra_all_hours = to_array(all_positions.radec()[0].hours, num_objects)
+        dec_all_deg = to_array(all_positions.radec()[1].degrees, num_objects)
+        ra_all_rad = to_array(all_positions.radec()[0].radians, num_objects)
 
         # Reset index to ensure i matches the position in all_positions arrays
         visible_ngc_plot = cast(pd.DataFrame, visible_ngc).reset_index(drop=True)
-        for i, (_, n_obj) in enumerate(visible_ngc_plot.iterrows()):
-            ngc_name = n_obj[ObjectTableLabels.NGC]
-            if bool(pd.isna(ngc_name)):
-                ngc_name = n_obj[ObjectTableLabels.NAME]
-            if ngc_name == target_name:
-                continue
 
-            alt_deg = float(alt_all_deg[i])
-            az_deg = float(az_all_deg[i])
-            ra_hours = float(ra_all_hours[i])
-            dec_deg = float(dec_all_deg[i])
-            ra_rad = float(ra_all_rad[i])
+        # Optimization: use vectorized coordinates for visibility and basic plot values
+        # This handles the alt_deg > 0 check efficiently for all objects.
+        is_above_horizon = alt_all_deg > 0
+        if not numpy.any(is_above_horizon):
+            return
 
-            if alt_deg > 0:
-                width_arcmin = n_obj.get("Size")
-                if bool(pd.isna(width_arcmin)):
-                    width_arcmin = n_obj.get("MajAx", 1.0)
-                width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-                width_deg = float(width_arcmin or 1.0) / 60.0
+        # Prepare data for plotting
+        # Optimization: replace iterrows() with faster zip() and vectorized operations
+        names = (
+            visible_ngc_plot[ObjectTableLabels.NGC]
+            .fillna(visible_ngc_plot[ObjectTableLabels.NAME])
+            .to_numpy()
+        )
+        # Filter by name and horizon at once
+        mask = (names != target_name) & is_above_horizon
+        if not numpy.any(mask):
+            return
 
-                height_arcmin = n_obj.get("MinAx")
-                if bool(pd.isna(height_arcmin)):
-                    height_arcmin = width_arcmin
-                height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-                height_deg = float(height_arcmin or 1.0) / 60.0
+        active_indices = numpy.where(mask)[0]
+        active_names = names[mask]
+        active_alts = alt_all_deg[mask]
+        active_azs = az_all_deg[mask]
+        active_ras_h = ra_all_hours[mask]
+        active_ras_r = ra_all_rad[mask]
+        active_decs = dec_all_deg[mask]
 
-                pos_angle = n_obj.get("PosAng")
-                if bool(pd.isna(pos_angle)):
-                    pos_angle = 0.0
-                pos_angle = getattr(pos_angle, "magnitude", pos_angle)
-                pos_angle = float(pos_angle or 0.0)
+        # Extract dimensions and other properties using vectorized pandas methods
+        # To avoid pint Quantity overhead, we use pre-calculated floats if possible
+        # or convert once.
+        def get_dim(col_name, default_col=None):
+            if col_name in visible_ngc_plot.columns:
+                vals = visible_ngc_plot.loc[mask, col_name]
+            else:
+                vals = pd.Series(numpy.nan, index=visible_ngc_plot.index[mask])
 
+            if (
+                default_col
+                and default_col in visible_ngc_plot.columns
+                and vals.isna().any()
+            ):
+                vals = vals.fillna(visible_ngc_plot.loc[mask, default_col])
+            vals = vals.fillna(1.0)
+            return numpy.array([getattr(x, "magnitude", x) for x in vals], dtype=float)
+
+        widths_deg = get_dim("Size", "MajAx") / 60.0
+        heights_deg = get_dim("MinAx", "Size") / 60.0
+        pos_angles = get_dim("PosAng")
+
+        if is_polar:
+            # Vectorized scatter for all NGC objects in polar view
+            # This provides a massive speedup by reducing thousands of Matplotlib calls to one.
+            sizes = (widths_deg + heights_deg) / 2 * 100
+            is_sh = observation.place.lat_decimal < 0
+
+            if coordinate_system == CoordinateSystem.HORIZONTAL:
+                x_vals, y_vals = numpy.deg2rad(active_azs), 90 - active_alts
+            else:
+                x_vals, y_vals = active_ras_r, (
+                    90 + active_decs if is_sh else 90 - active_decs
+                )
+
+            ax.scatter(x_vals, y_vals, s=sizes, color="green", marker="+")
+
+            # Annotation loop still needed but optimized to avoid iterrows()
+            for name, x, y in zip(active_names, x_vals, y_vals):
+                ax.annotate(
+                    name,
+                    (x, y),
+                    textcoords="offset points",
+                    xytext=(5, 5),
+                    color="green",
+                )
+        else:
+            # Cartesian / Zoomed view - still using loop for Ellipse patches but optimized
+            # (PatchCollection could be used but Ellipse initialization is still per-object)
+            if "Mag" in visible_ngc_plot.columns:
+                magnitudes = visible_ngc_plot.loc[mask, "Mag"].to_numpy()
+            elif "Magnitude" in visible_ngc_plot.columns:
+                magnitudes = visible_ngc_plot.loc[mask, "Magnitude"].to_numpy()
+            else:
+                magnitudes = numpy.full(len(active_indices), 10.0)
+
+            for i, idx in enumerate(active_indices):
                 parallactic_angle = calculate_parallactic_angle(
-                    observation.place.lat, dec_deg, az_deg
+                    observation.place.lat, active_decs[i], active_azs[i]
                 )
                 angle = calculate_ellipse_angle(
-                    pos_angle,
+                    pos_angles[i],
                     parallactic_angle,
                     coordinate_system,
                     flipped_horizontally,
                     flipped_vertically,
                 )
-                magnitude = n_obj.get("Mag")
-                face_color = get_brightness_color(magnitude)
+                face_color = get_brightness_color(magnitudes[i])
+
                 _plot_celestial_object(
                     ax,
-                    name=cast(str, ngc_name),
-                    alt_deg=alt_deg,
-                    az_deg=az_deg,
-                    ra_hours=ra_hours,
-                    dec_deg=dec_deg,
-                    width_deg=width_deg,
-                    height_deg=height_deg,
+                    name=cast(str, active_names[i]),
+                    alt_deg=float(active_alts[i]),
+                    az_deg=float(active_azs[i]),
+                    ra_hours=float(active_ras_h[i]),
+                    dec_deg=float(active_decs[i]),
+                    width_deg=float(widths_deg[i]),
+                    height_deg=float(heights_deg[i]),
                     angle=angle,
                     face_color=face_color,
                     edge_color="green",
-                    is_polar=is_polar,
-                    ra_rad=ra_rad,
+                    is_polar=False,
+                    ra_rad=float(active_ras_r[i]),
                     coordinate_system=coordinate_system,
                     is_sh=observation.place.lat_decimal < 0,
                 )
