@@ -2572,7 +2572,7 @@ def find_lunar_features(observer, start_date, end_date):
     times = ts.linspace(t0, t1, num_steps)
 
     # Precompute colongitudes for efficiency using the vectorized IAU 2015 model
-    colongs = planetary.get_moon_colongitude(times)
+    colongs = cast(np.ndarray, planetary.get_moon_colongitude(times))
 
     # Extract elevation from observer once
     observer_elevation = 0
@@ -2583,7 +2583,7 @@ def find_lunar_features(observer, start_date, end_date):
 
     for name, target_colong in features:
         # Handle wrap-around
-        diffs = (colongs - target_colong + 180) % 360 - 180
+        diffs = cast(np.ndarray, (colongs - target_colong + 180) % 360 - 180)
 
         # Find zero crossings (rising edge corresponds to sunrise at that colongitude)
         crossings = np.where((diffs[:-1] < 0) & (diffs[1:] > 0))[0]
