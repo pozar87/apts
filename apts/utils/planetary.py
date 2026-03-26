@@ -313,7 +313,7 @@ def get_saturn_ring_details(time: Any) -> dict:
     B_deg = float(np.degrees(B_rad))
 
     # Major axis (outer edge of A ring)
-    dist_km = astrometric.distance().km
+    dist_km = pos.distance().km
     radius_km = astronomy.SATURN_RING_OUTER_RADIUS_KM
     major_arcsec = float(2 * np.degrees(np.arcsin(radius_km / dist_km)) * 3600.0)
 
