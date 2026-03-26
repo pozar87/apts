@@ -186,5 +186,26 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 26)
         self.assertEqual(scope.mass.to('gram').magnitude, 1200)
 
+    def test_250pds_newtonian_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_250PDS_Newtonian()
+        self.assertEqual(scope.aperture.to('mm').magnitude, 254)
+        self.assertEqual(scope.mass.to('gram').magnitude, 14380)
+
+    def test_explorer_250p_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Explorer_250P()
+        self.assertEqual(scope.aperture.to('mm').magnitude, 254)
+        self.assertEqual(scope.mass.to('gram').magnitude, 14380)
+
+    def test_heritage_150p_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Heritage_150P()
+        self.assertEqual(scope.mass.to('gram').magnitude, 3700)
+
+    def test_star_adventurer_gti_80ed_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Star_Adventurer_GTi_80ED()
+        self.assertEqual(scope.aperture.to('mm').magnitude, 80)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 600)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
+        self.assertEqual(scope.mass.to('gram').magnitude, 2600)
+
 if __name__ == '__main__':
     unittest.main()

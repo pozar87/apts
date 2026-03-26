@@ -21,7 +21,7 @@ class TestExplorerPSpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 254)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1200)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 58)
-        self.assertEqual(scope.mass.to('gram').magnitude, 14000)
+        self.assertEqual(scope.mass.to('gram').magnitude, 14380)
 
     def test_explorer_300p_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Explorer_300P()

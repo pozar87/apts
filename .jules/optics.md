@@ -496,6 +496,25 @@
     - https://global.vixen.co.jp/en/product/37102_4/
     - https://global.vixen.co.jp/en/product/37103_1/
 
+## 2026-03-25 - Audit of Sky-Watcher Newtonians and Refractors
+
+- **Items:** Sky-Watcher 250PDS, Explorer 250P, Heritage 150P, Heritage 150P FlexTube, Star Adventurer GTi 80ED.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Initial State:**
+    - 250PDS had rounded aperture (250mm).
+    - Explorer 250P had rounded mass (14000g).
+    - Heritage 150P models had system mass (7500g) instead of OTA mass.
+    - Star Adventurer GTi 80ED was missing optical properties.
+- **Verified Specs (Source: Sky-Watcher Official Website / First Light Optics):**
+    - **250PDS:** Aperture 254mm, FL 1200mm, Mass 14.38kg, CO 63mm.
+    - **Explorer 250P:** Aperture 254mm, FL 1200mm, Mass 14.38kg, CO 58mm.
+    - **Heritage 150P:** Aperture 150mm, FL 750mm, Mass 3.7kg (OTA), CO 47mm.
+    - **Star Adventurer GTi 80ED:** Aperture 80mm, FL 600mm, Mass 2.6kg, CO 0mm.
+- **Action:** Updated all models with verified physical specs and added source comments. Updated `tests/unit/test_explorer_p_specs.py` and `tests/unit/test_sky_watcher_specs.py` to match new data.
+- **Source URLs:**
+    - https://www.firstlightoptics.com/reflectors/sky-watcher-explorer-150p-ds-with-eqm-35-pro-mount.html
+    - http://skywatcher.com/product/bkp-250-ds/
+    - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
 ## 2026-03-25 - Audit of Orion Telescopes
 
 - **Items:** Orion EON (80, 110, 130), 8" f/3.9 Astrograph, XT8/10/12 Classic Dobs, SpaceProbe 130ST.
