@@ -495,3 +495,28 @@
     - https://www.bresser.com/p/vixen-r200ss-reflector-telescope-X000315
     - https://global.vixen.co.jp/en/product/37102_4/
     - https://global.vixen.co.jp/en/product/37103_1/
+
+## 2026-03-25 - Audit of Orion Telescopes
+
+- **Items:** Orion EON (80, 110, 130), 8" f/3.9 Astrograph, XT8/10/12 Classic Dobs, SpaceProbe 130ST.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/orion.py`
+- **Initial State:**
+    - Mass values were rounded or slightly off (e.g., EON 130mm was 10200g, corrected to 10210g based on 22.5 lbs).
+    - Refractors were missing explicit `central_obstruction_mm: 0`.
+    - SpaceProbe 130ST was missing `central_obstruction_mm` (added 36.4mm based on 28% diameter obstruction).
+    - XT Dobs had slightly off mass values (e.g., XT8 corrected from 9300g to 9210g based on 20.3 lbs).
+- **Verified Specs (Sources: Orion Telescopes & Binoculars Official Website / Manuals / High Point Scientific):**
+    - **EON 130mm ED:** 130/910mm, Mass 10.21kg (22.5 lbs), CO 0mm.
+    - **8" f/3.9 Astrograph:** 203/800mm, Mass 7.94kg (17.5 lbs), CO 70mm.
+    - **EON 110mm ED:** 110/660mm, Mass 5.22kg (11.5 lbs), CO 0mm.
+    - **EON 80mm ED:** 80/500mm (or 560mm/480mm variants, but 500mm confirmed for the triplet), Mass 2.95kg (6.5 lbs), CO 0mm.
+    - **XT8 Classic Dob:** 203/1200mm, Mass 9.21kg (20.3 lbs OTA), CO 47mm.
+    - **XT10 Classic Dob:** 254/1200mm, Mass 13.11kg (28.9 lbs OTA), CO 63mm.
+    - **XT12 Classic Dob:** 305/1500mm, Mass 22.68kg (50.0 lbs OTA), CO 70mm.
+    - **SpaceProbe 130ST:** 130/650mm, Mass 2.81kg (6.2 lbs OTA), CO 36.4mm (28%).
+- **Action:** Updated all Orion telescope models with verified physical specs and added source comments. Created `tests/unit/test_orion_specs.py` for verification.
+- **Source URLs:**
+    - https://www.telescope.com/Orion-EON-130mm-ED-Triplet-Apochromatic-Refractor-Telescope/p/114817.uts
+    - https://www.highpointscientific.com/amfile/file/download/file/1110/product/9530/
+    - https://www.telescope.com/Orion-SpaceProbe-130ST-Equatorial-Reflector-Telescope/p/9007.uts
+    - https://www.telescope.com/Orion-SkyQuest-XT8-Classic-Dobsonian-Telescope/p/102005.uts
