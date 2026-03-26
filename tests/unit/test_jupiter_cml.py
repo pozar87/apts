@@ -40,4 +40,4 @@ def test_jupiter_cml_invalid_system():
     ts = get_timescale()
     t = ts.utc(2025, 1, 1)
     with pytest.raises(ValueError, match="Only System I"):
-        planetary.get_jupiter_cml(t, system=3)
+        planetary.get_jupiter_cml(t, system=4)
