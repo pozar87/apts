@@ -223,6 +223,21 @@ class Place:
         )
         return self.light_pollution.get_light_pollution()
 
+    def _get_scalar_datetime(self, target_time: Any) -> datetime.datetime:
+        """
+        Helper to convert a Skyfield Time object (scalar or vector) to a scalar
+        timezone-aware UTC datetime.
+        """
+        dt_raw = target_time.utc_datetime()
+        if isinstance(dt_raw, (list, np.ndarray)):
+            dt = dt_raw[0]
+        else:
+            dt = dt_raw
+
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=datetime.timezone.utc)
+        return dt
+
     def get_sqm(self, time: Optional[Any] = None) -> float:
         """
         Returns the approximate SQM value for the place based on its Bortle class,
@@ -271,12 +286,8 @@ class Place:
             and not self.weather.data.empty
         ):
             # Find nearest time in weather data
-            # target_time is Skyfield Time, convert to datetime
-            dt = target_time.utc_datetime()
-            # weather.data['time'] is timezone-aware
-            # We need to ensure dt is timezone-aware too
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            # target_time is Skyfield Time, convert to scalar aware datetime
+            dt = self._get_scalar_datetime(target_time)
 
             # Simple nearest neighbor
             idx = (self.weather.data["time"] - dt).abs().idxmin()
@@ -304,9 +315,7 @@ class Place:
             and self.weather.data is not None
             and not self.weather.data.empty
         ):
-            dt = target_time.utc_datetime()
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            dt = self._get_scalar_datetime(target_time)
             idx = (self.weather.data["time"] - dt).abs().idxmin()
 
             wind_speed = float(self.weather.data.loc[idx, "windSpeed"])

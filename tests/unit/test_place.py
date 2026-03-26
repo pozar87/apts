@@ -662,3 +662,38 @@ class TestPlaceTranslation(unittest.TestCase):
             self.assertEqual(ax.get_xlabel(), "Azymut [°]")
             self.assertEqual(ax.get_ylabel(), "Wysokość [°]")
             self.assertTrue(ax.get_title().startswith("Ścieżka Księżyca on"))
+
+    def test_get_altaz_curve_southern_hemisphere_wrap(self):
+        """
+        Tests the Southern Hemisphere wrap-around logic in get_altaz_curve.
+        Verifies that a NaN row is inserted when the azimuth crosses the 0/360 boundary.
+        """
+        # Place in Southern Hemisphere (Sydney)
+        p = Place(
+            lat=-33.8688,
+            lon=151.2093,
+            date=datetime(2024, 3, 20, 12, 0, 0, tzinfo=timezone.utc),
+        )
+
+        # Select an object and time window that crosses the North meridian (0/360)
+        # On Equinox, Sun transits North at local noon (~01:00 UTC for Sydney)
+        start_time = datetime(2024, 3, 20, 0, 0, 0, tzinfo=timezone.utc)
+        end_time = datetime(2024, 3, 20, 3, 0, 0, tzinfo=timezone.utc)
+
+        # Get curve with enough points to see the wrap
+        df = p.get_altaz_curve(p.sun, start_time, end_time, num_points=50)
+
+        # Find if there is a NaN row
+        nan_rows = df[df["Azimuth"].isna()]
+        self.assertGreater(
+            len(nan_rows), 0, "A NaN row should be inserted for Southern Hemisphere wrap-around"
+        )
+
+        # Verify it's inserted between points where azimuth jumps
+        nan_idx = nan_rows.index[0]
+        # Check surrounding points (if not at boundaries)
+        if nan_idx > 0 and nan_idx < len(df) - 1:
+            az_before = df.loc[nan_idx - 1, "Azimuth"]
+            az_after = df.loc[nan_idx + 1, "Azimuth"]
+            # Azimuth should jump from > 180 (e.g. ~359) to < 180 (e.g. ~1) or vice versa
+            self.assertGreater(abs(az_before - az_after), 180)

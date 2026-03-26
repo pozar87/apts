@@ -1241,6 +1241,13 @@ class OpticalPath:
         from .utils import planetary
         return planetary.get_planet_surface_brightness(planet_name, time)
 
+    def moon_colongitude(self, time: Any) -> Union[float, numpy.ndarray]:
+        """
+        Calculates the Moon's selenographic colongitude in degrees.
+        """
+        from .utils import planetary
+        return planetary.get_moon_colongitude(time)
+
     def jupiter_cml(self, time: Any, system: int = 2) -> Union[float, numpy.ndarray]:
         """
         Calculates Jupiter's Central Meridian Longitude (CML) for the specified system (1 or 2).
@@ -1254,6 +1261,13 @@ class OpticalPath:
         """
         from .utils import planetary
         return planetary.get_mars_cml(time)
+
+    def saturn_cml(self, time: Any, system: int = 3) -> Union[float, numpy.ndarray]:
+        """
+        Calculates Saturn's Central Meridian Longitude (CML) for the specified system (1, 2 or 3).
+        """
+        from .utils import planetary
+        return planetary.get_saturn_cml(time, system)
 
     def sun_physical_details(self, time: Any) -> dict:
         """
