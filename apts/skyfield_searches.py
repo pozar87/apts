@@ -17,8 +17,6 @@ def find_meteor_showers(observer, start_date, end_date):
     """
     from datetime import datetime
     ts = get_timescale()
-    t0_utc = ts.utc(start_date)
-    t1_utc = ts.utc(end_date)
     utc = start_date.tzinfo
     eph = get_ephemeris()
     sun = eph["sun"]

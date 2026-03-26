@@ -2,8 +2,6 @@ import datetime
 import unittest
 from unittest.mock import MagicMock, patch
 import pandas as pd
-import numpy as np
-from skyfield.api import Topos
 from apts.place import Place
 from apts.weather import Weather
 
