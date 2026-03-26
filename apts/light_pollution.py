@@ -15,20 +15,34 @@ class LightPollution:
         fp = [21.88, 21.67, 21.45, 21.05, 19.77, 18.87, 18.25, 17.5, 16.0]
         return float(np.interp(bortle_class, xp, fp))
 
+    _IMAGE = None
+    _PIX = None
+    _SIZE = None
+
+    @classmethod
+    def _load_image(cls):
+        """Loads the light pollution image and its pixel data into class-level cache."""
+        if cls._IMAGE is None:
+            image_path = str(
+                resources.files("apts").joinpath("data/world202t4_low3.png")
+            )
+            cls._IMAGE = Image.open(image_path)
+            # load() actually reads the image data into memory and returns a PixelAccess object
+            cls._PIX = cls._IMAGE.load()
+            cls._SIZE = cls._IMAGE.size
+
     def __init__(self, lat, lon):
         self.lat = lat
         self.lon = lon
-        self.image_path = str(
-            resources.files("apts").joinpath("data/world202t4_low3.png")
-        )
-        self.im = Image.open(self.image_path)
-        self.pix = self.im.load()
+        # Lazily load the image data into the class-level cache if not already loaded.
+        # This significantly improves performance when multiple LightPollution objects are created.
+        self._load_image()
 
     def _latlon_to_pixel(self, lat, lon):
         # Image dimensions: 14400x5600
         # Latitude range: 75N to 65S -> 140 degrees
         # Longitude range: 180W to 180E -> 360 degrees
-        img_width, img_height = self.im.size
+        img_width, img_height = self._SIZE
 
         # Normalize longitude to 0-360
         lon_norm = lon + 180
@@ -43,10 +57,10 @@ class LightPollution:
     def get_light_pollution(self):
         x, y = self._latlon_to_pixel(self.lat, self.lon)
 
-        if self.pix is None:
+        if self._PIX is None:
             return -1
 
-        palette_index = self.pix[x, y]
+        palette_index = self._PIX[x, y]
 
         if not isinstance(palette_index, int):
             return -1

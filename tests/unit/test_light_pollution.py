@@ -5,6 +5,11 @@ from apts.light_pollution import LightPollution
 
 class TestLightPollution(unittest.TestCase):
     def setUp(self):
+        # Clear the class-level cache before each test
+        LightPollution._IMAGE = None
+        LightPollution._PIX = None
+        LightPollution._SIZE = None
+
         # We patch Image.open in the setUp to avoid loading the actual image in every test
         self.patcher = patch("apts.light_pollution.Image.open")
         self.mock_image_open = self.patcher.start()
@@ -21,6 +26,9 @@ class TestLightPollution(unittest.TestCase):
 
     def test_latlon_to_pixel(self):
         # Test corners and center
+        # Latitude range: 75N to 65S -> 140 degrees
+        # (75 - 75) / 140 * 5600 = 0
+        # (75 - (-65)) / 140 * 5600 = 5600
         self.assertEqual(self.lp._latlon_to_pixel(75, -180), (0, 0))
         self.assertEqual(self.lp._latlon_to_pixel(-65, 179.99), (14399, 5600))
         self.assertEqual(self.lp._latlon_to_pixel(0, 0), (7200, 3000))
@@ -50,6 +58,7 @@ class TestLightPollution(unittest.TestCase):
         for palette_index, expected_bortle in bortle_scale.items():
             with self.subTest(palette_index=palette_index):
                 # Configure the mock pixel data to return the current palette index
+                # Accessing _PIX[x, y] calls __getitem__ with a tuple (x, y)
                 self.mock_pix.__getitem__.return_value = palette_index
                 # We can use any lat/lon since the pixel data is mocked
                 result = self.lp.get_light_pollution()
