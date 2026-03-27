@@ -179,6 +179,23 @@ class OpticalPath:
             self.telescope, self.zoom(), self.effective_barlow()
         )
 
+    def is_magnification_useful(self) -> bool:
+        """
+        Checks if the current magnification is within the theoretical useful range
+        of the telescope. For non-visual outputs (cameras), it returns True.
+        """
+        from .opticalequipment.telescope import Telescope
+
+        if not isinstance(self.telescope, Telescope) or not self.output.is_visual_output():
+            return True
+
+        zoom = self.zoom().magnitude
+        return (
+            self.telescope.lowest_useful_magnification()
+            <= zoom
+            <= self.telescope.highest_useful_magnification()
+        )
+
     def airmass(self, altitude_degrees: float) -> float:
         """
         Calculates the relative airmass for a given altitude in degrees.
