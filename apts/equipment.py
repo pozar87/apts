@@ -129,9 +129,6 @@ class Equipment:
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
-        # Import Binoculars here to keep it local to where it's used for isinstance
-        # and avoid potential circular imports if Binoculars ever needed Equipment.
-        from .opticalequipment.binoculars import Binoculars
 
         def append(result_data, paths):
             rows = []
@@ -142,7 +139,6 @@ class Equipment:
 
                 # Determine if the main optic is Binoculars or NakedEye
                 is_naked_eye = isinstance(path.telescope, NakedEye)
-                is_binoculars = isinstance(path.telescope, Binoculars) or is_naked_eye
 
                 # Calculate useful_zoom
                 useful_zoom_value = path.is_magnification_useful()

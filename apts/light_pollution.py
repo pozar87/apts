@@ -42,6 +42,8 @@ class LightPollution:
         # Image dimensions: 14400x5600
         # Latitude range: 75N to 65S -> 140 degrees
         # Longitude range: 180W to 180E -> 360 degrees
+        if self._SIZE is None:
+            return 0, 0
         img_width, img_height = self._SIZE
 
         # Normalize longitude to 0-360

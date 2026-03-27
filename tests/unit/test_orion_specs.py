@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.orion import OrionTelescope
 
 def test_orion_eon_130mm_ed_specs():

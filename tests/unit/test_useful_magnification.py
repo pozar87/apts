@@ -3,7 +3,6 @@ from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.camera import Camera
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 
 def test_telescope_useful_magnification_limits():
     # 80mm Refractor
