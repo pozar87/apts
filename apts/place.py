@@ -30,6 +30,7 @@ from .utils.planetary import (
     get_moon_illumination,
     get_moon_phase_name,
     get_planet_magnitude,
+    get_skyfield_obj,
 )
 from .weather import Weather
 
@@ -334,6 +335,46 @@ class Place:
                 s += 0.3
 
         return min(max(s, 0.5), 5.0)
+
+    def get_altitude(self, object_or_name: Any, time: Optional[Any] = None) -> float:
+        """
+        Returns the topocentric apparent altitude of a celestial object in degrees.
+        Supports both Skyfield objects and string names (e.g., 'Jupiter').
+        Uses high-precision refraction settings (10°C, 1013.25 mbar).
+        """
+        target_time = time if time is not None else self.date
+        obj = (
+            get_skyfield_obj(object_or_name)
+            if isinstance(object_or_name, str)
+            else object_or_name
+        )
+        alt, _, _ = (
+            self.observer.at(target_time)
+            .observe(obj)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+        return float(alt.degrees)
+
+    def get_azimuth(self, object_or_name: Any, time: Optional[Any] = None) -> float:
+        """
+        Returns the topocentric apparent azimuth of a celestial object in degrees.
+        Supports both Skyfield objects and string names (e.g., 'Jupiter').
+        Uses high-precision refraction settings (10°C, 1013.25 mbar).
+        """
+        target_time = time if time is not None else self.date
+        obj = (
+            get_skyfield_obj(object_or_name)
+            if isinstance(object_or_name, str)
+            else object_or_name
+        )
+        _, az, _ = (
+            self.observer.at(target_time)
+            .observe(obj)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+        return float(az.degrees)
 
     def get_weather(
         self,
