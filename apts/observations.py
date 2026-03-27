@@ -556,6 +556,30 @@ class Observation:
                 dark_mode_override=dark_mode_override, conditions=conditions, **args
             )
 
+    def plot_seeing(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.seeing(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
+    def plot_sqm(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        conditions: Optional[Conditions] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.sqm(
+                dark_mode_override=dark_mode_override, conditions=conditions, **args
+            )
+
     def plot_weather_summary(
         self,
         dark_mode_override: Optional[bool] = None,
@@ -770,7 +794,12 @@ class Observation:
             return []
 
         # Filter by time limit and make a copy to avoid SettingWithCopyWarning
-        hourly_data = hourly_data[hourly_data.time <= self.time_limit].copy()
+        # Ensure we use aware comparison
+        t_limit = pd.Timestamp(self.time_limit)
+        if t_limit.tzinfo is None:
+            t_limit = t_limit.tz_localize(self.place.local_timezone)
+
+        hourly_data = hourly_data[hourly_data.time <= t_limit].copy()
 
         if "fog" not in hourly_data.columns:
             hourly_data["fog"] = 0
@@ -790,6 +819,10 @@ class Observation:
             hourly_data["visibility"] = 20
         if "moonIllumination" not in hourly_data.columns:
             hourly_data["moonIllumination"] = 0
+        if "seeing" not in hourly_data.columns:
+            hourly_data["seeing"] = 1.5
+        if "sqm" not in hourly_data.columns:
+            hourly_data["sqm"] = 21.0
 
         # Calculate moon altitudes exactly for each weather data point
         ts = self.place.ts
@@ -809,6 +842,8 @@ class Observation:
             "moonIllumination",
             "fog",
             "aurora",
+            "seeing",
+            "sqm",
         ]:
             if col in hourly_data.columns:
                 hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
@@ -849,6 +884,12 @@ class Observation:
             is_bad_aurora = hourly_data.aurora.isna() | ~(
                 hourly_data.aurora >= effective_conditions.min_aurora
             )
+            is_bad_seeing = hourly_data.seeing.isna() | ~(
+                hourly_data.seeing <= effective_conditions.max_seeing
+            )
+            is_bad_sqm = hourly_data.sqm.isna() | ~(
+                hourly_data.sqm >= effective_conditions.min_sqm
+            )
 
             # Determine good hours
             is_good_hour_mask = ~(
@@ -861,6 +902,8 @@ class Observation:
                 | is_bad_fog
                 | is_bad_moon
                 | is_bad_aurora
+                | is_bad_seeing
+                | is_bad_sqm
             )
 
             # Pre-populate analysis_results with vectorized data
@@ -935,6 +978,16 @@ class Observation:
                                 "aurora": f"{row['aurora']:.1f}",
                                 "min_aurora": effective_conditions.min_aurora,
                             }
+                        )
+                    if is_bad_seeing.iloc[idx]:
+                        reasons.append(
+                            gettext_("Seeing %(seeing)s arcsec exceeds limit")
+                            % {"seeing": f"{row['seeing']:.1f}"}
+                        )
+                    if is_bad_sqm.iloc[idx]:
+                        reasons.append(
+                            gettext_("Sky brightness %(sqm)s mag/arcsec² below limit")
+                            % {"sqm": f"{row['sqm']:.1f}"}
                         )
                     reasons_col[idx] = reasons
 
