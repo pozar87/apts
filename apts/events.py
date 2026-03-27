@@ -123,14 +123,14 @@ class AstronomicalEvents:
                 )
                 moon_obj = planetary.get_skyfield_obj("moon")
                 # Using .apparent() to share high-precision positions
-                precomputed["moon"] = self.observer.at(times).observe(moon_obj).apparent()
+                # Optimization: Hoist observer.at(times) out of the loop
+                obs_at_times = self.observer.at(times)
+                precomputed["moon"] = obs_at_times.observe(moon_obj).apparent()
 
                 # Pre-compute positions for major planets
                 for p_name in planetary.CONJUNCTION_PLANETS:
                     p_obj = planetary.get_skyfield_obj(p_name)
-                    precomputed[p_name.lower()] = (
-                        self.observer.at(times).observe(p_obj).apparent()
-                    )
+                    precomputed[p_name.lower()] = obs_at_times.observe(p_obj).apparent()
 
         if self.event_settings.get("moon_phases"):
             futures.append(executor.submit(self.calculate_moon_phases))
@@ -543,11 +543,13 @@ class AstronomicalEvents:
 
         precomputed = {}
         # Pre-observe all planets and the moon at the given times
-        # Note: self.observer.at(times).observe(obj) returns an Astrometric object
+        # Note: observer.at(times).observe(obj) returns an Astrometric object
         # that behaves like an array of positions.
+        # Optimization: Hoist observer.at(times) out of the loop
+        obs_at_times = self.observer.at(times)
         for p, obj in planets_data.items():
-            precomputed[p.lower()] = self.observer.at(times).observe(obj)
-        precomputed[moon.lower()] = self.observer.at(times).observe(moon_obj)
+            precomputed[p.lower()] = obs_at_times.observe(obj)
+        precomputed[moon.lower()] = obs_at_times.observe(moon_obj)
 
         executor = self.executor
         futures = {}
