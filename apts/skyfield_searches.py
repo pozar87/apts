@@ -979,13 +979,17 @@ def find_saturn_ring_crossings(start_date, end_date):
     saturn = eph["saturn barycenter"]
 
     def get_tilt(t, observer_obj):
-        # Geocentric observation of Saturn (ICRS)
-        astrometric = observer_obj.at(t).observe(saturn)
-        # Unit vector from Saturn to observer
-        v_sat_obs = -astrometric.position.au / astrometric.distance().au
+        # Oracle: use astrometric positions for maximum consistency and accuracy.
+        # This includes light-time correction for the position of Saturn.
+        # We ensure a stable observation by using the center of the observer body.
+        pos = observer_obj.at(t).observe(saturn)
+        v_sat_obs = -pos.position.au / pos.distance().au
 
-        # Saturn's pole in J2000.0
-        alpha_p_deg, delta_p_deg = planetary.get_saturn_pole(t)
+        # Oracle: evaluate pole orientation at the time the light left Saturn.
+        t_eval = get_timescale().tt_jd(t.tt - pos.light_time)
+
+        # Saturn's pole in J2000.0 at evaluated time
+        alpha_p_deg, delta_p_deg = planetary.get_saturn_pole(t_eval)
         alpha_p = np.radians(alpha_p_deg)
         delta_p = np.radians(delta_p_deg)
 
@@ -2625,7 +2629,7 @@ def find_lunar_features(observer, start_date, end_date):
     features = [
         ("Lunar X", 358.0),
         ("Lunar V", 358.0),
-        ("Golden Handle", 15.0),
+        ("Golden Handle (Mountains of Jura)", 15.0),
         ("Straight Wall (Rupes Recta)", 11.0),
     ]
 
@@ -2634,7 +2638,7 @@ def find_lunar_features(observer, start_date, end_date):
     # Check every 2.4 hours (10 steps per day) for coarse search
     num_steps = int((t1 - t0) * 10)
     if num_steps < 2:
-        return []
+        num_steps = 2
 
     times = ts.linspace(t0, t1, num_steps)
 
@@ -2690,9 +2694,7 @@ def find_lunar_features(observer, start_date, end_date):
                         "object": "Moon",
                         "type": "Lunar Feature",
                         "altitude": float(m_alt.degrees),
-                        "colongitude": float(
-                            planetary.get_moon_colongitude(t_refined)
-                        ),
+                        "colongitude": float(planetary.get_moon_colongitude(t_refined)),
                     }
                 )
 

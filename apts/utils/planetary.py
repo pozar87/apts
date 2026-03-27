@@ -291,12 +291,17 @@ def get_saturn_ring_details(time: Any) -> dict:
     saturn = eph["saturn barycenter"]
 
     # Geocentric observation of Saturn (ICRS)
-    astrometric = cast(Any, earth).at(time).observe(saturn)
+    # Oracle: use astrometric() for consistency with searches
+    pos = cast(Any, earth).at(time).observe(saturn)
     # Unit vector from Saturn to Earth
-    v_sat_earth = -astrometric.position.au / astrometric.distance().au
+    v_sat_earth = -pos.position.au / pos.distance().au
+
+    # Oracle: apply light-time correction for the pole orientation.
+    # This evaluates the pole at the moment the light left Saturn.
+    t_eval = get_timescale().tt_jd(time.tt - pos.light_time)
 
     # Saturn's pole in J2000.0
-    alpha_p_deg, delta_p_deg = get_saturn_pole(time)
+    alpha_p_deg, delta_p_deg = get_saturn_pole(t_eval)
     alpha_p = np.radians(alpha_p_deg)
     delta_p = np.radians(delta_p_deg)
 
@@ -315,7 +320,7 @@ def get_saturn_ring_details(time: Any) -> dict:
     B_deg = float(np.degrees(B_rad))
 
     # Major axis (outer edge of A ring)
-    dist_km = astrometric.distance().km
+    dist_km = pos.distance().km
     radius_km = astronomy.SATURN_RING_OUTER_RADIUS_KM
     major_arcsec = float(2 * np.degrees(np.arcsin(radius_km / dist_km)) * 3600.0)
 
@@ -962,6 +967,113 @@ def get_moon_position_angle_bright_limb(time: Any) -> float:
 
     pa_rad = np.arctan2(num, den)
     return float(np.degrees(pa_rad) % 360)
+
+
+def get_moon_colongitude(time: Any) -> float | np.ndarray:
+    """
+    Returns the Moon's colongitude in degrees.
+    Uses the IAU 2015 rotation model for high precision and vectorization.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    moon = eph["moon"]
+
+    # Observation of Sun from Moon center (includes light-time correction)
+    astrometric = cast(Any, moon).at(time).observe(sun).apparent()
+    v_ms = astrometric.position.au
+
+    # Evaluate orientation at observation time (Terrestrial Time)
+    d = time.tt - 2451545.0
+    T = d / 36525.0
+
+    # IAU 2015 Lunar rotation parameters (Archinal et al. 2018)
+    E1 = np.radians((125.045 - 0.0529921 * d) % 360)
+    E2 = np.radians((250.089 - 0.1059842 * d) % 360)
+    E3 = np.radians((260.008 + 13.0120009 * d) % 360)
+    E4 = np.radians((176.625 + 13.3407154 * d) % 360)
+    E5 = np.radians((357.529 + 0.9856003 * d) % 360)
+    E6 = np.radians((311.589 + 26.4057084 * d) % 360)
+    E7 = np.radians((134.963 + 13.0649930 * d) % 360)
+    E8 = np.radians((276.617 + 0.3287146 * d) % 360)
+    E9 = np.radians((34.226 + 1.7484877 * d) % 360)
+    E10 = np.radians((15.134 - 0.1589763 * d) % 360)
+    E11 = np.radians((119.743 + 0.0036096 * d) % 360)
+    E12 = np.radians((239.961 + 0.1295801 * d) % 360)
+    E13 = np.radians((25.053 + 12.5126625 * d) % 360)
+
+    alpha0 = np.radians(
+        (
+            269.9949
+            + 0.0031 * T
+            - 3.8787 * np.sin(E1)
+            - 0.1204 * np.sin(E2)
+            - 0.0700 * np.sin(E3)
+            - 0.0172 * np.sin(E4)
+            + 0.0072 * np.sin(E6)
+            - 0.0052 * np.sin(E10)
+            + 0.0043 * np.sin(E13)
+        )
+        % 360
+    )
+
+    delta0 = np.radians(
+        (
+            66.5392
+            + 0.0130 * T
+            + 1.5419 * np.cos(E1)
+            + 0.0239 * np.cos(E2)
+            + 0.0278 * np.cos(E3)
+            + 0.0068 * np.cos(E4)
+            - 0.0029 * np.cos(E6)
+            + 0.0009 * np.cos(E7)
+            + 0.0008 * np.cos(E10)
+            - 0.0009 * np.cos(E13)
+        )
+        % 360
+    )
+
+    W = np.radians(
+        (
+            38.3213
+            + 13.17635815 * d
+            + 3.5610 * np.sin(E1)
+            + 0.1108 * np.sin(E2)
+            + 0.0642 * np.sin(E3)
+            + 0.0158 * np.sin(E4)
+            - 0.0252 * np.sin(E5)
+            - 0.0066 * np.sin(E6)
+            - 0.0047 * np.sin(E7)
+            - 0.0027 * np.sin(E8)
+            + 0.0048 * np.sin(E10)
+            + 0.0028 * np.sin(E11)
+            + 0.0052 * np.sin(E12)
+            - 0.0040 * np.sin(E13)
+        )
+        % 360
+    )
+
+    if hasattr(time, "shape") and time.shape:
+        u_v = v_ms / np.linalg.norm(v_ms, axis=0)
+    else:
+        u_v = v_ms / np.linalg.norm(v_ms)
+
+    # Transformation to selenographic frame
+    # x_node = intersection of Moon's equator and ICRS equator
+    x_node = u_v[0] * (-np.sin(alpha0)) + u_v[1] * np.cos(alpha0)
+    y_node = (
+        u_v[0] * (-np.sin(delta0) * np.cos(alpha0))
+        + u_v[1] * (-np.sin(delta0) * np.sin(alpha0))
+        + u_v[2] * np.cos(delta0)
+    )
+
+    # Longitude from node (eastward)
+    phi = np.degrees(np.arctan2(y_node, x_node))
+    # Selenographic longitude (eastward from prime meridian)
+    l = (phi - np.degrees(W)) % 360
+
+    # Colongitude C = (90 - l) % 360
+    return (90 - l) % 360
 
 
 def get_sun_physical_details(time: Any) -> dict:

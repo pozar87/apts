@@ -67,7 +67,7 @@ def test_golden_handle_detection():
     )
 
     df = events.get_events()
-    gh = df[df["event"] == "Golden Handle"]
+    gh = df[df["event"] == "Golden Handle (Mountains of Jura)"]
 
     assert not gh.empty
     assert gh.iloc[0]["type"] == "Lunar Feature"
