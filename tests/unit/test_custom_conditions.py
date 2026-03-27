@@ -30,6 +30,8 @@ def mock_weather_data():
                     "fog": [0.0, 0.0, 0.0, 0.0, 0.0],
                     "aurora": [0.0, 0.0, 0.0, 0.0, 0.0],
                     "precipIntensity": [0.0, 0.0, 0.0, 0.0, 0.0],
+                    "seeing": [1.5, 1.5, 1.5, 1.5, 1.5],
+                    "sqm": [21.0, 21.0, 21.0, 21.0, 21.0],
                 }
             )
             mock_provider.download_data.return_value = mock_data

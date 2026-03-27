@@ -402,7 +402,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         ) as mock_plot_weather_summary,
         patch(
             "apts.plotting.weather.pyplot.subplots",
-            return_value=(MagicMock(), MagicMock(shape=(6, 2))),
+            return_value=(MagicMock(), MagicMock(shape=(7, 2))),
         ) as mock_subplots,
         patch("apts.plotting.weather.mark_observation") as mock_mark_observation,
         patch(
@@ -413,10 +413,12 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
             mock_weather_instance, "plot_moon_illumination"
         ) as mock_plot_moon_illumination,
         patch.object(mock_weather_instance, "plot_fog") as mock_plot_fog,
+        patch.object(mock_weather_instance, "plot_seeing") as mock_plot_seeing,
+        patch.object(mock_weather_instance, "plot_sqm") as mock_plot_sqm,
     ):
         fig = obs.plot_weather()
 
-        mock_subplots.assert_called_once_with(nrows=6, ncols=2, figsize=(13, 25))
+        mock_subplots.assert_called_once_with(nrows=7, ncols=2, figsize=(13, 30))
 
         mock_plot_clouds.assert_called_once()
         mock_plot_clouds_summary.assert_called_once()
@@ -428,6 +430,8 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         mock_plot_visibility.assert_called_once()
         mock_plot_moon_illumination.assert_called_once()
         mock_plot_fog.assert_called_once()
+        mock_plot_seeing.assert_called_once()
+        mock_plot_sqm.assert_called_once()
         mock_plot_weather_summary.assert_called_once()
 
         assert mock_mark_observation.call_count >= 1
