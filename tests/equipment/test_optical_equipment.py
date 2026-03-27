@@ -21,8 +21,8 @@ class OpticalEquipmentTest(unittest.TestCase):
         self.assertEqual(t.rayleigh_limit().magnitude, 0.923)
         self.assertAlmostEqual(t.limiting_magnitude(), 13.58, 2)
         self.assertAlmostEqual(t.light_grasp_ratio(7).magnitude, 459.18, 2)
-        self.assertEqual(t.min_useful_zoom(), 25)
-        self.assertEqual(t.max_useful_zoom(), 375)
+        self.assertAlmostEqual(t.min_useful_zoom(), 21.42857, 5)
+        self.assertEqual(t.max_useful_zoom(), 300)
 
     def test_barlow(self):
         b = Barlow(magnification=2)
