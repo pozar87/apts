@@ -14,10 +14,18 @@ class TestLightPollution(unittest.TestCase):
         self.mock_image.load.return_value = self.mock_pix
         self.mock_image_open.return_value = self.mock_image
 
+        # Force reloading from the mock for this test instance
+        LightPollution._IMAGE = None
+        LightPollution._PIX = None
+        LightPollution._SIZE = None
         self.lp = LightPollution(lat=0, lon=0)
 
     def tearDown(self):
         self.patcher.stop()
+        # Reset class-level state to avoid affecting other tests
+        LightPollution._IMAGE = None
+        LightPollution._PIX = None
+        LightPollution._SIZE = None
 
     def test_latlon_to_pixel(self):
         # Test corners and center

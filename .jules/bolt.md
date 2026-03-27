@@ -53,3 +53,7 @@
 ## 2025-03-26 - [Skyfield Pairwise Vectorization]
 **Learning:** Skyfield's `.observe()` method supports pairwise vectorization (N unique bodies observed at N unique times) when the length of the `Time` object matches the length of the `Star` (or other body) object. This yields a single position vector of length N, bypassing the O(N) loop of individual observations. Additionally, for meridian culminations, expensive topocentric `altaz()` calls can be replaced by the geometric approximation `90 - |lat - dec|` plus Bennett's refraction formula, which is sub-arcsecond accurate and orders of magnitude faster.
 **Action:** Always use pairwise vectorization and geometric meridian shortcuts for large-scale culmination and transit searches.
+
+## 2025-05-22 - [Class-level Caching for Large Static Resources]
+**Learning:** Loading large static resources (like the 14400x5600 light pollution map) in every class instantiation is a major performance bottleneck. Using class-level attributes for lazy-loading such resources dramatically improves performance for repeated operations.
+**Action:** Always check if classes loading external data files (images, databases, etc.) can benefit from class-level or module-level caching, especially if the data is static.
