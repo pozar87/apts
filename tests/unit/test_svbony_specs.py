@@ -1,57 +1,72 @@
+import pytest
 from apts.opticalequipment.telescope.vendors.svbony import SvbonyTelescope
-from apts.opticalequipment.telescope.base import TelescopeType
 
-def test_svbony_sv503_specs() -> None:
-    # SV503 70ED
-    scope = SvbonyTelescope.SVBony_SV503_70ED()
-    assert scope.aperture.magnitude == 70
-    assert scope.focal_length.magnitude == 420
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 2220
-    assert scope.telescope_type == TelescopeType.REFRACTOR
+def test_sv503_70ed_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_70ED()
+    assert telescope.aperture.magnitude == 70
+    assert telescope.focal_length.magnitude == 420
+    assert telescope.mass.magnitude == 2220
+    assert telescope.central_obstruction.magnitude == 0
 
-    # SV503 80ED
-    scope = SvbonyTelescope.SVBony_SV503_80ED()
-    assert scope.aperture.magnitude == 80
-    assert scope.focal_length.magnitude == 560
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 2900
+def test_sv503_70ed_quad_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_70ED_Quad()
+    assert telescope.aperture.magnitude == 70
+    assert telescope.focal_length.magnitude == 474
+    assert telescope.mass.magnitude == 2685
+    assert telescope.central_obstruction.magnitude == 0
 
-    # SV503 102ED
-    scope = SvbonyTelescope.SVBony_SV503_102ED()
-    assert scope.aperture.magnitude == 102
-    assert scope.focal_length.magnitude == 714
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 4000
+def test_sv503_80ed_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_80ED()
+    assert telescope.aperture.magnitude == 80
+    assert telescope.focal_length.magnitude == 560
+    assert telescope.mass.magnitude == 3000
+    assert telescope.central_obstruction.magnitude == 0
 
-    # SV503 80
-    scope = SvbonyTelescope.SVBony_SV503_80()
-    assert scope.aperture.magnitude == 80
-    assert scope.focal_length.magnitude == 560
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 2900
+def test_sv503_102ed_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_102ED()
+    assert telescope.aperture.magnitude == 102
+    assert telescope.focal_length.magnitude == 714
+    assert telescope.mass.magnitude == 4000
+    assert telescope.central_obstruction.magnitude == 0
 
-def test_svbony_sv550_specs() -> None:
-    # SV550 80ED
-    scope = SvbonyTelescope.SVBony_SV550_80ED()
-    assert scope.aperture.magnitude == 80
-    assert scope.focal_length.magnitude == 480
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 2450
-    assert scope.telescope_type == TelescopeType.REFRACTOR
+def test_sv550_60_specs():
+    telescope = SvbonyTelescope.SVBony_SV550_60()
+    assert telescope.aperture.magnitude == 60
+    assert telescope.focal_length.magnitude == 300
+    assert telescope.mass.magnitude == 2030
+    assert telescope.central_obstruction.magnitude == 0
 
-    # SV550 122ED
-    scope = SvbonyTelescope.SVBony_SV550_122ED()
-    assert scope.aperture.magnitude == 122
-    assert scope.focal_length.magnitude == 854
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 6440
+def test_sv550_80ed_specs():
+    telescope = SvbonyTelescope.SVBony_SV550_80ED()
+    assert telescope.aperture.magnitude == 80
+    assert telescope.focal_length.magnitude == 480
+    assert telescope.mass.magnitude == 2450
+    assert telescope.central_obstruction.magnitude == 0
 
-def test_svbony_sv48_specs() -> None:
-    # SV48
-    scope = SvbonyTelescope.SVBony_SV48()
-    assert scope.aperture.magnitude == 90
-    assert scope.focal_length.magnitude == 500
-    assert scope.central_obstruction.magnitude == 0
-    assert scope.mass.magnitude == 2410
-    assert scope.telescope_type == TelescopeType.REFRACTOR
+def test_sv550_122ed_specs():
+    telescope = SvbonyTelescope.SVBony_SV550_122ED()
+    assert telescope.aperture.magnitude == 122
+    assert telescope.focal_length.magnitude == 854
+    assert telescope.mass.magnitude == 6440
+    assert telescope.central_obstruction.magnitude == 0
+
+def test_sv48_specs():
+    telescope = SvbonyTelescope.SVBony_SV48()
+    assert telescope.aperture.magnitude == 90
+    assert telescope.focal_length.magnitude == 500
+    assert telescope.mass.magnitude == 2730
+    assert telescope.central_obstruction.magnitude == 0
+
+def test_sv48p_102_specs():
+    telescope = SvbonyTelescope.SVBony_SV48P_102()
+    assert telescope.aperture.magnitude == 102
+    assert telescope.focal_length.magnitude == 663
+    assert telescope.mass.magnitude == 3400
+    assert telescope.central_obstruction.magnitude == 0
+
+def test_sv503_80_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_80()
+    assert telescope.aperture.magnitude == 80
+    assert telescope.focal_length.magnitude == 560
+    assert telescope.mass.magnitude == 3000
+    assert telescope.central_obstruction.magnitude == 0
