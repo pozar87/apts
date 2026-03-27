@@ -36,6 +36,7 @@ class AstronomicalEvents:
         "moon_star_conjunctions",
         "planet_messier_conjunctions",
         "planet_star_conjunctions",
+        "planetary_dichotomy",
     ]
 
     def __init__(
@@ -216,6 +217,10 @@ class AstronomicalEvents:
 
         if self.event_settings.get("greatest_elongations"):
             futures.append(executor.submit(self.calculate_greatest_elongations))
+        if self.event_settings.get("planetary_dichotomy"):
+            futures.append(
+                executor.submit(self.calculate_planetary_dichotomy, precomputed)
+            )
         if self.event_settings.get("seasons"):
             futures.append(executor.submit(self.calculate_seasons))
 
@@ -378,6 +383,8 @@ class AstronomicalEvents:
         if event_type == "Venus Greatest Brilliancy":
             return 4
         if event_type == "Supermoon":
+            return 3
+        if event_type == "Planetary Dichotomy":
             return 3
         return 1
 
@@ -1046,6 +1053,19 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Greatest Elongation", event)
         logger.debug(f"--- calculate_greatest_elongations: {time.time() - start_time}s")
+        return events
+
+    def calculate_planetary_dichotomy(self, precomputed_positions=None):
+        start_time = time.time()
+        events = skyfield_searches.find_planetary_dichotomy(
+            self.observer,
+            self.start_date,
+            self.end_date,
+            precomputed_positions=precomputed_positions,
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Planetary Dichotomy", event)
+        logger.debug(f"--- calculate_planetary_dichotomy: {time.time() - start_time}s")
         return events
 
     def calculate_seasons(self):

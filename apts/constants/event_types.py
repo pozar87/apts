@@ -43,6 +43,7 @@ class EventType(str, Enum):
     PLANET_PLANET_OCCULTATIONS = "planet_planet_occultations"
     VENUS_GREAT_BRILLIANCY = "venus_great_brilliancy"
     SUPERMOONS = "supermoons"
+    PLANETARY_DICHOTOMY = "planetary_dichotomy"
 
     def __str__(self):
         return self.value

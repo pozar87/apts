@@ -160,6 +160,73 @@ def find_meteor_showers(observer, start_date, end_date):
     return events
 
 
+def find_planetary_dichotomy(
+    observer,
+    start_date,
+    end_date,
+    precomputed_positions=None,
+):
+    """
+    Finds when Mercury or Venus reach exactly 50% illumination (phase angle = 90°).
+    This event is known as dichotomy.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    sun = planetary.get_skyfield_obj("sun")
+
+    planets = ["mercury", "venus"]
+    events = []
+
+    for p_name in planets:
+        planet_obj = planetary.get_skyfield_obj(p_name)
+        simple_name = planetary.get_simple_name(p_name)
+
+        def phase_angle_state(t):
+            # We want to find when phase angle crosses 90 degrees.
+            # Use geocentric position for standard dichotomy calculation.
+            # Geocentric Earth position is used as the reference for astronomical dichotomy.
+            eph = get_ephemeris()
+            earth = eph["earth"]
+            astrometric = earth.at(t).observe(planet_obj)
+
+            # Phase angle Sun-Planet-Earth
+            phase_angle = astrometric.phase_angle(sun).degrees
+            return (phase_angle > 90).astype(int)
+
+        # Dichotomy happens twice per synodic period.
+        # Step of 5 days is safe for Mercury (~116d synodic) and Venus (~584d synodic).
+        setattr(phase_angle_state, "step_days", 5.0)
+        times, codes = almanac.find_discrete(t0, t1, phase_angle_state)
+
+        for t in times:
+            # High-precision observation at the event time
+            astrometric = observer.at(t).observe(planet_obj).apparent()
+            alt, _, _ = astrometric.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+            # Visibility check: Planet above horizon and Sun below -6 degrees
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent()
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": f"{simple_name} Dichotomy (50% Illumination)",
+                    "object": simple_name,
+                    "type": "Planetary Dichotomy",
+                    "altitude": float(alt.degrees),
+                    "is_visible": bool(alt.degrees > 0 and sun_alt <= -6),
+                }
+            )
+
+    return events
+
+
 def find_supermoons(start_date, end_date):
     """
     Finds Supermoons (Perigee-Syzygy events).
