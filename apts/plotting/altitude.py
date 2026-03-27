@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import pandas as pd
 from matplotlib import lines, pyplot
@@ -141,7 +141,8 @@ def generate_plot_messier(
                 )
 
             # Collect unique types for legend
-            unique_rows = plot_df.drop_duplicates(subset=["TranslatedType"])
+            # Using casting on the method itself to bypass Pyright's overload resolution issues with Pandas
+            unique_rows = cast(Any, plot_df).drop_duplicates(subset=["TranslatedType"])
             plotted_types = dict(
                 zip(unique_rows["TranslatedType"], unique_rows["color"])
             )
