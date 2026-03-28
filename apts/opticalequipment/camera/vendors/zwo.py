@@ -950,6 +950,27 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 6248,
         },
+        "ZWO_ASI_2600MC_Air": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 73000,
+            "height": 4176,
+            "mass": 760,
+            "name": "ASI2600MC Air",
+            "optical_length": 17.5,
+            "pixel_size_um": 3.76,
+            "quantum_efficiency_pct": 80,
+            "read_noise_e": 1.0,
+            "reversible": False,
+            "sensor_height_mm": 15.7,
+            "sensor_width_mm": 23.5,
+            "tside_gender": "Female",
+            "tside_thread": "M54",
+            "type": "type_camera",
+            "width": 6248,
+        },
         "ZWO_ASI_2600MC_Pro": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1028,6 +1049,27 @@ class ZwoCamera(Camera):
             "sensor_width_mm": 23.5,
             "tside_gender": "Female",
             "tside_thread": "M42",
+            "type": "type_camera",
+            "width": 6248,
+        },
+        "ZWO_ASI_2600MM_Air": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 73000,
+            "height": 4176,
+            "mass": 760,
+            "name": "ASI2600MM Air",
+            "optical_length": 17.5,
+            "pixel_size_um": 3.76,
+            "quantum_efficiency_pct": 91,
+            "read_noise_e": 1.0,
+            "reversible": False,
+            "sensor_height_mm": 15.7,
+            "sensor_width_mm": 23.5,
+            "tside_gender": "Female",
+            "tside_thread": "M54",
             "type": "type_camera",
             "width": 6248,
         },
@@ -2915,3 +2957,11 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI_585MM_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_585MM_Pro"])
+
+    @classmethod
+    def ZWO_ASI_2600MC_Air(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Air"])
+
+    @classmethod
+    def ZWO_ASI_2600MM_Air(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Air"])
