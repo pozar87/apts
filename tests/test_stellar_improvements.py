@@ -296,3 +296,36 @@ def test_eclipse_rarity_and_naming():
 
     assert "Total Solar Eclipse" in eclipse_event["event"]
     assert eclipse_event["rarity"] == 5
+
+
+def test_place_altaz_helpers():
+    from datetime import datetime, timezone
+    from apts.place import Place
+    from apts.utils.planetary import get_skyfield_obj
+
+    # Test location: Greenwich
+    greenwich = Place(51.4779, 0.0, "Greenwich", 46)
+    # Specific time: 2024-01-01 12:00 UTC
+    t = greenwich.ts.utc(2024, 1, 1, 12, 0)
+
+    # Test with string name
+    alt_sun = greenwich.get_altitude("Sun", time=t)
+    az_sun = greenwich.get_azimuth("Sun", time=t)
+
+    assert isinstance(alt_sun, float)
+    assert isinstance(az_sun, float)
+    # At noon in Jan in London, Sun should be roughly in the South (az ~180) and low (alt ~15)
+    assert 170 < az_sun < 190
+    assert 10 < alt_sun < 20
+
+    # Test with Skyfield object
+    moon_obj = get_skyfield_obj("Moon")
+    alt_moon = greenwich.get_altitude(moon_obj, time=t)
+    az_moon = greenwich.get_azimuth(moon_obj, time=t)
+
+    assert isinstance(alt_moon, float)
+    assert isinstance(az_moon, float)
+
+    # Test with default time (self.date)
+    alt_default = greenwich.get_altitude("Sun")
+    assert isinstance(alt_default, float)
