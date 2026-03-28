@@ -299,7 +299,6 @@ def test_eclipse_rarity_and_naming():
 
 
 def test_place_altaz_helpers():
-    from datetime import datetime, timezone
     from apts.place import Place
     from apts.utils.planetary import get_skyfield_obj
 

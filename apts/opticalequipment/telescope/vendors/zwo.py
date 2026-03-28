@@ -32,7 +32,7 @@ class ZwoTelescope(Telescope):
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 91,
             'read_noise_e': 0.8,
-            'full_well_e': 54000
+            'full_well_e': 38200
         },
         'ZWO_Seestar_S30_Pro': {
             'brand': 'ZWO',
