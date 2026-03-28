@@ -30,7 +30,8 @@ class DwarfLabTelescope(Telescope):
             'mass': 1350,
             'pixel_size_um': 2.0,
             'quantum_efficiency_pct': 85,
-            'read_noise_e': 0.6
+            'read_noise_e': 0.6,
+            'full_well_e': 11270
         }
     }
 

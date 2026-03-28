@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.svbony import SvbonyTelescope
 
 def test_sv503_70ed_specs():
