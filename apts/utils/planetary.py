@@ -334,7 +334,7 @@ def get_saturn_ring_details(time: Any) -> dict:
     }
 
 
-def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
+def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Returns the illuminated fraction of a planet (0.0 to 1.0) for a given time.
     Uses the phase angle 'i' between the Sun and Earth as seen from the planet.
@@ -350,7 +350,7 @@ def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float:
     # Phase angle: angle Sun-Planet-Earth
     i_rad = astrometric.phase_angle(sun).radians
 
-    return float((1 + np.cos(i_rad)) / 2)
+    return (1 + np.cos(i_rad)) / 2
 
 
 def get_simple_name(technical_name: str) -> str:
@@ -715,7 +715,7 @@ def get_planet_phase(planet_name: str, time: Any) -> float:
     return get_planet_fraction_illuminated(planet_name, time) * 100.0
 
 
-def get_planet_phase_angle(planet_name: str, time: Any) -> float:
+def get_planet_phase_angle(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Returns the phase angle of a planet in degrees.
     The phase angle is the angle Sun-Planet-Earth.
@@ -726,10 +726,10 @@ def get_planet_phase_angle(planet_name: str, time: Any) -> float:
     planet_obj = get_skyfield_obj(planet_name)
 
     astrometric = cast(Any, earth).at(time).observe(planet_obj)
-    return float(astrometric.phase_angle(sun).degrees)
+    return astrometric.phase_angle(sun).degrees
 
 
-def get_planet_magnitude(planet_name: str, time: Any) -> float:
+def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Calculates the apparent visual magnitude (V) for a planet, the Moon, or the Sun.
 
@@ -750,20 +750,20 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float:
     if name_norm == "sun":
         # Sun magnitude: M = -26.74 at 1 AU
         dist_au = cast(Any, earth).at(time).observe(sun).distance().au
-        return float(-26.74 + 5 * np.log10(dist_au))
+        return -26.74 + 5 * np.log10(dist_au)
 
     if name_norm == "moon":
         # Moon magnitude using Krisciunas & Schaefer (1991)
         # alpha is the phase angle Sun-Moon-Earth in degrees
         alpha = get_planet_phase_angle("moon", time)
         # V(R, alpha) = -12.73 + 0.026 * |alpha| + 4e-9 * alpha^4
-        v_base = -12.73 + 0.026 * abs(alpha) + 4.0e-9 * (alpha**4)
+        v_base = -12.73 + 0.026 * np.abs(alpha) + 4.0e-9 * (alpha**4)
 
         # Distance correction: delta is distance in km
         dist_km = get_moon_distance(time)
         # correction = 5 * log10(dist / 384400)
         v_dist = 5 * np.log10(dist_km / 384400.0)
-        return float(v_base + v_dist)
+        return v_base + v_dist
 
     # Major planets and others supported by skyfield
     planet_obj = get_skyfield_obj(planet_name)
@@ -771,7 +771,7 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float:
 
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
     # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
-    return float(magnitudelib.planetary_magnitude(astrometric))
+    return magnitudelib.planetary_magnitude(astrometric)
 
 
 def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
