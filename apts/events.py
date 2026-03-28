@@ -493,7 +493,9 @@ class AstronomicalEvents:
 
     def calculate_lunar_eclipses(self):
         start_time = time.time()
-        events = skyfield_searches.find_lunar_eclipses(self.start_date, self.end_date)
+        events = skyfield_searches.find_lunar_eclipses(
+            self.start_date, self.end_date, observer=self.observer
+        )
         for event in events:
             event["event"] = "Lunar Eclipse"
             event["type"] = "Lunar Eclipse"

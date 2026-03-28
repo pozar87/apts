@@ -1861,14 +1861,35 @@ def find_tiangong_flybys(
     )
 
 
-def find_lunar_eclipses(start_date, end_date):
+def find_lunar_eclipses(start_date, end_date, observer=None):
+    """
+    Finds lunar eclipses and optionally filters them by topocentric visibility.
+    """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     eph = cast(Any, get_ephemeris())
     t, y, details = eclipselib.lunar_eclipses(t0, t1, eph)
     events = []
+
+    # Sun and Moon objects for visibility check
+    sun = planetary.get_skyfield_obj("sun")
+    moon = planetary.get_skyfield_obj("moon")
+
     for i, (ti, yi) in enumerate(zip(t, y)):
+        if observer is not None:
+            # Oracle: An event is useless if the Sun is still up or the object is below the horizon.
+            # Moon visibility: must be above horizon (altitude > 0)
+            # Sun visibility: must be at or below civil twilight threshold (altitude <= -6)
+            m_pos = observer.at(ti).observe(moon).apparent()
+            m_alt = m_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+
+            s_pos = observer.at(ti).observe(sun).apparent()
+            s_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+
+            if m_alt <= 0 or s_alt > -6:
+                continue
+
         events.append(
             {
                 "date": ti.utc_datetime(),

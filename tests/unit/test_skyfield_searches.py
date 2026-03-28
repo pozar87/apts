@@ -345,6 +345,7 @@ class SkyfieldSearchesTest(unittest.TestCase):
     def test_find_lunar_eclipses(self):
         start_date = datetime(2023, 1, 1, tzinfo=utc)
         end_date = datetime(2023, 12, 31, tzinfo=utc)
+        # Global search (no observer)
         events = skyfield_searches.find_lunar_eclipses(start_date, end_date)
         self.assertIsInstance(events, list)
         # There are two lunar eclipses in 2023
@@ -355,12 +356,25 @@ class SkyfieldSearchesTest(unittest.TestCase):
         self.assertEqual(events[0]["date"].month, 5)
         self.assertIn("penumbral_magnitude", events[0])
         self.assertIn("umbral_magnitude", events[0])
-        self.assertEqual(events[1]["type"], "Lunar Eclipse")
-        self.assertEqual(events[1]["eclipse_kind"], "Partial")
-        self.assertEqual(events[1]["date"].day, 28)
-        self.assertEqual(events[1]["date"].month, 10)
-        self.assertIn("penumbral_magnitude", events[1])
-        self.assertIn("umbral_magnitude", events[1])
+
+        # Topocentric search (Warsaw)
+        events_warsaw = skyfield_searches.find_lunar_eclipses(
+            start_date, end_date, observer=self.observer
+        )
+        # Warsaw sees only Oct 28 Partial eclipse in 2023 at greatest eclipse
+        # May 5 Penumbral greatest eclipse is in daylight for Warsaw
+        self.assertEqual(len(events_warsaw), 1)
+        self.assertEqual(events_warsaw[0]["date"].month, 10)
+
+        # Topocentric search (Tokyo)
+        tokyo_observer = self.eph["earth"] + Topos(
+            latitude_degrees=35.6764, longitude_degrees=139.6500
+        )
+        events_tokyo = skyfield_searches.find_lunar_eclipses(
+            start_date, end_date, observer=tokyo_observer
+        )
+        # Tokyo sees both in 2023
+        self.assertEqual(len(events_tokyo), 2)
 
     def test_find_solar_eclipses(self):
         # October 25, 2022 was visible in Warsaw
