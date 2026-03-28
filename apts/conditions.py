@@ -25,6 +25,10 @@ class DefaultConditions:
     MIN_VISIBILITY = 10  # [km], range [0,∞)
     # Maximal fog
     MAX_FOG = 5  # [%], range [0,100]
+    # Minimal sky brightness
+    MIN_SQM = 19.0  # [mag/arcsec²], range [10,22]
+    # Maximal astronomical seeing
+    MAX_SEEING = 2.5  # [arcsec], range [0.5,5]
     # Max acceptable hour of return
     MAX_RETURN = "02:00:00"
     # Start time for observation
@@ -64,6 +68,8 @@ class Conditions:
         min_weather_goodness: float = DefaultConditions.MIN_WEATHER_GOODNESS,
         min_visibility: float = DefaultConditions.MIN_VISIBILITY,
         max_fog: float = DefaultConditions.MAX_FOG,
+        min_sqm: float = DefaultConditions.MIN_SQM,
+        max_seeing: float = DefaultConditions.MAX_SEEING,
         max_return: Optional[str] = DefaultConditions.MAX_RETURN,
         start_time: Optional[Union[str, datetime]] = DefaultConditions.START_TIME,
         min_object_altitude: float = DefaultConditions.MIN_OBJECT_ALTITUDE,
@@ -85,6 +91,8 @@ class Conditions:
         self.min_weather_goodness = min_weather_goodness
         self.min_visibility = min_visibility
         self.max_fog = max_fog
+        self.min_sqm = min_sqm
+        self.max_seeing = max_seeing
         self.max_return = max_return
         self.start_time = start_time
         self.min_object_altitude = min_object_altitude

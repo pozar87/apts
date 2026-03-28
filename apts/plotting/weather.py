@@ -324,6 +324,60 @@ def generate_plot_aurora(
     return None
 
 
+def generate_plot_seeing(
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
+):
+    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    eff_conditions = conditions or observation.conditions
+    if observation.place.weather is None:
+        return _handle_no_weather(gettext_("Seeing"), effective_dark_mode, style)
+
+    ax = observation.place.weather.plot_seeing(
+        dark_mode_override=effective_dark_mode, **args
+    )
+    if ax:
+        mark_observation(observation, ax, effective_dark_mode, style)
+        mark_good_conditions(
+            observation,
+            ax,
+            0,
+            eff_conditions.max_seeing,
+            effective_dark_mode,
+            style,
+        )
+    return ax
+
+
+def generate_plot_sqm(
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
+):
+    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    eff_conditions = conditions or observation.conditions
+    if observation.place.weather is None:
+        return _handle_no_weather(gettext_("Sky brightness"), effective_dark_mode, style)
+
+    ax = observation.place.weather.plot_sqm(
+        dark_mode_override=effective_dark_mode, **args
+    )
+    if ax:
+        mark_observation(observation, ax, effective_dark_mode, style)
+        mark_good_conditions(
+            observation,
+            ax,
+            eff_conditions.min_sqm,
+            22.0,
+            effective_dark_mode,
+            style,
+        )
+    return ax
+
+
 def generate_plot_weather_summary(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
@@ -413,12 +467,12 @@ def generate_plot_weather(
         if (
             axes_arg is not None
             and isinstance(axes_arg, numpy.ndarray)
-            and axes_arg.shape == (6, 2)
+            and axes_arg.shape == (7, 2)
         ):
             axes = axes_arg
             fig = axes[0, 0].figure
         else:
-            fig, axes = pyplot.subplots(nrows=6, ncols=2, figsize=(13, 25), **args)
+            fig, axes = pyplot.subplots(nrows=7, ncols=2, figsize=(13, 30), **args)
 
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
 
@@ -478,19 +532,32 @@ def generate_plot_weather(
             conditions=conditions,
         )
 
-        plt_aurora_ax = generate_plot_aurora(
+        generate_plot_seeing(
             observation,
             ax=axes[5, 0],
             dark_mode_override=effective_dark_mode,
             conditions=conditions,
         )
+        generate_plot_sqm(
+            observation,
+            ax=axes[5, 1],
+            dark_mode_override=effective_dark_mode,
+            conditions=conditions,
+        )
+
+        plt_aurora_ax = generate_plot_aurora(
+            observation,
+            ax=axes[6, 0],
+            dark_mode_override=effective_dark_mode,
+            conditions=conditions,
+        )
         if plt_aurora_ax is None:
             # If the aurora column doesn't exist, you can hide the subplot
-            axes[5, 0].set_visible(False)
+            axes[6, 0].set_visible(False)
 
         generate_plot_weather_summary(
             observation,
-            ax=axes[5, 1],
+            ax=axes[6, 1],
             dark_mode_override=effective_dark_mode,
             conditions=conditions,
         )

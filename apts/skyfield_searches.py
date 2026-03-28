@@ -187,7 +187,7 @@ def find_planetary_dichotomy(
             # Use geocentric position for standard dichotomy calculation.
             # Geocentric Earth position is used as the reference for astronomical dichotomy.
             eph = get_ephemeris()
-            earth = eph["earth"]
+            earth = cast(Any, eph["earth"])
             astrometric = earth.at(t).observe(planet_obj)
 
             # Phase angle Sun-Planet-Earth

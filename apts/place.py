@@ -30,6 +30,7 @@ from .utils.planetary import (
     get_moon_illumination,
     get_moon_phase_name,
     get_planet_magnitude,
+    get_skyfield_obj,
 )
 from .weather import Weather
 
@@ -301,7 +302,20 @@ class Place:
             b_total *= 1 - 0.5 * (cloud_cover / 100.0)
 
         sqm = -2.5 * math.log10(max(b_total, 1e-10))
-        return min(max(sqm, 10.0), 22.0)
+        sqm_val = min(max(sqm, 10.0), 22.0)
+
+        # Update cache if time matches weather data
+        if (
+            self.weather is not None
+            and self.weather.data is not None
+            and not self.weather.data.empty
+        ):
+            dt = self._get_scalar_datetime(target_time)
+            idx = (self.weather.data["time"] - dt).abs().idxmin()
+            if (self.weather.data.loc[idx, "time"] - dt).total_seconds() == 0:
+                self.weather.data.loc[idx, "sqm"] = sqm_val
+
+        return sqm_val
 
     def get_seeing(self, time: Optional[Any] = None) -> float:
         """
@@ -333,7 +347,125 @@ class Place:
             if cloud_cover > 50:
                 s += 0.3
 
-        return min(max(s, 0.5), 5.0)
+        seeing_val = min(max(s, 0.5), 5.0)
+
+        # Update cache if time matches weather data
+        if (
+            self.weather is not None
+            and self.weather.data is not None
+            and not self.weather.data.empty
+        ):
+            dt = self._get_scalar_datetime(target_time)
+            idx = (self.weather.data["time"] - dt).abs().idxmin()
+            if (self.weather.data.loc[idx, "time"] - dt).total_seconds() == 0:
+                self.weather.data.loc[idx, "seeing"] = seeing_val
+
+        return seeing_val
+
+    def _add_extra_weather_info(self):
+        """
+        Calculates seeing and SQM for all time points in weather data.
+        """
+        if self.weather is None or self.weather.data is None or self.weather.data.empty:
+            return
+
+        ts = get_timescale()
+        times = ts.from_datetimes(self.weather.data["time"].tolist())
+
+        # Vectorized Sun/Moon altitude calculation
+        sun_alts = (
+            self.observer.at(times).observe(self.sun).apparent().altaz()[0].degrees
+        )
+        moon_alts = (
+            self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees
+        )
+        # Handle magnitude calculation for vectorized times
+        moon_mags = [get_planet_magnitude("moon", t) for t in times]
+
+        # Bortle info
+        bortle = self.get_light_pollution()
+        sqm_base = LightPollution.bortle_to_sqm(bortle)
+        b_starlight = 10 ** (-0.4 * sqm_base)
+
+        seeings = []
+        sqms = []
+
+        for i, row in self.weather.data.iterrows():
+            # SQM Calculation
+            b_total = b_starlight
+            sun_alt = sun_alts[i]
+            if sun_alt > -18:
+                b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alt) * 0.65))
+                b_total += b_sun
+
+            moon_alt = moon_alts[i]
+            if moon_alt > 0:
+                mag_m = moon_mags[i]
+                b_moon = 10 ** (-0.4 * (mag_m + 31)) * np.sin(np.radians(moon_alt))
+                b_total += b_moon
+
+            cloud_cover = float(row["cloudCover"])
+            if bortle > 4:
+                b_total *= 1 + 2 * (cloud_cover / 100.0)
+            else:
+                b_total *= 1 - 0.5 * (cloud_cover / 100.0)
+
+            sqm = -2.5 * math.log10(max(b_total, 1e-10))
+            sqms.append(min(max(sqm, 10.0), 22.0))
+
+            # Seeing Calculation
+            s = 1.5
+            wind_speed = float(row["windSpeed"])
+            humidity = float(row["humidity"])
+            s += max(0, (wind_speed - 15) / 50.0)
+            if humidity > 80:
+                s += (humidity - 80) / 40.0
+            if cloud_cover > 50:
+                s += 0.3
+            seeings.append(min(max(s, 0.5), 5.0))
+
+        self.weather.data["sqm"] = sqms
+        self.weather.data["seeing"] = seeings
+
+    def get_altitude(self, object_or_name: Any, time: Optional[Any] = None) -> float:
+        """
+        Returns the topocentric apparent altitude of a celestial object in degrees.
+        Supports both Skyfield objects and string names (e.g., 'Jupiter').
+        Uses high-precision refraction settings (10°C, 1013.25 mbar).
+        """
+        target_time = time if time is not None else self.date
+        obj = (
+            get_skyfield_obj(object_or_name)
+            if isinstance(object_or_name, str)
+            else object_or_name
+        )
+        alt, _, _ = (
+            self.observer.at(target_time)
+            .observe(obj)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+        return float(alt.degrees)
+
+    def get_azimuth(self, object_or_name: Any, time: Optional[Any] = None) -> float:
+        """
+        Returns the topocentric apparent azimuth of a celestial object in degrees.
+        Supports both Skyfield objects and string names (e.g., 'Jupiter').
+        Uses high-precision refraction settings (10°C, 1013.25 mbar).
+        """
+        target_time = time if time is not None else self.date
+        obj = (
+            get_skyfield_obj(object_or_name)
+            if isinstance(object_or_name, str)
+            else object_or_name
+        )
+        _, az, _ = (
+            self.observer.at(target_time)
+            .observe(obj)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        )
+        return float(az.degrees)
 
     def get_weather(
         self,
@@ -355,6 +487,7 @@ class Place:
             observation_window=observation_window,
             force=force,
         )
+        self._add_extra_weather_info()
 
     def _previous_setting_time(self, obj_name, start, horizon_degrees=None):
         res = _previous_setting_time_utc(

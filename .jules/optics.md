@@ -539,3 +539,28 @@
     - https://www.highpointscientific.com/amfile/file/download/file/1110/product/9530/
     - https://www.telescope.com/Orion-SpaceProbe-130ST-Equatorial-Reflector-Telescope/p/9007.uts
     - https://www.telescope.com/Orion-SkyQuest-XT8-Classic-Dobsonian-Telescope/p/102005.uts
+
+## 2026-03-25 - Audit of Svbony Telescopes
+
+- **Items:** SV503 (70ED Doublet, 70ED Quadruplet, 80ED, 102ED), SV550 (60, 80, 122), SV48P (90, 102).
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/svbony.py`
+- **Initial State:**
+    - SV503 70ED doublet was the only 70mm model.
+    - SV503 80ED/102ED had rounded or placeholder mass values.
+    - SV48 (90mm) was mislabeled and had incorrect mass.
+    - SV503 70ED Quadruplet and SV48P 102mm were missing.
+    - Refractors were missing explicit `central_obstruction_mm: 0`.
+- **Verified Specs (Sources: Svbony Official Website / Blog / APM Telescopes):**
+    - **SV503 70ED Doublet:** 70/420mm (f/6), Mass 2.22kg, CO 0mm.
+    - **SV503 70ED Quadruplet:** 70/474mm (f/6.78), Mass 2.685kg, CO 0mm.
+    - **SV503 80ED:** 80/560mm (f/7), Mass 3.00kg (OTA net weight), CO 0mm.
+    - **SV503 102ED:** 102/714mm (f/7), Mass 4.00kg (OTA net weight), CO 0mm.
+    - **SV550 60/80/122:** Verified masses and focal lengths.
+    - **SV48P 90:** 90/500mm (f/5.5), Mass 2.73kg, CO 0mm.
+    - **SV48P 102:** 102/663mm (f/6.5), Mass 3.40kg, CO 0mm.
+- **Action:** Corrected existing models to use "Net Weight" (OTA only) for load calculation precision. Added new 70mm Quad and 102mm Achromat models without breaking existing keys. Renamed SV48 display name to SV48P 90. Ensured refractor `central_obstruction_mm: 0`.
+- **Source URLs:**
+    - https://www.svbony.com/blog/sv503-70-ed-telescope
+    - https://www.svbony.com/products/sv503-70mm-flatfield-refractor-telescope
+    - https://www.svbony.com/products/sv48p-102mm-achromatic-refractor-telescope-set-for-visual-observation
+    - https://stargazerslounge.com/topic/390656-svbony-102ed-f7-refractor-first-light-impressions-sv503/

@@ -142,6 +142,8 @@ class WeatherProvider(ABC):
         "moonIllumination",
         "moonWaxing",
         "aurora",
+        "seeing",
+        "sqm",
     ]
 
     def __init__(self, api_key, lat, lon, local_timezone):

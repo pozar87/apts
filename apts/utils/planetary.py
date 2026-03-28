@@ -879,7 +879,7 @@ def get_moon_colongitude(time: Any) -> float | np.ndarray:
     E9 = np.radians((34.226 + 0.0334601 * d) % 360)
     E10 = np.radians((15.134 - 0.1589763 * d) % 360)
     E11 = np.radians((119.743 + 0.0036096 * d) % 360)
-    E12 = np.radians((239.961 + 0.1300581 * d) % 360)
+    E12 = np.radians((239.961 + 0.1295801 * d) % 360)
     E13 = np.radians((25.053 + 12.9590088 * d) % 360)
 
     alpha0 = np.radians(

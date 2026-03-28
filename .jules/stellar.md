@@ -289,3 +289,51 @@
 - Added factory methods for the new models.
 - Updated `tests/unit/test_player_one_specs.py` with the new/verified specifications.
 - All 9 Player One specification tests passed.
+
+## 2025-05-26 - Data audit for ZWO v2/Air series and Smart Telescopes
+
+### Observe
+- Many ZWO "v2" and "Pro v2" models in the database were missing critical optical specifications, relying on fallback heuristics.
+- The new ZWO "Air" series (integrated controller cameras) were missing entirely.
+- The Seestar S30 full-well capacity was overestimated (54ke- vs 38.2ke-).
+- The Dwarf 3 was missing full-well capacity data.
+
+### Target
+- Priority 2: Add missing popular cameras and correct existing equipment specifications.
+- Priority 1: Correct inaccuracies in hardware data.
+
+### Calibrate
+- **ZWO v2/Pro v2:** Completed specs for 183, 2600, 294, 533, 662, 482, 715, 678, and 585 series. Data verified via ZWO manuals and Sony datasheets.
+- **ASI2600 Air:** Added MC and MM models. Specs match IMX571 sensor. Mass updated to 1050g (integrated hardware).
+- **Seestar S30:** Corrected full-well to 38,200e- (Sony IMX662).
+- **Dwarf 3:** Added full-well of 11,270e- (Sony IMX678).
+- Source: ZWO Official Website, Sony Sensor Datasheets, DwarfLab Specs.
+
+### Develop
+- Updated  and  / .
+- Verified with .
+- Verified no regressions in existing optics tests.
+
+## 2025-05-26 - Data audit for ZWO v2/Air series and Smart Telescopes
+
+### Observe
+- Many ZWO "v2" and "Pro v2" models in the database were missing critical optical specifications, relying on fallback heuristics.
+- The new ZWO "Air" series (integrated controller cameras) were missing entirely.
+- The Seestar S30 full-well capacity was overestimated (54ke- vs 38.2ke-).
+- The Dwarf 3 was missing full-well capacity data.
+
+### Target
+- Priority 2: Add missing popular cameras and correct existing equipment specifications.
+- Priority 1: Correct inaccuracies in hardware data.
+
+### Calibrate
+- **ZWO v2/Pro v2:** Completed specs for 183, 2600, 294, 533, 662, 482, 715, 678, and 585 series. Data verified via ZWO manuals and Sony datasheets.
+- **ASI2600 Air:** Added MC and MM models. Specs match IMX571 sensor. Mass updated to 1050g (integrated hardware).
+- **Seestar S30:** Corrected full-well to 38,200e- (Sony IMX662).
+- **Dwarf 3:** Added full-well of 11,270e- (Sony IMX678).
+- Source: ZWO Official Website, Sony Sensor Datasheets, DwarfLab Specs.
+
+### Develop
+- Updated `apts/opticalequipment/camera/vendors/zwo.py` and `apts/opticalequipment/telescope/vendors/zwo.py` / `dwarflab.py`.
+- Verified with `tests/unit/test_stellar_audit_v2.py`.
+- Verified no regressions in existing optics tests.
