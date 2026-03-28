@@ -514,126 +514,6 @@ def get_moon_distance(time):
     return cast(Any, earth).at(time).observe(moon).distance().km
 
 
-def get_moon_colongitude(time: Any) -> float | np.ndarray:
-    """
-    Calculates the Moon's selenographic colongitude in degrees.
-    Uses the IAU 2015 lunar rotation model.
-    Colongitude is the selenographic longitude of the morning terminator,
-    measured westward from the prime meridian.
-    """
-    eph = get_ephemeris()
-    sun = eph["sun"]
-    moon = eph["moon"]
-
-    # Position of the Sun as seen from the Moon
-    # We use astrometric position as it's the standard for physical ephemeris
-    astrometric = cast(Any, moon).at(time).observe(sun)
-    v_ms = astrometric.position.au
-
-    if hasattr(time, "shape") and time.shape:
-        dist = np.linalg.norm(v_ms, axis=0)
-        u_v = v_ms / dist
-    else:
-        dist = np.linalg.norm(v_ms)
-        u_v = v_ms / dist
-
-    # IAU 2015 Moon rotation model
-    d = time.tt - 2451545.0
-    T = d / 36525.0
-
-    # Nutation arguments (E1 to E13)
-    # Using array for vectorized calculation
-    is_array = hasattr(d, "shape") and d.shape != ()
-    num_times = len(d) if is_array else 1
-    E = np.zeros((14, num_times))
-
-    E[1] = np.radians(125.045 - 0.052992 * d)
-    E[2] = np.radians(250.089 - 0.105984 * d)
-    E[3] = np.radians(260.008 + 13.012001 * d)
-    E[4] = np.radians(176.625 + 13.340715 * d)
-    E[5] = np.radians(357.529 + 0.985600 * d)
-    E[6] = np.radians(311.589 + 26.405708 * d)
-    E[7] = np.radians(134.963 + 13.064993 * d)
-    E[8] = np.radians(276.617 + 0.328715 * d)
-    E[9] = np.radians(34.226 + 0.033460 * d)
-    E[10] = np.radians(15.134 - 0.158976 * d)
-    E[11] = np.radians(119.743 + 0.003610 * d)
-    E[12] = np.radians(239.961 + 0.130058 * d)
-    E[13] = np.radians(25.053 + 12.959008 * d)
-
-    alpha0 = np.radians(
-        269.9949
-        + 0.0031 * T
-        - 3.8787 * np.sin(E[1])
-        - 0.1204 * np.sin(E[2])
-        - 0.0700 * np.sin(E[3])
-        - 0.0172 * np.sin(E[4])
-        + 0.0072 * np.sin(E[6])
-        - 0.0052 * np.sin(E[10])
-        + 0.0043 * np.sin(E[13])
-    )
-    delta0 = np.radians(
-        66.5392
-        + 0.0130 * T
-        + 1.5419 * np.cos(E[1])
-        + 0.0478 * np.cos(E[2])
-        + 0.0278 * np.cos(E[3])
-        + 0.0068 * np.cos(E[4])
-        - 0.0028 * np.cos(E[6])
-        + 0.0020 * np.cos(E[10])
-        - 0.0017 * np.cos(E[13])
-    )
-    W = np.radians(
-        (
-            38.3213
-            + 13.17635815 * d
-            + 3.5610 * np.sin(E[1])
-            + 0.1108 * np.sin(E[2])
-            + 0.0642 * np.sin(E[3])
-            + 0.0158 * np.sin(E[4])
-            + 0.0252 * np.sin(E[5])
-            - 0.0066 * np.sin(E[6])
-            - 0.0047 * np.sin(E[7])
-            - 0.0046 * np.sin(E[8])
-            + 0.0028 * np.sin(E[9])
-            + 0.0052 * np.sin(E[10])
-            + 0.0040 * np.sin(E[11])
-            + 0.0019 * np.sin(E[12])
-            - 0.0044 * np.sin(E[13])
-        )
-        % 360
-    )
-
-    # Rotation matrix to lunar principal axes frame
-    # Transformation from ICRS to Body-Fixed:
-    # R = Rz(W) * Rx(90-delta0) * Rz(alpha0+90)
-
-    u_v_x, u_v_y, u_v_z = u_v
-
-    # Rz(alpha0 + pi/2)
-    a1 = alpha0 + np.pi / 2
-    x1 = np.cos(a1) * u_v_x + np.sin(a1) * u_v_y
-    y1 = -np.sin(a1) * u_v_x + np.cos(a1) * u_v_y
-    z1 = u_v_z
-
-    # Rx(pi/2 - delta0)
-    a2 = np.pi / 2 - delta0
-    x2 = x1
-    y2 = np.cos(a2) * y1 + np.sin(a2) * z1
-    z2 = -np.sin(a2) * y1 + np.cos(a2) * z1
-
-    # Rz(W)
-    a3 = W
-    x3 = np.cos(a3) * x2 + np.sin(a3) * y2
-    y3 = -np.sin(a3) * x2 + np.cos(a3) * y2
-    # z3 = z2 (unused)
-
-    # Longitude in lunar frame (increasing EASTWARD)
-    l_s = np.degrees(np.arctan2(y3, x3))
-    # Colongitude C = (90 - l_s) % 360 (increasing WESTWARD)
-    colong = (90.0 - l_s) % 360.0
-
-    return colong if is_array else float(colong[0])
 
 
 def get_reverse_translated_planet_names(language: str) -> dict:
@@ -996,7 +876,6 @@ def get_moon_colongitude(time: Any) -> float | np.ndarray:
     E6 = np.radians((311.589 + 26.4057084 * d) % 360)
     E7 = np.radians((134.963 + 13.0649930 * d) % 360)
     E8 = np.radians((276.617 + 0.3287146 * d) % 360)
-    E9 = np.radians((34.226 + 1.7484877 * d) % 360)
     E10 = np.radians((15.134 - 0.1589763 * d) % 360)
     E11 = np.radians((119.743 + 0.0036096 * d) % 360)
     E12 = np.radians((239.961 + 0.1295801 * d) % 360)
@@ -1070,10 +949,10 @@ def get_moon_colongitude(time: Any) -> float | np.ndarray:
     # Longitude from node (eastward)
     phi = np.degrees(np.arctan2(y_node, x_node))
     # Selenographic longitude (eastward from prime meridian)
-    l = (phi - np.degrees(W)) % 360
+    lon_selenographic = (phi - np.degrees(W)) % 360
 
-    # Colongitude C = (90 - l) % 360
-    return (90 - l) % 360
+    # Colongitude C = (90 - lon_selenographic) % 360
+    return (90 - lon_selenographic) % 360
 
 
 def get_sun_physical_details(time: Any) -> dict:
