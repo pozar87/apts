@@ -57,3 +57,7 @@
 ## 2025-05-22 - [Class-level Caching for Large Static Resources]
 **Learning:** Loading large static resources (like the 14400x5600 light pollution map) in every class instantiation is a major performance bottleneck. Using class-level attributes for lazy-loading such resources dramatically improves performance for repeated operations.
 **Action:** Always check if classes loading external data files (images, databases, etc.) can benefit from class-level or module-level caching, especially if the data is static.
+
+## 2025-05-23 - [Vectorized Weather and Planetary Calculations]
+**Learning:** Vectorizing iterative calculations over Pandas DataFrames using NumPy and removing scalar-forcing casts (like `float()`) in utility functions (`get_planet_magnitude`, `get_planet_phase_angle`) provides a massive speedup (~17.8x) for astronomical and weather data processing. Replacing `iterrows()` with vectorized array operations and boolean masking (`np.where`, `np.clip`) is essential when handling large weather datasets.
+**Action:** Always prefer vectorized NumPy/Pandas operations over `iterrows()` or `apply()` for numerical calculations. Ensure utility functions support both scalar and array-backed Skyfield Time objects by avoiding explicit scalar type casting on return.
