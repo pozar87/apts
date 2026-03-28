@@ -74,6 +74,12 @@ class Plotter:
     def aurora(self, conditions: Optional["Conditions"] = None, **args):
         return plot_aurora(self.observation, conditions=conditions, **args)
 
+    def seeing(self, conditions: Optional["Conditions"] = None, **args):
+        return plot_seeing(self.observation, conditions=conditions, **args)
+
+    def sqm(self, conditions: Optional["Conditions"] = None, **args):
+        return plot_sqm(self.observation, conditions=conditions, **args)
+
     def weather_summary(self, conditions: Optional["Conditions"] = None, **args):
         return plot_weather_summary(self.observation, conditions=conditions, **args)
 
@@ -306,6 +312,40 @@ def plot_aurora(
     )
 
 
+def plot_seeing(
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
+):
+    from .plotting.weather import generate_plot_seeing
+
+    _ensure_weather(observation, conditions)
+    return generate_plot_seeing(
+        observation,
+        dark_mode_override=dark_mode_override,
+        conditions=conditions,
+        **args,
+    )
+
+
+def plot_sqm(
+    observation: "Observation",
+    dark_mode_override: Optional[bool] = None,
+    conditions: Optional["Conditions"] = None,
+    **args,
+):
+    from .plotting.weather import generate_plot_sqm
+
+    _ensure_weather(observation, conditions)
+    return generate_plot_sqm(
+        observation,
+        dark_mode_override=dark_mode_override,
+        conditions=conditions,
+        **args,
+    )
+
+
 def plot_weather_summary(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
@@ -376,6 +416,8 @@ __all__ = [
     "plot_moon_illumination",
     "plot_fog",
     "plot_aurora",
+    "plot_seeing",
+    "plot_sqm",
     "plot_weather_summary",
     "plot_skymap",
     "plot_visible_planets",

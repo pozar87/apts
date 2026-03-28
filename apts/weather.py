@@ -562,6 +562,8 @@ class Weather:
             "moonIllumination",
             "fog",
             "aurora",
+            "seeing",
+            "sqm",
         ]
         data = self._filter_data(critical_data_columns)
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
@@ -772,5 +774,101 @@ class Weather:
 
         PlotUtils.annotate_plot(
             ax, gettext_("Aurora"), effective_dark_mode, self.local_timezone
+        )
+        return ax
+
+    def plot_seeing(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        data = self._filter_data(["seeing"])
+        ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(ax, gettext_("Seeing"), effective_dark_mode)
+
+        fig = None
+
+        if ax:
+            fig = ax.figure
+
+        plot_kwargs = args.copy()
+        plot_ax = data.plot(
+            x="time",
+            y="seeing",
+            xlim=(data.time.min(), data.time.max()),
+            ylim=(0, 5.5),
+            title=gettext_("Seeing"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
+        )  # pyright: ignore
+
+        if not ax:
+            ax = plot_ax
+            fig = ax.figure
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
+
+        PlotUtils.style_legend(ax, style)
+
+        PlotUtils.annotate_plot(
+            ax, gettext_("Seeing [arcsec]"), effective_dark_mode, self.local_timezone
+        )
+        return ax
+
+    def plot_sqm(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
+        if dark_mode_override is not None:
+            effective_dark_mode = dark_mode_override
+        else:
+            effective_dark_mode = get_dark_mode()
+
+        style = get_plot_style(effective_dark_mode)
+        data = self._filter_data(["sqm"])
+        ax = args.pop("ax", None)
+        if data.empty:
+            return PlotUtils.plot_no_data(
+                ax, gettext_("Sky brightness"), effective_dark_mode
+            )
+
+        fig = None
+
+        if ax:
+            fig = ax.figure
+
+        plot_kwargs = args.copy()
+        plot_ax = data.plot(
+            x="time",
+            y="sqm",
+            xlim=(data.time.min(), data.time.max()),
+            ylim=(10, 22.5),
+            title=gettext_("Sky brightness"),
+            ax=ax,
+            x_compat=True,
+            **plot_kwargs,
+        )  # pyright: ignore
+
+        if not ax:
+            ax = plot_ax
+            fig = ax.figure
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+        else:
+            ax.set_facecolor(style["AXES_FACE_COLOR"])
+            cast(Any, fig).patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+
+        ax.set_title(ax.get_title(), color=style["TEXT_COLOR"])
+
+        PlotUtils.style_legend(ax, style)
+
+        PlotUtils.annotate_plot(
+            ax, gettext_("SQM [mag/arcsec²]"), effective_dark_mode, self.local_timezone
         )
         return ax
