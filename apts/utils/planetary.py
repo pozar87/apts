@@ -148,7 +148,7 @@ def get_planet_rotation_period(planet_name: str) -> float:
 
 def get_planet_distance_km(
     planet_name: str, time: Any, observer: Any = None
-) -> float:
+) -> float | np.ndarray:
     """
     Returns the geocentric (or topocentric) distance to the planet in km.
     """
@@ -229,7 +229,7 @@ def get_sub_observer_latitude(planet_name: str, time: Any) -> float:
 
 def get_planet_angular_diameter(
     planet_name: str, time: Any, which: str = "equatorial", observer: Any = None
-) -> float:
+) -> float | np.ndarray:
     """
     Returns the apparent angular diameter of the planet in arcseconds.
 
@@ -708,7 +708,7 @@ def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
 
     return (ref_lon + dt * drift_per_day) % 360
 
-def get_planet_phase(planet_name: str, time: Any) -> float:
+def get_planet_phase(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Returns the illuminated fraction of the planet as a percentage (0-100).
     """
@@ -774,7 +774,7 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
     return magnitudelib.planetary_magnitude(astrometric)
 
 
-def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
+def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Calculates the average surface brightness of a celestial body (Sun, Moon, or planets)
     in magnitudes per square arcsecond (mag/arcsec²).

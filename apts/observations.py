@@ -783,9 +783,9 @@ class Observation:
                 logger.warning("Weather data unavailable after fetch attempt.")
                 return []
 
-        if not all([self.start, self.stop, self.time_limit]):
+        if not all([self.start, self.stop]):
             logger.warning(
-                "Observation window (start, stop, time_limit) is not fully defined."
+                "Observation window (start, stop) is not fully defined."
             )
             return []
 
@@ -793,13 +793,16 @@ class Observation:
         if hourly_data.empty:
             return []
 
-        # Filter by time limit and make a copy to avoid SettingWithCopyWarning
+        # Filter by time limit if defined
         # Ensure we use aware comparison
-        t_limit = pd.Timestamp(self.time_limit)
-        if t_limit.tzinfo is None:
-            t_limit = t_limit.tz_localize(self.place.local_timezone)
+        if self.time_limit is not None:
+            t_limit = pd.Timestamp(self.time_limit)
+            if t_limit.tzinfo is None:
+                t_limit = t_limit.tz_localize(self.place.local_timezone)
 
-        hourly_data = hourly_data[hourly_data.time <= t_limit].copy()
+            hourly_data = hourly_data[hourly_data.time <= t_limit].copy()
+        else:
+            hourly_data = hourly_data.copy()
 
         if "fog" not in hourly_data.columns:
             hourly_data["fog"] = 0

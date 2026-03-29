@@ -1316,12 +1316,15 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.weather.get_critical_data.assert_not_called()
 
         # Restore stop and test with time_limit = None
+        # It should now proceed without filtering if time_limit is missing
         self.obs.stop = pd.Timestamp("2024-01-02 06:00:00", tz=self.test_tz)
         self.obs.time_limit = None
+        # Use an empty dataframe to trigger early return after data fetch
+        self.obs.place.weather.get_critical_data.return_value = pd.DataFrame()
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(results, [])
-        self.obs.place.weather.get_critical_data.assert_not_called()
+        self.obs.place.weather.get_critical_data.assert_called()
 
     def test_is_weather_good(self):
         """Test the is_weather_good method."""
