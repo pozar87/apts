@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import numpy as np
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, Union, cast
 
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
@@ -148,17 +148,20 @@ def get_planet_rotation_period(planet_name: str) -> float:
 
 def get_planet_distance_km(
     planet_name: str, time: Any, observer: Any = None
-) -> float:
+) -> Union[float, np.ndarray]:
     """
     Returns the geocentric (or topocentric) distance to the planet in km.
     """
     eph = get_ephemeris()
     obs_obj = observer if observer is not None else eph["earth"]
     planet_obj = get_skyfield_obj(planet_name)
-    return cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
+    res = cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
+    return float(res) if np.isscalar(res) else res
 
 
-def get_planet_pole_coords(planet_name: str, time: Any) -> tuple[float, float]:
+def get_planet_pole_coords(
+    planet_name: str, time: Any
+) -> tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
     """
     Returns the planet's North Pole coordinates (RA, Dec) in degrees for the given time.
     Uses the IAU 2015 model.
@@ -174,6 +177,8 @@ def get_planet_pole_coords(planet_name: str, time: Any) -> tuple[float, float]:
     if name_norm == "saturn":
         return get_saturn_pole(time)
     if name_norm == "uranus":
+        if hasattr(T, "shape") and T.shape:
+            return np.full_like(T, 257.311), np.full_like(T, -15.175)
         return 257.311, -15.175
     if name_norm == "neptune":
         # IAU 2015 model for Neptune (including nutation)
@@ -187,12 +192,14 @@ def get_planet_pole_coords(planet_name: str, time: Any) -> tuple[float, float]:
 
     # Default to Earth pole (approx) or raise error
     if name_norm == "earth":
+        if hasattr(T, "shape") and T.shape:
+            return np.full_like(T, 0.0), np.full_like(T, 90.0)
         return 0.0, 90.0
 
     raise ValueError(f"Pole coordinates for '{planet_name}' not supported.")
 
 
-def get_sub_observer_latitude(planet_name: str, time: Any) -> float:
+def get_sub_observer_latitude(planet_name: str, time: Any) -> Union[float, np.ndarray]:
     """
     Calculates the sub-observer latitude (planetocentric latitude of the Earth) in degrees.
     This represents the tilt of the planet's equator relative to the observer.
@@ -224,12 +231,13 @@ def get_sub_observer_latitude(planet_name: str, time: Any) -> float:
     ) * np.cos(alpha0_rad - alpha_rad)
     De_rad = np.arcsin(np.clip(sin_De, -1.0, 1.0))
 
-    return float(np.degrees(De_rad))
+    res = np.degrees(De_rad)
+    return float(res) if np.isscalar(res) else res
 
 
 def get_planet_angular_diameter(
     planet_name: str, time: Any, which: str = "equatorial", observer: Any = None
-) -> float:
+) -> Union[float, np.ndarray]:
     """
     Returns the apparent angular diameter of the planet in arcseconds.
 
@@ -265,10 +273,13 @@ def get_planet_angular_diameter(
     alpha_rad = 2 * np.arcsin(radius / distance)
 
     # Convert to arcseconds
-    return float(np.degrees(alpha_rad) * 3600.0)
+    res = np.degrees(alpha_rad) * 3600.0
+    return float(res) if np.isscalar(res) else res
 
 
-def get_saturn_pole(time: Any) -> tuple[float, float]:
+def get_saturn_pole(
+    time: Any,
+) -> tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
     """
     Returns Saturn's North Pole coordinates (RA, Dec) in degrees for the given time.
     Uses the IAU 2015 model.
@@ -315,22 +326,29 @@ def get_saturn_ring_details(time: Any) -> dict:
     )
 
     # sin(B) is the dot product of the pole vector and the Saturn-Earth vector
-    sin_B = np.dot(p, v_sat_earth)
+    if hasattr(time, "shape") and time.shape:
+        sin_B = np.sum(p * v_sat_earth, axis=0)
+    else:
+        sin_B = np.dot(p, v_sat_earth)
+
     B_rad = np.arcsin(np.clip(sin_B, -1.0, 1.0))
-    B_deg = float(np.degrees(B_rad))
+    B_deg = np.degrees(B_rad)
 
     # Major axis (outer edge of A ring)
     dist_km = pos.distance().km
     radius_km = astronomy.SATURN_RING_OUTER_RADIUS_KM
-    major_arcsec = float(2 * np.degrees(np.arcsin(radius_km / dist_km)) * 3600.0)
+    major_arcsec = 2 * np.degrees(np.arcsin(radius_km / dist_km)) * 3600.0
 
     # Minor axis
     minor_arcsec = major_arcsec * abs(np.sin(B_rad))
 
+    def _maybe_float(val):
+        return float(val) if np.isscalar(val) else val
+
     return {
-        "tilt_degrees": B_deg,
-        "major_axis_arcsec": major_arcsec,
-        "minor_axis_arcsec": minor_arcsec,
+        "tilt_degrees": _maybe_float(B_deg),
+        "major_axis_arcsec": _maybe_float(major_arcsec),
+        "minor_axis_arcsec": _maybe_float(minor_arcsec),
     }
 
 

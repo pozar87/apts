@@ -1032,7 +1032,7 @@ class OpticalPath:
 
     def planetary_size_in_pixels(
         self, planet_name: str, time: Any, which: str = "equatorial"
-    ) -> Optional[float]:
+    ) -> Optional[Union[float, numpy.ndarray]]:
         """
         Calculates the projected size of a planet on the sensor in pixels.
         Uses the planet's angular diameter and the setup's pixel scale.
@@ -1052,11 +1052,14 @@ class OpticalPath:
         if p_scale is None or p_scale.magnitude == 0:
             return None
 
-        return float(angular_diameter / p_scale.magnitude)
+        res = angular_diameter / p_scale.magnitude
+        return float(res) if numpy.isscalar(res) else res
 
     def saturn_ring_size_in_pixels(
         self, time: Any
-    ) -> Optional[tuple[float, float]]:
+    ) -> Optional[
+        tuple[Union[float, numpy.ndarray], Union[float, numpy.ndarray]]
+    ]:
         """
         Calculates the projected size of Saturn's rings on the sensor in pixels.
         Returns a tuple (major_axis_pixels, minor_axis_pixels).
@@ -1072,7 +1075,10 @@ class OpticalPath:
         major = details["major_axis_arcsec"] / p_scale.magnitude
         minor = details["minor_axis_arcsec"] / p_scale.magnitude
 
-        return float(major), float(minor)
+        def _maybe_float(val):
+            return float(val) if numpy.isscalar(val) else val
+
+        return _maybe_float(major), _maybe_float(minor)
 
     def rule_of_500(self) -> "Quantity":
         """
