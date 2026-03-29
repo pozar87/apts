@@ -206,6 +206,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_venus_greatest_brilliancy))
         if self.event_settings.get("supermoons"):
             futures.append(executor.submit(self.calculate_supermoons))
+        if self.event_settings.get("mars_closest_approach"):
+            futures.append(executor.submit(self.calculate_mars_closest_approach))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -386,6 +388,8 @@ class AstronomicalEvents:
             return 3
         if event_type == "Planetary Dichotomy":
             return 3
+        if event_type == "Mars Closest Approach":
+            return 4
         return 1
 
     def calculate_venus_greatest_brilliancy(self):
@@ -493,7 +497,9 @@ class AstronomicalEvents:
 
     def calculate_lunar_eclipses(self):
         start_time = time.time()
-        events = skyfield_searches.find_lunar_eclipses(self.start_date, self.end_date)
+        events = skyfield_searches.find_lunar_eclipses(
+            self.start_date, self.end_date, observer=self.observer
+        )
         for event in events:
             event["event"] = "Lunar Eclipse"
             event["type"] = "Lunar Eclipse"
@@ -1191,4 +1197,14 @@ class AstronomicalEvents:
             event["date"] = event["date"].astimezone(utc)
             event["rarity"] = self._get_rarity("Supermoon", event)
         logger.debug(f"--- calculate_supermoons: {time.time() - start_time}s")
+        return events
+
+    def calculate_mars_closest_approach(self):
+        start_time = time.time()
+        events = skyfield_searches.find_mars_closest_approach(
+            self.start_date, self.end_date, observer=self.observer
+        )
+        for event in events:
+            event["rarity"] = self._get_rarity("Mars Closest Approach", event)
+        logger.debug(f"--- calculate_mars_closest_approach: {time.time() - start_time}s")
         return events
