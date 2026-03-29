@@ -218,10 +218,11 @@ class Place:
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
     def get_light_pollution(self):
-        self.light_pollution = LightPollution(
-            self.lat_decimal,
-            self.lon_decimal,
-        )
+        if self.light_pollution is None:
+            self.light_pollution = LightPollution(
+                self.lat_decimal,
+                self.lon_decimal,
+            )
         return self.light_pollution.get_light_pollution()
 
     def _get_scalar_datetime(self, target_time: Any) -> datetime.datetime:
@@ -427,6 +428,7 @@ class Place:
 
         self.weather.data["sqm"] = sqms
         self.weather.data["seeing"] = seeings
+        self.weather.data["moon_altitude"] = moon_alts
 
     def get_altitude(self, object_or_name: Any, time: Optional[Any] = None) -> float:
         """

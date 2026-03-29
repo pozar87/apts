@@ -824,13 +824,16 @@ class Observation:
         if "sqm" not in hourly_data.columns:
             hourly_data["sqm"] = 21.0
 
-        # Calculate moon altitudes exactly for each weather data point
-        ts = self.place.ts
-        times = ts.from_datetimes(hourly_data["time"].tolist())
-        alt, _, _ = (
-            self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
-        )
-        hourly_data["Altitude"] = alt.degrees
+        # Calculate moon altitudes exactly for each weather data point if not already cached
+        if "moon_altitude" in hourly_data.columns and not hourly_data["moon_altitude"].isna().all():
+            hourly_data["Altitude"] = hourly_data["moon_altitude"]
+        else:
+            ts = self.place.ts
+            times = ts.from_datetimes(hourly_data["time"].tolist())
+            alt, _, _ = (
+                self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
+            )
+            hourly_data["Altitude"] = alt.degrees
 
         for col in [
             "cloudCover",
