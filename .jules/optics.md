@@ -564,3 +564,29 @@
     - https://www.svbony.com/products/sv503-70mm-flatfield-refractor-telescope
     - https://www.svbony.com/products/sv48p-102mm-achromatic-refractor-telescope-set-for-visual-observation
     - https://stargazerslounge.com/topic/390656-svbony-102ed-f7-refractor-first-light-impressions-sv503/
+
+## 2026-03-26 - Audit of Bresser Telescopes
+
+- **Items:** Messier AR-102xs, AR-127L, AR-152L, AR-152S, MC-127, MC-152, NT-150L, NT-203, NT-203s, NT-254.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/bresser.py`
+- **Initial State:**
+    - Missing `central_obstruction_mm` for all models.
+    - Many mass values were rounded or slightly off (e.g., NT-254 was 14000g, corrected to 16400g).
+    - MC models were generically typed as `catadioptric`.
+    - AR-152S and NT-203s were missing from the database.
+- **Verified Specs (Sources: Bresser Official Website, India Telescope Shop, Astro Telescopios):**
+    - **AR-102xs:** 102/460mm, Mass 2.8kg, CO 0mm.
+    - **AR-127L:** 127/1200mm, Mass 7.9kg, CO 0mm.
+    - **AR-152L:** 152/1200mm, Mass 11.1kg, CO 0mm.
+    - **AR-152S:** 152/760mm, Mass 10.6kg, CO 0mm.
+    - **MC-127:** 127/1900mm, Mass 3.4kg, CO 35mm. Type: Maksutov-Cassegrain.
+    - **MC-152:** 152/1900mm, Mass 6.5kg, CO 45mm. Type: Maksutov-Cassegrain.
+    - **NT-150L:** 150/1200mm, Mass 6.5kg, CO 45mm.
+    - **NT-203:** 203/1000mm, Mass 11.5kg, CO 60mm.
+    - **NT-203s:** 203/800mm, Mass 8.7kg, CO 85mm.
+    - **NT-254:** 254/1270mm, Mass 16.4kg, CO 74mm.
+- **Action:** Updated all models with verified physical specs, explicit central obstruction values, corrected masses, and added missing models. Added source comments for all entries. Verified with `verify_bresser.py`.
+- **Source URLs:**
+    - https://www.bresser.com/p/bresser-messier-ar-102xs-460-exos-1-eq4-4702467
+    - https://www.bresser.com/p/bresser-messier-mc-127-1900-ota-optical-tube-4827190
+    - https://www.indiatelescopeshop.com/product-page/bresser-messier-10-dobsonian
