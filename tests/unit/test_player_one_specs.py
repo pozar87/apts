@@ -113,3 +113,36 @@ def test_ceres_m_updated_specs():
     assert camera.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(3.75)
     assert camera.full_well == 18000
     assert camera.read_noise == 3.6
+
+def test_uranus_c_specs():
+    camera = Player_oneCamera.Player_One_Uranus_C()
+    ureg = get_unit_registry()
+
+    assert camera.vendor == "Player One Uranus-C"
+    assert camera.width == 3856
+    assert camera.height == 2180
+    assert camera.sensor_width.to(ureg.mm).magnitude == pytest.approx(11.2)
+    assert camera.sensor_height.to(ureg.mm).magnitude == pytest.approx(6.3)
+    assert camera.full_well == 47000
+    assert camera.read_noise == 0.7
+    assert camera.quantum_efficiency == 91
+    assert camera.backfocus.to(ureg.mm).magnitude == pytest.approx(12.5)
+
+def test_uranus_c_pro_specs():
+    camera = Player_oneCamera.Player_One_Uranus_C_Pro()
+    ureg = get_unit_registry()
+
+    assert camera.vendor == "Player One Uranus-C Pro"
+    assert camera.full_well == 47000
+    assert camera.read_noise == 0.7
+    assert camera.backfocus.to(ureg.mm).magnitude == pytest.approx(17.5)
+    assert camera.mass.to(ureg.gram).magnitude == pytest.approx(420)
+
+def test_xena_m_pro_specs():
+    camera = Player_oneCamera.Player_One_Xena_M_Pro()
+    ureg = get_unit_registry()
+
+    assert camera.vendor == "Player One Xena-M Pro"
+    assert camera.full_well == 47000
+    assert camera.backfocus.to(ureg.mm).magnitude == pytest.approx(17.5)
+    assert camera.mass.to(ureg.gram).magnitude == pytest.approx(420)
