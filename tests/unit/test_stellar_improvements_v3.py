@@ -96,11 +96,11 @@ class TestStellarImprovementsV3(unittest.TestCase):
         self.assertEqual(q600m.vendor, "QHY QHY 600M")
         # For factory methods, pixel_size() is set explicitly
         self.assertAlmostEqual(q600m.pixel_size().to("micrometer").magnitude, 3.76, places=2)
-        self.assertEqual(q600m.mass, 1050 * get_unit_registry().gram)
+        self.assertEqual(q600m.mass, 900 * get_unit_registry().gram)
 
         q268c = QhyCamera.QHY_QHY_268C()
         self.assertEqual(q268c.vendor, "QHY QHY 268C")
-        self.assertEqual(q268c.quantum_efficiency, 81)
+        self.assertEqual(q268c.quantum_efficiency, 92)
 
 if __name__ == "__main__":
     unittest.main()

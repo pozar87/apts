@@ -590,3 +590,20 @@
     - https://www.bresser.com/p/bresser-messier-ar-102xs-460-exos-1-eq4-4702467
     - https://www.bresser.com/p/bresser-messier-mc-127-1900-ota-optical-tube-4827190
     - https://www.indiatelescopeshop.com/product-page/bresser-messier-10-dobsonian
+
+## 2026-04-10 - Audit of QHY Cameras
+
+- **Items:** QHY268C, QHY268M, QHY600C, QHY600M.
+- **Vendor File:** `apts/opticalequipment/camera/vendors/qhy.py`
+- **Initial State:**
+    - QHY268 series resolution was 6248x4176.
+    - QHY268 series mass was 800g.
+    - QHY600 series mass was 1050g.
+    - QHY600C QE was 80%.
+- **Verified Specs (Source: QHYCCD Official Website / Manuals):**
+    - **QHY268C/M:** Effective pixels 6252 x 4176. Peak QE 92%. Mass 780g. Backfocus 17.5mm (standard with adapter).
+    - **QHY600C/M:** Peak QE 91%. Mass 900g. Backfocus 17.5mm (standard with adapter).
+- **Action:** Updated specifications for QHY268 and QHY600 series with verified data. Used effective resolution for FOV calculation accuracy. Corrected OTA masses.
+- **Source URLs:**
+    - https://www.qhyccd.com/astronomical-camera-qhy268/
+    - https://www.qhyccd.com/astronomical-camera-qhy600/
