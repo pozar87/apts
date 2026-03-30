@@ -548,6 +548,7 @@ class Weather:
                         "moonIllumination",
                         "fog",
                         "aurora",
+                        "moon_altitude",
                     ]
                 )
             )
@@ -564,6 +565,7 @@ class Weather:
             "aurora",
             "seeing",
             "sqm",
+            "moon_altitude",
         ]
         data = self._filter_data(critical_data_columns)
         return data[(data.time >= start) & (data.time <= stop)]  # pyright: ignore
