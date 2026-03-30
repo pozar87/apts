@@ -379,50 +379,51 @@ class Place:
         moon_alts = (
             self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees
         )
-        # Handle magnitude calculation for vectorized times
-        moon_mags = [get_planet_magnitude("moon", t) for t in times]
+        # Vectorized magnitude calculation
+        moon_mags = get_planet_magnitude("moon", times)
 
         # Bortle info
         bortle = self.get_light_pollution()
         sqm_base = LightPollution.bortle_to_sqm(bortle)
         b_starlight = 10 ** (-0.4 * sqm_base)
 
-        seeings = []
-        sqms = []
+        # Vectorized SQM Calculation
+        b_total = np.full(len(times), b_starlight)
 
-        for i, row in self.weather.data.iterrows():
-            # SQM Calculation
-            b_total = b_starlight
-            sun_alt = sun_alts[i]
-            if sun_alt > -18:
-                b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alt) * 0.65))
-                b_total += b_sun
+        # Sun contribution
+        sun_mask = sun_alts > -18
+        if np.any(sun_mask):
+            b_sun = 10 ** (-0.4 * (21.8 - (18 + sun_alts[sun_mask]) * 0.65))
+            b_total[sun_mask] += b_sun
 
-            moon_alt = moon_alts[i]
-            if moon_alt > 0:
-                mag_m = moon_mags[i]
-                b_moon = 10 ** (-0.4 * (mag_m + 31)) * np.sin(np.radians(moon_alt))
-                b_total += b_moon
+        # Moon contribution
+        moon_mask = moon_alts > 0
+        if np.any(moon_mask):
+            # moon_mags is now an array
+            b_moon = 10 ** (-0.4 * (moon_mags[moon_mask] + 31)) * np.sin(
+                np.radians(moon_alts[moon_mask])
+            )
+            b_total[moon_mask] += b_moon
 
-            cloud_cover = float(row["cloudCover"])
-            if bortle > 4:
-                b_total *= 1 + 2 * (cloud_cover / 100.0)
-            else:
-                b_total *= 1 - 0.5 * (cloud_cover / 100.0)
+        # Cloud cover effect
+        cloud_cover = self.weather.data["cloudCover"].astype(float).values
+        if bortle > 4:
+            b_total *= 1 + 2 * (cloud_cover / 100.0)
+        else:
+            b_total *= 1 - 0.5 * (cloud_cover / 100.0)
 
-            sqm = -2.5 * math.log10(max(b_total, 1e-10))
-            sqms.append(min(max(sqm, 10.0), 22.0))
+        sqms = -2.5 * np.log10(np.maximum(b_total, 1e-10))
+        sqms = np.clip(sqms, 10.0, 22.0)
 
-            # Seeing Calculation
-            s = 1.5
-            wind_speed = float(row["windSpeed"])
-            humidity = float(row["humidity"])
-            s += max(0, (wind_speed - 15) / 50.0)
-            if humidity > 80:
-                s += (humidity - 80) / 40.0
-            if cloud_cover > 50:
-                s += 0.3
-            seeings.append(min(max(s, 0.5), 5.0))
+        # Vectorized Seeing Calculation
+        wind_speed = self.weather.data["windSpeed"].astype(float).values
+        humidity = self.weather.data["humidity"].astype(float).values
+
+        seeings = np.full(len(times), 1.5)
+        seeings += np.maximum(0, (wind_speed - 15) / 50.0)
+        seeings += np.where(humidity > 80, (humidity - 80) / 40.0, 0)
+        seeings += np.where(cloud_cover > 50, 0.3, 0)
+        seeings = np.clip(seeings, 0.5, 5.0)
 
         self.weather.data["sqm"] = sqms
         self.weather.data["seeing"] = seeings

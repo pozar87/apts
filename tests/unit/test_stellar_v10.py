@@ -39,7 +39,7 @@ def test_qhy_factory_refactor():
 
     c600c = QhyCamera.QHY_QHY_600C()
     assert c600c.get_vendor() == "QHY QHY 600C"
-    assert c600c.quantum_efficiency == 80
+    assert c600c.quantum_efficiency == 91
 
     m268m = QhyCamera.QHY_QHY_268M()
     assert m268m.get_vendor() == "QHY QHY 268M"

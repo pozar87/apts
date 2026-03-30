@@ -66,5 +66,57 @@ class OracleNewFeaturesTest(unittest.TestCase):
         # M4 is very close to Antares
         self.assertIn("M4", events_messier_df["object2"].values)
 
+class TestOracleLundarMars(unittest.TestCase):
+    def test_lunar_eclipse_visibility_filtering(self):
+        # Total Lunar Eclipse: March 14, 2025.
+        # Greatest eclipse around 06:58 UTC.
+        # For Tokyo (35.7, 139.7), the Moon is below the horizon at this time.
+
+        start_date = datetime(2025, 3, 14, 0, 0, tzinfo=utc)
+        end_date = datetime(2025, 3, 15, 0, 0, tzinfo=utc)
+
+        place_tokyo = Place(lat=35.6895, lon=139.6917, name="Tokyo")
+        from apts.skyfield_searches import find_lunar_eclipses
+        eclipses_tokyo = find_lunar_eclipses(start_date, end_date, observer=place_tokyo.observer)
+
+        self.assertGreater(len(eclipses_tokyo), 0)
+        eclipse = eclipses_tokyo[0]
+        self.assertFalse(eclipse["is_visible"])
+        self.assertLess(eclipse["altitude"], 0)
+
+        # For New York (40.7, -74.0), it should be visible.
+        # 06:58 UTC is 02:58 EDT.
+        place_ny = Place(lat=40.7128, lon=-74.0060, name="New York")
+        eclipses_ny = find_lunar_eclipses(start_date, end_date, observer=place_ny.observer)
+        self.assertGreater(len(eclipses_ny), 0)
+        self.assertTrue(eclipses_ny[0]["is_visible"])
+        self.assertGreater(eclipses_ny[0]["altitude"], 0)
+
+    def test_mars_closest_approach_2025(self):
+        # Mars closest approach in 2025 is Jan 12.
+        # Opposition is Jan 16.
+        start_date = datetime(2025, 1, 1, tzinfo=utc)
+        end_date = datetime(2025, 1, 31, tzinfo=utc)
+
+        from apts.skyfield_searches import find_mars_closest_approach
+        events = find_mars_closest_approach(start_date, end_date)
+        self.assertGreater(len(events), 0)
+        self.assertEqual(events[0]["date"].day, 12)
+        self.assertEqual(events[0]["date"].month, 1)
+        self.assertIn("distance_au", events[0])
+
+    def test_astronomical_events_integration(self):
+        start_date = datetime(2025, 1, 1, tzinfo=utc)
+        end_date = datetime(2025, 1, 31, tzinfo=utc)
+        place = Place(lat=52.2, lon=21.0) # Warsaw
+
+        ae = AstronomicalEvents(place, start_date, end_date, events_to_calculate=[EventType.MARS_CLOSEST_APPROACH])
+        df = ae.get_events()
+
+        self.assertFalse(df.empty)
+        self.assertEqual(df.iloc[0]["event"], "Mars Closest Approach")
+        self.assertEqual(df.iloc[0]["rarity"], 4)
+
+
 if __name__ == "__main__":
     unittest.main()
