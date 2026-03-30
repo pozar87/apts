@@ -61,3 +61,7 @@
 ## 2025-05-23 - [Vectorized Weather and Planetary Calculations]
 **Learning:** Vectorizing iterative calculations over Pandas DataFrames using NumPy and removing scalar-forcing casts (like `float()`) in utility functions (`get_planet_magnitude`, `get_planet_phase_angle`) provides a massive speedup (~17.8x) for astronomical and weather data processing. Replacing `iterrows()` with vectorized array operations and boolean masking (`np.where`, `np.clip`) is essential when handling large weather datasets.
 **Action:** Always prefer vectorized NumPy/Pandas operations over `iterrows()` or `apply()` for numerical calculations. Ensure utility functions support both scalar and array-backed Skyfield Time objects by avoiding explicit scalar type casting on return.
+
+## 2025-05-24 - [Bulk Translation Optimization]
+**Learning:** Translating large DataFrames row-by-row using `.apply(lambda x: gettext_(x))` is a major bottleneck due to redundant function calls and Python loop overhead. Implementing an early return for the default language (e.g., 'en') and a unique-value mapping strategy (handling unhashable lists by converting to tuples) provides a massive speedup (~15x to 90x).
+**Action:** Always use unique-value mapping (via `df[col].map(translation_map)`) for bulk translations. Ensure unhashable types like lists are handled by falling back to a custom unique collection or converting to tuples for set/dict operations.
