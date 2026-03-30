@@ -373,14 +373,16 @@ class Place:
         times = ts.from_datetimes(self.weather.data["time"].tolist())
 
         # Vectorized Sun/Moon altitude calculation
-        sun_alts = (
-            self.observer.at(times).observe(self.sun).apparent().altaz()[0].degrees
+        sun_alts = cast(
+            np.ndarray,
+            self.observer.at(times).observe(self.sun).apparent().altaz()[0].degrees,
         )
-        moon_alts = (
-            self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees
+        moon_alts = cast(
+            np.ndarray,
+            self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees,
         )
         # Vectorized magnitude calculation
-        moon_mags = get_planet_magnitude("moon", times)
+        moon_mags = cast(np.ndarray, get_planet_magnitude("moon", times))
 
         # Bortle info
         bortle = self.get_light_pollution()
@@ -388,7 +390,7 @@ class Place:
         b_starlight = 10 ** (-0.4 * sqm_base)
 
         # Vectorized SQM Calculation
-        b_total = np.full(len(times), b_starlight)
+        b_total = cast(np.ndarray, np.full(len(times), b_starlight))
 
         # Sun contribution
         sun_mask = sun_alts > -18
@@ -406,20 +408,20 @@ class Place:
             b_total[moon_mask] += b_moon
 
         # Cloud cover effect
-        cloud_cover = self.weather.data["cloudCover"].astype(float).values
+        cloud_cover = cast(np.ndarray, self.weather.data["cloudCover"].astype(float).values)
         if bortle > 4:
             b_total *= 1 + 2 * (cloud_cover / 100.0)
         else:
             b_total *= 1 - 0.5 * (cloud_cover / 100.0)
 
-        sqms = -2.5 * np.log10(np.maximum(b_total, 1e-10))
+        sqms = cast(np.ndarray, -2.5 * np.log10(np.maximum(b_total, 1e-10)))
         sqms = np.clip(sqms, 10.0, 22.0)
 
         # Vectorized Seeing Calculation
-        wind_speed = self.weather.data["windSpeed"].astype(float).values
-        humidity = self.weather.data["humidity"].astype(float).values
+        wind_speed = cast(np.ndarray, self.weather.data["windSpeed"].astype(float).values)
+        humidity = cast(np.ndarray, self.weather.data["humidity"].astype(float).values)
 
-        seeings = np.full(len(times), 1.5)
+        seeings = cast(np.ndarray, np.full(len(times), 1.5))
         seeings += np.maximum(0, (wind_speed - 15) / 50.0)
         seeings += np.where(humidity > 80, (humidity - 80) / 40.0, 0)
         seeings += np.where(cloud_cover > 50, 0.3, 0)
