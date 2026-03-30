@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from apts.utils import planetary
 from apts.cache import get_timescale
-from apts.equipment import OpticalEquipment
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera

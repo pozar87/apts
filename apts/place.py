@@ -380,7 +380,7 @@ class Place:
             self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees
         )
         # Vectorized magnitude calculation
-        moon_mags = get_planet_magnitude("moon", times)
+        moon_mags = cast(np.ndarray, get_planet_magnitude("moon", times))
 
         # Bortle info
         bortle = self.get_light_pollution()
@@ -406,7 +406,7 @@ class Place:
             b_total[moon_mask] += b_moon
 
         # Cloud cover effect
-        cloud_cover = self.weather.data["cloudCover"].astype(float).values
+        cloud_cover = cast(np.ndarray, self.weather.data["cloudCover"].astype(float).values)
         if bortle > 4:
             b_total *= 1 + 2 * (cloud_cover / 100.0)
         else:
@@ -416,8 +416,8 @@ class Place:
         sqms = np.clip(sqms, 10.0, 22.0)
 
         # Vectorized Seeing Calculation
-        wind_speed = self.weather.data["windSpeed"].astype(float).values
-        humidity = self.weather.data["humidity"].astype(float).values
+        wind_speed = cast(np.ndarray, self.weather.data["windSpeed"].astype(float).values)
+        humidity = cast(np.ndarray, self.weather.data["humidity"].astype(float).values)
 
         seeings = np.full(len(times), 1.5)
         seeings += np.maximum(0, (wind_speed - 15) / 50.0)

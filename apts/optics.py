@@ -1053,7 +1053,9 @@ class OpticalPath:
             return None
 
         res = angular_diameter / p_scale.magnitude
-        return float(res) if numpy.isscalar(res) else res
+        if numpy.isscalar(res):
+            return float(cast(Any, res))
+        return cast(numpy.ndarray, res)
 
     def saturn_ring_size_in_pixels(
         self, time: Any
@@ -1075,10 +1077,12 @@ class OpticalPath:
         major = details["major_axis_arcsec"] / p_scale.magnitude
         minor = details["minor_axis_arcsec"] / p_scale.magnitude
 
-        def _maybe_float(val):
-            return float(val) if numpy.isscalar(val) else val
+        def _maybe_cast(val):
+            if numpy.isscalar(val):
+                return float(cast(Any, val))
+            return cast(numpy.ndarray, val)
 
-        return _maybe_float(major), _maybe_float(minor)
+        return _maybe_cast(major), _maybe_cast(minor)
 
     def rule_of_500(self) -> "Quantity":
         """
@@ -1221,7 +1225,7 @@ class OpticalPath:
 
         return float(m_eff)
 
-    def planetary_phase_angle(self, planet_name: str, time: Any) -> float:
+    def planetary_phase_angle(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
         """
         Calculates the phase angle (Sun-Object-Earth) for a planet or the Moon.
         """
@@ -1242,21 +1246,21 @@ class OpticalPath:
         from .utils import planetary
         return planetary.get_moon_position_angle_bright_limb(time)
 
-    def planetary_magnitude(self, planet_name: str, time: Any) -> float:
+    def planetary_magnitude(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
         """
         Calculates the apparent magnitude of a planet, the Moon, or the Sun.
         """
         from .utils import planetary
         return planetary.get_planet_magnitude(planet_name, time)
 
-    def planetary_phase(self, planet_name: str, time: Any) -> float:
+    def planetary_phase(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
         """
         Calculates the illuminated fraction of a planet or the Moon as a percentage (0-100).
         """
         from .utils import planetary
         return planetary.get_planet_phase(planet_name, time)
 
-    def planetary_surface_brightness(self, planet_name: str, time: Any) -> float:
+    def planetary_surface_brightness(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
         """
         Calculates the average surface brightness of a planet, the Moon, or the Sun
         in mag/arcsec².

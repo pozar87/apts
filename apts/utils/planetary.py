@@ -792,7 +792,7 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
     return magnitudelib.planetary_magnitude(astrometric)
 
 
-def get_planet_surface_brightness(planet_name: str, time: Any) -> float:
+def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.ndarray:
     """
     Calculates the average surface brightness of a celestial body (Sun, Moon, or planets)
     in magnitudes per square arcsecond (mag/arcsec²).
