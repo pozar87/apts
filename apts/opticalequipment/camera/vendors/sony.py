@@ -487,8 +487,34 @@ class SonyCamera(Camera):
             'width': 4912,
             'height': 3264,
             'pixel_size_um': 4.78
+        },
+        'Sony_A1_II': {
+            'brand': 'Sony',
+            'name': 'A1 II',
+            'type': 'type_dslr',
+            'optical_length': 18,
+            'mass': 743,
+            'tside_thread': 'Sony E',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 35.9,
+            'sensor_height_mm': 24.0,
+            'width': 8640,
+            'height': 5760,
+            'pixel_size_um': 4.16
         }
     }
+
+    @classmethod
+    def Sony_A1_II(cls):
+        """
+        Factory method for Sony A1 II camera.
+        Sensor: Full Frame
+        """
+        return cls.from_database(cls._DATABASE['Sony_A1_II'])
 
     @classmethod
     def Sony_A7_III(cls):

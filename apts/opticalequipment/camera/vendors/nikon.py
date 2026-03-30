@@ -345,8 +345,21 @@ class NikonCamera(Camera):
             'brand': 'Nikon', 'name': 'Df', 'type': 'type_dslr', 'optical_length': 46.5, 'mass': 710,
             'tside_thread': 'Nikon F', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
             'sensor_width_mm': 36.0, 'sensor_height_mm': 23.9, 'width': 4928, 'height': 3280, 'pixel_size_um': 7.3
+        },
+        'Nikon_Z50II': {
+            'brand': 'Nikon', 'name': 'Z50II', 'type': 'type_dslr', 'optical_length': 16, 'mass': 495,
+            'tside_thread': 'Nikon Z', 'tside_gender': 'Female', 'cside_thread': '', 'cside_gender': '', 'reversible': False, 'bf_role': 'end',
+            'sensor_width_mm': 23.5, 'sensor_height_mm': 15.7, 'width': 5568, 'height': 3712, 'pixel_size_um': 4.22
         }
     }
+
+    @classmethod
+    def Nikon_Z50II(cls):
+        """
+        Factory method for Nikon Z50II camera.
+        Sensor: APS-C (DX format)
+        """
+        return cls.from_database(cls._DATABASE['Nikon_Z50II'])
 
     @classmethod
     def Nikon_D850(cls):
