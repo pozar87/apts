@@ -632,6 +632,13 @@ class Meteoblue(WeatherProvider):
         apply_bad_condition("precipIntensity", lambda x: x >= conditions.max_precipitation_intensity)
         apply_bad_condition("windSpeed", lambda x: x >= conditions.max_wind)
         apply_bad_condition("temperature", lambda x: (x <= conditions.min_temperature) | (x >= conditions.max_temperature))
+        apply_bad_condition("seeing", lambda x: x >= conditions.max_seeing)
+        apply_bad_condition("sqm", lambda x: x <= conditions.min_sqm)
+        apply_bad_condition("aurora", lambda x: x <= conditions.min_aurora)
+
+        # Moon illumination check is tricky because moon altitude is not typically in Meteoblue response
+        # but we can check the illumination if it's there.
+        apply_bad_condition("moonIllumination", lambda x: x >= conditions.max_moon_illumination)
 
         good_hours = is_good_mask.sum()
         return (good_hours / len(df_window)) * 100 > conditions.min_weather_goodness
