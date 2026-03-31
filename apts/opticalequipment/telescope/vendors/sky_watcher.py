@@ -620,7 +620,7 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'newtonian_reflector'},
-        'Sky_Watcher_Quattro_200P': {'aperture_mm': 205,
+        'Sky_Watcher_Quattro_200P': {'aperture_mm': 200,
          'bf_role': '',
          'brand': 'Sky-Watcher',
          'central_obstruction_mm': 70,
@@ -633,7 +633,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'newtonian_reflector'},
+         'type': 'newtonian_reflector'}, # Verified via Sky-Watcher official specs (200mm aperture)
         'Sky_Watcher_Quattro_250P': {'aperture_mm': 254,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -1077,6 +1077,20 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'newtonian_reflector'},  # Verified via Sky-Watcher official specs (9.07 kg OTA)
+        'Sky_Watcher_130PDS_Newtonian': {'aperture_mm': 130,
+         'bf_role': '',
+         'brand': 'Sky-Watcher',
+         'central_obstruction_mm': 47,
+         'cside_gender': 'Female',
+         'cside_thread': '2"',
+         'focal_length_mm': 650,
+         'mass': 4000,
+         'name': '130PDS Newtonian',
+         'optical_length': 0,
+         'reversible': False,
+         'tside_gender': '',
+         'tside_thread': '',
+         'type': 'newtonian_reflector'}, # Verified via manufacturer technical specs (47mm CO, 4kg OTA)
         'Sky_Watcher_Virtuoso_GTi_130P': {'aperture_mm': 130,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -1178,6 +1192,10 @@ class Sky_watcherTelescope(Telescope):
     @classmethod
     def Sky_Watcher_Quattro_300P(cls):
         return cls.from_database(cls._DATABASE['Sky_Watcher_Quattro_300P'])
+
+    @classmethod
+    def Sky_Watcher_130PDS_Newtonian(cls):
+        return cls.from_database(cls._DATABASE['Sky_Watcher_130PDS_Newtonian'])
 
     @classmethod
     def Sky_Watcher_150PDS_Newtonian(cls):
