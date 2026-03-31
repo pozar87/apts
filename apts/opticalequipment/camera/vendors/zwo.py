@@ -2448,6 +2448,69 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3864,
         },
+        "ZWO_Seestar_S50_Sensor": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 12000,
+            "height": 1080,
+            "mass": 0,
+            "name": "Seestar S50 Sensor",
+            "optical_length": 0,
+            "pixel_size_um": 2.9,
+            "quantum_efficiency_pct": 80,
+            "read_noise_e": 1.0,
+            "reversible": False,
+            "sensor_height_mm": 3.2,
+            "sensor_width_mm": 5.6,
+            "tside_gender": "",
+            "tside_thread": "",
+            "type": "type_camera",
+            "width": 1920,
+        },
+        "ZWO_Seestar_S30_Sensor": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 38200,
+            "height": 1080,
+            "mass": 0,
+            "name": "Seestar S30 Sensor",
+            "optical_length": 0,
+            "pixel_size_um": 2.9,
+            "quantum_efficiency_pct": 91,
+            "read_noise_e": 0.8,
+            "reversible": False,
+            "sensor_height_mm": 3.13,
+            "sensor_width_mm": 5.57,
+            "tside_gender": "",
+            "tside_thread": "",
+            "type": "type_camera",
+            "width": 1920,
+        },
+        "ZWO_Seestar_S30_Pro_Sensor": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 11270,
+            "height": 2160,
+            "mass": 0,
+            "name": "Seestar S30 Pro Sensor",
+            "optical_length": 0,
+            "pixel_size_um": 2.0,
+            "quantum_efficiency_pct": 83,
+            "read_noise_e": 0.6,
+            "reversible": False,
+            "sensor_height_mm": 4.32,
+            "sensor_width_mm": 7.68,
+            "tside_gender": "",
+            "tside_thread": "",
+            "type": "type_camera",
+            "width": 3840,
+        },
     }
 
     @classmethod
@@ -3061,3 +3124,15 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI_2600MM_Air(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Air"])
+
+    @classmethod
+    def ZWO_Seestar_S50_Sensor(cls):
+        return cls.from_database(cls._DATABASE["ZWO_Seestar_S50_Sensor"])
+
+    @classmethod
+    def ZWO_Seestar_S30_Sensor(cls):
+        return cls.from_database(cls._DATABASE["ZWO_Seestar_S30_Sensor"])
+
+    @classmethod
+    def ZWO_Seestar_S30_Pro_Sensor(cls):
+        return cls.from_database(cls._DATABASE["ZWO_Seestar_S30_Pro_Sensor"])
