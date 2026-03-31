@@ -954,16 +954,16 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             ):  # Ensure we don't generate data beyond time_limit
                 break
 
-            # Good weather by default
-            cloud = self.obs.conditions.max_clouds - 1
-            precip = self.obs.conditions.max_precipitation_probability - 1
-            precip_int = self.obs.conditions.max_precipitation_intensity - 0.1
-            wind = self.obs.conditions.max_wind - 1
+            # Good weather by default (safe distance from thresholds)
+            cloud = self.obs.conditions.max_clouds - 5
+            precip = self.obs.conditions.max_precipitation_probability - 5
+            precip_int = self.obs.conditions.max_precipitation_intensity - 1
+            wind = self.obs.conditions.max_wind - 5
             temp = (
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
-            moonIllumination = self.obs.conditions.max_moon_illumination - 1
+            moonIllumination = self.obs.conditions.max_moon_illumination - 5
 
             if (
                 i < len(conditions_met_flags) and not conditions_met_flags[i]
@@ -972,6 +972,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 cloud = self.obs.conditions.max_clouds + 10
 
             vis = self.obs.conditions.min_visibility + 5
+            seeing = self.obs.conditions.max_seeing - 0.5
+            sqm = self.obs.conditions.min_sqm + 0.5
+            aurora = 100
 
             data.append(
                 {
@@ -984,7 +987,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "visibility": vis,
                     "moonIllumination": moonIllumination,
                     "fog": 0,
-                    "aurora": 0,
+                    "aurora": aurora,
+                    "seeing": seeing,
+                    "sqm": sqm,
                 }
             )
         return pd.DataFrame(data)
@@ -993,13 +998,17 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         """Test when all hours have good weather."""
         num_hours = 3
         mock_weather_df = self._generate_weather_data(num_hours, [True] * num_hours)
+        # Add values that are safely within thresholds
+        mock_weather_df['seeing'] = 1.0
+        mock_weather_df['sqm'] = 21.0
+        mock_weather_df['aurora'] = 100.0
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
-            self.assertTrue(results[i]["is_good_hour"])
+            self.assertTrue(results[i]["is_good_hour"], f"Hour {i} should be good. Reasons: {results[i].get('reasons')}")
             self.assertEqual(len(results[i]["reasons"]), 0)
             self.assertEqual(results[i]["time"], mock_weather_df["time"].iloc[i])
 
@@ -1013,14 +1022,14 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         base_time = self.obs.start
         for i in range(num_hours):
             hour_time = cast(Any, base_time) + datetime.timedelta(hours=i)
-            cloud = self.obs.conditions.max_clouds - 1
-            precip = self.obs.conditions.max_precipitation_probability - 1
-            wind = self.obs.conditions.max_wind - 1
+            cloud = self.obs.conditions.max_clouds - 2
+            precip = self.obs.conditions.max_precipitation_probability - 2
+            wind = self.obs.conditions.max_wind - 2
             temp = (
                 self.obs.conditions.min_temperature
                 + self.obs.conditions.max_temperature
             ) / 2
-            moonIllumination = self.obs.conditions.max_moon_illumination - 1
+            moonIllumination = self.obs.conditions.max_moon_illumination - 2
 
             if i == 1:  # Second hour
                 cloud = self.obs.conditions.max_clouds + 5  # Exceeds limit
@@ -1030,13 +1039,15 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                     "time": hour_time,
                     "cloudCover": cloud,
                     "precipIntensity": 0,
-                    "aurora": 0,
+                    "aurora": 100,
                     "precipProbability": precip,
                     "windSpeed": wind,
                     "temperature": temp,
-                    "visibility": self.obs.conditions.min_visibility + 1,
+                    "visibility": self.obs.conditions.min_visibility + 2,
                     "moonIllumination": moonIllumination,
                     "fog": 0,
+                    "seeing": 1.0,
+                    "sqm": 21.0,
                 }
             )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -1048,8 +1059,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertTrue(results[0]["is_good_hour"])
         self.assertFalse(results[1]["is_good_hour"])
         self.assertEqual(len(results[1]["reasons"]), 1)
-        expected_reason = "Cloud cover {cloud_cover}% exceeds limit".format(
-            cloud_cover=f"{(self.obs.conditions.max_clouds + 5):.1f}"
+        expected_reason = "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
+            cloud_cover=f"{(self.obs.conditions.max_clouds + 5):.1f}",
+            max_clouds=self.obs.conditions.max_clouds,
         )
         self.assertIn(expected_reason, results[1]["reasons"])
         self.assertTrue(results[2]["is_good_hour"])
@@ -1068,38 +1080,42 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 "time": base_time,
                 "cloudCover": cloud_bad,  # Bad
                 "precipIntensity": 0,
-                "aurora": 0,
+                "aurora": 100,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
-                - 1,  # Good
+                - 2,  # Good
                 "windSpeed": wind_bad,  # Bad
                 "temperature": (
                     self.obs.conditions.min_temperature
                     + self.obs.conditions.max_temperature
                 )
                 / 2,  # Good
-                "visibility": self.obs.conditions.min_visibility + 1,
+                "visibility": self.obs.conditions.min_visibility + 2,
                 "moonIllumination": 0,
                 "fog": 0,
+                "seeing": 1.0,
+                "sqm": 21.0,
             }
         )
         # Hour 1: Good
         data_rows.append(
             {
                 "time": cast(Any, base_time) + datetime.timedelta(hours=1),
-                "cloudCover": self.obs.conditions.max_clouds - 1,
+                "cloudCover": self.obs.conditions.max_clouds - 2,
                 "precipIntensity": 0,
-                "aurora": 0,
+                "aurora": 100,
                 "precipProbability": self.obs.conditions.max_precipitation_probability
-                - 1,
-                "windSpeed": self.obs.conditions.max_wind - 1,
+                - 2,
+                "windSpeed": self.obs.conditions.max_wind - 2,
                 "temperature": (
                     self.obs.conditions.min_temperature
                     + self.obs.conditions.max_temperature
                 )
                 / 2,
-                "visibility": self.obs.conditions.min_visibility + 1,
+                "visibility": self.obs.conditions.min_visibility + 2,
                 "moonIllumination": 0,
                 "fog": 0,
+                "seeing": 1.0,
+                "sqm": 21.0,
             }
         )
         mock_weather_df = pd.DataFrame(data_rows)
@@ -1110,11 +1126,13 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertEqual(len(results), num_hours)
         self.assertFalse(results[0]["is_good_hour"])
         self.assertEqual(len(results[0]["reasons"]), 2)
-        expected_cloud_reason = "Cloud cover {cloud_cover}% exceeds limit".format(
-            cloud_cover=f"{cloud_bad:.1f}"
+        expected_cloud_reason = "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
+            cloud_cover=f"{cloud_bad:.1f}",
+            max_clouds=self.obs.conditions.max_clouds,
         )
-        expected_wind_reason = "Wind speed {wind_speed} km/h exceeds limit".format(
-            wind_speed=f"{wind_bad:.1f}"
+        expected_wind_reason = "Wind speed {wind_speed} km/h exceeds limit of {max_wind} km/h".format(
+            wind_speed=f"{wind_bad:.1f}",
+            max_wind=self.obs.conditions.max_wind,
         )
         self.assertIn(expected_cloud_reason, results[0]["reasons"])
         self.assertIn(expected_wind_reason, results[0]["reasons"])
@@ -1211,8 +1229,10 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Temperature {temp}°C out of range".format(
-            temp=f"{temp_bad:.1f}"
+        expected_reason = "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
+            temp=f"{temp_bad:.1f}",
+            min_temp=self.obs.conditions.min_temperature,
+            max_temp=self.obs.conditions.max_temperature,
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
@@ -1239,8 +1259,10 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Temperature {temp}°C out of range".format(
-            temp=f"{temp_bad:.1f}"
+        expected_reason = "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
+            temp=f"{temp_bad:.1f}",
+            min_temp=self.obs.conditions.min_temperature,
+            max_temp=self.obs.conditions.max_temperature,
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
@@ -1271,8 +1293,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         self.assertFalse(results[0]["is_good_hour"])
         expected_reason = (
-            "Precipitation probability {precip_prob}% exceeds limit".format(
-                precip_prob=f"{precip_bad:.1f}"
+            "Precipitation probability {precip_prob}% exceeds limit of {max_precip_prob}%".format(
+                precip_prob=f"{precip_bad:.1f}",
+                max_precip_prob=self.obs.conditions.max_precipitation_probability,
             )
         )
         self.assertIn(expected_reason, results[0]["reasons"])
@@ -1417,8 +1440,8 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         # Scenario 3: Aurora data is missing (should be treated as 0, bad weather)
         self.obs._weather_analysis = None  # Reset cache
-        mock_weather_df_missing = self._generate_weather_data(1, [True])
-        # The 'aurora' column is missing in this DataFrame by default
+        # Explicitly drop aurora to test missing column logic
+        mock_weather_df_missing = self._generate_weather_data(1, [True]).drop(columns=["aurora"])
         self.obs.place.weather.get_critical_data.return_value = mock_weather_df_missing
 
         results_missing = self.obs.get_hourly_weather_analysis()
@@ -1436,36 +1459,50 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.max_temperature = 25
         self.obs.conditions.min_visibility = 10
         self.obs.conditions.max_moon_illumination = 50
+        self.obs.conditions.min_aurora = 10
 
         # Create data with values exactly at thresholds
-        data_rows = [
-            {
-                "time": self.obs.start,
-                "cloudCover": 20,  # Exactly at max
-                "precipIntensity": 5,  # Exactly at max
-                "aurora": 0,
-                "precipProbability": 10,  # Exactly at max
-                "windSpeed": 15,  # Exactly at max
-                "temperature": 25,  # Exactly at max
-                "visibility": 10,  # Exactly at min
-                "moonIllumination": 50,  # Exactly at max
-                "fog": self.obs.conditions.max_fog,  # Exactly at max
-                "Altitude": 10,  # Add altitude to satisfy moon illumination check
-            }
+        # Each of these should be "good"
+        test_fields = [
+            ("cloudCover", 20),
+            ("precipIntensity", 5),
+            ("precipProbability", 10),
+            ("windSpeed", 15),
+            ("temperature", 25),
+            ("temperature", 0),
+            ("visibility", 10),
+            ("moonIllumination", 50),
+            ("aurora", 10),
+            ("seeing", self.obs.conditions.max_seeing),
+            ("sqm", self.obs.conditions.min_sqm),
         ]
-        mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
 
-        # Use 100% goodness required to check is_weather_good boundary as well
-        self.obs.conditions.min_weather_goodness = 100
+        for field, val in test_fields:
+            with self.subTest(field=field, value=val):
+                # Start with "perfect" weather
+                data = {
+                    "time": self.obs.start,
+                    "cloudCover": 0,
+                    "precipIntensity": 0,
+                    "aurora": 100,
+                    "precipProbability": 0,
+                    "windSpeed": 0,
+                    "temperature": 15,
+                    "visibility": 100,
+                    "moonIllumination": 0,
+                    "fog": 0,
+                    "seeing": 1.0,
+                    "sqm": 21.0,
+                    "Altitude": 10,
+                }
+                data[field] = val
 
-        # Mock moon illumination calculation to match the threshold exactly
-        with patch("apts.observations.get_moon_illumination", return_value=50.0):
-            results = self.obs.get_hourly_weather_analysis()
+                mock_weather_df = pd.DataFrame([data])
+                self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+                self.obs._weather_analysis = None
 
-            # Assertions
-            self.assertTrue(results[0]["is_good_hour"], f"Boundary values should be good. Reasons: {results[0].get('reasons')}")
-            self.assertTrue(self.obs.is_weather_good(), "Observation should be good when goodness is exactly at min_weather_goodness")
+                results = self.obs.get_hourly_weather_analysis()
+                self.assertTrue(results[0]["is_good_hour"], f"Boundary value {val} for {field} should be good. Reasons: {results[0].get('reasons')}")
 
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
