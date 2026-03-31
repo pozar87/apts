@@ -208,6 +208,8 @@ class AstronomicalEvents:
             futures.append(executor.submit(self.calculate_supermoons))
         if self.event_settings.get("mars_closest_approach"):
             futures.append(executor.submit(self.calculate_mars_closest_approach))
+        if self.event_settings.get("jovian_mutual_events"):
+            futures.append(executor.submit(self.calculate_jovian_mutual_events))
 
         # Golden hour, Blue hour and Culminations are disabled by default as they generate too many events
         if self.event_settings.get("golden_hour", False) or self.event_settings.get(
@@ -1207,4 +1209,15 @@ class AstronomicalEvents:
         for event in events:
             event["rarity"] = self._get_rarity("Mars Closest Approach", event)
         logger.debug(f"--- calculate_mars_closest_approach: {time.time() - start_time}s")
+        return events
+
+    def calculate_jovian_mutual_events(self):
+        start_time = time.time()
+        events = skyfield_searches.find_jovian_mutual_events(
+            self.observer, self.start_date, self.end_date
+        )
+        for event in events:
+            # These are rare and high-interest events
+            event["rarity"] = 5
+        logger.debug(f"--- calculate_jovian_mutual_events: {time.time() - start_time}s")
         return events
