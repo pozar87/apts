@@ -995,3 +995,36 @@ msgstr "Masse [g]"
 
 msgid "Mass"
 msgstr "Masse"
+
+msgid "Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%"
+msgstr "Bewölkung von %(cloud_cover)s%% überschreitet das Limit von %(max_clouds)s%%"
+
+msgid "Precipitation probability %(precip_prob)s%% exceeds limit of %(max_precip_prob)s%%"
+msgstr "Niederschlagswahrscheinlichkeit von %(precip_prob)s%% überschreitet das Limit von %(max_precip_prob)s%%"
+
+msgid "Precipitation intensity %(precip_intens)s mm exceeds limit of %(max_precip_intens)s mm"
+msgstr "Niederschlagsintensität von %(precip_intens)s mm überschreitet das Limit von %(max_precip_intens)s mm"
+
+msgid "Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h"
+msgstr "Windgeschwindigkeit von %(wind_speed)s km/h überschreitet das Limit von %(max_wind)s km/h"
+
+msgid "Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)"
+msgstr "Temperatur von %(temp)s°C außerhalb des Bereichs (%(min_temp)s - %(max_temp)s°C)"
+
+msgid "Visibility %(vis)s km below limit of %(min_vis)s km"
+msgstr "Sichtweite von %(vis)s km unter dem Limit von %(min_vis)s km"
+
+msgid "Fog %(fog)s%% exceeds limit of %(max_fog)s%%"
+msgstr "Nebel von %(fog)s%% überschreitet das Limit von %(max_fog)s%%"
+
+msgid "Moon illumination %(illum)s%% exceeds limit of %(max_illum)s%% while moon is up"
+msgstr "Mondbeleuchtung von %(illum)s%% überschreitet das Limit von %(max_illum)s%% während der Mond aufgegangen ist"
+
+msgid "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
+msgstr "Aurora von %(aurora)s%% unter dem Limit von %(min_aurora)s%%"
+
+msgid "Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec"
+msgstr "Seeing von %(seeing)s Bogensekunden überschreitet das Limit von %(max_seeing)s Bogensekunden"
+
+msgid "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
+msgstr "Himmelshelligkeit von %(sqm)s mag/arcsec² unter dem Limit von %(min_sqm)s mag/arcsec²"
