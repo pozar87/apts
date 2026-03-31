@@ -1,5 +1,3 @@
-import datetime
-import numpy as np
 from apts.utils import planetary
 from apts.cache import get_timescale
 

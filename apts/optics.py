@@ -1053,7 +1053,9 @@ class OpticalPath:
             return None
 
         res = angular_diameter / p_scale.magnitude
-        return float(res) if numpy.isscalar(res) else res
+        if numpy.isscalar(res):
+            return float(cast(Any, res))
+        return cast(numpy.ndarray, res)
 
     def saturn_ring_size_in_pixels(
         self, time: Any
@@ -1075,10 +1077,12 @@ class OpticalPath:
         major = details["major_axis_arcsec"] / p_scale.magnitude
         minor = details["minor_axis_arcsec"] / p_scale.magnitude
 
-        def _maybe_float(val):
-            return float(val) if numpy.isscalar(val) else val
+        def _maybe_cast(val):
+            if numpy.isscalar(val):
+                return float(cast(Any, val))
+            return cast(numpy.ndarray, val)
 
-        return _maybe_float(major), _maybe_float(minor)
+        return _maybe_cast(major), _maybe_cast(minor)
 
     def rule_of_500(self) -> "Quantity":
         """

@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.camera.vendors.qhy import QhyCamera
 
 def test_qhy268c_specs():
