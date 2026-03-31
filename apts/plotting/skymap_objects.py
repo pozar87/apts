@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, cast, Any
 import numpy
 import pandas as pd
 from matplotlib.patches import Ellipse
-from skyfield.api import Star as SkyfieldStar
+from skyfield.api import Star
 
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_messier_color, get_planet_color
@@ -69,7 +69,7 @@ def _plot_bright_stars_on_skymap(
     if bright_stars_df.empty:
         return
 
-    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars_df))
+    star_positions = observer.observe(Star.from_dataframe(bright_stars_df))
     alt, az, _ = star_positions.apparent().altaz()
     ra, dec, _ = star_positions.apparent().radec()
 
@@ -266,13 +266,13 @@ def _plot_stars_on_skymap(
         # Now perform the precise separation calculation on the much smaller subset
         if not stars_in_box.empty:
             if hasattr(target_object, "ra"):
-                center = SkyfieldStar(ra=target_object.ra, dec=target_object.dec)
+                center = Star(ra=target_object.ra, dec=target_object.dec)
             else:
                 ra, dec, _ = observer.observe(target_object).radec()
-                center = SkyfieldStar(ra_hours=ra.hours, dec_degrees=dec.degrees)
+                center = Star(ra_hours=ra.hours, dec_degrees=dec.degrees)
             observed_center = observer.observe(center)
 
-            all_stars_vectors = SkyfieldStar.from_dataframe(stars_in_box)
+            all_stars_vectors = Star.from_dataframe(stars_in_box)
             observed_all_stars = observer.observe(all_stars_vectors)
 
             dist_center = observed_center.position.au
@@ -313,7 +313,7 @@ def _plot_stars_on_skymap(
     if bright_stars.empty:  # type: ignore
         return
 
-    star_positions = observer.observe(SkyfieldStar.from_dataframe(bright_stars))
+    star_positions = observer.observe(Star.from_dataframe(bright_stars))
     alt, az, _ = star_positions.apparent().altaz()
     ra, dec, _ = star_positions.apparent().radec()
 
@@ -493,69 +493,101 @@ def _plot_messier_on_skymap(
     ),
 ):
     visible_messier = observation.get_visible_messier()
-    if not visible_messier.empty:
-        for _, m_obj in visible_messier.iterrows():
-            messier_name = m_obj[ObjectTableLabels.MESSIER]
-            if messier_name == target_name:
-                continue
-            messier_object = observation.local_messier.find_by_name(messier_name)
-            if messier_object:
-                alt, az, _ = observer.observe(messier_object).apparent().altaz()
-                ra, dec, _ = observer.observe(messier_object).apparent().radec()
-                if bool(numpy.any(alt.degrees > 0)):
-                    width_arcmin = m_obj.get(ObjectTableLabels.WIDTH)
-                    if bool(pd.isna(width_arcmin)):
-                        width_arcmin = 1.0  # Default to 1 arcmin if missing
-                    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-                    width_deg = float(width_arcmin or 1.0) / 60.0
+    if visible_messier.empty:
+        return
 
-                    height_arcmin = m_obj.get("Height")
-                    if bool(pd.isna(height_arcmin)):
-                        height_arcmin = width_arcmin
-                    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-                    height_deg = float(height_arcmin or 1.0) / 60.0
+    # Filter out target object and ensure valid coordinates
+    plot_df = visible_messier[
+        visible_messier[ObjectTableLabels.MESSIER] != target_name
+    ].copy()
+    plot_df = cast(pd.DataFrame, plot_df).dropna(subset=["ra_hours", "dec_degrees"]).reset_index(drop=True)
 
-                    pos_angle = m_obj.get("PosAng", 0.0)
-                    if bool(pd.isna(pos_angle)):
-                        pos_angle = 0.0
-                    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
-                    pos_angle = float(pos_angle or 0.0)
+    if plot_df.empty:
+        return
 
-                    dec = messier_object.dec
-                    parallactic_angle = calculate_parallactic_angle(
-                        observation.place.lat, dec, az
-                    )
-                    angle = calculate_ellipse_angle(
-                        pos_angle,
-                        parallactic_angle,
-                        coordinate_system,
-                        flipped_horizontally,
-                        flipped_vertically,
-                    )
-                    magnitude = m_obj.get("Magnitude")
-                    face_color = get_brightness_color(magnitude)
+    # Optimization: Observe all visible Messier objects at once using a vectorized Star object.
+    # This replaces the O(N) loop of individual Skyfield calls with a single bulk observation.
+    stars_vector = Star(
+        ra_hours=plot_df["ra_hours"].to_numpy(),
+        dec_degrees=plot_df["dec_degrees"].to_numpy(),
+    )
+    astrometric = observer.observe(stars_vector).apparent()
 
-                    obj_type = gettext_(m_obj.get("Type", "Other"))
-                    effective_dark_mode = get_dark_mode()
-                    edge_color = get_messier_color(obj_type, effective_dark_mode)
+    alt, az, _ = astrometric.altaz()
+    ra, dec, _ = astrometric.radec()
 
-                    _plot_celestial_object(
-                        ax,
-                        name=cast(str, messier_name),
-                        alt_deg=cast(float, alt.degrees),
-                        az_deg=cast(float, az.degrees),
-                        ra_hours=cast(float, ra.hours),
-                        dec_deg=cast(float, dec.degrees),
-                        width_deg=width_deg,
-                        height_deg=height_deg,
-                        angle=angle,
-                        face_color=face_color,
-                        edge_color=edge_color,
-                        is_polar=is_polar,
-                        ra_rad=ra.radians,
-                        coordinate_system=coordinate_system,
-                        is_sh=observation.place.lat_decimal < 0,
-                    )
+    alt_deg = alt.degrees
+    az_deg = az.degrees
+    ra_hours = ra.hours
+    dec_deg = dec.degrees
+    ra_rad = ra.radians
+
+    # Extract dimensions using vectorized pandas operations to avoid pint Quantity overhead
+    def get_dim(col_name, default_val=1.0):
+        if col_name in plot_df.columns:
+            # Handle mixed Quantity/float Series efficiently
+            return numpy.array(
+                [getattr(x, "magnitude", x) for x in plot_df[col_name].values],
+                dtype=float,
+            )
+        return numpy.full(len(plot_df), default_val)
+
+    widths_deg = get_dim(ObjectTableLabels.WIDTH) / 60.0
+    heights_deg = get_dim("Height", numpy.nan) / 60.0
+    # Fallback height to width if missing
+    heights_deg = numpy.where(numpy.isnan(heights_deg), widths_deg, heights_deg)
+    pos_angles = get_dim("PosAng", 0.0)
+
+    # Determine colors based on type and magnitude
+    effective_dark_mode = get_dark_mode()
+    # Cast potential Series outputs from .get() to satisfy Pyright
+    types_raw = cast(Any, plot_df).get("Type", ["Other"] * len(plot_df))
+    types = [gettext_(t) for t in cast(list, types_raw)]
+    edge_colors = [get_messier_color(t, effective_dark_mode) for t in types]
+    magnitudes_raw = cast(Any, plot_df).get("Magnitude", [10.0] * len(plot_df))
+    magnitudes = [
+        getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)
+    ]
+    face_colors = [get_brightness_color(m) for m in magnitudes]
+
+    # Names for annotation
+    names = plot_df[ObjectTableLabels.MESSIER].to_numpy()
+
+    # Restoration of original plotting loop with helper function to ensure visual consistency
+    # while retaining the performance benefits of bulk Skyfield observations.
+    for i in range(len(plot_df)):
+        # Restore original filtering: only plot objects above the horizon
+        if alt_deg[i] <= 0:
+            continue
+
+        parallactic_angle = calculate_parallactic_angle(
+            observation.place.lat, dec_deg[i], az_deg[i]
+        )
+        angle = calculate_ellipse_angle(
+            pos_angles[i],
+            parallactic_angle,
+            coordinate_system,
+            flipped_horizontally,
+            flipped_vertically,
+        )
+
+        _plot_celestial_object(
+            ax,
+            name=cast(str, names[i]),
+            alt_deg=float(alt_deg[i]),
+            az_deg=float(az_deg[i]),
+            ra_hours=float(ra_hours[i]),
+            dec_deg=float(dec_deg[i]),
+            width_deg=float(widths_deg[i]),
+            height_deg=float(heights_deg[i]),
+            angle=angle,
+            face_color=face_colors[i],
+            edge_color=edge_colors[i],
+            is_polar=is_polar,
+            ra_rad=float(ra_rad[i]),
+            coordinate_system=coordinate_system,
+            is_sh=observation.place.lat_decimal < 0,
+        )
 
 
 def _parse_ra(ra_str):
@@ -650,7 +682,7 @@ def _plot_ngc_on_skymap(
                 # Vectorized Skyfield observation for separation calculation
                 ngc_in_box_copy = ngc_in_box.copy()
                 ngc_in_box_copy["epoch_year"] = 2000.0
-                all_ngc_stars = SkyfieldStar.from_dataframe(ngc_in_box_copy)
+                all_ngc_stars = Star.from_dataframe(ngc_in_box_copy)
                 observed_all_ngc = observer.observe(all_ngc_stars)
 
                 vec_center_np = observed_center.position.au
@@ -693,7 +725,7 @@ def _plot_ngc_on_skymap(
         # Optimization: Observe all visible NGC objects at once before plotting
         visible_ngc_copy = visible_ngc.copy()
         visible_ngc_copy["epoch_year"] = 2000.0
-        ngc_stars = SkyfieldStar.from_dataframe(visible_ngc_copy)
+        ngc_stars = Star.from_dataframe(visible_ngc_copy)
         all_positions = observer.observe(ngc_stars).apparent()
 
         def to_array(val, n):
@@ -885,8 +917,11 @@ def _plot_solar_system_object_on_skymap(
     if display_name is None:
         display_name = gettext_(planetary.get_simple_name(object_name))
 
-    alt, az, _ = observer.observe(obj).apparent().altaz()
-    ra, dec, _ = observer.observe(obj).apparent().radec()
+    # Optimization: perform a single observation and apparent position calculation.
+    # Apparent positions are expensive; reusing the result for Alt/Az and RA/Dec avoids redundant work.
+    astrometric = observer.observe(obj).apparent()
+    alt, az, _ = astrometric.altaz()
+    ra, dec, _ = astrometric.radec()
 
     is_below_horizon = numpy.all(numpy.asarray(alt.degrees) <= 0)
     if is_below_horizon and coordinate_system == CoordinateSystem.HORIZONTAL:
