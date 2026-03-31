@@ -65,11 +65,11 @@ class TestStellarImprovementsV4(unittest.TestCase):
         self.assertEqual(evo72.focal_length.to("mm").magnitude, 420)
         self.assertEqual(evo72.mass.to("gram").magnitude, 1950)
 
-        # Esprit 150ED: 150mm, 1050mm, 14520g
+        # Esprit 150ED: 150mm, 1050mm, 15000g (Corrected from 14520g)
         esprit150 = Sky_watcherTelescope.Sky_Watcher_Esprit_150ED()
         self.assertEqual(esprit150.aperture.to("mm").magnitude, 150)
         self.assertEqual(esprit150.focal_length.to("mm").magnitude, 1050)
-        self.assertEqual(esprit150.mass.to("gram").magnitude, 14520)
+        self.assertEqual(esprit150.mass.to("gram").magnitude, 15000)
 
 if __name__ == "__main__":
     unittest.main()
