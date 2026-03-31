@@ -359,7 +359,7 @@ class Observation:
             self.effective_date if self.effective_date is not None else self.place.date
         )
         moon_illumination = get_moon_illumination(date_for_illumination)
-        if moon_illumination < conditions.max_moon_illumination:
+        if moon_illumination <= conditions.max_moon_illumination:
             return True
 
         # Illumination is too high, check if moon is up during observation window
@@ -857,41 +857,41 @@ class Observation:
 
             # Vectorized condition checks
             is_bad_clouds = hourly_data.cloudCover.isna() | (
-                hourly_data.cloudCover >= effective_conditions.max_clouds
+                hourly_data.cloudCover > effective_conditions.max_clouds
             )
             is_bad_precip_prob = hourly_data.precipProbability.isna() | (
                 hourly_data.precipProbability
-                >= effective_conditions.max_precipitation_probability
+                > effective_conditions.max_precipitation_probability
             )
             is_bad_precip_intens = hourly_data.precipIntensity.isna() | (
                 hourly_data.precipIntensity
-                >= effective_conditions.max_precipitation_intensity
+                > effective_conditions.max_precipitation_intensity
             )
             is_bad_wind = hourly_data.windSpeed.isna() | (
-                hourly_data.windSpeed >= effective_conditions.max_wind
+                hourly_data.windSpeed > effective_conditions.max_wind
             )
             is_bad_temp = hourly_data.temperature.isna() | (
-                (effective_conditions.min_temperature >= hourly_data.temperature)
-                | (hourly_data.temperature >= effective_conditions.max_temperature)
+                (effective_conditions.min_temperature > hourly_data.temperature)
+                | (hourly_data.temperature > effective_conditions.max_temperature)
             )
             is_bad_vis = hourly_data.visibility.isna() | (
-                hourly_data.visibility <= effective_conditions.min_visibility
+                hourly_data.visibility < effective_conditions.min_visibility
             )
             is_bad_fog = hourly_data.fog.isna() | (
-                hourly_data.fog >= effective_conditions.max_fog
+                hourly_data.fog > effective_conditions.max_fog
             )
             is_bad_moon = (hourly_data["Altitude"] > 0) & (
                 hourly_data.moonIllumination
-                >= effective_conditions.max_moon_illumination
+                > effective_conditions.max_moon_illumination
             )
             is_bad_aurora = hourly_data.aurora.isna() | (
-                hourly_data.aurora <= effective_conditions.min_aurora
+                hourly_data.aurora < effective_conditions.min_aurora
             )
             is_bad_seeing = hourly_data.seeing.isna() | (
-                hourly_data.seeing >= effective_conditions.max_seeing
+                hourly_data.seeing > effective_conditions.max_seeing
             )
             is_bad_sqm = hourly_data.sqm.isna() | (
-                hourly_data.sqm <= effective_conditions.min_sqm
+                hourly_data.sqm < effective_conditions.min_sqm
             )
 
             # Determine good hours

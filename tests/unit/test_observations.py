@@ -1449,7 +1449,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertIn("Aurora 0.0% below limit of 10%", results_missing[0]["reasons"])
 
     def test_get_hourly_weather_analysis_boundary_conditions(self):
-        """Test that weather values exactly at the threshold are considered bad (weak inequality)."""
+        """Test that weather values exactly at the threshold are considered good."""
         # Setup conditions
         self.obs.conditions.max_clouds = 20
         self.obs.conditions.max_precipitation_probability = 10
@@ -1462,7 +1462,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.min_aurora = 10
 
         # Create data with values exactly at thresholds
-        # Each of these should trigger a "bad" flag
+        # Each of these should be "good"
         test_fields = [
             ("cloudCover", 20),
             ("precipIntensity", 5),
@@ -1502,7 +1502,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs._weather_analysis = None
 
                 results = self.obs.get_hourly_weather_analysis()
-                self.assertFalse(results[0]["is_good_hour"], f"Boundary value {val} for {field} should be bad.")
+                self.assertTrue(results[0]["is_good_hour"], f"Boundary value {val} for {field} should be good. Reasons: {results[0].get('reasons')}")
 
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):

@@ -81,37 +81,37 @@ class TestWeatherConditionsVerification(unittest.TestCase):
         # and a reason is provided.
 
         test_cases = [
-            ('cloudCover', 50, 'max_clouds', 20, "Cloud cover"),
-            ('cloudCover', 20, 'max_clouds', 20, "Cloud cover"), # Boundary
-            ('precipProbability', 10, 'max_precipitation_probability', 5, "Precipitation probability"),
-            ('precipProbability', 5, 'max_precipitation_probability', 5, "Precipitation probability"), # Boundary
-            ('precipIntensity', 10, 'max_precipitation_intensity', 5, "Precipitation intensity"),
-            ('precipIntensity', 5, 'max_precipitation_intensity', 5, "Precipitation intensity"), # Boundary
-            ('windSpeed', 20, 'max_wind', 10, "Wind speed"),
-            ('windSpeed', 10, 'max_wind', 10, "Wind speed"), # Boundary
-            ('temperature', -5, 'min_temperature', 0, "Temperature"),
-            ('temperature', 0, 'min_temperature', 0, "Temperature"), # Boundary
-            ('temperature', 30, 'max_temperature', 25, "Temperature"),
-            ('temperature', 25, 'max_temperature', 25, "Temperature"), # Boundary
-            ('visibility', 5, 'min_visibility', 10, "Visibility"),
-            ('visibility', 10, 'min_visibility', 10, "Visibility"), # Boundary
-            ('fog', 10, 'max_fog', 5, "Fog"),
-            ('fog', 5, 'max_fog', 5, "Fog"), # Boundary
-            ('seeing', 4.0, 'max_seeing', 2.5, "Seeing"),
-            ('seeing', 2.5, 'max_seeing', 2.5, "Seeing"), # Boundary
-            ('sqm', 17.0, 'min_sqm', 19.0, "Sky brightness"),
-            ('sqm', 19.0, 'min_sqm', 19.0, "Sky brightness"), # Boundary
-            ('aurora', 10, 'min_aurora', 50, "Aurora"),
-            ('aurora', 50, 'min_aurora', 50, "Aurora"), # Boundary
+            ('cloudCover', 50, 'max_clouds', 20, "Cloud cover", False),
+            ('cloudCover', 20, 'max_clouds', 20, "Cloud cover", True), # Boundary is good
+            ('precipProbability', 10, 'max_precipitation_probability', 5, "Precipitation probability", False),
+            ('precipProbability', 5, 'max_precipitation_probability', 5, "Precipitation probability", True), # Boundary is good
+            ('precipIntensity', 10, 'max_precipitation_intensity', 5, "Precipitation intensity", False),
+            ('precipIntensity', 5, 'max_precipitation_intensity', 5, "Precipitation intensity", True), # Boundary is good
+            ('windSpeed', 20, 'max_wind', 10, "Wind speed", False),
+            ('windSpeed', 10, 'max_wind', 10, "Wind speed", True), # Boundary is good
+            ('temperature', -5, 'min_temperature', 0, "Temperature", False),
+            ('temperature', 0, 'min_temperature', 0, "Temperature", True), # Boundary is good
+            ('temperature', 30, 'max_temperature', 25, "Temperature", False),
+            ('temperature', 25, 'max_temperature', 25, "Temperature", True), # Boundary is good
+            ('visibility', 5, 'min_visibility', 10, "Visibility", False),
+            ('visibility', 10, 'min_visibility', 10, "Visibility", True), # Boundary is good
+            ('fog', 10, 'max_fog', 5, "Fog", False),
+            ('fog', 5, 'max_fog', 5, "Fog", True), # Boundary is good
+            ('seeing', 4.0, 'max_seeing', 2.5, "Seeing", False),
+            ('seeing', 2.5, 'max_seeing', 2.5, "Seeing", True), # Boundary is good
+            ('sqm', 17.0, 'min_sqm', 19.0, "Sky brightness", False),
+            ('sqm', 19.0, 'min_sqm', 19.0, "Sky brightness", True), # Boundary is good
+            ('aurora', 10, 'min_aurora', 50, "Aurora", False),
+            ('aurora', 50, 'min_aurora', 50, "Aurora", True), # Boundary is good
         ]
 
-        for col, val, cond_attr, cond_val, reason_part in test_cases:
-            with self.subTest(condition=cond_attr):
+        for col, val, cond_attr, cond_val, reason_part, expected_good in test_cases:
+            with self.subTest(condition=cond_attr, value=val):
                 cond_kwargs = {cond_attr: cond_val}
                 conditions = Conditions(**cond_kwargs)
                 obs = self._create_observation(conditions)
 
-                # Setup weather data with one bad hour
+                # Setup weather data with one test hour
                 weather_data = self._get_mock_weather_data()
                 weather_data.loc[2, col] = val
 
@@ -122,10 +122,13 @@ class TestWeatherConditionsVerification(unittest.TestCase):
 
                 self.assertEqual(len(analysis), 5)
                 self.assertTrue(analysis[0]['is_good_hour'], f"Hour 0 should be good for {cond_attr}")
-                self.assertFalse(analysis[2]['is_good_hour'], f"Hour 2 should be bad for {cond_attr}")
 
-                reasons = analysis[2]['reasons']
-                self.assertTrue(any(reason_part in r for r in reasons), f"Reason for {cond_attr} not found in {reasons}")
+                if expected_good:
+                    self.assertTrue(analysis[2]['is_good_hour'], f"Hour 2 with {val} should be good for {cond_attr}. Reasons: {analysis[2]['reasons']}")
+                else:
+                    self.assertFalse(analysis[2]['is_good_hour'], f"Hour 2 with {val} should be bad for {cond_attr}")
+                    reasons = analysis[2]['reasons']
+                    self.assertTrue(any(reason_part in r for r in reasons), f"Reason for {cond_attr} not found in {reasons}")
 
     @patch('apts.observations.get_moon_illumination', return_value=80)
     def test_moon_condition(self, mock_moon_illum):
