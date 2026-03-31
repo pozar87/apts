@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 from apts.place import Place
@@ -14,7 +13,6 @@ def test_get_sqm_no_weather(place):
     with patch.object(place, 'get_light_pollution', return_value=4):
         # Mock Sun and Moon altitude to be low (night, no moon)
         with patch.object(place.observer, 'at') as mock_at:
-            mock_observe = mock_at.return_value.observe.return_value.apparent.return_value.altaz.return_value
             # Sun altitude -20, Moon altitude -10
             # We need to handle multiple calls to observe()
             def side_effect(obj):

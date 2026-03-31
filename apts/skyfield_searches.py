@@ -216,7 +216,7 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                 # 1. Earth perspective (Occultations)
                 # Oracle: use apparent positions with light-travel time from Earth center
                 eph_ = get_ephemeris()
-                earth_center = eph_["earth"]
+                earth_center = cast(Any, eph_["earth"])
                 m1_e = earth_center.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
                 m2_e = earth_center.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
                 sep_e = m1_e.separation_from(m2_e).degrees
