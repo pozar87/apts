@@ -637,6 +637,189 @@ def find_planet_star_conjunctions(
     return events
 
 
+def _get_jovian_moon_objects(eph):
+    """
+    Helper to extract Galilean moon objects from ephemeris, handling different
+    SPICE kernel naming conventions/IDs (e.g. jup300.bsp uses 501-504,
+    but others might use 55061-55064).
+    """
+    moon_map = {
+        "Io": [501, 55061],
+        "Europa": [502, 55062],
+        "Ganymede": [503, 55063],
+        "Callisto": [504, 55064],
+    }
+
+    moon_objs = {}
+    for name, ids in moon_map.items():
+        for moon_id in ids:
+            try:
+                moon_objs[name] = eph[moon_id]
+                break
+            except KeyError:
+                continue
+    return moon_objs
+
+
+def find_jovian_mutual_events(observer, start_date, end_date):
+    """
+    Finds mutual events between Jovian moons (Occultations and Eclipses).
+    """
+    from .cache import get_jovian_ephemeris
+    from itertools import combinations
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_jovian_ephemeris())
+
+    try:
+        jupiter = eph["jupiter barycenter"]
+        sun = eph["sun"]
+        moon_objs = _get_jovian_moon_objects(eph)
+        if not moon_objs:
+            return []
+    except KeyError:
+        return []
+
+    events = []
+    moon_names = list(moon_objs.keys())
+
+    # IAU 2015 Moon radii
+    MOON_RADII = {
+        "Io": astronomy.IO_RADIUS_KM,
+        "Europa": astronomy.EUROPA_RADIUS_KM,
+        "Ganymede": astronomy.GANYMEDE_RADIUS_KM,
+        "Callisto": astronomy.CALLISTO_RADIUS_KM,
+    }
+
+    # 1. Occultations (Earth perspective)
+    for m1_name, m2_name in combinations(moon_names, 2):
+        m1_obj = moon_objs[m1_name]
+        m2_obj = moon_objs[m2_name]
+
+        def occ_state_func(t):
+            # One moon occults another from Earth's perspective
+            m1_obs = observer.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
+            m2_obs = observer.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
+
+            sep = m1_obs.separation_from(m2_obs).degrees
+
+            # Angular radii
+            r1 = np.degrees(np.arcsin(MOON_RADII[m1_name] / m1_obs.distance().km))
+            r2 = np.degrees(np.arcsin(MOON_RADII[m2_name] / m2_obs.distance().km))
+
+            in_occultation = sep < (r1 + r2)
+
+            # Visibility: Jupiter above horizon and Sun below -6
+            j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+            alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+            sun_alt = (
+                observer.at(t)
+                .observe(sun)
+                .apparent(deflectors=(10, 599))
+                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                .degrees
+            )
+
+            # Oracle: -9999 bypasses visibility check
+            for vf in observer.vector_functions:
+                if hasattr(vf, "elevation") and vf.elevation.m == -9999:
+                    visible = np.ones_like(alt.degrees, dtype=bool) if hasattr(t, "shape") else True
+                    break
+            else:
+                visible = (alt.degrees > 0) & (sun_alt <= -6)
+
+            return (visible & in_occultation).astype(int)
+
+        setattr(occ_state_func, "step_days", 0.002)  # ~3 mins
+        t_ev, y_ev = almanac.find_discrete(t0, t1, occ_state_func)
+
+        for te, ye in zip(t_ev, y_ev):
+            # Check which moon is in front at the transition time
+            m1_dist = observer.at(te).observe(m1_obj).distance().km
+            m2_dist = observer.at(te).observe(m2_obj).distance().km
+
+            occulting = m1_name if m1_dist < m2_dist else m2_name
+            occulted = m2_name if m1_dist < m2_dist else m1_name
+
+            events.append(
+                {
+                    "date": te.utc_datetime(),
+                    "event": f"{occulting} occults {occulted} {'Start' if ye == 1 else 'End'}",
+                    "object1": occulting,
+                    "object2": occulted,
+                    "type": "Jovian Mutual Event",
+                }
+            )
+
+    # 2. Eclipses (Sun perspective)
+    for m1_name, m2_name in combinations(moon_names, 2):
+        for primary, secondary in [(m1_name, m2_name), (m2_name, m1_name)]:
+            p_obj = moon_objs[primary]
+            s_obj = moon_objs[secondary]
+
+            def eclipse_state_func(t):
+                # Moon S enters shadow of Moon P (shadow cast by Sun)
+                # Observed from Sun
+                p_sun = sun.at(t).observe(p_obj).apparent(deflectors=(10, 599))
+                s_sun = sun.at(t).observe(s_obj).apparent(deflectors=(10, 599))
+
+                sep = p_sun.separation_from(s_sun).degrees
+
+                # Shadow of Moon P at distance of Moon S
+                rp_sun = np.degrees(np.arcsin(MOON_RADII[primary] / p_sun.distance().km))
+                rs_sun = np.degrees(
+                    np.arcsin(MOON_RADII[secondary] / s_sun.distance().km)
+                )
+
+                # Simple geometric shadow (center-to-center disc overlap from Sun)
+                in_eclipse = (sep < (rp_sun + rs_sun)) & (
+                    p_sun.distance().km < s_sun.distance().km
+                )
+
+                # Visibility from Earth
+                j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+                alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+                sun_alt_obs = (
+                    observer.at(t)
+                    .observe(sun)
+                    .apparent(deflectors=(10, 599))
+                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                    .degrees
+                )
+
+                # Oracle: -9999 bypasses visibility check
+                for vf in observer.vector_functions:
+                    if hasattr(vf, "elevation") and vf.elevation.m == -9999:
+                        visible = np.ones_like(alt.degrees, dtype=bool) if hasattr(t, "shape") else True
+                        break
+                else:
+                    visible = (alt.degrees > 0) & (sun_alt_obs <= -6)
+
+                return (visible & in_eclipse).astype(int)
+
+            setattr(eclipse_state_func, "step_days", 0.002)
+            t_ev, y_ev = almanac.find_discrete(t0, t1, eclipse_state_func)
+
+            for te, ye in zip(t_ev, y_ev):
+                events.append(
+                    {
+                        "date": te.utc_datetime(),
+                        "event": f"{primary} eclipses {secondary} {'Start' if ye == 1 else 'End'}",
+                        "object1": primary,
+                        "object2": secondary,
+                        "type": "Jovian Mutual Event",
+                    }
+                )
+
+    return events
+
+
+
+
 def find_jovian_moon_events(observer, start_date, end_date):
     """
     Finds Jovian moon events (Transits, Shadows, Occultations, Eclipses)
@@ -652,17 +835,16 @@ def find_jovian_moon_events(observer, start_date, end_date):
     try:
         jupiter = eph["jupiter barycenter"]
         sun = eph["sun"]
-        # Map IDs to names
-        moon_map = {501: "Io", 502: "Europa", 503: "Ganymede", 504: "Callisto"}
-        moon_objs = {moon_id: eph[moon_id] for moon_id in moon_map}
+        moon_objs = _get_jovian_moon_objects(eph)
+        if not moon_objs:
+            return []
     except KeyError:
         return []
 
     events = []
 
     # Process each moon
-    for moon_id, moon_name in moon_map.items():
-        moon_obj = moon_objs[moon_id]
+    for moon_name, moon_obj in moon_objs.items():
 
         def state_func(t):
             # Vectorized state function for find_discrete
@@ -670,31 +852,51 @@ def find_jovian_moon_events(observer, start_date, end_date):
             is_array = hasattr(t, "shape") and t.shape != ()
             res = np.zeros(len(t) if is_array else 1, dtype=int)
 
-            # Jupiter observed from Earth
-            # We turn off light deflection by Saturn to avoid requiring Saturn ephemeris
-            # which is often not included in Jovian moon kernels.
+            # 1. Earth perspective (Transits and Occultations)
             j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
-            # Include atmospheric refraction for high-precision visibility check
             alt, _, dist = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            # Moon observed from Earth
             m_obs = observer.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
             sep_e = j_obs.separation_from(m_obs).degrees
-            j_rad_e = np.degrees(np.arcsin(astronomy.JUPITER_RADIUS_KM / dist.km))
 
-            # Earth perspective
+            # 3D Ellipsoidal Model for Jupiter radii (Earth perspective)
+            De = np.radians(planetary.get_sub_observer_latitude("jupiter", t))
+            j_rad_km = astronomy.JUPITER_RADIUS_KM * np.sqrt(
+                1
+                - ((astronomy.JUPITER_RADIUS_KM**2 - astronomy.JUPITER_POLAR_RADIUS_KM**2) / (astronomy.JUPITER_RADIUS_KM**2))
+                * np.cos(De) ** 2
+            )
+            j_rad_e = np.degrees(np.arcsin(j_rad_km / dist.km))
+
             in_transit = (sep_e < j_rad_e) & (m_obs.distance().km < dist.km)
             in_occultation = (sep_e < j_rad_e) & (m_obs.distance().km >= dist.km)
 
-            # Jupiter and Moon observed from Sun
+            # 2. Sun perspective (Shadows and Eclipses)
             j_sun = sun.at(t).observe(jupiter).apparent(deflectors=(10, 599))
             m_sun = sun.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
             sep_s = j_sun.separation_from(m_sun).degrees
-            j_rad_s = np.degrees(
-                np.arcsin(astronomy.JUPITER_RADIUS_KM / j_sun.distance().km)
-            )
 
-            # Sun perspective
+            # 3D Ellipsoidal Model for Jupiter radii (Sun perspective)
+            pos_sj = sun.at(t).observe(jupiter)
+            v_js = -pos_sj.position.au / pos_sj.distance().au
+            t_eval = ts.tt_jd(t.tt - pos_sj.light_time)
+            alpha0_rad = np.radians(planetary.get_planet_pole_coords("jupiter", t_eval)[0])
+            delta0_rad = np.radians(planetary.get_planet_pole_coords("jupiter", t_eval)[1])
+            p = np.array([np.cos(delta0_rad)*np.cos(alpha0_rad), np.cos(delta0_rad)*np.sin(alpha0_rad), np.sin(delta0_rad)])
+
+            if is_array:
+                sin_Ds = np.sum(p * v_js, axis=0)
+            else:
+                sin_Ds = np.dot(p, v_js)
+
+            Ds_rad = np.arcsin(np.clip(sin_Ds, -1.0, 1.0))
+            j_rad_km_s = astronomy.JUPITER_RADIUS_KM * np.sqrt(
+                1
+                - ((astronomy.JUPITER_RADIUS_KM**2 - astronomy.JUPITER_POLAR_RADIUS_KM**2) / (astronomy.JUPITER_RADIUS_KM**2))
+                * np.cos(Ds_rad) ** 2
+            )
+            j_rad_s = np.degrees(np.arcsin(j_rad_km_s / j_sun.distance().km))
+
             in_shadow = (sep_s < j_rad_s) & (m_sun.distance().km < j_sun.distance().km)
             in_eclipse = (sep_s < j_rad_s) & (
                 m_sun.distance().km >= j_sun.distance().km
@@ -704,13 +906,18 @@ def find_jovian_moon_events(observer, start_date, end_date):
             sun_alt = (
                 observer.at(t)
                 .observe(sun)
-                .apparent()
+                .apparent(deflectors=(10, 599))
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                 .degrees
             )
 
-            # Visibility from Earth: Jupiter above horizon and Sun below -6 degrees
-            visible = (alt.degrees > 0) & (sun_alt <= -6)
+            # Visibility from Earth
+            for vf in observer.vector_functions:
+                if hasattr(vf, "elevation") and vf.elevation.m == -9999:
+                    visible = np.ones_like(alt.degrees, dtype=bool) if hasattr(t, "shape") else True
+                    break
+            else:
+                visible = (alt.degrees > 0) & (sun_alt <= -6)
 
             if hasattr(t, "shape"):
                 res[visible & in_transit] = 1
@@ -767,8 +974,6 @@ def find_jovian_moon_events(observer, start_date, end_date):
             y_prev = ye
 
     return events
-
-
 def find_lunar_planetary_occultations(observer, start_date, end_date):
     """
     Finds occultations of planets by the Moon for a specific observer.

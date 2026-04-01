@@ -33,6 +33,7 @@ class EventType(str, Enum):
     LUNAR_PLANETARY_OCCULTATIONS = "lunar_planetary_occultations"
     MESSIER_CULMINATIONS = "messier_culminations"
     JOVIAN_MOON_EVENTS = "jovian_moon_events"
+    JOVIAN_MUTUAL_EVENTS = "jovian_mutual_events"
     SATURN_RING_CROSSINGS = "saturn_ring_crossings"
     JUPITER_GRS_TRANSITS = "jupiter_grs_transits"
     PLANET_MESSIER_CONJUNCTIONS = "planet_messier_conjunctions"
