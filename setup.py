@@ -26,7 +26,7 @@ setup(
     install_requires=[
         "aenum>=2.0.6",
         "ephem>=3.7.6.0",
-        "skyfield",
+        "skyfield>=1.54",
         "scipy>=1.0.0",
         "matplotlib>=2.1.2",
         "numpy>=1.14.0",
