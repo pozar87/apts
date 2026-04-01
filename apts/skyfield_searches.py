@@ -2447,7 +2447,7 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
                     events.append(
                         {
                             "date": t.utc_datetime(),
-                            "event": "Culmination",
+                            "event": f"{simple_name} Culmination",
                             "object": simple_name,
                             "type": "Culmination",
                             "altitude": float(alt),
@@ -2578,7 +2578,7 @@ def find_object_culminations(
                 events.append(
                     {
                         "date": t.utc_datetime(),
-                        "event": "Culmination",
+                        "event": f"{name} Culmination",
                         "object": name,
                         "type": "Messier Culmination",
                         "altitude": float(alt),
@@ -2613,7 +2613,7 @@ def find_object_culminations(
                     events.append(
                         {
                             "date": t.utc_datetime(),
-                            "event": "Culmination",
+                            "event": f"{name} Culmination",
                             "object": name,
                             "type": "Messier Culmination",
                             "altitude": float(alt),
