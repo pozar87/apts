@@ -61,6 +61,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             "lunar_features": True,
             "planet_planet_occultations": True,
             "mars_closest_approach": True,
+            "jovian_mutual_events": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -92,7 +93,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         # 36: supermoons
         # 37: planetary_dichotomy
         # 38: mars_closest_approach
-        num_events = 38
+        # 39: jovian_mutual_events
+        num_events = 39
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []

@@ -1501,7 +1501,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 self.obs.place.weather.get_critical_data.return_value = mock_weather_df
                 self.obs._weather_analysis = None
 
-                results = self.obs.get_hourly_weather_analysis()
+                results = self.obs.get_hourly_weather_analysis(force=True)
                 self.assertTrue(results[0]["is_good_hour"], f"Boundary value {val} for {field} should be good. Reasons: {results[0].get('reasons')}")
 
 

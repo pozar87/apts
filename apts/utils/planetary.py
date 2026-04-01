@@ -156,7 +156,7 @@ def get_planet_distance_km(
     obs_obj = observer if observer is not None else eph["earth"]
     planet_obj = get_skyfield_obj(planet_name)
     res = cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
-    return float(res) if np.isscalar(res) else res
+    return float(cast(Any, res)) if np.isscalar(res) else res
 
 
 def get_planet_pole_coords(
@@ -232,7 +232,7 @@ def get_sub_observer_latitude(planet_name: str, time: Any) -> Union[float, np.nd
     De_rad = np.arcsin(np.clip(sin_De, -1.0, 1.0))
 
     res = np.degrees(De_rad)
-    return float(res) if np.isscalar(res) else res
+    return float(cast(Any, res)) if np.isscalar(res) else res
 
 
 def get_planet_angular_diameter(
@@ -274,7 +274,7 @@ def get_planet_angular_diameter(
 
     # Convert to arcseconds
     res = np.degrees(alpha_rad) * 3600.0
-    return float(res) if np.isscalar(res) else res
+    return float(cast(Any, res)) if np.isscalar(res) else res
 
 
 def get_saturn_pole(
@@ -343,7 +343,7 @@ def get_saturn_ring_details(time: Any) -> dict:
     minor_arcsec = major_arcsec * abs(np.sin(B_rad))
 
     def _maybe_float(val):
-        return float(val) if np.isscalar(val) else val
+        return float(cast(Any, val)) if np.isscalar(val) else val
 
     return {
         "tilt_degrees": _maybe_float(B_deg),
