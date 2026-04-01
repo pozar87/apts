@@ -2,6 +2,20 @@ from ..base import Telescope
 
 class Sky_watcherTelescope(Telescope):
     _DATABASE = {
+        'Sky_Watcher_130PDS_Newtonian': {'aperture_mm': 130,
+         'bf_role': '',
+         'brand': 'Sky-Watcher',
+         'central_obstruction_mm': 47,
+         'cside_gender': 'Female',
+         'cside_thread': '2"',
+         'focal_length_mm': 650,
+         'mass': 4000,
+         'name': '130PDS Newtonian',
+         'optical_length': 0,
+         'reversible': False,
+         'tside_gender': '',
+         'tside_thread': '',
+         'type': 'newtonian_reflector'},
         'Sky_Watcher_150PDS_Newtonian': {'aperture_mm': 150,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -1178,6 +1192,10 @@ class Sky_watcherTelescope(Telescope):
     @classmethod
     def Sky_Watcher_Quattro_300P(cls):
         return cls.from_database(cls._DATABASE['Sky_Watcher_Quattro_300P'])
+
+    @classmethod
+    def Sky_Watcher_130PDS_Newtonian(cls):
+        return cls.from_database(cls._DATABASE['Sky_Watcher_130PDS_Newtonian'])
 
     @classmethod
     def Sky_Watcher_150PDS_Newtonian(cls):
