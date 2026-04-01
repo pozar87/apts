@@ -772,13 +772,17 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
 
     if name_norm == "moon":
         # Moon magnitude using Krisciunas & Schaefer (1991)
+        # Consolidate observation to a single call to improve performance
+        planet_obj = get_skyfield_obj("moon")
+        astrometric = cast(Any, earth).at(time).observe(planet_obj)
+
         # alpha is the phase angle Sun-Moon-Earth in degrees
-        alpha = get_planet_phase_angle("moon", time)
+        alpha = astrometric.phase_angle(sun).degrees
         # V(R, alpha) = -12.73 + 0.026 * |alpha| + 4e-9 * alpha^4
         v_base = -12.73 + 0.026 * np.abs(alpha) + 4.0e-9 * (alpha**4)
 
         # Distance correction: delta is distance in km
-        dist_km = get_moon_distance(time)
+        dist_km = astrometric.distance().km
         # correction = 5 * log10(dist / 384400)
         v_dist = 5 * np.log10(dist_km / 384400.0)
         return v_base + v_dist
