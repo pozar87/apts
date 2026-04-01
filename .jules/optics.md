@@ -630,3 +630,19 @@
     - http://skywatcher.com/series/astrophotography-reflectors/
     - https://www.skywatcherusa.com/products/sky-watcher-quattro-250p-imaging-newtonian-10-254-mm
     - https://www.skywatcherusa.com/products/sky-watcher-quattro-300p-imaging-newtonian-12-305-mm
+
+## 2026-05-21 - Audit of Sky-Watcher Evolux and Explorer/Quattro series
+
+- **Items:** Evolux 62ED, Evolux 82ED, Explorer 200P, Quattro 200P.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/sky_watcher.py`
+- **Verified Specs (Source: Sky-Watcher Global / First Light Optics):**
+    - **Evolux 62ED:** Aperture 62mm, FL 400mm, Mass 2.5kg (2500g). CO 0mm.
+    - **Evolux 82ED:** Aperture 82mm, FL 530mm, Mass 2.92kg (2920g). CO 0mm.
+    - **Explorer 200P:** Aperture 200mm, FL 1000mm, Mass 8.8kg (8800g). CO 52mm.
+    - **Quattro 200P:** Aperture 205mm, FL 800mm, Mass 9.5kg (9500g). CO 70mm.
+- **Action:** Updated all models with verified physical specs and added official source URLs in comments. Corrected Quattro 200P aperture to 205mm. Verified via static analysis of the database.
+- **Source URLs:**
+    - http://www.skywatcher.com/product/evolux-62ed/
+    - http://www.skywatcher.com/product/evolux-82ed/
+    - https://www.firstlightoptics.com/reflectors/skywatcher-explorer-200p-ota.html
+    - http://skywatcher.com/product/quattro-200-st/

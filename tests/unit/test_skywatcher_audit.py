@@ -35,7 +35,7 @@ def test_skywatcher_quattro_specs():
 
     # Quattro 200P
     q200 = Sky_watcherTelescope.Sky_Watcher_Quattro_200P()
-    assert q200.aperture.magnitude == 200
+    assert q200.aperture.magnitude == 205
     assert q200.focal_length.magnitude == 800
     assert q200.mass.to('g').magnitude == 9500
     assert q200.central_obstruction.magnitude == 70
