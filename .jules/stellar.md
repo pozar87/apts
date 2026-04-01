@@ -337,3 +337,28 @@
 - Updated `apts/opticalequipment/camera/vendors/zwo.py` and `apts/opticalequipment/telescope/vendors/zwo.py` / `dwarflab.py`.
 - Verified with `tests/unit/test_stellar_audit_v2.py`.
 - Verified no regressions in existing optics tests.
+
+## 2026-03-20 - Seestar Sensors and Askar Reduced Variants
+
+### Observe
+- Users of Seestar smart telescopes often want to model their specific sensors for simulation or custom setups, but these were missing from the camera database.
+- Askar APO refractors (103, 120, 140) are popular for their dedicated reducers, which were missing from the database.
+
+### Target
+- Priority 2: Add missing popular camera and telescopes to the internal database.
+
+### Calibrate
+- **Seestar Sensors:**
+  - S50: IMX462, 1920x1080, 2.9µm, 12ke- full well.
+  - S30: IMX662, 1920x1080, 2.9µm, 38.2ke- full well.
+  - S30 Pro: IMX678, 3840x2160, 2.0µm, 11.27ke- full well.
+- **Askar APO Reduced:** Calculated focal lengths with 0.8x reducer:
+  - 103APO: 560mm
+  - 120APO: 672mm
+  - 140APO: 784mm
+
+### Develop
+- Added Seestar sensor entries to `apts/opticalequipment/camera/vendors/zwo.py`.
+- Added reduced focal length variants for Askar APO series to `apts/opticalequipment/telescope/vendors/askar.py`.
+- Verified with `tests/unit/test_new_equipment_audit_v3.py`.
+- All 606 unit tests passed.

@@ -24,6 +24,9 @@ class AskarTelescope(Telescope):
         'Askar_ACL200': {'brand': 'Askar', 'name': 'ACL200', 'type': 'type_camera_lens', 'optical_length': 0, 'mass': 1800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 50, 'focal_length_mm': 200},
         'Askar_SQA55': {'brand': 'Askar', 'name': 'SQA55', 'type': 'type_refractor', 'optical_length': 0, 'mass': 1840, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 55, 'focal_length_mm': 264}, # Verified via specs
         'Askar_71F': {'brand': 'Askar', 'name': '71F', 'type': 'type_refractor', 'optical_length': 0, 'mass': 3000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 71, 'focal_length_mm': 490}, # Verified via specs
+        'Askar_103APO_Reduced': {'brand': 'Askar', 'name': '103APO (Reduced)', 'type': 'type_refractor', 'optical_length': 0, 'mass': 5500, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 103, 'focal_length_mm': 560}, # With 0.8x reducer
+        'Askar_120APO_Reduced': {'brand': 'Askar', 'name': '120APO (Reduced)', 'type': 'type_refractor', 'optical_length': 0, 'mass': 6500, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 120, 'focal_length_mm': 672}, # With 0.8x reducer
+        'Askar_140APO_Reduced': {'brand': 'Askar', 'name': '140APO (Reduced)', 'type': 'type_refractor', 'optical_length': 0, 'mass': 10000, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 140, 'focal_length_mm': 784}, # With 0.8x reducer
     }
 
     @classmethod
@@ -113,3 +116,15 @@ class AskarTelescope(Telescope):
     @classmethod
     def Askar_71F(cls):
         return cls.from_database(cls._DATABASE['Askar_71F'])
+
+    @classmethod
+    def Askar_103APO_Reduced(cls):
+        return cls.from_database(cls._DATABASE['Askar_103APO_Reduced'])
+
+    @classmethod
+    def Askar_120APO_Reduced(cls):
+        return cls.from_database(cls._DATABASE['Askar_120APO_Reduced'])
+
+    @classmethod
+    def Askar_140APO_Reduced(cls):
+        return cls.from_database(cls._DATABASE['Askar_140APO_Reduced'])

@@ -9,6 +9,7 @@ from requests_mock import ANY
 from apts.observations import Observation
 from apts.conditions import Conditions
 import pytz
+import pandas as pd
 from apts.i18n import gettext_
 
 # MOCK DATA
@@ -138,11 +139,10 @@ def test_weather_providers(
         assert data["ozone"] == 300
     elif provider_name == "openweathermap":
         assert data["windSpeed"] == 18.0  # 5 m/s * 3.6 = 18 km/h
-        assert data["ozone"] == "none"  # Not provided by OWM
+        assert pd.isna(data["ozone"])  # Not provided by OWM
     elif provider_name == "meteoblue":
         assert data["windSpeed"] == 5
-        assert data["ozone"] == "none"
-
+        assert pd.isna(data["ozone"])
 
 @pytest.mark.parametrize(
     "provider_name, mock_response",
