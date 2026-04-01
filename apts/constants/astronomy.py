@@ -32,13 +32,6 @@ GANYMEDE_RADIUS_KM = 2631.2
 CALLISTO_RADIUS_KM = 2410.3
 SUN_RADIUS_KM = 695700.0
 
-# Galilean Moons Radius in km
-# Source: IAU 2015 Standards / Archinal et al. (2018)
-IO_RADIUS_KM = 1821.5
-EUROPA_RADIUS_KM = 1560.8
-GANYMEDE_RADIUS_KM = 2634.1
-CALLISTO_RADIUS_KM = 2410.3
-
 # Saturn Ring dimensions (A ring outer edge)
 # Source: PDS Rings Node / Cassini Team
 SATURN_RING_OUTER_RADIUS_KM = 136775.0

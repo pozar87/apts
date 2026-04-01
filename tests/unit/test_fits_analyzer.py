@@ -3,7 +3,6 @@ import numpy as np
 import struct
 import zlib
 import math
-import warnings
 from unittest.mock import patch, MagicMock, mock_open
 from apts.utils.fits_analyzer import FitsAnalyzer
 
@@ -130,9 +129,7 @@ class TestFitsAnalyzer(unittest.TestCase):
 
         # Test no sources found
         analyzer.data = np.zeros((50, 50))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertEqual(analyzer.detect_stars(), [])
+        self.assertEqual(analyzer.detect_stars(), [])
 
     def test_analyze_and_classification(self):
         # Create image with stars elongated radially (too short backfocus)

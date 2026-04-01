@@ -2,20 +2,6 @@ from ..base import Telescope
 
 class Sky_watcherTelescope(Telescope):
     _DATABASE = {
-        'Sky_Watcher_130PDS_Newtonian': {'aperture_mm': 130,
-         'bf_role': '',
-         'brand': 'Sky-Watcher',
-         'central_obstruction_mm': 47,
-         'cside_gender': 'Female',
-         'cside_thread': '2"',
-         'focal_length_mm': 650,
-         'mass': 4000,
-         'name': '130PDS Newtonian',
-         'optical_length': 0,
-         'reversible': False,
-         'tside_gender': '',
-         'tside_thread': '',
-         'type': 'newtonian_reflector'},
         'Sky_Watcher_150PDS_Newtonian': {'aperture_mm': 150,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -113,7 +99,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs (2.5 kg OTA) http://www.skywatcher.com/product/evolux-62ed/
+         'type': 'type_refractor'},
         'Sky_Watcher_Evolux_82ED': {'aperture_mm': 82,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -127,7 +113,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs (2.92 kg OTA) http://www.skywatcher.com/product/evolux-82ed/
+         'type': 'type_refractor'},
         'Sky_Watcher_Black_Diamond_ED120': {'aperture_mm': 120,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -233,7 +219,7 @@ class Sky_watcherTelescope(Telescope):
          'cside_gender': 'Female',
          'cside_thread': 'M54',
          'focal_length_mm': 1050,
-         'mass': 15000,
+         'mass': 14520,
          'name': 'Esprit 150ED',
          'optical_length': 0,
          'reversible': False,
@@ -421,7 +407,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'newtonian_reflector'}, # Verified via manufacturer technical specs (52mm CO, 8.8kg OTA) https://www.firstlightoptics.com/reflectors/skywatcher-explorer-200p-ota.html
+         'type': 'newtonian_reflector'}, # Verified via manufacturer technical specs (52mm CO, 8.8kg OTA)
         'Sky_Watcher_Explorer_250P': {'aperture_mm': 254,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -647,11 +633,11 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'newtonian_reflector'}, # Verified via Sky-Watcher official specs (205mm diameter, 9.5kg tube) http://skywatcher.com/product/quattro-200-st/
+         'type': 'newtonian_reflector'},
         'Sky_Watcher_Quattro_250P': {'aperture_mm': 254,
          'bf_role': '',
          'brand': 'Sky-Watcher',
-         'central_obstruction_mm': 89,
+         'central_obstruction_mm': 82,
          'cside_gender': 'Female',
          'cside_thread': 'M48',
          'focal_length_mm': 1000,
@@ -665,7 +651,7 @@ class Sky_watcherTelescope(Telescope):
         'Sky_Watcher_Quattro_300P': {'aperture_mm': 305,
          'bf_role': '',
          'brand': 'Sky-Watcher',
-         'central_obstruction_mm': 102,
+         'central_obstruction_mm': 100,
          'cside_gender': 'Female',
          'cside_thread': 'M48',
          'focal_length_mm': 1200,
@@ -1077,7 +1063,7 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'newtonian_reflector'},
-        'Sky_Watcher_Traditional_Dob_8': {'aperture_mm': 200,
+        'Sky_Watcher_Traditional_Dob_8': {'aperture_mm': 203.2,
          'bf_role': '',
          'brand': 'Sky-Watcher',
          'central_obstruction_mm': 47,
@@ -1192,10 +1178,6 @@ class Sky_watcherTelescope(Telescope):
     @classmethod
     def Sky_Watcher_Quattro_300P(cls):
         return cls.from_database(cls._DATABASE['Sky_Watcher_Quattro_300P'])
-
-    @classmethod
-    def Sky_Watcher_130PDS_Newtonian(cls):
-        return cls.from_database(cls._DATABASE['Sky_Watcher_130PDS_Newtonian'])
 
     @classmethod
     def Sky_Watcher_150PDS_Newtonian(cls):

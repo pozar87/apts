@@ -82,15 +82,6 @@ class Weather:
         )
         if self.data is not None and not cast(pd.DataFrame, self.data).empty:
             logger.info(f"Successfully downloaded weather data from {provider_name}.")
-
-            # Ensure all required columns are present and numeric where appropriate
-            for col in provider.REQUIRED_COLUMNS:
-                if col not in self.data.columns:
-                    self.data[col] = "none"
-
-                if col not in ["time", "summary", "precipType", "moonWaxing"]:
-                    self.data[col] = pd.to_numeric(self.data[col], errors="coerce")
-
             ts = get_timescale()
             times = ts.from_datetimes(self.data["time"].tolist())
             illumination, is_waxing = get_moon_illumination_details(times)
@@ -110,9 +101,7 @@ class Weather:
             if col not in columns:
                 columns.append(col)
 
-        # Ensure all requested columns exist in self.data.
-        # This is now also handled in __init__, but we keep it here for safety
-        # and to handle cases where 'rows' contains columns not in REQUIRED_COLUMNS.
+        # Ensure all requested columns exist in self.data
         for col in columns:
             if col not in self.data.columns:
                 self.data[col] = "none"

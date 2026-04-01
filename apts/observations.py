@@ -769,10 +769,6 @@ class Observation:
         # Force a minimal check for is_moon_condition_met to allow it returning reasons later if needed,
         # but the current logic is to early-exit.
 
-        if not force and not self._is_moon_condition_met(effective_conditions):
-            logger.info("Skipping weather analysis due to moon condition.")
-            return []
-
         if self.place.weather is None:
             self.place.get_weather(
                 provider_name=provider_name,
@@ -780,16 +776,14 @@ class Observation:
                 observation_window=(self.start, self.stop),
                 force=force,
             )
-            if not force and not self._is_moon_condition_met(effective_conditions):
-                logger.info("Skipping weather analysis due to moon condition.")
-                return []
-
             if self.place.weather is None:
                 logger.warning("Weather data unavailable after fetch attempt.")
                 return []
 
         if not all([self.start, self.stop]):
-            logger.warning("Observation window (start, stop) is not fully defined.")
+            logger.warning(
+                "Observation window (start, stop) is not fully defined."
+            )
             return []
 
         hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
@@ -831,19 +825,13 @@ class Observation:
             hourly_data["sqm"] = 21.0
 
         # Calculate moon altitudes exactly for each weather data point if not already cached
-        if (
-            "moon_altitude" in hourly_data.columns
-            and not hourly_data["moon_altitude"].isna().all()
-        ):
+        if "moon_altitude" in hourly_data.columns and not hourly_data["moon_altitude"].isna().all():
             hourly_data["Altitude"] = hourly_data["moon_altitude"]
         else:
             ts = self.place.ts
             times = ts.from_datetimes(hourly_data["time"].tolist())
             alt, _, _ = (
-                self.place.observer.at(times)
-                .observe(self.place.moon)
-                .apparent()
-                .altaz()
+                self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
             )
             hourly_data["Altitude"] = alt.degrees
 
@@ -937,9 +925,7 @@ class Observation:
                     reasons = []
                     if is_bad_clouds.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%"
-                            )
+                            gettext_("Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%")
                             % {
                                 "cloud_cover": f"{row['cloudCover']:.1f}",
                                 "max_clouds": effective_conditions.max_clouds,
@@ -967,9 +953,7 @@ class Observation:
                         )
                     if is_bad_wind.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h"
-                            )
+                            gettext_("Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h")
                             % {
                                 "wind_speed": f"{row['windSpeed']:.1f}",
                                 "max_wind": effective_conditions.max_wind,
@@ -977,9 +961,7 @@ class Observation:
                         )
                     if is_bad_temp.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)"
-                            )
+                            gettext_("Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)")
                             % {
                                 "temp": f"{row['temperature']:.1f}",
                                 "min_temp": effective_conditions.min_temperature,
@@ -988,9 +970,7 @@ class Observation:
                         )
                     if is_bad_vis.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Visibility %(vis)s km below limit of %(min_vis)s km"
-                            )
+                            gettext_("Visibility %(vis)s km below limit of %(min_vis)s km")
                             % {
                                 "vis": f"{row['visibility']:.1f}",
                                 "min_vis": effective_conditions.min_visibility,
@@ -1026,9 +1006,7 @@ class Observation:
                         )
                     if is_bad_seeing.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec"
-                            )
+                            gettext_("Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec")
                             % {
                                 "seeing": f"{row['seeing']:.1f}",
                                 "max_seeing": effective_conditions.max_seeing,
@@ -1036,9 +1014,7 @@ class Observation:
                         )
                     if is_bad_sqm.iloc[idx]:
                         reasons.append(
-                            gettext_(
-                                "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
-                            )
+                            gettext_("Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²")
                             % {
                                 "sqm": f"{row['sqm']:.1f}",
                                 "min_sqm": effective_conditions.min_sqm,
