@@ -99,7 +99,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_refractor'},
+         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs (2.5 kg OTA) http://www.skywatcher.com/product/evolux-62ed/
         'Sky_Watcher_Evolux_82ED': {'aperture_mm': 82,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -113,7 +113,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_refractor'},
+         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs (2.92 kg OTA) http://www.skywatcher.com/product/evolux-82ed/
         'Sky_Watcher_Black_Diamond_ED120': {'aperture_mm': 120,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -407,7 +407,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'newtonian_reflector'}, # Verified via manufacturer technical specs (52mm CO, 8.8kg OTA)
+         'type': 'newtonian_reflector'}, # Verified via manufacturer technical specs (52mm CO, 8.8kg OTA) https://www.firstlightoptics.com/reflectors/skywatcher-explorer-200p-ota.html
         'Sky_Watcher_Explorer_250P': {'aperture_mm': 254,
          'bf_role': '',
          'brand': 'Sky-Watcher',
@@ -620,7 +620,7 @@ class Sky_watcherTelescope(Telescope):
          'tside_gender': '',
          'tside_thread': '',
          'type': 'newtonian_reflector'},
-        'Sky_Watcher_Quattro_200P': {'aperture_mm': 200,
+        'Sky_Watcher_Quattro_200P': {'aperture_mm': 205,
          'bf_role': '',
          'brand': 'Sky-Watcher',
          'central_obstruction_mm': 70,
@@ -633,7 +633,7 @@ class Sky_watcherTelescope(Telescope):
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'newtonian_reflector'},
+         'type': 'newtonian_reflector'}, # Verified via Sky-Watcher official specs (205mm diameter, 9.5kg tube) http://skywatcher.com/product/quattro-200-st/
         'Sky_Watcher_Quattro_250P': {'aperture_mm': 254,
          'bf_role': '',
          'brand': 'Sky-Watcher',
