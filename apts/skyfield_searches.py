@@ -214,11 +214,9 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                 res = np.zeros(len(t) if is_array else 1, dtype=int)
 
                 # 1. Earth perspective (Occultations)
-                # Oracle: use apparent positions with light-travel time from Earth center
-                eph_ = get_ephemeris()
-                earth_center = cast(Any, eph_["earth"])
-                m1_e = earth_center.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
-                m2_e = earth_center.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
+                # Oracle: use topocentric apparent positions for maximum precision
+                m1_e = observer.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
+                m2_e = observer.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
                 sep_e = m1_e.separation_from(m2_e).degrees
 
                 # Radii from constants (Galilean moons are spherical enough for this)
@@ -546,84 +544,90 @@ def find_golden_blue_hours(observer, start_date, end_date):
     y_prev = sun_state(t0)
 
     for ti, yi in zip(t, y):
-        # Transitions:
-        # 0 -> 1: Rising, Blue Hour Start (-6)
-        # 1 -> 2: Rising, Blue Hour End / Golden Hour Start (-4)
-        # 2 -> 3: Rising, Golden Hour End (6)
-        # 3 -> 2: Setting, Golden Hour Start (6)
-        # 2 -> 1: Setting, Golden Hour End / Blue Hour Start (-4)
-        # 1 -> 0: Setting, Blue Hour End (-6)
+        # Oracle: Handle potential state jumps (e.g., 0 -> 2) by iterating through
+        # all intermediate transitions. This ensures accuracy at high latitudes
+        # or when using coarser time steps.
+        step = 1 if yi > y_prev else -1
+        for current_y in range(y_prev + step, yi + step, step):
+            prev_y = current_y - step
+            # Transitions:
+            # 0 -> 1: Rising, Blue Hour Start (-6)
+            # 1 -> 2: Rising, Blue Hour End / Golden Hour Start (-4)
+            # 2 -> 3: Rising, Golden Hour End (6)
+            # 3 -> 2: Setting, Golden Hour Start (6)
+            # 2 -> 1: Setting, Golden Hour End / Blue Hour Start (-4)
+            # 1 -> 0: Setting, Blue Hour End (-6)
 
-        if y_prev == 0 and yi == 1:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "Start",
-                    "type": "Blue Hour",
-                }
-            )
-        elif y_prev == 1 and yi == 2:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "End",
-                    "type": "Blue Hour",
-                }
-            )
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "Start",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 2 and yi == 3:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "End",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 3 and yi == 2:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "Start",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 2 and yi == 1:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "End",
-                    "type": "Golden Hour",
-                }
-            )
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "Start",
-                    "type": "Blue Hour",
-                }
-            )
-        elif y_prev == 1 and yi == 0:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "End",
-                    "type": "Blue Hour",
-                }
-            )
+            if prev_y == 0 and current_y == 1:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "Start",
+                        "type": "Blue Hour",
+                    }
+                )
+            elif prev_y == 1 and current_y == 2:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "End",
+                        "type": "Blue Hour",
+                    }
+                )
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "Start",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 2 and current_y == 3:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "End",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 3 and current_y == 2:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "Start",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 2 and current_y == 1:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "End",
+                        "type": "Golden Hour",
+                    }
+                )
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "Start",
+                        "type": "Blue Hour",
+                    }
+                )
+            elif prev_y == 1 and current_y == 0:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "End",
+                        "type": "Blue Hour",
+                    }
+                )
 
         y_prev = yi
 
@@ -1903,6 +1907,7 @@ def _find_satellite_flybys(
     magnitude_threshold=None,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-18.0,
 ):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -1940,7 +1945,7 @@ def _find_satellite_flybys(
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)
         )
-        if sun_alt.degrees > -18:  # not dark enough
+        if sun_alt.degrees > sun_altitude_threshold:  # not dark enough
             continue
 
         # Topocentric satellite position
@@ -2036,7 +2041,9 @@ def find_iss_flybys(
     magnitude_threshold=-1.5,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-6.0,
 ):
+    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as bright ISS is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -2048,6 +2055,7 @@ def find_iss_flybys(
         magnitude_threshold,
         peak_altitude_threshold,
         rise_altitude_threshold,
+        sun_altitude_threshold,
     )
 
 
@@ -2058,7 +2066,9 @@ def find_tiangong_flybys(
     end_date,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-6.0,
 ):
+    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as Tiangong is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -2070,6 +2080,7 @@ def find_tiangong_flybys(
         None,  # No magnitude threshold for Tiangong
         peak_altitude_threshold,
         rise_altitude_threshold,
+        sun_altitude_threshold,
     )
 
 
