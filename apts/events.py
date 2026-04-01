@@ -322,7 +322,7 @@ class AstronomicalEvents:
                         )
                     )
                 else:
-                    df[col] = df[col].map(translation_map)
+                    df[col] = df[col].apply(lambda x: translation_map.get(x, x))
 
         return df
 

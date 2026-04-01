@@ -1,7 +1,6 @@
 import unittest
 from datetime import datetime, timedelta
 import pandas as pd
-import numpy as np
 import pytz
 from unittest.mock import MagicMock, patch
 

@@ -12,7 +12,7 @@ class TestObservationTimeLimitLogic(unittest.TestCase):
         self.place.local_timezone = datetime.timezone.utc
         self.place.ts = MagicMock()
         # Mock from_datetimes to return something that we can use to match calls if needed
-        self.place.ts.from_datetimes.side_effect = lambda l: MagicMock(length=len(l))
+        self.place.ts.from_datetimes.side_effect = lambda args_list: MagicMock(length=len(args_list))
 
         self.equipment = MagicMock()
         self.conditions = Conditions()
