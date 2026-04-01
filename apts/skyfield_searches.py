@@ -14,12 +14,23 @@ from .utils import planetary
 def find_meteor_showers(observer, start_date, end_date):
     """
     Finds meteor shower peaks and calculates radiant visibility for a given observer.
+    Meteor shower peaks are determined by the Sun's ecliptic longitude (λ⊙).
+
+    The presence and altitude of the Moon during the peak is a critical factor for
+    astrophotographers, as high lunar illumination can significantly wash out
+    fainter meteors.
+
+    :param observer: Skyfield observer (Topos or VectorSum).
+    :param start_date: Start of the search range (datetime).
+    :param end_date: End of the search range (datetime).
+    :return: List of event dictionaries.
     """
     from datetime import datetime
     ts = get_timescale()
     utc = start_date.tzinfo
     eph = get_ephemeris()
     sun = eph["sun"]
+    moon = eph["moon"]
 
     showers = {
         "Quadrantids": {
@@ -98,7 +109,7 @@ def find_meteor_showers(observer, start_date, end_date):
             if start_date <= s_date <= end_date:
                 events.append({
                     "date": s_date,
-                    "event": "Meteor Shower",
+                    "event": f"{shower} Start",
                     "shower_name": shower,
                     "phase": "Start",
                     "type": "Meteor Shower",
@@ -115,21 +126,33 @@ def find_meteor_showers(observer, start_date, end_date):
             if start_date <= e_date <= end_date:
                 events.append({
                     "date": e_date,
-                    "event": "Meteor Shower",
+                    "event": f"{shower} End",
                     "shower_name": shower,
                     "phase": "End",
                     "type": "Meteor Shower",
                 })
 
     if peak_candidates:
-        # Calculate Sun altitudes in bulk (one body at multiple times is supported)
+        # Calculate Sun and Moon data in bulk for efficiency
         peak_times = ts.from_datetimes([p["peak_date"] for p in peak_candidates])
-        sun_alts, _, _ = (
+
+        sun_alts = (
             observer.at(peak_times)
             .observe(sun)
             .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
         )
+
+        moon_alts = (
+            observer.at(peak_times)
+            .observe(moon)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+
+        moon_illums = planetary.get_moon_illumination(peak_times)
 
         for i, p in enumerate(peak_candidates):
             # For radiants, we observe individually to avoid pairwise N-to-N vectorization
@@ -144,16 +167,19 @@ def find_meteor_showers(observer, start_date, end_date):
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)
             )
 
-            s_alt = sun_alts.degrees[i]
+            s_alt = sun_alts[i]
             is_visible = r_alt.degrees > 0 and s_alt <= -6
 
             events.append({
                 "date": p["peak_date"],
-                "event": "Meteor Shower",
+                "event": f"{p['shower_name']} Peak",
                 "shower_name": p["shower_name"],
                 "phase": "Peak",
                 "type": "Meteor Shower",
                 "altitude": float(r_alt.degrees),
+                "sun_altitude": float(s_alt),
+                "moon_altitude": float(moon_alts[i]),
+                "moon_illumination": float(moon_illums[i]),
                 "is_visible": bool(is_visible),
             })
 
