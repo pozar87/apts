@@ -700,8 +700,8 @@ def find_jovian_mutual_events(observer, start_date, end_date):
 
         def occ_state_func(t):
             # One moon occults another from Earth's perspective
-            m1_obs = observer.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
-            m2_obs = observer.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
+            m1_obs = observer.at(t).observe(m1_obj).apparent()
+            m2_obs = observer.at(t).observe(m2_obj).apparent()
 
             sep = m1_obs.separation_from(m2_obs).degrees
 
@@ -712,13 +712,13 @@ def find_jovian_mutual_events(observer, start_date, end_date):
             in_occultation = sep < (r1 + r2)
 
             # Visibility: Jupiter above horizon and Sun below -6
-            j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+            j_obs = observer.at(t).observe(jupiter).apparent()
             alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
             sun_alt = (
                 observer.at(t)
                 .observe(sun)
-                .apparent(deflectors=(10, 599))
+                .apparent()
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                 .degrees
             )
@@ -763,8 +763,8 @@ def find_jovian_mutual_events(observer, start_date, end_date):
             def eclipse_state_func(t):
                 # Moon S enters shadow of Moon P (shadow cast by Sun)
                 # Observed from Sun
-                p_sun = sun.at(t).observe(p_obj).apparent(deflectors=(10, 599))
-                s_sun = sun.at(t).observe(s_obj).apparent(deflectors=(10, 599))
+                p_sun = sun.at(t).observe(p_obj).apparent()
+                s_sun = sun.at(t).observe(s_obj).apparent()
 
                 sep = p_sun.separation_from(s_sun).degrees
 
@@ -780,13 +780,13 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                 )
 
                 # Visibility from Earth
-                j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+                j_obs = observer.at(t).observe(jupiter).apparent()
                 alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
                 sun_alt_obs = (
                     observer.at(t)
                     .observe(sun)
-                    .apparent(deflectors=(10, 599))
+                    .apparent()
                     .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                     .degrees
                 )
@@ -853,10 +853,10 @@ def find_jovian_moon_events(observer, start_date, end_date):
             res = np.zeros(len(t) if is_array else 1, dtype=int)
 
             # 1. Earth perspective (Transits and Occultations)
-            j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+            j_obs = observer.at(t).observe(jupiter).apparent()
             alt, _, dist = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            m_obs = observer.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
+            m_obs = observer.at(t).observe(moon_obj).apparent()
             sep_e = j_obs.separation_from(m_obs).degrees
 
             # 3D Ellipsoidal Model for Jupiter radii (Earth perspective)
@@ -864,7 +864,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
             j_rad_km = astronomy.JUPITER_RADIUS_KM * np.sqrt(
                 1
                 - ((astronomy.JUPITER_RADIUS_KM**2 - astronomy.JUPITER_POLAR_RADIUS_KM**2) / (astronomy.JUPITER_RADIUS_KM**2))
-                * np.cos(De) ** 2
+                * np.sin(De) ** 2
             )
             j_rad_e = np.degrees(np.arcsin(j_rad_km / dist.km))
 
@@ -872,8 +872,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             in_occultation = (sep_e < j_rad_e) & (m_obs.distance().km >= dist.km)
 
             # 2. Sun perspective (Shadows and Eclipses)
-            j_sun = sun.at(t).observe(jupiter).apparent(deflectors=(10, 599))
-            m_sun = sun.at(t).observe(moon_obj).apparent(deflectors=(10, 599))
+            j_sun = sun.at(t).observe(jupiter).apparent()
+            m_sun = sun.at(t).observe(moon_obj).apparent()
             sep_s = j_sun.separation_from(m_sun).degrees
 
             # 3D Ellipsoidal Model for Jupiter radii (Sun perspective)
@@ -893,7 +893,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
             j_rad_km_s = astronomy.JUPITER_RADIUS_KM * np.sqrt(
                 1
                 - ((astronomy.JUPITER_RADIUS_KM**2 - astronomy.JUPITER_POLAR_RADIUS_KM**2) / (astronomy.JUPITER_RADIUS_KM**2))
-                * np.cos(Ds_rad) ** 2
+                * np.sin(Ds_rad) ** 2
             )
             j_rad_s = np.degrees(np.arcsin(j_rad_km_s / j_sun.distance().km))
 
@@ -906,7 +906,7 @@ def find_jovian_moon_events(observer, start_date, end_date):
             sun_alt = (
                 observer.at(t)
                 .observe(sun)
-                .apparent(deflectors=(10, 599))
+                .apparent()
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                 .degrees
             )
@@ -924,16 +924,15 @@ def find_jovian_moon_events(observer, start_date, end_date):
                 res[visible & in_occultation] = 2
                 res[visible & in_shadow] = 3
                 res[visible & in_eclipse] = 4
-            else:
-                if visible[0] if hasattr(visible, "shape") else visible:
-                    if in_transit:
-                        res[0] = 1
-                    elif in_occultation:
-                        res[0] = 2
-                    elif in_shadow:
-                        res[0] = 3
-                    elif in_eclipse:
-                        res[0] = 4
+            elif visible:
+                if in_transit:
+                    res[0] = 1
+                elif in_occultation:
+                    res[0] = 2
+                elif in_shadow:
+                    res[0] = 3
+                elif in_eclipse:
+                    res[0] = 4
             return res
 
         setattr(state_func, "step_days", 0.005)  # ~7.2 minutes
