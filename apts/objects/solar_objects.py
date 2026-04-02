@@ -36,7 +36,7 @@ class SolarObjects(Objects):
         major_planets_technical_names = [
             name
             for name in planetary.TECHNICAL_NAMES
-            if name not in dwarf_planet_technical_names
+            if name not in dwarf_planet_technical_names and name != "earth"
         ]
         all_solar_system_bodies = major_planets_technical_names + list(
             MINOR_PLANET_NAMES.values()
