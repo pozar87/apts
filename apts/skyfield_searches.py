@@ -14,12 +14,23 @@ from .utils import planetary
 def find_meteor_showers(observer, start_date, end_date):
     """
     Finds meteor shower peaks and calculates radiant visibility for a given observer.
+    Meteor shower peaks are determined by the Sun's ecliptic longitude (λ⊙).
+
+    The presence and altitude of the Moon during the peak is a critical factor for
+    astrophotographers, as high lunar illumination can significantly wash out
+    fainter meteors.
+
+    :param observer: Skyfield observer (Topos or VectorSum).
+    :param start_date: Start of the search range (datetime).
+    :param end_date: End of the search range (datetime).
+    :return: List of event dictionaries.
     """
     from datetime import datetime
     ts = get_timescale()
     utc = start_date.tzinfo
     eph = get_ephemeris()
     sun = eph["sun"]
+    moon = eph["moon"]
 
     showers = {
         "Quadrantids": {
@@ -98,7 +109,7 @@ def find_meteor_showers(observer, start_date, end_date):
             if start_date <= s_date <= end_date:
                 events.append({
                     "date": s_date,
-                    "event": "Meteor Shower",
+                    "event": f"{shower} Start",
                     "shower_name": shower,
                     "phase": "Start",
                     "type": "Meteor Shower",
@@ -115,21 +126,33 @@ def find_meteor_showers(observer, start_date, end_date):
             if start_date <= e_date <= end_date:
                 events.append({
                     "date": e_date,
-                    "event": "Meteor Shower",
+                    "event": f"{shower} End",
                     "shower_name": shower,
                     "phase": "End",
                     "type": "Meteor Shower",
                 })
 
     if peak_candidates:
-        # Calculate Sun altitudes in bulk (one body at multiple times is supported)
+        # Calculate Sun and Moon data in bulk for efficiency
         peak_times = ts.from_datetimes([p["peak_date"] for p in peak_candidates])
-        sun_alts, _, _ = (
+
+        sun_alts = (
             observer.at(peak_times)
             .observe(sun)
             .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
         )
+
+        moon_alts = (
+            observer.at(peak_times)
+            .observe(moon)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+
+        moon_illums = planetary.get_moon_illumination(peak_times)
 
         for i, p in enumerate(peak_candidates):
             # For radiants, we observe individually to avoid pairwise N-to-N vectorization
@@ -144,18 +167,183 @@ def find_meteor_showers(observer, start_date, end_date):
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)
             )
 
-            s_alt = sun_alts.degrees[i]
+            s_alt = sun_alts[i]
             is_visible = r_alt.degrees > 0 and s_alt <= -6
 
             events.append({
                 "date": p["peak_date"],
-                "event": "Meteor Shower",
+                "event": f"{p['shower_name']} Peak",
                 "shower_name": p["shower_name"],
                 "phase": "Peak",
                 "type": "Meteor Shower",
                 "altitude": float(r_alt.degrees),
+                "sun_altitude": float(s_alt),
+                "moon_altitude": float(moon_alts[i]),
+                "moon_illumination": float(moon_illums[i]),
                 "is_visible": bool(is_visible),
             })
+
+    return events
+
+
+def _get_jovian_moon_objects(eph):
+    """
+    Helper to get Galilean moon objects from ephemeris, handling different kernel IDs.
+    """
+    moon_map = {501: "Io", 502: "Europa", 503: "Ganymede", 504: "Callisto"}
+    moon_objs = {}
+    for moon_id in moon_map:
+        try:
+            moon_objs[moon_id] = eph[moon_id]
+        except KeyError:
+            # Fallback for jup300.bsp IDs
+            jup300_ids = {501: 55061, 502: 55062, 503: 55063, 504: 55064}
+            moon_objs[moon_id] = eph[jup300_ids[moon_id]]
+    return moon_map, moon_objs
+
+
+def find_jovian_mutual_events(observer, start_date, end_date):
+    """
+    Finds mutual events between Jovian moons:
+    - Mutual Occultations: one moon occults another as seen from Earth.
+    - Mutual Eclipses: one moon's shadow falls on another.
+    """
+    from .cache import get_jovian_ephemeris
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_jovian_ephemeris())
+
+    try:
+        jupiter = eph["jupiter barycenter"]
+        sun = eph["sun"]
+        moon_map, moon_objs = _get_jovian_moon_objects(eph)
+    except KeyError:
+        return []
+
+    events = []
+    # Check all pairs of moons
+    moon_ids = list(moon_map.keys())
+
+    for i, id1 in enumerate(moon_ids):
+        for id2 in moon_ids[i + 1 :]:
+            m1_name = moon_map[id1]
+            m2_name = moon_map[id2]
+            m1_obj = moon_objs[id1]
+            m2_obj = moon_objs[id2]
+
+            def mutual_state(t):
+                # Returns: 0: None, 1: m1 occults m2, 2: m2 occults m1,
+                # 3: m1 eclipses m2, 4: m2 eclipses m1
+                is_array = hasattr(t, "shape") and t.shape != ()
+                res = np.zeros(len(t) if is_array else 1, dtype=int)
+
+                # 1. Earth perspective (Occultations)
+                # Oracle: use topocentric apparent positions for maximum precision
+                m1_e = observer.at(t).observe(m1_obj).apparent(deflectors=(10, 599))
+                m2_e = observer.at(t).observe(m2_obj).apparent(deflectors=(10, 599))
+                sep_e = m1_e.separation_from(m2_e).degrees
+
+                # Radii from constants (Galilean moons are spherical enough for this)
+                moon_radii = {
+                    501: astronomy.IO_RADIUS_KM,
+                    502: astronomy.EUROPA_RADIUS_KM,
+                    503: astronomy.GANYMEDE_RADIUS_KM,
+                    504: astronomy.CALLISTO_RADIUS_KM,
+                }
+                r1 = np.degrees(np.arcsin(moon_radii[id1] / m1_e.distance().km))
+                r2 = np.degrees(np.arcsin(moon_radii[id2] / m2_e.distance().km))
+
+                occ = sep_e < (r1 + r2)
+                # Determine who is in front (closer to Earth)
+                m1_front = m1_e.distance().km < m2_e.distance().km
+
+                # 2. Sun perspective (Eclipses)
+                # Oracle: evaluated at t_emitted for retrospective accuracy
+                # j_obs for light-time
+                j_obs = observer.at(t).observe(jupiter).apparent(deflectors=(10, 599))
+                t_emitted = ts.tt_jd(t.tt - j_obs.light_time)
+
+                m1_s = sun.at(t_emitted).observe(m1_obj).apparent(deflectors=(10, 599))
+                m2_s = sun.at(t_emitted).observe(m2_obj).apparent(deflectors=(10, 599))
+                sep_s = m1_s.separation_from(m2_s).degrees
+
+                # Angular radii as seen from Sun
+                r1_s = np.degrees(np.arcsin(moon_radii[id1] / m1_s.distance().km))
+                r2_s = np.degrees(np.arcsin(moon_radii[id2] / m2_s.distance().km))
+
+                ecl = sep_s < (r1_s + r2_s)
+                # Determine shadow caster (closer to Sun)
+                m1_caster = m1_s.distance().km < m2_s.distance().km
+
+                # Extract elevation from observer once
+                observer_elevation = 0
+                for vf in observer.vector_functions:
+                    if hasattr(vf, "elevation"):
+                        observer_elevation = vf.elevation.m
+                        break
+
+                # Visibility: Jupiter above horizon and Sun below -6
+                # Special elevation -9999 bypasses topocentric checks for global indexing
+                if observer_elevation == -9999:
+                    visible = np.ones(len(t) if is_array else 1, dtype=bool)
+                else:
+                    alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+                    sun_alt = (
+                        observer.at(t)
+                        .observe(sun)
+                        .apparent(deflectors=(10, 599))
+                        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+                        .degrees
+                    )
+                    visible = (alt.degrees > 0) & (sun_alt <= -6)
+
+                if is_array:
+                    res[visible & occ & m1_front] = 1
+                    res[visible & occ & ~m1_front] = 2
+                    res[visible & ecl & m1_caster] = 3
+                    res[visible & ecl & ~m1_caster] = 4
+                else:
+                    if visible:
+                        if occ:
+                            res[0] = 1 if m1_front else 2
+                        elif ecl:
+                            res[0] = 3 if m1_caster else 4
+                return res
+
+            # Step of 5 minutes is safe for fast-moving Jovian moons
+            setattr(mutual_state, "step_days", 0.0035)
+            t_events, y_events = almanac.find_discrete(t0, t1, mutual_state)
+
+            if len(t_events) == 0:
+                continue
+
+            y_start = mutual_state(t0)
+            y_prev = y_start[0] if hasattr(y_start, "shape") else y_start
+
+            for te, ye in zip(t_events, y_events):
+                if y_prev != 0:
+                    caster, target = (m1_name, m2_name) if y_prev in [1, 3] else (m2_name, m1_name)
+                    kind = "Occultation" if y_prev in [1, 2] else "Eclipse"
+                    events.append({
+                        "date": te.utc_datetime(),
+                        "object1": caster,
+                        "object2": target,
+                        "event": f"Mutual {kind} End",
+                        "type": f"Jovian Mutual {kind}",
+                    })
+                if ye != 0:
+                    caster, target = (m1_name, m2_name) if ye in [1, 3] else (m2_name, m1_name)
+                    kind = "Occultation" if ye in [1, 2] else "Eclipse"
+                    events.append({
+                        "date": te.utc_datetime(),
+                        "object1": caster,
+                        "object2": target,
+                        "event": f"Mutual {kind} Start",
+                        "type": f"Jovian Mutual {kind}",
+                    })
+                y_prev = ye
 
     return events
 
@@ -382,84 +570,90 @@ def find_golden_blue_hours(observer, start_date, end_date):
     y_prev = sun_state(t0)
 
     for ti, yi in zip(t, y):
-        # Transitions:
-        # 0 -> 1: Rising, Blue Hour Start (-6)
-        # 1 -> 2: Rising, Blue Hour End / Golden Hour Start (-4)
-        # 2 -> 3: Rising, Golden Hour End (6)
-        # 3 -> 2: Setting, Golden Hour Start (6)
-        # 2 -> 1: Setting, Golden Hour End / Blue Hour Start (-4)
-        # 1 -> 0: Setting, Blue Hour End (-6)
+        # Oracle: Handle potential state jumps (e.g., 0 -> 2) by iterating through
+        # all intermediate transitions. This ensures accuracy at high latitudes
+        # or when using coarser time steps.
+        step = 1 if yi > y_prev else -1
+        for current_y in range(y_prev + step, yi + step, step):
+            prev_y = current_y - step
+            # Transitions:
+            # 0 -> 1: Rising, Blue Hour Start (-6)
+            # 1 -> 2: Rising, Blue Hour End / Golden Hour Start (-4)
+            # 2 -> 3: Rising, Golden Hour End (6)
+            # 3 -> 2: Setting, Golden Hour Start (6)
+            # 2 -> 1: Setting, Golden Hour End / Blue Hour Start (-4)
+            # 1 -> 0: Setting, Blue Hour End (-6)
 
-        if y_prev == 0 and yi == 1:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "Start",
-                    "type": "Blue Hour",
-                }
-            )
-        elif y_prev == 1 and yi == 2:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "End",
-                    "type": "Blue Hour",
-                }
-            )
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "Start",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 2 and yi == 3:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "End",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 3 and yi == 2:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "Start",
-                    "type": "Golden Hour",
-                }
-            )
-        elif y_prev == 2 and yi == 1:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Golden Hour",
-                    "phase": "End",
-                    "type": "Golden Hour",
-                }
-            )
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "Start",
-                    "type": "Blue Hour",
-                }
-            )
-        elif y_prev == 1 and yi == 0:
-            events.append(
-                {
-                    "date": ti.utc_datetime(),
-                    "event": "Blue Hour",
-                    "phase": "End",
-                    "type": "Blue Hour",
-                }
-            )
+            if prev_y == 0 and current_y == 1:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "Start",
+                        "type": "Blue Hour",
+                    }
+                )
+            elif prev_y == 1 and current_y == 2:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "End",
+                        "type": "Blue Hour",
+                    }
+                )
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "Start",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 2 and current_y == 3:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "End",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 3 and current_y == 2:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "Start",
+                        "type": "Golden Hour",
+                    }
+                )
+            elif prev_y == 2 and current_y == 1:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Golden Hour",
+                        "phase": "End",
+                        "type": "Golden Hour",
+                    }
+                )
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "Start",
+                        "type": "Blue Hour",
+                    }
+                )
+            elif prev_y == 1 and current_y == 0:
+                events.append(
+                    {
+                        "date": ti.utc_datetime(),
+                        "event": "Blue Hour",
+                        "phase": "End",
+                        "type": "Blue Hour",
+                    }
+                )
 
         y_prev = yi
 
@@ -1895,6 +2089,7 @@ def _find_satellite_flybys(
     magnitude_threshold=None,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-18.0,
 ):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -1932,7 +2127,7 @@ def _find_satellite_flybys(
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)
         )
-        if sun_alt.degrees > -18:  # not dark enough
+        if sun_alt.degrees > sun_altitude_threshold:  # not dark enough
             continue
 
         # Topocentric satellite position
@@ -2028,7 +2223,9 @@ def find_iss_flybys(
     magnitude_threshold=-1.5,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-6.0,
 ):
+    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as bright ISS is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -2040,6 +2237,7 @@ def find_iss_flybys(
         magnitude_threshold,
         peak_altitude_threshold,
         rise_altitude_threshold,
+        sun_altitude_threshold,
     )
 
 
@@ -2050,7 +2248,9 @@ def find_tiangong_flybys(
     end_date,
     peak_altitude_threshold=40,
     rise_altitude_threshold=10,
+    sun_altitude_threshold=-6.0,
 ):
+    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as Tiangong is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -2062,6 +2262,7 @@ def find_tiangong_flybys(
         None,  # No magnitude threshold for Tiangong
         peak_altitude_threshold,
         rise_altitude_threshold,
+        sun_altitude_threshold,
     )
 
 
