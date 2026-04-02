@@ -48,6 +48,23 @@ from .satellites import (
     find_tiangong_flybys,
 )
 from .utils import _refine_conjunction, find_solar_longitude_time
+from ..cache import get_ephemeris, get_timescale
+from skyfield.api import load
+from ..utils import planetary
+
+# Import submodules to allow access via apts.skyfield_searches.submodule
+from . import (
+    conjunctions,
+    jovian,
+    lunar,
+    meteor_showers,
+    planets,
+    satellites,
+    saturn,
+    solar,
+    utils,
+    visibility,
+)
 
 __all__ = [
     "find_meteor_showers",
@@ -90,4 +107,18 @@ __all__ = [
     "find_planet_planet_occultations",
     "find_jupiter_grs_transits",
     "find_lunar_features",
+    "get_ephemeris",
+    "get_timescale",
+    "load",
+    "planetary",
+    "conjunctions",
+    "jovian",
+    "lunar",
+    "meteor_showers",
+    "planets",
+    "satellites",
+    "saturn",
+    "solar",
+    "utils",
+    "visibility",
 ]
