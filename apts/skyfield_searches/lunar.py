@@ -318,6 +318,9 @@ def find_lunar_features(observer, start_date, end_date):
     # Extract elevation from observer once
     observer_elevation = 0
     for vf in observer.vector_functions:
+        if hasattr(vf, "latitude"):
+            # latitude is usually not what I want here if I am looking for elevation
+            pass
         if hasattr(vf, "elevation"):
             observer_elevation = vf.elevation.m
             break
