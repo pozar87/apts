@@ -1,10 +1,133 @@
+import datetime
+
+import pytz
 from typing import Any, cast
 import numpy as np
 from skyfield import almanac
-from skyfield.api import Star
+from skyfield.api import Star, Topos
 from skyfield.searchlib import find_maxima
 from ..cache import get_timescale, get_ephemeris
 from ..utils import planetary
+from ..constants.twilight import Twilight
+
+def get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(start_date + datetime.timedelta(days=2))
+
+    f = almanac.dark_twilight_day(eph, location)
+    times, events = almanac.find_discrete(t0, t1, f)
+
+    # Define transitions for evening (set) and morning (rise)
+    if event == "set":  # Evening: getting darker
+        transitions = {
+            Twilight.CIVIL: (3, 2),  # Civil -> Nautical
+            Twilight.NAUTICAL: (2, 1),  # Nautical -> Astronomical
+            Twilight.ASTRONOMICAL: (1, 0),  # Astronomical -> Night
+        }
+    else:  # Morning: getting lighter
+        transitions = {
+            Twilight.ASTRONOMICAL: (0, 1),  # Night -> Astronomical
+            Twilight.NAUTICAL: (1, 2),  # Astronomical -> Nautical
+            Twilight.CIVIL: (2, 3),  # Nautical -> Civil
+        }
+
+    trans = transitions.get(twilight)
+    if trans is None:
+        return None
+    prev_event, next_event = trans
+
+    # The first event is the state at t0
+    previous_y = f(t0)
+    if times is not None and events is not None:
+        for t, y in zip(times, events):
+            if previous_y == prev_event and y == next_event:
+                return t.utc_datetime().replace(tzinfo=pytz.UTC)
+            previous_y = y
+
+    return None
+
+def previous_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    obj = eph[obj_name]
+    t0 = ts.utc(start - datetime.timedelta(days=2))
+    t1 = ts.utc(start)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is None:
+        return None
+
+    settings = [ti for ti, yi in zip(t, y) if yi == 0]
+    if settings:
+        return settings[-1].utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+def next_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    obj = eph[obj_name]
+    t0 = ts.utc(start)
+    t1 = ts.utc(start + datetime.timedelta(days=2))
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is not None:
+        for ti, yi in zip(t, y):
+            if yi == 1:  # Rising
+                return ti.utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+def next_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    obj = eph[obj_name]
+    t0 = ts.utc(start)
+    t1 = ts.utc(start + datetime.timedelta(days=2))
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is not None:
+        for ti, yi in zip(t, y):
+            if yi == 0:  # Setting
+                return ti.utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
+
+def previous_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=None):
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    obj = eph[obj_name]
+    t0 = ts.utc(start - datetime.timedelta(days=2))
+    t1 = ts.utc(start)
+    if horizon_degrees is not None:
+        f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
+    else:
+        f = almanac.risings_and_settings(eph, obj, location)
+    t, y = almanac.find_discrete(t0, t1, f)
+
+    if t is None:
+        return None
+
+    risings = [ti for ti, yi in zip(t, y) if yi == 1]
+    if risings:
+        return risings[-1].utc_datetime().replace(tzinfo=pytz.UTC)
+    return None
 
 def find_golden_blue_hours(observer, start_date, end_date):
     ts = get_timescale()
