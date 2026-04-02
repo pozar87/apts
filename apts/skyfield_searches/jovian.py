@@ -1,6 +1,7 @@
 from typing import Any, cast
 import numpy as np
 from skyfield import almanac
+from skyfield.searchlib import find_minima
 from ..cache import get_timescale, get_ephemeris
 from ..constants import astronomy
 from ..utils import planetary
