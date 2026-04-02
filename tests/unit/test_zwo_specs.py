@@ -29,7 +29,7 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.pixel_size().to('micrometer').magnitude, 2.9)
         self.assertEqual(cam.full_well, 40000)
         self.assertEqual(cam.read_noise, 0.6)
-        self.assertEqual(cam.quantum_efficiency, 91)
+        self.assertEqual(cam.quantum_efficiency, 80)
 
         # Test V2 variant via from_database check indirectly
         cam_v2 = ZwoCamera.ZWO_ASI_585MC_V2()

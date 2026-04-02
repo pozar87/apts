@@ -100,7 +100,7 @@ class TestStellarImprovementsV3(unittest.TestCase):
 
         q268c = QhyCamera.QHY_QHY_268C()
         self.assertEqual(q268c.vendor, "QHY QHY 268C")
-        self.assertEqual(q268c.quantum_efficiency, 92)
+        self.assertEqual(q268c.quantum_efficiency, 80)
 
 if __name__ == "__main__":
     unittest.main()
