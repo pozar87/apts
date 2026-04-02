@@ -53,5 +53,5 @@ def test_zwo_asi664mc_specs():
     assert camera.height == 1536
     assert camera.pixel_size().magnitude == 2.9
     assert camera.full_well == 38500
-    assert camera.quantum_efficiency == 91
+    assert camera.quantum_efficiency == 80
     assert camera.read_noise == 0.46

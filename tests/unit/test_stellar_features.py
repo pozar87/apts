@@ -28,7 +28,7 @@ def test_asi585mc_specs():
     assert camera.width == 3840
     assert camera.height == 2160
     assert camera.pixel_size().to("micrometer").magnitude == pytest.approx(2.9)
-    assert camera.quantum_efficiency == 91
+    assert camera.quantum_efficiency == 80
     assert camera.full_well == 40000
     assert camera.read_noise == 0.6
 
