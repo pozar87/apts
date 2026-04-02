@@ -11,7 +11,7 @@ class GreatestElongationsTest(unittest.TestCase):
     def setUp(self):
         self.place = Place(lat=52.2, lon=21.0)  # Warsaw
 
-    @patch("apts.events.get_event_settings")
+    @patch("apts.events.coordinator.get_event_settings")
     def test_venus_greatest_elongation_2025(self, mock_get_event_settings):
         # Venus Greatest Eastern Elongation was on 2025-01-10
         mock_get_event_settings.return_value = {"greatest_elongations": True}
@@ -34,7 +34,7 @@ class GreatestElongationsTest(unittest.TestCase):
         # Separation should be around 47 degrees for Venus
         self.assertAlmostEqual(event["separation_degrees"], 47.1, delta=1.0)
 
-    @patch("apts.events.get_event_settings")
+    @patch("apts.events.coordinator.get_event_settings")
     def test_mercury_greatest_elongation_2024(self, mock_get_event_settings):
         # Mercury Greatest Western Elongation was on 2024-01-12
         mock_get_event_settings.return_value = {"greatest_elongations": True}

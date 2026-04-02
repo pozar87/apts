@@ -126,7 +126,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 12)
         self.assertEqual(event_date.day, 21)
 
-    @patch("apts.events.skyfield_searches.find_iss_flybys")
+    @patch("apts.events.calculations.space.skyfield_searches.find_iss_flybys")
     def test_calculate_iss_flybys(self, mock_find_iss_flybys):
         # Arrange
         mock_flyby_event = {
@@ -230,7 +230,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.month, 12)
         self.assertEqual(event_date.day, 8)
 
-    @patch("apts.events.skyfield_searches.find_conjunctions_with_stars")
+    @patch("apts.events.calculations.lunar.skyfield_searches.find_conjunctions_with_stars")
     def test_calculate_moon_messier_conjunctions(self, mock_find_conjs):
         # Arrange
         mock_find_conjs.return_value = [
@@ -325,7 +325,7 @@ class EventsTest(unittest.TestCase):
         self.assertIn("Uranus", planets_involved)
         self.assertIn("Neptune", planets_involved)
 
-    @patch("apts.events.get_event_settings")
+    @patch("apts.events.coordinator.get_event_settings")
     def test_calculate_culminations(self, mock_get_event_settings):
         # Warsaw, June 21, 2023. Sun should culminate around 10:45 UTC (12:45 local)
         mock_get_event_settings.return_value = {"culminations": True}
@@ -353,7 +353,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.hour, 10)
         self.assertAlmostEqual(sun_culmination.iloc[0]["altitude"], 61.2, delta=0.5)
 
-    @patch("apts.events.skyfield_searches.find_conjunctions_between_moving_bodies")
+    @patch("apts.events.calculations.planetary.skyfield_searches.find_conjunctions_between_moving_bodies")
     def test_conjunction_precomputation_usage(self, mock_find_conj):
         # Set a date range
         start_date = datetime(2023, 1, 1, tzinfo=utc)
