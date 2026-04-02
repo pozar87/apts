@@ -822,10 +822,20 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
     # Area = pi * (radius)^2 * k
     area = np.pi * (d / 2.0) ** 2 * k
 
-    if area <= 0:
-        return float("inf")
-
-    return float(v + 2.5 * np.log10(area))
+    # Handle cases where area might be zero or negative to avoid log10 errors
+    if np.isscalar(area):
+        if area <= 0:
+            return float("inf")
+        return float(v + 2.5 * np.log10(area))
+    else:
+        # For arrays, use np.where to handle zeros and return inf.
+        # We use np.log10's 'where' and 'out' parameters to avoid RuntimeWarnings
+        # when area contains zeros or negative values.
+        res = np.full_like(area, np.inf, dtype=float)
+        valid = area > 0
+        np.log10(area, where=valid, out=res)
+        res = np.where(valid, v + 2.5 * res, np.inf)
+        return cast(np.ndarray, res)
 
 
 def get_moon_libration(time: Any) -> tuple[float, float]:
