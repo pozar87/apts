@@ -2961,6 +2961,7 @@ def find_lunar_features(observer, start_date, end_date):
         ("Lunar V", 358.0),
         ("Golden Handle (Mountains of Jura)", 15.0),
         ("Straight Wall (Rupes Recta)", 11.0),
+        ("Hesiodus Ray", 18.0),
     ]
 
     events = []
