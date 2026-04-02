@@ -195,3 +195,13 @@ def calculate_lunar_eclipses(observer, start_date, end_date):
         event["rarity"] = get_rarity("Lunar Eclipse", event)
     logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
     return events
+
+def calculate_moon_libration_maxima(observer, start_date, end_date):
+    start_time = time.time()
+    events = skyfield_searches.find_moon_libration_maxima(
+        observer, start_date, end_date
+    )
+    for event in events:
+        event["rarity"] = get_rarity("Moon Libration Maximum", event)
+    logger.debug(f"--- calculate_moon_libration_maxima: {time.time() - start_time}s")
+    return events

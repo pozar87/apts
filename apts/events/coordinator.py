@@ -207,6 +207,9 @@ class AstronomicalEvents:
     def calculate_lunar_features(self):
         return lunar.calculate_lunar_features(self.observer, self.start_date, self.end_date)
 
+    def calculate_moon_libration_maxima(self):
+        return lunar.calculate_moon_libration_maxima(self.observer, self.start_date, self.end_date)
+
     def calculate_planet_planet_occultations(self):
         return planetary_calc.calculate_planet_planet_occultations(self.observer, self.start_date, self.end_date)
 
@@ -278,6 +281,7 @@ class AstronomicalEvents:
             "planet_stationary_points": self.calculate_planet_stationary_points,
             "planet_solar_conjunctions": self.calculate_planet_solar_conjunctions,
             "lunar_features": self.calculate_lunar_features,
+            "moon_libration_maxima": self.calculate_moon_libration_maxima,
             "planet_planet_occultations": self.calculate_planet_planet_occultations,
             "venus_great_brilliancy": self.calculate_venus_greatest_brilliancy,
             "supermoons": self.calculate_supermoons,

@@ -43,6 +43,7 @@ class EventType(str, Enum):
     PLANET_PLANET_OCCULTATIONS = "planet_planet_occultations"
     VENUS_GREAT_BRILLIANCY = "venus_great_brilliancy"
     SUPERMOONS = "supermoons"
+    MOON_LIBRATION_MAXIMA = "moon_libration_maxima"
     PLANETARY_DICHOTOMY = "planetary_dichotomy"
     MARS_CLOSEST_APPROACH = "mars_closest_approach"
     JOVIAN_MUTUAL_EVENTS = "jovian_mutual_events"

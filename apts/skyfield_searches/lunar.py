@@ -279,6 +279,92 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     return events
 
+def find_moon_libration_maxima(observer, start_date, end_date):
+    """
+    Finds local maxima in lunar libration (longitude and latitude).
+    These are the best times to observe features near the Moon's limb.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    sun = planetary.get_skyfield_obj("sun")
+    moon_sf = planetary.get_skyfield_obj("moon")
+
+    def libration_lon(t):
+        lon, _ = planetary.get_moon_libration(t)
+        return lon
+
+    def libration_lat(t):
+        _, lat = planetary.get_moon_libration(t)
+        return lat
+
+    # Step of 2 days is safe for libration cycles (~27.3 days)
+    setattr(libration_lon, "step_days", 2.0)
+    setattr(libration_lat, "step_days", 2.0)
+
+    # We want both extreme positive and negative values (East/West, North/South)
+    lon_max_times, lon_max_vals = find_maxima(t0, t1, libration_lon)
+    lon_min_times, lon_min_vals = find_minima(t0, t1, libration_lon)
+    lat_max_times, lat_max_vals = find_maxima(t0, t1, libration_lat)
+    lat_min_times, lat_min_vals = find_minima(t0, t1, libration_lat)
+
+    events = []
+
+    # Helper to calculate visibility and build event dict
+    def add_lib_event(t, val, axis, extreme):
+        # Oracle: use refracted positions for visibility check
+        m_obs = observer.at(t).observe(moon_sf).apparent()
+        m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+
+        s_alt = (
+            observer.at(t)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+
+        # Observer elevation for global indexing
+        observer_elevation = 0
+        for vf in observer.vector_functions:
+            if hasattr(vf, "elevation"):
+                observer_elevation = vf.elevation.m
+                break
+
+        is_visible = (m_alt.degrees > 0 and s_alt <= -6) or observer_elevation == -9999
+
+        side = {
+            ("longitude", "max"): "East",
+            ("longitude", "min"): "West",
+            ("latitude", "max"): "North",
+            ("latitude", "min"): "South",
+        }[(axis, extreme)]
+
+        events.append(
+            {
+                "date": t.utc_datetime(),
+                "event": f"Maximum Lunar Libration ({side})",
+                "object": "Moon",
+                "type": "Moon Libration Maximum",
+                "libration_value": float(val),
+                "axis": axis,
+                "side": side,
+                "altitude": float(m_alt.degrees),
+                "is_visible": bool(is_visible),
+            }
+        )
+
+    for t, v in zip(lon_max_times, lon_max_vals):
+        add_lib_event(t, v, "longitude", "max")
+    for t, v in zip(lon_min_times, lon_min_vals):
+        add_lib_event(t, v, "longitude", "min")
+    for t, v in zip(lat_max_times, lat_max_vals):
+        add_lib_event(t, v, "latitude", "max")
+    for t, v in zip(lat_min_times, lat_min_vals):
+        add_lib_event(t, v, "latitude", "min")
+
+    return events
+
 def find_lunar_features(observer, start_date, end_date):
     """
     Finds transient lunar features based on selenographic colongitude.
