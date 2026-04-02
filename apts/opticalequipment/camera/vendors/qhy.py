@@ -1951,14 +1951,6 @@ class QhyCamera(Camera):
     def QHY_QHY_183M(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_183M'])
 
-    @classmethod
-    def QHY_QHY_163M(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_163M'])
-
-
-    @classmethod
-    def QHY_QHY_411M(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_411M'])
 
     @classmethod
     def QHY_QHY_461M(cls):
@@ -2000,6 +1992,10 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_183C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_183C'])
+
+    @classmethod
+    def QHY_QHY_163M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_163M'])
 
     @classmethod
     def QHY_QHY_163C(cls):
@@ -2097,26 +2093,14 @@ class QhyCamera(Camera):
     def QHY_QHY_5III_664M(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_664M'])
 
-    @classmethod
-    def QHY_QHY_600M_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_600M_M42_Adapter'])
 
     @classmethod
-    def QHY_QHY_268M_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_268M_M42_Adapter'])
+    def QHY_QHY_600C_M42_Adapter(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_600C_M42_Adapter'])
 
     @classmethod
-    def QHY_QHY_533M_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_533M_M42_Adapter'])
-
-    @classmethod
-    def QHY_QHY_294M_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_294M_M42_Adapter'])
-
-    @classmethod
-    def QHY_QHY_183M_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_183M_M42_Adapter'])
-
+    def QHY_QHY_268C_M42_Adapter(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_268C_M42_Adapter'])
 
     @classmethod
     def QHY_QHY_533C_M42_Adapter(cls):
@@ -2137,14 +2121,6 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_461C_M42_Adapter(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_461C_M42_Adapter'])
-
-    @classmethod
-    def QHY_QHY_600C_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_600C_M42_Adapter'])
-
-    @classmethod
-    def QHY_QHY_268C_M42_Adapter(cls):
-        return cls.from_database(cls._DATABASE['QHY_QHY_268C_M42_Adapter'])
 
     @classmethod
     def QHY_PoleMaster(cls):

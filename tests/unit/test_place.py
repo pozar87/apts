@@ -13,6 +13,7 @@ from apts.constants.graphconstants import get_plot_style
 from apts.constants.twilight import Twilight
 from apts.i18n import language_context
 from apts.place import Place
+from apts.plotting.path import MOON_FONT
 
 # Assuming setup_place is a helper to create a Place instance for testing
 # If it's defined in tests/__init__.py, this import should work.
@@ -407,9 +408,9 @@ class TestPlacePlotting(unittest.TestCase):
         self.place._moon_phase_letter = MagicMock(return_value="M")
         self.place.moon_illumination = MagicMock(return_value=71)
 
-    @patch("apts.place.gettext_")
+    @patch("apts.plotting.path.gettext_")
     @patch("apts.utils.plot.gettext_")
-    @patch("apts.place.get_dark_mode")  # Corrected path for get_dark_mode used in Place
+    @patch("apts.plotting.path.get_dark_mode")  # Corrected path for get_dark_mode used in Place
     @patch("pandas.DataFrame.plot")
     def test_plot_moon_path_styling(
         self, mock_df_plot, mock_get_dark_mode_place, mock_gettext, mock_place_gettext
@@ -525,7 +526,7 @@ class TestPlacePlotting(unittest.TestCase):
                         180,
                         10,
                         "M",
-                        fontproperties=Place.MOON_FONT,
+                        fontproperties=MOON_FONT,
                         horizontalalignment="center",
                         verticalalignment="center",
                         color=expected_style["AXES_FACE_COLOR"],
@@ -535,7 +536,7 @@ class TestPlacePlotting(unittest.TestCase):
                         180,
                         10,
                         "M",
-                        fontproperties=Place.MOON_FONT,
+                        fontproperties=MOON_FONT,
                         horizontalalignment="center",
                         verticalalignment="center",
                         color=expected_style["TEXT_COLOR"],
@@ -562,7 +563,7 @@ class TestPlacePlotting(unittest.TestCase):
                 mock_df_plot.call_count = 0
 
 
-@patch("apts.place.get_dark_mode")
+@patch("apts.plotting.path.get_dark_mode")
 class TestDarkMode(unittest.TestCase):
     def setUp(self):
         self.place = setup_place()
@@ -632,7 +633,7 @@ class TestPlaceSouthernHemisphere(unittest.TestCase):
         # Sydney, Australia
         self.place = Place(lat=-33.8688, lon=151.2093)
 
-    @patch("apts.place.get_dark_mode", return_value=False)
+    @patch("apts.plotting.path.get_dark_mode", return_value=False)
     def test_plot_moon_path_southern_hemisphere_non_mocked(self, mock_get_dark_mode):
         """
         Non-mocked test to verify the southern hemisphere moon path plot.
