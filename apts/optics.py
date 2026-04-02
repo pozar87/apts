@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
 from .units import get_unit_registry
+from .utils import optics as optics_utils
 
 
 class OpticsUtils:
@@ -78,9 +79,7 @@ class OpticsUtils:
         Where h is the apparent altitude in degrees.
         Source: https://en.wikipedia.org/wiki/Air_mass_(astronomy)
         """
-        # Ensure altitude is at least 0 to avoid complex numbers/errors
-        h = max(altitude_degrees, 0.0)
-        return 1.0 / (numpy.sin(numpy.radians(h)) + 0.50572 * (h + 6.07995) ** -1.6364)
+        return float(optics_utils.calculate_airmass(altitude_degrees))
 
     @staticmethod
     def compute_field_of_view(
@@ -212,7 +211,11 @@ class OpticalPath:
         k typically ranges from 0.15 (very clear) to 0.5+ (hazy/polluted). Default 0.2.
         """
         airmass_val = self.airmass(altitude_degrees)
-        return magnitude + extinction_k * airmass_val
+        return float(
+            optics_utils.calculate_atmospheric_extinction(
+                magnitude, airmass_val, extinction_k
+            )
+        )
 
     def atmospheric_dispersion(
         self, altitude_degrees: float, lambda1_nm: float = 400, lambda2_nm: float = 700
@@ -224,26 +227,10 @@ class OpticalPath:
         Dispersion Delta R = (n1 - n2) * tan(zenith_distance)
         Source: Peck & Reeder (1972), "Refractive Index of Air in the Near Infrared"
         """
-        if altitude_degrees >= 90:
-            return 0.0 * get_unit_registry().arcsecond
-
-        z = numpy.radians(90.0 - max(altitude_degrees, 0.1))  # Avoid tan(90)
-
-        def get_n_minus_1(lambda_nm):
-            l_um = lambda_nm / 1000.0
-            l_inv_sq = 1.0 / (l_um**2)
-            n_minus_1_e6 = (
-                64.328 + 29498.1 / (146.0 - l_inv_sq) + 255.4 / (41.0 - l_inv_sq)
-            )
-            return n_minus_1_e6 * 1e-6
-
-        n1_m_1 = get_n_minus_1(lambda1_nm)
-        n2_m_1 = get_n_minus_1(lambda2_nm)
-
-        dispersion_rad = abs(n1_m_1 - n2_m_1) * numpy.tan(z)
-        dispersion_arcsec = numpy.degrees(dispersion_rad) * 3600.0
-
-        return dispersion_arcsec * get_unit_registry().arcsecond
+        dispersion_arcsec = optics_utils.calculate_atmospheric_dispersion(
+            altitude_degrees, lambda1_nm, lambda2_nm
+        )
+        return float(dispersion_arcsec) * get_unit_registry().arcsecond
 
     def atmospheric_dispersion_in_pixels(
         self, altitude_degrees: float, lambda1_nm: float = 400, lambda2_nm: float = 700
@@ -521,25 +508,15 @@ class OpticalPath:
             return None
 
         area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
-        qe = self.output.quantum_efficiency / 100.0
-
-        # Account for filters transmission
+        qe = self.output.quantum_efficiency
         transmission = 1.0
         for f in self.filters:
             transmission *= f.transmission
 
-        pixel_area_arcsec2 = scale.magnitude**2
-
-        # Formula: Reference flux scaled by aperture, QE, and sky brightness
-        flux = (
-            0.005
-            * 10 ** (0.4 * (21.83 - sqm))
-            * area_cm2
-            * qe
-            * transmission
-            * pixel_area_arcsec2
+        flux = optics_utils.calculate_sky_flux(
+            sqm, area_cm2, qe, scale.magnitude, transmission
         )
-        return flux  # e-/s/pixel
+        return float(flux)
 
     def object_flux(
         self,
@@ -573,23 +550,15 @@ class OpticalPath:
             )
 
         area_cm2 = self.telescope.aperture_area().to("cm**2").magnitude
-        qe = self.output.quantum_efficiency / 100.0
-
-        # Account for filters transmission
+        qe = self.output.quantum_efficiency
         transmission = 1.0
         for f in self.filters:
             transmission *= f.transmission
 
-        # Total integrated flux from the object
-        # Based on the same zero point as sky_flux
-        flux = (
-            0.005
-            * 10 ** (0.4 * (21.83 - effective_magnitude))
-            * area_cm2
-            * qe
-            * transmission
+        flux = optics_utils.calculate_object_flux(
+            effective_magnitude, area_cm2, qe, transmission
         )
-        return flux  # e-/s total
+        return float(flux)
 
     def snr(
         self,
@@ -633,27 +602,16 @@ class OpticalPath:
         ):
             return None
 
-        # Total signal
-        signal = obj_flux * exposure_time * n_subs
-
-        # Noise components (squared)
-        shot_noise_sq = obj_flux * exposure_time * n_subs
-        sky_noise_sq = sky_flux_val * exposure_time * n_subs * n_pix
-        read_noise_sq = (self.output.read_noise**2) * n_subs * n_pix
-
-        total_noise = numpy.sqrt(shot_noise_sq + sky_noise_sq + read_noise_sq)
-
-        if total_noise == 0:
-            return 0.0
-
-        snr_linear = signal / total_noise
-
-        if in_db:
-            if snr_linear <= 0:
-                return -numpy.inf
-            return 20.0 * numpy.log10(snr_linear)
-
-        return snr_linear
+        snr_val = optics_utils.calculate_snr(
+            obj_flux,
+            sky_flux_val,
+            self.output.read_noise,
+            exposure_time,
+            n_subs,
+            n_pix,
+            in_db,
+        )
+        return float(snr_val)
 
     def required_subs_for_snr(
         self,
@@ -846,22 +804,8 @@ class OpticalPath:
         # Focal length in mm (F)
         f = (self.telescope.focal_length * self.effective_barlow()).to("mm").magnitude
 
-        if f == 0:
-            return 0 * get_unit_registry().second
-
-        cos_dec = numpy.cos(numpy.radians(declination))
-
-        if numpy.abs(cos_dec) < 1e-10:
-            # At the celestial poles, star movement is minimal.
-            # We return a 1-hour cap (3600s) to avoid infinity.
-            return 3600 * get_unit_registry().second
-
-        if simplified:
-            t = k * (35 * n + 30 * p) / (f * cos_dec)
-        else:
-            t = k * (16.9 * n + 0.10 * f + 13.7 * p) / (f * cos_dec)
-
-        return t * get_unit_registry().second
+        res = optics_utils.calculate_npf_rule(n, p, f, declination, k, simplified)
+        return float(res) * get_unit_registry().second
 
     def estimated_star_trailing(
         self, exposure_time: float, declination: float = 0
@@ -898,17 +842,10 @@ class OpticalPath:
         Where omega_earth is the sidereal rotation rate (15.041067 "/s).
         Source: "Field Rotation" - Bill Keicher
         """
-        # Sidereal rotation rate in arcseconds per second
-        omega_earth = 15.041067
-
-        phi = numpy.radians(latitude_deg)
-        az = numpy.radians(azimuth_deg)
-        alt = numpy.radians(
-            min(altitude_deg, 89.99)
-        )  # Avoid division by zero at zenith
-
-        rate = omega_earth * numpy.cos(phi) * numpy.cos(az) / numpy.cos(alt)
-        return abs(rate) * (get_unit_registry().arcsecond / get_unit_registry().second)
+        rate = optics_utils.calculate_field_rotation_rate(
+            latitude_deg, azimuth_deg, altitude_deg
+        )
+        return float(rate) * (get_unit_registry().arcsecond / get_unit_registry().second)
 
     def max_exposure_alt_az(
         self,
@@ -980,10 +917,8 @@ class OpticalPath:
             return None
         # Effective focal ratio
         fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
-        # wavelength in nm -> micron
-        lambda_um = wavelength_nm / 1000.0
-        diameter = 2.44 * lambda_um * fr
-        return diameter * get_unit_registry().micrometer
+        diameter_um = optics_utils.calculate_airy_disk_diameter(fr, wavelength_nm)
+        return float(diameter_um) * get_unit_registry().micrometer
 
     def ideal_planetary_focal_ratio(self, k: float = 5.0) -> Optional[float]:
         """
