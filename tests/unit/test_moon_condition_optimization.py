@@ -3,7 +3,6 @@ import unittest
 import datetime
 from unittest.mock import MagicMock, patch
 import pandas as pd
-from apts.observations import Observation
 from apts.conditions import Conditions
 from tests import setup_observation
 

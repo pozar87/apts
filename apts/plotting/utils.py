@@ -202,7 +202,7 @@ def mark_observation(
     try:
         x_min, x_max = original_xlim
         # Handle both numeric and datetime plot limits
-        if isinstance(x_min, (float, numpy.float64, int)):
+        if isinstance(x_min, (float, int, numpy.number)):
             start_date = mdates.num2date(x_min, tz=observation.place.local_timezone)
             end_date = mdates.num2date(x_max, tz=observation.place.local_timezone)
         else:
