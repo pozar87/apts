@@ -14,7 +14,7 @@ class OracleNewFeaturesTest(unittest.TestCase):
         self.start_date = datetime(2023, 1, 1, tzinfo=utc)
         self.end_date = datetime(2023, 12, 31, tzinfo=utc)
 
-    @patch("apts.events.get_event_settings")
+    @patch("apts.events.coordinator.get_event_settings")
     def test_seasons(self, mock_get_event_settings):
         mock_get_event_settings.return_value = {"seasons": True}
         events = find_seasons(self.start_date, self.end_date)

@@ -18,8 +18,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         self.start_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
         self.end_date = datetime(2024, 1, 31, tzinfo=timezone.utc)
 
-    @patch("apts.events.as_completed")
-    @patch("apts.events.get_event_settings")
+    @patch("apts.events.coordinator.as_completed")
+    @patch("apts.events.coordinator.get_event_settings")
     def test_get_events_parallelization(
         self, mock_get_event_settings, mock_as_completed
     ):
@@ -113,7 +113,7 @@ class TestAstronomicalEvents(unittest.TestCase):
         mock_as_completed.assert_called_once()
         self.assertEqual(len(mock_as_completed.call_args[0][0]), num_events)
 
-    @patch("apts.events.as_completed")
+    @patch("apts.events.coordinator.as_completed")
     def test_get_events_with_enum_selection(self, mock_as_completed):
         # Instantiate AstronomicalEvents with a selection of events
         events_instance = AstronomicalEvents(
