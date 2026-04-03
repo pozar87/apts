@@ -189,6 +189,9 @@ def get_planet_pole_coords(
         alpha = 299.36 + 0.70 * np.sin(N_rad)
         delta = 43.46 - 0.51 * np.cos(N_rad)
         return alpha, delta
+    if name_norm == "moon":
+        alpha0, delta0, _ = _get_moon_orientation_elements(time)
+        return np.degrees(alpha0), np.degrees(delta0)
 
     # Default to Earth pole (approx) or raise error
     if name_norm == "earth":
@@ -838,13 +841,53 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
         return cast(np.ndarray, res)
 
 
-def get_moon_libration(time: Any) -> tuple[float, float]:
+def get_moon_libration(time: Any) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
     """
     Returns the Moon's libration in longitude and latitude in degrees.
+    Uses the IAU 2015 rotation model for high precision and vectorization.
+    Supports both scalar and array Skyfield Time objects.
     """
-    # Use PyEphem for libration
-    m = ephem.Moon(time.utc_datetime())
-    return float(np.degrees(m.libration_long)), float(np.degrees(m.libration_lat))
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    moon = eph["moon"]
+
+    # Observation of Earth from Moon center (includes light-time correction)
+    astrometric = cast(Any, moon).at(time).observe(earth).apparent()
+    v_me = astrometric.position.au
+
+    alpha0, delta0, W = _get_moon_orientation_elements(time)
+
+    if hasattr(time, "shape") and time.shape:
+        u_v = v_me / np.linalg.norm(v_me, axis=0)
+    else:
+        u_v = v_me / np.linalg.norm(v_me)
+
+    # Transformation to selenographic frame
+    # x_node = intersection of Moon's equator and ICRS equator
+    x_node = u_v[0] * (-np.sin(alpha0)) + u_v[1] * np.cos(alpha0)
+    y_node = (
+        u_v[0] * (-np.sin(delta0) * np.cos(alpha0))
+        + u_v[1] * (-np.sin(delta0) * np.sin(alpha0))
+        + u_v[2] * np.cos(delta0)
+    )
+    z = (
+        u_v[0] * (np.cos(delta0) * np.cos(alpha0))
+        + u_v[1] * (np.cos(delta0) * np.sin(alpha0))
+        + u_v[2] * np.sin(delta0)
+    )
+
+    # Latitude (latitude of sub-Earth point)
+    lat_lib = np.degrees(np.arcsin(np.clip(z, -1.0, 1.0)))
+
+    # Longitude from node (eastward)
+    phi = np.degrees(np.arctan2(y_node, x_node))
+    # Selenographic longitude (eastward from prime meridian)
+    lon_lib = (phi - np.degrees(W) + 180) % 360 - 180
+
+    def _maybe_float(val):
+        return float(cast(Any, val)) if np.isscalar(val) else val
+
+    return _maybe_float(lon_lib), _maybe_float(lat_lib)
 
 
 def get_moon_position_angle_bright_limb(time: Any) -> float:
@@ -881,20 +924,13 @@ def get_moon_position_angle_bright_limb(time: Any) -> float:
     return float(np.degrees(pa_rad) % 360)
 
 
-def get_moon_colongitude(time: Any) -> float | np.ndarray:
+def _get_moon_orientation_elements(
+    time: Any,
+) -> tuple[np.ndarray | float, np.ndarray | float, np.ndarray | float]:
     """
-    Returns the Moon's colongitude in degrees.
-    Uses the IAU 2015 rotation model for high precision and vectorization.
-    Supports both scalar and array Skyfield Time objects.
+    Internal helper to calculate Moon orientation elements (alpha0, delta0, W)
+    using the IAU 2015 model. Results are in radians.
     """
-    eph = get_ephemeris()
-    sun = eph["sun"]
-    moon = eph["moon"]
-
-    # Observation of Sun from Moon center (includes light-time correction)
-    astrometric = cast(Any, moon).at(time).observe(sun).apparent()
-    v_ms = astrometric.position.au
-
     # Evaluate orientation at observation time (Terrestrial Time)
     d = time.tt - 2451545.0
     T = d / 36525.0
@@ -963,6 +999,25 @@ def get_moon_colongitude(time: Any) -> float | np.ndarray:
         )
         % 360
     )
+
+    return alpha0, delta0, W
+
+
+def get_moon_colongitude(time: Any) -> float | np.ndarray:
+    """
+    Returns the Moon's colongitude in degrees.
+    Uses the IAU 2015 rotation model for high precision and vectorization.
+    Supports both scalar and array Skyfield Time objects.
+    """
+    eph = get_ephemeris()
+    sun = eph["sun"]
+    moon = eph["moon"]
+
+    # Observation of Sun from Moon center (includes light-time correction)
+    astrometric = cast(Any, moon).at(time).observe(sun).apparent()
+    v_ms = astrometric.position.au
+
+    alpha0, delta0, W = _get_moon_orientation_elements(time)
 
     if hasattr(time, "shape") and time.shape:
         u_v = v_ms / np.linalg.norm(v_ms, axis=0)

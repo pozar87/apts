@@ -62,6 +62,10 @@ class TestAstronomicalEvents(unittest.TestCase):
             "planet_planet_occultations": True,
             "mars_closest_approach": True,
             "jovian_mutual_events": True,
+            "moon_libration_maxima": True,
+            "venus_great_brilliancy": True,
+            "supermoons": True,
+            "planetary_dichotomy": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -94,7 +98,8 @@ class TestAstronomicalEvents(unittest.TestCase):
         # 37: planetary_dichotomy
         # 38: mars_closest_approach
         # 39: jovian_mutual_events
-        num_events = 39
+        # 40: moon_libration_maxima
+        num_events = 40
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
