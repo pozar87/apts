@@ -89,6 +89,8 @@ def get_rarity(event_type: str, data: dict) -> int:
         return 3
     if event_type == "Lunar Feature":
         return 4
+    if event_type == "Moon Libration Maximum":
+        return 3
     if event_type == "Planet-Planet Occultation":
         return 5
     if event_type == "Venus Greatest Brilliancy":

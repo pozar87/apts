@@ -853,7 +853,7 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
 
     # Handle cases where area might be zero or negative to avoid log10 errors
     if np.isscalar(area):
-        if area <= 0:
+        if cast(Any, area) <= 0:
             return float("inf")
         # Ensure we return a Python float for consistency
         res_scalar = v + 2.5 * np.log10(area)
