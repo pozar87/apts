@@ -1,12 +1,13 @@
 import functools
 import math
 import operator
-from typing import TYPE_CHECKING, Any, Optional, Union, Sequence, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, cast
 
 import numpy
 
 if TYPE_CHECKING:
     from pint import Quantity
+
     from .opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
     from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -18,7 +19,16 @@ from .utils import optics as optics_utils
 
 class OpticsUtils:
     @staticmethod
-    def expand(path: Sequence["OpticalEquipment"]) -> tuple[Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], Sequence[Any], Sequence[Any], Sequence[Any], Sequence[Any], Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]]:
+    def expand(
+        path: Sequence["OpticalEquipment"],
+    ) -> tuple[
+        Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
+        Sequence[Any],
+        Sequence[Any],
+        Sequence[Any],
+        Sequence[Any],
+        Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
+    ]:
         from .opticalequipment.barlow import Barlow
         from .opticalequipment.diagonal import Diagonal
         from .opticalequipment.filter import Filter
@@ -61,7 +71,11 @@ class OpticsUtils:
         return float(functools.reduce(operator.mul, barlows, 1))
 
     @staticmethod
-    def compute_zoom(telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], barlows: Sequence[Any], output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]) -> "Quantity":
+    def compute_zoom(
+        telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
+        barlows: Sequence[Any],
+        output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
+    ) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -83,7 +97,9 @@ class OpticsUtils:
 
     @staticmethod
     def compute_field_of_view(
-        telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"], barlows: Sequence[Any], output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"]
+        telescope: Union["OpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
+        barlows: Sequence[Any],
+        output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
     ) -> "Quantity":
         from .opticalequipment.smart_telescope import SmartTelescope
 
@@ -185,7 +201,10 @@ class OpticalPath:
         """
         from .opticalequipment.telescope import Telescope
 
-        if not isinstance(self.telescope, Telescope) or not self.output.is_visual_output():
+        if (
+            not isinstance(self.telescope, Telescope)
+            or not self.output.is_visual_output()
+        ):
             return True
 
         zoom = self.zoom().magnitude
@@ -239,7 +258,9 @@ class OpticalPath:
         Calculates the atmospheric dispersion in pixels for the current optical path.
         Useful for planetary imaging to determine if an Atmospheric Dispersion Corrector (ADC) is needed.
         """
-        dispersion = self.atmospheric_dispersion(altitude_degrees, lambda1_nm, lambda2_nm)
+        dispersion = self.atmospheric_dispersion(
+            altitude_degrees, lambda1_nm, lambda2_nm
+        )
         scale = self.pixel_scale()
         if scale is None or scale.magnitude == 0:
             return None
@@ -845,7 +866,9 @@ class OpticalPath:
         rate = optics_utils.calculate_field_rotation_rate(
             latitude_deg, azimuth_deg, altitude_deg
         )
-        return float(rate) * (get_unit_registry().arcsecond / get_unit_registry().second)
+        return float(rate) * (
+            get_unit_registry().arcsecond / get_unit_registry().second
+        )
 
     def max_exposure_alt_az(
         self,
@@ -895,9 +918,7 @@ class OpticalPath:
             return self.telescope.dawes_limit()
         return None
 
-    def rayleigh_limit(
-        self, wavelength_nm: float | int = 550
-    ) -> Optional["Quantity"]:
+    def rayleigh_limit(self, wavelength_nm: float | int = 550) -> Optional["Quantity"]:
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture and the provided wavelength (default 550nm).
@@ -994,9 +1015,7 @@ class OpticalPath:
 
     def saturn_ring_size_in_pixels(
         self, time: Any
-    ) -> Optional[
-        tuple[Union[float, numpy.ndarray], Union[float, numpy.ndarray]]
-    ]:
+    ) -> Optional[tuple[Union[float, numpy.ndarray], Union[float, numpy.ndarray]]]:
         """
         Calculates the projected size of Saturn's rings on the sensor in pixels.
         Returns a tuple (major_axis_pixels, minor_axis_pixels).
@@ -1160,11 +1179,14 @@ class OpticalPath:
 
         return float(m_eff)
 
-    def planetary_phase_angle(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
+    def planetary_phase_angle(
+        self, planet_name: str, time: Any
+    ) -> Union[float, numpy.ndarray]:
         """
         Calculates the phase angle (Sun-Object-Earth) for a planet or the Moon.
         """
         from .utils import planetary
+
         return planetary.get_planet_phase_angle(planet_name, time)
 
     def moon_libration(self, time: Any) -> tuple[float, float]:
@@ -1172,35 +1194,49 @@ class OpticalPath:
         Calculates the Moon's libration in longitude and latitude in degrees.
         """
         from .utils import planetary
-        return planetary.get_moon_libration(time)
+
+        lon, lat = planetary.get_moon_libration(time)
+        if numpy.isscalar(lon):
+            return float(cast(Any, lon)), float(cast(Any, lat))
+        return cast(Any, (lon, lat))
 
     def moon_position_angle_bright_limb(self, time: Any) -> float:
         """
         Calculates the position angle of the Moon's bright limb in degrees.
         """
         from .utils import planetary
+
         return planetary.get_moon_position_angle_bright_limb(time)
 
-    def planetary_magnitude(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
+    def planetary_magnitude(
+        self, planet_name: str, time: Any
+    ) -> Union[float, numpy.ndarray]:
         """
         Calculates the apparent magnitude of a planet, the Moon, or the Sun.
         """
         from .utils import planetary
+
         return planetary.get_planet_magnitude(planet_name, time)
 
-    def planetary_phase(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
+    def planetary_phase(
+        self, planet_name: str, time: Any
+    ) -> Union[float, numpy.ndarray]:
         """
         Calculates the illuminated fraction of a planet or the Moon as a percentage (0-100).
         """
         from .utils import planetary
+
         return planetary.get_planet_phase(planet_name, time)
 
-    def planetary_surface_brightness(self, planet_name: str, time: Any) -> Union[float, numpy.ndarray]:
+    def planetary_surface_brightness(
+        self, planet_name: str, time: Any
+    ) -> Union[float, numpy.ndarray]:
         """
         Calculates the average surface brightness of a planet, the Moon, or the Sun
         in mag/arcsec².
         """
         from .utils import planetary
+
         return planetary.get_planet_surface_brightness(planet_name, time)
 
     def moon_colongitude(self, time: Any) -> Union[float, numpy.ndarray]:
@@ -1208,6 +1244,7 @@ class OpticalPath:
         Calculates the Moon's selenographic colongitude in degrees.
         """
         from .utils import planetary
+
         return planetary.get_moon_colongitude(time)
 
     def jupiter_cml(self, time: Any, system: int = 2) -> Union[float, numpy.ndarray]:
@@ -1215,6 +1252,7 @@ class OpticalPath:
         Calculates Jupiter's Central Meridian Longitude (CML) for the specified system (1 or 2).
         """
         from .utils import planetary
+
         return planetary.get_jupiter_cml(time, system)
 
     def mars_cml(self, time: Any) -> Union[float, numpy.ndarray]:
@@ -1222,6 +1260,7 @@ class OpticalPath:
         Calculates Mars' Central Meridian Longitude (CML).
         """
         from .utils import planetary
+
         return planetary.get_mars_cml(time)
 
     def saturn_cml(self, time: Any, system: int = 3) -> Union[float, numpy.ndarray]:
@@ -1229,6 +1268,7 @@ class OpticalPath:
         Calculates Saturn's Central Meridian Longitude (CML) for the specified system (1, 2 or 3).
         """
         from .utils import planetary
+
         return planetary.get_saturn_cml(time, system)
 
     def sun_physical_details(self, time: Any) -> dict:
@@ -1236,6 +1276,7 @@ class OpticalPath:
         Calculates the physical details of the Sun (P, B0, L0).
         """
         from .utils import planetary
+
         return planetary.get_sun_physical_details(time)
 
     def max_planetary_rotation_duration(
@@ -1280,7 +1321,9 @@ class OpticalPath:
         omega = (2.0 * math.pi * r_eq * cos_de) / period
 
         if omega <= 1e-12:
-            return 3600 * get_unit_registry().second  # Cap at 1 hour for very slow rotators
+            return (
+                3600 * get_unit_registry().second
+            )  # Cap at 1 hour for very slow rotators
 
         t_max = (tolerance_pixels * scale) / omega
 
