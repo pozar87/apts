@@ -90,9 +90,11 @@ def find_solar_eclipses(observer, start_date, end_date):
 
         if d < rs + rm:
             # Visibility check: Is the Sun above the horizon for this observer?
-            # Account for atmospheric refraction for precise visibility check
+            # Oracle: use refracted position and account for Sun's semi-diameter.
+            # An eclipse is visible if any part of the solar disk is above the horizon.
+            # Horizon is approx -0.8333 degrees (34' refraction + 16' semi-diameter).
             sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-            if sun_alt <= 0:
+            if sun_alt <= -0.8333:
                 continue
 
             # Classification
