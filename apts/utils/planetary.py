@@ -147,15 +147,18 @@ def get_planet_rotation_period(planet_name: str) -> float:
 
 
 def get_planet_distance_km(
-    planet_name: str, time: Any, observer: Any = None
+    planet_name: str, time: Any, observer: Any = None, astrometric: Any = None
 ) -> Union[float, np.ndarray]:
     """
     Returns the geocentric (or topocentric) distance to the planet in km.
     """
-    eph = get_ephemeris()
-    obs_obj = observer if observer is not None else eph["earth"]
-    planet_obj = get_skyfield_obj(planet_name)
-    res = cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
+    if astrometric is not None:
+        res = astrometric.distance().km
+    else:
+        eph = get_ephemeris()
+        obs_obj = observer if observer is not None else eph["earth"]
+        planet_obj = get_skyfield_obj(planet_name)
+        res = cast(Any, obs_obj).at(time).observe(planet_obj).distance().km
     return float(cast(Any, res)) if np.isscalar(res) else res
 
 
@@ -355,7 +358,9 @@ def get_saturn_ring_details(time: Any) -> dict:
     }
 
 
-def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float | np.ndarray:
+def get_planet_fraction_illuminated(
+    planet_name: str, time: Any, astrometric: Any = None
+) -> float | np.ndarray:
     """
     Returns the illuminated fraction of a planet (0.0 to 1.0) for a given time.
     Uses the phase angle 'i' between the Sun and Earth as seen from the planet.
@@ -363,11 +368,12 @@ def get_planet_fraction_illuminated(planet_name: str, time: Any) -> float | np.n
     """
     eph = get_ephemeris()
     sun = eph["sun"]
-    earth = eph["earth"]
-    planet_obj = get_skyfield_obj(planet_name)
+    if astrometric is None:
+        earth = eph["earth"]
+        planet_obj = get_skyfield_obj(planet_name)
+        # Position of the planet as seen from Earth
+        astrometric = cast(Any, earth).at(time).observe(planet_obj)
 
-    # Position of the planet as seen from Earth
-    astrometric = cast(Any, earth).at(time).observe(planet_obj)
     # Phase angle: angle Sun-Planet-Earth
     i_rad = astrometric.phase_angle(sun).radians
 
@@ -750,7 +756,9 @@ def get_planet_phase_angle(planet_name: str, time: Any) -> float | np.ndarray:
     return astrometric.phase_angle(sun).degrees
 
 
-def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
+def get_planet_magnitude(
+    planet_name: str, time: Any, astrometric: Any = None
+) -> float | np.ndarray:
     """
     Calculates the apparent visual magnitude (V) for a planet, the Moon, or the Sun.
 
@@ -768,17 +776,20 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
 
     name_norm = get_simple_name(planet_name).lower()
 
+    if astrometric is None:
+        if name_norm == "sun":
+            planet_obj = sun
+        else:
+            planet_obj = get_skyfield_obj(planet_name)
+        astrometric = cast(Any, earth).at(time).observe(planet_obj)
+
     if name_norm == "sun":
         # Sun magnitude: M = -26.74 at 1 AU
-        dist_au = cast(Any, earth).at(time).observe(sun).distance().au
+        dist_au = astrometric.distance().au
         return -26.74 + 5 * np.log10(dist_au)
 
     if name_norm == "moon":
         # Moon magnitude using Krisciunas & Schaefer (1991)
-        # Consolidate observation to a single call to improve performance
-        planet_obj = get_skyfield_obj("moon")
-        astrometric = cast(Any, earth).at(time).observe(planet_obj)
-
         # alpha is the phase angle Sun-Moon-Earth in degrees
         alpha = astrometric.phase_angle(sun).degrees
         # V(R, alpha) = -12.73 + 0.026 * |alpha| + 4e-9 * alpha^4
@@ -791,9 +802,6 @@ def get_planet_magnitude(planet_name: str, time: Any) -> float | np.ndarray:
         return v_base + v_dist
 
     # Major planets and others supported by skyfield
-    planet_obj = get_skyfield_obj(planet_name)
-    astrometric = cast(Any, earth).at(time).observe(planet_obj)
-
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
     # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
     return magnitudelib.planetary_magnitude(astrometric)
@@ -812,14 +820,32 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
     - Wikipedia: Surface Brightness
     - Explanatory Supplement to the Astronomical Almanac
     """
-    v = get_planet_magnitude(planet_name, time)
-    d = get_planet_angular_diameter(planet_name, time)
-
+    eph = get_ephemeris()
+    earth = eph["earth"]
     name_norm = get_simple_name(planet_name).lower()
+
+    if name_norm == "sun":
+        planet_obj = eph["sun"]
+    else:
+        planet_obj = get_skyfield_obj(planet_name)
+
+    # Optimization: Consolidate redundant Skyfield observations into a single call.
+    # Apparent positions are expensive; reusing the result for magnitude, diameter,
+    # and illuminated fraction provides a significant speedup.
+    astrometric = cast(Any, earth).at(time).observe(planet_obj)
+
+    v = get_planet_magnitude(planet_name, time, astrometric=astrometric)
+
+    # Angular diameter calculation using precomputed astrometric object
+    radius_eq = get_planet_radius_km(planet_name)
+    distance_km = astrometric.distance().km
+    alpha_rad = 2 * np.arcsin(radius_eq / distance_km)
+    d = np.degrees(alpha_rad) * 3600.0
+
     if name_norm == "sun":
         k = 1.0
     else:
-        k = get_planet_fraction_illuminated(planet_name, time)
+        k = get_planet_fraction_illuminated(planet_name, time, astrometric=astrometric)
 
     # Area of illuminated portion of the disk in arcsec^2
     # Area = pi * (radius)^2 * k
@@ -829,7 +855,9 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
     if np.isscalar(area):
         if area <= 0:
             return float("inf")
-        return float(v + 2.5 * np.log10(area))
+        # Ensure we return a Python float for consistency
+        res_scalar = v + 2.5 * np.log10(area)
+        return float(cast(Any, res_scalar))
     else:
         # For arrays, use np.where to handle zeros and return inf.
         # We use np.log10's 'where' and 'out' parameters to avoid RuntimeWarnings
