@@ -298,6 +298,12 @@ def find_lunar_features(observer, start_date, end_date):
     features = [
         ("Lunar X", 358.0),
         ("Lunar V", 358.0),
+        # Hesiodus Ray: sunrise ray in crater Hesiodus. Colongitude ~18.0.
+        # Source: Sky & Telescope July 1996; ALPO Lunar Tool Kit.
+        ("Hesiodus Ray", 18.0),
+        # Curtiss Cross: "X" pattern near crater Fra Mauro. Colongitude ~193.8.
+        # Source: Jim Mosher; Sky & Telescope (originally reported by Curtiss).
+        ("Curtiss Cross", 193.8),
         ("Golden Handle (Mountains of Jura)", 15.0),
         ("Straight Wall (Rupes Recta)", 11.0),
     ]
