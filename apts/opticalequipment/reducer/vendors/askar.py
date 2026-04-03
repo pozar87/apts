@@ -24,7 +24,7 @@ class AskarReducer(Reducer):
             'tside_thread': 'M68',
             'tside_gender': 'Female',
             'cside_thread': 'M54',
-            'cside_gender': 'Female',
+            'cside_gender': 'Male',
             'reversible': False,
             'bf_role': 'start',
             'required_backfocus': 55
@@ -34,26 +34,70 @@ class AskarReducer(Reducer):
             'name': '103APO Reducer 0.6x',
             'type': 'type_reducer',
             'optical_length': 0,
-            'mass': 300,
+            'mass': 980,
             'tside_thread': 'M68',
             'tside_gender': 'Female',
-            'cside_thread': 'M68',
-            'cside_gender': 'Female',
+            'cside_thread': 'M48',
+            'cside_gender': 'Male',
             'reversible': False,
-            'bf_role': 'start'
+            'bf_role': 'start',
+            'required_backfocus': 55
         },
         'Askar_151PHQ_Reducer_0_7x': {
             'brand': 'Askar',
             'name': '151PHQ Reducer 0.7x',
             'type': 'type_reducer',
             'optical_length': 0,
-            'mass': 350,
+            'mass': 600,
             'tside_thread': 'M68',
             'tside_gender': 'Female',
-            'cside_thread': 'M68',
-            'cside_gender': 'Female',
+            'cside_thread': 'M48',
+            'cside_gender': 'Male',
             'reversible': False,
-            'bf_role': 'start'
+            'bf_role': 'start',
+            'required_backfocus': 55
+        },
+        'Askar_120APO_Reducer_0_8x': {
+            'brand': 'Askar',
+            'name': '120APO Reducer 0.8x',
+            'type': 'type_reducer',
+            'optical_length': 0,
+            'mass': 750,
+            'tside_thread': 'M68',
+            'tside_gender': 'Female',
+            'cside_thread': 'M54',
+            'cside_gender': 'Male',
+            'reversible': False,
+            'bf_role': 'start',
+            'required_backfocus': 55
+        },
+        'Askar_140APO_Reducer_0_8x': {
+            'brand': 'Askar',
+            'name': '140APO Reducer 0.8x',
+            'type': 'type_reducer',
+            'optical_length': 0,
+            'mass': 750,
+            'tside_thread': 'M68',
+            'tside_gender': 'Female',
+            'cside_thread': 'M54',
+            'cside_gender': 'Male',
+            'reversible': False,
+            'bf_role': 'start',
+            'required_backfocus': 55
+        },
+        'Askar_185APO_Reducer_0_8x': {
+            'brand': 'Askar',
+            'name': '185APO Reducer 0.8x',
+            'type': 'type_reducer',
+            'optical_length': 0,
+            'mass': 950,
+            'tside_thread': 'M68',
+            'tside_gender': 'Female',
+            'cside_thread': 'M54',
+            'cside_gender': 'Male',
+            'reversible': False,
+            'bf_role': 'start',
+            'required_backfocus': 55
         },
         'Askar_0_76x_Reducer_PHQ': {
             'brand': 'Askar',
@@ -137,6 +181,18 @@ class AskarReducer(Reducer):
     @classmethod
     def Askar_151PHQ_Reducer_0_7x(cls):
         return cls.from_database(cls._DATABASE['Askar_151PHQ_Reducer_0_7x'])
+
+    @classmethod
+    def Askar_120APO_Reducer_0_8x(cls):
+        return cls.from_database(cls._DATABASE['Askar_120APO_Reducer_0_8x'])
+
+    @classmethod
+    def Askar_140APO_Reducer_0_8x(cls):
+        return cls.from_database(cls._DATABASE['Askar_140APO_Reducer_0_8x'])
+
+    @classmethod
+    def Askar_185APO_Reducer_0_8x(cls):
+        return cls.from_database(cls._DATABASE['Askar_185APO_Reducer_0_8x'])
 
     @classmethod
     def Askar_0_76x_Reducer_PHQ(cls):
