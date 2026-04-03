@@ -69,3 +69,7 @@
 ## 2025-06-12 - [Moon Magnitude Consolidation]
 **Learning:** Calculating Moon magnitude requires both phase angle and distance. Implementing these via separate calls to `get_planet_phase_angle` and `get_moon_distance` results in redundant Skyfield observations of the Moon. Consolidating these into a single observation and extracting both properties from the resulting astrometric object yields a ~12x speedup for large time arrays.
 **Action:** When multiple physical properties (distance, phase angle, position) of the same moving body are needed for a calculation, always perform a single Skyfield observation and reuse the resulting astrometric object.
+
+## 2025-06-15 - [Vectorized Logarithmic Surface Brightness]
+**Learning:** Vectorizing calculations that involve logarithms (like surface brightness) requires careful handling of non-positive inputs to avoid `RuntimeWarning`. Using `np.log10(x, where=x>0, out=res)` followed by `np.where(x>0, ..., np.inf)` ensures vectorized performance while remaining silent and correct for invalid inputs.
+**Action:** Always use the `where` and `out` parameters of NumPy ufuncs when vectorizing functions with restricted domains (log, sqrt, etc.) to prevent noisy warnings in production.
