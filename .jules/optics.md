@@ -667,3 +667,32 @@
     - https://www.ioptron.com/product-p/6113af.htm (RC10 Steel)
     - https://www.ioptron.com/v/Manuals/611X_RCTruss_Manual.pdf (RC Truss Manual)
     - https://www.ioptron.com/product-p/8710.htm (R80)
+
+## 2024-06-12 - Audit of Stellarvue Telescopes
+
+- **Items:** Stellarvue SVX (070T, 080T, 090T, 102T, 130T, 152T), SV60EDS, SV70T, Access (80, 102, 48).
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/stellarvue.py`
+- **Initial State:**
+    - Missing explicit `aperture_mm`, `focal_length_mm`, and `central_obstruction_mm`.
+    - `mass` values were placeholders (e.g., 2800g for SVX080T).
+- **Verified Specs (Sources: Stellarvue Official Manuals / Product Pages / AstroBin / OpticsPlanet):**
+    - **SVX080T:** 80/480mm (f/6), Mass 2.95kg (6.5 lbs OTA).
+    - **SVX102T:** 101.5/714mm (f/7), Mass 4.5kg (9.9 lbs OTA).
+    - **SVX130T:** 130/910mm (f/7), Mass 7.62kg (16.8 lbs OTA).
+    - **SVX152T:** 152/1200mm (f/7.9), Mass 10.52kg (23.2 lbs OTA).
+    - **SV60EDS:** 60/330mm (f/5.5), Mass 1.13kg (2.5 lbs OTA).
+    - **SV70T:** 70/420mm (f/6), Mass 2.5kg (5.5 lbs OTA).
+    - **SVX090T:** 90/540mm (f/6), Mass 3.2kg (7.0 lbs OTA).
+    - **Access 80:** 80/560mm (f/7), Mass 2.72kg (6.0 lbs OTA).
+    - **Access 102:** 102/714mm (f/7), Mass 4.31kg (9.5 lbs OTA).
+    - **SVX070T Raptor:** 70/420mm (f/6), Mass 1.81kg (4.0 lbs OTA).
+- **Action:** Updated all 20 entries in `apts/opticalequipment/telescope/vendors/stellarvue.py` with verified physical specifications, ensuring `central_obstruction_mm: 0` for all refractors and correcting mass values to OTA-only weights. Added source comments. Verified with `scripts/verify_stellarvue_static.py`.
+- **Source URLs:**
+    - http://www.stellarvue.com/manuals/SVX80T-3SV_manual.pdf
+    - https://www.stellarvue.com/product/svx102t
+    - https://www.stellarvue.com/manuals/SVX130T_manual.pdf
+    - https://telescope.fandom.com/wiki/Stellarvue_SVX152T
+    - https://stargazerslounge.com/topic/234836-stellarvue-sv-60eds-unbox-mini-review/
+    - https://ssr.app.astrobin.com/equipment/explorer/telescope/333/stellarvue-sv70t
+    - https://www.stellarvue.com/product/svx090t
+    - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
