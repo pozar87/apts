@@ -1,8 +1,7 @@
-from typing import Any, cast
 import numpy as np
 from skyfield.api import Star
 from skyfield.searchlib import find_minima
-from ..cache import get_timescale, get_ephemeris
+from ..cache import get_timescale
 from ..constants import astronomy
 from ..utils import planetary
 from .utils import _refine_conjunction
@@ -135,7 +134,6 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
                 ingress_t = t_list[i]
                 egress_t = t_list[i + 1]
                 # Mid-point for conjunction refinement if needed
-                from datetime import timedelta
                 mid_t = ts.from_datetime(
                     ingress_t.utc_datetime()
                     + (egress_t.utc_datetime() - ingress_t.utc_datetime()) / 2

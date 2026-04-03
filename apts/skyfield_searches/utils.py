@@ -1,10 +1,7 @@
 from datetime import timedelta
 from typing import Any, cast
-import numpy as np
-from skyfield.api import Star
 from skyfield.searchlib import find_minima
 from ..cache import get_ephemeris, get_timescale
-from ..utils import planetary
 
 def _refine_conjunction(observer, obj1, obj2, rough_t):
     """

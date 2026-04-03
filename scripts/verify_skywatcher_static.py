@@ -1,5 +1,4 @@
 import ast
-import os
 
 def verify():
     filepath = 'apts/opticalequipment/telescope/vendors/sky_watcher.py'

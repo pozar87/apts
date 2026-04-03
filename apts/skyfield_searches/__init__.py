@@ -1,6 +1,5 @@
 from .meteor_showers import find_meteor_showers
 from .jovian import (
-    _get_jovian_moon_objects,
     find_jovian_mutual_events,
     find_jovian_moon_events,
     find_jupiter_grs_transits,
