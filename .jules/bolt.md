@@ -73,3 +73,7 @@
 ## 2025-06-15 - [Vectorized Logarithmic Surface Brightness]
 **Learning:** Vectorizing calculations that involve logarithms (like surface brightness) requires careful handling of non-positive inputs to avoid `RuntimeWarning`. Using `np.log10(x, where=x>0, out=res)` followed by `np.where(x>0, ..., np.inf)` ensures vectorized performance while remaining silent and correct for invalid inputs.
 **Action:** Always use the `where` and `out` parameters of NumPy ufuncs when vectorizing functions with restricted domains (log, sqrt, etc.) to prevent noisy warnings in production.
+
+## 2025-06-20 - [Supermoon Bulk Search Optimization]
+**Learning:** Iterative per-event searches for related orbital extremes (e.g., finding the nearest perigee for every Full Moon) is inefficient in Skyfield. Consolidating these into bulk maxima/minima searches over the entire padded date range, combined with NumPy-based nearest-neighbor matching, significantly reduces overhead.
+**Action:** Replace iterative 'find_maxima/minima' calls inside loops with a single bulk search over the full range plus padding, and use NumPy to match events.
