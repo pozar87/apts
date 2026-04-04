@@ -354,13 +354,14 @@ def find_moon_libration_maxima(observer, start_date, end_date):
             }
         )
 
-    for t, v in zip(lon_max_times, lon_max_vals):
+    from typing import Any, Iterable, cast
+    for t, v in zip(cast(Iterable[Any], lon_max_times), lon_max_vals):
         add_lib_event(t, v, "longitude", "max")
-    for t, v in zip(lon_min_times, lon_min_vals):
+    for t, v in zip(cast(Iterable[Any], lon_min_times), lon_min_vals):
         add_lib_event(t, v, "longitude", "min")
-    for t, v in zip(lat_max_times, lat_max_vals):
+    for t, v in zip(cast(Iterable[Any], lat_max_times), lat_max_vals):
         add_lib_event(t, v, "latitude", "max")
-    for t, v in zip(lat_min_times, lat_min_vals):
+    for t, v in zip(cast(Iterable[Any], lat_min_times), lat_min_vals):
         add_lib_event(t, v, "latitude", "min")
 
     return events
