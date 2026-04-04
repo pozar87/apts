@@ -26,40 +26,55 @@ def find_supermoons(start_date, end_date):
     t_phases, y_phases = almanac.find_discrete(t0, t1, f)
     full_moons = [t for t, y in zip(t_phases, y_phases) if y == 2]
 
+    if not full_moons:
+        return []
+
+    # 2. Bulk search for all Apogees and Perigees in the padded range.
+    # Padding by 16 days ensures we find the nearest events for every Full Moon.
+    t_padded_start = ts.tt_jd(t0.tt - 16)
+    t_padded_end = ts.tt_jd(t1.tt + 16)
+
+    def distance_to_earth(t):
+        return cast(Any, earth).at(t).observe(moon).distance().km
+
+    # Optimization: perform global search once instead of iteratively per Full Moon.
+    setattr(distance_to_earth, "step_days", 13.0)
+    t_apogees, v_apogees = find_maxima(t_padded_start, t_padded_end, distance_to_earth)
+    t_perigees, v_perigees = find_minima(t_padded_start, t_padded_end, distance_to_earth)
+
+    if len(v_perigees) == 0 or len(v_apogees) == 0:
+        return []
+
+    # 3. Vectorized distance calculation for all Full Moons
+    full_moons_t = ts.tt_jd(np.array([t.tt for t in full_moons]))
+    current_distances = cast(Any, earth).at(full_moons_t).observe(moon).distance().km
+
+    # 4. Use NumPy to find the nearest perigee and apogee for each Full Moon.
     events = []
-    for t_full in full_moons:
-        # 2. For each Full Moon, find the nearest perigee and apogee to determine the 90% threshold
-        # Search window: +/- 15 days around the full moon
-        t_start = ts.tt_jd(t_full.tt - 15)
-        t_end = ts.tt_jd(t_full.tt + 15)
+    apogee_tt = np.array([t.tt for t in t_apogees])
+    perigee_tt = np.array([t.tt for t in t_perigees])
 
-        def distance_to_earth(t):
-            return cast(Any, earth).at(t).observe(moon).distance().km
+    for i, t_full in enumerate(full_moons):
+        idx_apogee = np.argmin(np.abs(apogee_tt - t_full.tt))
+        idx_perigee = np.argmin(np.abs(perigee_tt - t_full.tt))
 
-        setattr(distance_to_earth, "step_days", 1.0)
-        t_max, v_max = find_maxima(t_start, t_end, distance_to_earth)
-        t_min, v_min = find_minima(t_start, t_end, distance_to_earth)
+        perigee_dist = v_perigees[idx_perigee]
+        apogee_dist = v_apogees[idx_apogee]
+        current_dist = current_distances[i]
 
-        if len(v_min) > 0 and len(v_max) > 0:
-            perigee_dist = v_min[0]
-            apogee_dist = v_max[0]
+        # Supermoon threshold (90% between apogee and perigee)
+        # Threshold = Perigee + 0.1 * (Apogee - Perigee)
+        threshold = perigee_dist + 0.1 * (apogee_dist - perigee_dist)
 
-            # Distance at the moment of Full Moon
-            current_dist = distance_to_earth(t_full)
-
-            # Supermoon threshold (90% between apogee and perigee)
-            # Threshold = Perigee + 0.1 * (Apogee - Perigee)
-            threshold = perigee_dist + 0.1 * (apogee_dist - perigee_dist)
-
-            if current_dist <= threshold:
-                events.append({
-                    "date": t_full.utc_datetime(),
-                    "event": "Supermoon",
-                    "object": "Moon",
-                    "type": "Supermoon",
-                    "distance_km": float(current_dist),
-                    "perigee_distance_km": float(perigee_dist)
-                })
+        if current_dist <= threshold:
+            events.append({
+                "date": t_full.utc_datetime(),
+                "event": "Supermoon",
+                "object": "Moon",
+                "type": "Supermoon",
+                "distance_km": float(current_dist),
+                "perigee_distance_km": float(perigee_dist)
+            })
 
     return events
 
