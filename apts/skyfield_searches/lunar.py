@@ -96,9 +96,19 @@ def find_moon_apogee_perigee(start_date, end_date):
 
     events = []
     for t in max_times:
-        events.append({"date": t.utc_datetime(), "event": "Apogee", "object": "Moon"})
+        events.append({
+            "date": t.utc_datetime(),
+            "event": "Apogee",
+            "object": "Moon",
+            "distance_km": float(distance_to_earth(t))
+        })
     for t in min_times:
-        events.append({"date": t.utc_datetime(), "event": "Perigee", "object": "Moon"})
+        events.append({
+            "date": t.utc_datetime(),
+            "event": "Perigee",
+            "object": "Moon",
+            "distance_km": float(distance_to_earth(t))
+        })
 
     return events
 
