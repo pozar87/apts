@@ -696,3 +696,23 @@
     - https://ssr.app.astrobin.com/equipment/explorer/telescope/333/stellarvue-sv70t
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
+
+## 2024-06-13 - Audit of TeleVue Telescopes
+
+- **Items:** TV-60, TV-76, TV-85, TV-102, NP101, NP101is, NP127is, NP127fli.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/televue.py`
+- **Initial State:**
+    - Missing explicit `aperture_mm`, `focal_length_mm`, and `central_obstruction_mm`.
+    - `mass` values were placeholders (e.g., 900g for TV-60, 4200g for NP101is).
+- **Verified Specs (Sources: TeleVue Official Website / Company Seven / B&H):**
+    - **TV-60:** 60/360mm (f/6.0), Mass 1.36kg (3.0 lbs).
+    - **TV-76:** 76/480mm (f/6.3), Mass 2.31kg (5.1 lbs).
+    - **TV-85:** 85/600mm (f/7.0), Mass 2.77kg (6.1 lbs).
+    - **TV-102:** 102/880mm (f/8.6), Mass 4.17kg (9.2 lbs).
+    - **NP101 / NP101is:** 101/540mm (f/5.4), Mass 4.85kg (10.7 lbs).
+    - **NP127is / NP127fli:** 127/660mm (f/5.2), Mass 6.58kg (14.5 lbs).
+- **Action:** Updated all entries in `apts/opticalequipment/telescope/vendors/televue.py` with verified physical specifications, explicit aperture/focal length, and `central_obstruction_mm: 0`. Standardized mass to OTA-only weights in grams. Added source comments. Verified with `scripts/verify_televue_static.py`.
+- **Source URLs:**
+    - https://www.televue.com/pdf/Literature/Tele%20Vue%20Telescopes%20Recommendations%20and%20Specs.pdf
+    - https://www.televue.com/engine/TV3b_page.asp?id=199&Tab=_spec
+    - http://www.company7.com/televue/telescopes/tv102.html
