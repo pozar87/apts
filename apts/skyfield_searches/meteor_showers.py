@@ -1,4 +1,4 @@
-from datetime import datetime
+from typing import Any, cast
 from skyfield.api import Star
 from ..cache import get_ephemeris, get_timescale
 from ..utils import planetary
@@ -40,7 +40,6 @@ def find_meteor_showers(observer, start_date, end_date):
     :return: List of event dictionaries.
     """
     ts = get_timescale()
-    utc = start_date.tzinfo
     eph = get_ephemeris()
     sun = eph["sun"]
     moon = eph["moon"]
@@ -172,7 +171,7 @@ def find_meteor_showers(observer, start_date, end_date):
         times_vec = ts.from_datetimes([c["date"] for c in candidates])
 
         # Geocentric solar longitude for all candidates (apparent)
-        sun_lons = np.atleast_1d(earth.at(times_vec).observe(sun).apparent().ecliptic_latlon()[1].degrees)
+        sun_lons = np.atleast_1d(cast(Any, earth).at(times_vec).observe(sun).apparent().ecliptic_latlon()[1].degrees)
 
         # Altitudes for Sun and Moon
         sun_alts = np.atleast_1d(
