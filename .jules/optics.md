@@ -696,3 +696,45 @@
     - https://ssr.app.astrobin.com/equipment/explorer/telescope/333/stellarvue-sv70t
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
+
+## 2024-06-13 - Audit of Askar Telescopes
+
+- **Items:** Askar FRA (300 Pro, 400, 500, 600), PHQ (65, 80, 107, 130, 151), APO (103, 120, 140, 185, 203), V series (60, 80), FMA (135, 180 Pro, 230), ACL200, SQA55, 71F.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/askar.py`
+- **Initial State:**
+    - Missing explicit `central_obstruction_mm` for all models.
+    - Several models had rounded or incorrect mass values.
+    - V series and FMA series had incorrect focal lengths (using reduced instead of native).
+    - `Askar_203APO` was incorrectly listed as `Askar_200APO`.
+- **Verified Specs (Source: Sharpstar/Askar Official Website & Manuals):**
+    - **FRA300 Pro:** 60/300mm, Mass 2.26kg, CO 0mm.
+    - **FRA400:** 72/400mm, Mass 2.56kg (OTA), CO 0mm.
+    - **103APO:** 103/700mm, Mass 4.75kg (Net), CO 0mm.
+    - **80PHQ:** 80/600mm, Mass 3.9kg (Net), CO 0mm.
+    - **65PHQ:** 65/416mm, Mass 2.0kg (OTA), CO 0mm.
+    - **107PHQ:** 107/749mm, Mass 5.7kg (Net), CO 0mm.
+    - **130PHQ:** 130/1000mm, Mass 10.2kg (Net), CO 0mm.
+    - **151PHQ:** 151/1057mm, Mass 11.0kg (Net), CO 0mm.
+    - **185APO:** 185/1295mm, Mass 14.9kg (Net), CO 0mm.
+    - **V_60Q:** 60/360mm (native), Mass 2.86kg (total config), CO 0mm.
+    - **V_80Q:** 80/500mm (native), Mass 3.44kg (total config), CO 0mm.
+    - **FMA135:** 30/135mm, Mass 280g (OTA), CO 0mm.
+    - **FMA180 Pro:** 40/180mm, Mass 395g (OTA), CO 0mm.
+    - **FMA230:** 50/275mm (native), Mass 1.2kg (total), CO 0mm.
+    - **203APO:** 203/1421mm, Mass 18.0kg, CO 0mm.
+    - **140APO:** 140/980mm, Mass 9.2kg (Net), CO 0mm.
+    - **120APO:** 120/840mm, Mass 6.5kg (Net), CO 0mm.
+    - **ACL200:** 50/200mm, Mass 1.5kg, CO 0mm.
+    - **71F:** 71/490mm, Mass 2.5kg (OTA), CO 0mm.
+- **Action:** Updated all 25 entries with verified physical specifications, explicit `central_obstruction_mm: 0`, and corrected mass values to OTA/Net weights where available. Added source comments for all entries. Corrected `Askar_200APO` to `Askar_203APO`.
+- **Source URLs:**
+    - https://www.sharpstar-optics.com/Products_1/22.html (FRA300 Pro)
+    - https://www.sharpstar-optics.com/Products_1/34.html (FRA400)
+    - https://www.sharpstar-optics.com/Products_1/79.html (103APO)
+    - https://www.sharpstar-optics.com/Products_1/1.html (80PHQ)
+    - https://www.sharpstar-optics.com/Products_1/39.html (65PHQ)
+    - https://www.sharpstar-optics.com/Products_1/78.html (130PHQ)
+    - https://www.sharpstar-optics.com/Products_1/93.html (185APO)
+    - https://www.sharpstar-optics.com/Products_1/21.html (FMA230)
+    - https://www.sharpstar-optics.com/Products_1/203APO.html (203APO)
+    - https://www.sharpstar-optics.com/Products_1/101.html (71F)
