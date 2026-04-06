@@ -30,7 +30,11 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
             sun = eph["sun"]
 
             m_obs = observer.at(ti).observe(moon).apparent()
-            m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            # Oracle: use refracted position and account for Moon's semi-diameter.
+            m_alt_refracted, _, m_dist = m_obs.altaz(
+                temperature_C=10.0, pressure_mbar=1013.25
+            )
+            rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
 
             s_alt = (
                 observer.at(ti)
@@ -40,11 +44,13 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
                 .degrees
             )
 
+            # Visibility: Moon partially above horizon (refracted)
+            # and Sun below horizon (refracted altitude < -0.26 deg approx semi-diameter)
             event.update(
                 {
-                    "altitude": float(m_alt.degrees),
+                    "altitude": float(m_alt_refracted.degrees),
                     "sun_altitude": float(s_alt),
-                    "is_visible": bool(m_alt.degrees > 0 and s_alt <= -6),
+                    "is_visible": bool(m_alt_refracted.degrees > -rm and s_alt < -0.26),
                 }
             )
 
@@ -55,56 +61,82 @@ def find_solar_eclipses(observer, start_date, end_date):
     """
     Finds solar eclipses for a specific observer, providing classification
     (Total, Annular, Partial), magnitude, and obscuration.
+    Uses an optimized two-step search (Geocentric New Moon -> Topocentric refinement).
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
+    eph = get_ephemeris()
     sun = planetary.get_skyfield_obj("sun")
     moon = planetary.get_skyfield_obj("moon")
 
-    def solar_separation(t):
-        s = observer.at(t).observe(sun).apparent()
-        m = observer.at(t).observe(moon).apparent()
+    # 1. Fast Geocentric New Moon search
+    # We pad the range by 12 hours to catch events where topocentric parallax
+    # might shift a geocentric New Moon into/out of the window.
+    t_search_0 = ts.tt_jd(t0.tt - 0.5)
+    t_search_1 = ts.tt_jd(t1.tt + 0.5)
 
-        # Calculate topocentric angular radii
-        s_dist = s.distance().km
-        m_dist = m.distance().km
-
-        s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
-        m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
-
-        sep = s.separation_from(m).degrees
-        return sep - (s_radius + m_radius)
-
-    setattr(solar_separation, "step_days", 0.005)
-    times, _ = find_minima(t0, t1, solar_separation)
+    f_phases = almanac.moon_phases(eph)
+    t_phases, y_phases = almanac.find_discrete(t_search_0, t_search_1, f_phases)
+    new_moon_times = [t for t, y in zip(t_phases, y_phases) if y == 0]
 
     events = []
-    for t in times:
-        s_pos = observer.at(t).observe(sun).apparent()
-        m_pos = observer.at(t).observe(moon).apparent()
 
-        d = s_pos.separation_from(m_pos).degrees
-        rs = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_pos.distance().km))
-        rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_pos.distance().km))
+    # 2. Topocentric refinement for each potential window
+    for t_nm in new_moon_times:
+        # Narrow window: +/- 12 hours around geocentric New Moon
+        tw0 = ts.tt_jd(t_nm.tt - 0.5)
+        tw1 = ts.tt_jd(t_nm.tt + 0.5)
 
-        if d < rs + rm:
-            # Visibility check: Is the Sun above the horizon for this observer?
-            # Oracle: use refracted position and account for Sun's semi-diameter.
-            # An eclipse is visible if any part of the solar disk is above the horizon.
-            # Horizon is approx -0.8333 degrees (34' refraction + 16' semi-diameter).
-            sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-            if sun_alt <= -0.8333:
+        def solar_separation(t):
+            s = observer.at(t).observe(sun).apparent()
+            m = observer.at(t).observe(moon).apparent()
+
+            # Calculate topocentric angular radii
+            s_dist = s.distance().km
+            m_dist = m.distance().km
+
+            s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
+            m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
+
+            sep = s.separation_from(m).degrees
+            return sep - (s_radius + m_radius)
+
+        setattr(solar_separation, "step_days", 0.05)
+        times, separations = find_minima(tw0, tw1, solar_separation)
+
+        for t, s in zip(times, separations):
+            if s > 0:
                 continue
 
-            # Classification
-            if d <= abs(rs - rm):
-                if rm >= rs:
-                    kind = "Total"
+            # Filter times outside the original requested range
+            if not (t0.tt <= t.tt <= t1.tt):
+                continue
+
+            s_pos = observer.at(t).observe(sun).apparent()
+            m_pos = observer.at(t).observe(moon).apparent()
+
+            d = s_pos.separation_from(m_pos).degrees
+            rs = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_pos.distance().km))
+            rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_pos.distance().km))
+
+            if d < rs + rm:
+                # Visibility check: Is the Sun above the horizon for this observer?
+                # Oracle: use refracted position and account for Sun's semi-diameter.
+                # An eclipse is visible if any part of the solar disk is above the horizon.
+                # Refracted altitude is used; center of Sun at horizon means alt=0.
+                sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+                if sun_alt <= -rs:
+                    continue
+
+                # Classification
+                if d <= abs(rs - rm):
+                    if rm >= rs:
+                        kind = "Total"
+                    else:
+                        kind = "Annular"
                 else:
-                    kind = "Annular"
-            else:
-                kind = "Partial"
+                    kind = "Partial"
 
             # Magnitude (fraction of solar diameter covered)
             mag = (rs + rm - d) / (2 * rs)

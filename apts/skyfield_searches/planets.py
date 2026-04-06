@@ -263,7 +263,20 @@ def find_oppositions(observer, planet_name, start_date, end_date):
 
     events = []
     for t in times:
-        events.append({"date": t.utc_datetime(), "planet": planet_name})
+        # High-precision observation at the moment of opposition
+        astrometric = observer.at(t).observe(planet).apparent()
+
+        mag = planetary.get_planet_magnitude(planet_name, t, astrometric=astrometric)
+        dist_au = astrometric.distance().au
+        diam = planetary.get_planet_angular_diameter(planet_name, t, observer=observer)
+
+        events.append({
+            "date": t.utc_datetime(),
+            "planet": planet_name,
+            "magnitude": float(mag),
+            "distance_au": float(dist_au),
+            "angular_diameter_arcsec": float(diam),
+        })
 
     return events
 
