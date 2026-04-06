@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
+from apts.utils import planetary
 from apts.events import AstronomicalEvents
 from apts.place import Place
 from apts.constants.event_types import EventType
@@ -107,16 +108,35 @@ class TestAstronomicalEvents(unittest.TestCase):
         # Have the submit method return a different mock future each time
         mock_executor_instance.submit.side_effect = mock_futures
 
-        # have as_completed return the list of mock_futures as an iterator
-        mock_as_completed.return_value = iter(mock_futures)
+        # Pre-computation futures (for the 8 bodies)
+        num_precompute = 8
+        precompute_mock_futures = [MagicMock() for _ in range(num_precompute)]
+        for i, (future, name) in enumerate(
+            zip(
+                precompute_mock_futures,
+                list(planetary.CONJUNCTION_PLANETS.keys()) + ["moon"],
+            )
+        ):
+            future.result.return_value = (name.lower(), MagicMock())
+
+        # Combine pre-computation and main event futures
+        all_mock_futures = precompute_mock_futures + mock_futures
+        mock_executor_instance.submit.side_effect = all_mock_futures
+
+        # have as_completed return all mock futures in two separate batches as expected by get_events
+        def mock_as_completed_side_effect(futures_list):
+            return iter(futures_list)
+
+        mock_as_completed.side_effect = mock_as_completed_side_effect
 
         events_instance.get_events()
 
-        # Check that submit was called for each calculation method
-        self.assertEqual(mock_executor_instance.submit.call_count, num_events)
-        # Check that as_completed was called with the futures list
-        mock_as_completed.assert_called_once()
-        self.assertEqual(len(mock_as_completed.call_args[0][0]), num_events)
+        # Check that submit was called for each calculation method + precompute
+        self.assertEqual(
+            mock_executor_instance.submit.call_count, num_events + num_precompute
+        )
+        # Check that as_completed was called twice
+        self.assertEqual(mock_as_completed.call_count, 2)
 
     @patch("apts.events.coordinator.as_completed")
     def test_get_events_with_enum_selection(self, mock_as_completed):
