@@ -45,23 +45,22 @@ class OpticsUtils:
         telescope = main_optic
         # Last item in the path is output
         output = cast("OutputOpticalEquipment", path[-1])
-        # Intermediate elements
-        intermediate = path[1:-1]
-        # We treat Reducer, Flattener, and Corrector similarly to Barlow for magnification purposes
-        barlows = [
-            item
-            for item in intermediate
-            if isinstance(item, (Barlow, Reducer, Flattener, Corrector))
-        ]
-        diagonals = [item for item in intermediate if isinstance(item, Diagonal)]
-        filters = [item for item in intermediate if isinstance(item, Filter)]
-        others = [
-            item
-            for item in intermediate
-            if not isinstance(
-                item, (Barlow, Reducer, Flattener, Corrector, Diagonal, Filter)
-            )
-        ]
+        # Intermediate elements - categorized in a single pass
+        barlows = []
+        diagonals = []
+        filters = []
+        others = []
+
+        for item in path[1:-1]:
+            if isinstance(item, (Barlow, Reducer, Flattener, Corrector)):
+                barlows.append(item)
+            elif isinstance(item, Diagonal):
+                diagonals.append(item)
+            elif isinstance(item, Filter):
+                filters.append(item)
+            else:
+                others.append(item)
+
         return (telescope, barlows, diagonals, filters, others, output)
 
     @staticmethod
@@ -130,6 +129,8 @@ class OpticalPath:
         else:
             self.others = others
             self.output = output
+        # Cache for expensive calculations
+        self._cache = {}
 
     @classmethod
     def from_path(cls, path):
@@ -139,10 +140,18 @@ class OpticalPath:
         return cls(telescope, barlows, diagonals, filters, others, output)
 
     def zoom(self) -> "Quantity":
-        return OpticsUtils.compute_zoom(self.telescope, self.barlows, self.output)
+        if "zoom" not in self._cache:
+            self._cache["zoom"] = OpticsUtils.compute_zoom(
+                self.telescope, self.barlows, self.output
+            )
+        return self._cache["zoom"]
 
     def effective_barlow(self) -> float:
-        return float(OpticsUtils.barlows_multiplications(self.barlows))
+        if "effective_barlow" not in self._cache:
+            self._cache["effective_barlow"] = float(
+                OpticsUtils.barlows_multiplications(self.barlows)
+            )
+        return self._cache["effective_barlow"]
 
     def label(self) -> str:
         from .opticalequipment.smart_telescope import SmartTelescope
@@ -269,6 +278,9 @@ class OpticalPath:
         )
 
     def brightness(self) -> "Quantity":
+        if "brightness" in self._cache:
+            return self._cache["brightness"]
+
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -284,6 +296,7 @@ class OpticalPath:
         for f in self.filters:
             brightness *= f.transmission
 
+        self._cache["brightness"] = brightness
         return brightness
 
     def exit_pupil(self) -> "Quantity":
@@ -338,6 +351,9 @@ class OpticalPath:
         )
 
     def total_mass(self) -> "Quantity":
+        if "total_mass" in self._cache:
+            return self._cache["total_mass"]
+
         from .opticalequipment.abstract import OpticalEquipment
 
         all_equipment: set[OpticalEquipment] = set()
@@ -359,6 +375,7 @@ class OpticalPath:
             mass = getattr(eq, "mass", 0 * get_unit_registry().gram)
             if mass is not None:
                 total += mass
+        self._cache["total_mass"] = total
         return total
 
     def backfocus_gap(self) -> Optional["Quantity"]:
@@ -434,20 +451,27 @@ class OpticalPath:
         return (flipped_horizontally, flipped_vertically)
 
     def pixel_scale(self) -> Optional["Quantity"]:
+        if "pixel_scale" in self._cache:
+            return self._cache["pixel_scale"]
+
         from .opticalequipment.camera import Camera
         from .opticalequipment.smart_telescope import SmartTelescope
 
         if not isinstance(self.output, (Camera, SmartTelescope)):
+            self._cache["pixel_scale"] = None
             return None
         # Effective focal length
         eff_focal_length = self.telescope.focal_length * self.effective_barlow()
         # Pixel size
         p_size = self.output.pixel_size()
         # Formula: (p_size / eff_focal_length) * 206265
+        # Optimization: use pre-defined constant if it existed, but we'll stick to 206265 for now as it's the current code's precision.
         scale = (
             p_size.to("mm").magnitude / eff_focal_length.to("mm").magnitude
         ) * 206265
-        return scale * get_unit_registry().arcsecond
+        res = scale * get_unit_registry().arcsecond
+        self._cache["pixel_scale"] = res
+        return res
 
     def sampling(self, seeing: float) -> Optional[str]:
         """
@@ -914,18 +938,27 @@ class OpticalPath:
         Calculates the Dawes' limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture.
         """
-        if hasattr(self.telescope, "dawes_limit"):
-            return self.telescope.dawes_limit()
-        return None
+        if "dawes_limit" not in self._cache:
+            if hasattr(self.telescope, "dawes_limit"):
+                self._cache["dawes_limit"] = self.telescope.dawes_limit()
+            else:
+                self._cache["dawes_limit"] = None
+        return self._cache["dawes_limit"]
 
     def rayleigh_limit(self, wavelength_nm: float | int = 550) -> Optional["Quantity"]:
         """
         Calculates the Rayleigh limit (resolving power) of the telescope in arcseconds.
         Based on the telescope aperture and the provided wavelength (default 550nm).
         """
-        if hasattr(self.telescope, "rayleigh_limit"):
-            return self.telescope.rayleigh_limit(wavelength_nm=wavelength_nm)
-        return None
+        cache_key = f"rayleigh_limit_{wavelength_nm}"
+        if cache_key not in self._cache:
+            if hasattr(self.telescope, "rayleigh_limit"):
+                self._cache[cache_key] = self.telescope.rayleigh_limit(
+                    wavelength_nm=wavelength_nm
+                )
+            else:
+                self._cache[cache_key] = None
+        return self._cache[cache_key]
 
     def airy_disk_diameter(self, wavelength_nm: float = 550) -> Optional["Quantity"]:
         """

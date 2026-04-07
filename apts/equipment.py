@@ -56,24 +56,39 @@ class Equipment:
         self.register(NakedEye())
         self._connected = False
 
-    def _get_paths(self, output_id):
+    def _get_paths(self, output_ids):
+        """
+        Find all unique optical paths to the given output IDs.
+        """
         # Connect all outputs with inputs
         self._connect()
+
+        if not isinstance(output_ids, list):
+            output_ids = [output_ids]
+
         # Find input and output nodes
         results = []
-        results_set = set()
-        logger.debug(f"Space {GraphConstants.SPACE_ID}, Output {output_id}")
+        # Store frozenset of equipment to avoid redundant path creation
+        seen_equipment_sets = set()
+
+        logger.debug(f"Space {GraphConstants.SPACE_ID}, Outputs {output_ids}")
         for optical_path in GenericUtils.find_all_paths(
-            self.connection_garph, GraphConstants.SPACE_ID, output_id
+            self.connection_garph, GraphConstants.SPACE_ID, output_ids
         ):
             logger.debug(f"Optical Path: {optical_path}")
-            result: list[Optional[OpticalEquipment]] = [
+            # Get equipment objects in the path
+            equipment_list: list[OpticalEquipment] = [
                 self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
                 for node_id in optical_path
+                if self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT] is not None
             ]
-            op = OpticalPath.from_path([item for item in result if item is not None])  # pyright: ignore
-            if op.elements() not in results_set:
-                results_set.add(op.elements())
+
+            # Use frozenset for early uniqueness check
+            equipment_set = frozenset(equipment_list)
+            if equipment_set not in seen_equipment_sets:
+                seen_equipment_sets.add(equipment_set)
+                # Only create OpticalPath if it's unique
+                op = OpticalPath.from_path(equipment_list)
                 results.append(op)
         return results
 
@@ -90,10 +105,17 @@ class Equipment:
     def data(self, language: Optional[str] = None) -> pd.DataFrame:
         with language_context(language):
             result = self._generate_data()
-            # Translate Type column
-            result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].apply(
-                lambda x: gettext_(x.name) if isinstance(x, OpticalType) else x
+            # Translate Type column using vectorized mapping
+            # Get unique types to minimize gettext calls
+            unique_types = result[EquipmentTableLabels.TYPE].unique()
+            translation_map = {
+                t: (gettext_(t.name) if isinstance(t, OpticalType) else t)
+                for t in unique_types
+            }
+            result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].map(
+                translation_map
             )
+
             # Remove internal columns
             if EquipmentTableLabels.IS_NAKED_EYE in result.columns:
                 result = result.drop(columns=[EquipmentTableLabels.IS_NAKED_EYE])
@@ -251,26 +273,8 @@ class Equipment:
             return result_data
 
         result = pd.DataFrame(columns=columns)  # pyright: ignore
-        # Get paths from both visual and image outputs
-        visual_paths = self._get_paths(GraphConstants.EYE_ID)
-        image_paths = self._get_paths(GraphConstants.IMAGE_ID)
-
-        # Combine paths and remove duplicates across both visual and image paths
-        # Use path elements as the uniqueness criterion to avoid duplicates
-        all_paths = []
-        seen_elements = set()
-
-        # First add image paths (these include smart telescopes)
-        for path in image_paths:
-            if path.elements() not in seen_elements:
-                seen_elements.add(path.elements())
-                all_paths.append(path)
-
-        # Then add visual paths, but skip any that have elements already seen
-        for path in visual_paths:
-            if path.elements() not in seen_elements:
-                seen_elements.add(path.elements())
-                all_paths.append(path)
+        # Get unique paths from both visual and image outputs in a single pass
+        all_paths = self._get_paths([GraphConstants.EYE_ID, GraphConstants.IMAGE_ID])
 
         result = append(result, all_paths)
 
