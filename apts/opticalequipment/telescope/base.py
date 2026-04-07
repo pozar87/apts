@@ -2,7 +2,7 @@ import numpy
 from ..abstract import OpticalEquipment
 from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
-from ...constants import GraphConstants
+from ...constants import GraphConstants, astronomy
 from enum import Enum
 from typing import Optional, Any, cast
 
@@ -128,7 +128,7 @@ class Telescope(OpticalEquipment):
         wavelength_m = wavelength_nm * 1e-9
         aperture_m = self.aperture.to("m").magnitude
         limit_rad = 1.22 * wavelength_m / aperture_m
-        limit_arcsec = limit_rad * 206265
+        limit_arcsec = limit_rad * astronomy.RAD_TO_ARCSEC
         return round(limit_arcsec, 3) * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
