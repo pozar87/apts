@@ -2,7 +2,6 @@ import unittest
 from apts.opticalequipment.telescope.vendors.televue import TelevueTelescope
 
 class TestTelevueSpecs(unittest.TestCase):
-<<<<<<< HEAD
     def test_tv_60_specs(self):
         scope = TelevueTelescope.TeleVue_TV_60()
         self.assertEqual(scope.aperture.magnitude, 60)
@@ -58,7 +57,6 @@ class TestTelevueSpecs(unittest.TestCase):
         self.assertEqual(scope.focal_length.magnitude, 660)
         self.assertEqual(scope.mass.magnitude, 6577)
         self.assertEqual(scope.central_obstruction.magnitude, 0)
-=======
     def test_tv60_specs(self):
         scope = TelevueTelescope.TeleVue_TV_60()
         self.assertEqual(scope.aperture.to('mm').magnitude, 60)
@@ -114,7 +112,6 @@ class TestTelevueSpecs(unittest.TestCase):
         self.assertEqual(scope.focal_length.to('mm').magnitude, 660)
         self.assertEqual(scope.mass.to('gram').magnitude, 6500)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
->>>>>>> origin/master
 
 if __name__ == '__main__':
     unittest.main()
