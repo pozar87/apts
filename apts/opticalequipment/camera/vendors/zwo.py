@@ -1913,6 +1913,19 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3864,
         },
+        "ZWO_ASI_715MM": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "mass": 150,
+            "name": "ASI715MM",
+            "optical_length": 6.5,
+            "reversible": False,
+            "tside_gender": "Female",
+            "tside_thread": "M42",
+            "type": "type_camera"
+        },
         "ZWO_Seestar_S50_Sensor": {
             "bf_role": "end",
             "brand": "ZWO",
