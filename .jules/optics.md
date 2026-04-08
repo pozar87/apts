@@ -696,3 +696,30 @@
     - https://ssr.app.astrobin.com/equipment/explorer/telescope/333/stellarvue-sv70t
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
+
+## 2024-05-23 - Audit of ZWO Cameras
+
+- **Items:** ZWO ASI Pro Cooled and Uncooled camera series.
+- **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:**
+    - Contained non-existent 'ghost' mono models based on color-only sensors (ASI071MM, ASI094MM, ASI128MM, ASI2400MM, ASI482MM, ASI485MM, ASI664MM, ASI676MM, ASI715MM).
+    - Contained redundant 'V2' entries for several models.
+    - Masses for cooled Pro cameras were inconsistent (720g vs 700g, 1010g vs 700g).
+    - Masses for uncooled cameras were inaccurate (e.g., 340g-400g instead of ~126g).
+    - Peak QE values were sometimes missing or incorrect for color vs mono variants.
+- **Verified Specs (Source: ZWO Official Manuals / Website):**
+    - **ASI2600/6200 Pro:** Mass 700g (0.7kg). Peak QE: 80% (MC), 91% (MM).
+    - **ASI533/585 Pro:** Mass 470g (0.47kg).
+    - **ASI183/294 Pro:** Mass 410g (0.41kg).
+    - **Uncooled models (ASI533, ASI294, ASI183, ASI585, ASI662, ASI462):** Mass ~120g-129g.
+    - **ASI2600 Air:** Mass 760g (0.76kg).
+    - **Peak QE:** Standardized to 80% for modern OSC (IMX571, IMX455, IMX533) and 91% for Mono counterparts. Starvis 2 color sensors (IMX585, IMX662) verified at 91%.
+- **Action:** Removed ghost mono models and redundant V2 entries. Updated specifications (mass, QE, sensor dimensions) for core models based on official manuals. Cleaned up factory methods. Updated `tests/unit/test_stellar_improvements_v3.py` to match verified 700g mass for Pro cameras.
+- **Source URLs:**
+    - https://www.zwoastro.com/product/new-asi2600mm-mc-pro/
+    - https://www.zwoastro.com/product/asi6200/
+    - https://www.zwoastro.com/product/asi585mc-mm-pro/
+    - https://www.zwoastro.com/product/asi533mc-mm-pro/
+    - https://www.zwoastro.com/product/asi294/
+    - https://www.zwoastro.com/product/asi183/
+    - https://www.zwoastro.com/product/asi2600mc-air/

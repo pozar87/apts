@@ -568,18 +568,33 @@ def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_deg
             if p_name in ["mercury", "venus"]:
                 if p_dist < sun_dist:
                     kind = "Inferior Conjunction"
+                    # Oracle: check for transit during inferior conjunction
+                    p_rad = np.degrees(
+                        np.arctan2(planetary.get_planet_radius_km(p_name) / astronomy.AU_KM, p_dist)
+                    )
+                    s_rad = np.degrees(
+                        np.arctan2(astronomy.SUN_RADIUS_KM / astronomy.AU_KM, sun_dist)
+                    )
+                    is_transit = conj["separation_degrees"] < (p_rad + s_rad)
                 else:
                     kind = "Superior Conjunction"
+                    is_transit = False
             else:
                 kind = "Conjunction"
+                is_transit = False
+
+            event_name = f"{simple_name} Solar {kind}"
+            if is_transit:
+                event_name += " (Transit)"
 
             conj.update(
                 {
-                    "event": f"{simple_name} Solar {kind}",
+                    "event": event_name,
                     "object1": simple_name,
                     "object2": "Sun",
                     "type": "Planet Solar Conjunction",
                     "conjunction_kind": kind,
+                    "is_transit": is_transit,
                 }
             )
             conjunctions.append(conj)

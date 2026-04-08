@@ -115,27 +115,6 @@ class ZwoCamera(Camera):
             "tside_thread": "M42",
             "type": "type_camera",
         },
-        "ZWO_ASI_094MC_Pro": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 52000,
-            "height": 4928,
-            "mass": 800,
-            "name": "ASI094MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 4.88,
-            "quantum_efficiency_pct": 56,
-            "read_noise_e": 2.1,
-            "reversible": False,
-            "sensor_height_mm": 24.0,
-            "sensor_width_mm": 36.0,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 7376,
-        },
         "ZWO_ASI_120MC": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -546,11 +525,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 15000,
             "height": 3672,
-            "mass": 340,
+            "mass": 120, # Verified via official manual (0.12kg)
             "name": "ASI183MC",
             "optical_length": 6.5,
             "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
+            "quantum_efficiency_pct": 84, # Verified peak QE
             "read_noise_e": 1.6,
             "reversible": False,
             "sensor_height_mm": 8.8,
@@ -588,8 +567,29 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 15000,
             "height": 3672,
-            "mass": 410,
+            "mass": 410, # Verified via official manual (0.41kg)
             "name": "ASI183MC Pro",
+            "optical_length": 17.5,
+            "pixel_size_um": 2.4,
+            "quantum_efficiency_pct": 84, # Verified peak QE
+            "read_noise_e": 1.6,
+            "reversible": False,
+            "sensor_height_mm": 8.8,
+            "sensor_width_mm": 13.2,
+            "tside_gender": "Female",
+            "tside_thread": "M42",
+            "type": "type_camera",
+            "width": 5496,
+        },
+        "ZWO_ASI_183MC_Pro_v2": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 15000,
+            "height": 3672,
+            "mass": 410,
+            "name": "ASI183MC Pro v2",
             "optical_length": 17.5,
             "pixel_size_um": 2.4,
             "quantum_efficiency_pct": 84,
@@ -615,48 +615,6 @@ class ZwoCamera(Camera):
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
         },
-        "ZWO_ASI_183MC_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 15000,
-            "height": 3672,
-            "mass": 420,
-            "name": "ASI183MC Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
-            "read_noise_e": 1.6,
-            "reversible": False,
-            "sensor_height_mm": 8.8,
-            "sensor_width_mm": 13.2,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 5496,
-        },
-        "ZWO_ASI_183MM_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 15000,
-            "height": 3672,
-            "mass": 420,
-            "name": "ASI183MM Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
-            "read_noise_e": 1.6,
-            "reversible": False,
-            "sensor_height_mm": 8.8,
-            "sensor_width_mm": 13.2,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 5496,
-        },
         "ZWO_ASI_183MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -664,11 +622,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 15000,
             "height": 3672,
-            "mass": 340,
+            "mass": 120, # Verified via official manual (0.12kg)
             "name": "ASI183MM",
             "optical_length": 6.5,
             "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
+            "quantum_efficiency_pct": 84, # Verified peak QE
             "read_noise_e": 1.6,
             "reversible": False,
             "sensor_height_mm": 8.8,
@@ -706,11 +664,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 15000,
             "height": 3672,
-            "mass": 410,
+            "mass": 410, # Verified via official manual (0.41kg)
             "name": "ASI183MM Pro",
             "optical_length": 17.5,
             "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
+            "quantum_efficiency_pct": 84, # Verified peak QE
             "read_noise_e": 1.6,
             "reversible": False,
             "sensor_height_mm": 8.8,
@@ -874,9 +832,9 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 73000,
+            "full_well_e": 73000, # Extended full well mode
             "height": 4176,
-            "mass": 1050,
+            "mass": 760, # Verified via official manual (0.76kg)
             "name": "ASI2600MC Air",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
@@ -897,8 +855,29 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 4176,
-            "mass": 720,
+            "mass": 700, # Verified via official manual (0.7kg)
             "name": "ASI2600MC Pro",
+            "optical_length": 17.5,
+            "pixel_size_um": 3.76,
+            "quantum_efficiency_pct": 80, # Verified peak QE for color variant
+            "read_noise_e": 1.0,
+            "reversible": False,
+            "sensor_height_mm": 15.7,
+            "sensor_width_mm": 23.5,
+            "tside_gender": "Female",
+            "tside_thread": "M42",
+            "type": "type_camera",
+            "width": 6248,
+        },
+        "ZWO_ASI_2600MC_Pro_v2": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 73000,
+            "height": 4176,
+            "mass": 700,
+            "name": "ASI2600MC Pro v2",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 80,
@@ -916,9 +895,9 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 73000,
+            "full_well_e": 73000, # Extended full well mode
             "height": 4176,
-            "mass": 1050,
+            "mass": 760, # Verified via official manual (0.76kg)
             "name": "ASI2600MM Air",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
@@ -958,27 +937,6 @@ class ZwoCamera(Camera):
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
         },
-        "ZWO_ASI_2600MC_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 73000,
-            "height": 4176,
-            "mass": 730,
-            "name": "ASI2600MC Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.0,
-            "reversible": False,
-            "sensor_height_mm": 15.7,
-            "sensor_width_mm": 23.5,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 6248,
-        },
         "ZWO_ASI_2600MM_Duo": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1007,11 +965,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 4176,
-            "mass": 720,
+            "mass": 700, # Verified via official manual (0.7kg)
             "name": "ASI2600MM Pro",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
+            "quantum_efficiency_pct": 91, # Verified peak QE for mono variant
             "read_noise_e": 1.0,
             "reversible": False,
             "sensor_height_mm": 15.7,
@@ -1046,27 +1004,6 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
-        },
-        "ZWO_ASI_2600MM_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 73000,
-            "height": 4176,
-            "mass": 730,
-            "name": "ASI2600MM Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.0,
-            "reversible": False,
-            "sensor_height_mm": 15.7,
-            "sensor_width_mm": 23.5,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 6248,
         },
         "ZWO_ASI_2600_M54_Adapter": {
             "bf_role": "end",
@@ -1161,11 +1098,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 63700,
             "height": 2822,
-            "mass": 400,
+            "mass": 126, # Verified via official manual (0.126kg)
             "name": "ASI294MC",
             "optical_length": 6.5,
             "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 75,
+            "quantum_efficiency_pct": 75, # Verified peak QE for color variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 13.0,
@@ -1182,11 +1119,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 63700,
             "height": 2822,
-            "mass": 478,
+            "mass": 410, # Verified via official manual (0.41kg)
             "name": "ASI294MC Pro",
             "optical_length": 17.5,
             "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 75,
+            "quantum_efficiency_pct": 75, # Verified peak QE for color variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 13.0,
@@ -1222,27 +1159,6 @@ class ZwoCamera(Camera):
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
         },
-        "ZWO_ASI_294MC_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 63700,
-            "height": 2822,
-            "mass": 480,
-            "name": "ASI294MC Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 75,
-            "read_noise_e": 1.2,
-            "reversible": False,
-            "sensor_height_mm": 13.0,
-            "sensor_width_mm": 19.1,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 4144,
-        },
         "ZWO_ASI_294MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1250,11 +1166,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 66000,
             "height": 2822,
-            "mass": 400,
+            "mass": 126, # Verified via official manual (0.126kg)
             "name": "ASI294MM",
             "optical_length": 6.5,
             "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 90,
+            "quantum_efficiency_pct": 90, # Verified peak QE for mono variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 13.0,
@@ -1271,11 +1187,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 66000,
             "height": 2822,
-            "mass": 478,
+            "mass": 410, # Verified via official manual (0.41kg)
             "name": "ASI294MM Pro",
             "optical_length": 17.5,
             "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 90,
+            "quantum_efficiency_pct": 90, # Verified peak QE for mono variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 13.0,
@@ -1297,27 +1213,6 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
-        },
-        "ZWO_ASI_294MM_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 66000,
-            "height": 2822,
-            "mass": 480,
-            "name": "ASI294MM Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 90,
-            "read_noise_e": 1.2,
-            "reversible": False,
-            "sensor_height_mm": 13.0,
-            "sensor_width_mm": 19.1,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 4144,
         },
         "ZWO_ASI_294_M54_Adapter": {
             "bf_role": "end",
@@ -1419,20 +1314,20 @@ class ZwoCamera(Camera):
             "cside_gender": "",
             "cside_thread": "",
             "full_well_e": 11200,
-            "height": 1096,
-            "mass": 150,
+            "height": 1080, # Corrected to 1080 for IMX462
+            "mass": 126, # Verified for 462 size uncooled (0.126kg)
             "name": "ASI462MM",
             "optical_length": 6.5,
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.5,
             "reversible": False,
-            "sensor_height_mm": 3.2,
-            "sensor_width_mm": 5.6,
+            "sensor_height_mm": 3.13, # Corrected for IMX462
+            "sensor_width_mm": 5.57, # Corrected for IMX462
             "tside_gender": "Female",
             "tside_thread": "M42",
             "type": "type_camera",
-            "width": 1936,
+            "width": 1920, # Corrected to 1920 for IMX462
         },
         "ZWO_ASI_482MC": {
             "bf_role": "end",
@@ -1443,27 +1338,6 @@ class ZwoCamera(Camera):
             "height": 1080,
             "mass": 133,
             "name": "ASI482MC",
-            "optical_length": 6.5,
-            "pixel_size_um": 5.8,
-            "quantum_efficiency_pct": 85,
-            "read_noise_e": 1.5,
-            "reversible": False,
-            "sensor_height_mm": 6.26,
-            "sensor_width_mm": 11.13,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 1920,
-        },
-        "ZWO_ASI_482MC_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 51500,
-            "height": 1080,
-            "mass": 155,
-            "name": "ASI482MC V2",
             "optical_length": 6.5,
             "pixel_size_um": 5.8,
             "quantum_efficiency_pct": 85,
@@ -1497,35 +1371,14 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3840,
         },
-        "ZWO_ASI_678MM_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 11270,
-            "height": 2160,
-            "mass": 155,
-            "name": "ASI678MM V2",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.0,
-            "quantum_efficiency_pct": 83,
-            "read_noise_e": 0.6,
-            "reversible": False,
-            "sensor_height_mm": 4.32,
-            "sensor_width_mm": 7.68,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3840,
-        },
         "ZWO_ASI_585MM_Pro": {
             "bf_role": "end",
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 40000,
+            "full_well_e": 47000, # Verified via official manual (47ke)
             "height": 2160,
-            "mass": 470,
+            "mass": 470, # Verified via official manual (0.47kg)
             "name": "ASI585MM Pro",
             "optical_length": 17.5,
             "pixel_size_um": 2.9,
@@ -1546,11 +1399,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 3008,
-            "mass": 350,
+            "mass": 129, # Verified via official manual (0.129kg)
             "name": "ASI533MC",
             "optical_length": 6.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
+            "quantum_efficiency_pct": 80, # Verified peak QE for color variant
             "read_noise_e": 1.0,
             "reversible": False,
             "sensor_height_mm": 11.31,
@@ -1567,11 +1420,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 3008,
-            "mass": 450,
+            "mass": 470, # Verified via official manual (0.47kg)
             "name": "ASI533MC Pro",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
+            "quantum_efficiency_pct": 80, # Verified peak QE for color variant
             "read_noise_e": 1.0,
             "reversible": False,
             "sensor_height_mm": 11.31,
@@ -1607,27 +1460,6 @@ class ZwoCamera(Camera):
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
         },
-        "ZWO_ASI_533MC_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 50000,
-            "height": 3008,
-            "mass": 460,
-            "name": "ASI533MC Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.0,
-            "reversible": False,
-            "sensor_height_mm": 11.31,
-            "sensor_width_mm": 11.31,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3008,
-        },
         "ZWO_ASI_533MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1635,11 +1467,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 3008,
-            "mass": 350,
+            "mass": 129, # Verified via official manual (0.129kg)
             "name": "ASI533MM",
             "optical_length": 6.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
+            "quantum_efficiency_pct": 91, # Verified peak QE for mono variant
             "read_noise_e": 1.0,
             "reversible": False,
             "sensor_height_mm": 11.31,
@@ -1656,8 +1488,29 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 50000,
             "height": 3008,
-            "mass": 450,
+            "mass": 470, # Verified via official manual (0.47kg)
             "name": "ASI533MM Pro",
+            "optical_length": 17.5,
+            "pixel_size_um": 3.76,
+            "quantum_efficiency_pct": 91, # Verified peak QE for mono variant
+            "read_noise_e": 1.0,
+            "reversible": False,
+            "sensor_height_mm": 11.31,
+            "sensor_width_mm": 11.31,
+            "tside_gender": "Female",
+            "tside_thread": "M42",
+            "type": "type_camera",
+            "width": 3008,
+        },
+        "ZWO_ASI_533MM_Pro_v2": {
+            "bf_role": "end",
+            "brand": "ZWO",
+            "cside_gender": "",
+            "cside_thread": "",
+            "full_well_e": 50000,
+            "height": 3008,
+            "mass": 470,
+            "name": "ASI533MM Pro v2",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
             "quantum_efficiency_pct": 91,
@@ -1682,27 +1535,6 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
-        },
-        "ZWO_ASI_533MM_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 50000,
-            "height": 3008,
-            "mass": 460,
-            "name": "ASI533MM Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.0,
-            "reversible": False,
-            "sensor_height_mm": 11.31,
-            "sensor_width_mm": 11.31,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3008,
         },
         "ZWO_ASI_533_M54_Adapter": {
             "bf_role": "end",
@@ -1800,29 +1632,8 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 40000,
             "height": 2160,
-            "mass": 150,
+            "mass": 126, # Verified via official manual (0.126kg)
             "name": "ASI585MM",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 0.6,
-            "reversible": False,
-            "sensor_height_mm": 6.26,
-            "sensor_width_mm": 11.13,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3840,
-        },
-        "ZWO_ASI_585MM_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 40000,
-            "height": 2160,
-            "mass": 155,
-            "name": "ASI585MM V2",
             "optical_length": 6.5,
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
@@ -1842,11 +1653,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 51400,
             "height": 6388,
-            "mass": 1010,
+            "mass": 700, # Verified via official manual (0.7kg for Pro cooled models)
             "name": "ASI6200MC Pro",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
+            "quantum_efficiency_pct": 80, # Verified peak QE for color variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 24.0,
@@ -1882,27 +1693,6 @@ class ZwoCamera(Camera):
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
         },
-        "ZWO_ASI_6200MC_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 51400,
-            "height": 6388,
-            "mass": 1020,
-            "name": "ASI6200MC Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.2,
-            "reversible": False,
-            "sensor_height_mm": 24.0,
-            "sensor_width_mm": 36.0,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 9576,
-        },
         "ZWO_ASI_6200MM_Pro": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1910,11 +1700,11 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 51400,
             "height": 6388,
-            "mass": 1010,
+            "mass": 700, # Verified via official manual (0.7kg for Pro cooled models)
             "name": "ASI6200MM Pro",
             "optical_length": 17.5,
             "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
+            "quantum_efficiency_pct": 91, # Verified peak QE for mono variant
             "read_noise_e": 1.2,
             "reversible": False,
             "sensor_height_mm": 24.0,
@@ -1949,27 +1739,6 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "ZWO 6-bolt",
             "type": "type_camera",
-        },
-        "ZWO_ASI_6200MM_Pro_v2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 51400,
-            "height": 6388,
-            "mass": 1020,
-            "name": "ASI6200MM Pro v2",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.2,
-            "reversible": False,
-            "sensor_height_mm": 24.0,
-            "sensor_width_mm": 36.0,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 9576,
         },
         "ZWO_ASI_6200_M54_Adapter": {
             "bf_role": "end",
@@ -2018,27 +1787,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 1920,
         },
-        "ZWO_ASI_662MC_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 38200,
-            "height": 1080,
-            "mass": 155,
-            "name": "ASI662MC V2",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 0.8,
-            "reversible": False,
-            "sensor_height_mm": 3.13,
-            "sensor_width_mm": 5.57,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 1920,
-        },
         "ZWO_ASI_662MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -2046,29 +1794,8 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 38200,
             "height": 1080,
-            "mass": 126,
+            "mass": 126, # Verified via official manual (0.126kg)
             "name": "ASI662MM",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 0.8,
-            "reversible": False,
-            "sensor_height_mm": 3.13,
-            "sensor_width_mm": 5.57,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 1920,
-        },
-        "ZWO_ASI_662MM_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 38200,
-            "height": 1080,
-            "mass": 155,
-            "name": "ASI662MM V2",
             "optical_length": 6.5,
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
@@ -2144,27 +1871,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3840,
         },
-        "ZWO_ASI_678MC_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 11270,
-            "height": 2160,
-            "mass": 155,
-            "name": "ASI678MC V2",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.0,
-            "quantum_efficiency_pct": 83,
-            "read_noise_e": 0.6,
-            "reversible": False,
-            "sensor_height_mm": 4.32,
-            "sensor_width_mm": 7.68,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3840,
-        },
         "ZWO_ASI_678MM": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -2195,27 +1901,6 @@ class ZwoCamera(Camera):
             "height": 2192,
             "mass": 150,
             "name": "ASI715MC",
-            "optical_length": 6.5,
-            "pixel_size_um": 1.45,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 0.72,
-            "reversible": False,
-            "sensor_height_mm": 3.18,
-            "sensor_width_mm": 5.6,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3864,
-        },
-        "ZWO_ASI_715MC_V2": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 6030,
-            "height": 2192,
-            "mass": 155,
-            "name": "ASI715MC V2",
             "optical_length": 6.5,
             "pixel_size_um": 1.45,
             "quantum_efficiency_pct": 80,
@@ -2346,6 +2031,10 @@ class ZwoCamera(Camera):
         return cls.from_database(cls._DATABASE["ZWO_ASI_183MC_Pro"])
 
     @classmethod
+    def ZWO_ASI_183MC_Pro_v2(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_183MC_Pro_v2"])
+
+    @classmethod
     def ZWO_ASI_183MM_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_183MM_Pro"])
 
@@ -2366,6 +2055,10 @@ class ZwoCamera(Camera):
         return cls.from_database(cls._DATABASE["ZWO_ASI_533MM_Pro"])
 
     @classmethod
+    def ZWO_ASI_533MM_Pro_v2(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_533MM_Pro_v2"])
+
+    @classmethod
     def ZWO_ASI_1600MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_1600MC_Pro"])
 
@@ -2379,13 +2072,12 @@ class ZwoCamera(Camera):
 
 
     @classmethod
-    def ZWO_ASI_094MC_Pro(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_094MC_Pro"])
-
-
-    @classmethod
     def ZWO_ASI_2600MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Pro"])
+
+    @classmethod
+    def ZWO_ASI_2600MC_Pro_v2(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Pro_v2"])
 
     @classmethod
     def ZWO_ASI_2600MM_Pro(cls):
@@ -2411,11 +2103,9 @@ class ZwoCamera(Camera):
     def ZWO_ASI_2400MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_2400MC_Pro"])
 
-
     @classmethod
     def ZWO_ASI_128MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_128MC_Pro"])
-
 
     @classmethod
     def ZWO_ASI_533MC(cls):
@@ -2534,11 +2224,9 @@ class ZwoCamera(Camera):
     def ZWO_ASI_482MC(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_482MC"])
 
-
     @classmethod
     def ZWO_ASI_485MC(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_485MC"])
-
 
     @classmethod
     def ZWO_ASI_432MM(cls):
@@ -2670,7 +2358,6 @@ class ZwoCamera(Camera):
     def ZWO_ASI_071MC_Pro_6_bolt_mount(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_071MC_Pro_6_bolt_mount"])
 
-
     @classmethod
     def ZWO_ASI_2400MC_Pro_6_bolt_mount(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_2400MC_Pro_6_bolt_mount"])
@@ -2779,83 +2466,14 @@ class ZwoCamera(Camera):
     def ZWO_ASI_094MC_Cool(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_094MC_Cool"])
 
-    @classmethod
-    def ZWO_ASI_533MC_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_533MC_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_533MM_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_533MM_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_2600MC_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_2600MM_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_6200MC_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_6200MC_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_6200MM_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_6200MM_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_294MC_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_294MC_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_294MM_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_294MM_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_183MC_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_183MC_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_183MM_Pro_v2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_183MM_Pro_v2"])
-
-    @classmethod
-    def ZWO_ASI_715MC_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_715MC_V2"])
-
-
-    @classmethod
-    def ZWO_ASI_585MC_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_V2"])
-
-    @classmethod
-    def ZWO_ASI_585MM_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_585MM_V2"])
-
-    @classmethod
-    def ZWO_ASI_662MC_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_662MC_V2"])
-
-    @classmethod
-    def ZWO_ASI_662MM_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_662MM_V2"])
-
-    @classmethod
-    def ZWO_ASI_678MC_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_678MC_V2"])
-
-    @classmethod
-    def ZWO_ASI_678MM_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_678MM_V2"])
-
-    @classmethod
-    def ZWO_ASI_482MC_V2(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_482MC_V2"])
-
 
     @classmethod
     def ZWO_ASI_585MC_Pro(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_Pro"])
+
+    @classmethod
+    def ZWO_ASI_585MC_V2(cls):
+        return cls.from_database(cls._DATABASE["ZWO_ASI_585MC_V2"])
 
     @classmethod
     def ZWO_ASI_585MM_Pro(cls):

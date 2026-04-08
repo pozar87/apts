@@ -18,6 +18,7 @@ class William_opticsTelescope(Telescope):
         'William_Optics_Redcat_71': {'brand': 'William Optics', 'name': 'Redcat 71', 'type': 'type_refractor', 'optical_length': 0, 'mass': 2800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 71, 'focal_length_mm': 350, 'central_obstruction_mm': 0},
         'William_Optics_Pleiades_68': {'brand': 'William Optics', 'name': 'Pleiades 68', 'type': 'type_refractor', 'optical_length': 0, 'mass': 2980, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 68, 'focal_length_mm': 258.4, 'central_obstruction_mm': 0}, # Verified via WO Support (258.4mm, 2.98kg OTA)
         'William_Optics_Pleiades_111': {'brand': 'William Optics', 'name': 'Pleiades 111', 'type': 'type_refractor', 'optical_length': 0, 'mass': 7950, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 111, 'focal_length_mm': 528, 'central_obstruction_mm': 0}, # Verified via WO Support (528mm, 7.95kg OTA)
+        'William_Optics_RedCat_61': {'brand': 'William Optics', 'name': 'RedCat 61', 'type': 'type_refractor', 'optical_length': 0, 'mass': 2470, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False, 'bf_role': '', 'aperture_mm': 61, 'focal_length_mm': 300, 'central_obstruction_mm': 0}, # Verified via official product page (2.47kg OTA, 300mm f/4.9 Petzval)
     }
 
     @classmethod
@@ -83,3 +84,7 @@ class William_opticsTelescope(Telescope):
     @classmethod
     def William_Optics_Pleiades_111(cls):
         return cls.from_database(cls._DATABASE['William_Optics_Pleiades_111'])
+
+    @classmethod
+    def William_Optics_RedCat_61(cls):
+        return cls.from_database(cls._DATABASE['William_Optics_RedCat_61'])
