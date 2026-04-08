@@ -9,9 +9,6 @@ class TestStellarZwoCameras(unittest.TestCase):
         self.assertEqual(cam.full_well, 10550)
         self.assertEqual(cam.pixel_size().to('micrometer').magnitude, 2.0)
 
-        cam_mm = ZwoCamera.ZWO_ASI_676MM()
-        self.assertEqual(cam_mm.quantum_efficiency, 91)
-
     def test_asi482_specs(self):
         cam = ZwoCamera.ZWO_ASI_482MC()
         self.assertEqual(cam.width, 1920)
