@@ -20,6 +20,7 @@ from .lunar import (
     find_moon_apogee_perigee,
     find_lunar_occultations,
     find_lunar_features,
+    find_moon_libration_maxima,
 )
 from .conjunctions import (
     find_planet_star_conjunctions,
@@ -106,6 +107,7 @@ __all__ = [
     "find_planet_planet_occultations",
     "find_jupiter_grs_transits",
     "find_lunar_features",
+    "find_moon_libration_maxima",
     "get_ephemeris",
     "get_timescale",
     "load",
