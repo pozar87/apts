@@ -697,7 +697,7 @@
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
 
-## 2026-05-23 - Audit of ZWO Cameras
+## 2024-05-23 - Audit of ZWO Cameras
 
 - **Items:** ZWO ASI Pro Cooled and Uncooled camera series.
 - **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
