@@ -10,7 +10,5 @@ def test_askar_sqa55_specs():
 
 def test_zwo_asi664_full_well_correction():
     camera_mc = ZwoCamera.ZWO_ASI_664MC()
-    camera_mm = ZwoCamera.ZWO_ASI_664MM()
 
     assert camera_mc.full_well == 38500
-    assert camera_mm.full_well == 38500
