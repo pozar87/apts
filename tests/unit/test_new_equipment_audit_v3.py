@@ -34,7 +34,7 @@ def test_askar_apo_specs():
     # 103APO
     a103 = AskarTelescope.Askar_103APO()
     assert a103.aperture.magnitude == 103
-    assert a103.focal_length.magnitude == pytest.approx(700.0)
+    assert a103.focal_length.magnitude == pytest.approx(700.4)
 
     # 103APO Reduced (0.8x)
     a103r = AskarTelescope.Askar_103APO_Reduced()

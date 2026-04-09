@@ -322,6 +322,9 @@ class AstronomicalEvents:
             "phase",
             "shower_name",
             "distance_km",
+            "magnitude",
+            "distance_au",
+            "angular_diameter_arcsec",
         ]
 
         if not self.events:
