@@ -32,7 +32,11 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
             sun = eph["sun"]
 
             m_obs = observer.at(ti).observe(moon).apparent()
-            m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            # Oracle: use refracted position and account for Moon's semi-diameter.
+            m_alt_refracted, _, m_dist = m_obs.altaz(
+                temperature_C=10.0, pressure_mbar=1013.25
+            )
+            rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
 
             s_alt = (
                 observer.at(ti)
@@ -42,11 +46,13 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
                 .degrees
             )
 
+            # Visibility: Moon partially above horizon (refracted)
+            # and Sun below horizon (refracted altitude < -0.26 deg approx semi-diameter)
             event.update(
                 {
-                    "altitude": float(m_alt.degrees),
+                    "altitude": float(m_alt_refracted.degrees),
                     "sun_altitude": float(s_alt),
-                    "is_visible": bool(m_alt.degrees > 0 and s_alt <= -6),
+                    "is_visible": bool(m_alt_refracted.degrees > -rm and s_alt < -0.26),
                 }
             )
 
@@ -103,9 +109,12 @@ def find_solar_eclipses(observer, start_date, end_date):
         if tn1.tt > (t1 + 0.5).tt:
             tn1 = t1 + 0.5
 
-        times, _ = find_minima(tn0, tn1, solar_separation)
+        times, separations = find_minima(tn0, tn1, solar_separation)
 
-        for t in times:
+        for t, s in zip(times, separations):
+            if s > 0:
+                continue
+
             s_pos = observer.at(t).observe(sun).apparent()
             m_pos = observer.at(t).observe(moon).apparent()
 
