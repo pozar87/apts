@@ -496,10 +496,12 @@ def _plot_messier_on_skymap(
     if visible_messier.empty:
         return
 
-    # Filter out target object
-    plot_df = visible_messier[
-        visible_messier[ObjectTableLabels.MESSIER] != target_name
-    ].copy()
+    # Filter out target object and reset index for positional access
+    plot_df = (
+        visible_messier[visible_messier[ObjectTableLabels.MESSIER] != target_name]
+        .copy()
+        .reset_index(drop=True)
+    )
 
     if plot_df.empty:
         return
