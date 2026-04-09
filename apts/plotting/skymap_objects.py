@@ -505,6 +505,8 @@ def _plot_messier_on_skymap(
         return
 
     # Ensure RA/Dec float columns exist for vectorization (handling mocks/incomplete data in tests)
+    # Optimization: reset_index(drop=True) is called here to ensure positional access is safe.
+    plot_df = plot_df.reset_index(drop=True)
     if "ra_hours" not in plot_df.columns or "dec_degrees" not in plot_df.columns:
         ras, decs = [], []
         # Using index-based loop to avoid potential issues with MagicMock Series
