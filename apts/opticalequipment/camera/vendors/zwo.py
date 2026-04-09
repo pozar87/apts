@@ -890,27 +890,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 6248,
         },
-        "ZWO_ASI_2600MM_Air": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 73000, # Extended full well mode
-            "height": 4176,
-            "mass": 760, # Verified via official manual (0.76kg)
-            "name": "ASI2600MM Air",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.0,
-            "reversible": False,
-            "sensor_height_mm": 15.7,
-            "sensor_width_mm": 23.5,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 6248,
-        },
         "ZWO_ASI_2600MC_Pro_4_bolt_no_tilt_plate": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1787,27 +1766,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 1920,
         },
-        "ZWO_ASI_662MM": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 38200,
-            "height": 1080,
-            "mass": 126, # Verified via official manual (0.126kg)
-            "name": "ASI662MM",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 0.8,
-            "reversible": False,
-            "sensor_height_mm": 3.13,
-            "sensor_width_mm": 5.57,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 1920,
-        },
         "ZWO_ASI_664MC": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1871,27 +1829,6 @@ class ZwoCamera(Camera):
             "type": "type_camera",
             "width": 3840,
         },
-        "ZWO_ASI_678MM": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "full_well_e": 11270,
-            "height": 2160,
-            "mass": 150,
-            "name": "ASI678MM",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.0,
-            "quantum_efficiency_pct": 83,
-            "read_noise_e": 0.6,
-            "reversible": False,
-            "sensor_height_mm": 4.32,
-            "sensor_width_mm": 7.68,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera",
-            "width": 3840,
-        },
         "ZWO_ASI_715MC": {
             "bf_role": "end",
             "brand": "ZWO",
@@ -1912,19 +1849,6 @@ class ZwoCamera(Camera):
             "tside_thread": "M42",
             "type": "type_camera",
             "width": 3864,
-        },
-        "ZWO_ASI_715MM": {
-            "bf_role": "end",
-            "brand": "ZWO",
-            "cside_gender": "",
-            "cside_thread": "",
-            "mass": 150,
-            "name": "ASI715MM",
-            "optical_length": 6.5,
-            "reversible": False,
-            "tside_gender": "Female",
-            "tside_thread": "M42",
-            "type": "type_camera"
         },
         "ZWO_Seestar_S50_Sensor": {
             "bf_role": "end",
@@ -2217,16 +2141,8 @@ class ZwoCamera(Camera):
         return cls.from_database(cls._DATABASE["ZWO_ASI_678MC"])
 
     @classmethod
-    def ZWO_ASI_678MM(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_678MM"])
-
-    @classmethod
     def ZWO_ASI_662MC(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_662MC"])
-
-    @classmethod
-    def ZWO_ASI_662MM(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_662MM"])
 
     @classmethod
     def ZWO_ASI_664MC(cls):
@@ -2495,10 +2411,6 @@ class ZwoCamera(Camera):
     @classmethod
     def ZWO_ASI_2600MC_Air(cls):
         return cls.from_database(cls._DATABASE["ZWO_ASI_2600MC_Air"])
-
-    @classmethod
-    def ZWO_ASI_2600MM_Air(cls):
-        return cls.from_database(cls._DATABASE["ZWO_ASI_2600MM_Air"])
 
     @classmethod
     def ZWO_Seestar_S50_Sensor(cls):
