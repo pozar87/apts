@@ -1,4 +1,5 @@
 from ..constants import OpticalType, GraphConstants
+from ..constants.astronomy import RAD_TO_ARCSEC
 from ..i18n import gettext_ as _
 from ..units import get_unit_registry
 from .abstract import OutputOpticalEquipment
@@ -86,7 +87,7 @@ class Binoculars(OutputOpticalEquipment):
         wavelength_m = wavelength_nm * 1e-9
         aperture_m = self.objective_diameter.to("m").magnitude
         limit_rad = 1.22 * wavelength_m / aperture_m
-        limit_arcsec = limit_rad * 206265
+        limit_arcsec = limit_rad * RAD_TO_ARCSEC
         return round(limit_arcsec, 3) * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
