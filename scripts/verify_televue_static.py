@@ -1,5 +1,4 @@
 import ast
-import os
 import sys
 
 def verify_televue_specs():
