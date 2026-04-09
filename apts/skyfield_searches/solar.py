@@ -55,32 +55,52 @@ def find_solar_eclipses(observer, start_date, end_date):
     """
     Finds solar eclipses for a specific observer, providing classification
     (Total, Annular, Partial), magnitude, and obscuration.
+
+    Optimized using a two-step search:
+    1. Identify geocentric New Moons (fast).
+    2. Perform topocentric refinement in narrow windows (+/- 12 hours) around them.
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
+    eph = get_ephemeris()
     sun = planetary.get_skyfield_obj("sun")
     moon = planetary.get_skyfield_obj("moon")
+
+    # 1. Fast geocentric search for New Moons (padded by 12h to handle parallax)
+    t_search_start = ts.tt_jd(t0.tt - 0.5)
+    t_search_end = ts.tt_jd(t1.tt + 0.5)
+    f = almanac.moon_phases(eph)
+    t_phases, y_phases = almanac.find_discrete(t_search_start, t_search_end, f)
+    new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
 
     def solar_separation(t):
         s = observer.at(t).observe(sun).apparent()
         m = observer.at(t).observe(moon).apparent()
 
-        # Calculate topocentric angular radii
-        s_dist = s.distance().km
-        m_dist = m.distance().km
+        s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s.distance().km))
+        m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m.distance().km))
 
-        s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
-        m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
-
-        sep = s.separation_from(m).degrees
-        return sep - (s_radius + m_radius)
+        return s.separation_from(m).degrees - (s_radius + m_radius)
 
     setattr(solar_separation, "step_days", 0.005)
-    times, _ = find_minima(t0, t1, solar_separation)
+
+    all_times = []
+    # 2. Topocentric refinement around each New Moon
+    for t_nm in new_moons:
+        t_window_start = ts.tt_jd(t_nm.tt - 0.5)
+        t_window_end = ts.tt_jd(t_nm.tt + 0.5)
+
+        # Clip windows to the requested range
+        t_win_0 = ts.tt_jd(max(t_window_start.tt, t0.tt))
+        t_win_1 = ts.tt_jd(min(t_window_end.tt, t1.tt))
+
+        if t_win_1.tt > t_win_0.tt:
+            times, _ = find_minima(t_win_0, t_win_1, solar_separation)
+            all_times.extend(times)
 
     events = []
-    for t in times:
+    for t in all_times:
         s_pos = observer.at(t).observe(sun).apparent()
         m_pos = observer.at(t).observe(moon).apparent()
 
