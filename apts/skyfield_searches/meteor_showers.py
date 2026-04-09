@@ -175,7 +175,7 @@ def find_meteor_showers(observer, start_date, end_date):
 
         # Altitudes for Sun and Moon
         sun_alts = np.atleast_1d(
-            observer.at(times_vec)
+            cast(Any, observer).at(times_vec)
             .observe(sun)
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
@@ -183,7 +183,7 @@ def find_meteor_showers(observer, start_date, end_date):
         )
 
         moon_alts = np.atleast_1d(
-            observer.at(times_vec)
+            cast(Any, observer).at(times_vec)
             .observe(moon)
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
@@ -202,7 +202,7 @@ def find_meteor_showers(observer, start_date, end_date):
             radiant_obj = Star(ra_hours=ra_h, dec_degrees=dec_d)
 
             r_alt, _, _ = (
-                observer.at(c["time"])
+                cast(Any, observer).at(c["time"])
                 .observe(radiant_obj)
                 .apparent()
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)

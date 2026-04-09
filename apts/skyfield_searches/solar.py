@@ -1,4 +1,6 @@
+from datetime import timedelta
 from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac, eclipselib
 from skyfield.searchlib import find_minima
@@ -76,75 +78,102 @@ def find_solar_eclipses(observer, start_date, end_date):
         sep = s.separation_from(m).degrees
         return sep - (s_radius + m_radius)
 
+    # Optimization: Solar eclipses only occur during New Moon.
+    # We find geocentric New Moons and search +/- 12 hours around them.
+    # This avoids expensive topocentric calculations for most of the year.
+    # We extend the search range by 12 hours to catch New Moons just outside
+    # the requested range whose topocentric eclipse falls within the range.
+    eph = get_ephemeris()
+    t_phases, y_phases = almanac.find_discrete(
+        t0 - 0.5, t1 + 0.5, almanac.moon_phases(eph)
+    )
+    new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
+
     setattr(solar_separation, "step_days", 0.005)
-    times, _ = find_minima(t0, t1, solar_separation)
 
     events = []
-    for t in times:
-        s_pos = observer.at(t).observe(sun).apparent()
-        m_pos = observer.at(t).observe(moon).apparent()
+    for t_nm in new_moons:
+        # Narrow search window around geocentric New Moon to account for parallax
+        tn0 = ts.from_datetime(t_nm.utc_datetime() - timedelta(hours=12))
+        tn1 = ts.from_datetime(t_nm.utc_datetime() + timedelta(hours=12))
 
-        d = s_pos.separation_from(m_pos).degrees
-        rs = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_pos.distance().km))
-        rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_pos.distance().km))
+        # Ensure the narrow search window does not exceed our padded range
+        if tn0.tt < (t0 - 0.5).tt:
+            tn0 = t0 - 0.5
+        if tn1.tt > (t1 + 0.5).tt:
+            tn1 = t1 + 0.5
 
-        if d < rs + rm:
-            # Visibility check: Is the Sun above the horizon for this observer?
-            # Oracle: use refracted position and account for Sun's semi-diameter.
-            # An eclipse is visible if any part of the solar disk is above the horizon.
-            # Horizon is approx -0.8333 degrees (34' refraction + 16' semi-diameter).
-            sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-            if sun_alt <= -0.8333:
-                continue
+        times, _ = find_minima(tn0, tn1, solar_separation)
 
-            # Classification
-            if d <= abs(rs - rm):
-                if rm >= rs:
-                    kind = "Total"
+        for t in times:
+            s_pos = observer.at(t).observe(sun).apparent()
+            m_pos = observer.at(t).observe(moon).apparent()
+
+            d = s_pos.separation_from(m_pos).degrees
+            rs = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_pos.distance().km))
+            rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_pos.distance().km))
+
+            if d < rs + rm:
+                # Visibility check: Is the Sun above the horizon for this observer?
+                # Oracle: use refracted position and account for Sun's semi-diameter.
+                # An eclipse is visible if any part of the solar disk is above the horizon.
+                # Horizon is approx -0.8333 degrees (34' refraction + 16' semi-diameter).
+                sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+                if sun_alt <= -0.8333:
+                    continue
+
+                # Classification
+                if d <= abs(rs - rm):
+                    if rm >= rs:
+                        kind = "Total"
+                    else:
+                        kind = "Annular"
                 else:
-                    kind = "Annular"
-            else:
-                kind = "Partial"
+                    kind = "Partial"
 
-            # Magnitude (fraction of solar diameter covered)
-            mag = (rs + rm - d) / (2 * rs)
+                # Magnitude (fraction of solar diameter covered)
+                mag = (rs + rm - d) / (2 * rs)
 
-            # Obscuration (fraction of solar area covered)
-            # Area of intersection of two circles
-            if d <= abs(rs - rm):
-                obs = 1.0 if rm >= rs else (rm / rs) ** 2
-            else:
-                # Formula for area of overlap of two circles
-                # Source: http://mathworld.wolfram.com/Circle-CircleIntersection.html
-                def area(r1, r2, d):
-                    if d >= r1 + r2:
-                        return 0.0
-                    if d <= abs(r1 - r2):
-                        return np.pi * min(r1, r2) ** 2
-                    r1sq = r1**2
-                    r2sq = r2**2
-                    dsq = d**2
-                    part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d * r1))
-                    part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d * r2))
-                    part3 = 0.5 * np.sqrt(
-                        (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)
-                    )
-                    return part1 + part2 - part3
+                # Obscuration (fraction of solar area covered)
+                # Area of intersection of two circles
+                if d <= abs(rs - rm):
+                    obs = 1.0 if rm >= rs else (rm / rs) ** 2
+                else:
+                    # Formula for area of overlap of two circles
+                    # Source: http://mathworld.wolfram.com/Circle-CircleIntersection.html
+                    def area(r1, r2, d):
+                        if d >= r1 + r2:
+                            return 0.0
+                        if d <= abs(r1 - r2):
+                            return np.pi * min(r1, r2) ** 2
+                        r1sq = r1**2
+                        r2sq = r2**2
+                        dsq = d**2
+                        part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d * r1))
+                        part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d * r2))
+                        part3 = 0.5 * np.sqrt(
+                            (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)
+                        )
+                        return part1 + part2 - part3
 
-                overlap_area = area(rs, rm, d)
-                sun_area = np.pi * rs**2
-                obs = overlap_area / sun_area
+                    overlap_area = area(rs, rm, d)
+                    sun_area = np.pi * rs**2
+                    obs = overlap_area / sun_area
 
-            events.append(
-                {
-                    "date": t.utc_datetime(),
-                    "type": "Solar Eclipse",
-                    "eclipse_type": kind,
-                    "magnitude": float(mag),
-                    "obscuration": float(obs),
-                    "separation_degrees": float(d),
-                }
-            )
+                # Ensure the final event date falls within the requested range
+                if t.tt < t0.tt or t.tt > t1.tt:
+                    continue
+
+                events.append(
+                    {
+                        "date": t.utc_datetime(),
+                        "type": "Solar Eclipse",
+                        "eclipse_type": kind,
+                        "magnitude": float(mag),
+                        "obscuration": float(obs),
+                        "separation_degrees": float(d),
+                    }
+                )
     return events
 
 def find_seasons(start_date, end_date):
