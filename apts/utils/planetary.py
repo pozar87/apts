@@ -807,7 +807,7 @@ def get_planet_magnitude(
     try:
         return magnitudelib.planetary_magnitude(astrometric)
     except Exception:
-        # Gracefully handle unsupported bodies (e.g. minor planets like Ceres)
+        # Fallback for minor planets or unsupported bodies
         return np.nan
 
 

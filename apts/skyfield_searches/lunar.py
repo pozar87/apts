@@ -98,7 +98,7 @@ def find_moon_apogee_perigee(start_date, end_date):
     # Optimization: pre-calculate distances for all extrema
     if len(max_times) > 0:
         max_dist = cast(Any, earth).at(max_times).observe(moon).distance().km
-        for i, t in enumerate(max_times):
+        for i, t in enumerate(cast(Any, max_times)):
             events.append({
                 "date": t.utc_datetime(),
                 "event": "Apogee",
@@ -107,7 +107,7 @@ def find_moon_apogee_perigee(start_date, end_date):
             })
     if len(min_times) > 0:
         min_dist = cast(Any, earth).at(min_times).observe(moon).distance().km
-        for i, t in enumerate(min_times):
+        for i, t in enumerate(cast(Any, min_times)):
             events.append({
                 "date": t.utc_datetime(),
                 "event": "Perigee",
