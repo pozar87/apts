@@ -804,11 +804,7 @@ def get_planet_magnitude(
     # Major planets and others supported by skyfield
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
     # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
-    try:
-        return magnitudelib.planetary_magnitude(astrometric)
-    except Exception:
-        # Fallback for minor planets or unsupported bodies
-        return np.nan
+    return magnitudelib.planetary_magnitude(astrometric)
 
 
 def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.ndarray:

@@ -77,7 +77,3 @@
 ## 2025-06-20 - [Supermoon Bulk Search Optimization]
 **Learning:** Iterative per-event searches for related orbital extremes (e.g., finding the nearest perigee for every Full Moon) is inefficient in Skyfield. Consolidating these into bulk maxima/minima searches over the entire padded date range, combined with NumPy-based nearest-neighbor matching, significantly reduces overhead.
 **Action:** Replace iterative 'find_maxima/minima' calls inside loops with a single bulk search over the full range plus padding, and use NumPy to match events.
-
-## 2025-06-21 - [Solar Eclipse Search Optimization]
-**Learning:** Performing a direct topocentric `find_minima` search for solar eclipses over long periods is extremely inefficient. Since solar eclipses can only occur during a New Moon, a two-step approach—identifying geocentric New Moons first and then performing a narrow topocentric search (+/- 12 hours)—provides a ~20x performance gain.
-**Action:** Use geocentric "event triggers" (like moon phases or conjunctions) to narrow the search window for expensive topocentric astronomical calculations. Always pad the trigger search range to ensure events shifted by parallax across boundaries are not missed.

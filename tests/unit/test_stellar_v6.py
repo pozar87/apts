@@ -43,9 +43,10 @@ class TestStellarV6(unittest.TestCase):
 
     def test_camera_664_specs(self):
         zwo_mc = ZwoCamera.ZWO_ASI_664MC()
+        zwo_mm = ZwoCamera.ZWO_ASI_664MM()
         qhy_c = QhyCamera.QHY_QHY_5III_664C()
 
-        for cam in [zwo_mc, qhy_c]:
+        for cam in [zwo_mc, zwo_mm, qhy_c]:
             self.assertEqual(cam.width, 2704)
             self.assertEqual(cam.height, 1536)
             self.assertEqual(cam.pixel_size().magnitude, 2.9)

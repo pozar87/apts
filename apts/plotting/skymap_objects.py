@@ -496,10 +496,10 @@ def _plot_messier_on_skymap(
     if visible_messier.empty:
         return
 
-    # Filter out target object and reset index for array matching/safe iteration
+    # Filter out target object
     plot_df = visible_messier[
         visible_messier[ObjectTableLabels.MESSIER] != target_name
-    ].copy().reset_index(drop=True)
+    ].copy()
 
     if plot_df.empty:
         return
@@ -510,8 +510,7 @@ def _plot_messier_on_skymap(
         # Ensure we use positional indexing if the original index is not 0-based
         temp_df = plot_df.reset_index(drop=True)
         for i in range(len(temp_df)):
-            # Using index-based loop to avoid potential issues with MagicMock Series
-            m_name = temp_df.iloc[i, ObjectTableLabels.MESSIER]
+            m_name = temp_df.at[i, ObjectTableLabels.MESSIER]
             # Try to get coordinates from the catalog or object itself
             m_obj = observation.local_messier.find_by_name(m_name)
             if m_obj and hasattr(m_obj, "ra"):
@@ -559,8 +558,10 @@ def _plot_messier_on_skymap(
         # 2. Fallback to individual observation (safest for mocks/complex test cases)
         alt_deg, az_deg = [], []
         ra_hours, dec_deg, ra_rad = [], [], []
-        for i in range(len(plot_df)):
-            m_name = plot_df.iloc[i][ObjectTableLabels.MESSIER]
+        # Ensure i matches positional index
+        temp_plot_df = plot_df.reset_index(drop=True)
+        for i in range(len(temp_plot_df)):
+            m_name = temp_plot_df.at[i, ObjectTableLabels.MESSIER]
             m_obj = observation.local_messier.find_by_name(m_name)
             if m_obj:
                 obs = observer.observe(m_obj).apparent()
