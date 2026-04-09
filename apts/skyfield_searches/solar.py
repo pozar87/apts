@@ -1,4 +1,6 @@
+from datetime import timedelta
 from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac, eclipselib
 from skyfield.searchlib import find_minima
@@ -61,56 +63,56 @@ def find_solar_eclipses(observer, start_date, end_date):
     """
     Finds solar eclipses for a specific observer, providing classification
     (Total, Annular, Partial), magnitude, and obscuration.
-    Uses an optimized two-step search (Geocentric New Moon -> Topocentric refinement).
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
-    eph = get_ephemeris()
     sun = planetary.get_skyfield_obj("sun")
     moon = planetary.get_skyfield_obj("moon")
 
-    # 1. Fast Geocentric New Moon search
-    # We pad the range by 12 hours to catch events where topocentric parallax
-    # might shift a geocentric New Moon into/out of the window.
-    t_search_0 = ts.tt_jd(t0.tt - 0.5)
-    t_search_1 = ts.tt_jd(t1.tt + 0.5)
+    def solar_separation(t):
+        s = observer.at(t).observe(sun).apparent()
+        m = observer.at(t).observe(moon).apparent()
 
-    f_phases = almanac.moon_phases(eph)
-    t_phases, y_phases = almanac.find_discrete(t_search_0, t_search_1, f_phases)
-    new_moon_times = [t for t, y in zip(t_phases, y_phases) if y == 0]
+        # Calculate topocentric angular radii
+        s_dist = s.distance().km
+        m_dist = m.distance().km
+
+        s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
+        m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
+
+        sep = s.separation_from(m).degrees
+        return sep - (s_radius + m_radius)
+
+    # Optimization: Solar eclipses only occur during New Moon.
+    # We find geocentric New Moons and search +/- 12 hours around them.
+    # This avoids expensive topocentric calculations for most of the year.
+    # We extend the search range by 12 hours to catch New Moons just outside
+    # the requested range whose topocentric eclipse falls within the range.
+    eph = get_ephemeris()
+    t_phases, y_phases = almanac.find_discrete(
+        t0 - 0.5, t1 + 0.5, almanac.moon_phases(eph)
+    )
+    new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
+
+    setattr(solar_separation, "step_days", 0.005)
 
     events = []
+    for t_nm in new_moons:
+        # Narrow search window around geocentric New Moon to account for parallax
+        tn0 = ts.from_datetime(t_nm.utc_datetime() - timedelta(hours=12))
+        tn1 = ts.from_datetime(t_nm.utc_datetime() + timedelta(hours=12))
 
-    # 2. Topocentric refinement for each potential window
-    for t_nm in new_moon_times:
-        # Narrow window: +/- 12 hours around geocentric New Moon
-        tw0 = ts.tt_jd(t_nm.tt - 0.5)
-        tw1 = ts.tt_jd(t_nm.tt + 0.5)
+        # Ensure the narrow search window does not exceed our padded range
+        if tn0.tt < (t0 - 0.5).tt:
+            tn0 = t0 - 0.5
+        if tn1.tt > (t1 + 0.5).tt:
+            tn1 = t1 + 0.5
 
-        def solar_separation(t):
-            s = observer.at(t).observe(sun).apparent()
-            m = observer.at(t).observe(moon).apparent()
-
-            # Calculate topocentric angular radii
-            s_dist = s.distance().km
-            m_dist = m.distance().km
-
-            s_radius = np.degrees(np.arcsin(astronomy.SUN_RADIUS_KM / s_dist))
-            m_radius = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist))
-
-            sep = s.separation_from(m).degrees
-            return sep - (s_radius + m_radius)
-
-        setattr(solar_separation, "step_days", 0.05)
-        times, separations = find_minima(tw0, tw1, solar_separation)
+        times, separations = find_minima(tn0, tn1, solar_separation)
 
         for t, s in zip(times, separations):
             if s > 0:
-                continue
-
-            # Filter times outside the original requested range
-            if not (t0.tt <= t.tt <= t1.tt):
                 continue
 
             s_pos = observer.at(t).observe(sun).apparent()
@@ -166,6 +168,10 @@ def find_solar_eclipses(observer, start_date, end_date):
                     overlap_area = area(rs, rm, d)
                     sun_area = np.pi * rs**2
                     obs = overlap_area / sun_area
+
+                # Ensure the final event date falls within the requested range
+                if t.tt < t0.tt or t.tt > t1.tt:
+                    continue
 
                 events.append(
                     {

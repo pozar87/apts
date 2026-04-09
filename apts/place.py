@@ -253,12 +253,15 @@ class Place:
             np.ndarray,
             self.observer.at(times).observe(self.sun).apparent().altaz()[0].degrees,
         )
+        # Optimization: Reuse the Moon observation for both altitude and magnitude
+        # to avoid redundant high-precision coordinate transformations.
+        moon_obs = self.observer.at(times).observe(self.moon).apparent()
         moon_alts = cast(
             np.ndarray,
-            self.observer.at(times).observe(self.moon).apparent().altaz()[0].degrees,
+            moon_obs.altaz()[0].degrees,
         )
-        # Vectorized magnitude calculation
-        moon_mags = cast(np.ndarray, get_planet_magnitude("moon", times))
+        # Vectorized magnitude calculation - reusing topocentric observation for better accuracy and performance
+        moon_mags = cast(np.ndarray, get_planet_magnitude("moon", times, astrometric=moon_obs))
 
         # Bortle info
         bortle = self.get_light_pollution()

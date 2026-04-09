@@ -803,11 +803,11 @@ def get_planet_magnitude(
 
     # Major planets and others supported by skyfield
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
-    # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, and Neptune.
-    # We wrap in try-except to handle unsupported bodies like Pluto or Ceres gracefully.
+    # Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto.
     try:
         return magnitudelib.planetary_magnitude(astrometric)
-    except (ValueError, TypeError, KeyError):
+    except Exception:
+        # Fallback for minor planets or unsupported bodies
         return np.nan
 
 

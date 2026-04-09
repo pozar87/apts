@@ -4,6 +4,7 @@ from skyfield import almanac, magnitudelib
 from skyfield.searchlib import find_maxima, find_minima
 from ..cache import get_timescale, get_ephemeris
 from ..utils import planetary
+from ..constants import astronomy
 
 def find_planetary_dichotomy(
     observer,
@@ -263,19 +264,19 @@ def find_oppositions(observer, planet_name, start_date, end_date):
 
     events = []
     for t in times:
-        # High-precision observation at the moment of opposition
+        # Calculate physical data at the moment of opposition
         astrometric = observer.at(t).observe(planet).apparent()
 
         mag = planetary.get_planet_magnitude(planet_name, t, astrometric=astrometric)
-        dist_au = astrometric.distance().au
+        dist_km = planetary.get_planet_distance_km(planet_name, t, astrometric=astrometric)
         diam = planetary.get_planet_angular_diameter(planet_name, t, observer=observer)
 
         events.append({
             "date": t.utc_datetime(),
             "planet": planet_name,
             "magnitude": float(mag),
-            "distance_au": float(dist_au),
-            "angular_diameter_arcsec": float(diam),
+            "distance_au": float(dist_km / astronomy.AU_KM),
+            "angular_diameter_arcsec": float(diam)
         })
 
     return events
