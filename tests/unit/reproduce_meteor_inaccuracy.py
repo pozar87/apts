@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timezone
 from apts.place import Place
 from apts.skyfield_searches.meteor_showers import find_meteor_showers
+from skyfield.api import Star
 
 class TestMeteorInaccuracy(unittest.TestCase):
     def test_perseids_radiant_drift(self):

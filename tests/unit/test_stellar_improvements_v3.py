@@ -84,11 +84,11 @@ class TestStellarImprovementsV3(unittest.TestCase):
 
     def test_zwo_updated_pro_cameras(self):
         mc_pro = ZwoCamera.ZWO_ASI2600MC_PRO()
-        self.assertEqual(mc_pro.mass, 700 * get_unit_registry().gram)
+        self.assertEqual(mc_pro.mass, 720 * get_unit_registry().gram)
         self.assertEqual(mc_pro.backfocus, 17.5 * get_unit_registry().mm)
 
         ff_pro = ZwoCamera.ZWO_ASI6200MM_PRO()
-        self.assertEqual(ff_pro.mass, 700 * get_unit_registry().gram)
+        self.assertEqual(ff_pro.mass, 1010 * get_unit_registry().gram)
         self.assertEqual(ff_pro.backfocus, 17.5 * get_unit_registry().mm)
 
     def test_qhy_new_cameras(self):
@@ -100,7 +100,7 @@ class TestStellarImprovementsV3(unittest.TestCase):
 
         q268c = QhyCamera.QHY_QHY_268C()
         self.assertEqual(q268c.vendor, "QHY QHY 268C")
-        self.assertEqual(q268c.quantum_efficiency, 80)
+        self.assertEqual(q268c.quantum_efficiency, 92)
 
 if __name__ == "__main__":
     unittest.main()

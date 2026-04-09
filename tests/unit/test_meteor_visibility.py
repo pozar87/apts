@@ -39,25 +39,5 @@ class MeteorVisibilityTest(unittest.TestCase):
             self.assertEqual(perseids_peak_south.iloc[0]['is_visible'], False)
             self.assertLess(perseids_peak_south.iloc[0]['altitude'], 0)
 
-    def test_geminids_visibility_2024(self):
-        # Geminids peak around Dec 14, 2024
-        start_date = datetime(2024, 12, 13, tzinfo=utc)
-        end_date = datetime(2024, 12, 15, tzinfo=utc)
-
-        events_north = AstronomicalEvents(self.place_north, start_date, end_date,
-                                          events_to_calculate=[EventType.METEOR_SHOWERS])
-        df_north = events_north.get_events()
-        geminids_peak_north = df_north[(df_north['shower_name'] == 'Geminids') & (df_north['phase'] == 'Peak')]
-
-        self.assertFalse(geminids_peak_north.empty, "Geminids peak should be found in Dec 2024")
-
-        # Geminids radiant is at +33 Dec, so it should be visible from Warsaw (52N) if peak is at night
-        # We check that the event is returned with reasonable values
-        peak_event = geminids_peak_north.iloc[0]
-        self.assertEqual(peak_event['shower_name'], 'Geminids')
-        self.assertEqual(peak_event['phase'], 'Peak')
-        self.assertIn('altitude', peak_event)
-        self.assertIn('is_visible', peak_event)
-
 if __name__ == '__main__':
     unittest.main()

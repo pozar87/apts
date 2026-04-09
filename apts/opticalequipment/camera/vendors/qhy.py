@@ -59,6 +59,27 @@ class QhyCamera(Camera):
             'read_noise_e': 2.5,
             'full_well_e': 76000
         },
+        'QHY_QHY_128M_Pro': {
+            'brand': 'QHY',
+            'name': 'QHY 128M Pro',
+            'type': 'type_camera',
+            'optical_length': 17.5,
+            'mass': 1300,
+            'tside_thread': 'M54',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 36.03,
+            'sensor_height_mm': 24.05,
+            'width': 6036,
+            'height': 4028,
+            'pixel_size_um': 5.97,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 2.5,
+            'full_well_e': 76000
+        },
         'QHY_QHY_163C': {
             'brand': 'QHY',
             'name': 'QHY 163C',
@@ -119,6 +140,27 @@ class QhyCamera(Camera):
             'height': 3288,
             'pixel_size_um': 4.8,
             'quantum_efficiency_pct': 50,
+            'read_noise_e': 2.3,
+            'full_well_e': 46000
+        },
+        'QHY_QHY_168M': {
+            'brand': 'QHY',
+            'name': 'QHY 168M',
+            'type': 'type_camera',
+            'optical_length': 17.5,
+            'mass': 600,
+            'tside_thread': 'M54',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.77,
+            'sensor_height_mm': 15.78,
+            'width': 4952,
+            'height': 3288,
+            'pixel_size_um': 4.8,
+            'quantum_efficiency_pct': 91,
             'read_noise_e': 2.3,
             'full_well_e': 46000
         },
@@ -353,6 +395,27 @@ class QhyCamera(Camera):
             'read_noise_e': 2.3,
             'full_well_e': 46000
         },
+        'QHY_QHY_247M': {
+            'brand': 'QHY',
+            'name': 'QHY 247M',
+            'type': 'type_camera',
+            'optical_length': 17.5,
+            'mass': 700,
+            'tside_thread': 'M54',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 23.5,
+            'sensor_height_mm': 15.7,
+            'width': 6048,
+            'height': 4032,
+            'pixel_size_um': 3.91,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 2.3,
+            'full_well_e': 46000
+        },
         'QHY_QHY_268C': {
             'brand': 'QHY',
             'name': 'QHY 268C',
@@ -370,7 +433,7 @@ class QhyCamera(Camera):
             'width': 6252,  # Verified effective resolution
             'height': 4176,
             'pixel_size_um': 3.76,
-            'quantum_efficiency_pct': 80,  # Verified BSI peak QE
+            'quantum_efficiency_pct': 92,  # Verified BSI peak QE
             'read_noise_e': 1.1,
             'full_well_e': 51000
         },
@@ -391,7 +454,7 @@ class QhyCamera(Camera):
             'width': 6252,
             'height': 4176,
             'pixel_size_um': 3.76,
-            'quantum_efficiency_pct': 80,
+            'quantum_efficiency_pct': 92,
             'read_noise_e': 1.1,
             'full_well_e': 51000
         },
@@ -412,7 +475,7 @@ class QhyCamera(Camera):
             'width': 6252,
             'height': 4176,
             'pixel_size_um': 3.76,
-            'quantum_efficiency_pct': 80,
+            'quantum_efficiency_pct': 92,
             'read_noise_e': 1.1,
             'full_well_e': 51000
         },
@@ -626,6 +689,27 @@ class QhyCamera(Camera):
             'read_noise_e': 2.4,
             'full_well_e': 80000
         },
+        'QHY_QHY_367M_Pro': {
+            'brand': 'QHY',
+            'name': 'QHY 367M Pro',
+            'type': 'type_camera',
+            'optical_length': 17.5,
+            'mass': 900,
+            'tside_thread': 'M54',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 36.0,
+            'sensor_height_mm': 24.0,
+            'width': 7376,
+            'height': 4928,
+            'pixel_size_um': 4.88,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 2.4,
+            'full_well_e': 80000
+        },
         'QHY_QHY_410C': {
             'brand': 'QHY',
             'name': 'QHY 410C',
@@ -665,6 +749,48 @@ class QhyCamera(Camera):
             'height': 4044,
             'pixel_size_um': 5.94,
             'quantum_efficiency_pct': 80,
+            'read_noise_e': 1.1,
+            'full_well_e': 100000
+        },
+        'QHY_QHY_410M': {
+            'brand': 'QHY',
+            'name': 'QHY 410M',
+            'type': 'type_camera',
+            'optical_length': 17.5,
+            'mass': 950,
+            'tside_thread': 'M54',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 36.0,
+            'sensor_height_mm': 24.0,
+            'width': 6072,
+            'height': 4044,
+            'pixel_size_um': 5.94,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 1.1,
+            'full_well_e': 100000
+        },
+        'QHY_QHY_410M_M42_Adapter': {
+            'brand': 'QHY',
+            'name': 'QHY 410M + M42 Adapter',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 980,
+            'tside_thread': 'M42',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 36.0,
+            'sensor_height_mm': 24.0,
+            'width': 6072,
+            'height': 4044,
+            'pixel_size_um': 5.94,
+            'quantum_efficiency_pct': 91,
             'read_noise_e': 1.1,
             'full_well_e': 100000
         },
@@ -1319,9 +1445,51 @@ class QhyCamera(Camera):
             'read_noise_e': 0.5,
             'full_well_e': 12000
         },
+        'QHY_QHY_5III_462M': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 462M',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 5.6,
+            'sensor_height_mm': 3.2,
+            'width': 1920,
+            'height': 1080,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.5,
+            'full_well_e': 12000
+        },
         'QHY_QHY_5III_482C': {
             'brand': 'QHY',
             'name': 'QHY 5III 482C',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 11.13,
+            'sensor_height_mm': 6.26,
+            'width': 1920,
+            'height': 1080,
+            'pixel_size_um': 5.8,
+            'quantum_efficiency_pct': 85,
+            'read_noise_e': 1.5,
+            'full_well_e': 50000
+        },
+        'QHY_QHY_5III_482M': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 482M',
             'type': 'type_camera',
             'optical_length': 12.5,
             'mass': 90,
@@ -1550,9 +1718,51 @@ class QhyCamera(Camera):
             'read_noise_e': 0.46,
             'full_well_e': 38500
         },
+        'QHY_QHY_5III_664M': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 664M',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.84,
+            'sensor_height_mm': 4.45,
+            'width': 2704,
+            'height': 1536,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.46,
+            'full_well_e': 38500
+        },
         'QHY_QHY_5III_678C': {
             'brand': 'QHY',
             'name': 'QHY 5III 678C',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 100,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.7,
+            'sensor_height_mm': 4.3,
+            'width': 3840,
+            'height': 2160,
+            'pixel_size_um': 2.0,
+            'quantum_efficiency_pct': 83,
+            'read_noise_e': 0.6,
+            'full_well_e': 10000
+        },
+        'QHY_QHY_5III_678M': {
+            'brand': 'QHY',
+            'name': 'QHY 5III 678M',
             'type': 'type_camera',
             'optical_length': 12.5,
             'mass': 100,
@@ -1609,7 +1819,7 @@ class QhyCamera(Camera):
             'width': 9576,
             'height': 6388,
             'pixel_size_um': 3.76,
-            'quantum_efficiency_pct': 80,
+            'quantum_efficiency_pct': 91,
             'read_noise_e': 1.2,
             'full_well_e': 51000
         },
@@ -1796,6 +2006,27 @@ class QhyCamera(Camera):
             'height': 1032,
             'pixel_size_um': 5.0
         },
+        'QHY_QHY5III664M': {
+            'brand': 'QHY',
+            'name': 'QHY5III664M',
+            'type': 'type_camera',
+            'optical_length': 12.5,
+            'mass': 90,
+            'tside_thread': 'CS',
+            'tside_gender': 'Female',
+            'cside_thread': '',
+            'cside_gender': '',
+            'reversible': False,
+            'bf_role': 'end',
+            'sensor_width_mm': 7.84,
+            'sensor_height_mm': 4.45,
+            'width': 2704,
+            'height': 1536,
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.46,
+            'full_well_e': 38500
+        }
     }
 
     @classmethod
@@ -1851,6 +2082,18 @@ class QhyCamera(Camera):
         return cls.from_database(cls._DATABASE['QHY_QHY_163M'])
 
     @classmethod
+    def QHY_QHY_168M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_168M'])
+
+    @classmethod
+    def QHY_QHY_367M_Pro(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_367M_Pro'])
+
+    @classmethod
+    def QHY_QHY_410M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_410M'])
+
+    @classmethod
     def QHY_QHY_411M(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_411M'])
 
@@ -1861,6 +2104,14 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_492M(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_492M'])
+
+    @classmethod
+    def QHY_QHY_128M_Pro(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_128M_Pro'])
+
+    @classmethod
+    def QHY_QHY_247M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_247M'])
 
     @classmethod
     def QHY_QHY_600C_Pro(cls):
@@ -1987,6 +2238,10 @@ class QhyCamera(Camera):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_664C'])
 
     @classmethod
+    def QHY_QHY_5III_664M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_664M'])
+
+    @classmethod
     def QHY_QHY_600M_M42_Adapter(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_600M_M42_Adapter'])
 
@@ -2005,6 +2260,10 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_183M_M42_Adapter(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_183M_M42_Adapter'])
+
+    @classmethod
+    def QHY_QHY_410M_M42_Adapter(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_410M_M42_Adapter'])
 
     @classmethod
     def QHY_QHY_461M_M42_Adapter(cls):
@@ -2059,6 +2318,14 @@ class QhyCamera(Camera):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_385M'])
 
     @classmethod
+    def QHY_QHY_5III_678M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_678M'])
+
+    @classmethod
+    def QHY_QHY_5III_482M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_482M'])
+
+    @classmethod
     def QHY_QHY_5III_120C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_120C'])
 
@@ -2077,6 +2344,10 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_5III_482C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_5III_482C'])
+
+    @classmethod
+    def QHY_QHY_5III_462M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY_5III_462M'])
 
     @classmethod
     def QHY_QHY_5III_568M(cls):
@@ -2141,3 +2412,7 @@ class QhyCamera(Camera):
     @classmethod
     def QHY_QHY_174C(cls):
         return cls.from_database(cls._DATABASE['QHY_QHY_174C'])
+
+    @classmethod
+    def QHY_QHY5III664M(cls):
+        return cls.from_database(cls._DATABASE['QHY_QHY5III664M'])

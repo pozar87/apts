@@ -1,4 +1,5 @@
 import ast
+import os
 
 def verify_askar_reducers():
     filepath = 'apts/opticalequipment/reducer/vendors/askar.py'

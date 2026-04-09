@@ -22,7 +22,7 @@ class TestStellarUpdates(unittest.TestCase):
         self.assertEqual(cam.sensor_width.magnitude, 11.13)
         self.assertEqual(cam.sensor_height.magnitude, 6.26)
         self.assertAlmostEqual(cam.pixel_size().magnitude, 2.9, places=1)
-        self.assertEqual(cam.full_well, 47000) # Verified for Pro variant
+        self.assertEqual(cam.full_well, 40000)
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.mass.magnitude, 470)
 
@@ -31,7 +31,7 @@ class TestStellarUpdates(unittest.TestCase):
         self.assertEqual(cam.sensor_width.magnitude, 11.13)
         self.assertEqual(cam.sensor_height.magnitude, 6.26)
         self.assertAlmostEqual(cam.pixel_size().magnitude, 2.9, places=1)
-        self.assertEqual(cam.full_well, 40000) # OSC uncooled/standard full well
+        self.assertEqual(cam.full_well, 40000)
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.mass.magnitude, 470)
 

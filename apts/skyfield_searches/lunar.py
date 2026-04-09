@@ -95,25 +95,10 @@ def find_moon_apogee_perigee(start_date, end_date):
     min_times, _ = find_minima(t0, t1, distance_to_earth)
 
     events = []
-    # Optimization: pre-calculate distances for all extrema
-    if len(max_times) > 0:
-        max_dist = cast(Any, earth).at(max_times).observe(moon).distance().km
-        for i, t in enumerate(cast(Any, max_times)):
-            events.append({
-                "date": t.utc_datetime(),
-                "event": "Apogee",
-                "object": "Moon",
-                "distance_km": float(max_dist[i])
-            })
-    if len(min_times) > 0:
-        min_dist = cast(Any, earth).at(min_times).observe(moon).distance().km
-        for i, t in enumerate(cast(Any, min_times)):
-            events.append({
-                "date": t.utc_datetime(),
-                "event": "Perigee",
-                "object": "Moon",
-                "distance_km": float(min_dist[i])
-            })
+    for t in max_times:
+        events.append({"date": t.utc_datetime(), "event": "Apogee", "object": "Moon"})
+    for t in min_times:
+        events.append({"date": t.utc_datetime(), "event": "Perigee", "object": "Moon"})
 
     return events
 
