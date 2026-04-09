@@ -508,6 +508,8 @@ def _plot_messier_on_skymap(
     # Optimization: reset_index(drop=True) is called here to ensure positional access is safe.
     plot_df = plot_df.reset_index(drop=True)
     if "ra_hours" not in plot_df.columns or "dec_degrees" not in plot_df.columns:
+        # Reset index to ensure loc[i] works correctly after filtering
+        plot_df = plot_df.reset_index(drop=True)
         ras, decs = [], []
         # Using index-based loop to avoid potential issues with MagicMock Series
         for i in range(len(plot_df)):

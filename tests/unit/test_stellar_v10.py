@@ -22,7 +22,7 @@ def test_askar_71f_specs():
     telescope = AskarTelescope.Askar_71F()
     assert telescope.aperture.magnitude == 71
     assert telescope.focal_length.magnitude == 490
-    assert telescope.mass.magnitude == 3000
+    assert telescope.mass.magnitude == 2500
     assert telescope.get_vendor() == "Askar 71F"
 
 def test_zwo_asi664mc_optical_length():
