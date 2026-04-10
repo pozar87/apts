@@ -16,7 +16,7 @@ class ZwoTelescope(Telescope):
             'pixel_size_um': 2.9,
             'quantum_efficiency_pct': 80,
             'read_noise_e': 1.0,
-            'full_well_e': 12000
+            'full_well_e': 11200 # Verified via IMX462 sensor specs
         },
         'ZWO_Seestar_S30': {
             'brand': 'ZWO',
@@ -39,17 +39,17 @@ class ZwoTelescope(Telescope):
             'name': 'Seestar S30 Pro',
             'type': 'type_smart_telescope',
             'aperture': 30,
-            'focal_length': 150,
-            'sensor_width': 7.68,
-            'sensor_height': 4.32,
+            'focal_length': 160,
+            'sensor_width': 11.13,
+            'sensor_height': 6.26,
             'width': 3840,
             'height': 2160,
             'mass': 1650,
-            'pixel_size_um': 2.0,
-            'quantum_efficiency_pct': 83,
-            'read_noise_e': 0.6,
-            'full_well_e': 11270
-        }
+            'pixel_size_um': 2.9,
+            'quantum_efficiency_pct': 91,
+            'read_noise_e': 0.7,
+            'full_well_e': 40000
+        } # Verified via AstroBackyard/High Point Scientific (Sony IMX585 sensor)
     }
 
     @classmethod

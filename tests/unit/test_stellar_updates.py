@@ -9,20 +9,20 @@ class TestStellarUpdates(unittest.TestCase):
     def test_seestar_s30_pro_specs(self):
         s30_pro = ZwoTelescope.ZWO_Seestar_S30_Pro()
         self.assertEqual(s30_pro.aperture.magnitude, 30)
-        self.assertEqual(s30_pro.focal_length.magnitude, 150)
-        self.assertEqual(s30_pro.sensor_width.magnitude, 7.68)
-        self.assertEqual(s30_pro.sensor_height.magnitude, 4.32)
-        # Pixel size for IMX678 (3840x2160 on 7.68x4.32mm) is 2.0um
-        self.assertAlmostEqual(s30_pro.pixel_size().magnitude, 2.0, places=1)
-        self.assertEqual(s30_pro.full_well, 11270)
-        self.assertEqual(s30_pro.quantum_efficiency, 83)
+        self.assertEqual(s30_pro.focal_length.magnitude, 160)
+        self.assertEqual(s30_pro.sensor_width.magnitude, 11.13)
+        self.assertEqual(s30_pro.sensor_height.magnitude, 6.26)
+        # Pixel size for IMX585 (3840x2160 on 11.13x6.26mm) is 2.9um
+        self.assertAlmostEqual(s30_pro.pixel_size().magnitude, 2.9, places=1)
+        self.assertEqual(s30_pro.full_well, 40000)
+        self.assertEqual(s30_pro.quantum_efficiency, 91)
 
     def test_asi585mm_pro_specs(self):
         cam = ZwoCamera.ZWO_ASI_585MM_Pro()
         self.assertEqual(cam.sensor_width.magnitude, 11.13)
         self.assertEqual(cam.sensor_height.magnitude, 6.26)
         self.assertAlmostEqual(cam.pixel_size().magnitude, 2.9, places=1)
-        self.assertEqual(cam.full_well, 40000)
+        self.assertEqual(cam.full_well, 47000) # Verified for Pro variant
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.mass.magnitude, 470)
 
@@ -31,7 +31,7 @@ class TestStellarUpdates(unittest.TestCase):
         self.assertEqual(cam.sensor_width.magnitude, 11.13)
         self.assertEqual(cam.sensor_height.magnitude, 6.26)
         self.assertAlmostEqual(cam.pixel_size().magnitude, 2.9, places=1)
-        self.assertEqual(cam.full_well, 40000)
+        self.assertEqual(cam.full_well, 40000) # OSC uncooled/standard full well
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.mass.magnitude, 470)
 

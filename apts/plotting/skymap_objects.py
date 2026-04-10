@@ -496,22 +496,24 @@ def _plot_messier_on_skymap(
     if visible_messier.empty:
         return
 
-    # Filter out target object and reset index for safe positional indexing
-    plot_df = (
-        visible_messier[visible_messier[ObjectTableLabels.MESSIER] != target_name]
-        .copy()
-        .reset_index(drop=True)
-    )
+    # Filter out target object and reset index for array matching/safe iteration
+    plot_df = visible_messier[
+        visible_messier[ObjectTableLabels.MESSIER] != target_name
+    ].copy().reset_index(drop=True)
 
     if plot_df.empty:
         return
 
     # Ensure RA/Dec float columns exist for vectorization (handling mocks/incomplete data in tests)
+    # Optimization: reset_index(drop=True) is called here to ensure positional access is safe.
+    plot_df = plot_df.reset_index(drop=True)
     if "ra_hours" not in plot_df.columns or "dec_degrees" not in plot_df.columns:
+        # Reset index to ensure loc[i] works correctly after filtering
+        plot_df = plot_df.reset_index(drop=True)
         ras, decs = [], []
         # Using index-based loop to avoid potential issues with MagicMock Series
         for i in range(len(plot_df)):
-            m_name = plot_df.loc[i, ObjectTableLabels.MESSIER]
+            m_name = plot_df.iloc[i][ObjectTableLabels.MESSIER]
             # Try to get coordinates from the catalog or object itself
             m_obj = observation.local_messier.find_by_name(m_name)
             if m_obj and hasattr(m_obj, "ra"):
@@ -560,7 +562,7 @@ def _plot_messier_on_skymap(
         alt_deg, az_deg = [], []
         ra_hours, dec_deg, ra_rad = [], [], []
         for i in range(len(plot_df)):
-            m_name = plot_df.loc[i, ObjectTableLabels.MESSIER]
+            m_name = plot_df.iloc[i][ObjectTableLabels.MESSIER]
             m_obj = observation.local_messier.find_by_name(m_name)
             if m_obj:
                 obs = observer.observe(m_obj).apparent()

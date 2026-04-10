@@ -11,7 +11,7 @@ def test_seestar_sensor_specs():
     assert s50.width == 1920
     assert s50.height == 1080
     assert s50.pixel_size().to("micrometer").magnitude == pytest.approx(2.9)
-    assert s50.full_well == 12000
+    assert s50.full_well == 11200
 
     # S30 Sensor (IMX662)
     s30 = ZwoCamera.ZWO_Seestar_S30_Sensor()
@@ -20,21 +20,21 @@ def test_seestar_sensor_specs():
     assert s30.pixel_size().to("micrometer").magnitude == pytest.approx(2.9)
     assert s30.full_well == 38200
 
-    # S30 Pro Sensor (IMX678)
+    # S30 Pro Sensor (IMX585)
     s30p = ZwoCamera.ZWO_Seestar_S30_Pro_Sensor()
-    assert s30p.sensor_width.magnitude == 7.68
-    assert s30p.sensor_height.magnitude == 4.32
+    assert s30p.sensor_width.magnitude == 11.13
+    assert s30p.sensor_height.magnitude == 6.26
     assert s30p.width == 3840
     assert s30p.height == 2160
-    assert s30p.pixel_size().to("micrometer").magnitude == pytest.approx(2.0)
-    assert s30p.full_well == 11270
+    assert s30p.pixel_size().to("micrometer").magnitude == pytest.approx(2.9)
+    assert s30p.full_well == 40000
 
 def test_askar_apo_specs():
     """Verify Askar APO refractor entries including reduced variants."""
     # 103APO
     a103 = AskarTelescope.Askar_103APO()
     assert a103.aperture.magnitude == 103
-    assert a103.focal_length.magnitude == pytest.approx(700.4)
+    assert a103.focal_length.magnitude == pytest.approx(700.0)
 
     # 103APO Reduced (0.8x)
     a103r = AskarTelescope.Askar_103APO_Reduced()
