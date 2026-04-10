@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
     from .opticalequipment.smart_telescope import SmartTelescope
 
+from .constants import astronomy
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
 from .units import get_unit_registry
@@ -464,11 +465,10 @@ class OpticalPath:
         eff_focal_length = self.telescope.focal_length * self.effective_barlow()
         # Pixel size
         p_size = self.output.pixel_size()
-        # Formula: (p_size / eff_focal_length) * 206265
-        # Optimization: use pre-defined constant if it existed, but we'll stick to 206265 for now as it's the current code's precision.
+        # Formula: (p_size / eff_focal_length) * RAD_TO_ARCSEC
         scale = (
             p_size.to("mm").magnitude / eff_focal_length.to("mm").magnitude
-        ) * 206265
+        ) * astronomy.RAD_TO_ARCSEC
         res = scale * get_unit_registry().arcsecond
         self._cache["pixel_scale"] = res
         return res
@@ -929,7 +929,7 @@ class OpticalPath:
         # r = sqrt((width/2)^2 + (height/2)^2)
         r = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
 
-        t = (tolerance_pixels * 206265.0) / (r * rot_rate)
+        t = (tolerance_pixels * astronomy.RAD_TO_ARCSEC) / (r * rot_rate)
 
         return t * get_unit_registry().second
 

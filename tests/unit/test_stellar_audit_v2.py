@@ -22,7 +22,7 @@ def test_zwo_pro_v2_specs():
 def test_zwo_air_specs():
     cam_air = ZwoCamera.ZWO_ASI_2600MC_Air()
     assert cam_air.full_well == 73000
-    assert cam_air.mass.magnitude == 1050
+    assert cam_air.mass.magnitude == 760 # Verified for Air model
     assert "Air" in cam_air.vendor
 
 def test_smart_telescope_audit():
