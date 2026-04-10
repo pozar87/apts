@@ -6,7 +6,7 @@ class TestAskarSpecs(unittest.TestCase):
         scope = AskarTelescope.Askar_FRA400()
         self.assertEqual(scope.aperture.to('mm').magnitude, 72)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 400)
-        self.assertEqual(scope.mass.to('gram').magnitude, 3200)
+        self.assertEqual(scope.mass.to('gram').magnitude, 2560)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
 
     def test_203apo_specs(self):

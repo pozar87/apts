@@ -668,6 +668,33 @@
     - https://www.ioptron.com/v/Manuals/611X_RCTruss_Manual.pdf (RC Truss Manual)
     - https://www.ioptron.com/product-p/8710.htm (R80)
 
+## 2024-05-23 - Audit of ZWO Cameras
+
+- **Items:** ZWO ASI Pro Cooled and Uncooled camera series.
+- **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:**
+    - Contained non-existent 'ghost' mono models based on color-only sensors (ASI071MM, ASI094MM, ASI128MM, ASI2400MM, ASI482MM, ASI485MM, ASI664MM, ASI676MM, ASI715MM).
+    - Contained redundant 'V2' entries for several models.
+    - Masses for cooled Pro cameras were inconsistent (720g vs 700g, 1010g vs 700g).
+    - Masses for uncooled cameras were inaccurate (e.g., 340g-400g instead of ~126g).
+    - Peak QE values were sometimes missing or incorrect for color vs mono variants.
+- **Verified Specs (Source: ZWO Official Manuals / Website):**
+    - **ASI2600/6200 Pro:** Mass 700g (0.7kg). Peak QE: 80% (MC), 91% (MM).
+    - **ASI533/585 Pro:** Mass 470g (0.47kg).
+    - **ASI183/294 Pro:** Mass 410g (0.41kg).
+    - **Uncooled models (ASI533, ASI294, ASI183, ASI585, ASI662, ASI462):** Mass ~120g-129g.
+    - **ASI2600 Air:** Mass 760g (0.76kg).
+    - **Peak QE:** Standardized to 80% for modern OSC (IMX571, IMX455, IMX533) and 91% for Mono counterparts. Starvis 2 color sensors (IMX585, IMX662) verified at 91%.
+- **Action:** Removed ghost mono models and redundant V2 entries. Updated specifications (mass, QE, sensor dimensions) for core models based on official manuals. Cleaned up factory methods. Updated `tests/unit/test_stellar_improvements_v3.py` to match verified 700g mass for Pro cameras.
+- **Source URLs:**
+    - https://www.zwoastro.com/product/new-asi2600mm-mc-pro/
+    - https://www.zwoastro.com/product/asi6200/
+    - https://www.zwoastro.com/product/asi585mc-mm-pro/
+    - https://www.zwoastro.com/product/asi533mc-mm-pro/
+    - https://www.zwoastro.com/product/asi294/
+    - https://www.zwoastro.com/product/asi183/
+    - https://www.zwoastro.com/product/asi2600mc-air/
+
 ## 2024-06-12 - Audit of Stellarvue Telescopes
 
 - **Items:** Stellarvue SVX (070T, 080T, 090T, 102T, 130T, 152T), SV60EDS, SV70T, Access (80, 102, 48).
@@ -696,3 +723,109 @@
     - https://ssr.app.astrobin.com/equipment/explorer/telescope/333/stellarvue-sv70t
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
+
+## 2024-06-13 - Audit of ZWO Seestar Series (S50, S30, S30 Pro)
+
+- **Items:** ZWO Seestar S50, Seestar S30, Seestar S30 Pro
+- **Vendor Files:**
+    - `apts/opticalequipment/telescope/vendors/zwo.py`
+    - `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:**
+    - Seestar S30 Pro had incorrect focal length (150mm), incorrect sensor specs (IMX678 instead of IMX585), and incorrect electronic parameters.
+    - Seestar S50 had slightly incorrect full well (12000e- instead of 11200e-).
+- **Verified Specs (Source: ZWO Official Website / AstroBackyard / High Point Scientific):**
+    - **Seestar S50:** 50/250mm, IMX462 sensor (2.9µm, 5.6x3.2mm), Full Well 11200e-.
+    - **Seestar S30:** 30/150mm, IMX662 sensor (2.9µm, 5.57x3.13mm), Full Well 38200e-, QE 91%, Read Noise 0.8e-.
+    - **Seestar S30 Pro:** 30/160mm, IMX585 sensor (2.9µm, 11.13x6.26mm), Full Well 40000e-, QE 91%, Read Noise 0.7e-.
+- **Action:** Updated all models with verified physical and electronic specs. Corrected S30 Pro to the correct focal length (160mm) and IMX585 sensor parameters. Standardized internal sensor entries in the camera database.
+- **Source URLs:**
+    - https://www.zwoastro.com/product/seestar-s30-pro/
+    - https://www.highpointscientific.com/zwo-seestar-s30-all-in-one-smart-telescope
+    - https://astrobackyard.com/seestar-s30-pro-review/
+## 2024-06-13 - Audit of Askar Telescopes
+
+- **Items:** Askar FRA (300 Pro, 400, 500, 600), PHQ (65, 80, 107, 130, 151), APO (103, 120, 140, 185, 203), V series (60, 80), FMA (135, 180 Pro, 230), ACL200, SQA55, 71F.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/askar.py`
+- **Initial State:**
+    - Missing explicit `central_obstruction_mm` for all models.
+    - Several models had rounded or incorrect mass values.
+    - V series and FMA series had incorrect focal lengths (using reduced instead of native).
+    - `Askar_203APO` was incorrectly listed as `Askar_200APO`.
+- **Verified Specs (Source: Sharpstar/Askar Official Website & Manuals):**
+    - **FRA300 Pro:** 60/300mm, Mass 2.26kg, CO 0mm.
+    - **FRA400:** 72/400mm, Mass 2.56kg (OTA), CO 0mm.
+    - **103APO:** 103/700mm, Mass 4.75kg (Net), CO 0mm.
+    - **80PHQ:** 80/600mm, Mass 3.9kg (Net), CO 0mm.
+    - **65PHQ:** 65/416mm, Mass 2.0kg (OTA), CO 0mm.
+    - **107PHQ:** 107/749mm, Mass 5.7kg (Net), CO 0mm.
+    - **130PHQ:** 130/1000mm, Mass 10.2kg (Net), CO 0mm.
+    - **151PHQ:** 151/1057mm, Mass 11.0kg (Net), CO 0mm.
+    - **185APO:** 185/1295mm, Mass 14.9kg (Net), CO 0mm.
+    - **V_60Q:** 60/360mm (native), Mass 2.86kg (total config), CO 0mm.
+    - **V_80Q:** 80/500mm (native), Mass 3.44kg (total config), CO 0mm.
+    - **FMA135:** 30/135mm, Mass 280g (OTA), CO 0mm.
+    - **FMA180 Pro:** 40/180mm, Mass 395g (OTA), CO 0mm.
+    - **FMA230:** 50/275mm (native), Mass 1.2kg (total), CO 0mm.
+    - **203APO:** 203/1421mm, Mass 18.0kg, CO 0mm.
+    - **140APO:** 140/980mm, Mass 9.2kg (Net), CO 0mm.
+    - **120APO:** 120/840mm, Mass 6.5kg (Net), CO 0mm.
+    - **ACL200:** 50/200mm, Mass 1.5kg, CO 0mm.
+    - **71F:** 71/490mm, Mass 2.5kg (OTA), CO 0mm.
+- **Action:** Updated all 25 entries with verified physical specifications, explicit `central_obstruction_mm: 0`, and corrected mass values to OTA/Net weights where available. Added source comments for all entries. Corrected `Askar_200APO` to `Askar_203APO`.
+- **Source URLs:**
+    - https://www.sharpstar-optics.com/Products_1/22.html (FRA300 Pro)
+    - https://www.sharpstar-optics.com/Products_1/34.html (FRA400)
+    - https://www.sharpstar-optics.com/Products_1/79.html (103APO)
+    - https://www.sharpstar-optics.com/Products_1/1.html (80PHQ)
+    - https://www.sharpstar-optics.com/Products_1/39.html (65PHQ)
+    - https://www.sharpstar-optics.com/Products_1/78.html (130PHQ)
+    - https://www.sharpstar-optics.com/Products_1/93.html (185APO)
+    - https://www.sharpstar-optics.com/Products_1/21.html (FMA230)
+    - https://www.sharpstar-optics.com/Products_1/203APO.html (203APO)
+    - https://www.sharpstar-optics.com/Products_1/101.html (71F)
+
+## 2024-06-13 - Audit of TeleVue Telescopes
+
+- **Items:** TV-60, TV-76, TV-85, TV-102, NP101, NP101is, NP127is, NP127fli.
+- **Vendor File:** `apts/opticalequipment/telescope/vendors/televue.py`
+- **Initial State:**
+    - Missing explicit `aperture_mm`, `focal_length_mm`, and `central_obstruction_mm`.
+    - `mass` values were placeholders (e.g., 900g for TV-60, 4200g for NP101is).
+- **Verified Specs (Sources: TeleVue Official Website / Company Seven / B&H):**
+    - **TV-60:** 60/360mm (f/6.0), Mass 1.36kg (3.0 lbs).
+    - **TV-76:** 76/480mm (f/6.3), Mass 2.31kg (5.1 lbs).
+    - **TV-85:** 85/600mm (f/7.0), Mass 2.77kg (6.1 lbs).
+    - **TV-102:** 102/880mm (f/8.6), Mass 4.17kg (9.2 lbs).
+    - **NP101 / NP101is:** 101/540mm (f/5.4), Mass 4.85kg (10.7 lbs).
+    - **NP127is / NP127fli:** 127/660mm (f/5.2), Mass 6.58kg (14.5 lbs).
+- **Action:** Updated all entries in `apts/opticalequipment/telescope/vendors/televue.py` with verified physical specifications, explicit aperture/focal length, and `central_obstruction_mm: 0`. Standardized mass to OTA-only weights in grams. Added source comments. Verified with `scripts/verify_televue_static.py`.
+- **Source URLs:**
+    - https://www.televue.com/pdf/Literature/Tele%20Vue%20Telescopes%20Recommendations%20and%20Specs.pdf
+    - https://www.televue.com/engine/TV3b_page.asp?id=199&Tab=_spec
+    - http://www.company7.com/televue/telescopes/tv102.html
+## 2024-05-23 - Audit of ZWO Cameras
+
+- **Items:** ZWO ASI Pro Cooled and Uncooled camera series.
+- **Vendor File:** `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:**
+    - Contained non-existent 'ghost' mono models based on color-only sensors (ASI071MM, ASI094MM, ASI128MM, ASI2400MM, ASI482MM, ASI485MM, ASI664MM, ASI676MM, ASI715MM).
+    - Contained redundant 'V2' entries for several models.
+    - Masses for cooled Pro cameras were inconsistent (720g vs 700g, 1010g vs 700g).
+    - Masses for uncooled cameras were inaccurate (e.g., 340g-400g instead of ~126g).
+    - Peak QE values were sometimes missing or incorrect for color vs mono variants.
+- **Verified Specs (Source: ZWO Official Manuals / Website):**
+    - **ASI2600/6200 Pro:** Mass 700g (0.7kg). Peak QE: 80% (MC), 91% (MM).
+    - **ASI533/585 Pro:** Mass 470g (0.47kg).
+    - **ASI183/294 Pro:** Mass 410g (0.41kg).
+    - **Uncooled models (ASI533, ASI294, ASI183, ASI585, ASI662, ASI462):** Mass ~120g-129g.
+    - **ASI2600 Air:** Mass 760g (0.76kg).
+    - **Peak QE:** Standardized to 80% for modern OSC (IMX571, IMX455, IMX533) and 91% for Mono counterparts. Starvis 2 color sensors (IMX585, IMX662) verified at 91%.
+- **Action:** Removed ghost mono models and redundant V2 entries. Updated specifications (mass, QE, sensor dimensions) for core models based on official manuals. Cleaned up factory methods. Updated `tests/unit/test_stellar_improvements_v3.py` to match verified 700g mass for Pro cameras.
+- **Source URLs:**
+    - https://www.zwoastro.com/product/new-asi2600mm-mc-pro/
+    - https://www.zwoastro.com/product/asi6200/
+    - https://www.zwoastro.com/product/asi585mc-mm-pro/
+    - https://www.zwoastro.com/product/asi533mc-mm-pro/
+    - https://www.zwoastro.com/product/asi294/
+    - https://www.zwoastro.com/product/asi183/
+    - https://www.zwoastro.com/product/asi2600mc-air/
