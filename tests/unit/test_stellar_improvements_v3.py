@@ -22,23 +22,24 @@ class TestStellarImprovementsV3(unittest.TestCase):
         # Pixel scale = (3.76 / 400) * 206265 = 1.939 arcsec/pixel
         c.pixel_size.return_value = 3.76 * get_unit_registry().micrometer
 
-        path = OpticalPath(t, [], [], [], [], c)
-
         # Case 1: Seeing (0.5") < Rayleigh (1.702")
         # Resolution limit = 1.702"
         # Ratio = 1.702 / 1.939 = 0.877 (< 1.5 -> Under-sampled)
-        status = path.sampling(seeing=0.5)
+        path1 = OpticalPath(t, [], [], [], [], c)
+        status = path1.sampling(seeing=0.5)
         self.assertEqual(status, "Under-sampled")
 
         # Case 2: Seeing (5.0") > Rayleigh (1.702")
         # Resolution limit = 5.0"
         # Ratio = 5.0 / 1.939 = 2.578 (Well-sampled, 1.0 <= ratio <= 3.0)
-        status_bad_seeing = path.sampling(seeing=5.0)
+        path2 = OpticalPath(t, [], [], [], [], c)
+        status_bad_seeing = path2.sampling(seeing=5.0)
         self.assertEqual(status_bad_seeing, "Well-sampled")
 
         # Case 3: Extreme seeing
         # Ratio = 7.0 / 1.939 = 3.61 (> 3.0 -> Over-sampled)
-        status_extreme_seeing = path.sampling(seeing=7.0)
+        path3 = OpticalPath(t, [], [], [], [], c)
+        status_extreme_seeing = path3.sampling(seeing=7.0)
         self.assertEqual(status_extreme_seeing, "Over-sampled")
 
     def test_sampling_nyquist_thresholds(self):
@@ -50,8 +51,6 @@ class TestStellarImprovementsV3(unittest.TestCase):
         t.focal_length = 100 * get_unit_registry().mm
         c.pixel_size.return_value = 1.0 * get_unit_registry().micrometer
 
-        path = OpticalPath(t, [], [], [], [], c)
-
         # Resolution limit will be max(seeing=2.0, rayleigh=2.0) = 2.0
 
         # Ratio = 2.0 / pixel_scale
@@ -59,17 +58,20 @@ class TestStellarImprovementsV3(unittest.TestCase):
         # pixel_scale = 2.5
         # (p_size / 100) * 206265 = 2.5 => p_size = 2.5 * 100 / 206265
         c.pixel_size.return_value = (2.5 * 100 / 206265) * get_unit_registry().mm
-        self.assertEqual(path.sampling(seeing=2.0), "Under-sampled")
+        path1 = OpticalPath(t, [], [], [], [], c)
+        self.assertEqual(path1.sampling(seeing=2.0), "Under-sampled")
 
-        # Ratio 1.5 (Well-sampled, 1.0-2.0)
+        # Ratio 1.5 (Well-sampled, 1.0-3.0)
         # pixel_scale = 2.0 / 1.5 = 1.333
         c.pixel_size.return_value = (1.3333 * 100 / 206265) * get_unit_registry().mm
-        self.assertEqual(path.sampling(seeing=2.0), "Well-sampled")
+        path2 = OpticalPath(t, [], [], [], [], c)
+        self.assertEqual(path2.sampling(seeing=2.0), "Well-sampled")
 
-        # Ratio 4.0 (> 2.0) -> Over-sampled
+        # Ratio 4.0 (> 3.0) -> Over-sampled
         # pixel_scale = 0.5
         c.pixel_size.return_value = (0.5 * 100 / 206265) * get_unit_registry().mm
-        self.assertEqual(path.sampling(seeing=2.0), "Over-sampled")
+        path3 = OpticalPath(t, [], [], [], [], c)
+        self.assertEqual(path3.sampling(seeing=2.0), "Over-sampled")
 
     def test_zwo_duo_cameras(self):
         mc_duo = ZwoCamera.ZWO_ASI2600MC_DUO()
