@@ -90,8 +90,11 @@ def find_solar_eclipses(observer, start_date, end_date):
     # We extend the search range by 12 hours to catch New Moons just outside
     # the requested range whose topocentric eclipse falls within the range.
     eph = get_ephemeris()
+    t_start_padded = ts.tt_jd(t0.tt - 0.5)
+    t_end_padded = ts.tt_jd(t1.tt + 0.5)
+
     t_phases, y_phases = almanac.find_discrete(
-        t0 - 0.5, t1 + 0.5, almanac.moon_phases(eph)
+        t_start_padded, t_end_padded, almanac.moon_phases(eph)
     )
     new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
 
@@ -100,14 +103,14 @@ def find_solar_eclipses(observer, start_date, end_date):
     events = []
     for t_nm in new_moons:
         # Narrow search window around geocentric New Moon to account for parallax
-        tn0 = ts.from_datetime(t_nm.utc_datetime() - timedelta(hours=12))
-        tn1 = ts.from_datetime(t_nm.utc_datetime() + timedelta(hours=12))
+        tn0 = ts.tt_jd(t_nm.tt - 0.5)
+        tn1 = ts.tt_jd(t_nm.tt + 0.5)
 
         # Ensure the narrow search window does not exceed our padded range
-        if tn0.tt < (t0 - 0.5).tt:
-            tn0 = t0 - 0.5
-        if tn1.tt > (t1 + 0.5).tt:
-            tn1 = t1 + 0.5
+        if tn0.tt < t_start_padded.tt:
+            tn0 = t_start_padded
+        if tn1.tt > t_end_padded.tt:
+            tn1 = t_end_padded
 
         times, separations = find_minima(tn0, tn1, solar_separation)
 

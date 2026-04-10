@@ -9,5 +9,12 @@ class TestAskarSpecs(unittest.TestCase):
         self.assertEqual(scope.mass.to('gram').magnitude, 2560)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
 
+    def test_203apo_specs(self):
+        scope = AskarTelescope.Askar_203APO()
+        self.assertEqual(scope.aperture.to('mm').magnitude, 203)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 1421)
+        self.assertEqual(scope.mass.to('gram').magnitude, 14900)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
+
 if __name__ == '__main__':
     unittest.main()

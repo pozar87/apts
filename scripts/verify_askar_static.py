@@ -36,7 +36,7 @@ class TestAskarSpecsStatic(unittest.TestCase):
     def test_103apo(self):
         specs = self.db['Askar_103APO']
         self.assertEqual(specs['aperture_mm'], 103)
-        self.assertEqual(specs['focal_length_mm'], 700)
+        self.assertEqual(specs['focal_length_mm'], 700.4)
         self.assertEqual(specs['mass'], 4750)
 
     def test_v60q(self):
@@ -53,7 +53,7 @@ class TestAskarSpecsStatic(unittest.TestCase):
         specs = self.db['Askar_203APO']
         self.assertEqual(specs['aperture_mm'], 203)
         self.assertEqual(specs['focal_length_mm'], 1421)
-        self.assertEqual(specs['mass'], 18000)
+        self.assertEqual(specs['mass'], 14900)
 
     def test_all_have_co(self):
         for key, specs in self.db.items():

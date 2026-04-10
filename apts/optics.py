@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
     from .opticalequipment.smart_telescope import SmartTelescope
 
-from .constants.astronomy import RAD_TO_ARCSEC
+from .constants import astronomy
 from .opticalequipment.binoculars import Binoculars
 from .opticalequipment.naked_eye import NakedEye
 from .units import get_unit_registry
@@ -447,7 +447,7 @@ class OpticalPath:
         # Formula: (p_size / eff_focal_length) * RAD_TO_ARCSEC
         scale = (
             p_size.to("mm").magnitude / eff_focal_length.to("mm").magnitude
-        ) * RAD_TO_ARCSEC
+        ) * astronomy.RAD_TO_ARCSEC
         return scale * get_unit_registry().arcsecond
 
     def sampling(self, seeing: float) -> Optional[str]:
@@ -906,7 +906,7 @@ class OpticalPath:
         # r = sqrt((width/2)^2 + (height/2)^2)
         r = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
 
-        t = (tolerance_pixels * RAD_TO_ARCSEC) / (r * rot_rate)
+        t = (tolerance_pixels * astronomy.RAD_TO_ARCSEC) / (r * rot_rate)
 
         return t * get_unit_registry().second
 

@@ -43,7 +43,7 @@ SATURN_RING_OUTER_RADIUS_KM = 136775.0
 AU_KM = 149597870.7
 
 # Conversion factors
-RAD_TO_ARCSEC = 206264.806247
+RAD_TO_ARCSEC = 206264.80624709636
 
 # Sidereal Rotation Period in seconds
 # Sources: IAU 2015 Standards / Archinal et al. (2018)
