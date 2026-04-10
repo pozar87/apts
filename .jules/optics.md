@@ -724,6 +724,24 @@
     - https://www.stellarvue.com/product/svx090t
     - https://galileotelescope.com/telescopes/stellarvue-access-80mm-super-ed-2-5-sv-focuser-with-d1029ed-and-case.html
 
+## 2024-06-13 - Audit of ZWO Seestar Series (S50, S30, S30 Pro)
+
+- **Items:** ZWO Seestar S50, Seestar S30, Seestar S30 Pro
+- **Vendor Files:**
+    - `apts/opticalequipment/telescope/vendors/zwo.py`
+    - `apts/opticalequipment/camera/vendors/zwo.py`
+- **Initial State:**
+    - Seestar S30 Pro had incorrect focal length (150mm), incorrect sensor specs (IMX678 instead of IMX585), and incorrect electronic parameters.
+    - Seestar S50 had slightly incorrect full well (12000e- instead of 11200e-).
+- **Verified Specs (Source: ZWO Official Website / AstroBackyard / High Point Scientific):**
+    - **Seestar S50:** 50/250mm, IMX462 sensor (2.9µm, 5.6x3.2mm), Full Well 11200e-.
+    - **Seestar S30:** 30/150mm, IMX662 sensor (2.9µm, 5.57x3.13mm), Full Well 38200e-, QE 91%, Read Noise 0.8e-.
+    - **Seestar S30 Pro:** 30/160mm, IMX585 sensor (2.9µm, 11.13x6.26mm), Full Well 40000e-, QE 91%, Read Noise 0.7e-.
+- **Action:** Updated all models with verified physical and electronic specs. Corrected S30 Pro to the correct focal length (160mm) and IMX585 sensor parameters. Standardized internal sensor entries in the camera database.
+- **Source URLs:**
+    - https://www.zwoastro.com/product/seestar-s30-pro/
+    - https://www.highpointscientific.com/zwo-seestar-s30-all-in-one-smart-telescope
+    - https://astrobackyard.com/seestar-s30-pro-review/
 ## 2024-06-13 - Audit of Askar Telescopes
 
 - **Items:** Askar FRA (300 Pro, 400, 500, 600), PHQ (65, 80, 107, 130, 151), APO (103, 120, 140, 185, 203), V series (60, 80), FMA (135, 180 Pro, 230), ACL200, SQA55, 71F.
