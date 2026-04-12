@@ -688,7 +688,7 @@ class Observation:
 
     def plot_skymap(
         self,
-        target_name: str,
+        target_name: Optional[str] = None,
         dark_mode_override: Optional[bool] = None,
         zoom_deg: Optional[float] = None,
         star_magnitude_limit: Optional[float] = None,
@@ -696,11 +696,15 @@ class Observation:
         plot_messier: bool = False,
         plot_ngc: bool = False,
         plot_planets: bool = False,
+        plot_sun: bool = False,
+        plot_moon: bool = False,
         plot_date: Optional[datetime] = None,
         flip_horizontally: Optional[bool] = None,
         flip_vertically: Optional[bool] = None,
         coordinate_system: Optional[CoordinateSystem] = None,
         language: Optional[str] = None,
+        texture_mode: bool = False,
+        plot_labels: Optional[bool] = None,
         **kwargs,
     ) -> "matplotlib.figure.Figure":
         """
@@ -712,7 +716,7 @@ class Observation:
         certain telescopes.
 
         Args:
-            target_name (str): The name of the target object to center the skymap on.
+            target_name (Optional[str]): The name of the target object to center the skymap on.
             dark_mode_override (Optional[bool]): If set, overrides the system's dark mode setting.
             zoom_deg (Optional[float]): The diameter of the zoomed-in view in degrees. If None, a full skymap is generated.
             star_magnitude_limit (Optional[float]): The faintest magnitude of stars to plot.
@@ -720,12 +724,16 @@ class Observation:
             plot_messier (bool): Whether to plot Messier objects. Defaults to False.
             plot_ngc (bool): Whether to plot NGC objects. Defaults to False.
             plot_planets (bool): Whether to plot planets. Defaults to False.
+            plot_sun (bool): Whether to plot Sun. Defaults to False.
+            plot_moon (bool): Whether to plot Moon. Defaults to False.
             plot_date (Optional[datetime]): The specific date and time for which to generate the skymap.
                                             If None, the middle of the observation window is used.
             flip_horizontally (Optional[bool]): If True, the skymap's horizontal axis is inverted.
             flip_vertically (Optional[bool]): If True, the skymap's vertical axis is inverted.
             coordinate_system (Optional[CoordinateSystem]): The coordinate system to use for the skymap (e.g., 'altaz', 'radec').
-            **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id`.
+            texture_mode (bool): If True, generates a 2D texture of the whole sky.
+            plot_labels (Optional[bool]): Whether to plot labels. Defaults to True (False in texture mode).
+            **kwargs: Additional keyword arguments to pass to the plotting function, including `equipment_id` and `figsize`.
 
         Returns:
             A matplotlib Figure object representing the skymap.
@@ -746,6 +754,67 @@ class Observation:
                     flip_horizontally=flip_horizontally,
                     flip_vertically=flip_vertically,
                     coordinate_system=coordinate_system,
+                    texture_mode=texture_mode,
+                    plot_labels=plot_labels,
+                    **kwargs,
+                ),
+            )
+
+    def plot_skymap_texture(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        star_magnitude_limit: Optional[float] = None,
+        plot_stars: bool = True,
+        plot_messier: bool = False,
+        plot_ngc: bool = False,
+        plot_planets: bool = False,
+        plot_sun: bool = False,
+        plot_moon: bool = False,
+        plot_date: Optional[datetime] = None,
+        coordinate_system: Optional[CoordinateSystem] = None,
+        language: Optional[str] = None,
+        plot_labels: bool = False,
+        figsize: tuple = (40, 20),
+        **kwargs,
+    ) -> "matplotlib.figure.Figure":
+        """
+        Generates and displays a high-resolution skymap texture.
+
+        Args:
+            dark_mode_override (Optional[bool]): If set, overrides the system's dark mode setting.
+            star_magnitude_limit (Optional[float]): The faintest magnitude of stars to plot.
+            plot_stars (bool): Whether to plot stars. Defaults to True.
+            plot_messier (bool): Whether to plot Messier objects. Defaults to False.
+            plot_ngc (bool): Whether to plot NGC objects. Defaults to False.
+            plot_planets (bool): Whether to plot planets. Defaults to False.
+            plot_sun (bool): Whether to plot Sun. Defaults to False.
+            plot_moon (bool): Whether to plot Moon. Defaults to False.
+            plot_date (Optional[datetime]): The specific date and time for which to generate the skymap.
+            coordinate_system (Optional[CoordinateSystem]): The coordinate system to use.
+            language (Optional[str]): Language for translation.
+            plot_labels (bool): Whether to plot labels. Defaults to False.
+            figsize (tuple): Figure size for hi-res output. Defaults to (40, 20).
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            A matplotlib Figure object representing the skymap texture.
+        """
+        with language_context(language):
+            return cast(
+                "matplotlib.figure.Figure",
+                self.plot.skymap_texture(
+                    dark_mode_override=dark_mode_override,
+                    star_magnitude_limit=star_magnitude_limit,
+                    plot_stars=plot_stars,
+                    plot_messier=plot_messier,
+                    plot_ngc=plot_ngc,
+                    plot_planets=plot_planets,
+                    plot_sun=plot_sun,
+                    plot_moon=plot_moon,
+                    plot_date=plot_date,
+                    coordinate_system=coordinate_system,
+                    plot_labels=plot_labels,
+                    figsize=figsize,
                     **kwargs,
                 ),
             )
