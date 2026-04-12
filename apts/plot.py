@@ -86,6 +86,9 @@ class Plotter:
     def skymap(self, **args):
         return plot_skymap(self.observation, **args)
 
+    def skymap_texture(self, **args):
+        return plot_skymap(self.observation, texture_mode=True, **args)
+
     def visible_planets(self, **args):
         return plot_visible_planets(self.observation, **args)
 

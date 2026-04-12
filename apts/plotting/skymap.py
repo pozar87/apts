@@ -9,6 +9,7 @@ from apts.constants.graphconstants import get_plot_style
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import _thread_local, gettext_
 from apts.plotting.skymap_polar import _generate_polar_skymap
+from apts.plotting.skymap_texture import _generate_texture_skymap
 from apts.plotting.skymap_zoom import _generate_zoom_skymap
 from apts.utils.planetary import get_reverse_translated_planet_names
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def _generate_plot_skymap(
     observation: "Observation",
-    target_name: str,
+    target_name: Optional[str] = None,
     dark_mode_override: Optional[bool] = None,
     zoom_deg: Optional[float] = None,
     star_magnitude_limit: Optional[float] = None,
@@ -36,6 +37,8 @@ def _generate_plot_skymap(
     coordinate_system: CoordinateSystem = cast(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
     ),
+    texture_mode: bool = False,
+    plot_labels: Optional[bool] = None,
     **kwargs,
 ) -> figure.Figure:
     """
@@ -75,6 +78,42 @@ def _generate_plot_skymap(
     generation_time_str = t.astimezone(observation.place.local_timezone).strftime(
         "%Y-%m-%d %H:%M %Z"
     )
+
+    if texture_mode:
+        figsize = kwargs.get("figsize", (20, 10))
+        _, ax = pyplot.subplots(figsize=figsize)
+        return cast(
+            figure.Figure,
+            _generate_texture_skymap(
+                observation,
+                ax,
+                style,
+                observer,
+                effective_dark_mode,
+                star_magnitude_limit,
+                plot_stars,
+                plot_messier,
+                plot_ngc,
+                plot_planets,
+                plot_sun,
+                plot_moon,
+                coordinate_system,
+                plot_labels=plot_labels if plot_labels is not None else False,
+            ),
+        )
+
+    if not target_name:
+        # If not texture mode, target_name is required.
+        fig, ax = pyplot.subplots(figsize=(10, 10))
+        ax.text(
+            0.5,
+            0.5,
+            gettext_("Target name is required for polar/zoom skymaps."),
+            horizontalalignment="center",
+            verticalalignment="center",
+            transform=ax.transAxes,
+        )
+        return cast(figure.Figure, fig)
 
     target_object = None
     target_object_data = None
@@ -197,7 +236,7 @@ def _generate_plot_skymap(
 
 def plot_skymap(
     observation: "Observation",
-    target_name: str,
+    target_name: Optional[str] = None,
     dark_mode_override: Optional[bool] = None,
     zoom_deg: Optional[float] = None,
     star_magnitude_limit: Optional[float] = None,
@@ -214,6 +253,8 @@ def plot_skymap(
     coordinate_system: CoordinateSystem = cast(
         CoordinateSystem, CoordinateSystem.HORIZONTAL
     ),
+    texture_mode: bool = False,
+    plot_labels: Optional[bool] = None,
     **kwargs,
 ) -> figure.Figure:
     flipped_horizontally = False
@@ -245,5 +286,7 @@ def plot_skymap(
         flipped_horizontally=flipped_horizontally,
         flipped_vertically=flipped_vertically,
         coordinate_system=coordinate_system,
+        texture_mode=texture_mode,
+        plot_labels=plot_labels,
         **kwargs,
     )
