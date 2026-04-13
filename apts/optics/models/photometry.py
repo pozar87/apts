@@ -1,13 +1,13 @@
 import math
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from pint import Quantity
-
+from typing import Optional, TYPE_CHECKING
+import numpy
 from ...units import get_unit_registry
 from ...utils import optics as optics_utils
 from ...opticalequipment.binoculars import Binoculars
 from ...opticalequipment.naked_eye import NakedEye
+
+if TYPE_CHECKING:
+    from pint import Quantity
 
 
 class PhotometryMixIn:

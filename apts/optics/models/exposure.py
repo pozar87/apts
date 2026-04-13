@@ -1,13 +1,12 @@
 import math
+from typing import Optional, TYPE_CHECKING
 import numpy
-from typing import TYPE_CHECKING, Optional
+from ...units import get_unit_registry
+from ...constants import astronomy
+from ...utils import optics as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity
-
-from ...units import get_unit_registry
-from ...utils import optics as optics_utils
-from ...constants import astronomy
 
 
 class ExposureMixIn:

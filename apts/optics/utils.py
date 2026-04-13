@@ -4,14 +4,13 @@ from typing import TYPE_CHECKING, Any, Sequence, Union, cast
 
 if TYPE_CHECKING:
     from pint import Quantity
-
     from ..opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
     from ..opticalequipment.smart_telescope import SmartTelescope
 
-from ..opticalequipment.binoculars import Binoculars
-from ..opticalequipment.naked_eye import NakedEye
 from ..units import get_unit_registry
 from ..utils import optics as optics_utils
+from ..opticalequipment.binoculars import Binoculars
+from ..opticalequipment.naked_eye import NakedEye
 
 
 class OpticsUtils:

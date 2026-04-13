@@ -1,28 +1,24 @@
 import math
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional
 
-import numpy
 
 if TYPE_CHECKING:
     from pint import Quantity
-
-    from ..opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
-    from ..opticalequipment.smart_telescope import SmartTelescope
 
 from ..constants import astronomy
 from ..opticalequipment.binoculars import Binoculars
 from ..opticalequipment.naked_eye import NakedEye
 from ..units import get_unit_registry
+from ..utils import optics as optics_utils
 from .utils import OpticsUtils
+
 from .models.atmospheric import AtmosphericMixIn
 from .models.photometry import PhotometryMixIn
 from .models.exposure import ExposureMixIn
 from .models.planetary import PlanetaryMixIn
 
 
-class OpticalPath(
-    AtmosphericMixIn, PhotometryMixIn, ExposureMixIn, PlanetaryMixIn
-):
+class OpticalPath(AtmosphericMixIn, PhotometryMixIn, ExposureMixIn, PlanetaryMixIn):
     """
     Class representing an optical path in a telescope setup.
     """
@@ -148,6 +144,8 @@ class OpticalPath(
         """
         Return ordered list of all optical components in the path.
         """
+        from ..opticalequipment.binoculars import Binoculars
+        from ..opticalequipment.naked_eye import NakedEye
         from ..opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
@@ -192,10 +190,7 @@ class OpticalPath(
 
     def backfocus_gap(self) -> Optional["Quantity"]:
         """
-        Calculates the remaining backfocus (gap) between the last component that
-        requires a specific backfocus (like a Reducer or Flattener) and the current
-        sensor position.
-
+        Calculate the backfocus gap.
         Returns a Quantity (distance) or None if no backfocus requirement is defined.
         """
         # 1. Find the component that defines the required backfocus
@@ -386,8 +381,7 @@ class OpticalPath(
             return None
         # Effective focal ratio
         fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
-        from ..utils import optics as utils_optics
-        diameter_um = utils_optics.calculate_airy_disk_diameter(fr, wavelength_nm)
+        diameter_um = optics_utils.calculate_airy_disk_diameter(fr, wavelength_nm)
         return float(diameter_um) * get_unit_registry().micrometer
 
     def ideal_planetary_focal_ratio(self, k: float = 5.0) -> Optional[float]:

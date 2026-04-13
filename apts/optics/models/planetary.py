@@ -1,11 +1,10 @@
 import math
+from typing import Optional, Any, Union, cast, TYPE_CHECKING
 import numpy
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from ...units import get_unit_registry
 
 if TYPE_CHECKING:
     from pint import Quantity
-
-from ...units import get_unit_registry
 
 
 class PlanetaryMixIn:

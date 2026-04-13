@@ -1,9 +1,8 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional, TYPE_CHECKING
+from ...units import get_unit_registry
 
 if TYPE_CHECKING:
     from pint import Quantity
-
-from ...units import get_unit_registry
 from ...utils import optics as optics_utils
 from ..utils import OpticsUtils
 
@@ -24,8 +23,7 @@ class AtmosphericMixIn:
         Where k is the extinction coefficient and X is the airmass.
         k typically ranges from 0.15 (very clear) to 0.5+ (hazy/polluted). Default 0.2.
         """
-        # Note: self.airmass is available via MixIn or base class
-        airmass_val = self.airmass(altitude_degrees) # type: ignore
+        airmass_val = self.airmass(altitude_degrees)
         return float(
             optics_utils.calculate_atmospheric_extinction(
                 magnitude, airmass_val, extinction_k
@@ -57,7 +55,7 @@ class AtmosphericMixIn:
         dispersion = self.atmospheric_dispersion(
             altitude_degrees, lambda1_nm, lambda2_nm
         )
-        scale = self.pixel_scale() # type: ignore
+        scale = self.pixel_scale()
         if scale is None or scale.magnitude == 0:
             return None
         return float(
