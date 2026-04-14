@@ -18,17 +18,18 @@ class DiscoveryService:
     def get_top_picks(place, equipment_path, catalogs, date=None, strategy=FilterStrategy.BROADBAND, limit=20):
         """
         Returns a ranked list of objects sorted by the Multi-Factor Score.
+        Focuses on the Messier catalog for optimal performance and quality.
         """
+        from .objects.messier import Messier
+
         scorer = SuitabilityScorer(place, equipment_path, filter_strategy=strategy)
 
-        all_objects = []
+        # Focus on Messier catalog for performance and high-quality results
+        # We use the Messier object to ensure tranzit/altitude are computed
+        messier_obj = Messier(place, catalogs)
+        messier_obj.compute(calculation_date=date)
 
-        # Collect from Messier and NGC
-        messier_df = catalogs.MESSIER
-        ngc_df = catalogs.NGC
-
-        # Combine catalogs
-        combined_df = pd.concat([messier_df, ngc_df], ignore_index=True)
+        combined_df = messier_obj.objects
 
         # Filtering for reasonable visibility (optional optimization)
         # For now, we'll score everything, but typically you'd filter by magnitude or altitude first
@@ -70,22 +71,42 @@ class TimelineGenerator:
         else:
             if isinstance(date, datetime.datetime):
                 t0_dt = date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
-            else:
+            elif isinstance(date, datetime.date):
                 t0_dt = datetime.datetime.combine(date, datetime.time.min).replace(tzinfo=datetime.timezone.utc)
+            else:
+                # Assume Skyfield Time or other
+                t0_dt = date.utc_datetime()
+                if not isinstance(t0_dt, datetime.datetime):
+                    t0_dt = t0_dt[0]
+                t0_dt = t0_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
 
         t0 = ts.utc(t0_dt)
         t1 = ts.utc(t0_dt + datetime.timedelta(days=1))
 
         # 1. Twilight phases
+        # dark_twilight_day returns:
+        # 0: Night
+        # 1: Astronomical Twilight
+        # 2: Nautical Twilight
+        # 3: Civil Twilight
+        # 4: Day
         f_twilight = almanac.dark_twilight_day(eph, place.location)
         times, events = almanac.find_discrete(t0, t1, f_twilight)
+
+        twilight_map = {
+            0: "Night",
+            1: "Astronomical Twilight",
+            2: "Nautical Twilight",
+            3: "Civil Twilight",
+            4: "Day"
+        }
 
         twilight_events = []
         for t, e in zip(times, events):
             twilight_events.append({
                 "time": t.utc_datetime(),
-                "phase": Twilight(e).name if e in [1, 2, 3, 4] else "Day" if e == 4 else "Night",
-                "event_id": e
+                "phase": twilight_map.get(int(e), "Unknown"),
+                "event_id": int(e)
             })
 
         # 2. Moon transit data
@@ -96,7 +117,7 @@ class TimelineGenerator:
         for t, e in zip(m_times, m_events):
             moon_events.append({
                 "time": t.utc_datetime(),
-                "type": "Upper Transit" if e == 1 else "Lower Transit"
+                "type": "Upper Transit" if int(e) == 1 else "Lower Transit"
             })
 
         return {
