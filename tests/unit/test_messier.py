@@ -43,9 +43,9 @@ class TestMessier(unittest.TestCase):
         self.assertTrue(hasattr(m["Distance"].iloc[0], "units"))
         self.assertEqual(str(m["Distance"].iloc[0].units), "light_year")
 
-        self.assertTrue(hasattr(m["Width"].iloc[0], "magnitude"))
-        self.assertTrue(hasattr(m["Width"].iloc[0], "units"))
-        self.assertEqual(m["Width"].iloc[0].units, "arcminute")
+        self.assertTrue(hasattr(m[ObjectTableLabels.SIZE_MAJOR].iloc[0], "magnitude"))
+        self.assertTrue(hasattr(m[ObjectTableLabels.SIZE_MAJOR].iloc[0], "units"))
+        self.assertEqual(m[ObjectTableLabels.SIZE_MAJOR].iloc[0].units, "arcminute")
 
         self.assertTrue(hasattr(m["Magnitude"].iloc[0], "magnitude"))
         self.assertTrue(hasattr(m["Magnitude"].iloc[0], "units"))

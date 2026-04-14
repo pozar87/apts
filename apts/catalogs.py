@@ -45,10 +45,6 @@ def _load_messier_with_units():
     }
     messier_df[ObjectTableLabels.DSO_TYPE] = messier_df["Type"].map(messier_type_map).fillna(DSOType.OTHER)
 
-    # Standardize dimensions
-    messier_df[ObjectTableLabels.SIZE_MAJOR] = messier_df["Width"]
-    messier_df[ObjectTableLabels.SIZE_MINOR] = messier_df["Height"]
-
     # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
     # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
     messier_df["skyfield_object"] = [
@@ -68,9 +64,16 @@ def _load_messier_with_units():
     messier_df["Distance"] = list(messier_df["Distance"].values * ureg.light_year)
     messier_df["RA"] = list(messier_df["RA"].values * ureg.hour)
     messier_df["Dec"] = list(messier_df["Dec"].values * ureg.degree)
-    messier_df["Width"] = list(messier_df["Width"].values * ureg.arcminute)
-    messier_df["Height"] = list(messier_df["Height"].values * ureg.arcminute)
+    messier_df[ObjectTableLabels.SIZE_MAJOR] = list(
+        messier_df["Width"].values * ureg.arcminute
+    )
+    messier_df[ObjectTableLabels.SIZE_MINOR] = list(
+        messier_df["Height"].values * ureg.arcminute
+    )
     messier_df["Magnitude"] = list(messier_df["Magnitude"].values * ureg.mag)
+
+    # Drop redundant columns
+    messier_df.drop(columns=["Width", "Height"], inplace=True)
 
     # Add external links (vectorized list comprehension)
     quoted_messier = [urllib.parse.quote(str(x)) for x in messier_df["Messier"]]
@@ -96,7 +99,7 @@ def _load_ngc_with_units():
 
     # Rename columns for consistency
     ngc_df.rename(
-        columns={"Const": "Constellation", "V-Mag": "Magnitude", "MajAx": "Size", "MinAx": "Size_Minor"},
+        columns={"Const": "Constellation", "V-Mag": "Magnitude"},
         inplace=True,
     )
 
@@ -123,11 +126,18 @@ def _load_ngc_with_units():
         "RfN": DSOType.RN,
         "SNR": DSOType.SNR,
     }
-    ngc_df[ObjectTableLabels.DSO_TYPE] = ngc_df["Type"].map(ngc_type_map).fillna(DSOType.OTHER)
+    ngc_df[ObjectTableLabels.DSO_TYPE] = (
+        ngc_df["Type"].map(ngc_type_map).fillna(DSOType.OTHER)
+    )
 
     # Standardize dimensions
-    ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(ngc_df["Size"], errors="coerce")
-    ngc_df[ObjectTableLabels.SIZE_MINOR] = pd.to_numeric(ngc_df["Size_Minor"], errors="coerce").fillna(ngc_df["Size"])
+    ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(ngc_df["MajAx"], errors="coerce")
+    ngc_df[ObjectTableLabels.SIZE_MINOR] = pd.to_numeric(
+        ngc_df["MinAx"], errors="coerce"
+    ).fillna(ngc_df[ObjectTableLabels.SIZE_MAJOR])
+
+    # Drop redundant columns
+    ngc_df.drop(columns=["MajAx", "MinAx"], inplace=True)
 
     # Map constellation abbreviations to full names
     ngc_df["Constellation"] = ngc_df["Constellation"].map(constellation_map)  # type: ignore
@@ -179,8 +189,12 @@ def _load_ngc_with_units():
     # for performance. They are converted to Pint Quantities lazily in NGC.get_visible().
     # We use object dtype to avoid FutureWarnings when restoring Quantities.
     ngc_df["Magnitude"] = cast(pd.Series, magnitudes).astype(object)
-    ngc_df["Size"] = cast(pd.Series, pd.to_numeric(ngc_df["Size"], errors="coerce")).astype(object)
-    ngc_df["Size_Minor"] = cast(pd.Series, pd.to_numeric(ngc_df["Size_Minor"], errors="coerce")).astype(object)
+    ngc_df[ObjectTableLabels.SIZE_MAJOR] = ngc_df[ObjectTableLabels.SIZE_MAJOR].astype(
+        object
+    )
+    ngc_df[ObjectTableLabels.SIZE_MINOR] = ngc_df[ObjectTableLabels.SIZE_MINOR].astype(
+        object
+    )
 
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]

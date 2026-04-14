@@ -82,23 +82,20 @@ def generate_plot_messier(
 
         # Vectorized property extraction to avoid slow iterrows()
         # Ensure numeric columns are floats to avoid Pint/Quantity overhead
-        for col in [ObjectTableLabels.ALTITUDE, ObjectTableLabels.WIDTH, "Height"]:
+        for col in [
+            ObjectTableLabels.ALTITUDE,
+            ObjectTableLabels.SIZE_MAJOR,
+            ObjectTableLabels.SIZE_MINOR,
+        ]:
             if col in messier_df.columns:
                 messier_df[col] = [
                     getattr(x, "magnitude", x) for x in messier_df[col].values
                 ]
 
-        # Handle missing Height
-        if "Height" not in messier_df.columns:
-            messier_df["Height"] = messier_df[ObjectTableLabels.WIDTH]
-        else:
-            messier_df["Height"] = messier_df["Height"].fillna(
-                messier_df[ObjectTableLabels.WIDTH]
-            )
-
         # Vectorized marker size: marker area (s) as width * height
         messier_df["marker_size"] = (
-            messier_df[ObjectTableLabels.WIDTH] * messier_df["Height"]
+            messier_df[ObjectTableLabels.SIZE_MAJOR]
+            * messier_df[ObjectTableLabels.SIZE_MINOR]
         )
 
         # Determine colors (Type is often already translated in get_visible_messier)

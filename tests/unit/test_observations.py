@@ -475,8 +475,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
             "Altitude": [45 * ureg.deg],  # Using Quantity
             "Azimuth": [180 * ureg.deg],  # Using Quantity
             "Transit": [pd.Timestamp("2023-01-01 22:00:00", tz="UTC")],
-            "Width": [6.0 * ureg.arcmin],  # Using Quantity
-            "Height": [4.0 * ureg.arcmin],  # Using Quantity
+            ObjectTableLabels.SIZE_MAJOR: [6.0 * ureg.arcmin],  # Using Quantity
+            ObjectTableLabels.SIZE_MINOR: [4.0 * ureg.arcmin],  # Using Quantity
         }
         self.mock_messier_df = pd.DataFrame(mock_messier_data)
         # Ensure DataFrame columns with pint Quantities are correctly typed if needed by the method

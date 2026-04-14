@@ -606,10 +606,8 @@ def _plot_messier_on_skymap(
             )
         return numpy.full(len(plot_df), default_val)
 
-    widths_deg = get_dim(ObjectTableLabels.WIDTH) / 60.0
-    heights_deg = get_dim("Height", numpy.nan) / 60.0
-    # Fallback height to width if missing
-    heights_deg = numpy.where(numpy.isnan(heights_deg), widths_deg, heights_deg)
+    widths_deg = get_dim(ObjectTableLabels.SIZE_MAJOR) / 60.0
+    heights_deg = get_dim(ObjectTableLabels.SIZE_MINOR) / 60.0
     pos_angles = get_dim("PosAng", 0.0)
 
     # Determine colors based on type and magnitude
@@ -869,8 +867,8 @@ def _plot_ngc_on_skymap(
             vals = vals.fillna(1.0)
             return numpy.array([getattr(x, "magnitude", x) for x in vals], dtype=float)
 
-        widths_deg = get_dim("Size", "MajAx") / 60.0
-        heights_deg = get_dim("MinAx", "Size") / 60.0
+        widths_deg = get_dim(ObjectTableLabels.SIZE_MAJOR) / 60.0
+        heights_deg = get_dim(ObjectTableLabels.SIZE_MINOR) / 60.0
         pos_angles = get_dim("PosAng")
 
         if is_polar:
