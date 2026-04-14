@@ -44,7 +44,7 @@ class TestObservationTimeLimitLogic(unittest.TestCase):
         self.obs.place.weather = MagicMock()
         self.obs.place.weather.get_critical_data.return_value = self.weather_data
 
-    @patch("apts.observations.get_moon_illumination", return_value=0)
+    @patch("apts.observations.weather.get_moon_illumination", return_value=0)
     def test_get_hourly_weather_analysis_with_time_limit(self, mock_moon_illum):
         # Set time limit to 22:00
         self.obs.time_limit = pd.Timestamp("2024-01-01 22:00:00", tz="UTC")
@@ -62,7 +62,7 @@ class TestObservationTimeLimitLogic(unittest.TestCase):
         self.assertEqual(analysis[0]["time"], pd.Timestamp("2024-01-01 18:00:00", tz="UTC"))
         self.assertEqual(analysis[1]["time"], pd.Timestamp("2024-01-01 21:00:00", tz="UTC"))
 
-    @patch("apts.observations.get_moon_illumination", return_value=0)
+    @patch("apts.observations.weather.get_moon_illumination", return_value=0)
     def test_get_hourly_weather_analysis_without_time_limit(self, mock_moon_illum):
         # Set time limit to None
         self.obs.time_limit = None

@@ -51,7 +51,7 @@ class TestMoonConditionOptimization(unittest.TestCase):
         self.mock_observer.at.return_value.observe.return_value.apparent.return_value.altaz.return_value = (self.mock_altaz, None, None)
         self.mock_altaz.degrees = [10.0] * 10
 
-    @patch("apts.observations.get_moon_illumination")
+    @patch("apts.observations.weather.get_moon_illumination")
     def test_weather_analysis_skipped_when_moon_too_bright(self, mock_get_illumination):
         # Arrange: Moon is 80% illuminated (> 50% limit)
         mock_get_illumination.return_value = 80.0
@@ -63,7 +63,7 @@ class TestMoonConditionOptimization(unittest.TestCase):
         self.assertEqual(results, [])
         self.mock_place.get_weather.assert_not_called()
 
-    @patch("apts.observations.get_moon_illumination")
+    @patch("apts.observations.weather.get_moon_illumination")
     def test_weather_analysis_not_skipped_when_moon_is_dim(self, mock_get_illumination):
         # Arrange: Moon is 20% illuminated (< 50% limit)
         mock_get_illumination.return_value = 20.0
@@ -99,7 +99,7 @@ class TestMoonConditionOptimization(unittest.TestCase):
         self.assertNotEqual(results, [])
         self.mock_place.get_weather.assert_called()
 
-    @patch("apts.observations.get_moon_illumination")
+    @patch("apts.observations.weather.get_moon_illumination")
     def test_weather_analysis_forced_when_moon_too_bright(self, mock_get_illumination):
         # Arrange: Moon is 80% illuminated (> 50% limit)
         mock_get_illumination.return_value = 80.0
@@ -135,7 +135,7 @@ class TestMoonConditionOptimization(unittest.TestCase):
         self.assertNotEqual(results, [])
         self.mock_place.get_weather.assert_called()
 
-    @patch("apts.observations.get_moon_illumination")
+    @patch("apts.observations.weather.get_moon_illumination")
     def test_is_weather_good_returns_false_when_moon_too_bright(self, mock_get_illumination):
         # Arrange: Moon is 80% illuminated (> 50% limit)
         mock_get_illumination.return_value = 80.0
