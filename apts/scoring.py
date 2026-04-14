@@ -1,7 +1,10 @@
 import numpy as np
+import pandas as pd
 import logging
+import datetime
+from skyfield.api import Time
 from .constants import FilterStrategy, ObjectTableLabels
-from .cache import get_cached_score
+from .cache import get_cached_score, set_cached_score
 
 logger = logging.getLogger(__name__)
 
@@ -93,21 +96,32 @@ class SuitabilityScorer:
         if time is None:
             time = self.place.date
 
+        # Ensure time is a scalar Skyfield Time object for scoring
+        ts = self.place.ts
+        if hasattr(time, "shape") and time.shape:
+            # If it's an array Time, take the first element
+            time = time[0]
+        elif isinstance(time, (datetime.datetime, datetime.date)):
+            time = ts.utc(time)
+
         # Attempt to get from cache first
         scorer_id = hash((self.place.lat_decimal, self.place.lon_decimal, self.equipment_path.label(), self.filter_strategy))
         object_id = target_row.get("Name") or target_row.get("Messier") or target_row.get("NGC")
-        timestamp = time.tt if hasattr(time, "tt") else time
+        timestamp = time.tt
 
-        # In a real implementation, get_cached_score would be more functional
-        # For now, we follow the plan of adding the mechanism.
+        cached_result = get_cached_score(scorer_id, object_id, timestamp)
+        if cached_result is not None:
+            return cached_result
 
         # Get values from target_row
         try:
             # 1. Altitude
             skyfield_obj = target_row.get("skyfield_object")
-            if skyfield_obj is None:
+            if pd.isna(skyfield_obj) or skyfield_obj is None:
                 # Try to reconstruct if missing
                 from .objects.objects import Objects
+                if pd.isna(target_row["ra_hours"]) or pd.isna(target_row["dec_degrees"]):
+                    return None
                 skyfield_obj = Objects.fixed_body(target_row["ra_hours"], target_row["dec_degrees"])
 
             altitude = self.place.get_altitude(skyfield_obj, time)
@@ -143,7 +157,7 @@ class SuitabilityScorer:
 
             total_score = s_alt + s_win + s_fov + s_moon + s_bright
 
-            return {
+            result = {
                 "total_score": total_score,
                 "s_alt": s_alt,
                 "s_win": s_win,
@@ -154,6 +168,8 @@ class SuitabilityScorer:
                 "window_minutes": window_info["total_minutes"],
                 "moon_separation": moon_sep
             }
+            set_cached_score(scorer_id, object_id, timestamp, result)
+            return result
         except Exception as e:
-            logger.error(f"Error calculating score for target: {e}")
+            logger.error(f"Error calculating score for target {object_id}: {e}")
             return None

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from dateutil import tz
 from skyfield import almanac
-from skyfield.api import Topos
+from skyfield.api import Topos, Time
 from timezonefinder import TimezoneFinder
 
 from apts.cache import get_ephemeris, get_timescale
@@ -425,7 +425,7 @@ class Place:
         return None
 
     def _get_start_date(self, target_date, start_search_from):
-        if start_search_from:
+        if start_search_from is not None:
             return start_search_from
         elif target_date:
             if isinstance(target_date, datetime.datetime):
@@ -529,8 +529,8 @@ class Place:
         return get_moon_distance(self.date)
 
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
-        t0 = self.ts.utc(start_time)
-        t1 = self.ts.utc(end_time)
+        t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
+        t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
         times = self.ts.linspace(t0, t1, num_points)
 
         alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()

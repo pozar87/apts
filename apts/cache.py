@@ -137,7 +137,7 @@ def get_mpcorb_data() -> pd.DataFrame:
                 re.escape(d.encode("ascii")) for d in planets_to_load
             ]
             pattern = rb"^(?:" + rb"|".join(escaped_designations) + rb").*"
-            regex = re.compile(pattern, re.MULTILINE)
+            regex = re.compile(pattern, rb.MULTILINE)
 
             # Find all matching lines and join them
             lines = regex.findall(data)
@@ -225,13 +225,21 @@ def download_all_data():
     get_jovian_ephemeris()
 
 
-@functools.lru_cache(maxsize=1024)
+_SCORE_CACHE = {}
+
+
 def get_cached_score(scorer_id, object_id, timestamp):
     """
-    Caches score results for a specific scorer configuration, object and time.
+    Retrieves a cached score result.
     """
-    # This is a placeholder for actual score caching logic if needed in SuitabilityScorer
-    return None
+    return _SCORE_CACHE.get((scorer_id, object_id, timestamp))
+
+
+def set_cached_score(scorer_id, object_id, timestamp, result):
+    """
+    Caches a score result.
+    """
+    _SCORE_CACHE[(scorer_id, object_id, timestamp)] = result
 
 
 def clear_cache():
@@ -244,3 +252,5 @@ def clear_cache():
     get_mpcorb_data.cache_clear()
     get_jovian_ephemeris.cache_clear()
     get_nasa_comets_data.cache_clear()
+    global _SCORE_CACHE
+    _SCORE_CACHE = {}
