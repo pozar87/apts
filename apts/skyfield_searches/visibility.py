@@ -1,10 +1,9 @@
 import datetime
-
 import pytz
 from typing import Any, cast
 import numpy as np
 from skyfield import almanac
-from skyfield.api import Star, Topos
+from skyfield.api import Star, Topos, Time
 from skyfield.searchlib import find_maxima
 from ..cache import get_timescale, get_ephemeris
 from ..utils import planetary
@@ -14,8 +13,13 @@ def get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
     ts = get_timescale()
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(start_date + datetime.timedelta(days=2))
+
+    if isinstance(start_date, Time):
+        t0 = start_date
+        t1 = ts.tt_jd(t0.tt + 2.0)
+    else:
+        t0 = ts.utc(start_date)
+        t1 = ts.utc(start_date + datetime.timedelta(days=2))
 
     f = almanac.dark_twilight_day(eph, location)
     times, events = almanac.find_discrete(t0, t1, f)
@@ -54,8 +58,14 @@ def previous_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degr
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
-    t0 = ts.utc(start - datetime.timedelta(days=2))
-    t1 = ts.utc(start)
+
+    if isinstance(start, Time):
+        t1 = start
+        t0 = ts.tt_jd(t1.tt - 2.0)
+    else:
+        t1 = ts.utc(start)
+        t0 = ts.utc(start - datetime.timedelta(days=2))
+
     if horizon_degrees is not None:
         f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
     else:
@@ -75,8 +85,14 @@ def next_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=N
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
-    t0 = ts.utc(start)
-    t1 = ts.utc(start + datetime.timedelta(days=2))
+
+    if isinstance(start, Time):
+        t0 = start
+        t1 = ts.tt_jd(t0.tt + 2.0)
+    else:
+        t0 = ts.utc(start)
+        t1 = ts.utc(start + datetime.timedelta(days=2))
+
     if horizon_degrees is not None:
         f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
     else:
@@ -94,8 +110,14 @@ def next_setting_time_utc(lat, lon, elevation, obj_name, start, horizon_degrees=
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
-    t0 = ts.utc(start)
-    t1 = ts.utc(start + datetime.timedelta(days=2))
+
+    if isinstance(start, Time):
+        t0 = start
+        t1 = ts.tt_jd(t0.tt + 2.0)
+    else:
+        t0 = ts.utc(start)
+        t1 = ts.utc(start + datetime.timedelta(days=2))
+
     if horizon_degrees is not None:
         f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
     else:
@@ -113,8 +135,14 @@ def previous_rising_time_utc(lat, lon, elevation, obj_name, start, horizon_degre
     eph = get_ephemeris()
     location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
     obj = eph[obj_name]
-    t0 = ts.utc(start - datetime.timedelta(days=2))
-    t1 = ts.utc(start)
+
+    if isinstance(start, Time):
+        t1 = start
+        t0 = ts.tt_jd(t1.tt - 2.0)
+    else:
+        t1 = ts.utc(start)
+        t0 = ts.utc(start - datetime.timedelta(days=2))
+
     if horizon_degrees is not None:
         f = almanac.risings_and_settings(eph, obj, location, horizon_degrees=horizon_degrees)
     else:

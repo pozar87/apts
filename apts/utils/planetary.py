@@ -541,6 +541,15 @@ def get_moon_distance(time):
     return cast(Any, earth).at(time).observe(moon).distance().km
 
 
+def get_moon_separation(obj, observer, time):
+    """
+    Calculates the angular distance in degrees between the target object and the Moon.
+    """
+    eph = get_ephemeris()
+    moon = eph["moon"]
+    astrometric_obj = observer.at(time).observe(obj).apparent()
+    astrometric_moon = observer.at(time).observe(moon).apparent()
+    return astrometric_obj.separation_from(astrometric_moon).degrees
 
 
 def get_reverse_translated_planet_names(language: str) -> dict:

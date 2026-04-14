@@ -8,6 +8,7 @@ from skyfield.api import Star
 
 from .constants.constellations import constellation_map
 from .constants.objecttablelabels import ObjectTableLabels
+from .constants.strategies import DSOType
 from .units import get_unit_registry
 
 _messier_df = None
@@ -25,6 +26,28 @@ def _load_messier_with_units():
     string_columns = ["Messier", "NGC", "Name", "Type", "Constellation"]
     for column in string_columns:
         messier_df[column] = messier_df[column].astype("string")
+
+    # Map Messier types to DSOType
+    messier_type_map = {
+        "Diffuse Nebula": DSOType.DN,
+        "Double Star": DSOType.DS,
+        "Elliptical Galaxy": DSOType.GX,
+        "Globular Cluster": DSOType.GC,
+        "Group/Asterism": DSOType.AST,
+        "Irregular Galaxy": DSOType.GX,
+        "Lenticular (S0) Galaxy": DSOType.GX,
+        "Open Cluster": DSOType.OC,
+        "Planetary Nebula": DSOType.PN,
+        "Spiral Galaxy": DSOType.GX,
+        "Star Cloud": DSOType.SC,
+        "Supernova Remnant": DSOType.SNR,
+        "Pleiades. Subaru.\"": DSOType.OC, # Special case for M45 entry
+    }
+    messier_df[ObjectTableLabels.DSO_TYPE] = messier_df["Type"].map(messier_type_map).fillna(DSOType.OTHER)
+
+    # Standardize dimensions
+    messier_df[ObjectTableLabels.SIZE_MAJOR] = messier_df["Width"]
+    messier_df[ObjectTableLabels.SIZE_MINOR] = messier_df["Height"]
 
     # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
     # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
@@ -73,9 +96,38 @@ def _load_ngc_with_units():
 
     # Rename columns for consistency
     ngc_df.rename(
-        columns={"Const": "Constellation", "V-Mag": "Magnitude", "MajAx": "Size"},
+        columns={"Const": "Constellation", "V-Mag": "Magnitude", "MajAx": "Size", "MinAx": "Size_Minor"},
         inplace=True,
     )
+
+    # Mapping for NGC types to DSOType
+    ngc_type_map = {
+        "*": DSOType.OTHER,
+        "**": DSOType.DS,
+        "*Ass": DSOType.AST,
+        "Cl+N": DSOType.OC, # Cluster with nebulosity
+        "Dup": DSOType.OTHER,
+        "EmN": DSOType.EN,
+        "G": DSOType.GX,
+        "GCl": DSOType.GC,
+        "GGroup": DSOType.AST,
+        "GPair": DSOType.GX,
+        "GTrpl": DSOType.GX,
+        "HII": DSOType.EN,
+        "Neb": DSOType.DN,
+        "NonEx": DSOType.OTHER,
+        "Nova": DSOType.OTHER,
+        "OCl": DSOType.OC,
+        "Other": DSOType.OTHER,
+        "PN": DSOType.PN,
+        "RfN": DSOType.RN,
+        "SNR": DSOType.SNR,
+    }
+    ngc_df[ObjectTableLabels.DSO_TYPE] = ngc_df["Type"].map(ngc_type_map).fillna(DSOType.OTHER)
+
+    # Standardize dimensions
+    ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(ngc_df["Size"], errors="coerce")
+    ngc_df[ObjectTableLabels.SIZE_MINOR] = pd.to_numeric(ngc_df["Size_Minor"], errors="coerce").fillna(ngc_df["Size"])
 
     # Map constellation abbreviations to full names
     ngc_df["Constellation"] = ngc_df["Constellation"].map(constellation_map)  # type: ignore
@@ -128,6 +180,7 @@ def _load_ngc_with_units():
     # We use object dtype to avoid FutureWarnings when restoring Quantities.
     ngc_df["Magnitude"] = cast(pd.Series, magnitudes).astype(object)
     ngc_df["Size"] = cast(pd.Series, pd.to_numeric(ngc_df["Size"], errors="coerce")).astype(object)
+    ngc_df["Size_Minor"] = cast(pd.Series, pd.to_numeric(ngc_df["Size_Minor"], errors="coerce")).astype(object)
 
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]

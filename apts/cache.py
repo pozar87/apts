@@ -225,6 +225,23 @@ def download_all_data():
     get_jovian_ephemeris()
 
 
+_SCORE_CACHE = {}
+
+
+def get_cached_score(scorer_id, object_id, timestamp):
+    """
+    Retrieves a cached score result.
+    """
+    return _SCORE_CACHE.get((scorer_id, object_id, timestamp))
+
+
+def set_cached_score(scorer_id, object_id, timestamp, result):
+    """
+    Caches a score result.
+    """
+    _SCORE_CACHE[(scorer_id, object_id, timestamp)] = result
+
+
 def clear_cache():
     """
     Clears all the caches.
@@ -235,3 +252,5 @@ def clear_cache():
     get_mpcorb_data.cache_clear()
     get_jovian_ephemeris.cache_clear()
     get_nasa_comets_data.cache_clear()
+    global _SCORE_CACHE
+    _SCORE_CACHE = {}

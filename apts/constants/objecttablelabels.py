@@ -33,3 +33,8 @@ class ObjectTableLabels:
     MESSIER = "Messier"
     NGC = "NGC"
     WIDTH = "Width"
+    HEIGHT = "Height"
+    TYPE = "Type"
+    DSO_TYPE = "DSO Type"
+    SIZE_MAJOR = "Size Major"
+    SIZE_MINOR = "Size Minor"
