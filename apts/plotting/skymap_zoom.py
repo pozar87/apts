@@ -231,11 +231,13 @@ def _generate_zoom_skymap(
             coordinate_system=coordinate_system,
         )
     if target_object_data is not None:
-        width_arcmin = target_object_data.get(ObjectTableLabels.WIDTH, 0)
+        width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
         width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
         width_deg = width_arcmin / 60.0
 
-        height_arcmin = target_object_data.get("Height", width_arcmin)
+        height_arcmin = target_object_data.get(
+            ObjectTableLabels.SIZE_MINOR, width_arcmin
+        )
         height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
         height_deg = height_arcmin / 60.0
 

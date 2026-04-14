@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import cast
 from apts.catalogs import Catalogs
+from apts.constants import ObjectTableLabels
 
 
 def test_messier_catalog():
@@ -17,9 +18,9 @@ def test_messier_catalog():
     assert c.iloc[81]["NGC"] == "NGC 3034"
     assert c.iloc[81]["Name"] == "Cigar Galaxy"
     # Andromeda is the biggest galaxy
-    # Sort using magnitude value of Width
+    # Sort using magnitude value of Size Major
     largest_objects = c.sort_values(
-        by="Width",
+        by=ObjectTableLabels.SIZE_MAJOR,
         key=lambda x: cast(pd.Series, x.apply(lambda y: getattr(y, "magnitude", y))),
         ascending=False,
     )
@@ -47,9 +48,9 @@ def test_messier_catalog():
     assert hasattr(c["Distance"].iloc[0], "units")
     assert str(c["Distance"].iloc[0].units) == "light_year"
 
-    assert hasattr(c["Width"].iloc[0], "magnitude")
-    assert hasattr(c["Width"].iloc[0], "units")
-    assert c["Width"].iloc[0].units == "arcminute"
+    assert hasattr(c[ObjectTableLabels.SIZE_MAJOR].iloc[0], "magnitude")
+    assert hasattr(c[ObjectTableLabels.SIZE_MAJOR].iloc[0], "units")
+    assert c[ObjectTableLabels.SIZE_MAJOR].iloc[0].units == "arcminute"
 
     assert hasattr(c["Magnitude"].iloc[0], "magnitude")
     assert hasattr(c["Magnitude"].iloc[0], "units")

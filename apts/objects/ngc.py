@@ -107,15 +107,21 @@ class NGC(Objects):
                 self.objects.loc[indices_to_restore, "Magnitude"] = mags_q
 
                 # Size restoration
-                sizes_q = [
+                sizes_major_q = [
                     x * ureg.arcminute if pd.notna(x) else None
-                    for x in self.objects.loc[indices_to_restore, "Size"]
+                    for x in self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR]
                 ]
-                self.objects.loc[indices_to_restore, "Size"] = sizes_q
+                sizes_minor_q = [
+                    x * ureg.arcminute if pd.notna(x) else None
+                    for x in self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR]
+                ]
+                self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
+                self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
 
                 # Refresh the 'visible' slice with restored objects
                 visible.loc[indices_to_restore, "Magnitude"] = mags_q
-                visible.loc[indices_to_restore, "Size"] = sizes_q
+                visible.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
+                visible.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
 
         return visible
 
