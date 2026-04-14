@@ -137,7 +137,7 @@ def get_mpcorb_data() -> pd.DataFrame:
                 re.escape(d.encode("ascii")) for d in planets_to_load
             ]
             pattern = rb"^(?:" + rb"|".join(escaped_designations) + rb").*"
-            regex = re.compile(pattern, rb.MULTILINE)
+            regex = re.compile(pattern, re.MULTILINE)
 
             # Find all matching lines and join them
             lines = regex.findall(data)
