@@ -225,6 +225,15 @@ def download_all_data():
     get_jovian_ephemeris()
 
 
+@functools.lru_cache(maxsize=1024)
+def get_cached_score(scorer_id, object_id, timestamp):
+    """
+    Caches score results for a specific scorer configuration, object and time.
+    """
+    # This is a placeholder for actual score caching logic if needed in SuitabilityScorer
+    return None
+
+
 def clear_cache():
     """
     Clears all the caches.

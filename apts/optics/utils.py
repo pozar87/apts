@@ -106,3 +106,27 @@ class OpticsUtils:
         zoom = OpticsUtils.compute_zoom(telescope, barlows, output)
         # TODO: this is not best way to do it
         return output.field_of_view(telescope, zoom, magnification)
+
+    @staticmethod
+    def calculate_fov_ratio(object_size, sensor_size, focal_length):
+        """
+        Determine the percentage of the frame the object occupies.
+        object_size: tuple (major, minor) in arcminutes
+        sensor_size: tuple (width, height) in mm
+        focal_length: focal length in mm
+        """
+        import numpy as np
+        from ..constants import astronomy
+
+        obj_major_deg = object_size[0] / 60.0
+        obj_minor_deg = object_size[1] / 60.0
+
+        # FOV in degrees = 2 * arctan(sensor_size / (2 * focal_length))
+        fov_w_deg = np.degrees(2 * np.arctan(sensor_size[0] / (2 * focal_length)))
+        fov_h_deg = np.degrees(2 * np.arctan(sensor_size[1] / (2 * focal_length)))
+
+        ratio_w = obj_major_deg / fov_w_deg
+        ratio_h = obj_minor_deg / fov_h_deg
+
+        # Use the maximum ratio to ensure it's not "clipped"
+        return max(ratio_w, ratio_h) * 100.0

@@ -8,6 +8,7 @@ from .graphconstants import (
 )
 from .nodelabels import NodeLabels
 from .objecttablelabels import ObjectTableLabels
+from .strategies import DSOType, FilterStrategy
 
 __all__ = [
     "EquipmentTableLabels",
@@ -15,6 +16,8 @@ __all__ = [
     "NodeLabels",
     "ObjectTableLabels",
     "OpticalType",
+    "DSOType",
+    "FilterStrategy",
     "get_plot_colors",
     "get_plot_style",
     "get_planet_color",
