@@ -48,7 +48,7 @@ class TestUtils(unittest.TestCase):
         # It should be around 1.0 day
         self.assertAlmostEqual(age, 1.0, delta=0.1)
 
-    @patch("apts.utils.planetary.almanac.find_discrete")
+    @patch("apts.utils.planetary.moon.almanac.find_discrete")
     def test_get_moon_age_fallback(self, mock_find_discrete):
         # Force fallback by returning empty lists
         mock_find_discrete.return_value = ([], [])
