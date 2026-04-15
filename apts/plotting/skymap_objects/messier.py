@@ -4,20 +4,14 @@ import numpy
 import pandas as pd
 from skyfield.api import Star
 
-from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_messier_color
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
-from apts.plotting.utils import (
-    calculate_ellipse_angle,
-    calculate_parallactic_angle,
-    get_brightness_color,
-)
 from ...constants import ObjectTableLabels
 from .utils import _plot_celestial_object
 
 if TYPE_CHECKING:
-    from ...observations import Observation
+    from apts.observations import Observation
 
 
 def _plot_messier_on_skymap(
@@ -34,6 +28,7 @@ def _plot_messier_on_skymap(
     plot_labels: bool = True,
     ignore_horizon: bool = False,
 ):
+    import apts.plotting.skymap_objects as api
     if ignore_horizon:
         visible_messier = observation.local_messier.objects
     else:
@@ -146,7 +141,7 @@ def _plot_messier_on_skymap(
     pos_angles = get_dim("PosAng", 0.0)
 
     # Determine colors based on type and magnitude
-    effective_dark_mode = get_dark_mode()
+    effective_dark_mode = api.get_dark_mode()
     # Cast potential Series outputs from .get() to satisfy Pyright
     types_raw = cast(Any, plot_df).get("Type", ["Other"] * len(plot_df))
     types = [gettext_(t) for t in cast(list, types_raw)]
@@ -155,7 +150,7 @@ def _plot_messier_on_skymap(
     magnitudes = [
         getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)
     ]
-    face_colors = [get_brightness_color(m) for m in magnitudes]
+    face_colors = [api.get_brightness_color(m) for m in magnitudes]
 
     # Names for annotation
     names = plot_df[ObjectTableLabels.MESSIER].to_numpy()
@@ -167,10 +162,10 @@ def _plot_messier_on_skymap(
         if alt_deg[i] <= 0 and not ignore_horizon:
             continue
 
-        parallactic_angle = calculate_parallactic_angle(
+        parallactic_angle = api.calculate_parallactic_angle(
             observation.place.lat, dec_deg[i], az_deg[i]
         )
-        angle = calculate_ellipse_angle(
+        angle = api.calculate_ellipse_angle(
             pos_angles[i],
             parallactic_angle,
             coordinate_system,

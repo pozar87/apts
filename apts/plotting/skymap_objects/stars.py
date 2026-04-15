@@ -5,13 +5,8 @@ import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
-from apts.plotting.utils import (
-    create_ra_zoom_mask,
-)
-from ...cache import get_hipparcos_data
-
 if TYPE_CHECKING:
-    from ...observations import Observation
+    from apts.observations import Observation
 
 
 def _plot_bright_stars_on_skymap(
@@ -26,6 +21,7 @@ def _plot_bright_stars_on_skymap(
     plot_labels: bool = True,
     ignore_horizon: bool = False,
 ):
+    import apts.plotting.skymap_objects as api
     bright_stars_df = cast(pd.DataFrame, observation.local_stars.objects.copy())
     if target_name:
         bright_stars_df = bright_stars_df[bright_stars_df["Name"] != target_name]
@@ -129,7 +125,7 @@ def _plot_bright_stars_on_skymap(
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
 
-                zoom_mask = create_ra_zoom_mask(ra_hours_apparent, xlim) & (
+                zoom_mask = api.create_ra_zoom_mask(ra_hours_apparent, xlim) & (
                     (dec_degrees_apparent >= ylim[0]) & (dec_degrees_apparent <= ylim[1])
                 )
 
@@ -222,7 +218,8 @@ def _plot_stars_on_skymap(
     plot_labels: bool = True,
     ignore_horizon: bool = False,
 ):
-    stars = get_hipparcos_data()
+    import apts.plotting.skymap_objects as api
+    stars = api.get_hipparcos_data()
 
     if zoom_deg is not None and target_object is not None:
         # Optimization: pre-filter stars to a bounding box before expensive separation calculation
@@ -309,7 +306,7 @@ def _plot_stars_on_skymap(
     ra, dec, _ = star_positions.apparent().radec()
 
     if coordinate_system == CoordinateSystem.HORIZONTAL and not ignore_horizon:
-        visible = alt.degrees > 0
+        visible = numpy.atleast_1d(alt.degrees > 0)
     else:
         visible = numpy.ones(len(bright_stars), dtype=bool)
 
@@ -361,7 +358,7 @@ def _plot_stars_on_skymap(
                 xlim = ax.get_xlim()
                 ylim = ax.get_ylim()
 
-                zoom_mask = create_ra_zoom_mask(ra_hours_apparent, xlim) & (
+                zoom_mask = api.create_ra_zoom_mask(ra_hours_apparent, xlim) & (
                     (dec_degrees_apparent >= ylim[0]) & (dec_degrees_apparent <= ylim[1])
                 )
 

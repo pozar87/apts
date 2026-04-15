@@ -5,16 +5,11 @@ import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
-from apts.plotting.utils import (
-    calculate_ellipse_angle,
-    calculate_parallactic_angle,
-    get_brightness_color,
-)
 from ...constants import ObjectTableLabels
 from .utils import _parse_ra, _parse_dec, _plot_celestial_object
 
 if TYPE_CHECKING:
-    from ...observations import Observation
+    from apts.observations import Observation
 
 
 def _plot_ngc_on_skymap(
@@ -34,6 +29,7 @@ def _plot_ngc_on_skymap(
     plot_labels: bool = True,
     ignore_horizon: bool = False,
 ):
+    import apts.plotting.skymap_objects as api
     if (zoom_deg is not None and target_object is not None) or ignore_horizon:
         # Use direct reference to avoid costly copy of 14k entries
         visible_ngc = observation.local_ngc.objects
@@ -234,17 +230,17 @@ def _plot_ngc_on_skymap(
                 magnitudes = numpy.full(len(active_indices), 10.0)
 
             for i, idx in enumerate(active_indices):
-                parallactic_angle = calculate_parallactic_angle(
+                parallactic_angle = api.calculate_parallactic_angle(
                     observation.place.lat, active_decs[i], active_azs[i]
                 )
-                angle = calculate_ellipse_angle(
+                angle = api.calculate_ellipse_angle(
                     pos_angles[i],
                     parallactic_angle,
                     coordinate_system,
                     flipped_horizontally,
                     flipped_vertically,
                 )
-                face_color = get_brightness_color(magnitudes[i])
+                face_color = api.get_brightness_color(magnitudes[i])
 
                 _plot_celestial_object(
                     ax,

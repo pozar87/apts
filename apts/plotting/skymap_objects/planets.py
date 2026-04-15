@@ -4,18 +4,14 @@ import numpy
 import pandas as pd
 from matplotlib.patches import Ellipse
 
-from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_planet_color
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
-from apts.plotting.utils import (
-    get_object_angular_size_deg,
-)
 from apts.utils import planetary
 from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
-    from ...observations import Observation
+    from apts.observations import Observation
 
 
 def _plot_planets_on_skymap(
@@ -80,6 +76,7 @@ def _plot_solar_system_object_on_skymap(
     ignore_horizon: bool = False,
 ):
     """Helper to plot a solar system object, handling regular and target styles."""
+    import apts.plotting.skymap_objects as api
     obj = observation.local_planets.find_by_name(object_name)
     if not obj:
         return  # Object not found
@@ -101,10 +98,10 @@ def _plot_solar_system_object_on_skymap(
     ):
         return
 
-    size_deg = get_object_angular_size_deg(observation, object_name)
+    size_deg = api.get_object_angular_size_deg(observation, object_name)
 
     # Determine colors and markers
-    effective_dark_mode = get_dark_mode()
+    effective_dark_mode = api.get_dark_mode()
     default_color = style.get("EMPHASIS_COLOR", "yellow")
     edge_color = get_planet_color(
         planetary.get_simple_name(object_name), effective_dark_mode, default_color

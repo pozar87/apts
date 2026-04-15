@@ -19,7 +19,15 @@ from .planets import (
 )
 
 from ..utils import (
-    get_brightness_color
+    get_brightness_color,
+    calculate_ellipse_angle,
+    calculate_parallactic_angle,
+    create_ra_zoom_mask,
+    get_object_angular_size_deg,
+)
+
+from ...cache import (
+    get_hipparcos_data
 )
 
 from ...config import (
@@ -36,4 +44,11 @@ __all__ = [
     "_plot_ngc_on_skymap",
     "_plot_planets_on_skymap",
     "_plot_solar_system_object_on_skymap",
+    "get_brightness_color",
+    "calculate_ellipse_angle",
+    "calculate_parallactic_angle",
+    "create_ra_zoom_mask",
+    "get_object_angular_size_deg",
+    "get_hipparcos_data",
+    "get_dark_mode",
 ]
