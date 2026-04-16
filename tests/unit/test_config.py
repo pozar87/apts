@@ -51,7 +51,7 @@ class ConfigTest(unittest.TestCase):
             remove_config_path(fake_config_path)
             load_config()  # Reload original config
 
-    @patch("apts.weather_providers.requests_cache.CachedSession")
+    @patch("apts.weather.providers.base.requests_cache.CachedSession")
     def test_redis_connection_fallback(self, mock_cached_session):
         # Import redis and its exception class for mocking
         try:
@@ -78,10 +78,10 @@ class ConfigTest(unittest.TestCase):
 
         # Manually reset the global session to ensure get_session runs its logic
         import importlib
-        import apts.weather_providers
+        import apts.weather.providers as weather_providers
 
-        importlib.reload(apts.weather_providers)
-        apts.weather_providers.reset_session()
+        importlib.reload(weather_providers)
+        weather_providers.reset_session()
 
         # Configure apts to use redis
         set_redis_location("redis://nonexistent-server:6379")
@@ -99,9 +99,9 @@ class ConfigTest(unittest.TestCase):
 
                     # This call should now trigger the fallback logic
                     with self.assertLogs(
-                        "apts.weather_providers", level="WARNING"
+                        "apts.weather.providers.base", level="WARNING"
                     ) as cm:
-                        apts.weather_providers.get_session()
+                        weather_providers.get_session()
                         self.assertIn("Redis connection failed", cm.output[0])
                         self.assertIn("Falling back to in-memory cache", cm.output[0])
 
@@ -121,7 +121,7 @@ class ConfigTest(unittest.TestCase):
         finally:
             remove_config_path(fake_config_path)
             load_config()  # Reload original config
-            apts.weather_providers.reset_session()  # Clean up global state
+            weather_providers.reset_session()  # Clean up global state
 
     def test_config_masking_in_logs(self):
         config_content = """

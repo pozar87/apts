@@ -108,7 +108,7 @@ METEOBLUE_MOCK = {
         ("meteoblue", METEOBLUE_MOCK),
     ],
 )
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.base.get_weather_settings")
 def test_weather_providers(
     mock_get_weather_settings, requests_mock, provider_name, mock_response
 ):
@@ -203,10 +203,10 @@ def test_weather_providers(
         (None, False, False),
     ],
 )
-@patch("apts.weather.PlotUtils.annotate_plot")
+@patch("apts.weather.models.PlotUtils.annotate_plot")
 @patch("pandas.DataFrame.plot")
-@patch("apts.weather.get_dark_mode")
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.models.get_dark_mode")
+@patch("apts.weather.base.get_weather_settings")
 def test_plot_clouds_dark_mode_styles(
     mock_get_weather_settings,
     mock_get_dark_mode,
@@ -284,7 +284,7 @@ def test_plot_clouds_dark_mode_styles(
     mock_get_dark_mode.reset_mock()
 
 
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.base.get_weather_settings")
 def test_get_critical_data_all_hours(mock_get_weather_settings, requests_mock):
     mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
@@ -322,14 +322,14 @@ def test_weather_provider_key_error(requests_mock):
     mock_response_missing_key = {"wrong_key": {}}
 
     with patch(
-        "apts.weather.get_weather_settings", return_value=("pirateweather", "dummy_key")
+        "apts.weather.base.get_weather_settings", return_value=("pirateweather", "dummy_key")
     ):
         requests_mock.get(ANY, json=mock_response_missing_key)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
         assert weather.data.empty
 
 
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.base.get_weather_settings")
 def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
     mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
@@ -441,7 +441,7 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         assert isinstance(fig, MagicMock)
 
 
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.base.get_weather_settings")
 def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     mock_get_weather_settings.return_value = ("pirateweather", "dummy_key")
     mock_api_response = {
@@ -469,7 +469,7 @@ def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     requests_mock.get(ANY, json=mock_api_response)
 
     weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
-    with patch("apts.weather.PlotUtils.annotate_plot") as mock_annotate_plot:
+    with patch("apts.weather.models.PlotUtils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_illumination()
         assert ax is not None
         mock_annotate_plot.assert_called_once_with(

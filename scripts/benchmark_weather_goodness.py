@@ -2,7 +2,7 @@ import time
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from apts.weather_providers import Meteoblue
+from apts.weather.providers import Meteoblue
 from apts.conditions import Conditions
 
 def run_benchmark():

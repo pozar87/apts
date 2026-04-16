@@ -2,7 +2,7 @@
 import logging
 import unittest
 from unittest.mock import patch, MagicMock
-from apts.weather_providers import get_session, reset_session
+from apts.weather.providers import get_session, reset_session
 
 class TestRedisLeak(unittest.TestCase):
     def setUp(self):
@@ -18,7 +18,7 @@ class TestRedisLeak(unittest.TestCase):
 
         self.handler = CaptureHandler(self.log_capture)
         # Ensure we capture from the correct logger
-        self.logger = logging.getLogger("apts.weather_providers")
+        self.logger = logging.getLogger("apts.weather.providers.base")
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.WARNING)
 
@@ -26,7 +26,7 @@ class TestRedisLeak(unittest.TestCase):
         self.logger.removeHandler(self.handler)
         reset_session()
 
-    @patch("apts.weather_providers.get_cache_settings")
+    @patch("apts.weather.providers.base.get_cache_settings")
     @patch("requests_cache.CachedSession")
     def test_redis_connection_leak_is_masked(self, mock_session, mock_get_cache_settings):
         # Sensitive Redis URL

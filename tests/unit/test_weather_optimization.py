@@ -5,7 +5,7 @@ import datetime
 from apts.observations import Observation
 from apts.place import Place
 from apts.conditions import Conditions
-from apts.weather_providers import Meteoblue
+from apts.weather.providers import Meteoblue
 
 
 class TestWeatherOptimization(unittest.TestCase):
@@ -90,8 +90,8 @@ class TestWeatherOptimization(unittest.TestCase):
 
         self.place.get_weather.assert_called_once()
 
-    @patch("apts.weather_providers.get_session")
-    @patch("apts.weather_providers._get_aurora_df")
+    @patch("apts.weather.providers.base.get_session")
+    @patch("apts.weather.providers.base._get_aurora_df")
     def test_meteoblue_optimization_skips_clouds(
         self, mock_aurora_df, mock_get_session
     ):
@@ -114,7 +114,7 @@ class TestWeatherOptimization(unittest.TestCase):
             datetime.datetime(2025, 1, 1, 21, 0, tzinfo=datetime.timezone.utc),
         )
 
-        with patch("apts.weather_providers.datetime") as mock_datetime:
+        with patch("apts.weather.providers.meteoblue.datetime") as mock_datetime:
             mock_datetime.now.return_value = datetime.datetime(
                 2025, 1, 1, 19, 0, tzinfo=datetime.timezone.utc
             )
@@ -132,8 +132,8 @@ class TestWeatherOptimization(unittest.TestCase):
         # Verify that aurora enrichment was also skipped
         mock_aurora_df.assert_not_called()
 
-    @patch("apts.weather_providers.get_session")
-    @patch("apts.weather_providers._get_aurora_df")
+    @patch("apts.weather.providers.base.get_session")
+    @patch("apts.weather.providers.base._get_aurora_df")
     def test_meteoblue_optimization_calls_clouds_when_good(
         self, mock_aurora_df, mock_get_session
     ):
@@ -165,7 +165,7 @@ class TestWeatherOptimization(unittest.TestCase):
             datetime.datetime(2025, 1, 1, 21, 0, tzinfo=datetime.timezone.utc),
         )
 
-        with patch("apts.weather_providers.datetime") as mock_datetime:
+        with patch("apts.weather.providers.meteoblue.datetime") as mock_datetime:
             mock_datetime.now.return_value = datetime.datetime(
                 2025, 1, 1, 19, 0, tzinfo=datetime.timezone.utc
             )
