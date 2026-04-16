@@ -10,7 +10,6 @@ from ..config import get_dark_mode
 from ..constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from ..constants.graphconstants import get_plot_colors, get_plot_style
 from ..i18n import gettext_, language_context
-from ..utils import ConnectionType
 from ..utils import Utils as GenericUtils
 from ..utils.plot import Utils as PlotUtils
 from .models import MatplotlibSVGWrapper

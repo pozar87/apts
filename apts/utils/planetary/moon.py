@@ -5,7 +5,6 @@ from skyfield import almanac
 
 from apts.cache import get_ephemeris, get_timescale
 from apts.i18n import gettext_
-from .base import get_skyfield_obj
 
 
 def get_moon_illumination_details(time):

@@ -1,5 +1,4 @@
 import sys
-import os
 import ast
 
 def verify_seestar_static():
@@ -80,8 +79,8 @@ def verify_seestar_static():
 if __name__ == "__main__":
     try:
         verify_seestar_static()
-    except AssertionError as e:
-        print(f"\n❌ Static Data Integrity Check FAILED")
+    except AssertionError:
+        print("\n❌ Static Data Integrity Check FAILED")
         sys.exit(1)
     except Exception as e:
         print(f"\n❌ An error occurred: {e}")

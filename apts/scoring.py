@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-import numpy as np
 import pandas as pd
 
 from .cache import get_cached_score, set_cached_score

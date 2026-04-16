@@ -1,6 +1,5 @@
 
 import unittest
-from apts.constants import DSOType, FilterStrategy
 from apts.scoring import SuitabilityScorer
 from apts.place import Place
 from apts.catalogs import Catalogs
@@ -8,7 +7,6 @@ from apts.discovery import DiscoveryService, TimelineGenerator
 from apts.optics import OpticalPath
 from apts.opticalequipment.telescope.vendors.william_optics import William_opticsTelescope
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-import datetime
 
 class TestNewPlanningFeatures(unittest.TestCase):
     def setUp(self):

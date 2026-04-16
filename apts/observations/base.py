@@ -20,9 +20,8 @@ from ..objects.ngc import NGC
 from ..objects.solar_objects import SolarObjects
 from ..objects.stars import Stars
 from ..utils import Utils
-
-from .weather import WeatherAnalysisMixIn
 from .plotting import PlottingMixIn
+from .weather import WeatherAnalysisMixIn
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +365,11 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
                 if "TechnicalName" in visible_planets_df.columns
                 else visible_planets_df.to_html(),
                 "messier_table": messier_df.to_html(),
-                "equipment_table": self.equipment.data().to_html(),
+                "equipment_table": (
+                    self.equipment.data()
+                    if hasattr(self.equipment, "data")
+                    else self.equipment
+                ).to_html(),
                 "place_name": html.escape(self.place.name),
                 "lat": np.rad2deg(self.place.lat),
                 "lon": np.rad2deg(self.place.lon),
