@@ -1,12 +1,14 @@
+import datetime
+import logging
+
 import numpy as np
 import pandas as pd
-import logging
-import datetime
-from skyfield.api import Time
-from .constants import FilterStrategy, ObjectTableLabels
+
 from .cache import get_cached_score, set_cached_score
+from .constants import FilterStrategy, ObjectTableLabels
 
 logger = logging.getLogger(__name__)
+
 
 class SuitabilityScorer:
     """
@@ -105,8 +107,17 @@ class SuitabilityScorer:
             time = ts.utc(time)
 
         # Attempt to get from cache first
-        scorer_id = hash((self.place.lat_decimal, self.place.lon_decimal, self.equipment_path.label(), self.filter_strategy))
-        object_id = target_row.get("Name") or target_row.get("Messier") or target_row.get("NGC")
+        scorer_id = hash(
+            (
+                self.place.lat_decimal,
+                self.place.lon_decimal,
+                self.equipment_path.label(),
+                self.filter_strategy,
+            )
+        )
+        object_id = (
+            target_row.get("Name") or target_row.get("Messier") or target_row.get("NGC")
+        )
         timestamp = time.tt
 
         cached_result = get_cached_score(scorer_id, object_id, timestamp)
@@ -120,9 +131,14 @@ class SuitabilityScorer:
             if pd.isna(skyfield_obj) or skyfield_obj is None:
                 # Try to reconstruct if missing
                 from .objects.objects import Objects
-                if pd.isna(target_row["ra_hours"]) or pd.isna(target_row["dec_degrees"]):
+
+                if pd.isna(target_row["ra_hours"]) or pd.isna(
+                    target_row["dec_degrees"]
+                ):
                     return None
-                skyfield_obj = Objects.fixed_body(target_row["ra_hours"], target_row["dec_degrees"])
+                skyfield_obj = Objects.fixed_body(
+                    target_row["ra_hours"], target_row["dec_degrees"]
+                )
 
             altitude = self.place.get_altitude(skyfield_obj, time)
             s_alt = self.score_altitude(altitude)
@@ -133,21 +149,35 @@ class SuitabilityScorer:
 
             # 3. FOV Fit
             from .optics.utils import OpticsUtils
-            object_size = (target_row[ObjectTableLabels.SIZE_MAJOR], target_row[ObjectTableLabels.SIZE_MINOR])
+
+            object_size = (
+                target_row[ObjectTableLabels.SIZE_MAJOR],
+                target_row[ObjectTableLabels.SIZE_MINOR],
+            )
             # Handle NaNs in object size
             if pd.isna(object_size[0]):
                 s_fov = 0
             else:
                 sensor_size = (
                     self.equipment_path.output.sensor_width.to("mm").magnitude,
-                    self.equipment_path.output.sensor_height.to("mm").magnitude
+                    self.equipment_path.output.sensor_height.to("mm").magnitude,
                 )
-                focal_length = (self.equipment_path.telescope.focal_length * self.equipment_path.effective_barlow()).to("mm").magnitude
-                fov_ratio = OpticsUtils.calculate_fov_ratio(object_size, sensor_size, focal_length)
+                focal_length = (
+                    (
+                        self.equipment_path.telescope.focal_length
+                        * self.equipment_path.effective_barlow()
+                    )
+                    .to("mm")
+                    .magnitude
+                )
+                fov_ratio = OpticsUtils.calculate_fov_ratio(
+                    object_size, sensor_size, focal_length
+                )
                 s_fov = self.score_fov_fit(fov_ratio)
 
             # 4. Moon Penalty
             from .utils.planetary import get_moon_separation
+
             moon_sep = get_moon_separation(skyfield_obj, self.place.observer, time)
             s_moon = self.score_moon_penalty(moon_sep)
 
@@ -166,7 +196,7 @@ class SuitabilityScorer:
                 "s_bright": s_bright,
                 "altitude": altitude,
                 "window_minutes": window_info["total_minutes"],
-                "moon_separation": moon_sep
+                "moon_separation": moon_sep,
             }
             set_cached_score(scorer_id, object_id, timestamp, result)
             return result
