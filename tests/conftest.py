@@ -222,5 +222,5 @@ def mock_weather_session(request):
     test_session = requests.Session()
 
     # Patch get_session to return our test session
-    with patch("apts.weather_providers.get_session", return_value=test_session):
+    with patch("apts.weather.providers.base.get_session", return_value=test_session):
         yield test_session

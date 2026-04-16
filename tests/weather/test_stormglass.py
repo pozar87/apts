@@ -24,7 +24,7 @@ STORMGLASS_MOCK = {
 }
 
 
-@patch("apts.weather.get_weather_settings")
+@patch("apts.weather.base.get_weather_settings")
 def test_stormglass_provider(mock_get_weather_settings, requests_mock):
     mock_get_weather_settings.return_value = ("stormglass", "dummy_key")
     requests_mock.get(ANY, json=STORMGLASS_MOCK)
@@ -60,7 +60,7 @@ def test_stormglass_precip_type_snow(requests_mock):
         ]
     }
     with patch(
-        "apts.weather.get_weather_settings", return_value=("stormglass", "dummy_key")
+        "apts.weather.base.get_weather_settings", return_value=("stormglass", "dummy_key")
     ):
         requests_mock.get(ANY, json=mock_response)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
@@ -79,7 +79,7 @@ def test_stormglass_precip_type_none(requests_mock):
         ]
     }
     with patch(
-        "apts.weather.get_weather_settings", return_value=("stormglass", "dummy_key")
+        "apts.weather.base.get_weather_settings", return_value=("stormglass", "dummy_key")
     ):
         requests_mock.get(ANY, json=mock_response)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)

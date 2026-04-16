@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from apts.config import config, get_cache_settings, load_config, set_redis_location
-from apts.weather_providers import get_session, reset_session
+from apts.weather.providers import get_session, reset_session
 
 
 class TestRedisInit(unittest.TestCase):

@@ -5,13 +5,13 @@ import datetime
 import json
 from datetime import timezone
 from unittest.mock import patch, MagicMock
-from apts.weather_providers import StormGlass, Meteoblue, VisualCrossing
+from apts.weather.providers import StormGlass, Meteoblue, VisualCrossing
 
 
 
 @pytest.fixture(autouse=True)
 def mock_aurora():
-    with patch("apts.weather_providers._get_aurora_df") as m:
+    with patch("apts.weather.providers._get_aurora_df") as m:
         m.return_value = MagicMock(empty=True)
         yield m
 
@@ -142,7 +142,7 @@ def test_weather_data_filtering():
         "hours": [{"time": t, "airTemperature": {"sg": 20}} for t in times]
     }
 
-    with patch("apts.weather_providers.get_session") as mock_session:
+    with patch("apts.weather.providers.get_session") as mock_session:
         mock_resp = MagicMock()
         mock_resp.text = json.dumps(mock_response)
         mock_resp.status_code = 200

@@ -13,7 +13,7 @@ def test_weather_provider_leak_on_connection_error(requests_mock, caplog):
 
     # We need to mock get_weather_settings to return our provider and secret key
     with patch(
-        "apts.weather.get_weather_settings", return_value=(provider_name, api_key)
+        "apts.weather.base.get_weather_settings", return_value=(provider_name, api_key)
     ):
         # Configure requests_mock to raise ConnectionError for the PirateWeather URL
         url = f"https://api.pirateweather.net/forecast/{api_key}/0,0?units=si"

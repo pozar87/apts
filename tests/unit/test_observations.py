@@ -272,7 +272,7 @@ class TestObservationTemplate(unittest.TestCase):
   </body>
 </html>"""
 
-    @patch("apts.weather.Weather.__init__")
+    @patch("apts.weather.base.Weather.__init__")
     @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
     def test_to_html_default_template(self, mock_template, mock_weather_init):
         """Test that to_html uses the default template when no custom template is provided"""
@@ -301,7 +301,7 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(self.observation.place.name, html)
         self.assertIn("APTS", html)
 
-    @patch("apts.weather.Weather.__init__")
+    @patch("apts.weather.base.Weather.__init__")
     def test_to_html_custom_template(self, mock_weather_init):
         """Test that to_html uses a custom template when provided"""
         mock_weather_init.return_value = None
@@ -334,7 +334,7 @@ class TestObservationTemplate(unittest.TestCase):
         finally:
             os.unlink(custom_template_path)
 
-    @patch("apts.weather.Weather.__init__")
+    @patch("apts.weather.base.Weather.__init__")
     @patch("apts.observations.Observation.NOTIFICATION_TEMPLATE")
     def test_to_html_custom_css(self, mock_template, mock_weather_init):
         """Test that to_html injects custom CSS when provided"""
@@ -361,7 +361,7 @@ class TestObservationTemplate(unittest.TestCase):
         self.assertIn(custom_css, html)
         self.assertIn("body { color: #555; }", html)
 
-    @patch("apts.weather.Weather.__init__")
+    @patch("apts.weather.base.Weather.__init__")
     def test_to_html_with_actual_template_file(self, mock_weather_init):
         """Test to_html with an actual temporary template file"""
         mock_weather_init.return_value = None

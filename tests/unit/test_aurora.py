@@ -1,12 +1,12 @@
 import pandas as pd
-from apts.weather_providers import _get_aurora_df, PirateWeather
+from apts.weather.providers import _get_aurora_df, PirateWeather
 from unittest.mock import patch, MagicMock
 from typing import cast
 import json
 import pytz
 
 
-@patch("apts.weather_providers.get_session")
+@patch("apts.weather.providers.base.get_session")
 def test_get_aurora_df(mock_get_session):
     # Mock the session and its get method
     mock_session = MagicMock()
@@ -58,7 +58,7 @@ def test_enrich_with_aurora_data_handles_dtype_mismatch():
     aurora_df_mock = pd.DataFrame(aurora_data)
 
     # Patch the function that fetches aurora data to return our mock DataFrame
-    with patch("apts.weather_providers._get_aurora_df", return_value=aurora_df_mock):
+    with patch("apts.weather.providers.base._get_aurora_df", return_value=aurora_df_mock):
         # Instantiate a concrete WeatherProvider
         provider = PirateWeather(api_key="dummy", lat=0, lon=0, local_timezone=pytz.utc)
 
