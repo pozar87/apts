@@ -850,8 +850,8 @@ def test_plot_zoom_includes_naked_eye_when_flagged(mock_plot):
         assert "Naked Eye 1x7" in data_for_plot.index
 
 
-@patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.nx.draw")  # Mock the nx.draw call
+@patch("apts.equipment.plotting.get_dark_mode")
+@patch("apts.equipment.plotting.nx.draw")  # Mock the nx.draw call
 def test_plot_connection_graph_override_dark(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = False  # Global is light
     eq = _create_custom_equipment_for_plotting()
@@ -887,8 +887,8 @@ def test_plot_connection_graph_override_dark(mock_nx_draw, mock_get_global_dark_
     assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
-@patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.nx.draw")
+@patch("apts.equipment.plotting.get_dark_mode")
+@patch("apts.equipment.plotting.nx.draw")
 def test_plot_connection_graph_override_light(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = True  # Global is dark
     eq = _create_custom_equipment_for_plotting()
@@ -918,8 +918,8 @@ def test_plot_connection_graph_override_light(mock_nx_draw, mock_get_global_dark
     assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
-@patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.nx.draw")
+@patch("apts.equipment.plotting.get_dark_mode")
+@patch("apts.equipment.plotting.nx.draw")
 def test_plot_connection_graph_global_dark(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = True  # Global is dark
     eq = _create_custom_equipment_for_plotting()
@@ -949,8 +949,8 @@ def test_plot_connection_graph_global_dark(mock_nx_draw, mock_get_global_dark_mo
     assert all_actual_font_color == expected_style["TEXT_COLOR"]
 
 
-@patch("apts.equipment.get_dark_mode")
-@patch("apts.equipment.nx.draw")
+@patch("apts.equipment.plotting.get_dark_mode")
+@patch("apts.equipment.plotting.nx.draw")
 def test_plot_connection_graph_global_light(mock_nx_draw, mock_get_global_dark_mode):
     mock_get_global_dark_mode.return_value = False  # Global is light
     eq = _create_custom_equipment_for_plotting()
