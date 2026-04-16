@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast, TYPE_CHECKING, Callable
+from typing import Any, Optional, cast, TYPE_CHECKING
 
 import pandas as pd
 

@@ -5,7 +5,7 @@ from ...utils import optics as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity
-    from typing import Any, List, Callable
+    from typing import Any, List
 
 
 class PhotometryMixIn:

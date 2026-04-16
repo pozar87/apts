@@ -9,7 +9,6 @@ from skyfield.api import Time
 
 if TYPE_CHECKING:
     from skyfield.api import Timescale
-    from .base import Place
 
 from apts.cache import get_timescale
 from apts.constants.twilight import Twilight

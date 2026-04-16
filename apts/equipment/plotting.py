@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TYPE_CHECKING, Callable, Any
+from typing import Optional, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import networkx as nx
