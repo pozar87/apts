@@ -93,7 +93,7 @@ def _generate_zoom_skymap(
         ax.set_aspect("equal", adjustable="box")
 
         # Plot horizon line if available
-        if observation.conditions.horizon_file:
+        if observation.conditions.horizon_file or observation.conditions.horizon_content:
             az_view = numpy.linspace(
                 target_az.degrees - half_zoom, target_az.degrees + half_zoom, 100
             )

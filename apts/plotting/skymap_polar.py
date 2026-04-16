@@ -108,10 +108,10 @@ def _generate_polar_skymap(
         # Get the visibility mask for a range of altitudes at each azimuth
         # In a polar plot, r = 90 - altitude. We want to find the boundary altitude.
         # For the simple case, the boundary is the horizon altitude.
-        if observation.conditions.horizon_file:
+        if observation.conditions.horizon_file or observation.conditions.horizon_content:
             horizon_alt = observation.conditions.horizon.get_altitude(az_deg)
             r_outer_good = 90 - horizon_alt
-            
+
             ax.fill_between(
                 theta,
                 0,
@@ -184,7 +184,9 @@ def _generate_polar_skymap(
                     ),
                 )
 
-        if not observation.conditions.horizon_file and not (
+        if not (
+            observation.conditions.horizon_file or observation.conditions.horizon_content
+        ) and not (
             float(observation.conditions.min_object_azimuth) == 0.0
             and float(observation.conditions.max_object_azimuth) == 360.0
         ):
