@@ -4,11 +4,11 @@ import re
 from datetime import datetime, timedelta
 from importlib import resources
 from string import Template
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from skyfield.api import utc
+from skyfield.api import utc, Time
 
 from .. import plot as apts_plot
 from ..conditions import Conditions
@@ -30,6 +30,8 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
     NOTIFICATION_TEMPLATE = resources.files("apts").joinpath(
         "templates/notification.html.template"
     )
+
+    effective_date: Optional[Union[datetime, Time]]
 
     def __init__(
         self,

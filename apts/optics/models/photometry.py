@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class PhotometryMixIn:
     if TYPE_CHECKING:
-        def pixel_scale(self) -> "Quantity": ...
+        def pixel_scale(self) -> Optional["Quantity"]: ...
         output: Any
         telescope: Any
         filters: List[Any]

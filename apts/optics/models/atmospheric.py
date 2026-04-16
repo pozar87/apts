@@ -10,7 +10,7 @@ from ..utils import OpticsUtils
 
 class AtmosphericMixIn:
     if TYPE_CHECKING:
-        def pixel_scale(self) -> "Quantity": ...
+        def pixel_scale(self) -> Optional["Quantity"]: ...
 
     def airmass(self, altitude_degrees: float) -> float:
         """
