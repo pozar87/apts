@@ -1,8 +1,13 @@
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    from ..conditions import Conditions
+    from ..place import Place
 
 from ..conditions import Conditions
 from ..i18n import language_context
@@ -12,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 class WeatherAnalysisMixIn:
+    if TYPE_CHECKING:
+        start: Optional[datetime]
+        stop: Optional[datetime]
+        place: Place
+        conditions: Conditions
+        effective_date: Optional[datetime]
+        time_limit: Optional[datetime]
+
     def _compute_weather_goodness(self, conditions: Optional[Conditions] = None):
         analysis = self.get_weather_analysis(conditions=conditions)
         if not analysis:

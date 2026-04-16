@@ -1,1 +1,1 @@
-from .base import Equipment
+from .base import Equipment as Equipment

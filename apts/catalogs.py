@@ -43,7 +43,7 @@ def _load_messier_with_units():
         "Supernova Remnant": DSOType.SNR,
         "Pleiades. Subaru.\"": DSOType.OC, # Special case for M45 entry
     }
-    messier_df[ObjectTableLabels.DSO_TYPE] = messier_df["Type"].map(messier_type_map).fillna(DSOType.OTHER)
+    messier_df[ObjectTableLabels.DSO_TYPE] = messier_df["Type"].map(messier_type_map.get).fillna(DSOType.OTHER)
 
     # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
     # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
@@ -127,14 +127,14 @@ def _load_ngc_with_units():
         "SNR": DSOType.SNR,
     }
     ngc_df[ObjectTableLabels.DSO_TYPE] = (
-        ngc_df["Type"].map(ngc_type_map).fillna(DSOType.OTHER)
+        ngc_df["Type"].map(ngc_type_map.get).fillna(DSOType.OTHER)
     )
 
     # Standardize dimensions
     ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(ngc_df["MajAx"], errors="coerce")
-    ngc_df[ObjectTableLabels.SIZE_MINOR] = pd.to_numeric(
+    ngc_df[ObjectTableLabels.SIZE_MINOR] = cast(pd.Series, pd.to_numeric(
         ngc_df["MinAx"], errors="coerce"
-    ).fillna(ngc_df[ObjectTableLabels.SIZE_MAJOR])
+    )).fillna(ngc_df[ObjectTableLabels.SIZE_MAJOR])
 
     # Drop redundant columns
     ngc_df.drop(columns=["MajAx", "MinAx"], inplace=True)

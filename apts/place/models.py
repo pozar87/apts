@@ -1,11 +1,15 @@
 import datetime
 import math
-from typing import Any, Iterable, Optional, Tuple, cast
+from typing import Any, Iterable, Optional, Tuple, cast, TYPE_CHECKING, Callable
 
 import numpy as np
 import pandas as pd
 from skyfield import almanac
 from skyfield.api import Time
+
+if TYPE_CHECKING:
+    from skyfield.api import Timescale
+    from .base import Place
 
 from apts.cache import get_timescale
 from apts.constants.twilight import Twilight
@@ -23,6 +27,17 @@ from ..weather import Weather
 
 
 class PlaceConditionsMixIn:
+    if TYPE_CHECKING:
+        light_pollution: Optional[LightPollution]
+        lat_decimal: float
+        lon_decimal: float
+        date: Time
+        observer: Any
+        sun: Any
+        moon: Any
+        local_timezone: Any
+        weather: Optional[Weather]
+
     def get_light_pollution(self):
         if self.light_pollution is None:
             self.light_pollution = LightPollution(
@@ -255,6 +270,12 @@ class PlaceConditionsMixIn:
 
 
 class PlaceTimesMixIn:
+    if TYPE_CHECKING:
+        lat_decimal: float
+        lon_decimal: float
+        elevation: float
+        local_timezone: Any
+
     def _previous_setting_time(self, obj_name, start, horizon_degrees=None):
         res = previous_setting_time_utc(
             self.lat_decimal,
@@ -382,6 +403,15 @@ class PlaceTimesMixIn:
 
 
 class PlacePathsMixIn:
+    if TYPE_CHECKING:
+        ts: Timescale
+        observer: Any
+        lat_decimal: float
+        local_timezone: Any
+        moon: Any
+        eph: Any
+        sun: Any
+
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
         t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
@@ -500,6 +530,13 @@ class PlacePathsMixIn:
 
 
 class PlaceImagingMixIn:
+    if TYPE_CHECKING:
+        date: Time
+        local_timezone: Any
+        sunset_time: Callable[..., Any]
+        sunrise_time: Callable[..., Any]
+        get_altaz_curve: Callable[..., Any]
+
     def get_imaging_window(
         self, skyfield_object, min_altitude=30, target_date=None
     ) -> dict:

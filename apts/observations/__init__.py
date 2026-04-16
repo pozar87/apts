@@ -1,1 +1,1 @@
-from .base import Observation
+from .base import Observation as Observation

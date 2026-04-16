@@ -5,9 +5,17 @@ from ...utils import optics as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity
+    from typing import Any, List, Callable
 
 
 class PhotometryMixIn:
+    if TYPE_CHECKING:
+        def pixel_scale(self) -> "Quantity": ...
+        output: Any
+        telescope: Any
+        filters: List[Any]
+        def atmospheric_extinction(self, magnitude: float, altitude_degrees: float, extinction_k: float = 0.2) -> float: ...
+
     def sky_flux(self, sqm: float) -> Optional[float]:
         """
         Calculates the sky background flux in electrons per second per pixel.
