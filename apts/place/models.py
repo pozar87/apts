@@ -1,97 +1,35 @@
 import datetime
-import logging
 import math
-from functools import lru_cache
-from math import copysign as copysign
-from math import radians as rad
 from typing import Any, Iterable, Optional, Tuple, cast
 
 import numpy as np
 import pandas as pd
-from dateutil import tz
 from skyfield import almanac
-from skyfield.api import Topos, Time
-from timezonefinder import TimezoneFinder
+from skyfield.api import Time
 
-from apts.cache import get_ephemeris, get_timescale
+from apts.cache import get_timescale
 from apts.constants.twilight import Twilight
 from apts.light_pollution import LightPollution
 
-from .skyfield_searches.visibility import (
+from .utils import (
+    get_scalar_datetime,
     get_twilight_time_utc,
     next_rising_time_utc,
     next_setting_time_utc,
     previous_rising_time_utc,
     previous_setting_time_utc,
 )
-from .utils.planetary import (
+from ..utils.planetary import (
     get_moon_age,
     get_moon_distance,
     get_moon_illumination,
     get_moon_phase_name,
     get_planet_magnitude,
-    get_skyfield_obj,
 )
-from .weather import Weather
-
-logger = logging.getLogger(__name__)
+from ..weather import Weather
 
 
-get_twilight_time_utc = lru_cache(maxsize=1024)(get_twilight_time_utc)
-previous_setting_time_utc = lru_cache(maxsize=1024)(previous_setting_time_utc)
-next_rising_time_utc = lru_cache(maxsize=1024)(next_rising_time_utc)
-next_setting_time_utc = lru_cache(maxsize=1024)(next_setting_time_utc)
-previous_rising_time_utc = lru_cache(maxsize=1024)(previous_rising_time_utc)
-
-
-class TFProxy:
-    def __init__(self):
-        self._instance = None
-
-    def __getattr__(self, name):
-        if self._instance is None:
-            self._instance = TimezoneFinder()
-        return getattr(self._instance, name)
-
-
-class Place:
-    TF = TFProxy()
-
-    def __init__(
-        self,
-        lat,
-        lon,
-        name="",
-        elevation=300,
-        date=datetime.datetime.now(datetime.UTC),
-    ):
-        self.ts = get_timescale()
-        self.eph = get_ephemeris()
-        if isinstance(date, type(self.ts.now())):
-            self.date = date
-        else:
-            self.date = self.ts.utc(date)
-        self.lat = rad(lat)
-        self.lon = rad(lon)
-        self.lat_decimal = lat
-        self.lon_decimal = lon
-        self.name = name
-        self.elevation = elevation
-        self.location = Topos(
-            latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation)
-        )
-        self.observer = self.eph["earth"] + self.location
-        # Sun
-        self.sun = self.eph["sun"]
-        # Moon
-        self.moon = self.eph["moon"]
-        self.local_timezone = tz.gettz(
-            Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal)
-        )
-        self.weather = None
-        self.light_pollution = None
-        logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
-
+class PlaceConditionsMixIn:
     def get_light_pollution(self):
         if self.light_pollution is None:
             self.light_pollution = LightPollution(
@@ -99,21 +37,6 @@ class Place:
                 self.lon_decimal,
             )
         return self.light_pollution.get_light_pollution()
-
-    def _get_scalar_datetime(self, target_time: Any) -> datetime.datetime:
-        """
-        Helper to convert a Skyfield Time object (scalar or vector) to a scalar
-        timezone-aware UTC datetime.
-        """
-        dt_raw = target_time.utc_datetime()
-        if isinstance(dt_raw, (list, np.ndarray)):
-            dt = dt_raw[0]
-        else:
-            dt = dt_raw
-
-        if dt.tzinfo is None:
-            return dt.replace(tzinfo=datetime.timezone.utc)
-        return dt
 
     def get_sqm(self, time: Optional[Any] = None) -> float:
         """
@@ -148,7 +71,9 @@ class Place:
             .degrees
         )
         if moon_alt > 0:
-            mag_m = get_planet_magnitude("moon", target_time)
+            # Import within the method to ensure patch targets on apts.place work.
+            from ..place import get_planet_magnitude as _get_planet_magnitude
+            mag_m = _get_planet_magnitude("moon", target_time)
             # Simplified moon model
             # Zenith brightness model for Moon: SQM_moon_zenith = mag_m + 31
             # Combined with sine altitude factor
@@ -164,7 +89,7 @@ class Place:
         ):
             # Find nearest time in weather data
             # target_time is Skyfield Time, convert to scalar aware datetime
-            dt = self._get_scalar_datetime(target_time)
+            dt = get_scalar_datetime(target_time)
 
             # Simple nearest neighbor
             idx = (self.weather.data["time"] - dt).abs().idxmin()
@@ -186,7 +111,7 @@ class Place:
             and self.weather.data is not None
             and not self.weather.data.empty
         ):
-            dt = self._get_scalar_datetime(target_time)
+            dt = get_scalar_datetime(target_time)
             idx = (self.weather.data["time"] - dt).abs().idxmin()
             if (self.weather.data.loc[idx, "time"] - dt).total_seconds() == 0:
                 self.weather.data.loc[idx, "sqm"] = sqm_val
@@ -205,7 +130,7 @@ class Place:
             and self.weather.data is not None
             and not self.weather.data.empty
         ):
-            dt = self._get_scalar_datetime(target_time)
+            dt = get_scalar_datetime(target_time)
             idx = (self.weather.data["time"] - dt).abs().idxmin()
 
             wind_speed = float(self.weather.data.loc[idx, "windSpeed"])
@@ -231,7 +156,7 @@ class Place:
             and self.weather.data is not None
             and not self.weather.data.empty
         ):
-            dt = self._get_scalar_datetime(target_time)
+            dt = get_scalar_datetime(target_time)
             idx = (self.weather.data["time"] - dt).abs().idxmin()
             if (self.weather.data.loc[idx, "time"] - dt).total_seconds() == 0:
                 self.weather.data.loc[idx, "seeing"] = seeing_val
@@ -261,7 +186,9 @@ class Place:
             moon_obs.altaz()[0].degrees,
         )
         # Vectorized magnitude calculation - reusing topocentric observation for better accuracy and performance
-        moon_mags = cast(np.ndarray, get_planet_magnitude("moon", times, astrometric=moon_obs))
+        # Import within the method to ensure patch targets on apts.place work.
+        from ..place import get_planet_magnitude as _get_planet_magnitude
+        moon_mags = cast(np.ndarray, _get_planet_magnitude("moon", times, astrometric=moon_obs))
 
         # Bortle info
         bortle = self.get_light_pollution()
@@ -291,6 +218,7 @@ class Place:
         if bortle > 4:
             b_total *= 1 + 2 * (cloud_cover / 100.0)
         else:
+            # Dark site: clouds block starlight
             b_total *= 1 - 0.5 * (cloud_cover / 100.0)
 
         sqms = cast(np.ndarray, -2.5 * np.log10(np.maximum(b_total, 1e-10)))
@@ -309,46 +237,6 @@ class Place:
         self.weather.data["sqm"] = sqms
         self.weather.data["seeing"] = seeings
         self.weather.data["moon_altitude"] = moon_alts
-
-    def get_altitude(self, object_or_name: Any, time: Optional[Any] = None) -> float:
-        """
-        Returns the topocentric apparent altitude of a celestial object in degrees.
-        Supports both Skyfield objects and string names (e.g., 'Jupiter').
-        Uses high-precision refraction settings (10°C, 1013.25 mbar).
-        """
-        target_time = time if time is not None else self.date
-        obj = (
-            get_skyfield_obj(object_or_name)
-            if isinstance(object_or_name, str)
-            else object_or_name
-        )
-        alt, _, _ = (
-            self.observer.at(target_time)
-            .observe(obj)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        )
-        return float(alt.degrees)
-
-    def get_azimuth(self, object_or_name: Any, time: Optional[Any] = None) -> float:
-        """
-        Returns the topocentric apparent azimuth of a celestial object in degrees.
-        Supports both Skyfield objects and string names (e.g., 'Jupiter').
-        Uses high-precision refraction settings (10°C, 1013.25 mbar).
-        """
-        target_time = time if time is not None else self.date
-        obj = (
-            get_skyfield_obj(object_or_name)
-            if isinstance(object_or_name, str)
-            else object_or_name
-        )
-        _, az, _ = (
-            self.observer.at(target_time)
-            .observe(obj)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        )
-        return float(az.degrees)
 
     def get_weather(
         self,
@@ -372,6 +260,8 @@ class Place:
         )
         self._add_extra_weather_info()
 
+
+class PlaceTimesMixIn:
     def _previous_setting_time(self, obj_name, start, horizon_degrees=None):
         res = previous_setting_time_utc(
             self.lat_decimal,
@@ -497,37 +387,8 @@ class Place:
             "moon", start=start_date, horizon_degrees=horizon_degrees
         )
 
-    def _moon_phase_letter(self) -> str:
-        phase_angle = almanac.moon_phase(self.eph, self.date)
-        if hasattr(phase_angle, "degrees"):
-            phase_angle_deg = phase_angle.degrees
-        else:
-            phase_angle_deg = float(phase_angle)  # type: ignore
-        lunation = cast(float, phase_angle_deg) / 360.0
-        letter = chr(ord("A") + int(round(lunation * 26)))
-        return letter
 
-    def moon_illumination(self):
-        return get_moon_illumination(self.date)
-
-    def moon_phase_name(self):
-        """
-        Returns the name of the moon phase.
-        """
-        return get_moon_phase_name(self.date)
-
-    def moon_age(self):
-        """
-        Returns the Moon age in days.
-        """
-        return get_moon_age(self.date)
-
-    def moon_distance(self):
-        """
-        Returns the Moon distance in km.
-        """
-        return get_moon_distance(self.date)
-
+class PlacePathsMixIn:
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
         t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
@@ -635,40 +496,17 @@ class Place:
         return df
 
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
-        from .plotting.path import generate_plot_sun_path
+        from ..plotting.path import generate_plot_sun_path
 
         return generate_plot_sun_path(self, dark_mode_override, **args)
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # Remove the unpicklable entries.
-        del state["ts"]
-        del state["eph"]
-        del state["location"]
-        del state["observer"]
-        del state["sun"]
-        del state["moon"]
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        # Re-create the unpicklable entries.
-        self.ts = get_timescale()
-        self.eph = get_ephemeris()
-        self.location = Topos(
-            latitude_degrees=self.lat_decimal,
-            longitude_degrees=self.lon_decimal,
-            elevation_m=self.elevation,
-        )
-        self.observer = self.eph["earth"] + self.location
-        self.sun = self.eph["sun"]
-        self.moon = self.eph["moon"]
-
     def plot_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
-        from .plotting.path import generate_plot_moon_path
+        from ..plotting.path import generate_plot_moon_path
 
         return generate_plot_moon_path(self, dark_mode_override, **args)
 
+
+class PlaceImagingMixIn:
     def get_imaging_window(
         self, skyfield_object, min_altitude=30, target_date=None
     ) -> dict:
