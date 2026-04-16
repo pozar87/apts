@@ -135,7 +135,7 @@ class SuitabilityScorer:
             from .optics.utils import OpticsUtils
             object_size = (target_row[ObjectTableLabels.SIZE_MAJOR], target_row[ObjectTableLabels.SIZE_MINOR])
             # Handle NaNs in object size
-            if np.isnan(object_size[0]):
+            if pd.isna(object_size[0]):
                 s_fov = 0
             else:
                 sensor_size = (

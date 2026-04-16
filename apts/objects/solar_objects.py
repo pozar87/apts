@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from ..cache import get_mpcorb_data
-from ..constants import ObjectTableLabels
+from ..constants import ObjectTableLabels, DSOType
 from ..utils import MINOR_PLANET_NAMES, planetary
 from .objects import Objects
 
@@ -216,8 +216,17 @@ class SolarObjects(Objects):
                 elongs.append(np.nan)
 
         computed_df[ObjectTableLabels.MAGNITUDE] = mags
-        computed_df["Magnitude_float"] = mags
+        # Fill missing magnitudes with a very high value (e.g. 99) for scoring
+        mags_float = [m if pd.notna(m) else 99 for m in mags]
+        computed_df["Magnitude_float"] = mags_float
         computed_df[ObjectTableLabels.SIZE] = sizes
+
+        # Populate SIZE_MAJOR and SIZE_MINOR in arcminutes for SuitabilityScorer
+        # ephem returns size in arcseconds.
+        sizes_arcmin = [s / 60.0 if s is not None else 0 for s in sizes]
+        computed_df[ObjectTableLabels.SIZE_MAJOR] = sizes_arcmin
+        computed_df[ObjectTableLabels.SIZE_MINOR] = sizes_arcmin
+
         computed_df[ObjectTableLabels.PHASE] = phases
         computed_df["skyfield_object"] = sky_objs
         computed_df["ra_hours"] = ras
@@ -227,6 +236,9 @@ class SolarObjects(Objects):
         computed_df[ObjectTableLabels.DEC] = decs
         computed_df[ObjectTableLabels.DISTANCE] = dists
         computed_df[ObjectTableLabels.ELONGATION] = elongs
+
+        # DSO_TYPE is used in top_picks
+        computed_df[ObjectTableLabels.DSO_TYPE] = DSOType.OTHER
 
         if not skip_transits:
             # Use fast vectorized geometric approximation for transits, rise, set, and altitude.

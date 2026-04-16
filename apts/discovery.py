@@ -18,18 +18,23 @@ class DiscoveryService:
     def get_top_picks(place, equipment_path, catalogs, date=None, strategy=FilterStrategy.BROADBAND, limit=20):
         """
         Returns a ranked list of objects sorted by the Multi-Factor Score.
-        Focuses on the Messier catalog for optimal performance and quality.
+        Includes Messier and Solar objects.
         """
         from .objects.messier import Messier
+        from .objects.solar_objects import SolarObjects
 
         scorer = SuitabilityScorer(place, equipment_path, filter_strategy=strategy)
 
-        # Focus on Messier catalog for performance and high-quality results
-        # We use the Messier object to ensure tranzit/altitude are computed
+        # 1. Messier catalog
         messier_obj = Messier(place, catalogs)
         messier_obj.compute(calculation_date=date)
 
-        combined_df = messier_obj.objects
+        # 2. Solar objects
+        solar_obj = SolarObjects(place)
+        solar_obj.compute(calculation_date=date)
+
+        # Combine both for scoring
+        combined_df = pd.concat([messier_obj.objects, solar_obj.objects], ignore_index=True)
 
         # Filtering for reasonable visibility (optional optimization)
         # For now, we'll score everything, but typically you'd filter by magnitude or altitude first

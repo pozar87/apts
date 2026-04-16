@@ -116,10 +116,21 @@ class OpticsUtils:
         focal_length: focal length in mm
         """
         import numpy as np
-        from ..constants import astronomy
 
-        obj_major_deg = object_size[0] / 60.0
-        obj_minor_deg = object_size[1] / 60.0
+        # Handle potential pint.Quantity objects in object_size
+        obj_major_arcmin = (
+            object_size[0].magnitude
+            if hasattr(object_size[0], "magnitude")
+            else object_size[0]
+        )
+        obj_minor_arcmin = (
+            object_size[1].magnitude
+            if hasattr(object_size[1], "magnitude")
+            else object_size[1]
+        )
+
+        obj_major_deg = obj_major_arcmin / 60.0
+        obj_minor_deg = obj_minor_arcmin / 60.0
 
         # FOV in degrees = 2 * arctan(sensor_size / (2 * focal_length))
         fov_w_deg = np.degrees(2 * np.arctan(sensor_size[0] / (2 * focal_length)))
