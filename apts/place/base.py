@@ -10,7 +10,6 @@ from skyfield.api import Topos
 from apts.cache import get_ephemeris, get_timescale
 from .utils import TFProxy, get_scalar_datetime
 from .models import (
-    PlaceConditionsMixIn,
     PlaceTimesMixIn,
     PlacePathsMixIn,
     PlaceImagingMixIn,

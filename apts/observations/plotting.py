@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, cast, Any
+from typing import TYPE_CHECKING, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
