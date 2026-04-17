@@ -1,11 +1,12 @@
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, mock_open, patch
+
 from apts.config import (
-    load_config,
-    get_cache_settings,
-    set_redis_location,
     add_config_path,
+    get_cache_settings,
+    load_config,
     remove_config_path,
+    set_redis_location,
 )
 
 
@@ -55,7 +56,9 @@ class ConfigTest(unittest.TestCase):
     def test_redis_connection_fallback(self, mock_cached_session):
         # Import redis and its exception class for mocking
         try:
-            from redis.exceptions import ConnectionError as RedisConnectionError  # pyright: ignore[reportMissingImports]
+            from redis.exceptions import (
+                ConnectionError as RedisConnectionError,  # pyright: ignore[reportMissingImports]
+            )
         except ImportError:
             self.skipTest("redis library not installed")
 
@@ -77,33 +80,22 @@ class ConfigTest(unittest.TestCase):
         mock_cached_session.side_effect = session_side_effect
 
         # Manually reset the global session to ensure get_session runs its logic
-        import importlib
         import apts.weather.providers as weather_providers
 
-        importlib.reload(weather_providers)
         weather_providers.reset_session()
 
         # Configure apts to use redis
         set_redis_location("redis://nonexistent-server:6379")
-        config_content = """
-        [cache]
-        backend = redis
-        redis_location = redis://nonexistent-server:6379
-        """
-        fake_config_path = "/fake/path/for/this/test/apts.ini"
-        try:
-            with patch("builtins.open", mock_open(read_data=config_content)):
-                with patch("os.path.exists", return_value=True):
-                    add_config_path(fake_config_path, priority=True)
-                    load_config()
 
-                    # This call should now trigger the fallback logic
-                    with self.assertLogs(
-                        "apts.weather.providers.base", level="WARNING"
-                    ) as cm:
-                        weather_providers.get_session()
-                        self.assertIn("Redis connection failed", cm.output[0])
-                        self.assertIn("Falling back to in-memory cache", cm.output[0])
+        try:
+            # This call should now trigger the fallback logic
+            with self.assertLogs("apts.weather.providers.base", level="WARNING") as cm:
+                weather_providers.get_session()
+
+            # Verify logs
+            self.assertTrue(len(cm.output) > 0, "No logs were captured")
+            self.assertIn("Redis connection failed", cm.output[0])
+            self.assertIn("Falling back to in-memory cache", cm.output[0])
 
             # Verify that CachedSession was first called for Redis, then for in-memory
             self.assertEqual(mock_cached_session.call_count, 2)
@@ -119,7 +111,6 @@ class ConfigTest(unittest.TestCase):
             self.assertNotIn("connection", second_call_kwargs)
 
         finally:
-            remove_config_path(fake_config_path)
             load_config()  # Reload original config
             weather_providers.reset_session()  # Clean up global state
 
