@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import numpy as np
 import pandas as pd
+import pytz
 from skyfield import almanac
 from skyfield.api import Star
 from skyfield.searchlib import find_discrete
