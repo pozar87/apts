@@ -1,7 +1,7 @@
 from aenum import Enum, auto
 
 
-class DSOType(Enum):
+class DSOType(Enum):  # type: ignore
     EN = auto()  # Emission Nebula
     PN = auto()  # Planetary Nebula
     GC = auto()  # Globular Cluster
