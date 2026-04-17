@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
+    from ..plot import Plotter, NullPlotter
 
 from ..constants.plot import CoordinateSystem
 from ..conditions import Conditions
@@ -10,6 +11,10 @@ from ..i18n import language_context
 
 
 class PlottingMixIn:
+    if TYPE_CHECKING:
+        @property
+        def plot(self) -> "Plotter | NullPlotter": ...
+
     def plot_visible_planets_svg(
         self,
         dark_mode_override: Optional[bool] = None,

@@ -13,6 +13,8 @@ from apts.plotting.skymap_texture import _generate_texture_skymap
 from apts.plotting.skymap_zoom import _generate_zoom_skymap
 from apts.utils.planetary import get_reverse_translated_planet_names
 
+from ..place.utils import get_scalar_datetime
+
 if TYPE_CHECKING:
     from ..observations import Observation
 
@@ -75,9 +77,9 @@ def _generate_plot_skymap(
 
     observer = observation.place.observer.at(t)
 
-    generation_time_str = t.astimezone(observation.place.local_timezone).strftime(
-        "%Y-%m-%d %H:%M %Z"
-    )
+    # Ensure t is treated as a single datetime for formatting.
+    t_dt = get_scalar_datetime(t).astimezone(observation.place.local_timezone)
+    generation_time_str = t_dt.strftime("%Y-%m-%d %H:%M %Z")
 
     if texture_mode:
         figsize = kwargs.get("figsize", (20, 10))
@@ -264,11 +266,25 @@ def plot_skymap(
     if flip_vertically is not None:
         flipped_vertically = flip_vertically
     elif equipment_id is not None and zoom_deg is not None:
-        equipment_data = observation.equipment.data()
-        if not equipment_data.empty and equipment_id in equipment_data["ID"].values:
+        # Check if equipment has data method, otherwise assume it's already a DataFrame
+        equipment_data = (
+            observation.equipment.data()
+            if hasattr(observation.equipment, "data")
+            else observation.equipment
+        )
+        if (
+            equipment_data is not None
+            and hasattr(equipment_data, "empty")
+            and not equipment_data.empty
+            and hasattr(equipment_data, "columns")
+            and "ID" in equipment_data.columns
+            and equipment_id in equipment_data["ID"].values
+        ):
             row = equipment_data.loc[equipment_data["ID"] == equipment_id]
-            flipped_horizontally = row["Flipped Horizontally"].iloc[0]
-            flipped_vertically = row["Flipped Vertically"].iloc[0]
+            if "Flipped Horizontally" in row.columns:
+                flipped_horizontally = row["Flipped Horizontally"].iloc[0]
+            if "Flipped Vertically" in row.columns:
+                flipped_vertically = row["Flipped Vertically"].iloc[0]
 
     return _generate_plot_skymap(
         observation,

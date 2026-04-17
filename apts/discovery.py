@@ -5,7 +5,6 @@ from skyfield import almanac
 from .constants import FilterStrategy, ObjectTableLabels
 from .scoring import SuitabilityScorer
 from .cache import get_timescale, get_ephemeris
-from .constants.twilight import Twilight
 
 logger = logging.getLogger(__name__)
 

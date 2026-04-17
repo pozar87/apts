@@ -1,16 +1,18 @@
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
+if TYPE_CHECKING:
+    import networkx as nx
+
 from ..config import get_dark_mode
 from ..constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from ..constants.graphconstants import get_plot_colors, get_plot_style
 from ..i18n import gettext_, language_context
-from ..utils import ConnectionType
 from ..utils import Utils as GenericUtils
 from ..utils.plot import Utils as PlotUtils
 from .models import MatplotlibSVGWrapper
@@ -18,6 +20,12 @@ from .models import MatplotlibSVGWrapper
 logger = logging.getLogger(__name__)
 
 class EquipmentPlottingMixIn:
+    if TYPE_CHECKING:
+        def max_zoom(self) -> float: ...
+        def _generate_data(self) -> pd.DataFrame: ...
+        def _connect(self) -> None: ...
+        connection_garph: "nx.DiGraph"
+
     def plot_zoom(
         self,
         dark_mode_override: Optional[bool] = None,

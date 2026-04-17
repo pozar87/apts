@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any, Optional, cast, TYPE_CHECKING
 
 import pandas as pd
 
@@ -9,6 +9,11 @@ from apts.utils.plot import Utils as PlotUtils
 
 
 class WeatherPlottingMixIn:
+    if TYPE_CHECKING:
+        local_timezone: Any
+        data: pd.DataFrame
+        def _filter_data(self, rows: list[str]) -> pd.DataFrame: ...
+
     def plot_clouds(self, hours=24, dark_mode_override: Optional[bool] = None, **args):
         if dark_mode_override is not None:
             effective_dark_mode = dark_mode_override

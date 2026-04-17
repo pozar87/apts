@@ -2,7 +2,6 @@ import unittest
 from apts.opticalequipment.camera.vendors.player_one import Player_oneCamera
 from apts.opticalequipment.telescope.vendors.william_optics import William_opticsTelescope
 from apts.optics import OpticalPath
-from apts.units import get_unit_registry
 from apts.constants.astronomy import RAD_TO_ARCSEC
 
 class TestPlayerOneV2(unittest.TestCase):

@@ -1,4 +1,3 @@
-import pytest
 import os
 from apts.place import Place
 from apts.observations import Observation

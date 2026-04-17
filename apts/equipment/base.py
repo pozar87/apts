@@ -91,7 +91,7 @@ class Equipment(EquipmentPlottingMixIn):
                 for t in unique_types
             }
             result[EquipmentTableLabels.TYPE] = result[EquipmentTableLabels.TYPE].map(
-                translation_map
+                translation_map.get
             )
 
             # Remove internal columns

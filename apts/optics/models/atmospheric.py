@@ -3,11 +3,15 @@ from ...units import get_unit_registry
 
 if TYPE_CHECKING:
     from pint import Quantity
+
 from ...utils import optics as optics_utils
 from ..utils import OpticsUtils
 
 
 class AtmosphericMixIn:
+    if TYPE_CHECKING:
+        def pixel_scale(self) -> Optional["Quantity"]: ...
+
     def airmass(self, altitude_degrees: float) -> float:
         """
         Calculates the relative airmass for a given altitude in degrees.

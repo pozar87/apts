@@ -8,6 +8,9 @@ if TYPE_CHECKING:
 
 
 class PlanetaryMixIn:
+    if TYPE_CHECKING:
+        def pixel_scale(self) -> Optional["Quantity"]: ...
+
     def planetary_size_in_pixels(
         self, planet_name: str, time: Any, which: str = "equatorial"
     ) -> Optional[Union[float, numpy.ndarray]]:

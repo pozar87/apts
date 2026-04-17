@@ -123,9 +123,14 @@ def _ensure_weather(
     observation: "Observation", conditions: Optional["Conditions"] = None
 ):
     if observation.place.weather is None:
+        obs_window = (
+            (observation.start, observation.stop)
+            if observation.start is not None and observation.stop is not None
+            else None
+        )
         observation.place.get_weather(
             conditions=conditions or observation.conditions,
-            observation_window=(observation.start, observation.stop),
+            observation_window=obs_window,
         )
 
 

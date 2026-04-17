@@ -1,20 +1,20 @@
+from __future__ import annotations
+
 import datetime
 import logging
 from math import radians as rad
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dateutil import tz
+
+if TYPE_CHECKING:
+    from ..light_pollution import LightPollution
+    from ..weather import Weather
 from skyfield import almanac
 from skyfield.api import Topos
 
 from apts.cache import get_ephemeris, get_timescale
-from .utils import TFProxy, get_scalar_datetime
-from .models import (
-    PlaceConditionsMixIn,
-    PlaceTimesMixIn,
-    PlacePathsMixIn,
-    PlaceImagingMixIn,
-)
+
 from ..utils.planetary import (
     get_moon_age,
     get_moon_distance,
@@ -22,13 +22,17 @@ from ..utils.planetary import (
     get_moon_phase_name,
     get_skyfield_obj,
 )
+from .models import (
+    PlaceImagingMixIn,
+    PlacePathsMixIn,
+    PlaceTimesMixIn,
+)
+from .utils import TFProxy, get_scalar_datetime
 
 logger = logging.getLogger(__name__)
 
 
-class Place(
-    PlaceConditionsMixIn, PlaceTimesMixIn, PlacePathsMixIn, PlaceImagingMixIn
-):
+class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
     TF = TFProxy()
 
     def __init__(
@@ -47,8 +51,8 @@ class Place(
             self.date = self.ts.utc(date)
         self.lat = rad(lat)
         self.lon = rad(lon)
-        self.lat_decimal = lat
-        self.lon_decimal = lon
+        self._lat_decimal = lat
+        self._lon_decimal = lon
         self.name = name
         self.elevation = elevation
         self.location = Topos(
@@ -60,10 +64,10 @@ class Place(
         # Moon
         self.moon = self.eph["moon"]
         self.local_timezone = tz.gettz(
-            Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal)
+            Place.TF.timezone_at(lat=self._lat_decimal, lng=self._lon_decimal)
         )
-        self.weather = None
-        self.light_pollution = None
+        self.weather: Weather | None = None
+        self.light_pollution: LightPollution | None = None
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
     def _get_scalar_datetime(self, target_time: Any) -> datetime.datetime:
@@ -153,6 +157,14 @@ class Place(
         del state["sun"]
         del state["moon"]
         return state
+
+    @property
+    def lat_decimal(self) -> float:
+        return self._lat_decimal
+
+    @property
+    def lon_decimal(self) -> float:
+        return self._lon_decimal
 
     def __setstate__(self, state):
         self.__dict__.update(state)

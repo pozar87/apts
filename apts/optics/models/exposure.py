@@ -1,5 +1,5 @@
 import math
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 import numpy
 from ...units import get_unit_registry
 from ...constants import astronomy
@@ -10,6 +10,12 @@ if TYPE_CHECKING:
 
 
 class ExposureMixIn:
+    if TYPE_CHECKING:
+        output: Any
+        telescope: Any
+        def effective_barlow(self) -> float: ...
+        def pixel_scale(self) -> Optional["Quantity"]: ...
+
     def npf_rule(
         self, declination: float = 0, k: float = 1.0, simplified: bool = False
     ) -> Optional["Quantity"]:

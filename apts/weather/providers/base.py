@@ -1,8 +1,8 @@
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional, Tuple, cast
+from datetime import datetime
+from typing import Any, Optional, Tuple
 
 import pandas as pd
 import requests_cache
