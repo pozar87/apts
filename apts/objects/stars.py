@@ -3,7 +3,6 @@ import pandas as pd
 import pytz
 from datetime import timedelta
 from types import SimpleNamespace
-from typing import cast
 
 from skyfield.api import Star
 
