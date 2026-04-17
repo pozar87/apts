@@ -130,7 +130,7 @@ class SuitabilityScorer:
             skyfield_obj = target_row.get("skyfield_object")
             if pd.isna(skyfield_obj) or skyfield_obj is None:
                 # Try to reconstruct if missing
-                from .objects.objects import Objects
+                from .objects import Objects
 
                 if pd.isna(target_row["ra_hours"]) or pd.isna(
                     target_row["dec_degrees"]

@@ -1,6 +1,6 @@
 import functools
 from types import SimpleNamespace
-from .objects import Objects
+from .base import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
 
@@ -44,7 +44,7 @@ class Messier(Objects):
         computed_df = target_df.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts, rises, sets = self._fast_compute_stars(
+        transits, alts, rises, sets = self._vectorized_geometric_compute(
             computed_df, observer_to_use
         )
         computed_df[ObjectTableLabels.TRANSIT] = transits

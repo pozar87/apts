@@ -10,7 +10,8 @@ import pandas as pd
 from ..cache import get_mpcorb_data
 from ..constants import ObjectTableLabels, DSOType
 from ..utils import MINOR_PLANET_NAMES, planetary
-from .objects import Objects
+from .base import Objects
+from .utils import vectorized_geometric_compute
 
 
 def _to_float(value):
@@ -246,12 +247,16 @@ class SolarObjects(Objects):
             # While it introduces a small error (2-5 mins for planets, ~20 mins for the Moon),
             # it is perfectly adequate for visualization purposes.
             valid_mask = np.ones(len(computed_df), dtype=bool)
-            transits, alts, rises, sets = self._vectorized_geometric_compute(
-                computed_df,
-                observer_to_use,
+            transits, alts, rises, sets = vectorized_geometric_compute(
+                self.ts,
+                self.place.lat_decimal,
+                self.place.lon_decimal,
+                observer_to_use.local_timezone,
+                observer_to_use.date,
                 np.array(ras),
                 np.array(decs),
                 valid_mask,
+                len(computed_df)
             )
             computed_df[ObjectTableLabels.TRANSIT] = transits
             computed_df[ObjectTableLabels.ALTITUDE] = alts
