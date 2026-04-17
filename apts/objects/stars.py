@@ -1,8 +1,16 @@
+import numpy as np
+import pandas as pd
+import pytz
+from datetime import timedelta
 from types import SimpleNamespace
+from typing import cast
 
-from .objects import Objects
+from skyfield.api import Star
+
+from .base import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
+from .utils import calculate_refraction, vectorized_geometric_compute
 
 
 class Stars(Objects):
@@ -45,7 +53,7 @@ class Stars(Objects):
         computed_df = df_to_compute.copy()
 
         # Fast transit and altitude calculation for stars
-        transits, alts, rises, sets = self._fast_compute_stars(
+        transits, alts, rises, sets = self._vectorized_geometric_compute(
             computed_df, observer_to_use
         )
         computed_df[ObjectTableLabels.TRANSIT] = transits
@@ -73,3 +81,104 @@ class Stars(Objects):
         if not result.empty:
             return self.get_skyfield_object(result.iloc[0])
         return None
+
+    def _compute_tranzit(self, skyfield_object, observer):
+        """
+        Calculates the upper meridian transit of a celestial object.
+        For stars, a fast sidereal time approximation is used.
+        """
+        if skyfield_object is None:
+            return None
+
+        # Optimization for stars: use sidereal time formula
+        if isinstance(skyfield_object, Star):
+            current_dt = observer.date.utc_datetime()
+            # Start search from the beginning of the UTC day
+            t0_dt = current_dt.replace(
+                hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC
+            )
+            t0 = self.ts.utc(t0_dt)
+
+            # RA of the star
+            ra_hours = skyfield_object.ra.hours
+            lon_hours = self.place.lon_decimal / 15.0
+
+            # LST = GMST + lon
+            # We want LST == RA => GMST + lon == RA => GMST == RA - lon
+            target_gmst = (ra_hours - lon_hours) % 24
+
+            current_gmst = t0.gmst
+
+            # Sidereal day is shorter than solar day
+            # 1 solar hour = 1.0027379 sidereal hours
+            # 1 sidereal hour = 0.99726957 solar hours
+            sidereal_to_solar = 0.99726957
+
+            dt_sidereal = (target_gmst - current_gmst) % 24
+            dt_solar = dt_sidereal * sidereal_to_solar
+
+            transit_dt = t0_dt + timedelta(hours=dt_solar)
+
+            # Ensure we catch the transit relevant to the observation window
+            # If it already happened more than 12 hours before observation start,
+            # we might want the next one (stars transit once per sidereal day)
+            if transit_dt < current_dt - timedelta(hours=12):
+                transit_dt += timedelta(hours=24 * sidereal_to_solar)
+
+            return transit_dt.astimezone(observer.local_timezone)
+
+        return super()._compute_tranzit(skyfield_object, observer)
+
+    def _altitude_at_transit(self, skyfield_object, transit, observer):
+        # Calculate objects altitude at transit time
+        if transit is None or pd.isna(transit):
+            return 0
+
+        # Optimization for stars: geometric formula
+        if isinstance(skyfield_object, Star):
+            lat = self.place.lat_decimal
+            dec = skyfield_object.dec.degrees
+            # Max altitude = 90 - abs(lat - dec)
+            # Add refraction for better accuracy
+            true_alt = 90.0 - abs(lat - dec)
+            return true_alt + calculate_refraction(true_alt)
+
+        return super()._altitude_at_transit(skyfield_object, transit, observer)
+
+    def _vectorized_geometric_compute(self, df, observer):
+        """
+        Fast transit, altitude, rising, and setting calculation for a DataFrame of Stars.
+        Uses vectorized numpy operations and geometric approximations for speed.
+
+        Note: Rising/setting times use a geometric formula that accounts for atmospheric
+        refraction (~34'). This results in high accuracy compared to Skyfield's
+        iterative solver, while maintaining excellent performance.
+        """
+        # Extract Skyfield Star objects and their coordinates in a vectorized way
+        if "skyfield_object" in df.columns:
+            sky_objs = df["skyfield_object"].to_numpy()
+        else:
+            sky_objs = np.array(
+                [self.get_skyfield_object(row) for _, row in df.iterrows()]
+            )
+
+        valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
+
+        ras = np.array(
+            [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
+        decs = np.array(
+            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+        )
+
+        return vectorized_geometric_compute(
+            self.ts,
+            self.place.lat_decimal,
+            self.place.lon_decimal,
+            observer.local_timezone,
+            observer.date,
+            ras,
+            decs,
+            valid_mask,
+            len(df),
+        )
