@@ -150,8 +150,11 @@ class WeatherAnalysisMixIn:
                 logger.warning("Weather data unavailable after fetch attempt.")
                 return []
 
-        if not all([self.start, self.stop]):
+        if self.start is None or self.stop is None:
             logger.warning("Observation window (start, stop) is not fully defined.")
+            return []
+
+        if self.place.weather is None:
             return []
 
         hourly_data = cast(
