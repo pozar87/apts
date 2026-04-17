@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class Place(
-    PlaceConditionsMixIn, PlaceTimesMixIn, PlacePathsMixIn, PlaceImagingMixIn
+    PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn
 ):
     TF = TFProxy()
 
@@ -47,8 +47,8 @@ class Place(
             self.date = self.ts.utc(date)
         self.lat = rad(lat)
         self.lon = rad(lon)
-        self.lat_decimal = lat
-        self.lon_decimal = lon
+        self._lat_decimal = lat
+        self._lon_decimal = lon
         self.name = name
         self.elevation = elevation
         self.location = Topos(
@@ -60,7 +60,7 @@ class Place(
         # Moon
         self.moon = self.eph["moon"]
         self.local_timezone = tz.gettz(
-            Place.TF.timezone_at(lat=self.lat_decimal, lng=self.lon_decimal)
+            Place.TF.timezone_at(lat=self._lat_decimal, lng=self._lon_decimal)
         )
         self.weather = None
         self.light_pollution = None
@@ -153,6 +153,14 @@ class Place(
         del state["sun"]
         del state["moon"]
         return state
+
+    @property
+    def lat_decimal(self) -> float:
+        return self._lat_decimal
+
+    @property
+    def lon_decimal(self) -> float:
+        return self._lon_decimal
 
     def __setstate__(self, state):
         self.__dict__.update(state)

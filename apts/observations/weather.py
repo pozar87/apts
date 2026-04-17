@@ -1,11 +1,13 @@
 import logging
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
+    from skyfield.api import Time
     from ..conditions import Conditions
     from ..place import Place
 
@@ -22,7 +24,7 @@ class WeatherAnalysisMixIn:
         stop: Optional[datetime]
         place: Place
         conditions: Conditions
-        effective_date: Optional[datetime]
+        effective_date: Optional[Union[datetime, "Time"]]
         time_limit: Optional[datetime]
 
     def _compute_weather_goodness(self, conditions: Optional[Conditions] = None):
@@ -91,10 +93,15 @@ class WeatherAnalysisMixIn:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
             )
+            obs_window = (
+                (self.start, self.stop)
+                if self.start is not None and self.stop is not None
+                else None
+            )
             self.place.get_weather(
                 provider_name=provider_name,
                 conditions=effective_conditions,
-                observation_window=(self.start, self.stop),
+                observation_window=obs_window,
                 force=force,
             )
         else:
@@ -124,10 +131,15 @@ class WeatherAnalysisMixIn:
             return []
 
         if self.place.weather is None:
+            obs_window = (
+                (self.start, self.stop)
+                if self.start is not None and self.stop is not None
+                else None
+            )
             self.place.get_weather(
                 provider_name=provider_name,
                 conditions=effective_conditions,
-                observation_window=(self.start, self.stop),
+                observation_window=obs_window,
                 force=force,
             )
             if not force and not self._is_moon_condition_met(effective_conditions):

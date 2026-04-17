@@ -28,14 +28,22 @@ from ..weather import Weather
 class PlaceConditionsMixIn:
     if TYPE_CHECKING:
         light_pollution: Optional[LightPollution]
-        lat_decimal: float
-        lon_decimal: float
+        @property
+        def lat_decimal(self) -> float: ...
+        @property
+        def lon_decimal(self) -> float: ...
         date: Time
         observer: Any
         sun: Any
         moon: Any
         local_timezone: Any
         weather: Optional[Weather]
+        ts: Timescale
+        eph: Any
+        elevation: float
+        sunset_time: Callable[..., Any]
+        sunrise_time: Callable[..., Any]
+        get_altaz_curve: Callable[..., Any]
 
     def get_light_pollution(self):
         if self.light_pollution is None:
@@ -268,13 +276,7 @@ class PlaceConditionsMixIn:
         self._add_extra_weather_info()
 
 
-class PlaceTimesMixIn:
-    if TYPE_CHECKING:
-        lat_decimal: float
-        lon_decimal: float
-        elevation: float
-        local_timezone: Any
-
+class PlaceTimesMixIn(PlaceConditionsMixIn):
     def _previous_setting_time(self, obj_name, start, horizon_degrees=None):
         res = previous_setting_time_utc(
             self.lat_decimal,
@@ -401,16 +403,7 @@ class PlaceTimesMixIn:
         )
 
 
-class PlacePathsMixIn:
-    if TYPE_CHECKING:
-        ts: Timescale
-        observer: Any
-        lat_decimal: float
-        local_timezone: Any
-        moon: Any
-        eph: Any
-        sun: Any
-
+class PlacePathsMixIn(PlaceConditionsMixIn):
     def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
         t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
         t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
@@ -520,22 +513,19 @@ class PlacePathsMixIn:
     def plot_sun_path(self, dark_mode_override: Optional[bool] = None, **args):
         from ..plotting.path import generate_plot_sun_path
 
-        return generate_plot_sun_path(self, dark_mode_override, **args)
+        if TYPE_CHECKING:
+            from .base import Place
+        return generate_plot_sun_path(cast("Place", self), dark_mode_override, **args)
 
     def plot_moon_path(self, dark_mode_override: Optional[bool] = None, **args):
         from ..plotting.path import generate_plot_moon_path
 
-        return generate_plot_moon_path(self, dark_mode_override, **args)
+        if TYPE_CHECKING:
+            from .base import Place
+        return generate_plot_moon_path(cast("Place", self), dark_mode_override, **args)
 
 
-class PlaceImagingMixIn:
-    if TYPE_CHECKING:
-        date: Time
-        local_timezone: Any
-        sunset_time: Callable[..., Any]
-        sunrise_time: Callable[..., Any]
-        get_altaz_curve: Callable[..., Any]
-
+class PlaceImagingMixIn(PlaceConditionsMixIn):
     def get_imaging_window(
         self, skyfield_object, min_altitude=30, target_date=None
     ) -> dict:
