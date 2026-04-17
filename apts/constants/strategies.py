@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from aenum import Enum, auto
 
 
 class DSOType(Enum):
@@ -16,6 +16,6 @@ class DSOType(Enum):
     OTHER = auto()
 
 
-class FilterStrategy(Enum):
+class FilterStrategy(Enum):  # type: ignore
     BROADBAND = auto()
     NARROWBAND = auto()
