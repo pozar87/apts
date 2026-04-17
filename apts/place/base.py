@@ -1,19 +1,20 @@
+from __future__ import annotations
+
 import datetime
 import logging
 from math import radians as rad
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dateutil import tz
+
+if TYPE_CHECKING:
+    from ..light_pollution import LightPollution
+    from ..weather import Weather
 from skyfield import almanac
 from skyfield.api import Topos
 
 from apts.cache import get_ephemeris, get_timescale
-from .utils import TFProxy, get_scalar_datetime
-from .models import (
-    PlaceTimesMixIn,
-    PlacePathsMixIn,
-    PlaceImagingMixIn,
-)
+
 from ..utils.planetary import (
     get_moon_age,
     get_moon_distance,
@@ -21,13 +22,17 @@ from ..utils.planetary import (
     get_moon_phase_name,
     get_skyfield_obj,
 )
+from .models import (
+    PlaceImagingMixIn,
+    PlacePathsMixIn,
+    PlaceTimesMixIn,
+)
+from .utils import TFProxy, get_scalar_datetime
 
 logger = logging.getLogger(__name__)
 
 
-class Place(
-    PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn
-):
+class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
     TF = TFProxy()
 
     def __init__(
@@ -61,8 +66,8 @@ class Place(
         self.local_timezone = tz.gettz(
             Place.TF.timezone_at(lat=self._lat_decimal, lng=self._lon_decimal)
         )
-        self.weather = None
-        self.light_pollution = None
+        self.weather: Weather | None = None
+        self.light_pollution: LightPollution | None = None
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")
 
     def _get_scalar_datetime(self, target_time: Any) -> datetime.datetime:

@@ -1,13 +1,13 @@
 import logging
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime
-from typing import Union
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
     from skyfield.api import Time
+
     from ..conditions import Conditions
     from ..place import Place
 
@@ -154,7 +154,9 @@ class WeatherAnalysisMixIn:
             logger.warning("Observation window (start, stop) is not fully defined.")
             return []
 
-        hourly_data = self.place.weather.get_critical_data(self.start, self.stop)
+        hourly_data = cast(
+            pd.DataFrame, self.place.weather.get_critical_data(self.start, self.stop)
+        )
         if hourly_data.empty:
             return []
 
@@ -165,9 +167,11 @@ class WeatherAnalysisMixIn:
             if t_limit.tzinfo is None:
                 t_limit = t_limit.tz_localize(self.place.local_timezone)
 
-            hourly_data = hourly_data[hourly_data.time <= t_limit].copy()
+            hourly_data = cast(
+                pd.DataFrame, hourly_data[hourly_data.time <= t_limit].copy()
+            )
         else:
-            hourly_data = hourly_data.copy()
+            hourly_data = cast(pd.DataFrame, hourly_data.copy())
 
         if "fog" not in hourly_data.columns:
             hourly_data["fog"] = 0
@@ -195,7 +199,7 @@ class WeatherAnalysisMixIn:
         # Calculate moon altitudes exactly for each weather data point if not already cached
         if (
             "moon_altitude" in hourly_data.columns
-            and not hourly_data["moon_altitude"].isna().all()
+            and not cast(pd.Series, hourly_data["moon_altitude"]).isna().all()
         ):
             hourly_data["Altitude"] = hourly_data["moon_altitude"]
         else:
@@ -435,7 +439,9 @@ class WeatherAnalysisMixIn:
                 "seeing",
                 "sqm",
             ]
-            result_df = hourly_data[final_cols].rename(columns=rename_map)
+            result_df = cast(pd.DataFrame, hourly_data[final_cols]).rename(
+                columns=rename_map
+            )
             analysis_results = result_df.to_dict("records")
         if conditions is None:
             self._weather_analysis = analysis_results

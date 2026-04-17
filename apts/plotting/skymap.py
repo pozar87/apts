@@ -13,6 +13,8 @@ from apts.plotting.skymap_texture import _generate_texture_skymap
 from apts.plotting.skymap_zoom import _generate_zoom_skymap
 from apts.utils.planetary import get_reverse_translated_planet_names
 
+from ..place.utils import get_scalar_datetime
+
 if TYPE_CHECKING:
     from ..observations import Observation
 
@@ -75,9 +77,9 @@ def _generate_plot_skymap(
 
     observer = observation.place.observer.at(t)
 
-    generation_time_str = t.astimezone(observation.place.local_timezone).strftime(
-        "%Y-%m-%d %H:%M %Z"
-    )
+    # Ensure t is treated as a single datetime for formatting.
+    t_dt = get_scalar_datetime(t).astimezone(observation.place.local_timezone)
+    generation_time_str = t_dt.strftime("%Y-%m-%d %H:%M %Z")
 
     if texture_mode:
         figsize = kwargs.get("figsize", (20, 10))

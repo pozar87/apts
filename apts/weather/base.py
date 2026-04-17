@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any, Optional, cast
 
 import pandas as pd
@@ -20,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class Weather(WeatherPlottingMixIn):
+    data: pd.DataFrame
+
     def __init__(
         self,
         lat,
@@ -124,7 +127,7 @@ class Weather(WeatherPlottingMixIn):
 
         return cast(pd.DataFrame, result)
 
-    def get_critical_data(self, start, stop):
+    def get_critical_data(self, start: datetime, stop: datetime) -> pd.DataFrame:
         if cast(pd.DataFrame, self.data).empty:
             return pd.DataFrame(
                 columns=pd.Index(

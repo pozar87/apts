@@ -1,6 +1,6 @@
 import datetime
 import math
-from typing import Any, Iterable, Optional, Tuple, cast, TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,7 @@ from apts.cache import get_timescale
 from apts.constants.twilight import Twilight
 from apts.light_pollution import LightPollution
 
+from ..weather import Weather
 from .utils import (
     get_scalar_datetime,
     get_twilight_time_utc,
@@ -22,16 +23,17 @@ from .utils import (
     previous_rising_time_utc,
     previous_setting_time_utc,
 )
-from ..weather import Weather
 
 
 class PlaceConditionsMixIn:
     if TYPE_CHECKING:
         light_pollution: Optional[LightPollution]
+
         @property
         def lat_decimal(self) -> float: ...
         @property
         def lon_decimal(self) -> float: ...
+
         date: Time
         observer: Any
         sun: Any
@@ -68,7 +70,11 @@ class PlaceConditionsMixIn:
 
         # Sun contribution
         sun_alt = (
-            self.observer.at(target_time).observe(self.sun).apparent().altaz()[0].degrees
+            self.observer.at(target_time)
+            .observe(self.sun)
+            .apparent()
+            .altaz()[0]
+            .degrees
         )
         if sun_alt > -18:
             # Simplified twilight model: brightness increases as sun rises
@@ -88,6 +94,7 @@ class PlaceConditionsMixIn:
         if moon_alt > 0:
             # Import within the method to ensure patch targets on apts.place work.
             from ..place import get_planet_magnitude as _get_planet_magnitude
+
             mag_m = _get_planet_magnitude("moon", target_time)
             # Simplified moon model
             # Zenith brightness model for Moon: SQM_moon_zenith = mag_m + 31
@@ -203,7 +210,10 @@ class PlaceConditionsMixIn:
         # Vectorized magnitude calculation - reusing topocentric observation for better accuracy and performance
         # Import within the method to ensure patch targets on apts.place work.
         from ..place import get_planet_magnitude as _get_planet_magnitude
-        moon_mags = cast(np.ndarray, _get_planet_magnitude("moon", times, astrometric=moon_obs))
+
+        moon_mags = cast(
+            np.ndarray, _get_planet_magnitude("moon", times, astrometric=moon_obs)
+        )
 
         # Bortle info
         bortle = self.get_light_pollution()
@@ -229,7 +239,9 @@ class PlaceConditionsMixIn:
             b_total[moon_mask] += b_moon
 
         # Cloud cover effect
-        cloud_cover = cast(np.ndarray, self.weather.data["cloudCover"].astype(float).values)
+        cloud_cover = cast(
+            np.ndarray, self.weather.data["cloudCover"].astype(float).values
+        )
         if bortle > 4:
             b_total *= 1 + 2 * (cloud_cover / 100.0)
         else:
@@ -240,7 +252,9 @@ class PlaceConditionsMixIn:
         sqms = np.clip(sqms, 10.0, 22.0)
 
         # Vectorized Seeing Calculation
-        wind_speed = cast(np.ndarray, self.weather.data["windSpeed"].astype(float).values)
+        wind_speed = cast(
+            np.ndarray, self.weather.data["windSpeed"].astype(float).values
+        )
         humidity = cast(np.ndarray, self.weather.data["humidity"].astype(float).values)
 
         seeings = cast(np.ndarray, np.full(len(times), 1.5))
@@ -366,7 +380,9 @@ class PlaceTimesMixIn(PlaceConditionsMixIn):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "set")
-        return self._next_setting_time("sun", start=start_date, horizon_degrees=horizon_degrees)
+        return self._next_setting_time(
+            "sun", start=start_date, horizon_degrees=horizon_degrees
+        )
 
     def sunrise_time(
         self,
@@ -378,7 +394,9 @@ class PlaceTimesMixIn(PlaceConditionsMixIn):
         start_date = self._get_start_date(target_date, start_search_from)
         if twilight:
             return self._get_twilight_time(start_date, twilight, "rise")
-        return self._next_rising_time("sun", start=start_date, horizon_degrees=horizon_degrees)
+        return self._next_rising_time(
+            "sun", start=start_date, horizon_degrees=horizon_degrees
+        )
 
     def moonset_time(
         self,
@@ -539,7 +557,9 @@ class PlaceImagingMixIn(PlaceConditionsMixIn):
         t_start = (
             target_date
             if target_date is not None
-            else self.date.utc_datetime().replace(tzinfo=datetime.timezone.utc)
+            else cast(datetime.datetime, self.date.utc_datetime()).replace(
+                tzinfo=datetime.timezone.utc
+            )
         )
         # Ensure it's a datetime
         if isinstance(t_start, datetime.date) and not isinstance(
@@ -586,7 +606,9 @@ class PlaceImagingMixIn(PlaceConditionsMixIn):
 
         # Find the longest continuous block
         above_threshold = above_threshold.copy()
-        above_threshold["group"] = (above_threshold.index.to_series().diff() > 1).cumsum()
+        above_threshold["group"] = (
+            above_threshold.index.to_series().diff() > 1
+        ).cumsum()
         longest_group = above_threshold.groupby("group").size().idxmax()
         window_df = above_threshold[above_threshold["group"] == longest_group]
 
