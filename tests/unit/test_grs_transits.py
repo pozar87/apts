@@ -31,8 +31,9 @@ def test_jupiter_grs_transits():
 
     # Check the transit time for the first event
     transit_time = grs_events.iloc[0]["date"]
-    # With light-time correction (~40 mins), expected time shifts from 02:26 to ~03:06
-    expected_time = datetime(2026, 3, 18, 3, 6, tzinfo=timezone.utc)
+    # With correctly identified intrinsic longitude (55.2),
+    # the observed transit is at ~02:25 UTC
+    expected_time = datetime(2026, 3, 18, 2, 25, tzinfo=timezone.utc)
 
     diff_minutes = abs((transit_time - expected_time).total_seconds()) / 60.0
     assert diff_minutes < 10  # Should be within 10 minutes

@@ -1,3 +1,4 @@
 from . import weather
+from . import planets
 
-__all__ = ["weather"]
+__all__ = ["weather", "planets"]
