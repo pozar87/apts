@@ -252,16 +252,17 @@ def get_jupiter_grs_longitude(time: Any) -> float | np.ndarray:
     """
     Returns the projected longitude of the Great Red Spot (System II) for a given time.
     Uses a linear drift model based on recent observations.
-    Reference: 79.6° on 2026-03-18 with a drift of approx +0.8° per month.
+    Reference: 55.2° (intrinsic) on 2026-03-18 with a drift of approx 16.0°/year.
     Supports both scalar and array Skyfield Time objects.
     """
-    # Reference epoch: 2026-03-18 00:00:00 UTC
-    ref_lon = 79.6
-    drift_per_day = 0.8 / 30.44  # approx 0.8 degrees per month
+    # Reference epoch: 2026-03-18 12:21:00 UTC (Transit)
+    # Pull intrinsic reference longitude from constants
+    ref_lon = astronomy.JUPITER_GRS_LONGITUDE_SYSTEM_II
+    drift_per_day = 16.0 / 365.25
 
     # Use .tt (Terrestrial Time) for precise day counting
     ts = get_timescale()
-    ref_tt = ts.utc(2026, 3, 18).tt
+    ref_tt = ts.utc(2026, 3, 18, 12, 21).tt
     dt = time.tt - ref_tt
 
     return (ref_lon + dt * drift_per_day) % 360

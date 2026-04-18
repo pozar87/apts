@@ -20,6 +20,7 @@ def test_jupiter_grs_transits_integration():
 
     # Check approximate time
     transit_time = df.iloc[0]["date"]
+    # With correctly identified intrinsic longitude (55.2),
+    # the observed transit is at ~22:16 UTC
     assert transit_time.hour == 22
-    # With light-time correction (~40 mins), expected time shifts from 22:16 to ~22:57
-    assert 50 <= transit_time.minute <= 60
+    assert 10 <= transit_time.minute <= 25

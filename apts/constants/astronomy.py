@@ -59,7 +59,7 @@ NEPTUNE_ROTATION_PERIOD_S = 57996.0
 PLUTO_ROTATION_PERIOD_S = 551856.1
 
 # Jupiter Great Red Spot (GRS) Longitude in System II (degrees)
-# Note: This is a reference value for early 2026 (approx 80.0°).
+# Note: This is a reference value for early 2026 (approx 55.2°).
 # The library uses a dynamic drift model in `apts.utils.planetary.get_jupiter_grs_longitude`
 # for high-precision transit predictions.
-JUPITER_GRS_LONGITUDE_SYSTEM_II = 80.0
+JUPITER_GRS_LONGITUDE_SYSTEM_II = 55.2

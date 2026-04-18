@@ -55,16 +55,16 @@ class TestOracleImprovements(unittest.TestCase):
         self.assertIn('Venus Solar Superior Conjunction', event['event'])
 
     def test_grs_dynamic_longitude(self):
-        # Reference: 79.6 on 2026-03-18
-        t1 = get_timescale().utc(2026, 3, 18)
+        # Reference: 55.2 (intrinsic) on 2026-03-18 12:21
+        t1 = get_timescale().utc(2026, 3, 18, 12, 21)
         lon1 = planetary.get_jupiter_grs_longitude(t1)
-        self.assertAlmostEqual(lon1, 79.6, places=1)
+        self.assertAlmostEqual(lon1, 55.2, places=1)
 
-        # One month earlier should be approx 0.8 degrees less
+        # One month earlier should be approx 1.3 degrees less (16 deg/year)
         t2 = get_timescale().utc(2026, 2, 18)
         lon2 = planetary.get_jupiter_grs_longitude(t2)
         self.assertLess(lon2, lon1)
-        self.assertGreater(lon2, lon1 - 1.0)
+        self.assertGreater(lon2, lon1 - 2.0)
 
 if __name__ == "__main__":
     unittest.main()
