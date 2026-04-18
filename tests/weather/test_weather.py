@@ -203,9 +203,9 @@ def test_weather_providers(
         (None, False, False),
     ],
 )
-@patch("apts.weather.models.PlotUtils.annotate_plot")
+@patch("apts.utils.plot.Utils.annotate_plot")
 @patch("pandas.DataFrame.plot")
-@patch("apts.weather.models.get_dark_mode")
+@patch("apts.plotting.weather.utils.get_dark_mode")
 @patch("apts.weather.base.get_weather_settings")
 def test_plot_clouds_dark_mode_styles(
     mock_get_weather_settings,
@@ -398,15 +398,15 @@ def test_plot_weather_calls_sub_plots(mock_get_weather_settings, requests_mock):
         patch.object(mock_weather_instance, "plot_visibility") as mock_plot_visibility,
         patch.object(mock_weather_instance, "plot_aurora"),
         patch(
-            "apts.plotting.weather.generate_plot_weather_summary"
+            "apts.plotting.weather.plots.generate_plot_weather_summary"
         ) as mock_plot_weather_summary,
         patch(
-            "apts.plotting.weather.pyplot.subplots",
+            "apts.plotting.weather.plots.pyplot.subplots",
             return_value=(MagicMock(), MagicMock(shape=(7, 2))),
         ) as mock_subplots,
-        patch("apts.plotting.weather.mark_observation") as mock_mark_observation,
+        patch("apts.plotting.weather.plots.mark_observation") as mock_mark_observation,
         patch(
-            "apts.plotting.weather.mark_good_conditions"
+            "apts.plotting.weather.plots.mark_good_conditions"
         ) as mock_mark_good_conditions,
         patch("apts.plotting.path.plot_sun_and_moon_path"),
         patch.object(
@@ -469,7 +469,7 @@ def test_plot_moon_illumination(mock_get_weather_settings, requests_mock):
     requests_mock.get(ANY, json=mock_api_response)
 
     weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
-    with patch("apts.weather.models.PlotUtils.annotate_plot") as mock_annotate_plot:
+    with patch("apts.utils.plot.Utils.annotate_plot") as mock_annotate_plot:
         ax = weather.plot_moon_illumination()
         assert ax is not None
         mock_annotate_plot.assert_called_once_with(

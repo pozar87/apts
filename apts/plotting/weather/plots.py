@@ -2,29 +2,18 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 import numpy
+import pandas as pd
 from matplotlib import pyplot
 
-from apts.config import get_dark_mode
-from apts.constants.graphconstants import get_plot_style
 from apts.i18n import gettext_
 from apts.plotting.utils import mark_good_conditions, mark_observation
+from .utils import get_plot_setup, apply_colors
 
 if TYPE_CHECKING:
     from apts.observations import Observation
     from apts.conditions import Conditions
 
 logger = logging.getLogger(__name__)
-
-
-def _get_plot_setup(observation: "Observation", dark_mode_override: Optional[bool]):
-    if dark_mode_override is not None:
-        effective_dark_mode = dark_mode_override
-    else:
-        effective_dark_mode = get_dark_mode()
-
-    style = get_plot_style(effective_dark_mode)
-    return effective_dark_mode, style
-
 
 def _handle_no_weather(title: str, effective_dark_mode: bool, style: dict):
     fig_err, ax_err = pyplot.subplots(figsize=(10, 6))
@@ -47,14 +36,13 @@ def _handle_no_weather(title: str, effective_dark_mode: bool, style: dict):
     ax_err.set_title(title, color=style["TEXT_COLOR"])
     return fig_err
 
-
 def generate_plot_clouds(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Clouds"), effective_dark_mode, style)
@@ -74,13 +62,12 @@ def generate_plot_clouds(
         )
     return ax
 
-
 def generate_plot_clouds_summary(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Cloud summary"), effective_dark_mode, style)
 
@@ -88,14 +75,13 @@ def generate_plot_clouds_summary(
         dark_mode_override=effective_dark_mode, **args
     )
 
-
 def generate_plot_precipitation(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(
@@ -122,13 +108,12 @@ def generate_plot_precipitation(
         )
     return ax
 
-
 def generate_plot_precipitation_type_summary(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     if observation.place.weather is None:
         return _handle_no_weather(
             gettext_("Precipitation type summary"), effective_dark_mode, style
@@ -138,14 +123,13 @@ def generate_plot_precipitation_type_summary(
         dark_mode_override=effective_dark_mode, **args
     )
 
-
 def generate_plot_temperature(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Temperatures"), effective_dark_mode, style)
@@ -165,14 +149,13 @@ def generate_plot_temperature(
         )
     return ax
 
-
 def generate_plot_wind(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Wind speed"), effective_dark_mode, style)
@@ -192,13 +175,12 @@ def generate_plot_wind(
         )
     return ax
 
-
 def generate_plot_pressure_and_ozone(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     if observation.place.weather is None:
         return _handle_no_weather(
             gettext_("Pressure and Ozone"), effective_dark_mode, style
@@ -211,14 +193,13 @@ def generate_plot_pressure_and_ozone(
         mark_observation(observation, ax, effective_dark_mode, style)
     return ax
 
-
 def generate_plot_visibility(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Visibility"), effective_dark_mode, style)
@@ -238,14 +219,13 @@ def generate_plot_visibility(
         )
     return ax
 
-
 def generate_plot_moon_illumination(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(
@@ -267,14 +247,13 @@ def generate_plot_moon_illumination(
         )
     return ax
 
-
 def generate_plot_fog(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Fog"), effective_dark_mode, style)
@@ -294,14 +273,13 @@ def generate_plot_fog(
         )
     return ax
 
-
 def generate_plot_aurora(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Aurora"), effective_dark_mode, style)
@@ -323,14 +301,13 @@ def generate_plot_aurora(
         return ax
     return None
 
-
 def generate_plot_seeing(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Seeing"), effective_dark_mode, style)
@@ -350,14 +327,13 @@ def generate_plot_seeing(
         )
     return ax
 
-
 def generate_plot_sqm(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(gettext_("Sky brightness"), effective_dark_mode, style)
@@ -377,14 +353,13 @@ def generate_plot_sqm(
         )
     return ax
 
-
 def generate_plot_weather_summary(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
     eff_conditions = conditions or observation.conditions
 
     if observation.place.weather is None:
@@ -397,8 +372,6 @@ def generate_plot_weather_summary(
         return _handle_no_weather(
             gettext_("Weather summary"), effective_dark_mode, style
         )
-
-    import pandas as pd
 
     df = pd.DataFrame(analysis)
     ax = args.pop("ax", None)
@@ -431,11 +404,10 @@ def generate_plot_weather_summary(
     if not ax:
         ax = plot_ax
         fig = ax.figure
-        fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
-        ax.set_facecolor(style["AXES_FACE_COLOR"])
     else:
-        ax.set_facecolor(style["AXES_FACE_COLOR"])
-        ax.figure.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
+        fig = ax.figure
+
+    apply_colors(ax, fig, style)
 
     ax.set_title(gettext_("Weather goodness summary"), color=style["TEXT_COLOR"])
     ax.set_ylabel("")  # Remove default ylabel
@@ -445,14 +417,13 @@ def generate_plot_weather_summary(
 
     return ax
 
-
 def generate_plot_weather(
     observation: "Observation",
     dark_mode_override: Optional[bool] = None,
     conditions: Optional["Conditions"] = None,
     **args,
 ):
-    effective_dark_mode, style = _get_plot_setup(observation, dark_mode_override)
+    effective_dark_mode, style = get_plot_setup(dark_mode_override)
 
     if observation.place.weather is None:
         return _handle_no_weather(
