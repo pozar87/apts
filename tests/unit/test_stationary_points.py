@@ -20,7 +20,7 @@ class TestStationaryPoints(unittest.TestCase):
         # Check for Mars stationary point
         mars_stationary = df[df['object'] == 'Mars']
         self.assertFalse(mars_stationary.empty)
-        self.assertIn('Stationary', mars_stationary.iloc[0]['event'])
+        self.assertIn('Mars Stationary', mars_stationary.iloc[0]['event'])
         # Precise date is Feb 24
         self.assertEqual(mars_stationary.iloc[0]['date'].day, 24)
 
