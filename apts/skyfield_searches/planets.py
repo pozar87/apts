@@ -158,13 +158,14 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
     times, codes = almanac.find_discrete(t0, t1, ra_state)
 
     events = []
+    simple_name = planetary.get_simple_name(planet_name)
     for t, code in zip(times, codes):
         direction = "Stationary (Direct)" if code == 1 else "Stationary (Retrograde)"
         events.append(
             {
                 "date": t.utc_datetime(),
-                "event": direction,
-                "object": planetary.get_simple_name(planet_name),
+                "event": f"{simple_name} {direction}",
+                "object": simple_name,
                 "type": "Planet Stationary Point",
             }
         )
