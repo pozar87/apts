@@ -41,13 +41,17 @@ def _load_messier_with_units():
         "Spiral Galaxy": DSOType.GX,
         "Star Cloud": DSOType.SC,
         "Supernova Remnant": DSOType.SNR,
-        "Pleiades. Subaru.\"": DSOType.OC, # Special case for M45 entry
+        'Pleiades. Subaru."': DSOType.OC,  # Special case for M45 entry
     }
-    messier_df[ObjectTableLabels.DSO_TYPE] = messier_df["Type"].map(messier_type_map.get).fillna(DSOType.OTHER)
+    messier_df[ObjectTableLabels.DSO_TYPE] = (
+        messier_df["Type"]
+        .map(messier_type_map.get)
+        .fillna(cast(DSOType, DSOType.OTHER))
+    )
 
     # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
     # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
-    messier_df["skyfield_object"] = [
+    messier_df["skyfield_object"] = [  # type: ignore
         Star(ra_hours=ra, dec_degrees=dec)
         for ra, dec in zip(messier_df["RA"], messier_df["Dec"])
     ]
@@ -108,7 +112,7 @@ def _load_ngc_with_units():
         "*": DSOType.OTHER,
         "**": DSOType.DS,
         "*Ass": DSOType.AST,
-        "Cl+N": DSOType.OC, # Cluster with nebulosity
+        "Cl+N": DSOType.OC,  # Cluster with nebulosity
         "Dup": DSOType.OTHER,
         "EmN": DSOType.EN,
         "G": DSOType.GX,
@@ -127,14 +131,16 @@ def _load_ngc_with_units():
         "SNR": DSOType.SNR,
     }
     ngc_df[ObjectTableLabels.DSO_TYPE] = (
-        ngc_df["Type"].map(ngc_type_map.get).fillna(DSOType.OTHER)
+        ngc_df["Type"].map(ngc_type_map.get).fillna(cast(DSOType, DSOType.OTHER))
     )
 
     # Standardize dimensions
-    ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(ngc_df["MajAx"], errors="coerce")
-    ngc_df[ObjectTableLabels.SIZE_MINOR] = cast(pd.Series, pd.to_numeric(
-        ngc_df["MinAx"], errors="coerce"
-    )).fillna(ngc_df[ObjectTableLabels.SIZE_MAJOR])
+    ngc_df[ObjectTableLabels.SIZE_MAJOR] = pd.to_numeric(
+        ngc_df["MajAx"], errors="coerce"
+    )
+    ngc_df[ObjectTableLabels.SIZE_MINOR] = cast(
+        pd.Series, pd.to_numeric(ngc_df["MinAx"], errors="coerce")
+    ).fillna(ngc_df[ObjectTableLabels.SIZE_MAJOR])
 
     # Drop redundant columns
     ngc_df.drop(columns=["MajAx", "MinAx"], inplace=True)
@@ -224,7 +230,7 @@ def _load_bright_stars_with_units():
 
     # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
     # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
-    bright_stars_df["skyfield_object"] = [
+    bright_stars_df["skyfield_object"] = [  # type: ignore
         Star(ra_hours=ra, dec_degrees=dec)
         for ra, dec in zip(bright_stars_df["RA"], bright_stars_df["Dec"])
     ]
