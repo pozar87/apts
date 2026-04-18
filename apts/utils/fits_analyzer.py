@@ -194,8 +194,8 @@ class FitsAnalyzer:
         for row in sources:
             self.stars.append(
                 {
-                    "x": float(row["x_centroid"]),
-                    "y": float(row["y_centroid"]),
+                    "x": float(row["xcentroid"]),
+                    "y": float(row["ycentroid"]),
                     "flux": float(row["flux"]),
                 }
             )
