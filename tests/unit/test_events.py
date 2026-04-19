@@ -306,13 +306,13 @@ class EventsTest(unittest.TestCase):
         alignment_events = events_df[events_df["type"] == "Planet Alignment"]
         self.assertGreaterEqual(len(alignment_events), 1)
 
-        # Check if it correctly identified the number of planets
-        # The Feb 28 alignment has 7 planets
+        # The Feb 28 alignment has 7 planets, and 6 are visible from Warsaw
         feb_28_alignment = alignment_events[
             cast(Any, alignment_events["date"]).dt.day == 28
         ]
         self.assertEqual(len(feb_28_alignment), 1)
         self.assertIn("7 planets", cast(Any, feb_28_alignment).iloc[0]["event"])
+        self.assertIn("6 visible", cast(Any, feb_28_alignment).iloc[0]["event"])
         self.assertEqual(cast(Any, feb_28_alignment).iloc[0]["rarity"], 5)
 
         # Check planets involved
@@ -324,6 +324,16 @@ class EventsTest(unittest.TestCase):
         self.assertIn("Saturn", planets_involved)
         self.assertIn("Uranus", planets_involved)
         self.assertIn("Neptune", planets_involved)
+
+        # Check visible planets
+        visible_planets = cast(Any, feb_28_alignment).iloc[0]["visible_planets"]
+        self.assertEqual(len(visible_planets), 6)
+        self.assertIn("Mercury", visible_planets)
+        self.assertIn("Venus", visible_planets)
+        self.assertIn("Jupiter", visible_planets)
+        self.assertIn("Saturn", visible_planets)
+        self.assertIn("Uranus", visible_planets)
+        self.assertIn("Neptune", visible_planets)
 
     @patch("apts.events.coordinator.get_event_settings")
     def test_calculate_culminations(self, mock_get_event_settings):
