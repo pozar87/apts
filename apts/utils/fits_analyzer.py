@@ -191,11 +191,14 @@ class FitsAnalyzer:
             return []
 
         self.stars = []
+        # Support both photutils < 3.0.0 (xcentroid) and >= 3.0.0 (x_centroid)
+        x_col = "x_centroid" if "x_centroid" in sources.colnames else "xcentroid"
+        y_col = "y_centroid" if "y_centroid" in sources.colnames else "ycentroid"
         for row in sources:
             self.stars.append(
                 {
-                    "x": float(row["x_centroid"]),
-                    "y": float(row["y_centroid"]),
+                    "x": float(row[x_col]),
+                    "y": float(row[y_col]),
                     "flux": float(row["flux"]),
                 }
             )
