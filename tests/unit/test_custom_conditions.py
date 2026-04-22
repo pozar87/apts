@@ -94,7 +94,7 @@ def test_is_weather_good_with_custom_conditions(mock_weather_data):
     assert obs.is_weather_good(conditions=custom_conditions) is True
 
 
-@patch("apts.plot.plot_weather")
+@patch("apts.plotting.Plotter.weather")
 def test_plot_weather_passes_custom_conditions(mock_plot_weather, mock_weather_data):
     place = setup_place()
     place.weather = mock_weather_data

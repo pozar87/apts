@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
-    from ..plot import Plotter, NullPlotter
+    from ..plotting import Plotter, NullPlotter
 
 from ..constants.plot import CoordinateSystem
 from ..conditions import Conditions

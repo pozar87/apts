@@ -13,7 +13,7 @@ from apts.constants.plot import CoordinateSystem
 from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
-from apts.plot import plot_skymap
+from apts.plotting import plot_skymap
 from apts.plotting.skymap_objects import (
     _plot_messier_on_skymap,
     _plot_planets_on_skymap,
