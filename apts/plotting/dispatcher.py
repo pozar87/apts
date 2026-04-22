@@ -5,6 +5,31 @@ if TYPE_CHECKING:
     from ..observations import Observation
     from ..conditions import Conditions
 
+from .wrappers.objects import (
+    plot_messier,
+    plot_planets,
+    plot_skymap,
+    plot_visible_planets,
+    plot_visible_planets_svg,
+    plot_sun_and_moon_path,
+)
+from .wrappers.weather import (
+    plot_weather,
+    plot_clouds,
+    plot_clouds_summary,
+    plot_precipitation,
+    plot_precipitation_type_summary,
+    plot_temperature,
+    plot_wind,
+    plot_pressure_and_ozone,
+    plot_visibility,
+    plot_moon_illumination,
+    plot_fog,
+    plot_aurora,
+    plot_seeing,
+    plot_sqm,
+    plot_weather_summary,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +42,6 @@ class NullPlotter:
     """
 
     def __getattr__(self, name):
-        # Optional: Log that a plot method was skipped
-        # logger.debug(f"NullPlotter: Ignoring call to '{name}'")
         return lambda *args, **kwargs: None
 
 
@@ -97,314 +120,6 @@ class Plotter:
 
     def sun_and_moon_path(self, **args):
         return plot_sun_and_moon_path(self.observation, **args)
-
-
-def plot_messier(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from .altitude import generate_plot_messier
-
-    return generate_plot_messier(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_planets(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from .altitude import generate_plot_planets
-
-    return generate_plot_planets(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def _ensure_weather(
-    observation: "Observation", conditions: Optional["Conditions"] = None
-):
-    if observation.place.weather is None:
-        obs_window = (
-            (observation.start, observation.stop)
-            if observation.start is not None and observation.stop is not None
-            else None
-        )
-        observation.place.get_weather(
-            conditions=conditions or observation.conditions,
-            observation_window=obs_window,
-        )
-
-
-def plot_weather(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_weather(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_clouds(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_clouds(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_clouds_summary(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from . import weather
-
-    _ensure_weather(observation)
-    return weather.generate_plot_clouds_summary(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_precipitation(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_precipitation(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_precipitation_type_summary(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from . import weather
-
-    _ensure_weather(observation)
-    return weather.generate_plot_precipitation_type_summary(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_temperature(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_temperature(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_wind(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_wind(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_pressure_and_ozone(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from . import weather
-
-    _ensure_weather(observation)
-    return weather.generate_plot_pressure_and_ozone(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_visibility(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_visibility(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_moon_illumination(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_moon_illumination(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_fog(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_fog(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_aurora(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_aurora(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_seeing(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_seeing(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_sqm(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_sqm(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_weather_summary(
-    observation: "Observation",
-    dark_mode_override: Optional[bool] = None,
-    conditions: Optional["Conditions"] = None,
-    **args,
-):
-    from . import weather
-
-    _ensure_weather(observation, conditions)
-    return weather.generate_plot_weather_summary(
-        observation,
-        dark_mode_override=dark_mode_override,
-        conditions=conditions,
-        **args,
-    )
-
-
-def plot_skymap(observation: "Observation", **args):
-    from .skymap import plot_skymap
-
-    return plot_skymap(observation, **args)
-
-
-def plot_visible_planets(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from .planets import plot_visible_planets
-
-    return plot_visible_planets(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_visible_planets_svg(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from .planets import plot_visible_planets_svg
-
-    return plot_visible_planets_svg(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
-
-
-def plot_sun_and_moon_path(
-    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
-):
-    from .path import plot_sun_and_moon_path
-
-    return plot_sun_and_moon_path(
-        observation, dark_mode_override=dark_mode_override, **args
-    )
 
 
 __all__ = [
