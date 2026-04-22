@@ -119,7 +119,7 @@ class WeatherAnalysisMixIn:
         provider_name: Optional[str] = None,
         force: bool = False,
     ):
-        if conditions is None and self._weather_analysis is not None:
+        if not force and conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
 
         effective_conditions = conditions or self.conditions
@@ -295,6 +295,8 @@ class WeatherAnalysisMixIn:
             # Initialize reasons with empty lists
             # Note: We use a list of empty lists because objects in Series are slow to update individually
             reasons_col = [[] for _ in range(len(hourly_data))]
+            reason_keys_col = [[] for _ in range(len(hourly_data))]
+            reason_keys_col = [[] for _ in range(len(hourly_data))]
 
             # Only iterate over "bad" hours to generate reason strings (optimization)
             bad_indices = np.where(~is_good_hour_mask)[0]
@@ -304,7 +306,9 @@ class WeatherAnalysisMixIn:
                 for i, row in enumerate(bad_rows):
                     idx = bad_indices[i]
                     reasons = []
+                    reason_keys = []
                     if is_bad_clouds.iloc[idx]:
+                        reason_keys.append("BAD_CLOUDS")
                         reasons.append(
                             gettext_(
                                 "Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%"
@@ -315,6 +319,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_precip_prob.iloc[idx]:
+                        reason_keys.append("BAD_PRECIP")
                         reasons.append(
                             gettext_(
                                 "Precipitation probability %(precip_prob)s%% exceeds limit of %(max_precip_prob)s%%"
@@ -325,6 +330,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_precip_intens.iloc[idx]:
+                        reason_keys.append("BAD_PRECIP")
                         reasons.append(
                             gettext_(
                                 "Precipitation intensity %(precip_intens)s mm exceeds limit of %(max_precip_intens)s mm"
@@ -335,6 +341,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_wind.iloc[idx]:
+                        reason_keys.append("BAD_WIND")
                         reasons.append(
                             gettext_(
                                 "Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h"
@@ -345,6 +352,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_temp.iloc[idx]:
+                        reason_keys.append("BAD_TEMP")
                         reasons.append(
                             gettext_(
                                 "Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)"
@@ -356,6 +364,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_vis.iloc[idx]:
+                        reason_keys.append("BAD_VIS")
                         reasons.append(
                             gettext_(
                                 "Visibility %(vis)s km below limit of %(min_vis)s km"
@@ -366,6 +375,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_fog.iloc[idx]:
+                        reason_keys.append("BAD_FOG")
                         reasons.append(
                             gettext_("Fog %(fog)s%% exceeds limit of %(max_fog)s%%")
                             % {
@@ -374,6 +384,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_moon.iloc[idx]:
+                        reason_keys.append("BAD_MOON")
                         reasons.append(
                             gettext_(
                                 "Moon illumination %(illum)s%% exceeds limit of %(max_illum)s%% while moon is up"
@@ -384,6 +395,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_aurora.iloc[idx]:
+                        reason_keys.append("BAD_AURORA")
                         reasons.append(
                             gettext_(
                                 "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
@@ -394,6 +406,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_seeing.iloc[idx]:
+                        reason_keys.append("BAD_SEEING")
                         reasons.append(
                             gettext_(
                                 "Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec"
@@ -404,6 +417,7 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     if is_bad_sqm.iloc[idx]:
+                        reason_keys.append("BAD_SQM")
                         reasons.append(
                             gettext_(
                                 "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
@@ -414,8 +428,10 @@ class WeatherAnalysisMixIn:
                             }
                         )
                     reasons_col[idx] = reasons
+                    reason_keys_col[idx] = reason_keys
 
             hourly_data["reasons"] = reasons_col
+            hourly_data["reason_keys"] = reason_keys_col
 
             # Rename columns to match expected output dictionary keys
             rename_map = {
@@ -430,6 +446,7 @@ class WeatherAnalysisMixIn:
                 "time",
                 "is_good_hour",
                 "reasons",
+                "reason_keys",
                 "temperature",
                 "cloudCover",
                 "precipProbability",
