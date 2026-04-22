@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from apts.plot import plot_sun_and_moon_path
+from apts.plotting import plot_sun_and_moon_path
 
 
 @patch("apts.plotting.path.generate_plot_sun_path")

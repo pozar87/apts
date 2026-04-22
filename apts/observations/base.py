@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from skyfield.api import utc, Time
 
-from .. import plot as apts_plot
+from .. import plotting as apts_plot
 from ..conditions import Conditions
 from ..constants.event_types import EventType
 from ..events import AstronomicalEvents
