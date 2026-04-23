@@ -17,6 +17,20 @@ from ..utils.planetary import get_moon_illumination
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_WEATHER_VALUES = {
+    "fog": 0,
+    "aurora": 0,
+    "precipIntensity": 0,
+    "precipProbability": 0,
+    "cloudCover": 0,
+    "windSpeed": 0,
+    "temperature": 20,
+    "visibility": 20,
+    "moonIllumination": 0,
+    "seeing": 1.5,
+    "sqm": 21.0,
+}
+
 
 class WeatherAnalysisMixIn:
     if TYPE_CHECKING:
@@ -79,6 +93,314 @@ class WeatherAnalysisMixIn:
 
         return True
 
+    def _ensure_weather_data_available(
+        self,
+        conditions: Conditions,
+        provider_name: Optional[str] = None,
+        force: bool = False,
+    ) -> bool:
+        """
+        Ensures that weather data is fetched and moon conditions are met.
+        Returns True if analysis can proceed, False otherwise.
+        """
+        if not force and not self._is_moon_condition_met(conditions):
+            logger.info("Skipping weather analysis due to moon condition.")
+            return False
+
+        if self.place.weather is None:
+            obs_window = (
+                (self.start, self.stop)
+                if self.start is not None and self.stop is not None
+                else None
+            )
+            self.place.get_weather(
+                provider_name=provider_name,
+                conditions=conditions,
+                observation_window=obs_window,
+                force=force,
+            )
+            # Re-check moon condition after potential weather update/fetch
+            if not force and not self._is_moon_condition_met(conditions):
+                logger.info("Skipping weather analysis due to moon condition.")
+                return False
+
+        if self.place.weather is None:
+            logger.warning("Weather data unavailable after fetch attempt.")
+            return False
+
+        if self.start is None or self.stop is None:
+            logger.warning("Observation window (start, stop) is not fully defined.")
+            return False
+
+        return True
+
+    def _calculate_moon_altitudes(self, hourly_data: pd.DataFrame) -> pd.Series:
+        """Calculates or retrieves moon altitudes for weather data points."""
+        if (
+            "moon_altitude" in hourly_data.columns
+            and not cast(pd.Series, hourly_data["moon_altitude"]).isna().all()
+        ):
+            return cast(pd.Series, hourly_data["moon_altitude"])
+
+        ts = self.place.ts
+        times = ts.from_datetimes(hourly_data["time"].tolist())
+        alt, _, _ = (
+            self.place.observer.at(times).observe(self.place.moon).apparent().altaz()
+        )
+        return pd.Series(alt.degrees, index=hourly_data.index)
+
+    def _get_prepared_weather_df(self) -> pd.DataFrame:
+        """Retrieves and prepares the weather DataFrame for analysis."""
+        if self.place.weather is None or self.start is None or self.stop is None:
+            return pd.DataFrame()
+
+        hourly_data = cast(
+            pd.DataFrame, self.place.weather.get_critical_data(self.start, self.stop)
+        )
+        if hourly_data.empty:
+            return hourly_data
+
+        # Filter by time limit if defined
+        if self.time_limit is not None:
+            t_limit = pd.Timestamp(self.time_limit)
+            if t_limit.tzinfo is None:
+                t_limit = t_limit.tz_localize(self.place.local_timezone)
+            hourly_data = cast(
+                pd.DataFrame, hourly_data[hourly_data.time <= t_limit].copy()
+            )
+        else:
+            hourly_data = cast(pd.DataFrame, hourly_data.copy())
+
+        # Populate missing columns with default values
+        for col, default_val in DEFAULT_WEATHER_VALUES.items():
+            if col not in hourly_data.columns:
+                hourly_data[col] = default_val
+
+        # Calculate moon altitudes
+        hourly_data["Altitude"] = self._calculate_moon_altitudes(hourly_data)
+
+        # Coerce to numeric
+        for col in DEFAULT_WEATHER_VALUES.keys():
+            hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
+
+        return hourly_data
+
+    def _compute_condition_masks(
+        self, hourly_data: pd.DataFrame, conditions: Conditions
+    ) -> dict[str, pd.Series]:
+        """Performs vectorized condition checks and returns masks for bad weather."""
+        return {
+            "is_bad_clouds": hourly_data.cloudCover.isna()
+            | (hourly_data.cloudCover > conditions.max_clouds),
+            "is_bad_precip_prob": hourly_data.precipProbability.isna()
+            | (
+                hourly_data.precipProbability
+                > conditions.max_precipitation_probability
+            ),
+            "is_bad_precip_intens": hourly_data.precipIntensity.isna()
+            | (hourly_data.precipIntensity > conditions.max_precipitation_intensity),
+            "is_bad_wind": hourly_data.windSpeed.isna()
+            | (hourly_data.windSpeed > conditions.max_wind),
+            "is_bad_temp": hourly_data.temperature.isna()
+            | (
+                (conditions.min_temperature > hourly_data.temperature)
+                | (hourly_data.temperature > conditions.max_temperature)
+            ),
+            "is_bad_vis": hourly_data.visibility.isna()
+            | (hourly_data.visibility < conditions.min_visibility),
+            "is_bad_fog": hourly_data.fog.isna()
+            | (hourly_data.fog > conditions.max_fog),
+            "is_bad_moon": (hourly_data["Altitude"] > 0)
+            & (hourly_data.moonIllumination > conditions.max_moon_illumination),
+            "is_bad_aurora": hourly_data.aurora.isna()
+            | (hourly_data.aurora < conditions.min_aurora),
+            "is_bad_seeing": hourly_data.seeing.isna()
+            | (hourly_data.seeing > conditions.max_seeing),
+            "is_bad_sqm": hourly_data.sqm.isna() | (hourly_data.sqm < conditions.min_sqm),
+        }
+
+    def _generate_analysis_records(
+        self,
+        hourly_data: pd.DataFrame,
+        masks: dict[str, pd.Series],
+        conditions: Conditions,
+        language: Optional[str] = None,
+    ) -> list[dict]:
+        """Generates localized analysis records for each hour."""
+        # Determine good hours
+        is_good_hour_mask = ~pd.concat(masks.values(), axis=1).any(axis=1)
+        hourly_data["is_good_hour"] = is_good_hour_mask
+
+        reasons_col = [[] for _ in range(len(hourly_data))]
+        reason_keys_col = [[] for _ in range(len(hourly_data))]
+
+        with language_context(language):
+            from ..i18n import gettext_
+
+            bad_indices = np.where(~is_good_hour_mask)[0]
+            if len(bad_indices) > 0:
+                bad_rows = hourly_data.iloc[bad_indices].to_dict("records")
+                for i, row in enumerate(bad_rows):
+                    idx = bad_indices[i]
+                    reasons = []
+                    reason_keys = []
+
+                    if masks["is_bad_clouds"].iloc[idx]:
+                        reason_keys.append("BAD_CLOUDS")
+                        reasons.append(
+                            gettext_(
+                                "Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%"
+                            )
+                            % {
+                                "cloud_cover": f"{row['cloudCover']:.1f}",
+                                "max_clouds": conditions.max_clouds,
+                            }
+                        )
+                    if masks["is_bad_precip_prob"].iloc[idx]:
+                        reason_keys.append("BAD_PRECIP")
+                        reasons.append(
+                            gettext_(
+                                "Precipitation probability %(precip_prob)s%% exceeds limit of %(max_precip_prob)s%%"
+                            )
+                            % {
+                                "precip_prob": f"{row['precipProbability']:.1f}",
+                                "max_precip_prob": conditions.max_precipitation_probability,
+                            }
+                        )
+                    if masks["is_bad_precip_intens"].iloc[idx]:
+                        reason_keys.append("BAD_PRECIP")
+                        reasons.append(
+                            gettext_(
+                                "Precipitation intensity %(precip_intens)s mm exceeds limit of %(max_precip_intens)s mm"
+                            )
+                            % {
+                                "precip_intens": f"{row['precipIntensity']:.1f}",
+                                "max_precip_intens": conditions.max_precipitation_intensity,
+                            }
+                        )
+                    if masks["is_bad_wind"].iloc[idx]:
+                        reason_keys.append("BAD_WIND")
+                        reasons.append(
+                            gettext_(
+                                "Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h"
+                            )
+                            % {
+                                "wind_speed": f"{row['windSpeed']:.1f}",
+                                "max_wind": conditions.max_wind,
+                            }
+                        )
+                    if masks["is_bad_temp"].iloc[idx]:
+                        reason_keys.append("BAD_TEMP")
+                        reasons.append(
+                            gettext_(
+                                "Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)"
+                            )
+                            % {
+                                "temp": f"{row['temperature']:.1f}",
+                                "min_temp": conditions.min_temperature,
+                                "max_temp": conditions.max_temperature,
+                            }
+                        )
+                    if masks["is_bad_vis"].iloc[idx]:
+                        reason_keys.append("BAD_VIS")
+                        reasons.append(
+                            gettext_(
+                                "Visibility %(vis)s km below limit of %(min_vis)s km"
+                            )
+                            % {
+                                "vis": f"{row['visibility']:.1f}",
+                                "min_vis": conditions.min_visibility,
+                            }
+                        )
+                    if masks["is_bad_fog"].iloc[idx]:
+                        reason_keys.append("BAD_FOG")
+                        reasons.append(
+                            gettext_("Fog %(fog)s%% exceeds limit of %(max_fog)s%%")
+                            % {
+                                "fog": f"{row['fog']:.1f}",
+                                "max_fog": conditions.max_fog,
+                            }
+                        )
+                    if masks["is_bad_moon"].iloc[idx]:
+                        reason_keys.append("BAD_MOON")
+                        reasons.append(
+                            gettext_(
+                                "Moon illumination %(illum)s%% exceeds limit of %(max_illum)s%% while moon is up"
+                            )
+                            % {
+                                "illum": f"{row['moonIllumination']:.1f}",
+                                "max_illum": conditions.max_moon_illumination,
+                            }
+                        )
+                    if masks["is_bad_aurora"].iloc[idx]:
+                        reason_keys.append("BAD_AURORA")
+                        reasons.append(
+                            gettext_(
+                                "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
+                            )
+                            % {
+                                "aurora": f"{row['aurora']:.1f}",
+                                "min_aurora": conditions.min_aurora,
+                            }
+                        )
+                    if masks["is_bad_seeing"].iloc[idx]:
+                        reason_keys.append("BAD_SEEING")
+                        reasons.append(
+                            gettext_(
+                                "Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec"
+                            )
+                            % {
+                                "seeing": f"{row['seeing']:.1f}",
+                                "max_seeing": conditions.max_seeing,
+                            }
+                        )
+                    if masks["is_bad_sqm"].iloc[idx]:
+                        reason_keys.append("BAD_SQM")
+                        reasons.append(
+                            gettext_(
+                                "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
+                            )
+                            % {
+                                "sqm": f"{row['sqm']:.1f}",
+                                "min_sqm": conditions.min_sqm,
+                            }
+                        )
+                    reasons_col[idx] = reasons
+                    reason_keys_col[idx] = reason_keys
+
+        hourly_data["reasons"] = reasons_col
+        hourly_data["reason_keys"] = reason_keys_col
+
+        rename_map = {
+            "cloudCover": "clouds",
+            "precipProbability": "precipitation",
+            "precipIntensity": "precipitation_intensity",
+            "windSpeed": "wind_speed",
+            "moonIllumination": "moon_illumination",
+        }
+        final_cols = [
+            "time",
+            "is_good_hour",
+            "reasons",
+            "reason_keys",
+            "temperature",
+            "cloudCover",
+            "precipProbability",
+            "precipIntensity",
+            "windSpeed",
+            "visibility",
+            "moonIllumination",
+            "fog",
+            "aurora",
+            "seeing",
+            "sqm",
+        ]
+        return (
+            cast(pd.DataFrame, hourly_data[final_cols])
+            .rename(columns=rename_map)
+            .to_dict("records")
+        )
+
     def is_weather_good(
         self,
         conditions: Optional[Conditions] = None,
@@ -119,352 +441,32 @@ class WeatherAnalysisMixIn:
         provider_name: Optional[str] = None,
         force: bool = False,
     ):
+        """
+        Orchestrates weather analysis for the observation window.
+        Decomposed into helper methods for readability and maintainability.
+        """
         if not force and conditions is None and self._weather_analysis is not None:
             return self._weather_analysis
 
         effective_conditions = conditions or self.conditions
-        # Force a minimal check for is_moon_condition_met to allow it returning reasons later if needed,
-        # but the current logic is to early-exit.
 
-        if not force and not self._is_moon_condition_met(effective_conditions):
-            logger.info("Skipping weather analysis due to moon condition.")
+        if not self._ensure_weather_data_available(
+            effective_conditions, provider_name, force
+        ):
             return []
 
-        if self.place.weather is None:
-            obs_window = (
-                (self.start, self.stop)
-                if self.start is not None and self.stop is not None
-                else None
-            )
-            self.place.get_weather(
-                provider_name=provider_name,
-                conditions=effective_conditions,
-                observation_window=obs_window,
-                force=force,
-            )
-            if not force and not self._is_moon_condition_met(effective_conditions):
-                logger.info("Skipping weather analysis due to moon condition.")
-                return []
-
-            if self.place.weather is None:
-                logger.warning("Weather data unavailable after fetch attempt.")
-                return []
-
-        if self.start is None or self.stop is None:
-            logger.warning("Observation window (start, stop) is not fully defined.")
-            return []
-
-        if self.place.weather is None:
-            return []
-
-        hourly_data = cast(
-            pd.DataFrame, self.place.weather.get_critical_data(self.start, self.stop)
-        )
+        hourly_data = self._get_prepared_weather_df()
         if hourly_data.empty:
             return []
 
-        # Filter by time limit if defined
-        # Ensure we use aware comparison
-        if self.time_limit is not None:
-            t_limit = pd.Timestamp(self.time_limit)
-            if t_limit.tzinfo is None:
-                t_limit = t_limit.tz_localize(self.place.local_timezone)
+        masks = self._compute_condition_masks(hourly_data, effective_conditions)
+        analysis_results = self._generate_analysis_records(
+            hourly_data, masks, effective_conditions, language
+        )
 
-            hourly_data = cast(
-                pd.DataFrame, hourly_data[hourly_data.time <= t_limit].copy()
-            )
-        else:
-            hourly_data = cast(pd.DataFrame, hourly_data.copy())
-
-        if "fog" not in hourly_data.columns:
-            hourly_data["fog"] = 0
-        if "aurora" not in hourly_data.columns:
-            hourly_data["aurora"] = 0
-        if "precipIntensity" not in hourly_data.columns:
-            hourly_data["precipIntensity"] = 0
-        if "precipProbability" not in hourly_data.columns:
-            hourly_data["precipProbability"] = 0
-        if "cloudCover" not in hourly_data.columns:
-            hourly_data["cloudCover"] = 0
-        if "windSpeed" not in hourly_data.columns:
-            hourly_data["windSpeed"] = 0
-        if "temperature" not in hourly_data.columns:
-            hourly_data["temperature"] = 20
-        if "visibility" not in hourly_data.columns:
-            hourly_data["visibility"] = 20
-        if "moonIllumination" not in hourly_data.columns:
-            hourly_data["moonIllumination"] = 0
-        if "seeing" not in hourly_data.columns:
-            hourly_data["seeing"] = 1.5
-        if "sqm" not in hourly_data.columns:
-            hourly_data["sqm"] = 21.0
-
-        # Calculate moon altitudes exactly for each weather data point if not already cached
-        if (
-            "moon_altitude" in hourly_data.columns
-            and not cast(pd.Series, hourly_data["moon_altitude"]).isna().all()
-        ):
-            hourly_data["Altitude"] = hourly_data["moon_altitude"]
-        else:
-            ts = self.place.ts
-            times = ts.from_datetimes(hourly_data["time"].tolist())
-            alt, _, _ = (
-                self.place.observer.at(times)
-                .observe(self.place.moon)
-                .apparent()
-                .altaz()
-            )
-            hourly_data["Altitude"] = alt.degrees
-
-        for col in [
-            "cloudCover",
-            "precipProbability",
-            "precipIntensity",
-            "windSpeed",
-            "temperature",
-            "visibility",
-            "moonIllumination",
-            "fog",
-            "aurora",
-            "seeing",
-            "sqm",
-        ]:
-            if col in hourly_data.columns:
-                hourly_data[col] = pd.to_numeric(hourly_data[col], errors="coerce")
-
-        effective_conditions = conditions or self.conditions
-        with language_context(language):
-            from ..i18n import gettext_
-
-            # Vectorized condition checks
-            is_bad_clouds = hourly_data.cloudCover.isna() | (
-                hourly_data.cloudCover > effective_conditions.max_clouds
-            )
-            is_bad_precip_prob = hourly_data.precipProbability.isna() | (
-                hourly_data.precipProbability
-                > effective_conditions.max_precipitation_probability
-            )
-            is_bad_precip_intens = hourly_data.precipIntensity.isna() | (
-                hourly_data.precipIntensity
-                > effective_conditions.max_precipitation_intensity
-            )
-            is_bad_wind = hourly_data.windSpeed.isna() | (
-                hourly_data.windSpeed > effective_conditions.max_wind
-            )
-            is_bad_temp = hourly_data.temperature.isna() | (
-                (effective_conditions.min_temperature > hourly_data.temperature)
-                | (hourly_data.temperature > effective_conditions.max_temperature)
-            )
-            is_bad_vis = hourly_data.visibility.isna() | (
-                hourly_data.visibility < effective_conditions.min_visibility
-            )
-            is_bad_fog = hourly_data.fog.isna() | (
-                hourly_data.fog > effective_conditions.max_fog
-            )
-            is_bad_moon = (hourly_data["Altitude"] > 0) & (
-                hourly_data.moonIllumination
-                > effective_conditions.max_moon_illumination
-            )
-            is_bad_aurora = hourly_data.aurora.isna() | (
-                hourly_data.aurora < effective_conditions.min_aurora
-            )
-            is_bad_seeing = hourly_data.seeing.isna() | (
-                hourly_data.seeing > effective_conditions.max_seeing
-            )
-            is_bad_sqm = hourly_data.sqm.isna() | (
-                hourly_data.sqm < effective_conditions.min_sqm
-            )
-
-            # Determine good hours
-            is_good_hour_mask = ~(
-                is_bad_clouds
-                | is_bad_precip_prob
-                | is_bad_precip_intens
-                | is_bad_wind
-                | is_bad_temp
-                | is_bad_vis
-                | is_bad_fog
-                | is_bad_moon
-                | is_bad_aurora
-                | is_bad_seeing
-                | is_bad_sqm
-            )
-
-            # Pre-populate analysis_results with vectorized data
-            hourly_data["is_good_hour"] = is_good_hour_mask
-            # Initialize reasons with empty lists
-            # Note: We use a list of empty lists because objects in Series are slow to update individually
-            reasons_col = [[] for _ in range(len(hourly_data))]
-            reason_keys_col = [[] for _ in range(len(hourly_data))]
-            reason_keys_col = [[] for _ in range(len(hourly_data))]
-
-            # Only iterate over "bad" hours to generate reason strings (optimization)
-            bad_indices = np.where(~is_good_hour_mask)[0]
-            if len(bad_indices) > 0:
-                # Convert only bad rows to dict for much faster access than iloc in loop
-                bad_rows = hourly_data.iloc[bad_indices].to_dict("records")
-                for i, row in enumerate(bad_rows):
-                    idx = bad_indices[i]
-                    reasons = []
-                    reason_keys = []
-                    if is_bad_clouds.iloc[idx]:
-                        reason_keys.append("BAD_CLOUDS")
-                        reasons.append(
-                            gettext_(
-                                "Cloud cover %(cloud_cover)s%% exceeds limit of %(max_clouds)s%%"
-                            )
-                            % {
-                                "cloud_cover": f"{row['cloudCover']:.1f}",
-                                "max_clouds": effective_conditions.max_clouds,
-                            }
-                        )
-                    if is_bad_precip_prob.iloc[idx]:
-                        reason_keys.append("BAD_PRECIP")
-                        reasons.append(
-                            gettext_(
-                                "Precipitation probability %(precip_prob)s%% exceeds limit of %(max_precip_prob)s%%"
-                            )
-                            % {
-                                "precip_prob": f"{row['precipProbability']:.1f}",
-                                "max_precip_prob": effective_conditions.max_precipitation_probability,
-                            }
-                        )
-                    if is_bad_precip_intens.iloc[idx]:
-                        reason_keys.append("BAD_PRECIP")
-                        reasons.append(
-                            gettext_(
-                                "Precipitation intensity %(precip_intens)s mm exceeds limit of %(max_precip_intens)s mm"
-                            )
-                            % {
-                                "precip_intens": f"{row['precipIntensity']:.1f}",
-                                "max_precip_intens": effective_conditions.max_precipitation_intensity,
-                            }
-                        )
-                    if is_bad_wind.iloc[idx]:
-                        reason_keys.append("BAD_WIND")
-                        reasons.append(
-                            gettext_(
-                                "Wind speed %(wind_speed)s km/h exceeds limit of %(max_wind)s km/h"
-                            )
-                            % {
-                                "wind_speed": f"{row['windSpeed']:.1f}",
-                                "max_wind": effective_conditions.max_wind,
-                            }
-                        )
-                    if is_bad_temp.iloc[idx]:
-                        reason_keys.append("BAD_TEMP")
-                        reasons.append(
-                            gettext_(
-                                "Temperature %(temp)s°C out of range (%(min_temp)s - %(max_temp)s°C)"
-                            )
-                            % {
-                                "temp": f"{row['temperature']:.1f}",
-                                "min_temp": effective_conditions.min_temperature,
-                                "max_temp": effective_conditions.max_temperature,
-                            }
-                        )
-                    if is_bad_vis.iloc[idx]:
-                        reason_keys.append("BAD_VIS")
-                        reasons.append(
-                            gettext_(
-                                "Visibility %(vis)s km below limit of %(min_vis)s km"
-                            )
-                            % {
-                                "vis": f"{row['visibility']:.1f}",
-                                "min_vis": effective_conditions.min_visibility,
-                            }
-                        )
-                    if is_bad_fog.iloc[idx]:
-                        reason_keys.append("BAD_FOG")
-                        reasons.append(
-                            gettext_("Fog %(fog)s%% exceeds limit of %(max_fog)s%%")
-                            % {
-                                "fog": f"{row['fog']:.1f}",
-                                "max_fog": effective_conditions.max_fog,
-                            }
-                        )
-                    if is_bad_moon.iloc[idx]:
-                        reason_keys.append("BAD_MOON")
-                        reasons.append(
-                            gettext_(
-                                "Moon illumination %(illum)s%% exceeds limit of %(max_illum)s%% while moon is up"
-                            )
-                            % {
-                                "illum": f"{row['moonIllumination']:.1f}",
-                                "max_illum": effective_conditions.max_moon_illumination,
-                            }
-                        )
-                    if is_bad_aurora.iloc[idx]:
-                        reason_keys.append("BAD_AURORA")
-                        reasons.append(
-                            gettext_(
-                                "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
-                            )
-                            % {
-                                "aurora": f"{row['aurora']:.1f}",
-                                "min_aurora": effective_conditions.min_aurora,
-                            }
-                        )
-                    if is_bad_seeing.iloc[idx]:
-                        reason_keys.append("BAD_SEEING")
-                        reasons.append(
-                            gettext_(
-                                "Seeing %(seeing)s arcsec exceeds limit of %(max_seeing)s arcsec"
-                            )
-                            % {
-                                "seeing": f"{row['seeing']:.1f}",
-                                "max_seeing": effective_conditions.max_seeing,
-                            }
-                        )
-                    if is_bad_sqm.iloc[idx]:
-                        reason_keys.append("BAD_SQM")
-                        reasons.append(
-                            gettext_(
-                                "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
-                            )
-                            % {
-                                "sqm": f"{row['sqm']:.1f}",
-                                "min_sqm": effective_conditions.min_sqm,
-                            }
-                        )
-                    reasons_col[idx] = reasons
-                    reason_keys_col[idx] = reason_keys
-
-            hourly_data["reasons"] = reasons_col
-            hourly_data["reason_keys"] = reason_keys_col
-
-            # Rename columns to match expected output dictionary keys
-            rename_map = {
-                "cloudCover": "clouds",
-                "precipProbability": "precipitation",
-                "precipIntensity": "precipitation_intensity",
-                "windSpeed": "wind_speed",
-                "moonIllumination": "moon_illumination",
-            }
-            # Select and rename columns for the final result
-            final_cols = [
-                "time",
-                "is_good_hour",
-                "reasons",
-                "reason_keys",
-                "temperature",
-                "cloudCover",
-                "precipProbability",
-                "precipIntensity",
-                "windSpeed",
-                "visibility",
-                "moonIllumination",
-                "fog",
-                "aurora",
-                "seeing",
-                "sqm",
-            ]
-            result_df = cast(pd.DataFrame, hourly_data[final_cols]).rename(
-                columns=rename_map
-            )
-            analysis_results = result_df.to_dict("records")
         if conditions is None:
             self._weather_analysis = analysis_results
+
         return analysis_results
 
     def get_hourly_weather_analysis(
