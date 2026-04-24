@@ -74,7 +74,7 @@ class TestWeatherConditionsVerification(unittest.TestCase):
                 data[key] = value
         return pd.DataFrame(data)
 
-    @patch('apts.observations.weather.get_moon_illumination', return_value=0)
+    @patch('apts.observations.weather.base.get_moon_illumination', return_value=0)
     def test_all_conditions_checked(self, mock_moon_illum):
         # We want to verify that if ANY condition is violated, the hour is marked as "not good"
         # and a reason is provided.
@@ -129,7 +129,7 @@ class TestWeatherConditionsVerification(unittest.TestCase):
                     reasons = analysis[2]['reasons']
                     self.assertTrue(any(reason_part in r for r in reasons), f"Reason for {cond_attr} not found in {reasons}")
 
-    @patch('apts.observations.weather.get_moon_illumination', return_value=80)
+    @patch('apts.observations.weather.base.get_moon_illumination', return_value=80)
     def test_moon_condition(self, mock_moon_illum):
         # Moon is 80% illuminated
         conditions = Conditions(max_moon_illumination=50)

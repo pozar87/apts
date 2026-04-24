@@ -36,7 +36,7 @@ class TestWeatherOptimization(unittest.TestCase):
         # Mock Equipment
         self.equipment = MagicMock()
 
-    @patch("apts.observations.weather.get_moon_illumination")
+    @patch("apts.observations.weather.base.get_moon_illumination")
     def test_moon_pre_check_skips_fetch(self, mock_illum):
         # Setup: Moon is too bright and always up
         mock_illum.return_value = 90.0
@@ -62,7 +62,7 @@ class TestWeatherOptimization(unittest.TestCase):
         self.assertFalse(result)
         self.place.get_weather.assert_not_called()
 
-    @patch("apts.observations.weather.get_moon_illumination")
+    @patch("apts.observations.weather.base.get_moon_illumination")
     def test_moon_pre_check_allows_fetch_if_moon_is_down(self, mock_illum):
         # Setup: Moon is bright but always down
         mock_illum.return_value = 90.0
