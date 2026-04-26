@@ -10,7 +10,7 @@ class TestJovianMutualEvents(unittest.TestCase):
         self.start_date = datetime(2021, 1, 1, tzinfo=timezone.utc)
         self.end_date = datetime(2021, 1, 2, tzinfo=timezone.utc)
 
-    @patch("apts.skyfield_searches.jovian.get_timescale")
+    @patch("apts.skyfield_searches.jovian.mutual.get_timescale")
     @patch("skyfield.almanac.find_discrete")
     @patch("apts.cache.get_jovian_ephemeris")
     def test_find_jovian_mutual_events_basic(self, mock_get_jovian_ephemeris, mock_find_discrete, mock_get_timescale):
