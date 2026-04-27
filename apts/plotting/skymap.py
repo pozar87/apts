@@ -8,9 +8,10 @@ from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import _thread_local, gettext_
-from apts.plotting.skymap_polar import _generate_polar_skymap
-from apts.plotting.skymap_texture import _generate_texture_skymap
-from apts.plotting.skymap_zoom import _generate_zoom_skymap
+from apts.plotting.skymaps.resolver import resolve_target
+from apts.plotting.skymaps.skymap_polar import _generate_polar_skymap
+from apts.plotting.skymaps.skymap_texture import _generate_texture_skymap
+from apts.plotting.skymaps.skymap_zoom import _generate_zoom_skymap
 from apts.utils.planetary import get_reverse_translated_planet_names
 
 from ..place.utils import get_scalar_datetime
@@ -117,43 +118,7 @@ def _generate_plot_skymap(
         )
         return cast(figure.Figure, fig)
 
-    target_object = None
-    target_object_data = None
-
-    # Search logic that mirrors find_by_name methods
-    # Messier
-    result_df = observation.local_messier.objects[
-        observation.local_messier.objects["Messier"] == target_name
-    ]
-    if not result_df.empty:
-        target_object_data = result_df.iloc[0]
-        target_object = observation.local_messier.get_skyfield_object(
-            target_object_data
-        )
-    else:
-        # NGC
-        result_df = observation.local_ngc.objects[
-            (observation.local_ngc.objects["NGC"] == target_name)
-            | (observation.local_ngc.objects["Name"] == target_name)
-        ]
-        if not result_df.empty:
-            target_object_data = result_df.iloc[0]
-            target_object = observation.local_ngc.get_skyfield_object(
-                target_object_data
-            )
-        else:
-            # Stars
-            result_df = observation.local_stars.objects[
-                observation.local_stars.objects["Name"] == target_name
-            ]
-            if not result_df.empty:
-                target_object_data = result_df.iloc[0]
-                target_object = observation.local_stars.get_skyfield_object(
-                    target_object_data
-                )
-            else:
-                # Planets
-                target_object = observation.local_planets.find_by_name(target_name)
+    target_object, target_object_data = resolve_target(observation, target_name)
 
     if not target_object:
         fig, ax = pyplot.subplots(figsize=(10, 10))
@@ -177,9 +142,6 @@ def _generate_plot_skymap(
             color=style["TEXT_COLOR"],
         )
         return cast(figure.Figure, fig)
-
-    target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
-    target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
 
     if zoom_deg is not None:
         _, ax = pyplot.subplots(figsize=(10, 10))

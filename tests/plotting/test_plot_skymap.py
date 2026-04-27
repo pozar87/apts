@@ -164,7 +164,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.get_brightness_color"
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color"
         ) as mock_get_brightness_color,
     ):
         mock_get_brightness_color.return_value = "0.5"
@@ -776,10 +776,10 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -878,10 +878,10 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=Angle(degrees=parallactic_angle_val),
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -1554,7 +1554,7 @@ def test_sh_polar_orientation():
     """
     from skyfield.units import Angle
 
-    from apts.plotting.skymap_polar import _generate_polar_skymap
+    from apts.plotting.skymaps.skymap_polar import _generate_polar_skymap
 
     # 1. Setup a southern hemisphere observation
     # Sydney, Australia (lat -33.8688)
@@ -1699,7 +1699,7 @@ def test_sh_zoom_orientation():
     """
     from skyfield.units import Angle
 
-    from apts.plotting.skymap_zoom import _generate_zoom_skymap
+    from apts.plotting.skymaps.skymap_zoom import _generate_zoom_skymap
 
     place = Place(lat=-33.8688, lon=151.2093, name="Sydney")
     observation = Observation(place=place, equipment=Equipment())

@@ -13,7 +13,7 @@ from apts.plotting.skymap_objects import (
 )
 
 if TYPE_CHECKING:
-    from ..observations import Observation
+    from ...observations import Observation
 
 
 def _generate_texture_skymap(
