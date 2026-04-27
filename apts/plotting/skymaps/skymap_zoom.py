@@ -20,11 +20,12 @@ from apts.plotting.utils import (
     calculate_parallactic_angle,
     get_brightness_color,
 )
+from .utils import setup_zoom_ax
 
-from ..constants import ObjectTableLabels
+from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
-    from ..observations import Observation
+    from ...observations import Observation
 
 
 def _generate_zoom_skymap(
@@ -84,16 +85,22 @@ def _generate_zoom_skymap(
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
-    if coordinate_system == CoordinateSystem.HORIZONTAL:
-        ax.set_xlabel(gettext_("Azimuth (°)"), color=style["TEXT_COLOR"])
-        ax.set_ylabel(gettext_("Altitude (°)"), color=style["TEXT_COLOR"])
-        half_zoom = zoom_deg / 2
-        ax.set_xlim(target_az.degrees - half_zoom, target_az.degrees + half_zoom)
-        ax.set_ylim(target_alt.degrees - half_zoom, target_alt.degrees + half_zoom)
-        ax.set_aspect("equal", adjustable="box")
+    setup_zoom_ax(
+        observation,
+        ax,
+        style,
+        coordinate_system,
+        zoom_deg,
+        target_alt,
+        target_az,
+        target_ra,
+        target_dec,
+    )
 
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
         # Plot horizon line if available
         if observation.conditions.horizon_file or observation.conditions.horizon_content:
+            half_zoom = zoom_deg / 2
             az_view = numpy.linspace(
                 target_az.degrees - half_zoom, target_az.degrees + half_zoom, 100
             )
@@ -113,43 +120,6 @@ def _generate_zoom_skymap(
                 color="black",
                 alpha=0.3,
             )
-    else:  # Equatorial
-        ax.set_xlabel(gettext_("Right Ascension (hours)"), color=style["TEXT_COLOR"])
-        ax.set_ylabel(gettext_("Declination (°)"), color=style["TEXT_COLOR"])
-        dec_rad = numpy.deg2rad(target_dec.degrees)
-        half_zoom_dec = zoom_deg / 2.0
-        half_zoom_ra_hours = half_zoom_dec / (15.0 * numpy.cos(dec_rad))
-        is_sh = observation.place.lat_decimal < 0
-        if is_sh:
-            # For Southern Hemisphere, North should be on the bottom.
-            # Facing North in SH, Dec decreases as you go UP towards Zenith.
-            # RA increases eastward, which is to the RIGHT when facing North.
-            ax.set_xlim(
-                target_ra.hours - half_zoom_ra_hours,
-                target_ra.hours + half_zoom_ra_hours,
-            )
-            ax.set_ylim(
-                target_dec.degrees + half_zoom_dec,
-                target_dec.degrees - half_zoom_dec,
-            )
-        else:
-            ax.set_xlim(
-                target_ra.hours + half_zoom_ra_hours,
-                target_ra.hours - half_zoom_ra_hours,
-            )
-            ax.set_ylim(
-                target_dec.degrees - half_zoom_dec,
-                target_dec.degrees + half_zoom_dec,
-            )
-        ax.set_aspect(1.0 / (15.0 * numpy.cos(dec_rad)))
-
-    ax.tick_params(axis="x", colors=style["TEXT_COLOR"])
-    ax.tick_params(axis="y", colors=style["TEXT_COLOR"])
-    ax.spines["left"].set_color(style["AXIS_COLOR"])
-    ax.spines["bottom"].set_color(style["AXIS_COLOR"])
-    ax.spines["top"].set_color(style["AXIS_COLOR"])
-    ax.spines["right"].set_color(style["AXIS_COLOR"])
-    ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
     if plot_stars:
         _plot_stars_on_skymap(

@@ -1719,7 +1719,7 @@ class TestObservationSkymap(unittest.TestCase):
         mock_pyplot.subplots.assert_called_once()
         self.assertTrue(mock_ax.set_title.call_args[0][0].startswith("Skymap for Mars"))
 
-    @patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_messier_zoomed(
@@ -1768,7 +1768,7 @@ class TestObservationSkymap(unittest.TestCase):
 
 
 class TestObservationSkymapFlipped(TestObservationSkymap):
-    @patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5")
+    @patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5")
     @patch("apts.plotting.skymap.pyplot")
     def test_plot_skymap_flipped(

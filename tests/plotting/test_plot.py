@@ -158,7 +158,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.get_brightness_color"
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color"
         ) as mock_get_brightness_color,
         patch(
             "apts.plotting.skymap_objects.get_brightness_color"
@@ -747,16 +747,16 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_ellipse_angle",
             side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -862,16 +862,16 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_ellipse_angle",
             side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -997,16 +997,16 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_ellipse_angle",
             side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -1128,16 +1128,16 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     with (
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
-            "apts.plotting.skymap_zoom.calculate_parallactic_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
         patch(
-            "apts.plotting.skymap_zoom.calculate_ellipse_angle",
+            "apts.plotting.skymaps.skymap_zoom.calculate_ellipse_angle",
             side_effect=lambda pa, p_angle, cs, fh, fv: _calculate_ellipse_angle(
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,

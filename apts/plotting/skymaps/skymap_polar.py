@@ -15,11 +15,12 @@ from apts.plotting.skymap_objects import (
     _plot_solar_system_object_on_skymap,
     _plot_stars_on_skymap,
 )
+from .utils import setup_polar_ax
 
-from ..constants import ObjectTableLabels
+from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
-    from ..observations import Observation
+    from ...observations import Observation
 
 
 def _generate_polar_skymap(
@@ -48,49 +49,9 @@ def _generate_polar_skymap(
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
+    setup_polar_ax(observation, ax, style, coordinate_system)
     polar_ax = cast(Any, ax)
     is_sh = observation.place.lat_decimal < 0
-    if coordinate_system == CoordinateSystem.HORIZONTAL:
-        polar_ax.set_rlim(0, 90)
-        polar_ax.set_theta_zero_location("S" if is_sh else "N")
-        polar_ax.set_theta_direction(1)
-        polar_ax.set_yticks([0, 30, 60, 90])
-        polar_ax.set_yticklabels(["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"])
-        polar_ax.set_rlabel_position(22.5)
-        cardinal_directions = {
-            "N": 0,
-            "E": numpy.pi / 2,
-            "S": numpy.pi,
-            "W": 3 * numpy.pi / 2,
-        }
-        for direction, angle in cardinal_directions.items():
-            polar_ax.text(
-                angle,
-                95,
-                direction,
-                ha="center",
-                va="center",
-                color=style["TEXT_COLOR"],
-                fontsize=12,
-            )
-    else:  # Equatorial
-        polar_ax.set_rlim(0, 90)
-        polar_ax.set_theta_zero_location("S" if is_sh else "N")
-        polar_ax.set_theta_direction(1)  # RA increases eastward
-        polar_ax.set_yticks([0, 30, 60, 90])
-        if is_sh:
-            polar_ax.set_yticklabels(
-                ["-90°", "-60°", "-30°", "0°"], color=style["TEXT_COLOR"]
-            )
-        else:
-            polar_ax.set_yticklabels(
-                ["90°", "60°", "30°", "0°"], color=style["TEXT_COLOR"]
-            )
-        polar_ax.set_rlabel_position(22.5)
-        ra_labels = [f"{h}h" for h in range(0, 24, 3)]
-        polar_ax.set_xticklabels(ra_labels, color=style["TEXT_COLOR"])
-
-    ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
 
     good_condition_color = style.get(
         "GOOD_CONDITION_HL_COLOR",
