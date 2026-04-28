@@ -225,40 +225,49 @@ class AstronomicalEvents:
     def _get_rarity(self, event_type: str, data: dict) -> int:
         return get_rarity(event_type, data)
 
+    def _precompute_positions(self):
+        """
+        Pre-compute positions for moving bodies often used in multiple searches
+        to improve overall calculation efficiency.
+        """
+        precomputed = {}
+        if not any(self.event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
+            return precomputed
+
+        num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
+        if num_hours < 2:
+            return precomputed
+
+        times = self.ts.linspace(
+            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
+        )
+        # Using .apparent() to share high-precision positions
+        # Optimization: Hoist observer.at(times) out of the loop
+        obs_at_times = self.observer.at(times)
+
+        bodies_to_precompute = list(planetary.CONJUNCTION_PLANETS.keys()) + ["moon"]
+
+        def _observe(name):
+            obj = planetary.get_skyfield_obj(name)
+            return name.lower(), obs_at_times.observe(obj).apparent()
+
+        # Optimization: Parallelize high-precision observations using the existing executor.
+        # Benchmarking confirms ~2.2x speedup for this pre-computation step.
+        precompute_futures = [
+            self.executor.submit(_observe, name) for name in bodies_to_precompute
+        ]
+        for future in as_completed(precompute_futures):
+            name, pos = future.result()
+            precomputed[name] = pos
+
+        return precomputed
+
     def get_events(self):
         start_time = time.time()
         executor = self.executor
         futures = []
 
-        # Pre-compute positions for moving bodies often used in multiple searches
-        # to improve overall calculation efficiency.
-        precomputed = {}
-        if any(self.event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
-            num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
-            if num_hours >= 2:
-                times = self.ts.linspace(
-                    self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
-                )
-                # Using .apparent() to share high-precision positions
-                # Optimization: Hoist observer.at(times) out of the loop
-                obs_at_times = self.observer.at(times)
-
-                bodies_to_precompute = list(planetary.CONJUNCTION_PLANETS.keys()) + [
-                    "moon"
-                ]
-
-                def _observe(name):
-                    obj = planetary.get_skyfield_obj(name)
-                    return name.lower(), obs_at_times.observe(obj).apparent()
-
-                # Optimization: Parallelize high-precision observations using the existing executor.
-                # Benchmarking confirms ~2.2x speedup for this pre-computation step.
-                precompute_futures = [
-                    executor.submit(_observe, name) for name in bodies_to_precompute
-                ]
-                for future in as_completed(precompute_futures):
-                    name, pos = future.result()
-                    precomputed[name] = pos
+        precomputed = self._precompute_positions()
 
         # Dispatch mapping for event calculations to reduce cyclomatic complexity
         event_dispatch = {
