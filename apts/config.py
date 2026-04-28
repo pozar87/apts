@@ -242,10 +242,13 @@ def get_jovian_ephemeris_url() -> str:
     Returns:
         str: The URL to download the Jovian ephemeris from.
     """
-    # Default is jup300.bsp (138MB, 1900-2100) which is a good balance of size and precision.
-    # The high-precision jup310.bsp (~1.1GB) is also available from NASA NAIF:
+    # Default is jup365.bsp (~1.1GB, 1600-2600) which contains high-precision Galilean moon orbits.
+    # A smaller alternative (138MB) is jup300.bsp, but it lacks Galilean satellites at standard IDs.
+    # The high-precision jup310.bsp (~1.2GB) is also available from NASA NAIF:
     # https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup310.bsp
-    default_url = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup300.bsp"
+    default_url = (
+        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/jup365.bsp"
+    )
     return config.get("data", "jovian_ephemeris_url", fallback=default_url)
 
 

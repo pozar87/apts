@@ -1,4 +1,8 @@
+import logging
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
 
 def _get_jovian_moon_objects(eph):
     """
@@ -10,8 +14,11 @@ def _get_jovian_moon_objects(eph):
         try:
             moon_objs[moon_id] = eph[moon_id]
         except KeyError:
-            # Fallback for jup300.bsp IDs
+            # Fallback for jup300.bsp IDs (non-standard mapping)
             jup300_ids = {501: 55061, 502: 55062, 503: 55063, 504: 55064}
+            logger.warning(
+                f"ID {moon_id} not found in Jovian ephemeris. Falling back to non-standard ID {jup300_ids[moon_id]}."
+            )
             moon_objs[moon_id] = eph[jup300_ids[moon_id]]
     return moon_map, moon_objs
 
