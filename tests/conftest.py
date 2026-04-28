@@ -72,8 +72,8 @@ solar_eclipses = false
 lunar_eclipses = false
 
 [data]
-# Use smaller Jovian ephemeris for testing (138MB, 1900-2100)
-jovian_ephemeris_url = https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/a_old_versions/jup300.bsp
+# Use working Jovian ephemeris for testing (~1.1GB)
+jovian_ephemeris_url = https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/jup365.bsp
 """)
 
     # Set environment variable to point to our test config
