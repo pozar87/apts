@@ -31,11 +31,12 @@ def find_jovian_moon_events(observer, start_date, end_date):
     for moon_id, moon_name in moon_map.items():
         moon_obj = moon_objs[moon_id]
 
-        def state_func(t):
-            # Vectorized state function for find_discrete
-            # Returns: 0: None, 1: Transit, 2: Occultation, 3: Shadow, 4: Eclipse
+        def get_geometry(t):
+            """
+            Computes geometric states for a given moon at time(s) t.
+            Returns visible, in_transit, in_occultation, in_shadow, in_eclipse.
+            """
             is_array = hasattr(t, "shape") and t.shape != ()
-            res = np.zeros(len(t) if is_array else 1, dtype=int)
 
             # 1. Observation from Earth
             # j_obs gives Jupiter's position at t_emitted = t - light_time
@@ -69,18 +70,19 @@ def find_jovian_moon_events(observer, start_date, end_date):
                 np.cos(delta0) * np.cos(alpha0),
                 np.cos(delta0) * np.sin(alpha0),
                 np.sin(delta0)
-            ]) # (3, N) or (3,)
+            ])
+
+            # Vector from Jupiter to Moon
+            p_m = m_obs.position.km - j_obs.position.km
 
             # 3. Earth perspective (Transits and Occultations)
             # Vector from Jupiter to Earth
             p_j_e = -j_obs.position.km
             if is_array:
                 u_e = p_j_e / np.linalg.norm(p_j_e, axis=0)
-                p_m = m_obs.position.km - j_obs.position.km
                 p_m_u_e = np.sum(p_m * u_e, axis=0)
             else:
                 u_e = p_j_e / np.linalg.norm(p_j_e)
-                p_m = m_obs.position.km - j_obs.position.km
                 p_m_u_e = np.dot(p_m, u_e)
 
             in_projection_e = is_inside_ellipsoid_projection(p_m, u_e, z_pole, re, rp)
@@ -97,7 +99,6 @@ def find_jovian_moon_events(observer, start_date, end_date):
                 p_m_u_s = np.sum(p_m * u_s, axis=0)
             else:
                 u_s = p_j_s / np.linalg.norm(p_j_s)
-                p_m = m_obs.position.km - j_obs.position.km
                 p_m_u_s = np.dot(p_m, u_s)
 
             in_projection_s = is_inside_ellipsoid_projection(p_m, u_s, z_pole, re, rp)
@@ -105,58 +106,46 @@ def find_jovian_moon_events(observer, start_date, end_date):
             in_shadow = in_projection_s & (p_m_u_s > 0)
             in_eclipse = in_projection_s & (p_m_u_s <= 0)
 
-            if is_array:
-                res[visible & in_transit] = 1
-                res[visible & in_occultation] = 2
-                res[visible & in_shadow] = 3
-                res[visible & in_eclipse] = 4
-            else:
-                if visible:
-                    if in_transit:
-                        res[0] = 1
-                    elif in_occultation:
-                        res[0] = 2
-                    elif in_shadow:
-                        res[0] = 3
-                    elif in_eclipse:
-                        res[0] = 4
-            return res
+            return visible, in_transit, in_occultation, in_shadow, in_eclipse
 
-        setattr(state_func, "step_days", 0.005)  # ~7.2 minutes
-        t_events, y_events = almanac.find_discrete(t0, t1, state_func)
+        def find_events_for_type(type_name, type_idx):
+            def state_func(t):
+                geom = get_geometry(t)
+                # visible is index 0, others follow: 1: transit, 2: occultation, 3: shadow, 4: eclipse
+                return (geom[0] & geom[type_idx]).astype(int)
 
-        if len(t_events) == 0:
-            continue
+            setattr(state_func, "step_days", 0.005)  # ~7.2 minutes
+            t_events, y_events = almanac.find_discrete(t0, t1, state_func)
 
-        # Initial state
-        y_start = state_func(t0)
-        y_prev = y_start[0] if hasattr(y_start, "shape") else y_start
-        state_names = {
-            1: "Transit",
-            2: "Occultation",
-            3: "Shadow Transit",
-            4: "Eclipse",
-        }
+            # Check initial state
+            y_start = state_func(t0)
+            y_prev = int(np.atleast_1d(y_start)[0])
 
-        for te, ye in zip(t_events, y_events):
-            if y_prev != 0:
-                events.append(
-                    {
-                        "date": te.utc_datetime(),
-                        "object": moon_name,
-                        "event": f"{moon_name} {state_names[int(y_prev)]} End",
-                        "type": "Jovian Moon Event",
-                    }
-                )
-            if ye != 0:
-                events.append(
-                    {
-                        "date": te.utc_datetime(),
-                        "object": moon_name,
-                        "event": f"{moon_name} {state_names[int(ye)]} Start",
-                        "type": "Jovian Moon Event",
-                    }
-                )
-            y_prev = ye
+            for te, ye in zip(t_events, y_events):
+                if y_prev != 0:
+                    events.append(
+                        {
+                            "date": te.utc_datetime(),
+                            "object": moon_name,
+                            "event": f"{moon_name} {type_name} End",
+                            "type": "Jovian Moon Event",
+                        }
+                    )
+                if ye != 0:
+                    events.append(
+                        {
+                            "date": te.utc_datetime(),
+                            "object": moon_name,
+                            "event": f"{moon_name} {type_name} Start",
+                            "type": "Jovian Moon Event",
+                        }
+                    )
+                y_prev = ye
 
+        find_events_for_type("Transit", 1)
+        find_events_for_type("Occultation", 2)
+        find_events_for_type("Shadow Transit", 3)
+        find_events_for_type("Eclipse", 4)
+
+    events.sort(key=lambda x: x["date"])
     return events
