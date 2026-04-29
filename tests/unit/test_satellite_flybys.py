@@ -17,7 +17,7 @@ class TestSatelliteFlybys(unittest.TestCase):
         self.topos_observer = Topos(latitude_degrees=52.2297, longitude_degrees=21.0122)
         # Mocking a vector observer (earth + topos)
         self.vector_observer = MagicMock()
-        self.start_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+        self.start_date = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         self.end_date = self.start_date + timedelta(days=1)
 
     @patch("apts.skyfield_searches.satellites.load.tle_file")
@@ -43,14 +43,30 @@ class TestSatelliteFlybys(unittest.TestCase):
 
         # mock_satellite.find_events returns (times, event_codes)
         # codes: 0=rise, 1=culmination, 2=set
-        mock_satellite.find_events.return_value = (
-            [t_rise, t_culm, t_set],
-            [0, 1, 2],
-        )
+        def mock_find_events(topos, t0, t1, altitude_degrees=0.0):
+            # Return events if the window covers the culmination at +1h
+            if t0.tt < t_culm.tt and t1.tt > t_culm.tt:
+                return [t_rise, t_culm, t_set], [0, 1, 2]
+            return [], []
+
+        mock_satellite.find_events.side_effect = mock_find_events
         mock_tle.return_value = [mock_satellite]
 
-        # Mock Sun position
+        # Mock Ephemeris for magnitude calculation
+        mock_earth = MagicMock()
         mock_sun = MagicMock()
+        mock_eph.return_value.__getitem__.side_effect = (
+            lambda x: {"sun": mock_sun, "earth": mock_earth}[x]
+        )
+
+        # Mock the subtraction of vectors for magnitude
+        mock_sun_minus_earth = MagicMock()
+        mock_sun.__sub__.return_value = mock_sun_minus_earth
+        mock_sun_minus_earth.at.return_value.position.km = np.array(
+            [-150000000.0, 0.0, 0.0]
+        )
+
+        # Mock Sun position
         mock_get_obj.return_value = mock_sun
 
         # Mock Sun altitude (must be < -18 for dark sky)
@@ -86,9 +102,6 @@ class TestSatelliteFlybys(unittest.TestCase):
 
         mock_obs_at_t.observe.side_effect = mock_observe
 
-        # Mock Sun position for magnitude calculation (Sun behind observer for low phase angle)
-        mock_sun.at.return_value.position.km = np.array([-150000000.0, 0.0, 0.0])
-
         # Mock topocentric altaz
         mock_topocentric = MagicMock()
         mock_sat_at_t.__sub__.return_value = mock_topocentric
@@ -112,7 +125,8 @@ class TestSatelliteFlybys(unittest.TestCase):
             "ISS (ZARYA)",
             "Test Flyby",
             "ISS Flyby",
-            magnitude_threshold=0,
+            magnitude_threshold=5,
+            peak_altitude_threshold=10,
         )
 
         # Assertions

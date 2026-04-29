@@ -52,23 +52,40 @@ class TestSatelliteFlybysMultiple(unittest.TestCase):
         # Pass 4 rise (0), Pass 4 culmination (1), Pass 4 set (2)
         # Pass 3 rise (0), Pass 3 culmination (1)
 
-        mock_satellite.find_events.side_effect = [
-            # Main call
-            (
-                [t2_culm, t2_set, t1_rise, t1_culm, t1_set, t4_rise, t4_culm, t4_set, t3_rise, t3_culm],
-                np.array([1, 2, 0, 1, 2, 0, 1, 2, 0, 1])
-            ),
-            # Search for Pass 2 rise
-            (
-                [t2_rise],
-                np.array([0])
-            ),
-            # Search for Pass 3 set
-            (
-                [t3_set],
-                np.array([2])
-            )
-        ]
+        def mock_find_events(topos, t0, t1, altitude_degrees=0.0):
+            # Check window to determine which pass to return
+            # Main search window: [start_date-30m, end_date+30m]
+            # Pass 2 rise search: [t2_culm-30m, t2_culm]
+            # Pass 3 set search: [t3_culm, t3_culm+30m]
+            # sunlit search: [culm-15m, culm+15m] with alt=2.0
+            if altitude_degrees == 2.0:
+                # Return culmination for sunlit check
+                return [t1_culm, t2_culm, t3_culm, t4_culm], [1, 1, 1, 1]
+            if t0.tt < t2_rise.tt:
+                # Wide main window
+                return [
+                    t2_rise,
+                    t2_culm,
+                    t2_set,
+                    t1_rise,
+                    t1_culm,
+                    t1_set,
+                    t4_rise,
+                    t4_culm,
+                    t4_set,
+                    t3_rise,
+                    t3_culm,
+                    t3_set,
+                ], np.array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+            if t1.tt == t2_culm.tt:
+                # Search for Pass 2 rise
+                return [t2_rise], np.array([0])
+            if t0.tt == t3_culm.tt:
+                # Search for Pass 3 set
+                return [t3_set], np.array([2])
+            return [], []
+
+        mock_satellite.find_events.side_effect = mock_find_events
         mock_tle.return_value = [mock_satellite]
 
         # Mock Sun altitude (dark sky)
