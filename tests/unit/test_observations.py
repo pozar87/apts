@@ -505,9 +505,9 @@ class TestObservationPlottingStyles(unittest.TestCase):
             }
         )
 
-    @patch("apts.plotting.altitude.PlotUtils.annotate_plot")
-    @patch("apts.plotting.altitude.pyplot")
-    @patch("apts.plotting.altitude.get_dark_mode")
+    @patch("apts.plotting.altitude.messier.PlotUtils.annotate_plot")
+    @patch("apts.plotting.altitude.messier.pyplot")
+    @patch("apts.plotting.altitude.messier.get_dark_mode")
     def test_generate_plot_messier_dark_mode_styles(
         self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
     ):
@@ -635,8 +635,8 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     mock_ax.legend.assert_called_once()
 
     @patch("apts.utils.plot.Utils.annotate_plot")
-    @patch("apts.plotting.altitude.pyplot")
-    @patch("apts.plotting.altitude.get_dark_mode")
+    @patch("apts.plotting.altitude.messier.pyplot")
+    @patch("apts.plotting.altitude.messier.get_dark_mode")
     def test_generate_plot_messier_translation_pl(
         self, mock_get_dark_mode, mock_pyplot, mock_annotate_plot
     ):
@@ -779,9 +779,9 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     )
 
     @patch("pandas.DataFrame.plot")
-    @patch("apts.plotting.altitude.PlotUtils.annotate_plot")
-    @patch("apts.plotting.altitude.pyplot")
-    @patch("apts.plotting.altitude.get_dark_mode")
+    @patch("apts.plotting.altitude.planets.PlotUtils.annotate_plot")
+    @patch("apts.plotting.altitude.planets.pyplot")
+    @patch("apts.plotting.altitude.planets.get_dark_mode")
     @patch("apts.place.Place.get_altaz_curve")
     def test_generate_plot_planets_specific_colors(
         self,
