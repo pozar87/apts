@@ -375,6 +375,6 @@ def calculate_jovian_mutual_events(observer, start_date, end_date):
         observer, start_date, end_date
     )
     for event in events:
-        event["rarity"] = 5
+        event["rarity"] = get_rarity(event["type"], event)
     logger.debug(f"--- calculate_jovian_mutual_events: {time.time() - start_time}s")
     return events
