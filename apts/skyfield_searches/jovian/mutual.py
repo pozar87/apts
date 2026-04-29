@@ -133,7 +133,7 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                         "date": te.utc_datetime(),
                         "object1": caster,
                         "object2": target,
-                        "event": f"Mutual {kind} End",
+                        "event": f"{caster} Mutual {kind} of {target} End",
                         "type": f"Jovian Mutual {kind}",
                     })
                 if ye != 0:
@@ -143,7 +143,7 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                         "date": te.utc_datetime(),
                         "object1": caster,
                         "object2": target,
-                        "event": f"Mutual {kind} Start",
+                        "event": f"{caster} Mutual {kind} of {target} Start",
                         "type": f"Jovian Mutual {kind}",
                     })
                 y_prev = ye
