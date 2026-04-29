@@ -45,8 +45,8 @@ def _find_satellite_flybys(
     event_name,
     event_type,
     magnitude_threshold=None,
-    peak_altitude_threshold=40,
-    rise_altitude_threshold=10,
+    peak_altitude_threshold=10,
+    rise_altitude_threshold=5,
     sun_altitude_threshold=-18.0,
 ):
     ts = get_timescale()
@@ -65,18 +65,27 @@ def _find_satellite_flybys(
         return []
 
     # Find rise/culmination/set events above `rise_altitude_threshold`
+    # Use a wider window for the initial search to avoid missing events near boundaries
+    t_search_start = ts.utc(start_date - timedelta(minutes=30))
+    t_search_end = ts.utc(end_date + timedelta(minutes=30))
+
     times, events = satellite.find_events(
-        topos_observer, t0, t1, altitude_degrees=rise_altitude_threshold
+        topos_observer, t_search_start, t_search_end, altitude_degrees=rise_altitude_threshold
     )
 
     events_list = []
     sun = planetary.get_skyfield_obj("sun")
+    eph = get_ephemeris()
 
     for i, event_code in enumerate(events):
         if event_code != 1:  # only look at culmination
             continue
 
         culmination_time = times[i]
+
+        # Only include flybys whose culmination is within the original start/end window
+        if culmination_time.tt < t0.tt - 1e-9 or culmination_time.tt > t1.tt + 1e-9:
+            continue
 
         # Sun altitude (dark-sky check)
         sun_alt, _, _ = (
@@ -98,15 +107,40 @@ def _find_satellite_flybys(
         if alt.degrees < peak_altitude_threshold:
             continue
 
-        # Check if satellite is sunlit
-        if not sat.is_sunlit(get_ephemeris()):
+        # Find rise and set times for this pass at the rise_altitude_threshold
+        rise_time = None
+        set_time = None
+        if i > 0 and events[i-1] == 0:
+            rise_time = times[i-1]
+        if i < len(events) - 1 and events[i+1] == 2:
+            set_time = times[i+1]
+
+        # Check if satellite is sunlit at any point during the pass
+        # where it is at least 2.0 degrees above the horizon.
+        is_sunlit = sat.is_sunlit(eph)
+
+        if not is_sunlit:
+            # Check for sunlight at the 2.0-degree altitude points.
+            t_s_start = ts.utc(culmination_time.utc_datetime() - timedelta(minutes=15))
+            t_s_end = ts.utc(culmination_time.utc_datetime() + timedelta(minutes=15))
+            v_times, v_events = satellite.find_events(
+                topos_observer, t_s_start, t_s_end, altitude_degrees=2.0
+            )
+            for v_t, v_e in zip(v_times, v_events):
+                if v_e in (0, 1, 2) and satellite.at(v_t).is_sunlit(eph):
+                    is_sunlit = True
+                    break
+
+        if not is_sunlit:
             continue
 
         # Calculate apparent magnitude
+        # We need Sun position relative to Earth center for correct phase angle
+        sun_pos_earth_center = (eph["sun"] - eph["earth"]).at(culmination_time).position.km
         mag = calculate_satellite_magnitude(
             satellite_name,
             sat.position.km,
-            cast(Any, sun).at(culmination_time).position.km,
+            sun_pos_earth_center,
             obs.position.km,
             distance.km,
         )
@@ -118,55 +152,12 @@ def _find_satellite_flybys(
             "date": culmination_time.utc_datetime(),
             "event": event_name,
             "type": event_type,
-            "rise_time": None,
+            "rise_time": rise_time.utc_datetime() if rise_time is not None else None,
             "culmination_time": culmination_time.utc_datetime(),
-            "set_time": None,
+            "set_time": set_time.utc_datetime() if set_time is not None else None,
             "peak_altitude": alt.degrees,
             "peak_magnitude": float(mag),
         }
-
-        # Find rise and set times for this pass
-        # If they are not in the 'times' list (because they fell outside the search window),
-        # we try to find them by searching a small window around the culmination.
-        if i > 0 and events[i - 1] == 0:
-            event_data["rise_time"] = times[i - 1].utc_datetime()
-        else:
-            # Rise happened before start_date? Search up to 30 mins before culmination.
-            t_search_start = ts.utc(
-                culmination_time.utc_datetime() - timedelta(minutes=30)
-            )
-            t_search_end = culmination_time
-            r_times, r_events = satellite.find_events(
-                topos_observer,
-                t_search_start,
-                t_search_end,
-                altitude_degrees=rise_altitude_threshold,
-            )
-            r_indices = [idx for idx, code in enumerate(r_events) if code == 0]
-            if r_indices:
-                event_data["rise_time"] = r_times[r_indices[-1]].utc_datetime()
-            else:
-                event_data["rise_time"] = None
-
-        if i < len(events) - 1 and events[i + 1] == 2:
-            event_data["set_time"] = times[i + 1].utc_datetime()
-        else:
-            # Set will happen after end_date? Search up to 30 mins after culmination.
-            t_search_start = culmination_time
-            t_search_end = ts.utc(
-                culmination_time.utc_datetime() + timedelta(minutes=30)
-            )
-            s_times, s_events = satellite.find_events(
-                topos_observer,
-                t_search_start,
-                t_search_end,
-                altitude_degrees=rise_altitude_threshold,
-            )
-            s_indices = [idx for idx, code in enumerate(s_events) if code == 2]
-            if s_indices:
-                event_data["set_time"] = s_times[s_indices[0]].utc_datetime()
-            else:
-                event_data["set_time"] = None
 
         events_list.append(event_data)
 
@@ -177,12 +168,11 @@ def find_iss_flybys(
     vector_observer,
     start_date,
     end_date,
-    magnitude_threshold=-1.5,
-    peak_altitude_threshold=40,
-    rise_altitude_threshold=10,
-    sun_altitude_threshold=-6.0,
+    magnitude_threshold=2.0,
+    peak_altitude_threshold=10,
+    rise_altitude_threshold=5,
+    sun_altitude_threshold=-4.0,
 ):
-    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as bright ISS is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -202,11 +192,10 @@ def find_tiangong_flybys(
     vector_observer,
     start_date,
     end_date,
-    peak_altitude_threshold=40,
-    rise_altitude_threshold=10,
+    peak_altitude_threshold=10,
+    rise_altitude_threshold=5,
     sun_altitude_threshold=-6.0,
 ):
-    # Oracle: Relaxed default sun altitude to -6 (civil twilight) as Tiangong is visible.
     return _find_satellite_flybys(
         topos_observer,
         vector_observer,
@@ -215,7 +204,7 @@ def find_tiangong_flybys(
         "CSS (TIANHE)",
         "Bright Tiangong Flyby",
         "Tiangong Flyby",
-        None,  # No magnitude threshold for Tiangong
+        None,
         peak_altitude_threshold,
         rise_altitude_threshold,
         sun_altitude_threshold,
