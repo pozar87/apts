@@ -49,6 +49,38 @@ EQUIPMENT_CLASSES = [
     SmartTelescope,
 ]
 
+# Mapping of equipment type strings to their corresponding classes for dynamic instantiation.
+TYPE_TO_CLASS_MAP = {
+    "type_telescope": Telescope,
+    "type_refractor": Telescope,
+    "refractor": Telescope,
+    "newtonian_reflector": Telescope,
+    "schmidt_cassegrain": Telescope,
+    "maksutov_cassegrain": Telescope,
+    "catadioptric": Telescope,
+    "type_camera_lens": Telescope,
+    "type_camera": Camera,
+    "type_dslr": Camera,
+    "type_eyepiece": Eyepiece,
+    "type_barlow": Barlow,
+    "type_extender": Barlow,
+    "type_reducer": Reducer,
+    "type_flattener": Flattener,
+    "type_corrector": Corrector,
+    "type_diagonal": Diagonal,
+    "type_filter_wheel": FilterWheel,
+    "type_filter_holder": FilterHolder,
+    "type_oag": OAG,
+    "type_rotator": Rotator,
+    "type_focuser": Focuser,
+    "type_adapter": Adapter,
+    "type_spacer": Spacer,
+    "type_anti_tilt": AntiTilt,
+    "type_flip_mirror": FlipMirror,
+    "type_guide_scope": GuideScope,
+    "type_smart_telescope": SmartTelescope,
+}
+
 
 class EquipmentDatabase:
     """
@@ -86,52 +118,20 @@ class EquipmentDatabase:
 
     def create_equipment(self, entry: Dict[str, Any]) -> Any:
         """
-        Creates an apts equipment object from a database entry.
+        Creates an apts equipment object from a database entry using a registry-based lookup.
         """
-        tp = entry["type"]
+        tp = entry.get("type", "")
         name = entry.get("name", "")
 
-        # Mapping to classes
+        # Special case: Binoculars detection based on name
         if "binocular" in name.lower():
             return Binoculars.from_database(entry)
 
-        if tp in ["type_telescope", "type_refractor", "refractor", "newtonian_reflector", "schmidt_cassegrain", "maksutov_cassegrain", "catadioptric", "type_camera_lens"]:
-            return Telescope.from_database(entry)
-        if tp in ["type_camera", "type_dslr"]:
-            return Camera.from_database(entry)
-        if tp == "type_eyepiece":
-            return Eyepiece.from_database(entry)
-        if tp in ["type_barlow", "type_extender"]:
-            return Barlow.from_database(entry)
-        if tp == "type_reducer":
-            return Reducer.from_database(entry)
-        if tp == "type_flattener":
-            return Flattener.from_database(entry)
-        if tp == "type_corrector":
-            return Corrector.from_database(entry)
-        if tp == "type_diagonal":
-            return Diagonal.from_database(entry)
-        if tp == "type_filter_wheel":
-            return FilterWheel.from_database(entry)
-        if tp == "type_filter_holder":
-            return FilterHolder.from_database(entry)
-        if tp == "type_oag":
-            return OAG.from_database(entry)
-        if tp == "type_rotator":
-            return Rotator.from_database(entry)
-        if tp == "type_focuser":
-            return Focuser.from_database(entry)
-        if tp == "type_adapter":
-            return Adapter.from_database(entry)
-        if tp == "type_spacer":
-            return Spacer.from_database(entry)
-        if tp == "type_anti_tilt":
-            return AntiTilt.from_database(entry)
-        if tp == "type_flip_mirror":
-            return FlipMirror.from_database(entry)
-        if tp == "type_guide_scope":
-            return GuideScope.from_database(entry)
-        if tp == "type_smart_telescope":
-            return SmartTelescope.from_database(entry)
+        # Lookup class in the registry
+        cls = TYPE_TO_CLASS_MAP.get(tp)
 
+        if cls and hasattr(cls, "from_database"):
+            return cls.from_database(entry)
+
+        logger.warning(f"Could not find a class to create equipment of type '{tp}' and name '{name}'.")
         return None
