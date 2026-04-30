@@ -7,6 +7,7 @@ from skyfield.api import Star
 
 from ... import skyfield_searches
 from ..rarity import get_rarity
+from ..duration import get_duration
 
 logger = logging.getLogger(__name__)
 utc = timezone.utc
@@ -25,6 +26,7 @@ def calculate_moon_phases(ts, start_date, end_date, eph):
             "type": "Moon Phase",
         }
         event_data["rarity"] = get_rarity("Moon Phase", event_data)
+        event_data["duration"] = get_duration("Moon Phase", event_data)
         events.append(event_data)
     logger.debug(f"--- calculate_moon_phases: {time.time() - start_time}s")
     return events
@@ -41,6 +43,7 @@ def calculate_lunar_occultations(observer, start_date, end_date, bright_stars):
         event["type"] = "Lunar Occultation"
         event["event"] = "Lunar Occultation"
         event["rarity"] = get_rarity("Lunar Occultation", event)
+        event["duration"] = get_duration("Lunar Occultation", event)
     logger.debug(f"--- calculate_lunar_occultations: {time.time() - start_time}s")
     return events
 
@@ -55,6 +58,7 @@ def calculate_lunar_planetary_occultations(observer, start_date, end_date):
         event["type"] = "Lunar Planetary Occultation"
         event["event"] = "Lunar Planetary Occultation"
         event["rarity"] = get_rarity("Lunar Planetary Occultation", event)
+        event["duration"] = get_duration("Lunar Planetary Occultation", event)
     logger.debug(
         f"--- calculate_lunar_planetary_occultations: {time.time() - start_time}s"
     )
@@ -68,6 +72,7 @@ def calculate_moon_apogee_perigee(start_date, end_date):
     for event in events:
         event["type"] = "Moon Apogee/Perigee"
         event["rarity"] = get_rarity("Moon Apogee/Perigee", event)
+        event["duration"] = get_duration("Moon Apogee/Perigee", event)
     logger.debug(f"--- calculate_moon_apogee_perigee: {time.time() - start_time}s")
     return events
 
@@ -106,6 +111,7 @@ def calculate_moon_messier_conjunctions(observer, start_date, end_date, messier_
         event_data["rarity"] = get_rarity(
             "Moon-Messier Conjunction", event_data
         )
+        event_data["duration"] = get_duration("Moon-Messier Conjunction", event_data)
         events.append(event_data)
 
     logger.debug(
@@ -157,6 +163,7 @@ def calculate_moon_star_conjunctions(ts, observer, start_date, end_date, bright_
             "type": "Moon-Star Conjunction",
         }
         event_data["rarity"] = get_rarity("Moon-Star Conjunction", event_data)
+        event_data["duration"] = get_duration("Moon-Star Conjunction", event_data)
         events.append(event_data)
 
     logger.debug(
@@ -171,6 +178,7 @@ def calculate_lunar_features(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Lunar Feature", event)
+        event["duration"] = get_duration("Lunar Feature", event)
     logger.debug(f"--- calculate_lunar_features: {time.time() - start_time}s")
     return events
 
@@ -181,6 +189,7 @@ def calculate_supermoons(start_date, end_date):
         # Ensure date is timezone-aware UTC
         event["date"] = event["date"].astimezone(utc)
         event["rarity"] = get_rarity("Supermoon", event)
+        event["duration"] = get_duration("Supermoon", event)
     logger.debug(f"--- calculate_supermoons: {time.time() - start_time}s")
     return events
 
@@ -193,6 +202,7 @@ def calculate_lunar_eclipses(observer, start_date, end_date):
         event["event"] = "Lunar Eclipse"
         event["type"] = "Lunar Eclipse"
         event["rarity"] = get_rarity("Lunar Eclipse", event)
+        event["duration"] = get_duration("Lunar Eclipse", event)
     logger.debug(f"--- calculate_lunar_eclipses: {time.time() - start_time}s")
     return events
 
@@ -203,5 +213,6 @@ def calculate_moon_libration_maxima(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Moon Libration Maximum", event)
+        event["duration"] = get_duration("Moon Libration Maximum", event)
     logger.debug(f"--- calculate_moon_libration_maxima: {time.time() - start_time}s")
     return events

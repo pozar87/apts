@@ -423,6 +423,49 @@ class EventsTest(unittest.TestCase):
         self.assertAlmostEqual(conjunction.iloc[0]["separation_degrees"], 1.02, delta=0.01)
         self.assertEqual(conjunction.iloc[0]["rarity"], 3)
 
+    def test_event_durations(self):
+        # Calculate a few different event types
+        events_calculator = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+            events_to_calculate=[
+                EventType.MOON_PHASES,
+                EventType.CONJUNCTIONS,
+                EventType.ISS_FLYBYS,
+                EventType.LUNAR_OCCULTATIONS
+            ],
+        )
+
+        # Mock ISS flyby to ensure it has duration
+        with patch("apts.events.calculations.space.skyfield_searches.find_iss_flybys") as mock_iss:
+            mock_iss.return_value = [{
+                "date": datetime(2023, 1, 15, 18, 30, 0, tzinfo=utc),
+                "event": "Bright ISS Flyby",
+                "type": "ISS Flyby",
+                "peak_altitude": 85.0,
+                "peak_magnitude": -3.5,
+                "rise_time": datetime(2023, 1, 15, 18, 25, 0, tzinfo=utc),
+                "set_time": datetime(2023, 1, 15, 18, 35, 0, tzinfo=utc),
+            }]
+
+            events_df = events_calculator.get_events()
+
+        # Check that duration column exists
+        self.assertIn("duration", events_df.columns)
+
+        # Check ISS duration (dynamic)
+        iss_event = events_df[events_df["type"] == "ISS Flyby"].iloc[0]
+        self.assertEqual(iss_event["duration"], 600) # 10 minutes
+
+        # Check Moon Phase duration (static default)
+        moon_event = events_df[events_df["type"] == "Moon Phase"].iloc[0]
+        self.assertEqual(moon_event["duration"], 86400) # 1 day
+
+        # Check Conjunction duration (static default)
+        conj_event = events_df[events_df["type"] == "Conjunction"].iloc[0]
+        self.assertEqual(conj_event["duration"], 172800) # 2 days
+
 
 if __name__ == "__main__":
     unittest.main()

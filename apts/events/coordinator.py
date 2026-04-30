@@ -13,6 +13,7 @@ from ..config import get_event_settings
 from ..constants.event_types import EventType
 from ..utils import planetary
 from .rarity import get_rarity
+from .duration import get_duration
 from .translator import translate_events
 from .calculations import lunar, planetary as planetary_calc, space, sky
 
@@ -225,6 +226,9 @@ class AstronomicalEvents:
     def _get_rarity(self, event_type: str, data: dict) -> int:
         return get_rarity(event_type, data)
 
+    def _get_duration(self, event_type: str, data: dict) -> int:
+        return get_duration(event_type, data)
+
     def _precompute_positions(self):
         """
         Pre-compute positions for moving bodies often used in multiple searches
@@ -332,6 +336,7 @@ class AstronomicalEvents:
             "event",
             "type",
             "rarity",
+            "duration",
             "object",
             "object1",
             "object2",

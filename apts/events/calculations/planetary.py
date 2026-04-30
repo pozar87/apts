@@ -7,6 +7,7 @@ from concurrent.futures import as_completed
 from ... import skyfield_searches
 from ...utils import planetary
 from ..rarity import get_rarity
+from ..duration import get_duration
 
 logger = logging.getLogger(__name__)
 utc = timezone.utc
@@ -18,6 +19,7 @@ def calculate_venus_greatest_brilliancy(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Venus Greatest Brilliancy", event)
+        event["duration"] = get_duration("Venus Greatest Brilliancy", event)
     logger.debug(
         f"--- calculate_venus_greatest_brilliancy: {time.time() - start_time}s"
     )
@@ -101,6 +103,7 @@ def calculate_conjunctions(ts, observer, start_date, end_date, executor):
             event["event"] = "Conjunction"
             event["object1"] = obj1_name
             event["rarity"] = get_rarity("Conjunction", event)
+            event["duration"] = get_duration("Conjunction", event)
             events.append(event)
     logger.debug(f"--- calculate_conjunctions: {time.time() - start_time}s")
     return events
@@ -128,6 +131,7 @@ def calculate_oppositions(observer, start_date, end_date, executor):
             event["object"] = simple_name
             del event["planet"]
             event["rarity"] = get_rarity("Opposition", event)
+            event["duration"] = get_duration("Opposition", event)
         events.extend(found_events)
     logger.debug(f"--- calculate_oppositions: {time.time() - start_time}s")
     return events
@@ -158,6 +162,7 @@ def calculate_highest_altitudes(observer, start_date, end_date, executor):
                 "altitude": alt,
             }
             event_data["rarity"] = get_rarity("Planet Altitude", event_data)
+            event_data["duration"] = get_duration("Planet Altitude", event_data)
             events.append(event_data)
     logger.debug(f"--- calculate_highest_altitudes: {time.time() - start_time}s")
     return events
@@ -188,6 +193,7 @@ def calculate_aphelion_perihelion(start_date, end_date, executor):
             event_dict["rarity"] = get_rarity(
                 "Aphelion/Perihelion", event_dict
             )
+            event_dict["duration"] = get_duration("Aphelion/Perihelion", event_dict)
             events.append(event_dict)
     logger.debug(f"--- calculate_aphelion_perihelion: {time.time() - start_time}s")
     return events
@@ -205,6 +211,7 @@ def calculate_mercury_inferior_conjunctions(observer, start_date, end_date):
             event["event"] = "Inferior Conjunction"
         event["object"] = "Mercury"
         event["rarity"] = get_rarity("Inferior Conjunction", event)
+        event["duration"] = get_duration("Inferior Conjunction", event)
     logger.debug(
         f"--- calculate_mercury_inferior_conjunctions: {time.time() - start_time}s"
     )
@@ -218,6 +225,7 @@ def calculate_planet_alignments(observer, start_date, end_date):
     for event in events:
         event["type"] = "Planet Alignment"
         event["rarity"] = get_rarity("Planet Alignment", event)
+        event["duration"] = get_duration("Planet Alignment", event)
     logger.debug(f"--- calculate_planet_alignments: {time.time() - start_time}s")
     return events
 
@@ -228,6 +236,7 @@ def calculate_jovian_moon_events(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Jovian Moon Event", event)
+        event["duration"] = get_duration("Jovian Moon Event", event)
     logger.debug(f"--- calculate_jovian_moon_events: {time.time() - start_time}s")
     return events
 
@@ -238,7 +247,8 @@ def calculate_saturn_ring_crossings(start_date, end_date):
     )
     for event in events:
         event["date"] = event["date"].astimezone(utc)
-        event["rarity"] = 5
+        event["rarity"] = get_rarity("Saturn Ring Crossing", event)
+        event["duration"] = get_duration("Saturn Ring Crossing", event)
     logger.debug(
         f"--- calculate_saturn_ring_crossings: {time.time() - start_time}s"
     )
@@ -251,6 +261,7 @@ def calculate_greatest_elongations(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Greatest Elongation", event)
+        event["duration"] = get_duration("Greatest Elongation", event)
     logger.debug(f"--- calculate_greatest_elongations: {time.time() - start_time}s")
     return events
 
@@ -264,6 +275,7 @@ def calculate_planetary_dichotomy(observer, start_date, end_date, precomputed_po
     )
     for event in events:
         event["rarity"] = get_rarity("Planetary Dichotomy", event)
+        event["duration"] = get_duration("Planetary Dichotomy", event)
     logger.debug(f"--- calculate_planetary_dichotomy: {time.time() - start_time}s")
     return events
 
@@ -277,6 +289,7 @@ def calculate_planet_messier_conjunctions(observer, start_date, end_date, precom
     )
     for event in events:
         event["rarity"] = get_rarity("Planet-Messier Conjunction", event)
+        event["duration"] = get_duration("Planet-Messier Conjunction", event)
     logger.debug(
         f"--- calculate_planet_messier_conjunctions: {time.time() - start_time}s"
     )
@@ -289,6 +302,7 @@ def calculate_jupiter_grs_transits(observer, start_date, end_date, grs_longitude
     )
     for event in events:
         event["rarity"] = get_rarity("Jupiter GRS Transit", event)
+        event["duration"] = get_duration("Jupiter GRS Transit", event)
     logger.debug(f"--- calculate_jupiter_grs_transits: {time.time() - start_time}s")
     return events
 
@@ -302,6 +316,7 @@ def calculate_planet_star_conjunctions(observer, start_date, end_date, precomput
     )
     for event in events:
         event["rarity"] = get_rarity("Planet-Star Conjunction", event)
+        event["duration"] = get_duration("Planet-Star Conjunction", event)
     logger.debug(
         f"--- calculate_planet_star_conjunctions: {time.time() - start_time}s"
     )
@@ -329,6 +344,7 @@ def calculate_planet_stationary_points(observer, start_date, end_date):
         )
         for event in found_events:
             event["rarity"] = get_rarity("Planet Stationary Point", event)
+            event["duration"] = get_duration("Planet Stationary Point", event)
         events.extend(found_events)
     logger.debug(
         f"--- calculate_planet_stationary_points: {time.time() - start_time}s"
@@ -342,6 +358,7 @@ def calculate_planet_solar_conjunctions(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Planet Solar Conjunction", event)
+        event["duration"] = get_duration("Planet Solar Conjunction", event)
     logger.debug(
         f"--- calculate_planet_solar_conjunctions: {time.time() - start_time}s"
     )
@@ -354,6 +371,7 @@ def calculate_planet_planet_occultations(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Planet-Planet Occultation", event)
+        event["duration"] = get_duration("Planet-Planet Occultation", event)
     logger.debug(
         f"--- calculate_planet_planet_occultations: {time.time() - start_time}s"
     )
@@ -366,6 +384,7 @@ def calculate_mars_closest_approach(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Mars Closest Approach", event)
+        event["duration"] = get_duration("Mars Closest Approach", event)
     logger.debug(f"--- calculate_mars_closest_approach: {time.time() - start_time}s")
     return events
 
@@ -376,5 +395,6 @@ def calculate_jovian_mutual_events(observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity(event["type"], event)
+        event["duration"] = get_duration(event["type"], event)
     logger.debug(f"--- calculate_jovian_mutual_events: {time.time() - start_time}s")
     return events

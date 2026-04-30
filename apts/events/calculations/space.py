@@ -7,6 +7,7 @@ from skyfield.api import Topos
 
 from ... import skyfield_searches
 from ..rarity import get_rarity
+from ..duration import get_duration
 
 logger = logging.getLogger(__name__)
 utc = timezone.utc
@@ -28,6 +29,7 @@ def calculate_space_launches(start_date, end_date):
                 "type": "Space Launch",
             }
             event_data["rarity"] = get_rarity("Space Launch", event_data)
+            event_data["duration"] = get_duration("Space Launch", event_data)
             events.append(event_data)
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching space launches: {e}")
@@ -51,6 +53,7 @@ def calculate_space_events(start_date, end_date):
                 "type": "Space Event",
             }
             event_data["rarity"] = get_rarity("Space Event", event_data)
+            event_data["duration"] = get_duration("Space Event", event_data)
             events.append(event_data)
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching space events: {e}")
@@ -69,6 +72,7 @@ def calculate_iss_flybys(place, observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("ISS Flyby", event)
+        event["duration"] = get_duration("ISS Flyby", event)
     logger.debug(f"--- calculate_iss_flybys: {time.time() - start_time}s")
     return events
 
@@ -84,5 +88,6 @@ def calculate_tiangong_flybys(place, observer, start_date, end_date):
     )
     for event in events:
         event["rarity"] = get_rarity("Tiangong Flyby", event)
+        event["duration"] = get_duration("Tiangong Flyby", event)
     logger.debug(f"--- calculate_tiangong_flybys: {time.time() - start_time}s")
     return events
