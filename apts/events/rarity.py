@@ -99,7 +99,7 @@ RARITY_HANDLERS = {
     "Planet Stationary Point": lambda _: 3,
     "Planet Solar Conjunction": lambda _: 3,
     "Lunar Feature": lambda _: 4,
-    "Moon Libration Maximum": lambda _: 1,
+    "Moon Libration Maximum": lambda _: 3,
     "Planet-Planet Occultation": lambda _: 5,
     "Venus Greatest Brilliancy": lambda _: 4,
     "Supermoon": lambda _: 3,
