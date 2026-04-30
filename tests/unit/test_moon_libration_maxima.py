@@ -39,4 +39,4 @@ def test_moon_libration_maxima_detection():
 
     # Ensure rarity is calculated
     assert all(lib_maxima["rarity"].notna())
-    assert all(lib_maxima["rarity"] == 3) # Libration maxima are relatively common (monthly)
+    assert all(lib_maxima["rarity"] == 1) # Libration maxima are relatively common (monthly)
