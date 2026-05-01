@@ -22,11 +22,9 @@ from ..utils.planetary import (
     get_moon_phase_name,
     get_skyfield_obj,
 )
-from .models import (
-    PlaceImagingMixIn,
-    PlacePathsMixIn,
-    PlaceTimesMixIn,
-)
+from .imaging import PlaceImagingMixIn
+from .paths import PlacePathsMixIn
+from .times import PlaceTimesMixIn
 from .utils import TFProxy, get_scalar_datetime
 
 logger = logging.getLogger(__name__)
