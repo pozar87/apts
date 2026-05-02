@@ -121,5 +121,31 @@ class TestPolarAlignment(unittest.TestCase):
         self.assertIsNotNone(correction)
         self.assertIn("Altitude", correction["instructions"])
 
+    def test_generate_alignment_map(self):
+        # Mock star
+        mock_star = MagicMock()
+        mock_star.ra.hours = 2.5
+        mock_star.dec.degrees = 89.2
+        self.mock_observation.local_stars.find_by_name.return_value = mock_star
+
+        # Mock altaz
+        mock_altaz_obj = MagicMock()
+        mock_altaz_obj.altaz.return_value = (MagicMock(degrees=52.0), MagicMock(degrees=0.0), None)
+        self.mock_observation.place.observer.at().observe.return_value.apparent.return_value = mock_altaz_obj
+
+        # Mock time object with gmst
+        mock_time = MagicMock()
+        mock_time.gmst = 2.5
+        self.mock_observation.place.ts.utc.return_value = mock_time
+
+        pa = PolarAlignment(self.mock_observation, target_star_name="Polaris")
+        pa.pixel_scale = 28.8
+        pa.frames = [{"target": {"x": 600, "y": 500}, "ra_rotation": 0}, {"target": {"x": 500, "y": 600}, "ra_rotation": 90}]
+        pa.mount_axis_image = np.array([500, 500])
+
+        plot_buf = pa.generate_alignment_map()
+        self.assertIsNotNone(plot_buf)
+        self.assertTrue(plot_buf.getbuffer().nbytes > 0)
+
 if __name__ == "__main__":
     unittest.main()
