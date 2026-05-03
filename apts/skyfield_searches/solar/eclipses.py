@@ -3,9 +3,10 @@ from typing import Any, cast
 import numpy as np
 from skyfield import almanac, eclipselib
 from skyfield.searchlib import find_minima
-from ..cache import get_timescale, get_ephemeris
-from ..constants import astronomy
-from ..utils import planetary
+from ...cache import get_timescale, get_ephemeris
+from ...constants import astronomy
+from ...utils import planetary
+
 
 def find_lunar_eclipses(start_date, end_date, observer=None):
     """
@@ -57,6 +58,7 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
 
         events.append(event)
     return events
+
 
 def find_solar_eclipses(observer, start_date, end_date):
     """
@@ -134,42 +136,13 @@ def find_solar_eclipses(observer, start_date, end_date):
                     continue
 
                 # Classification
-                if d <= abs(rs - rm):
-                    if rm >= rs:
-                        kind = "Total"
-                    else:
-                        kind = "Annular"
-                else:
-                    kind = "Partial"
+                kind = _classify_solar_eclipse(d, rs, rm)
 
                 # Magnitude (fraction of solar diameter covered)
                 mag = (rs + rm - d) / (2 * rs)
 
                 # Obscuration (fraction of solar area covered)
-                # Area of intersection of two circles
-                if d <= abs(rs - rm):
-                    obs = 1.0 if rm >= rs else (rm / rs) ** 2
-                else:
-                    # Formula for area of overlap of two circles
-                    # Source: http://mathworld.wolfram.com/Circle-CircleIntersection.html
-                    def area(r1, r2, d):
-                        if d >= r1 + r2:
-                            return 0.0
-                        if d <= abs(r1 - r2):
-                            return np.pi * min(r1, r2) ** 2
-                        r1sq = r1**2
-                        r2sq = r2**2
-                        dsq = d**2
-                        part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d * r1))
-                        part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d * r2))
-                        part3 = 0.5 * np.sqrt(
-                            (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)
-                        )
-                        return part1 + part2 - part3
-
-                    overlap_area = area(rs, rm, d)
-                    sun_area = np.pi * rs**2
-                    obs = overlap_area / sun_area
+                obs = _calculate_solar_obscuration(rs, rm, d)
 
                 # Ensure the final event date falls within the requested range
                 if t.tt < t0.tt or t.tt > t1.tt:
@@ -187,24 +160,45 @@ def find_solar_eclipses(observer, start_date, end_date):
                 )
     return events
 
-def find_seasons(start_date, end_date):
-    """
-    Finds the start of seasons (equinoxes and solstices).
-    """
-    ts = get_timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
 
-    t, y = almanac.find_discrete(t0, t1, almanac.seasons(eph))
+def _classify_solar_eclipse(d, rs, rm):
+    """
+    Classifies a solar eclipse as Total, Annular, or Partial.
+    """
+    if d <= abs(rs - rm):
+        if rm >= rs:
+            return "Total"
+        else:
+            return "Annular"
+    else:
+        return "Partial"
 
-    events = []
-    for ti, yi in zip(t, y):
-        events.append(
-            {
-                "date": ti.utc_datetime(),
-                "event": almanac.SEASON_EVENTS[yi],
-                "type": "Season",
-            }
-        )
-    return events
+
+def _calculate_solar_obscuration(rs, rm, d):
+    """
+    Calculates the fraction of the solar area covered by the moon.
+    """
+    # Area of intersection of two circles
+    if d <= abs(rs - rm):
+        return 1.0 if rm >= rs else (rm / rs) ** 2
+    else:
+        # Formula for area of overlap of two circles
+        # Source: http://mathworld.wolfram.com/Circle-CircleIntersection.html
+        def area(r1, r2, d_sep):
+            if d_sep >= r1 + r2:
+                return 0.0
+            if d_sep <= abs(r1 - r2):
+                return np.pi * min(r1, r2) ** 2
+            r1sq = r1**2
+            r2sq = r2**2
+            dsq = d_sep**2
+            part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d_sep * r1))
+            part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d_sep * r2))
+            part3 = 0.5 * np.sqrt(
+                (-d_sep + r1 + r2) * (d_sep + r1 - r2) * (d_sep - r1 + r2) * (d_sep + r1 + r2)
+            )
+            return part1 + part2 - part3
+
+        overlap_area = area(rs, rm, d)
+        sun_area = np.pi * rs**2
+        return overlap_area / sun_area
