@@ -1,9 +1,21 @@
 from typing import Any, cast
+from datetime import timedelta
+from collections import defaultdict
 import numpy as np
 from skyfield.searchlib import find_minima
 from ...cache import get_timescale, get_ephemeris
 from ...utils import planetary
 from ...constants import astronomy
+
+# Thresholds for different numbers of planets (number: arc_degrees)
+_PLANET_ALIGNMENT_THRESHOLDS = {
+    3: 10,
+    4: 25,
+    5: 45,
+    6: 90,
+    7: 150,
+}
+
 
 def find_oppositions(observer, planet_name, start_date, end_date):
     ts = get_timescale()
@@ -102,100 +114,44 @@ def find_mars_closest_approach(start_date, end_date, observer=None):
 
     return events
 
-def find_planet_alignments(observer, start_date, end_date):
+def _get_best_alignment_at_time(lons_at_t):
     """
-    Finds planetary alignments (multiple planets close together in ecliptic longitude).
-    Takes into account visibility from the observer's location to highlight "planet parades".
+    Identifies the largest and tightest planetary alignment for a given set of longitudes.
     """
-    from datetime import timedelta
+    sorted_indices = np.argsort(lons_at_t)
+    sorted_lons = lons_at_t[sorted_indices]
+    n = len(sorted_lons)
+    lons_extended = np.concatenate([sorted_lons, sorted_lons + 360])
 
-    ts = get_timescale()
-    t_start = ts.utc(start_date)
-    t_end = ts.utc(end_date)
+    best_k = 0
+    best_arc = 360
+    best_indices = []
 
-    planets = [
-        "mercury",
-        "venus",
-        "mars barycenter",
-        "jupiter barycenter",
-        "saturn barycenter",
-        "uranus barycenter",
-        "neptune barycenter",
-    ]
-    planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
-    eph = get_ephemeris()
-    earth = eph["earth"]
-    sun = planetary.get_skyfield_obj("sun")
+    for k in range(3, n + 1):
+        min_arc_k = 360
+        min_indices_k = []
+        for i in range(n):
+            arc = lons_extended[i + k - 1] - lons_extended[i]
+            if arc < min_arc_k:
+                min_arc_k = arc
+                # Indices of planets in the arc
+                min_indices_k = [sorted_indices[j % n] for j in range(i, i + k)]
 
-    # Thresholds for different numbers of planets
-    thresholds = {
-        3: 10,
-        4: 25,
-        5: 45,
-        6: 90,
-        7: 150,
-    }
+        if min_arc_k < _PLANET_ALIGNMENT_THRESHOLDS.get(k, 360):
+            best_k = k
+            best_arc = min_arc_k
+            best_indices = min_indices_k
 
-    # Use 1-hour steps to find best visibility and alignment
-    duration_days = float(t_end - t_start)
-    if duration_days <= 0:
-        return []
+    return best_k, best_arc, best_indices
 
-    num_steps = int(duration_days * 24) + 1
-    t_list = [
-        t_start.utc_datetime() + timedelta(hours=i) for i in range(num_steps)
-    ]
-    times = ts.from_datetimes(t_list)
 
-    # Pre-calculate longitudes, altitudes and sun altitude vectorized
-    longitudes = []
-    altitudes = []
-    for _, obj in planet_objs:
-        # Longitudes are geocentric ecliptic
-        lons = cast(Any, earth).at(times).observe(obj).ecliptic_latlon()[1].degrees
-        longitudes.append(lons)
-
-        # Altitudes are topocentric (from observer)
-        alts = observer.at(times).observe(obj).apparent().altaz()[0].degrees
-        altitudes.append(alts)
-
-    longitudes = np.array(longitudes)  # (n_planets, n_times)
-    altitudes = np.array(altitudes)  # (n_planets, n_times)
-
-    sun_alts = observer.at(times).observe(sun).apparent().altaz()[0].degrees
-    is_dark = sun_alts < -6
-
-    def get_best_k_and_arc(lons_at_t):
-        sorted_indices = np.argsort(lons_at_t)
-        sorted_lons = lons_at_t[sorted_indices]
-        n = len(sorted_lons)
-        lons_extended = np.concatenate([sorted_lons, sorted_lons + 360])
-
-        best_k = 0
-        best_arc = 360
-        best_indices = []
-
-        for k in range(3, n + 1):
-            min_arc_k = 360
-            min_indices_k = []
-            for i in range(n):
-                arc = lons_extended[i + k - 1] - lons_extended[i]
-                if arc < min_arc_k:
-                    min_arc_k = arc
-                    # Indices of planets in the arc
-                    min_indices_k = [sorted_indices[j % n] for j in range(i, i + k)]
-
-            if min_arc_k < thresholds.get(k, 360):
-                best_k = k
-                best_arc = min_arc_k
-                best_indices = min_indices_k
-
-        return best_k, best_arc, best_indices
-
-    # Calculate stats for every hour
+def _calculate_step_results(times, longitudes, altitudes, is_dark):
+    """
+    Calculates alignment and visibility stats for each time step.
+    """
     step_results = []
     for i in range(len(times)):
-        k, arc, indices = get_best_k_and_arc(longitudes[:, i])
+        k, arc, indices = _get_best_alignment_at_time(longitudes[:, i])
 
         # Count visible planets among those in the alignment
         visible_in_alignment = 0
@@ -215,10 +171,14 @@ def find_planet_alignments(observer, start_date, end_date):
                 "visible_indices": visible_indices,
             }
         )
+    return step_results
 
-    # Aggregate to daily results to maintain consistent grouping
-    from collections import defaultdict
 
+def _aggregate_to_daily_results(times, step_results):
+    """
+    Aggregates hourly results to find the best representative alignment for each day.
+    Best means: max k, then max num_visible, then min arc.
+    """
     by_day = defaultdict(list)
     for i, res in enumerate(step_results):
         day = times[i].utc_datetime().date()
@@ -228,12 +188,17 @@ def find_planet_alignments(observer, start_date, end_date):
     sorted_days = sorted(by_day.keys())
     for day in sorted_days:
         day_steps = by_day[day]
-        # Best day means: max k, then max num_visible, then min arc
         best_step = max(
             day_steps, key=lambda x: (x[1]["k"], x[1]["num_visible"], -x[1]["arc"])
         )
         daily_results.append(best_step)
+    return daily_results
 
+
+def _format_alignment_events(daily_results, planets):
+    """
+    Identifies alignment windows from daily results and formats them into events.
+    """
     events = []
     i = 0
     while i < len(daily_results):
@@ -280,5 +245,65 @@ def find_planet_alignments(observer, start_date, end_date):
             )
         else:
             i += 1
-
     return events
+
+
+def find_planet_alignments(observer, start_date, end_date):
+    """
+    Finds planetary alignments (multiple planets close together in ecliptic longitude).
+    Takes into account visibility from the observer's location to highlight "planet parades".
+    """
+    ts = get_timescale()
+    t_start = ts.utc(start_date)
+    t_end = ts.utc(end_date)
+
+    planets = [
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+    planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
+    eph = get_ephemeris()
+    earth = eph["earth"]
+    sun = planetary.get_skyfield_obj("sun")
+
+    # Use 1-hour steps to find best visibility and alignment
+    duration_days = float(t_end - t_start)
+    if duration_days <= 0:
+        return []
+
+    num_steps = int(duration_days * 24) + 1
+    t_list = [
+        t_start.utc_datetime() + timedelta(hours=i) for i in range(num_steps)
+    ]
+    times = ts.from_datetimes(t_list)
+
+    # Pre-calculate longitudes, altitudes and sun altitude vectorized
+    longitudes = []
+    altitudes = []
+    for _, obj in planet_objs:
+        # Longitudes are geocentric ecliptic
+        lons = cast(Any, earth).at(times).observe(obj).ecliptic_latlon()[1].degrees
+        longitudes.append(lons)
+
+        # Altitudes are topocentric (from observer)
+        alts = observer.at(times).observe(obj).apparent().altaz()[0].degrees
+        altitudes.append(alts)
+
+    longitudes = np.array(longitudes)  # (n_planets, n_times)
+    altitudes = np.array(altitudes)  # (n_planets, n_times)
+
+    sun_alts = observer.at(times).observe(sun).apparent().altaz()[0].degrees
+    is_dark = sun_alts < -6
+
+    # Calculate stats for every hour
+    step_results = _calculate_step_results(times, longitudes, altitudes, is_dark)
+
+    # Aggregate to daily results to maintain consistent grouping
+    daily_results = _aggregate_to_daily_results(times, step_results)
+
+    return _format_alignment_events(daily_results, planets)
