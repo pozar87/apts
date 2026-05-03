@@ -68,12 +68,13 @@ class PolarAlignment:
     def __init__(self, observation, target_star_name=None):
         self.observation = observation
         self.target_star_name = target_star_name
-        self.frames = []
+        self.rotation_frames = []
+        self.adjustment_frames = []
         self.mount_axis_image = None  # (x, y) in pixels
         self.pixel_scale = None  # arcsec/pixel
         self.orientation = None  # degrees (angle of RA axis in image)
 
-    def add_frame(self, filepath, ra_rotation_deg):
+    def add_frame(self, filepath, ra_rotation_deg=0, phase='rotation'):
         """
         Analyzes a frame and tracks the target star.
         """
@@ -85,47 +86,52 @@ class PolarAlignment:
             logger.warning(f"No stars detected in {filepath}")
             return False
 
-        # If no target star specified, pick the brightest one in the first frame
-        if self.target_star_name is None and not self.frames:
-            # Sort by flux (DAOStarFinder provides flux)
-            # Actually FitsAnalyzer.stars has flux, fitted_stars doesn't seem to have it in the summary but we can use FWHM-based proxy or just detect_stars first
-            detected = analyzer.stars
-            if detected:
-                brightest = max(detected, key=lambda s: s["flux"])
-                # Find matching fitted star
-                target = min(
-                    stars,
-                    key=lambda s: (s["x"] - brightest["x"]) ** 2
-                    + (s["y"] - brightest["y"]) ** 2,
-                )
+        target = None
+        # Logic to find the target star
+        if not self.rotation_frames and not self.adjustment_frames:
+            # First frame ever: pick the brightest or find by name
+            if self.target_star_name is None:
+                detected = analyzer.stars
+                if detected:
+                    brightest = max(detected, key=lambda s: s["flux"])
+                    target = min(
+                        stars,
+                        key=lambda s: (s["x"] - brightest["x"]) ** 2
+                        + (s["y"] - brightest["y"]) ** 2,
+                    )
+                else:
+                    target = stars[0]
             else:
-                target = stars[0]
-        elif not self.frames:
-            # User provided a star name, we should find it in the image.
-            # For now, let's assume the user points roughly at it, and we pick the brightest star.
-            # Real plate solving would be better, but we don't have it here yet.
-            target = max(stars, key=lambda s: s.get("flux", 0)) if any("flux" in s for s in stars) else stars[0]
+                # Ideally we'd plate solve, but for now we pick brightest
+                target = max(stars, key=lambda s: s.get("flux", 0)) if any("flux" in s for s in stars) else stars[0]
         else:
-            # Track the star from the previous frame
-            prev_target = self.frames[-1]["target"]
-            # Look for the star closest to the previous position
-            # (Assuming small movement between frames)
-            target = min(
-                stars,
-                key=lambda s: (s["x"] - prev_target["x"]) ** 2
-                + (s["y"] - prev_target["y"]) ** 2,
-            )
+            # Track from previous frame (either from rotation or adjustment)
+            prev_frame = self.adjustment_frames[-1] if self.adjustment_frames else self.rotation_frames[-1]
+            prev_target = prev_frame["target"]
+            # We look for the star closest to the previous position, but within a reasonable radius
+            # to avoid jumping to another star if the target was lost or moved significantly
+            distances = [((s["x"] - prev_target["x"]) ** 2 + (s["y"] - prev_target["y"]) ** 2, s) for s in stars]
+            min_dist_sq, target = min(distances, key=lambda d: d[0])
 
-        self.frames.append(
-            {
-                "filepath": filepath,
-                "ra_rotation": ra_rotation_deg,
-                "target": target,
-                "stars": stars,
-                "width": analyzer.data.shape[1],
-                "height": analyzer.data.shape[0],
-            }
-        )
+            # If the jump is too large (e.g. > 100 pixels), we might want to warning or fallback
+            if min_dist_sq > 100**2:
+                logger.warning(f"Large star tracking jump detected: {math.sqrt(min_dist_sq):.1f} pixels")
+
+        frame_data = {
+            "filepath": filepath,
+            "ra_rotation": ra_rotation_deg,
+            "target": target,
+            "stars": stars,
+            "width": analyzer.data.shape[1],
+            "height": analyzer.data.shape[0],
+            "timestamp": self.observation.place.ts.utc(self.observation.observation_local_time)
+        }
+
+        if phase == 'rotation':
+            self.rotation_frames.append(frame_data)
+        else:
+            self.adjustment_frames.append(frame_data)
+
         return True
 
     def _fit_circle(self):
@@ -133,11 +139,11 @@ class PolarAlignment:
         Fits a circle to the tracked target star positions to find the center of rotation.
         Supports 2 points (using RA rotation) or 3+ points (general circle fit).
         """
-        if len(self.frames) < 2:
+        if len(self.rotation_frames) < 2:
             return None
 
-        points = np.array([(f["target"]["x"], f["target"]["y"]) for f in self.frames])
-        rotations = np.array([f["ra_rotation"] for f in self.frames])
+        points = np.array([(f["target"]["x"], f["target"]["y"]) for f in self.rotation_frames])
+        rotations = np.array([f["ra_rotation"] for f in self.rotation_frames])
 
         if len(points) == 2:
             # Solve for center using 2 points and known rotation angle
@@ -165,10 +171,6 @@ class PolarAlignment:
             self.mount_axis_image = m + h * n
         else:
             # 3+ points: General circle fit
-            # (x-xc)^2 + (y-yc)^2 = R^2
-            # x^2 - 2x*xc + xc^2 + y^2 - 2y*yc + yc^2 = R^2
-            # 2x*xc + 2y*yc + (R^2 - xc^2 - yc^2) = x^2 + y^2
-            # Linear system: [2x 2y 1] * [xc yc C]^T = x^2 + y^2
             A = np.column_stack([2 * points[:, 0], 2 * points[:, 1], np.ones(len(points))])
             b = points[:, 0] ** 2 + points[:, 1] ** 2
             res, _, _, _ = np.linalg.lstsq(A, b, rcond=None)
@@ -183,22 +185,15 @@ class PolarAlignment:
         """
         Estimates camera orientation and pixel scale.
         """
-        if len(self.frames) < 2 or self.mount_axis_image is None:
+        if len(self.rotation_frames) < 2 or self.mount_axis_image is None:
             return
 
-        p1 = np.array([self.frames[0]["target"]["x"], self.frames[0]["target"]["y"]])
+        p1 = np.array([self.rotation_frames[0]["target"]["x"], self.rotation_frames[0]["target"]["y"]])
         c = self.mount_axis_image
 
         # Radius in pixels
         r_px = np.linalg.norm(p1 - c)
 
-        # We need the star's declination to find the expected radius in arcseconds
-        # For polar alignment stars, Dec is high.
-        # But wait, the "radius" of the arc in the image depends on the distance from the RA axis.
-        # If the RA axis is pointing at the pole, the radius is roughly (90 - star_dec).
-        # Actually, the angular distance between the RA axis and the star is what we need.
-
-        # Let's try to get the star's declination if we can.
         target_star = None
         if self.target_star_name:
             target_star = self.observation.local_stars.find_by_name(self.target_star_name)
@@ -212,7 +207,6 @@ class PolarAlignment:
             self.pixel_scale = r_arcsec / r_px if r_px > 0 else None
 
         # Orientation: Angle of the vector from center to p1 at ra_rotation[0]
-        # This tells us where "up" (Dec+) is in the image relative to the mount's RA axis.
         v = p1 - c
         self.orientation = np.degrees(np.arctan2(v[1], v[0]))
 
@@ -234,26 +228,31 @@ class PolarAlignment:
         pole_alt = abs(lat)
         pole_az = 0.0 if lat >= 0 else 180.0
 
+        if self.target_star_name is None:
+            logger.warning("Target star name not specified.")
+            return None
+
         target_star = self.observation.local_stars.find_by_name(self.target_star_name)
         if target_star is None:
             logger.warning(f"Target star {self.target_star_name} not found in catalog.")
             return None
 
-        t = self.observation.place.ts.utc(self.observation.observation_local_time)
+        # Use latest frame for correction feedback
+        latest_frame = self.adjustment_frames[-1] if self.adjustment_frames else self.rotation_frames[-1]
+        t = latest_frame["timestamp"]
+
         obs_pos = self.observation.place.observer.at(t).observe(target_star).apparent()
         alt, az, _ = obs_pos.altaz()
         star_alt, star_az = alt.degrees, az.degrees
         star_dec = target_star.dec.degrees
 
         # 2. Calculate Parallactic Angle (q)
-        # q is the angle between the vertical circle and the hour circle.
-        # We use it to rotate from Dec/RA frame to Alt/Az frame.
         lat_rad = np.radians(lat)
         alt_rad = np.radians(star_alt)
         dec_rad = np.radians(star_dec)
 
         # Find Hour Angle (H)
-        lst = self.observation.place.ts.utc(self.observation.observation_local_time).gmst + self.observation.place.lon_decimal / 15.0
+        lst = t.gmst + self.observation.place.lon_decimal / 15.0
         h_rad = np.radians((lst - target_star.ra.hours) * 15.0)
 
         # Standard formula for q
@@ -262,33 +261,31 @@ class PolarAlignment:
         q = np.arctan2(sin_q, cos_q)
 
         # 3. Determine Image Orientation in Alt/Az space
-        # Direction from Star to Mount RA Axis in image
-        p1 = np.array([self.frames[0]["target"]["x"], self.frames[0]["target"]["y"]])
+        p_current = np.array([latest_frame["target"]["x"], latest_frame["target"]["y"]])
         c = self.mount_axis_image
-        v_pole_img = c - p1
+        v_pole_img = c - p_current
         angle_pole_img = np.arctan2(v_pole_img[1], v_pole_img[0])
 
-        # Direction of "Up" (Alt+) in image is towards NCP rotated by -q
-        # (Assuming mount was roughly aligned, so v_pole points towards NCP)
+        # Direction of "Up" (Alt+) in image is towards Pole rotated by -q
+        # q is Zenith -> Pole angle. So Zenith is at -q from Pole.
         angle_alt_img = angle_pole_img - q
         u_alt = np.array([np.cos(angle_alt_img), np.sin(angle_alt_img)])
-        # Az+ (Eastward) is 90 degrees clockwise from Alt+ in North-facing view
-        u_az = np.array([np.cos(angle_alt_img - np.pi/2), np.sin(angle_alt_img - np.pi/2)])
+        # Az+ (Eastward increase) is 90 degrees clockwise from Alt+ in the sky.
+        # In a Y-down image, clockwise rotation is +pi/2.
+        u_az = np.array([np.cos(angle_alt_img + np.pi/2), np.sin(angle_alt_img + np.pi/2)])
 
         # 4. Project Star-to-NCP vector into Image Space
         d_alt_sky = pole_alt - star_alt
-        # Shortest distance in azimuth
         d_az_raw = pole_az - star_az
         if d_az_raw > 180: d_az_raw -= 360
         if d_az_raw < -180: d_az_raw += 360
         d_az_sky = d_az_raw * np.cos(np.radians((star_alt + pole_alt) / 2))
 
         # Expected position of NCP in image if mount was aligned
-        ncp_image = p1 + (d_alt_sky * 3600 / self.pixel_scale) * u_alt + \
+        ncp_image = p_current + (d_alt_sky * 3600 / self.pixel_scale) * u_alt + \
                          (d_az_sky * 3600 / self.pixel_scale) * u_az
 
         # 5. Calculate Misalignment Error Vector
-        # Error is the vector from where the RA axis IS to where it SHOULD be (NCP)
         error_img = c - ncp_image
 
         # Decompose error into Alt and Az components
@@ -314,7 +311,7 @@ class PolarAlignment:
             "mount_axis_image": c,
             "ncp_image": ncp_image,
             "instructions": ". ".join(inst),
-            "star_image": p1,
+            "star_image": p_current,
             "u_alt": u_alt,
             "u_az": u_az
         }
@@ -373,3 +370,70 @@ class PolarAlignment:
         plt.close(fig)
         buf.seek(0)
         return buf
+
+class PolarAlignmentWizard:
+    PHASE_SELECT_STAR = "SELECT_STAR"
+    PHASE_ROTATION = "ROTATION"
+    PHASE_ADJUSTMENT = "ADJUSTMENT"
+
+    def __init__(self, observation):
+        self.observation = observation
+        self.pa = None
+        self.phase = self.PHASE_SELECT_STAR
+        self.error = None
+        self.instructions = "Please select a target star for polar alignment."
+
+    def select_star(self, star_name):
+        self.pa = PolarAlignment(self.observation, target_star_name=star_name)
+        self.phase = self.PHASE_ROTATION
+        self.instructions = "Take the first frame at the home position (RA=0)."
+
+    def add_rotation_frame(self, filepath, ra_rotation_deg):
+        if self.phase != self.PHASE_ROTATION:
+            raise ValueError(f"Not in rotation phase. Current phase: {self.phase}")
+        success = self.pa.add_frame(filepath, ra_rotation_deg=ra_rotation_deg, phase='rotation')
+        if success:
+            if len(self.pa.rotation_frames) == 1:
+                self.instructions = "Rotate RA (e.g. 60-90 degrees) and take another frame."
+            elif len(self.pa.rotation_frames) >= 2:
+                self.instructions = "Rotation data collected. You can add more frames or calculate the alignment."
+        return success
+
+    def calculate(self):
+        if self.pa is None or len(self.pa.rotation_frames) < 2:
+            raise ValueError("Need at least 2 rotation frames to calculate alignment.")
+        correction = self.pa.calculate_correction()
+        if correction:
+            self.error = correction["error_arcmin"]
+            self.instructions = f"Alignment calculated. Error: {self.error:.1f}'. {correction['instructions']}. Start adjustment phase for live feedback."
+            return correction
+        return None
+
+    def start_adjustment(self):
+        if self.pa is None or self.pa.mount_axis_image is None:
+            # Try to calculate if not done yet
+            self.calculate()
+        self.phase = self.PHASE_ADJUSTMENT
+        self.instructions = "Take adjustment frames for live feedback. Adjust Altitude and Azimuth knobs as instructed."
+
+    def add_adjustment_frame(self, filepath):
+        if self.phase != self.PHASE_ADJUSTMENT:
+            raise ValueError(f"Not in adjustment phase. Current phase: {self.phase}")
+        success = self.pa.add_frame(filepath, phase='adjustment')
+        if success:
+            correction = self.pa.calculate_correction()
+            if correction:
+                self.error = correction["error_arcmin"]
+                self.instructions = f"Error: {self.error:.1f}'. {correction['instructions']}"
+                return correction
+        return None
+
+    def get_status(self):
+        return {
+            "phase": self.phase,
+            "error_arcmin": self.error,
+            "instructions": self.instructions,
+            "target_star": self.pa.target_star_name if self.pa else None,
+            "rotation_frames_count": len(self.pa.rotation_frames) if self.pa else 0,
+            "adjustment_frames_count": len(self.pa.adjustment_frames) if self.pa else 0
+        }
