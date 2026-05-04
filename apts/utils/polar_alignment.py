@@ -106,16 +106,31 @@ class PolarAlignment:
                 target = max(stars, key=lambda s: s.get("flux", 0)) if any("flux" in s for s in stars) else stars[0]
         else:
             # Track from previous frame (either from rotation or adjustment)
-            prev_frame = self.adjustment_frames[-1] if self.adjustment_frames else self.rotation_frames[-1]
+            prev_frame = (
+                self.adjustment_frames[-1]
+                if self.adjustment_frames
+                else self.rotation_frames[-1]
+            )
             prev_target = prev_frame["target"]
-            # We look for the star closest to the previous position, but within a reasonable radius
-            # to avoid jumping to another star if the target was lost or moved significantly
-            distances = [((s["x"] - prev_target["x"]) ** 2 + (s["y"] - prev_target["y"]) ** 2, s) for s in stars]
-            min_dist_sq, target = min(distances, key=lambda d: d[0])
+            prev_stars = prev_frame["stars"]
 
-            # If the jump is too large (e.g. > 100 pixels), we might want to warning or fallback
-            if min_dist_sq > 100**2:
-                logger.warning(f"Large star tracking jump detected: {math.sqrt(min_dist_sq):.1f} pixels")
+            # Robust tracking using relative positions (triangles/asterisms)
+            # if we have enough stars in the previous frame.
+            target = self._robust_star_tracking(prev_target, prev_stars, stars)
+
+            if target is None:
+                # Fallback to proximity
+                distances = [
+                    ((s["x"] - prev_target["x"]) ** 2 + (s["y"] - prev_target["y"]) ** 2, s)
+                    for s in stars
+                ]
+                min_dist_sq, target = min(distances, key=lambda d: d[0])
+
+                if min_dist_sq > 100**2:
+                    logger.warning(
+                        f"Large star tracking jump detected: {math.sqrt(min_dist_sq):.1f} pixels"
+                    )
+
 
         frame_data = {
             "filepath": filepath,
@@ -133,6 +148,64 @@ class PolarAlignment:
             self.adjustment_frames.append(frame_data)
 
         return True
+
+    def _robust_star_tracking(self, prev_target, prev_stars, current_stars):
+        """
+        Attempts to find the target star in the current frame by comparing
+        the local configuration of stars (asterism).
+        """
+        if len(prev_stars) < 3 or len(current_stars) < 3:
+            return None
+
+        # 1. Select a few bright neighbors of the target in the previous frame
+        def dist(s1, s2):
+            return math.sqrt((s1["x"] - s2["x"]) ** 2 + (s1["y"] - s2["y"]) ** 2)
+
+        # Use only high-confidence stars (high flux) for neighbors to be robust against noise
+        min_flux = prev_target.get("flux", 0) * 0.1
+        neighbors = sorted(
+            [s for s in prev_stars if dist(s, prev_target) > 1.0 and s.get("flux", 0) > min_flux],
+            key=lambda s: dist(s, prev_target)
+        )[:5] # Take up to 5 closest neighbors
+
+        if not neighbors:
+            return None
+
+        # Precompute relative distances from target to neighbors in previous frame
+        target_to_neighbors_dists = [dist(prev_target, n) for n in neighbors]
+
+        # 2. For each star in the current frame, check if it has neighbors at similar distances
+        best_star = None
+        best_match_count = 0
+
+        for s_curr in current_stars:
+            curr_neighbors_dists = sorted([dist(s_curr, other) for other in current_stars if dist(s_curr, other) > 1.0])
+
+            match_count = 0
+            # Also consider flux similarity
+            flux_ratio = s_curr.get("flux", 0) / prev_target.get("flux", 1)
+            if flux_ratio < 0.5 or flux_ratio > 2.0:
+                # Too much flux difference, likely not the same star
+                continue
+
+            for d_target in target_to_neighbors_dists:
+                # Find if any current neighbor distance matches d_target within tolerance (e.g. 5%)
+                for d_curr in curr_neighbors_dists:
+                    if d_curr > d_target * 1.1: # Too far
+                        break
+                    if abs(d_curr - d_target) < max(2.0, d_target * 0.10): # Relaxed to 10%
+                        match_count += 1
+                        break
+
+            if match_count > best_match_count:
+                best_match_count = match_count
+                best_star = s_curr
+
+        # We need a significant match (e.g. at least 2 neighbors matching distances)
+        if best_match_count >= min(2, len(neighbors)):
+            return best_star
+
+        return None
 
     def _fit_circle(self):
         """

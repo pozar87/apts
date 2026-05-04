@@ -54,12 +54,23 @@ class TestPolarAlignmentWizardIntegration(unittest.TestCase):
             if os.path.exists(f):
                 os.remove(f)
 
-    def create_synthetic_fits(self, filename, star_x, star_y, width=1000, height=1000):
+    def create_synthetic_fits(self, filename, target_star_x, target_star_y, other_stars=None, width=1000, height=1000):
+        """
+        Creates a synthetic FITS image with a target star and optional other stars.
+        other_stars: list of (x, y, flux) tuples
+        """
         data = np.random.normal(100, 5, (height, width)).astype(np.float32)
         y, x = np.mgrid[0:height, 0:width]
-        # Star blob
-        star = 5000 * np.exp(-((x - star_x)**2 + (y - star_y)**2) / (2 * 2.0**2))
+
+        # Target Star blob
+        star = 5000 * np.exp(-((x - target_star_x)**2 + (y - target_star_y)**2) / (2 * 2.0**2))
         data += star.astype(np.float32)
+
+        # Other stars
+        if other_stars:
+            for sx, sy, flux in other_stars:
+                other = flux * np.exp(-((x - sx)**2 + (y - sy)**2) / (2 * 2.0**2))
+                data += other.astype(np.float32)
 
         hdu = fits.PrimaryHDU(data)
         # Add some minimal header
@@ -148,6 +159,96 @@ class TestPolarAlignmentWizardIntegration(unittest.TestCase):
         self.assertGreater(error1, error2)
         self.assertGreater(error2, error3)
         self.assertLess(error3, 5.0)
+
+    def test_robust_tracking_multi_star(self):
+        wizard = PolarAlignmentWizard(self.mock_observation)
+        wizard.select_star(self.star_name)
+
+        center_x, center_y = 500, 500
+        radius = 96
+
+        # We have a target star and a "decoy" star nearby
+        # Star positions in field (relative to center)
+        # Target: (+96, 0)
+        # Decoy: (+120, 20)
+
+        other_stars_0 = [(center_x + 120, center_y + 20, 4500)] # Slightly dimmer than target (5000)
+
+        f1 = self.create_synthetic_fits("robust_0.fits", center_x + radius, center_y, other_stars=other_stars_0)
+        wizard.add_rotation_frame(f1, 0)
+        self.assertAlmostEqual(wizard.pa.rotation_frames[0]["target"]["x"], center_x + radius, delta=1)
+
+        # Rotate 90 degrees.
+        # Target moves to (center_x, center_y + 96) = (500, 596)
+        # Decoy moves to (center_x - 20, center_y + 120) = (480, 620)
+        other_stars_90 = [(480, 620, 4500)]
+
+        f2 = self.create_synthetic_fits("robust_90.fits", center_x, center_y + radius, other_stars=other_stars_90)
+        wizard.add_rotation_frame(f2, 90)
+
+        # Check if it tracked the right one
+        tracked_x = wizard.pa.rotation_frames[1]["target"]["x"]
+        tracked_y = wizard.pa.rotation_frames[1]["target"]["y"]
+
+        print(f"Tracked position: ({tracked_x:.1f}, {tracked_y:.1f})")
+        print(f"Expected Target: ({center_x:.1f}, {center_y + radius:.1f})")
+        print(f"Expected Decoy: (480.0, 620.0)")
+
+        self.assertAlmostEqual(tracked_x, center_x, delta=5)
+        self.assertAlmostEqual(tracked_y, center_y + radius, delta=5)
+
+    def test_robust_tracking_large_rotation(self):
+        wizard = PolarAlignmentWizard(self.mock_observation)
+        wizard.select_star(self.star_name)
+
+        center_x, center_y = 500, 500
+        radius = 96
+
+        # To make it robust, we need at least 3 stars total (target + 2 neighbors)
+        # Target at (+96, 0) relative to center
+        # Neighbor 1 at (+150, 50)
+        # Neighbor 2 at (+50, 100)
+
+        other_stars_0 = [
+            (center_x + 150, center_y + 50, 4000),
+            (center_x + 50, center_y + 100, 4000),
+            (center_x - radius, center_y, 4500) # Decoy
+        ]
+
+        f1 = self.create_synthetic_fits("robust_large_0.fits", center_x + radius, center_y, other_stars=other_stars_0)
+        wizard.add_rotation_frame(f1, 0)
+
+        # Large rotation: 180 degrees
+        # Target moves to (-96, 0) -> (404, 500)
+        # Neighbor 1 moves to (-150, -50) -> (350, 450)
+        # Neighbor 2 moves to (-50, -100) -> (450, 400)
+        # Decoy moves to (+96, 0) -> (596, 500)
+
+        other_stars_180 = [
+            (center_x - 150, center_y - 50, 4000),
+            (center_x - 50, center_y - 100, 4000),
+            (center_x + radius, center_y, 4500) # Decoy
+        ]
+
+        f2 = self.create_synthetic_fits("robust_large_180.fits", center_x - radius, center_y, other_stars=other_stars_180)
+
+        # Ensure neighbors are also in prev_stars for Frame 0 (not just f1's Frame 1)
+        # The analyzer is called for f1, and it populates rotation_frames[0]["stars"]
+        # So we don't need to manually populate it, but we MUST NOT mess with prev_target
+        # in a way that breaks distance calculations to neighbors.
+
+        # If we want to simulate proximity failing, we should move BOTH target and its neighbors
+        # but that's what a large rotation ALREADY DOES.
+        # The reason it picked the decoy is that proximity (Frame 1 -> Frame 2) saw decoy
+        # at (596, 500) and prev target at (596, 500).
+
+        wizard.add_rotation_frame(f2, 180)
+
+        tracked_x = wizard.pa.rotation_frames[1]["target"]["x"]
+
+        print(f"Robust large rotation tracked X: {tracked_x:.1f}")
+        # It should pick 404 (Target) even if proximity suggests 596 (Decoy)
+        self.assertAlmostEqual(tracked_x, center_x - radius, delta=5)
 
 if __name__ == "__main__":
     unittest.main()
