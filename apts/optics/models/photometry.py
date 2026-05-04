@@ -1,3 +1,4 @@
+import math
 from typing import Optional, TYPE_CHECKING
 import numpy
 from ...units import get_unit_registry
@@ -15,6 +16,8 @@ class PhotometryMixIn:
         telescope: Any
         filters: List[Any]
         def atmospheric_extinction(self, magnitude: float, altitude_degrees: float, extinction_k: float = 0.2) -> float: ...
+        def airmass(self, altitude_degrees: float) -> float: ...
+        def psf_peak_fraction(self, seeing: float) -> Optional[float]: ...
 
     def sky_flux(self, sqm: float) -> Optional[float]:
         """
@@ -294,3 +297,95 @@ class PhotometryMixIn:
         sqm_factor = sqm - 21.0
 
         return base + time_factor + sqm_factor
+
+    def dynamic_range(self) -> Optional[float]:
+        """
+        Calculates the dynamic range of the camera or smart telescope in the optical path.
+        """
+        from ...opticalequipment.camera import Camera
+        from ...opticalequipment.smart_telescope import SmartTelescope
+
+        if isinstance(self.output, (Camera, SmartTelescope)):
+            return self.output.dynamic_range()
+        return None
+
+    def saturation_time(
+        self,
+        magnitude: float,
+        seeing: float,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional["Quantity"]:
+        """
+        Calculates the maximum exposure time before the central pixel of a point source saturates.
+        Based on the full-well capacity of the sensor and the Gaussian PSF model.
+        """
+        from ...opticalequipment.camera import Camera
+        from ...opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        if self.output.full_well is None:
+            return None
+
+        obj_flux = self.object_flux(
+            magnitude, altitude=altitude, extinction_k=extinction_k
+        )
+        f = self.psf_peak_fraction(seeing)
+
+        if obj_flux is None or f is None or obj_flux <= 0 or f <= 0:
+            return None
+
+        # S_peak = flux * t * f
+        # t = full_well / (flux * f)
+        t = self.output.full_well / (obj_flux * f)
+        return t * get_unit_registry().second
+
+    def saturation_magnitude(
+        self,
+        exposure_time: float,
+        seeing: float,
+        altitude: Optional[float] = None,
+        extinction_k: float = 0.2,
+    ) -> Optional[float]:
+        """
+        Calculates the magnitude of a point source that would just saturate the sensor
+        at the given exposure time and seeing conditions.
+        """
+        from ...opticalequipment.camera import Camera
+        from ...opticalequipment.smart_telescope import SmartTelescope
+
+        if not isinstance(self.output, (Camera, SmartTelescope)):
+            return None
+
+        if self.output.full_well is None:
+            return None
+
+        f = self.psf_peak_fraction(seeing)
+        if f is None or f <= 0 or exposure_time <= 0:
+            return None
+
+        # target_flux = full_well / (t * f)
+        target_flux = self.output.full_well / (exposure_time * f)
+
+        # flux = 0.005 * 10^(0.4 * (21.83 - m_eff)) * Area * QE * Transmission
+        # We can find m_eff using binary search or analytical inversion.
+        # Since we have object_flux(m), we know object_flux(0)
+        flux_at_zero = self.object_flux(0.0, altitude=None, extinction_k=0.0)
+        if flux_at_zero is None:
+            return None
+
+        # target_flux = flux_at_zero * 10^(-0.4 * m_eff)
+        # 10^(-0.4 * m_eff) = target_flux / flux_at_zero
+        # -0.4 * m_eff = log10(target_flux / flux_at_zero)
+        # m_eff = -2.5 * log10(target_flux / flux_at_zero)
+        m_eff = -2.5 * math.log10(target_flux / flux_at_zero)
+
+        if altitude is not None:
+            # m_eff = m + k * X
+            # m = m_eff - k * X
+            airmass_val = self.airmass(altitude)
+            return float(m_eff - extinction_k * airmass_val)
+
+        return float(m_eff)
