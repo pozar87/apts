@@ -118,5 +118,36 @@ class TestPolarAlignmentWizardIntegration(unittest.TestCase):
         # (Numerical errors and noise might give a small error)
         self.assertLess(wizard.error, 10.0) # Within 10 arcmin for a synthetic test with noise
 
+    def test_iterative_adjustment(self):
+        wizard = PolarAlignmentWizard(self.mock_observation)
+        wizard.select_star(self.star_name)
+
+        center_x, center_y = 500, 500
+        radius = 96 # pixels
+
+        # Calibration (rotation)
+        wizard.add_rotation_frame(self.create_synthetic_fits("rot_0.fits", center_x + radius, center_y), 0)
+        wizard.add_rotation_frame(self.create_synthetic_fits("rot_90.fits", center_x, center_y + radius), 90)
+
+        wizard.calculate()
+        wizard.start_adjustment()
+
+        # Initial bad position: star at (620, 500) instead of (596, 500)
+        # Offset is 24 pixels = 24 * 30 = 720 arcsec = 12 arcmin
+        wizard.add_adjustment_frame(self.create_synthetic_fits("adj_iter_1.fits", 620, 500))
+        error1 = wizard.error
+
+        # Intermediate improvement: star at (608, 500)
+        wizard.add_adjustment_frame(self.create_synthetic_fits("adj_iter_2.fits", 608, 500))
+        error2 = wizard.error
+
+        # Almost perfect: star at (596, 500)
+        wizard.add_adjustment_frame(self.create_synthetic_fits("adj_iter_3.fits", 596, 500))
+        error3 = wizard.error
+
+        self.assertGreater(error1, error2)
+        self.assertGreater(error2, error3)
+        self.assertLess(error3, 5.0)
+
 if __name__ == "__main__":
     unittest.main()
