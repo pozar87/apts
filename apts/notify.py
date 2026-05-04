@@ -96,12 +96,12 @@ class Notify:
         msg_root["To"] = Utils.sanitize_header(self.recipient_email)
 
         # Plain text part
-        text_part = MIMEText(body, "plain")
+        text_part = MIMEText(body, "plain", "utf-8")
         msg_root.attach(text_part)
 
         # Optional HTML part
         if html_body:
-            html_part = MIMEText(html_body, "html")
+            html_part = MIMEText(html_body, "html", "utf-8")
             msg_root.attach(html_part)
 
         return self._send_email(msg_root)  # Use the internal helper
@@ -140,7 +140,7 @@ class Notify:
                     "Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
                     "Enable HTML to see the full content."
                 ).format(num_planets=num_planets, num_messier=num_messier)
-            text_part = MIMEText(plain_text_fallback, "plain")
+            text_part = MIMEText(plain_text_fallback, "plain", "utf-8")
             msg_root.attach(text_part)
 
             # Create multipart/related for HTML and inline images
@@ -150,7 +150,7 @@ class Notify:
             html_content = observations.to_html(
                 custom_template=custom_template, css=css, language=language
             )
-            html_part = MIMEText(html_content, "html")
+            html_part = MIMEText(html_content, "html", "utf-8")
             msg_related.attach(html_part)  # First part of related is the HTML
 
             # Add weather image (inline)
