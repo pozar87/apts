@@ -2,7 +2,7 @@ from typing import Any, Optional, cast
 import pandas as pd
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_plot_style
-from apts.utils.plot import Utils as PlotUtils
+from apts.utils.plot import PlotUtils
 
 def get_plot_setup(dark_mode_override: Optional[bool] = None):
     if dark_mode_override is not None:

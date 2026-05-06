@@ -5,29 +5,29 @@ from ...utils import ConnectionType, Gender
 class Barlow(OpticalEquipment):
     @classmethod 
     def normalize_database_entry(cls, entry: dict) -> dict: 
-        from ...utils import Utils 
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
         entry = entry.copy() 
         name = entry.get("name", "") 
         if "magnification" not in entry:
-            mag = Utils.extract_number(name, prefix="x")
+            mag = extract_number(name, prefix="x")
             if mag:
                 entry["magnification"] = mag
         return super(Barlow, cls).normalize_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
 
         brand = entry["brand"]
         name = entry["name"]
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        tt = Utils.map_conn(entry.get("tside_thread"))
-        tg = Utils.map_gender(entry.get("tside_gender"))
-        Utils.map_conn(entry.get("cside_thread"))
-        cg = Utils.map_gender(entry.get("cside_gender"))
-        mag = Utils.extract_number(name, prefix="x") or 2.0
+        tt = map_conn(entry.get("tside_thread"))
+        tg = map_gender(entry.get("tside_gender"))
+        map_conn(entry.get("cside_thread"))
+        cg = map_gender(entry.get("cside_gender"))
+        mag = extract_number(name, prefix="x") or 2.0
         return cls(
             mag,
             vendor=vendor,

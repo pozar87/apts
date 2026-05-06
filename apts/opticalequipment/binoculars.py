@@ -7,14 +7,14 @@ from .abstract import OutputOpticalEquipment
 class Binoculars(OutputOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
-        from ..utils import Utils
+        from ..utils import extract_number
 
         brand = entry["brand"]
         name = entry["name"]
         vendor = f"{brand} {name}"
         mass = entry.get("mass", 0)
-        mag = Utils.extract_number(name) or 10
-        obj = Utils.extract_number(name, prefix=f"{int(mag)}x") or 50
+        mag = extract_number(name) or 10
+        obj = extract_number(name, prefix=f"{int(mag)}x") or 50
         return cls(mag, obj, vendor, 60, mass=mass)
 
     """

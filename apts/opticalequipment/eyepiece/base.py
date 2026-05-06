@@ -7,12 +7,12 @@ from ...utils import ConnectionType, Gender
 class Eyepiece(OutputOpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import Utils
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
         import re
         entry = entry.copy()
         name = entry.get("name", "")
         if "focal_length_mm" not in entry and "focal_length" not in entry:
-            focal_length = Utils.extract_number(name)
+            focal_length = extract_number(name)
             if focal_length:
                 entry["focal_length_mm"] = focal_length
         if "field_of_view_deg" not in entry and "field_of_view" not in entry:
@@ -25,13 +25,13 @@ class Eyepiece(OutputOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
         entry = cls.normalize_database_entry(entry)
         brand = entry.get('brand', 'Unknown')
         name = entry.get('name', 'Unknown')
         vendor = f'{brand} {name}'
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
+        tt = map_conn(entry.get('tside_thread'))
+        tg = map_gender(entry.get('tside_gender'))
         fl = entry.get('focal_length_mm', 20)
         fov = entry.get('field_of_view_deg', 70)
         fs = entry.get('field_stop_mm')

@@ -15,7 +15,7 @@ from apts.constants.graphconstants import (
 from apts.i18n import gettext_
 from apts.plotting.utils import mark_good_conditions, mark_observation
 from apts.utils import planetary
-from apts.utils.plot import Utils as PlotUtils
+from apts.utils.plot import PlotUtils
 from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:

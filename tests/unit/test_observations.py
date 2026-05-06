@@ -634,7 +634,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 if not self.mock_messier_df.empty:
                     mock_ax.legend.assert_called_once()
 
-    @patch("apts.utils.plot.Utils.annotate_plot")
+    @patch("apts.utils.plot.PlotUtils.annotate_plot")
     @patch("apts.plotting.altitude.messier.pyplot")
     @patch("apts.plotting.altitude.messier.get_dark_mode")
     def test_generate_plot_messier_translation_pl(

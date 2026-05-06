@@ -5,31 +5,31 @@ from ...utils import ConnectionType, Gender
 class Diagonal(IntermediateOpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
         entry = entry.copy()
         if "in_connection_type" not in entry and "tside_thread" in entry:
-            entry["in_connection_type"] = Utils.map_conn(entry.get("tside_thread")).value
+            entry["in_connection_type"] = map_conn(entry.get("tside_thread")).value
         if "out_connection_type" not in entry and "cside_thread" in entry:
-            entry["out_connection_type"] = Utils.map_conn(entry.get("cside_thread")).value
+            entry["out_connection_type"] = map_conn(entry.get("cside_thread")).value
         if "in_gender" not in entry and "tside_gender" in entry:
-            entry["in_gender"] = (Utils.map_gender(entry.get("tside_gender")) or Gender.MALE).value
+            entry["in_gender"] = (map_gender(entry.get("tside_gender")) or Gender.MALE).value
         if "out_gender" not in entry and "cside_gender" in entry:
-            entry["out_gender"] = (Utils.map_gender(entry.get("cside_gender")) or Gender.MALE).value
+            entry["out_gender"] = (map_gender(entry.get("cside_gender")) or Gender.MALE).value
         return super(Diagonal, cls).normalize_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
 
         brand = entry["brand"]
         name = entry["name"]
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        tt = Utils.map_conn(entry.get("tside_thread"))
-        tg = Utils.map_gender(entry.get("tside_gender"))
-        ct = Utils.map_conn(entry.get("cside_thread"))
-        cg = Utils.map_gender(entry.get("cside_gender"))
+        tt = map_conn(entry.get("tside_thread"))
+        tg = map_gender(entry.get("tside_gender"))
+        ct = map_conn(entry.get("cside_thread"))
+        cg = map_gender(entry.get("cside_gender"))
         return cls(
             vendor,
             optical_length=ol,
