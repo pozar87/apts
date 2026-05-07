@@ -7,17 +7,17 @@ class OAG(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
 
         brand = entry["brand"]
         name = entry["name"]
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        tt = Utils.map_conn(entry.get("tside_thread"))
-        tg = Utils.map_gender(entry.get("tside_gender"))
-        ct = Utils.map_conn(entry.get("cside_thread"))
-        cg = Utils.map_gender(entry.get("cside_gender"))
+        tt = map_conn(entry.get("tside_thread"))
+        tg = map_gender(entry.get("tside_gender"))
+        ct = map_conn(entry.get("cside_thread"))
+        cg = map_gender(entry.get("cside_gender"))
         return cls(
             vendor,
             optical_length=ol,

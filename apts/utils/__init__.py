@@ -1,215 +1,42 @@
-import io
-import re
-from typing import overload, Literal, Tuple, Union, Any, Optional
-from enum import Enum
-
-from matplotlib import pyplot
-
-from apts.config import get_plot_format
-from apts.constants.graphconstants import get_plot_style
-from apts.units import ureg as ureg
 from .planetary import MINOR_PLANET_NAMES
+from .coordinates import decdeg2dms, dms2decdeg
+from .date import format_date, date_format
+from .graph import find_all_paths
+from .text import sanitize_header, extract_number, mask_secret
+from .equipment import ConnectionType, Gender, map_conn, map_gender, guess_optical_properties
+from .plot import PlotUtils
+from ..units import ureg as ureg
 
-__all__ = ["ureg", "MINOR_PLANET_NAMES"]
-
-
-class ConnectionType(Enum):
-    F_1_25 = "1.25"
-    F_2 = "2"
-    T2 = "T2"
-    M42 = "M42"
-    M48 = "M48"
-    M54 = "M54"
-    M56 = "M56"
-    M63 = "M63"
-    M68 = "M68"
-    M72 = "M72"
-    M81 = "M81"
-    M82 = "M82"
-    M84 = "M84"
-    M92 = "M92"
-    M117 = "M117"
-    EOS = "EOS"
-    CANON_RF = "Canon RF"
-    NIKON_F = "Nikon F"
-    NIKON_Z = "Nikon Z"
-    SONY_E = "Sony E"
-    FUJI_X = "Fuji X"
-    MFT = "MFT"
-    PENTAX_K = "Pentax K"
-    CS = "CS"
-    SC = "SC (Schmidt-Cassegrain)"
-    ZWO_6_BOLT = "ZWO 6-bolt"
-    ZWO_4_BOLT = "ZWO 4-bolt"
-    QHY_4_BOLT = "QHY 4-bolt"
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-
-class Gender(Enum):
-    MALE = "M"
-    FEMALE = "F"
-
-    def __str__(self) -> str:
-        return str(self.value)
+__all__ = [
+    "ureg",
+    "MINOR_PLANET_NAMES",
+    "decdeg2dms",
+    "dms2decdeg",
+    "format_date",
+    "date_format",
+    "find_all_paths",
+    "sanitize_header",
+    "extract_number",
+    "mask_secret",
+    "ConnectionType",
+    "Gender",
+    "map_conn",
+    "map_gender",
+    "guess_optical_properties",
+]
 
 
 class Utils:
-    @staticmethod
-    def find_all_paths(graph, start, end, mode="OUT", maxlen=None):
-        import networkx as nx
-
-        start_nodes = start if isinstance(start, list) else [start]
-        end_nodes = end if isinstance(end, list) else [end]
-
-        for s in start_nodes:
-            for e in end_nodes:
-                # networkx.all_simple_paths cutoff is in edges,
-                # so maxlen-1 if maxlen is the number of nodes.
-                cutoff = maxlen - 1 if maxlen is not None else None
-                try:
-                    # Return generator instead of list to save memory and time
-                    yield from nx.all_simple_paths(graph, s, e, cutoff=cutoff)
-                except nx.NodeNotFound:
-                    continue
-
-    @staticmethod
-    @overload
-    def decdeg2dms(dd: Any, pretty: Literal[True]) -> str: ...
-    @staticmethod
-    @overload
-    def decdeg2dms(
-        dd: Any, pretty: Literal[False] = False
-    ) -> Tuple[float, float, float]: ...
-    @staticmethod
-    def decdeg2dms(
-        dd: Any, pretty: bool = False
-    ) -> Union[str, Tuple[float, float, float]]:
-        is_pandas_series = hasattr(dd, "iloc")
-        dd_val = dd.iloc[0] if is_pandas_series else dd
-        mnt, sec = divmod(dd_val * 3600, 60)
-        deg, mnt = divmod(mnt, 60)
-
-        if pretty:
-            return f"{int(deg)}°{int(mnt)}'{int(sec)}\""
-        else:
-            return deg, mnt, sec
-
-    @staticmethod
-    def dms2decdeg(dms):
-        deg, mnt, sec = dms
-        return deg + mnt / 60 + sec / 3600
-
-    @staticmethod
-    def format_date(date):
-        return date.strftime("%Y-%m-%d %H:%M")
-
-    @staticmethod
-    def sanitize_header(value: str) -> str:
-        """Removes newlines to prevent header injection and crashes."""
-        if not value:
-            return ""
-        return str(value).replace("\n", "").replace("\r", "")
-
-    @staticmethod
-    def plot_to_bytes(plot):
-        plot_bytes = io.BytesIO()
-        plot.savefig(plot_bytes, format=get_plot_format())
-        # Prevent showing plot in ipython
-        pyplot.close(plot)
-        plot_bytes.seek(0)
-        return plot_bytes
-
-    @staticmethod
-    def date_format(date_time):
-        return date_time.isoformat(timespec="seconds")
-
-    @staticmethod
-    def mask_secret(secret: Any) -> str:
-        from ..secrets import mask_secret
-
-        return mask_secret(secret)
-
-    @staticmethod
-    def annotate_plot(plot, y_label, dark_mode_enabled: bool):  # Removed local_tz
-        style = get_plot_style(dark_mode_enabled)
-
-        plot.set_xlabel("Time", color=style["TEXT_COLOR"])
-        plot.set_ylabel(y_label, color=style["TEXT_COLOR"])
-        # The following line was found to cause incorrect date range scaling on the x-axis.
-        # Pandas/Matplotlib's default formatter handles timezone-aware dates correctly.
-        # plot.xaxis.set_major_formatter(mdates.DateFormatter("%d %b %H:%M", tz=local_tz))
-        plot.tick_params(
-            axis="x",
-            which="both",
-            colors=style["TICK_COLOR"],
-            labelcolor=style["TEXT_COLOR"],
-            bottom=True,
-            top=False,
-            labelbottom=True,
-        )
-        plot.tick_params(
-            axis="y", colors=style["TICK_COLOR"], labelcolor=style["TEXT_COLOR"]
-        )  # Also making y-axis labelcolor explicit
-
-        plot.spines["bottom"].set_color(style["AXIS_COLOR"])
-        plot.spines["top"].set_color(style["AXIS_COLOR"])
-        plot.spines["left"].set_color(style["AXIS_COLOR"])
-        plot.spines["right"].set_color(style["AXIS_COLOR"])
-
-    @staticmethod
-    def map_conn(thread_str):
-        if not thread_str:
-            return ConnectionType.F_1_25  # Default
-        # Try to match ConnectionType
-        for ct in ConnectionType:
-            if ct.value.lower() in thread_str.lower():
-                return ct
-        return ConnectionType.F_1_25
-
-    @staticmethod
-    def map_gender(gender_str):
-        if gender_str in ["Male", "M"]:
-            return Gender.MALE
-        if gender_str in ["Female", "F"]:
-            return Gender.FEMALE
-        return None
-
-    @staticmethod
-    def extract_number(s: str, prefix: str = "", suffix: str = "") -> Optional[float]:
-        pattern = f"{prefix}(\\d+\\.?\\d*){suffix}"
-        match = re.search(pattern, s)
-        if match:
-            return float(match.group(1))
-        return None
-
-    @staticmethod
-    def guess_optical_properties(name: str):
-        # Very simple heuristic
-        aperture = None
-        focal_length = None
-
-        # Match 80ED, 100ED etc
-        match = re.search(r"(\d+)ED", name)
-        if match:
-            aperture = float(match.group(1))
-
-        # Match C8, C11
-        match = re.search(r"C(\d+)", name)
-        if match:
-            inches = float(match.group(1))
-            if inches < 20:  # Heuristic for SCTs
-                aperture = round(inches * 25.4, 1)
-
-        # Match 135mm f/2
-        match = re.search(r"(\d+)mm", name)
-        if match:
-            val = float(match.group(1))
-            if val > 10:
-                if "f/" in name:
-                    focal_length = val
-                else:
-                    aperture = val
-
-        return aperture, focal_length
+    find_all_paths = staticmethod(find_all_paths)
+    decdeg2dms = staticmethod(decdeg2dms)
+    dms2decdeg = staticmethod(dms2decdeg)
+    format_date = staticmethod(format_date)
+    sanitize_header = staticmethod(sanitize_header)
+    plot_to_bytes = staticmethod(PlotUtils.plot_to_bytes)
+    date_format = staticmethod(date_format)
+    mask_secret = staticmethod(mask_secret)
+    annotate_plot = staticmethod(PlotUtils.annotate_plot_simple)
+    map_conn = staticmethod(map_conn)
+    map_gender = staticmethod(map_gender)
+    extract_number = staticmethod(extract_number)
+    guess_optical_properties = staticmethod(guess_optical_properties)

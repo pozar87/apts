@@ -19,7 +19,7 @@ from ..objects.messier import Messier
 from ..objects.ngc import NGC
 from ..objects.solar_objects import SolarObjects
 from ..objects.stars import Stars
-from ..utils import Utils
+from ..utils import format_date
 from .plotting import PlottingMixIn
 from .weather import WeatherAnalysisMixIn
 
@@ -357,8 +357,8 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
 
             data = {
                 "title": "APTS",
-                "start": Utils.format_date(self.start),
-                "stop": Utils.format_date(self.stop),
+                "start": format_date(self.start),
+                "stop": format_date(self.stop),
                 "planets_count": len(visible_planets_df),
                 "messier_count": len(messier_df),
                 "planets_table": visible_planets_df.drop(

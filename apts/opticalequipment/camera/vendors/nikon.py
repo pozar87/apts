@@ -368,12 +368,12 @@ class NikonCamera(Camera):
         Sensor: Full Frame
         """
         entry = cls._DATABASE['Nikon_D850']
-        from ....utils import Utils
+        from ....utils import map_conn, map_gender
         vendor = f"{entry['brand']} {entry['name']}"
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
+        tt = map_conn(entry.get('tside_thread'))
+        tg = map_gender(entry.get('tside_gender'))
         return cls(35.9, 23.9, 8256, 5504, vendor=vendor, connection_type=tt, connection_gender=tg or Gender.FEMALE, pixel_size=4.35, read_noise=1.1, full_well=48000, quantum_efficiency=54, backfocus=ol, mass=mass, optical_length=ol)
 
     @classmethod
