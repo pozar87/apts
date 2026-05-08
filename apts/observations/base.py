@@ -183,7 +183,7 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
     @property
     def local_messier(self) -> Messier:
         if self._local_messier is None:
-            from apts import catalogs
+            from .. import catalogs
 
             self._local_messier = Messier(
                 self.place, catalogs, calculation_date=self.effective_date
@@ -201,7 +201,7 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
     @property
     def local_ngc(self) -> NGC:
         if self._local_ngc is None:
-            from apts import catalogs
+            from .. import catalogs
 
             self._local_ngc = NGC(
                 self.place, catalogs, calculation_date=self.effective_date
@@ -211,7 +211,7 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
     @property
     def local_stars(self) -> Stars:
         if self._local_stars is None:
-            from apts import catalogs
+            from .. import catalogs
 
             self._local_stars = Stars(
                 self.place, catalogs, calculation_date=self.effective_date
