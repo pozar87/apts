@@ -232,10 +232,16 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
                 **args,
             )
             if "Type" in visible.columns:
-                visible["Type"] = visible["Type"].apply(gettext_).astype("string")
+                # Optimization: Use unique value mapping to avoid O(N) gettext_ calls.
+                unique_types = visible["Type"].unique()
+                translation_map = {val: gettext_(val) for val in unique_types}
+                visible["Type"] = visible["Type"].map(translation_map).astype("string")
             if "Constellation" in visible.columns:
+                # Optimization: Use unique value mapping to avoid O(N) gettext_ calls.
+                unique_constellations = visible["Constellation"].unique()
+                translation_map = {val: gettext_(val) for val in unique_constellations}
                 visible["Constellation"] = (
-                    visible["Constellation"].apply(gettext_).astype("string")
+                    visible["Constellation"].map(translation_map).astype("string")
                 )
             return visible
 
@@ -262,7 +268,10 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
                 **args,
             )
             if "Name" in visible.columns:
-                visible["Name"] = visible["Name"].apply(gettext_).astype("string")
+                # Optimization: Use unique value mapping to avoid O(N) gettext_ calls.
+                unique_names = visible["Name"].unique()
+                translation_map = {val: gettext_(val) for val in unique_names}
+                visible["Name"] = visible["Name"].map(translation_map).astype("string")
             return visible
 
     def get_astronomical_events(
