@@ -23,17 +23,17 @@ class TubeMaterial(Enum):
 class Telescope(OpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import Utils
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
         entry = entry.copy()
         name = entry.get("name", "")
         if "aperture_mm" not in entry and "aperture" not in entry:
-            aperture, focal_length = Utils.guess_optical_properties(name)
+            aperture, focal_length = guess_optical_properties(name)
             if aperture:
                 entry["aperture_mm"] = aperture
             if focal_length:
                 entry["focal_length_mm"] = focal_length
         elif "focal_length_mm" not in entry and "focal_length" not in entry:
-            _, focal_length = Utils.guess_optical_properties(name)
+            _, focal_length = guess_optical_properties(name)
             if focal_length:
                 entry["focal_length_mm"] = focal_length
         return super(Telescope, cls).normalize_database_entry(entry)
@@ -42,20 +42,20 @@ class Telescope(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)
-        ct = Utils.map_conn(entry.get('cside_thread'))
-        cg = Utils.map_gender(entry.get('cside_gender'))
+        ct = map_conn(entry.get('cside_thread'))
+        cg = map_gender(entry.get('cside_gender'))
 
         # Use explicit aperture and focal length if available, otherwise guess
         aperture = entry.get('aperture_mm')
         focal_length = entry.get('focal_length_mm')
         if aperture is None or focal_length is None:
-            g_aperture, g_focal_length = Utils.guess_optical_properties(name)
+            g_aperture, g_focal_length = guess_optical_properties(name)
             aperture = aperture or g_aperture
             focal_length = focal_length or g_focal_length
 

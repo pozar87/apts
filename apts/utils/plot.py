@@ -1,3 +1,4 @@
+import io
 from datetime import timedelta
 
 import matplotlib.axes
@@ -6,13 +7,14 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker
 from babel.dates import format_datetime
 
+from apts.config import get_plot_format
 from apts.constants.graphconstants import get_plot_style
 from apts.i18n import get_language, gettext_
 
-__all__ = ["Utils"]
+__all__ = ["PlotUtils"]
 
 
-class Utils:
+class PlotUtils:
     @staticmethod
     def plot_no_data(ax, title, dark_mode_enabled):
         style = get_plot_style(dark_mode_enabled)
@@ -116,6 +118,38 @@ class Utils:
                 pass
 
     @staticmethod
+    def annotate_plot_simple(plot, y_label, dark_mode_enabled: bool):
+        style = get_plot_style(dark_mode_enabled)
+
+        plot.set_xlabel("Time", color=style["TEXT_COLOR"])
+        plot.set_ylabel(y_label, color=style["TEXT_COLOR"])
+        plot.tick_params(
+            axis="x",
+            which="both",
+            colors=style["TICK_COLOR"],
+            labelcolor=style["TEXT_COLOR"],
+            bottom=True,
+            top=False,
+            labelbottom=True,
+        )
+        plot.tick_params(
+            axis="y", colors=style["TICK_COLOR"], labelcolor=style["TEXT_COLOR"]
+        )
+
+        plot.spines["bottom"].set_color(style["AXIS_COLOR"])
+        plot.spines["top"].set_color(style["AXIS_COLOR"])
+        plot.spines["left"].set_color(style["AXIS_COLOR"])
+        plot.spines["right"].set_color(style["AXIS_COLOR"])
+
+    @staticmethod
+    def plot_to_bytes(plot):
+        plot_bytes = io.BytesIO()
+        plot.savefig(plot_bytes, format=get_plot_format())
+        plt.close(plot)
+        plot_bytes.seek(0)
+        return plot_bytes
+
+    @staticmethod
     def style_legend(ax, style):
         """
         Applies a unified style to the legend of the provided axes.
@@ -128,3 +162,7 @@ class Utils:
                 text.set_color(style["TEXT_COLOR"])
             if legend.get_title():
                 legend.get_title().set_color(style["TEXT_COLOR"])
+
+
+# Backward compatibility
+Utils = PlotUtils

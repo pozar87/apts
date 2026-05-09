@@ -6,16 +6,16 @@ from ...utils import ConnectionType, Gender
 class GuideScope(Telescope):
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
 
         brand = entry["brand"]
         name = entry["name"]
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        ct = Utils.map_conn(entry.get("cside_thread"))
-        cg = Utils.map_gender(entry.get("cside_gender"))
-        aperture, focal_length = Utils.guess_optical_properties(name)
+        ct = map_conn(entry.get("cside_thread"))
+        cg = map_gender(entry.get("cside_gender"))
+        aperture, focal_length = guess_optical_properties(name)
         bf_val = entry.get("bf_role") == "start"
         return cls(
             aperture or 30,

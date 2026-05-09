@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from .config import config, get_plot_format
 from .i18n import gettext_
 from .utils import Utils
+from .utils.plot import PlotUtils
 from .secrets import mask_text, mask_secret
 
 logger = logging.getLogger(__name__)
@@ -216,7 +217,7 @@ class Notify:
             logger.warning(f"Plot object for {filename} is None. Skipping attachment.")
             return
 
-        plot_bytes = Utils.plot_to_bytes(plot)
+        plot_bytes = PlotUtils.plot_to_bytes(plot)
         if plot_bytes is None:
             logger.warning(
                 f"plot_to_bytes returned None for {filename}. Skipping attachment."

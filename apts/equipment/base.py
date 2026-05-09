@@ -13,7 +13,7 @@ from ..opticalequipment import (
 )
 from ..optics import OpticalPath
 from ..utils import ConnectionType
-from ..utils import Utils as GenericUtils
+from ..utils import find_all_paths
 from .plotting import EquipmentPlottingMixIn
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class Equipment(EquipmentPlottingMixIn):
         seen_equipment_sets = set()
 
         logger.debug(f"Space {GraphConstants.SPACE_ID}, Outputs {output_ids}")
-        for optical_path in GenericUtils.find_all_paths(
+        for optical_path in find_all_paths(
             self.connection_garph, GraphConstants.SPACE_ID, output_ids
         ):
             logger.debug(f"Optical Path: {optical_path}")

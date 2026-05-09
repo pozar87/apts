@@ -13,8 +13,8 @@ from ..config import get_dark_mode
 from ..constants import EquipmentTableLabels, GraphConstants, NodeLabels, OpticalType
 from ..constants.graphconstants import get_plot_colors, get_plot_style
 from ..i18n import gettext_, language_context
-from ..utils import Utils as GenericUtils
-from ..utils.plot import Utils as PlotUtils
+from ..utils import decdeg2dms, dms2decdeg
+from ..utils.plot import PlotUtils
 from .models import MatplotlibSVGWrapper
 
 logger = logging.getLogger(__name__)
@@ -80,10 +80,10 @@ class EquipmentPlottingMixIn:
             style = get_plot_style(effective_dark_mode)
 
             def formatter(tick, pos):
-                return GenericUtils.decdeg2dms(tick, pretty=True)
+                return decdeg2dms(tick, pretty=True)
 
             def add_line(description, position):
-                position = GenericUtils.dms2decdeg(position)
+                position = dms2decdeg(position)
                 plot.axhline(
                     position, color=style["TEXT_COLOR"], linestyle="--", alpha=0.7
                 )

@@ -9,7 +9,7 @@ import matplotlib.font_manager as font_manager
 from ..config import get_dark_mode
 from ..constants.graphconstants import get_plot_style
 from ..i18n import gettext_
-from ..utils.plot import Utils as PlotUtils
+from ..utils.plot import PlotUtils
 
 if TYPE_CHECKING:
     from ..observations import Observation

@@ -8,17 +8,17 @@ class Reducer(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
-        ct = Utils.map_conn(entry.get('cside_thread'))
-        cg = Utils.map_gender(entry.get('cside_gender'))
-        mag = Utils.extract_number(name, suffix='x') or 0.8
+        tt = map_conn(entry.get('tside_thread'))
+        tg = map_gender(entry.get('tside_gender'))
+        ct = map_conn(entry.get('cside_thread'))
+        cg = map_gender(entry.get('cside_gender'))
+        mag = extract_number(name, suffix='x') or 0.8
         bf = entry.get('required_backfocus', 55)
         return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
 
@@ -33,16 +33,16 @@ class Flattener(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
-        ct = Utils.map_conn(entry.get('cside_thread'))
-        cg = Utils.map_gender(entry.get('cside_gender'))
+        tt = map_conn(entry.get('tside_thread'))
+        tg = map_gender(entry.get('tside_gender'))
+        ct = map_conn(entry.get('cside_thread'))
+        cg = map_gender(entry.get('cside_gender'))
         mag = 1.0
         bf = entry.get('required_backfocus', 55)
         return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
@@ -58,16 +58,16 @@ class Corrector(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import Utils, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
         ol = entry.get('optical_length', 0)
         mass = entry.get('mass', 0)
-        tt = Utils.map_conn(entry.get('tside_thread'))
-        tg = Utils.map_gender(entry.get('tside_gender'))
-        ct = Utils.map_conn(entry.get('cside_thread'))
-        cg = Utils.map_gender(entry.get('cside_gender'))
+        tt = map_conn(entry.get('tside_thread'))
+        tg = map_gender(entry.get('tside_gender'))
+        ct = map_conn(entry.get('cside_thread'))
+        cg = map_gender(entry.get('cside_gender'))
         mag = 1.0
         bf = entry.get('required_backfocus', 55)
         return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
