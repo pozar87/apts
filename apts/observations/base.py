@@ -222,7 +222,7 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         with language_context(language):
-            from ..i18n import gettext_
+            from ..i18n import get_language, gettext_
 
             visible = self.local_messier.get_visible(
                 self.conditions,
@@ -231,11 +231,23 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+
+            # Optimization: skip translation if language is English or no objects found
+            if get_language() == "en" or visible.empty:
+                return visible
+
+            # Optimization: Use unique-value mapping to avoid redundant gettext_ calls.
+            # This provides a measurable speedup by minimizing Python function call overhead.
             if "Type" in visible.columns:
-                visible["Type"] = visible["Type"].apply(gettext_).astype("string")
+                unique_types = visible["Type"].unique()
+                type_map = {t: gettext_(t) for t in unique_types}
+                visible["Type"] = visible["Type"].map(type_map).astype("string")
+
             if "Constellation" in visible.columns:
+                unique_const = visible["Constellation"].unique()
+                const_map = {c: gettext_(c) for c in unique_const}
                 visible["Constellation"] = (
-                    visible["Constellation"].apply(gettext_).astype("string")
+                    visible["Constellation"].map(const_map).astype("string")
                 )
             return visible
 
@@ -252,7 +264,7 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         with language_context(language):
-            from ..i18n import gettext_
+            from ..i18n import get_language, gettext_
 
             visible = self.local_planets.get_visible(
                 self.conditions,
@@ -261,8 +273,16 @@ class Observation(WeatherAnalysisMixIn, PlottingMixIn):
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+
+            # Optimization: skip translation if language is English or no objects found
+            if get_language() == "en" or visible.empty:
+                return visible
+
+            # Optimization: Use unique-value mapping to avoid redundant gettext_ calls.
             if "Name" in visible.columns:
-                visible["Name"] = visible["Name"].apply(gettext_).astype("string")
+                unique_names = visible["Name"].unique()
+                name_map = {n: gettext_(n) for n in unique_names}
+                visible["Name"] = visible["Name"].map(name_map).astype("string")
             return visible
 
     def get_astronomical_events(
