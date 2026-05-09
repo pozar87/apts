@@ -1,9 +1,18 @@
+import functools
 from datetime import timedelta
 from typing import Any, cast
 import numpy as np
 from skyfield.api import load
 from ..cache import get_timescale, get_ephemeris
 from ..utils import planetary
+
+@functools.lru_cache(maxsize=1)
+def _get_satellites():
+    # Load TLE file - no ephemeris needed for satellite data
+    # We use the new GP formatted URL as the old stations.txt is deprecated.
+    stations_url = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
+    # Skyfield will cache this file by default
+    return load.tle_file(stations_url)
 
 def calculate_satellite_magnitude(
     satellite_name, sat_pos_km, sun_pos_km, observer_pos_km, distance_km
@@ -54,10 +63,8 @@ def _find_satellite_flybys(
     t1 = ts.utc(end_date)
 
     try:
-        stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
-        # Load TLE file - no ephemeris needed for satellite data
-        # Skyfield will cache this file by default
-        satellites = load.tle_file(stations_url)
+        # Optimization: Use cached TLE loading to avoid redundant network/disk I/O and parsing.
+        satellites = _get_satellites()
         satellite = next(s for s in satellites if s.name == satellite_name)
     except Exception as e:
         # Could be network error, or satellite not in file
