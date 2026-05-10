@@ -63,7 +63,7 @@ class TestPolarAlignment(unittest.TestCase):
         center = pa._fit_circle()
         np.testing.assert_allclose(center, [100, 100], atol=1e-7)
 
-    @patch("apts.utils.polar_alignment.FitsAnalyzer")
+    @patch("apts.utils.polar_alignment.engine.FitsAnalyzer")
     def test_add_frame_tracking(self, mock_fits):
         mock_analyzer = MagicMock()
         mock_fits.return_value = mock_analyzer
@@ -150,7 +150,7 @@ class TestPolarAlignment(unittest.TestCase):
         self.assertIsNotNone(plot_buf)
         self.assertTrue(plot_buf.getbuffer().nbytes > 0)
 
-    @patch("apts.utils.polar_alignment.FitsAnalyzer")
+    @patch("apts.utils.polar_alignment.engine.FitsAnalyzer")
     def test_wizard_full_workflow(self, mock_fits):
         mock_analyzer = MagicMock()
         mock_fits.return_value = mock_analyzer
