@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -5,15 +6,35 @@ if TYPE_CHECKING:
     import matplotlib.figure
     from ..plotting import Plotter, NullPlotter
 
+from .. import plotting as apts_plot
 from ..constants.plot import CoordinateSystem
 from ..conditions import Conditions
 from ..i18n import language_context
 
+logger = logging.getLogger(__name__)
+
 
 class PlottingMixIn:
     if TYPE_CHECKING:
-        @property
-        def plot(self) -> "Plotter | NullPlotter": ...
+        _plot: Optional["Plotter | NullPlotter"]
+
+    @property
+    def plot(self) -> "Plotter | NullPlotter":
+        if self._plot is None:
+            try:
+                self._plot = apts_plot.Plotter(self)
+            except ImportError:
+                # Fallback if dependencies are missing or plotting is disabled
+                self._plot = apts_plot.NullPlotter()
+            except Exception as e:
+                # Fallback for any other initialization error
+                logger.warning(f"Failed to initialize plotter: {e}")
+                self._plot = apts_plot.NullPlotter()
+        return self._plot
+
+    @plot.setter
+    def plot(self, value):
+        self._plot = value
 
     def plot_visible_planets_svg(
         self,
