@@ -84,17 +84,18 @@ def find_conjunctions_with_star(
 def find_conjunctions_with_stars(
     observer,
     body_name,
-    star_data,  # List of (name, Star object)
+    star_data,  # List of (name, Star object) OR a vectorized Star object
     start_date,
     end_date,
     threshold_degrees=1.0,
     precomputed_positions=None,
+    star_names=None,  # Required if star_data is a vectorized Star object
 ):
     """
     Finds conjunctions between a moving body and multiple fixed stars.
     Vectorized over both time and stars for maximum performance.
     """
-    if not star_data:
+    if star_data is None or (isinstance(star_data, list) and not star_data):
         return []
 
     ts = get_timescale()
@@ -139,8 +140,17 @@ def find_conjunctions_with_stars(
     u_body = body_au / np.linalg.norm(body_au, axis=0)
 
     # Prepare vectorized Star objects
-    star_names = [name for name, _ in star_data]
-    star_objs = [obj for _, obj in star_data]
+    if star_names is not None:
+        # Optimized path: star_data is already a vectorized Star object
+        stars_vector = star_data
+    else:
+        # Legacy path: star_data is a list of (name, Star)
+        star_names = [name for name, _ in star_data]
+        star_objs = [obj for _, obj in star_data]
+        stars_vector = Star(
+            ra_hours=np.array([s.ra.hours for s in star_objs]),
+            dec_degrees=np.array([s.dec.degrees for s in star_objs]),
+        )
 
     # To maximize performance, we observe all stars once in ICRF (at the midpoint of the search)
     # and treat them as fixed unit vectors. This eliminates the O(N) loop of
@@ -148,10 +158,6 @@ def find_conjunctions_with_stars(
     # Accuracy loss is sub-arcminute (mainly due to aberration), which is perfectly
     # acceptable for identifying conjunction candidates.
     t_mid = times[len(times) // 2]
-    stars_vector = Star(
-        ra_hours=np.array([s.ra.hours for s in star_objs]),
-        dec_degrees=np.array([s.dec.degrees for s in star_objs]),
-    )
     # Observe all stars at once in ICRF
     pos_stars = observer.at(t_mid).observe(stars_vector)
     # Unit vectors for stars: (3, N)
@@ -178,12 +184,23 @@ def find_conjunctions_with_stars(
     time_idxs = time_idxs_minus_1 + 1
 
     events = []
+    # Pre-cache coordinates for faster Star object creation during refinement
+    v_ra_hours = np.atleast_1d(stars_vector.ra.hours)
+    v_dec_degrees = np.atleast_1d(stars_vector.dec.degrees)
+
     for star_idx, time_idx in zip(star_idxs, time_idxs):
         # Refine conjunction time and separation
         # Refinement is still iterative as it requires high-precision topocentric observation
         # but is only performed for the final candidates.
+
+        # Reconstruct the individual Star object for refinement
+        # Skyfield Star objects are not subscriptable, so we recreate from coords.
+        target_star = Star(
+            ra_hours=v_ra_hours[star_idx], dec_degrees=v_dec_degrees[star_idx]
+        )
+
         refined_t, refined_s = _refine_conjunction(
-            observer, body, star_objs[star_idx], times[time_idx]
+            observer, body, target_star, times[time_idx]
         )
         events.append(
             {
