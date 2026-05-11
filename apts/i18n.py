@@ -63,6 +63,25 @@ def gettext_(message):
     return _thread_local.translation.gettext(message)
 
 
+def bulk_gettext(series):
+    """
+    Translates a pandas Series of strings in bulk using unique value mapping.
+    This provides a massive speedup by avoiding redundant gettext_ calls.
+    """
+    if series.empty:
+        return series
+
+    # Optimization: Early return if language is English (no translation needed)
+    if get_language() == "en":
+        return series
+
+    # Handle unique values and create a translation mapping
+    unique_values = series.unique()
+    translation_map = {val: gettext_(val) for val in unique_values if isinstance(val, str)}
+
+    return series.map(lambda x: translation_map.get(x, x))
+
+
 # Initialize with a default language for the main thread
 set_language("en")
 
