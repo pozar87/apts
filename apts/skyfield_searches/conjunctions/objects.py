@@ -33,19 +33,23 @@ def find_planet_star_conjunctions(
     ts = get_timescale()
     t_ref = ts.utc(start_date)
 
-    star_objs_all = catalogs.BRIGHT_STARS["skyfield_object"].tolist()
-    star_names_all = catalogs.BRIGHT_STARS["Name"].tolist()
+    # Optimized filtering: avoid iterative ra/dec extraction
+    v_ra_hours = catalogs.BRIGHT_STARS["ra_hours"].to_numpy()
+    v_dec_degrees = catalogs.BRIGHT_STARS["dec_degrees"].to_numpy()
+    star_names_all = catalogs.BRIGHT_STARS["Name"].to_numpy()
 
-    stars_vector = Star(
-        ra_hours=np.array([s.ra.hours for s in star_objs_all]),
-        dec_degrees=np.array([s.dec.degrees for s in star_objs_all]),
-    )
-    spos_at_t_ref = observer.at(t_ref).observe(stars_vector)
+    stars_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
+    spos_at_t_ref = observer.at(t_ref).observe(stars_vector_all)
     lats, _, _ = spos_at_t_ref.ecliptic_latlon()
 
     # Planets stay within ~7 degrees of the ecliptic (except Pluto, which is not in this list)
     mask = np.abs(lats.degrees) < 7.0
-    star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
+
+    # Filtered vectorized Star object
+    star_data_filtered = Star(
+        ra_hours=v_ra_hours[mask], dec_degrees=v_dec_degrees[mask]
+    )
+    star_names_filtered = star_names_all[mask]
 
     events = []
     for p_name in planets:
@@ -53,11 +57,12 @@ def find_planet_star_conjunctions(
         conjunctions = find_conjunctions_with_stars(
             observer,
             p_name,
-            star_data,
-            start_date,
-            end_date,
+            star_data=star_data_filtered,
+            start_date=start_date,
+            end_date=end_date,
             threshold_degrees=threshold_degrees,
             precomputed_positions=precomputed_positions,
+            star_names=star_names_filtered,
         )
         for conj in conjunctions:
             events.append(
@@ -89,9 +94,13 @@ def find_planet_messier_conjunctions(
         "uranus barycenter",
         "neptune barycenter",
     ]
-    # Optimization: replace iterrows() with zip() for better performance
-    messier_data = list(
-        zip(catalogs.MESSIER["Messier"], catalogs.MESSIER["skyfield_object"])
+
+    # Optimized path: avoid iterative Star object conversion and coordinate extraction.
+    # We use pre-calculated float coordinates to create a single vectorized Star object.
+    messier_names = catalogs.MESSIER["Messier"].to_numpy()
+    messier_vector = Star(
+        ra_hours=catalogs.MESSIER["ra_hours"].to_numpy(),
+        dec_degrees=catalogs.MESSIER["dec_degrees"].to_numpy(),
     )
 
     events = []
@@ -101,11 +110,12 @@ def find_planet_messier_conjunctions(
         conjunctions = find_conjunctions_with_stars(
             observer,
             p_name,
-            messier_data,
-            start_date,
-            end_date,
+            star_data=messier_vector,
+            start_date=start_date,
+            end_date=end_date,
             threshold_degrees=3.0,
             precomputed_positions=precomputed_positions,
+            star_names=messier_names,
         )
         for conj in conjunctions:
             events.append(

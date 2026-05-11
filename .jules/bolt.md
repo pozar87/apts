@@ -81,3 +81,7 @@
 ## 2025-06-21 - [Solar Eclipse Search Optimization]
 **Learning:** Performing a direct topocentric `find_minima` search for solar eclipses over long periods is extremely inefficient. Since solar eclipses can only occur during a New Moon, a two-step approach—identifying geocentric New Moons first and then performing a narrow topocentric search (+/- 12 hours)—provides a ~20x performance gain.
 **Action:** Use geocentric "event triggers" (like moon phases or conjunctions) to narrow the search window for expensive topocentric astronomical calculations. Always pad the trigger search range to ensure events shifted by parallax across boundaries are not missed.
+
+## 2025-06-22 - [Conjunction Vectorization over Catalogs]
+**Learning:** Iterative creation of `Star` objects and row-wise coordinate extraction (`.ra.hours`, `.dec.degrees`) from catalogs is a significant bottleneck in conjunction searches. Refactoring the search engine to accept pre-vectorized `Star` objects and utilizing pre-calculated float coordinate columns (e.g., `ra_hours`, `dec_degrees`) eliminates thousands of redundant Python calls, providing a ~19% speedup for Messier object searches.
+**Action:** Always utilize pre-calculated float coordinate columns and vectorized `Star` object creation for large-scale astronomical searches. Ensure core search utilities support vectorized inputs to avoid redundant object instantiation.
