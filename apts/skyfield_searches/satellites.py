@@ -54,7 +54,7 @@ def _find_satellite_flybys(
     t1 = ts.utc(end_date)
 
     try:
-        stations_url = "https://celestrak.org/NORAD/elements/stations.txt"
+        stations_url = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
         # Load TLE file - no ephemeris needed for satellite data
         # Skyfield will cache this file by default
         satellites = load.tle_file(stations_url)

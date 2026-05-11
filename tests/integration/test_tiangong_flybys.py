@@ -121,7 +121,7 @@ class TiangongFlybysIntegrationTest(unittest.TestCase):
 
             # Verify the correct URL was called
             mock_tle.assert_called_once_with(
-                "https://celestrak.org/NORAD/elements/stations.txt"
+                "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
             )
 
     def test_tiangong_name_search(self):
