@@ -99,6 +99,113 @@ class Equipment(EquipmentPlottingMixIn):
                 result = result.drop(columns=[EquipmentTableLabels.IS_NAKED_EYE])
         return result
 
+    def _extract_path_row(self, path: OpticalPath) -> list:
+        """
+        Extract technical parameters for a single optical path.
+        """
+        # Determine if the main optic is Binoculars or NakedEye
+        is_naked_eye = isinstance(path.telescope, NakedEye)
+
+        # Calculate useful_zoom
+        useful_zoom_value = path.is_magnification_useful()
+
+        # Get output type
+        output_type_value = path.output.output_type()
+
+        # Calculate Exit Pupil
+        exit_pupil_value = path.exit_pupil().to("mm").magnitude
+        if exit_pupil_value < 0:
+            exit_pupil_value = 0
+
+        flipped_horizontally, flipped_vertically = path.get_image_orientation()
+
+        # Pixel Scale
+        pixel_scale_value = path.pixel_scale()
+        pixel_scale_magnitude = (
+            pixel_scale_value.magnitude if pixel_scale_value is not None else numpy.nan
+        )
+
+        # NPF Rule
+        npf_value = path.npf_rule()
+        npf_magnitude = npf_value.magnitude if npf_value is not None else numpy.nan
+
+        # Rule of 500
+        r500_value = path.rule_of_500()
+        r500_magnitude = r500_value.magnitude if r500_value is not None else numpy.nan
+
+        # Sampling status (default seeing 2.0")
+        sampling_value = path.sampling_status(seeing=2.0)
+
+        # Critical Focus Zone
+        cfz_value = path.critical_focus_zone()
+        cfz_magnitude = cfz_value.magnitude if cfz_value is not None else numpy.nan
+
+        # Backfocus Gap
+        bf_gap_value = path.backfocus_gap()
+        bf_gap_magnitude = (
+            bf_gap_value.to("mm").magnitude if bf_gap_value is not None else numpy.nan
+        )
+
+        # Total Mass
+        total_mass_value = path.total_mass()
+        total_mass_magnitude = total_mass_value.to("gram").magnitude
+
+        return [
+            path.label(),
+            output_type_value,
+            path.zoom().magnitude,
+            useful_zoom_value,
+            path.fov().magnitude,
+            path.fov_width().magnitude,
+            path.fov_height().magnitude,
+            path.fov_diagonal().magnitude,
+            exit_pupil_value,
+            path.dawes_limit().magnitude
+            if path.dawes_limit() is not None
+            else numpy.nan,
+            path.rayleigh_limit().magnitude
+            if path.rayleigh_limit() is not None
+            else numpy.nan,
+            path.ideal_planetary_focal_ratio() or numpy.nan,
+            path.telescope.limiting_magnitude(),
+            path.brightness().magnitude,
+            path.length(),
+            path.component_list(),
+            flipped_horizontally,
+            flipped_vertically,
+            pixel_scale_magnitude,
+            sampling_value,
+            npf_magnitude,
+            r500_magnitude,
+            cfz_magnitude,
+            bf_gap_magnitude,
+            total_mass_magnitude,
+            is_naked_eye,
+        ]
+
+    def _merge_path_data(
+        self, result_data: pd.DataFrame, rows: list, columns: list
+    ) -> pd.DataFrame:
+        """
+        Merge extracted rows into a DataFrame and align dtypes.
+        """
+        if not rows:
+            return result_data
+
+        new_data = pd.DataFrame(rows, columns=columns)  # pyright: ignore
+        if result_data.empty:
+            return new_data
+
+        for col in result_data.columns:
+            if result_data[col].dtype != new_data[col].dtype:
+                try:
+                    new_data[col] = new_data[col].astype(result_data[col].dtype)
+                except Exception as e:
+                    logging.warning(
+                        f"Could not align dtype for column {col}: {e}. This might lead to concat issues."
+                    )
+        return pd.concat([result_data, new_data], ignore_index=True)  # pyright: ignore
+
     def _generate_data(self) -> pd.DataFrame:
         columns = [
             EquipmentTableLabels.LABEL,
@@ -129,141 +236,19 @@ class Equipment(EquipmentPlottingMixIn):
             EquipmentTableLabels.IS_NAKED_EYE,
         ]
 
-
-        def append(result_data, paths):
-            rows = []
-            logging.debug(f"Appending paths {paths}")
-            for path in paths:
-                # path.telescope is the main optic (telescope or binoculars)
-                # path.output is the final element (eyepiece, camera, or binoculars itself)
-
-                # Determine if the main optic is Binoculars or NakedEye
-                is_naked_eye = isinstance(path.telescope, NakedEye)
-
-                # Calculate useful_zoom
-                useful_zoom_value = path.is_magnification_useful()
-
-                # Get output type. For Binoculars, path.output is the Binocular instance.
-                output_type_value = path.output.output_type()
-
-                # Calculate Exit Pupil
-                # path.exit_pupil() now returns a Quantity (e.g., mm)
-                exit_pupil_value = path.exit_pupil().to("mm").magnitude
-                if exit_pupil_value < 0:  # Guard against potential negative values
-                    exit_pupil_value = 0
-
-                flipped_horizontally, flipped_vertically = path.get_image_orientation()
-
-                # Pixel Scale
-                pixel_scale_value = path.pixel_scale()
-                if pixel_scale_value is not None:
-                    pixel_scale_magnitude = pixel_scale_value.magnitude
-                else:
-                    pixel_scale_magnitude = numpy.nan
-
-                # NPF Rule
-                npf_value = path.npf_rule()
-                if npf_value is not None:
-                    npf_magnitude = npf_value.magnitude
-                else:
-                    npf_magnitude = numpy.nan
-
-                # Rule of 500
-                r500_value = path.rule_of_500()
-                if r500_value is not None:
-                    r500_magnitude = r500_value.magnitude
-                else:
-                    r500_magnitude = numpy.nan
-
-                # Sampling status (default seeing 2.0")
-                sampling_value = path.sampling_status(seeing=2.0)
-
-                # Critical Focus Zone
-                cfz_value = path.critical_focus_zone()
-                if cfz_value is not None:
-                    cfz_magnitude = cfz_value.magnitude
-                else:
-                    cfz_magnitude = numpy.nan
-
-                # Backfocus Gap
-                bf_gap_value = path.backfocus_gap()
-                if bf_gap_value is not None:
-                    bf_gap_magnitude = bf_gap_value.to("mm").magnitude
-                else:
-                    bf_gap_magnitude = numpy.nan
-
-                # Total Mass
-                total_mass_value = path.total_mass()
-                total_mass_magnitude = total_mass_value.to("gram").magnitude
-
-                rows.append(
-                    [
-                        path.label(),
-                        output_type_value,
-                        path.zoom().magnitude,
-                        useful_zoom_value,
-                        path.fov().magnitude,
-                        path.fov_width().magnitude,
-                        path.fov_height().magnitude,
-                        path.fov_diagonal().magnitude,
-                        exit_pupil_value,
-                        path.dawes_limit().magnitude
-                        if path.dawes_limit() is not None
-                        else numpy.nan,
-                        path.rayleigh_limit().magnitude
-                        if path.rayleigh_limit() is not None
-                        else numpy.nan,
-                        path.ideal_planetary_focal_ratio() or numpy.nan,
-                        path.telescope.limiting_magnitude(),  # limiting_magnitude() in Binoculars/Telescope returns float/int
-                        path.brightness().magnitude,  # brightness() in OpticalPath returns Quantity
-                        path.length(),  # length() in OpticalPath returns int
-                        path.component_list(),  # component_list() in OpticalPath returns list of objects
-                        flipped_horizontally,
-                        flipped_vertically,
-                        pixel_scale_magnitude,
-                        sampling_value,
-                        npf_magnitude,
-                        r500_magnitude,
-                        cfz_magnitude,
-                        bf_gap_magnitude,
-                        total_mass_magnitude,
-                        is_naked_eye,
-                    ]
-                )
-
-            if rows:
-                new_data = pd.DataFrame(rows, columns=columns)  # pyright: ignore
-                if result_data.empty:
-                    result_data = new_data
-                else:
-                    for col in result_data.columns:
-                        if result_data[col].dtype != new_data[col].dtype:
-                            # Try to convert new_data's column to result_data's dtype if they are compatible
-                            try:
-                                new_data[col] = new_data[col].astype(
-                                    result_data[col].dtype
-                                )
-                            except Exception as e:
-                                logging.warning(
-                                    f"Could not align dtype for column {col}: {e}. This might lead to concat issues."
-                                )
-                    result_data = pd.concat([result_data, new_data], ignore_index=True)  # pyright: ignore
-            return result_data
-
-        result = pd.DataFrame(columns=columns)  # pyright: ignore
         # Get unique paths from both visual and image outputs in a single pass
         all_paths = self._get_paths([GraphConstants.EYE_ID, GraphConstants.IMAGE_ID])
 
-        result = append(result, all_paths)
+        rows = [self._extract_path_row(path) for path in all_paths]
+        result = pd.DataFrame(columns=columns)  # pyright: ignore
+        result = self._merge_path_data(result, rows, columns)
 
         # Add ID column as first
-        if not result.empty:  # Only add ID if DataFrame is not empty
+        if not result.empty:
             result["ID"] = result.index
             result = result[["ID"] + columns]
-        else:  # If empty, ensure ID column exists for consistency if expected by other code
-            result[
-                "ID"
-            ] = []  # Initialize with empty list or appropriate empty type for ID
+        else:
+            result["ID"] = []
             result = result[["ID"] + columns]
 
         return result  # pyright: ignore
