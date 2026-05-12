@@ -301,11 +301,15 @@ class SolarObjects(Objects):
         )
 
         if not visible.empty:
+            # Optimization: use unique value mapping for get_simple_name
+            # instead of row-wise .apply().
             visible["TechnicalName"] = visible["Name"]
+            unique_tech_names = visible["TechnicalName"].unique()
+            name_map = {
+                tn: planetary.get_simple_name(tn) for tn in unique_tech_names
+            }
             visible["Name"] = (
-                visible["TechnicalName"]
-                .apply(planetary.get_simple_name)
-                .astype("string")
+                visible["TechnicalName"].map(name_map).astype("string")
             )
 
         return visible
