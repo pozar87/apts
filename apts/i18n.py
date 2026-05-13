@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Any, Union, Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -63,23 +63,30 @@ def gettext_(message):
     return _thread_local.translation.gettext(message)
 
 
-def bulk_gettext(series):
+def bulk_gettext(
+    messages: Union[Any, Iterable[Any]],
+) -> Union[Any, list[Any]]:
     """
-    Translates a pandas Series of strings in bulk using unique value mapping.
-    This provides a massive speedup by avoiding redundant gettext_ calls.
+    Translates a collection of messages efficiently using unique-value mapping.
+    This provides a significant speedup for large datasets with repetitive strings
+    by minimizing calls to the underlying gettext engine.
     """
-    if series.empty:
-        return series
-
     # Optimization: Early return if language is English (no translation needed)
     if get_language() == "en":
-        return series
+        return messages
 
-    # Handle unique values and create a translation mapping
-    unique_values = series.unique()
-    translation_map = {val: gettext_(val) for val in unique_values if isinstance(val, str)}
+    # Handle Pandas Series
+    import pandas as pd
+    if isinstance(messages, pd.Series):
+        unique_values = messages.unique()
+        translation_map = {val: gettext_(val) for val in unique_values}
+        return messages.map(translation_map)
 
-    return series.map(lambda x: translation_map.get(x, x))
+    # Handle other iterables (lists, etc.)
+    messages_list = list(messages)
+    unique_values_list = list(set(messages_list))
+    translation_map_list = {val: gettext_(val) for val in unique_values_list}
+    return [translation_map_list.get(msg, msg) for msg in messages_list]
 
 
 # Initialize with a default language for the main thread

@@ -280,13 +280,12 @@ class SolarObjects(Objects):
         )
 
         if not visible.empty:
+            # Optimization: use unique value mapping for get_simple_name
+            # instead of row-wise .apply().
             visible["TechnicalName"] = visible["Name"]
-            # Optimization: Use unique value mapping for planet name simplification.
-            # This avoids redundant calls to planetary.get_simple_name.
-            unique_technical_names = visible["TechnicalName"].unique()
+            unique_tech_names = visible["TechnicalName"].unique()
             name_map = {
-                name: planetary.get_simple_name(str(name))
-                for name in unique_technical_names
+                tn: planetary.get_simple_name(tn) for tn in unique_tech_names
             }
             visible["Name"] = (
                 visible["TechnicalName"].map(name_map).astype("string")

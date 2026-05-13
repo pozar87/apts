@@ -87,12 +87,14 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
-            # Optimization: Use bulk_gettext for massive speedup on large catalogs
+            # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Type" in visible.columns:
-                visible["Type"] = bulk_gettext(visible["Type"]).astype("string")
+                visible["Type"] = (
+                    bulk_gettext(visible["Type"]).astype("string")
+                )
             if "Constellation" in visible.columns:
-                visible["Constellation"] = bulk_gettext(visible["Constellation"]).astype(
-                    "string"
+                visible["Constellation"] = (
+                    bulk_gettext(visible["Constellation"]).astype("string")
                 )
             return visible
 
@@ -118,7 +120,9 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
-            # Optimization: Use bulk_gettext to avoid redundant translations
+            # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
-                visible["Name"] = bulk_gettext(visible["Name"]).astype("string")
+                visible["Name"] = (
+                    bulk_gettext(visible["Name"]).astype("string")
+                )
             return visible
