@@ -78,7 +78,7 @@ class CatalogMixIn:
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         with language_context(language):
-            from ..i18n import gettext_
+            from ..i18n import bulk_gettext
 
             visible = self.local_messier.get_visible(
                 self.conditions,
@@ -87,11 +87,12 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+            # Optimization: Use bulk_gettext for massive speedup on large catalogs
             if "Type" in visible.columns:
-                visible["Type"] = visible["Type"].apply(gettext_).astype("string")
+                visible["Type"] = bulk_gettext(visible["Type"]).astype("string")
             if "Constellation" in visible.columns:
-                visible["Constellation"] = (
-                    visible["Constellation"].apply(gettext_).astype("string")
+                visible["Constellation"] = bulk_gettext(visible["Constellation"]).astype(
+                    "string"
                 )
             return visible
 
@@ -108,7 +109,7 @@ class CatalogMixIn:
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         with language_context(language):
-            from ..i18n import gettext_
+            from ..i18n import bulk_gettext
 
             visible = self.local_planets.get_visible(
                 self.conditions,
@@ -117,6 +118,7 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+            # Optimization: Use bulk_gettext to avoid redundant translations
             if "Name" in visible.columns:
-                visible["Name"] = visible["Name"].apply(gettext_).astype("string")
+                visible["Name"] = bulk_gettext(visible["Name"]).astype("string")
             return visible
