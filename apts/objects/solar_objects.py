@@ -75,7 +75,8 @@ class SolarObjects(Objects):
         except (ValueError, KeyError):
             return None
 
-    def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
+    def _prepare_observer(self, calculation_date):
+        """Prepares the observer and time for computation."""
         if calculation_date is not None:
             t = (
                 calculation_date
@@ -96,111 +97,95 @@ class SolarObjects(Objects):
         else:
             observer_to_use = self.place
             t = self.place.date
+        return observer_to_use, t
 
-        # If no specific DataFrame is provided, use the class's default.
-        target_df = df_to_compute if df_to_compute is not None else self.objects
-
-        # Work on a copy to avoid SettingWithCopyWarning
-        computed_df = target_df.copy()
-        # Calculate planets magnitude
-        ephem_object_map = {
-            "mercury": ephem.Mercury,  # type: ignore
-            "venus": ephem.Venus,  # type: ignore
-            "mars barycenter": ephem.Mars,  # type: ignore
-            "jupiter barycenter": ephem.Jupiter,  # type: ignore
-            "saturn barycenter": ephem.Saturn,  # type: ignore
-            "uranus barycenter": ephem.Uranus,  # type: ignore
-            "neptune barycenter": ephem.Neptune,  # type: ignore
-            "moon": ephem.Moon,  # type: ignore
-            "sun": ephem.Sun,  # type: ignore
-        }
-
+    def _get_ephem_observer(self, observer_to_use, t):
+        """Configures and returns an ephem.Observer."""
         ephem_observer = ephem.Observer()
         ephem_observer.lat = str(observer_to_use.lat_decimal)
         ephem_observer.lon = str(observer_to_use.lon_decimal)
         ephem_observer.elevation = observer_to_use.elevation
         ephem_observer.date = t.utc_datetime()
+        return ephem_observer
 
+    def _compute_minor_planet_ephem(self, object_name, ephem_observer):
+        """Computes ephem data for a minor planet."""
+        try:
+            minor_planet_details = self.minor_planets.loc[object_name]
+            dp = ephem.EllipticalBody()
+            dp._inc = np.deg2rad(minor_planet_details["inclination_degrees"])
+            dp._Om = np.deg2rad(
+                minor_planet_details["longitude_of_ascending_node_degrees"]
+            )
+            dp._om = np.deg2rad(
+                minor_planet_details["argument_of_perihelion_degrees"]
+            )
+            dp._a = minor_planet_details["semimajor_axis_au"]
+            dp._e = minor_planet_details["eccentricity"]
+            dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
+            if pd.notna(minor_planet_details["magnitude_H"]):
+                dp._H = minor_planet_details["magnitude_H"]
+            if pd.notna(minor_planet_details["magnitude_G"]):
+                dp._G = minor_planet_details["magnitude_G"]
+
+            packed_epoch = minor_planet_details["epoch_packed"]
+            _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
+            _MPC_MONTH = {
+                "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6,
+                "7": 7, "8": 8, "9": 9, "A": 10, "B": 11, "C": 12,
+            }
+            _MPC_DAY = {str(d): d for d in range(1, 10)}
+            _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
+
+            year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
+            month = _MPC_MONTH[packed_epoch[3]]
+            day = _MPC_DAY[packed_epoch[4]]
+            dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
+
+            dp.compute(ephem_observer)
+            return dp.mag, None, None
+        except Exception:
+            return np.nan, None, None
+
+    def _compute_ephem_and_skyfield_data(self, computed_df, observer_to_use, t):
+        """Computes Ephem and Skyfield data for each object in computed_df."""
+        ephem_object_map = {
+            "mercury": ephem.Mercury,
+            "venus": ephem.Venus,
+            "mars barycenter": ephem.Mars,
+            "jupiter barycenter": ephem.Jupiter,
+            "saturn barycenter": ephem.Saturn,
+            "uranus barycenter": ephem.Uranus,
+            "neptune barycenter": ephem.Neptune,
+            "moon": ephem.Moon,
+            "sun": ephem.Sun,
+        }
+        ephem_observer = self._get_ephem_observer(observer_to_use, t)
         mags, sizes, phases = [], [], []
-        ras, decs, dists, elongs = [], [], [], []
-        sky_objs = []
+        ras, decs, dists, elongs, sky_objs = [], [], [], [], []
 
-        # Vectorized Skyfield positions setup
         obs_at_t = observer_to_use.observer.at(t)
-        # For elongation, use apparent position of Sun for consistency with planets
         sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
 
-        # Optimization: Combine Ephem and Skyfield calculations into a single loop
-        # to minimize iterrows() overhead.
         for _, row in computed_df.iterrows():
             object_name = cast(str, row[ObjectTableLabels.NAME])
-
-            # --- Ephem Calculation ---
+            # Ephem
             if object_name in MINOR_PLANET_NAMES.values():
-                try:
-                    minor_planet_details = self.minor_planets.loc[object_name]
-                    dp = ephem.EllipticalBody()
-                    dp._inc = np.deg2rad(minor_planet_details["inclination_degrees"])
-                    dp._Om = np.deg2rad(
-                        minor_planet_details["longitude_of_ascending_node_degrees"]
-                    )
-                    dp._om = np.deg2rad(
-                        minor_planet_details["argument_of_perihelion_degrees"]
-                    )
-                    dp._a = minor_planet_details["semimajor_axis_au"]
-                    dp._e = minor_planet_details["eccentricity"]
-                    dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
-                    if pd.notna(minor_planet_details["magnitude_H"]):
-                        dp._H = minor_planet_details["magnitude_H"]
-                    if pd.notna(minor_planet_details["magnitude_G"]):
-                        dp._G = minor_planet_details["magnitude_G"]
-
-                    packed_epoch = minor_planet_details["epoch_packed"]
-                    _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
-                    _MPC_MONTH = {
-                        "1": 1,
-                        "2": 2,
-                        "3": 3,
-                        "4": 4,
-                        "5": 5,
-                        "6": 6,
-                        "7": 7,
-                        "8": 8,
-                        "9": 9,
-                        "A": 10,
-                        "B": 11,
-                        "C": 12,
-                    }
-                    _MPC_DAY = {str(d): d for d in range(1, 10)}
-                    _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
-
-                    year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
-                    month = _MPC_MONTH[packed_epoch[3]]
-                    day = _MPC_DAY[packed_epoch[4]]
-                    dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
-
-                    dp.compute(ephem_observer)
-                    mags.append(dp.mag)
-                    sizes.append(None)
-                    phases.append(None)
-                except Exception:
-                    mags.append(np.nan)
-                    sizes.append(None)
-                    phases.append(None)
+                mag, size, phase = self._compute_minor_planet_ephem(
+                    object_name, ephem_observer
+                )
             else:
                 ephem_obj_constructor = ephem_object_map.get(object_name)
                 if ephem_obj_constructor:
                     ephem_obj = ephem_obj_constructor()
                     ephem_obj.compute(ephem_observer)
-                    mags.append(ephem_obj.mag)
-                    sizes.append(ephem_obj.size)
-                    phases.append(ephem_obj.phase)
+                    mag, size, phase = ephem_obj.mag, ephem_obj.size, ephem_obj.phase
                 else:
-                    mags.append(np.nan)
-                    sizes.append(np.nan)
-                    phases.append(np.nan)
-
-            # --- Skyfield Calculation ---
+                    mag, size, phase = np.nan, np.nan, np.nan
+            mags.append(mag)
+            sizes.append(size)
+            phases.append(phase)
+            # Skyfield
             sky_obj = self.get_skyfield_object(row)
             sky_objs.append(sky_obj)
             if sky_obj:
@@ -217,46 +202,40 @@ class SolarObjects(Objects):
                 elongs.append(np.nan)
 
         computed_df[ObjectTableLabels.MAGNITUDE] = mags
-        # Fill missing magnitudes with a very high value (e.g. 99) for scoring
-        mags_float = [m if pd.notna(m) else 99 for m in mags]
-        computed_df["Magnitude_float"] = mags_float
+        computed_df["Magnitude_float"] = [m if pd.notna(m) else 99 for m in mags]
         computed_df[ObjectTableLabels.SIZE] = sizes
-
-        # Populate SIZE_MAJOR and SIZE_MINOR in arcminutes for SuitabilityScorer
-        # ephem returns size in arcseconds.
         sizes_arcmin = [s / 60.0 if s is not None else 0 for s in sizes]
         computed_df[ObjectTableLabels.SIZE_MAJOR] = sizes_arcmin
         computed_df[ObjectTableLabels.SIZE_MINOR] = sizes_arcmin
-
         computed_df[ObjectTableLabels.PHASE] = phases
         computed_df["skyfield_object"] = sky_objs
         computed_df["ra_hours"] = ras
         computed_df["dec_degrees"] = decs
-
         computed_df[ObjectTableLabels.RA] = ras
         computed_df[ObjectTableLabels.DEC] = decs
         computed_df[ObjectTableLabels.DISTANCE] = dists
         computed_df[ObjectTableLabels.ELONGATION] = elongs
 
-        # DSO_TYPE is used in top_picks
+    def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
+        observer_to_use, t = self._prepare_observer(calculation_date)
+        target_df = df_to_compute if df_to_compute is not None else self.objects
+        computed_df = target_df.copy()
+
+        self._compute_ephem_and_skyfield_data(computed_df, observer_to_use, t)
         computed_df[ObjectTableLabels.DSO_TYPE] = DSOType.OTHER
 
         if not skip_transits:
-            # Use fast vectorized geometric approximation for transits, rise, set, and altitude.
-            # This is much faster than the iterative find_discrete solver, especially for minor planets.
-            # While it introduces a small error (2-5 mins for planets, ~20 mins for the Moon),
-            # it is perfectly adequate for visualization purposes.
             valid_mask = np.ones(len(computed_df), dtype=bool)
             transits, alts, rises, sets = vectorized_geometric_compute(
                 self.ts,
-                self.place.lat_decimal,
-                self.place.lon_decimal,
+                observer_to_use.lat_decimal,
+                observer_to_use.lon_decimal,
                 observer_to_use.local_timezone,
                 observer_to_use.date,
-                np.array(ras),
-                np.array(decs),
+                computed_df["ra_hours"].to_numpy(),
+                computed_df["dec_degrees"].to_numpy(),
                 valid_mask,
-                len(computed_df)
+                len(computed_df),
             )
             computed_df[ObjectTableLabels.TRANSIT] = transits
             computed_df[ObjectTableLabels.ALTITUDE] = alts
@@ -301,11 +280,15 @@ class SolarObjects(Objects):
         )
 
         if not visible.empty:
+            # Optimization: use unique value mapping for get_simple_name
+            # instead of row-wise .apply().
             visible["TechnicalName"] = visible["Name"]
+            unique_tech_names = visible["TechnicalName"].unique()
+            name_map = {
+                tn: planetary.get_simple_name(tn) for tn in unique_tech_names
+            }
             visible["Name"] = (
-                visible["TechnicalName"]
-                .apply(planetary.get_simple_name)
-                .astype("string")
+                visible["TechnicalName"].map(name_map).astype("string")
             )
 
         return visible
