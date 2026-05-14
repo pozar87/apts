@@ -303,7 +303,7 @@ class EquipmentPlottingMixIn:
         ax.set_facecolor(axes_face_color)
         ax.axis("off")
 
-        return fig, ax, current_node_colors, text_color, edge_color_val
+        return fig, ax, current_node_colors, text_color, edge_color_val, figure_face_color, axes_face_color
 
     def plot_connection_graph(
         self,
@@ -332,6 +332,8 @@ class EquipmentPlottingMixIn:
                 current_node_colors,
                 text_color,
                 edge_color_val,
+                figure_face_color,
+                axes_face_color,
             ) = self._setup_graph_axes(effective_dark_mode)
 
             # 3. Calculate vertex colors
@@ -359,6 +361,10 @@ class EquipmentPlottingMixIn:
                 font_color=text_color,
                 font_size=8,
             )
+
+            # Note: nx.draw might reset the figure facecolor, so we re-apply it here
+            fig.patch.set_facecolor(figure_face_color)
+            ax.set_facecolor(axes_face_color)
 
             return MatplotlibSVGWrapper(fig)
 
