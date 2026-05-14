@@ -213,6 +213,98 @@ class EquipmentPlottingMixIn:
 
         return result_df, columns_enums
 
+    def _get_simplified_connection_graph(self) -> "nx.DiGraph":
+        """
+        Create a simplified graph for visualization by removing technical IN/OUT nodes
+        """
+        plot_graph = self.connection_garph.copy()
+        nodes_to_remove = [
+            n
+            for n, d in plot_graph.nodes(data=True)
+            if d.get(NodeLabels.TYPE) in [OpticalType.INPUT, OpticalType.OUTPUT]
+        ]
+        for n in nodes_to_remove:
+            preds = list(plot_graph.predecessors(n))
+            succs = list(plot_graph.successors(n))
+            for p in preds:
+                for s in succs:
+                    plot_graph.add_edge(p, s)
+            plot_graph.remove_node(n)
+        return plot_graph
+
+    def _calculate_graph_layout(self, plot_graph: "nx.DiGraph") -> dict:
+        """
+        Calculate layers for multipartite layout
+        """
+        node_data = plot_graph.nodes(data=True)
+        try:
+            # Categorize nodes into logical steps of the optical path
+            layers = {}
+
+            # Import equipment classes locally to avoid circular dependencies
+            from ..opticalequipment.barlow import Barlow
+            from ..opticalequipment.binoculars import Binoculars
+            from ..opticalequipment.camera import Camera
+            from ..opticalequipment.diagonal import Diagonal
+            from ..opticalequipment.eyepiece import Eyepiece
+            from ..opticalequipment.filter import Filter
+            from ..opticalequipment.naked_eye import NakedEye
+            from ..opticalequipment.smart_telescope import SmartTelescope
+            from ..opticalequipment.telescope import Telescope
+
+            for node_id, data in node_data:
+                equipment = data.get(NodeLabels.EQUIPMENT)
+
+                if node_id == GraphConstants.SPACE_ID:
+                    layers[node_id] = 0
+                elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
+                    layers[node_id] = 4  # Final sinks
+                elif equipment is not None:
+                    # Main equipment nodes
+                    if isinstance(
+                        equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
+                    ):
+                        layers[node_id] = 1
+                    elif isinstance(equipment, (Barlow, Diagonal, Filter)):
+                        layers[node_id] = 2
+                    elif isinstance(equipment, (Eyepiece, Camera)):
+                        layers[node_id] = 3
+                    else:
+                        layers[node_id] = 2
+                else:
+                    layers[node_id] = 2
+
+            # Assign layer attribute to nodes (must be integer for multipartite_layout)
+            for node_id, layer in layers.items():
+                plot_graph.nodes[node_id]["layer"] = int(layer)
+
+            return nx.multipartite_layout(plot_graph, subset_key="layer")
+        except Exception as e:
+            logger.warning(f"Failed to calculate multipartite layout: {e}")
+            return nx.kamada_kawai_layout(plot_graph)
+
+    def _setup_graph_axes(self, dark_mode_enabled: bool):
+        """
+        Create the Matplotlib figure and axes for the connection graph
+        """
+        current_plot_style = get_plot_style(dark_mode_enabled)
+        current_node_colors = get_plot_colors(dark_mode_enabled)
+
+        # Determine general colors from style
+        text_color = current_plot_style.get("TEXT_COLOR", "#000000")
+        figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
+        axes_face_color = current_plot_style.get("AXES_FACE_COLOR", figure_face_color)
+        edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
+
+        fig, ax = plt.subplots(
+            figsize=(10, 8), facecolor=figure_face_color, edgecolor="none"
+        )
+        fig.patch.set_facecolor(figure_face_color)
+        ax.set_facecolor(axes_face_color)
+        ax.axis("off")
+
+        return fig, ax, current_node_colors, text_color, edge_color_val
+
     def plot_connection_graph(
         self,
         dark_mode_override: Optional[bool] = None,
@@ -228,107 +320,30 @@ class EquipmentPlottingMixIn:
                 if dark_mode_override is not None
                 else get_dark_mode()
             )
-            current_plot_style = get_plot_style(effective_dark_mode)
-            current_node_colors = get_plot_colors(effective_dark_mode)
 
-            logger.debug(
-                f"plot_connection_graph: effective_dark_mode = {effective_dark_mode}"
-            )
-            logger.debug(
-                f"plot_connection_graph: current_plot_style = {current_plot_style}"
-            )
-            logger.debug(
-                f"plot_connection_graph: current_node_colors = {current_node_colors}"
-            )
-
-            # Create a simplified graph for visualization by removing technical IN/OUT nodes
-            plot_graph = self.connection_garph.copy()
-            nodes_to_remove = [
-                n
-                for n, d in plot_graph.nodes(data=True)
-                if d.get(NodeLabels.TYPE) in [OpticalType.INPUT, OpticalType.OUTPUT]
-            ]
-            for n in nodes_to_remove:
-                preds = list(plot_graph.predecessors(n))
-                succs = list(plot_graph.successors(n))
-                for p in preds:
-                    for s in succs:
-                        plot_graph.add_edge(p, s)
-                plot_graph.remove_node(n)
-
+            # 1. Create a simplified graph for visualization
+            plot_graph = self._get_simplified_connection_graph()
             node_data = plot_graph.nodes(data=True)
 
-            # Calculate vertex colors with a default for missing types
+            # 2. Setup figure and axes with appropriate styles
+            (
+                fig,
+                ax,
+                current_node_colors,
+                text_color,
+                edge_color_val,
+            ) = self._setup_graph_axes(effective_dark_mode)
+
+            # 3. Calculate vertex colors
             vertex_colors_list = [
                 current_node_colors.get(data.get(NodeLabels.TYPE), "#FF00FF")
                 for _, data in node_data
             ]
-            logger.debug(
-                f"plot_connection_graph: Calculated vertex_colors_list = {vertex_colors_list}"
-            )
 
-            # Determine general colors from style
-            text_color = current_plot_style.get("TEXT_COLOR", "#000000")
-            figure_face_color = current_plot_style.get("FIGURE_FACE_COLOR", "#D3D3D3")
-            axes_face_color = current_plot_style.get(
-                "AXES_FACE_COLOR", figure_face_color
-            )
-            edge_color_val = current_plot_style.get("AXIS_COLOR", "#A9A9A9")
+            # 4. Calculate layout
+            pos = self._calculate_graph_layout(plot_graph)
 
-            fig, ax = plt.subplots(
-                figsize=(10, 8), facecolor=figure_face_color, edgecolor="none"
-            )
-            fig.patch.set_facecolor(figure_face_color)
-            ax.set_facecolor(axes_face_color)
-            ax.axis("off")
-
-            try:
-                # Calculate layers for multipartite layout
-                # Categorize nodes into logical steps of the optical path
-                layers = {}
-
-                # Import equipment classes locally to avoid circular dependencies
-                from ..opticalequipment.barlow import Barlow
-                from ..opticalequipment.binoculars import Binoculars
-                from ..opticalequipment.camera import Camera
-                from ..opticalequipment.diagonal import Diagonal
-                from ..opticalequipment.eyepiece import Eyepiece
-                from ..opticalequipment.filter import Filter
-                from ..opticalequipment.naked_eye import NakedEye
-                from ..opticalequipment.smart_telescope import SmartTelescope
-                from ..opticalequipment.telescope import Telescope
-
-                for node_id, data in node_data:
-                    equipment = data.get(NodeLabels.EQUIPMENT)
-
-                    if node_id == GraphConstants.SPACE_ID:
-                        layers[node_id] = 0
-                    elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
-                        layers[node_id] = 4  # Final sinks
-                    elif equipment is not None:
-                        # Main equipment nodes
-                        if isinstance(
-                            equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
-                        ):
-                            layers[node_id] = 1
-                        elif isinstance(equipment, (Barlow, Diagonal, Filter)):
-                            layers[node_id] = 2
-                        elif isinstance(equipment, (Eyepiece, Camera)):
-                            layers[node_id] = 3
-                        else:
-                            layers[node_id] = 2
-                    else:
-                        layers[node_id] = 2
-
-                # Assign layer attribute to nodes (must be integer for multipartite_layout)
-                for node_id, layer in layers.items():
-                    plot_graph.nodes[node_id]["layer"] = int(layer)
-
-                pos = nx.multipartite_layout(plot_graph, subset_key="layer")
-            except Exception as e:
-                logger.warning(f"Failed to calculate multipartite layout: {e}")
-                pos = nx.kamada_kawai_layout(plot_graph)
-
+            # 5. Draw the graph
             nx.draw(
                 plot_graph,
                 pos,
@@ -344,9 +359,6 @@ class EquipmentPlottingMixIn:
                 font_color=text_color,
                 font_size=8,
             )
-
-            fig.patch.set_facecolor(figure_face_color)
-            ax.set_facecolor(axes_face_color)
 
             return MatplotlibSVGWrapper(fig)
 
