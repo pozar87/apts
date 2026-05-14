@@ -47,6 +47,10 @@ class DiscoveryService:
             [messier_obj.objects, solar_obj.objects], ignore_index=True
         )
 
+        # Exclude the Sun from discovery results since it is not a
+        # valid astrophotography target and should not appear in top picks.
+        combined_df = combined_df[combined_df["Name"] != "sun"]
+
         # Filtering for reasonable visibility (optional optimization)
         # For now, we'll score everything, but typically you'd filter by magnitude or altitude first
 
