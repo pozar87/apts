@@ -1,12 +1,15 @@
-import logging
 import datetime
+import logging
+
 import pandas as pd
 from skyfield import almanac
+
+from .cache import get_ephemeris, get_timescale
 from .constants import FilterStrategy, ObjectTableLabels
 from .scoring import SuitabilityScorer
-from .cache import get_timescale, get_ephemeris
 
 logger = logging.getLogger(__name__)
+
 
 class DiscoveryService:
     """
@@ -14,7 +17,14 @@ class DiscoveryService:
     """
 
     @staticmethod
-    def get_top_picks(place, equipment_path, catalogs, date=None, strategy=FilterStrategy.BROADBAND, limit=20):
+    def get_top_picks(
+        place,
+        equipment_path,
+        catalogs,
+        date=None,
+        strategy=FilterStrategy.BROADBAND,
+        limit=20,
+    ):
         """
         Returns a ranked list of objects sorted by the Multi-Factor Score.
         Includes Messier and Solar objects.
@@ -33,7 +43,9 @@ class DiscoveryService:
         solar_obj.compute(calculation_date=date)
 
         # Combine both for scoring
-        combined_df = pd.concat([messier_obj.objects, solar_obj.objects], ignore_index=True)
+        combined_df = pd.concat(
+            [messier_obj.objects, solar_obj.objects], ignore_index=True
+        )
 
         # Filtering for reasonable visibility (optional optimization)
         # For now, we'll score everything, but typically you'd filter by magnitude or altitude first
@@ -43,11 +55,17 @@ class DiscoveryService:
         for _, row in combined_df.iterrows():
             score_data = scorer.calculate_total_score(row, time=date)
             if score_data:
+                name = row.get("Name")
+                # Some Messier objects have Name = "-" (no common name).
+                # Fall back to the Messier or NGC identifier so we never
+                # show "Unknown" in the UI and links remain functional.
+                if not name or str(name).strip() in ("-", "", "nan"):
+                    name = row.get("Messier") or row.get("NGC") or "Unknown"
                 obj_info = {
-                    "Name": row.get("Name") or row.get("Messier") or row.get("NGC"),
+                    "Name": name,
                     "Type": row.get(ObjectTableLabels.DSO_TYPE),
                     "Score": score_data["total_score"],
-                    "Details": score_data
+                    "Details": score_data,
                 }
                 scored_objects.append(obj_info)
 
@@ -55,6 +73,7 @@ class DiscoveryService:
         scored_objects.sort(key=lambda x: x["Score"], reverse=True)
 
         return scored_objects[:limit]
+
 
 class TimelineGenerator:
     """
@@ -71,18 +90,34 @@ class TimelineGenerator:
         eph = get_ephemeris()
 
         if date is None:
-            t0_dt = place.date.utc_datetime().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
+            t0_dt = place.date.utc_datetime().replace(
+                hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc
+            )
         else:
             if isinstance(date, datetime.datetime):
-                t0_dt = date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
+                t0_dt = date.replace(
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    microsecond=0,
+                    tzinfo=datetime.timezone.utc,
+                )
             elif isinstance(date, datetime.date):
-                t0_dt = datetime.datetime.combine(date, datetime.time.min).replace(tzinfo=datetime.timezone.utc)
+                t0_dt = datetime.datetime.combine(date, datetime.time.min).replace(
+                    tzinfo=datetime.timezone.utc
+                )
             else:
                 # Assume Skyfield Time or other
                 t0_dt = date.utc_datetime()
                 if not isinstance(t0_dt, datetime.datetime):
                     t0_dt = t0_dt[0]
-                t0_dt = t0_dt.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=datetime.timezone.utc)
+                t0_dt = t0_dt.replace(
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    microsecond=0,
+                    tzinfo=datetime.timezone.utc,
+                )
 
         t0 = ts.utc(t0_dt)
         t1 = ts.utc(t0_dt + datetime.timedelta(days=1))
@@ -102,16 +137,18 @@ class TimelineGenerator:
             1: "Astronomical Twilight",
             2: "Nautical Twilight",
             3: "Civil Twilight",
-            4: "Day"
+            4: "Day",
         }
 
         twilight_events = []
         for t, e in zip(times, events):
-            twilight_events.append({
-                "time": t.utc_datetime(),
-                "phase": twilight_map.get(int(e), "Unknown"),
-                "event_id": int(e)
-            })
+            twilight_events.append(
+                {
+                    "time": t.utc_datetime(),
+                    "phase": twilight_map.get(int(e), "Unknown"),
+                    "event_id": int(e),
+                }
+            )
 
         # 2. Moon transit data
         f_moon = almanac.meridian_transits(eph, eph["moon"], place.location)
@@ -119,13 +156,15 @@ class TimelineGenerator:
 
         moon_events = []
         for t, e in zip(m_times, m_events):
-            moon_events.append({
-                "time": t.utc_datetime(),
-                "type": "Upper Transit" if int(e) == 1 else "Lower Transit"
-            })
+            moon_events.append(
+                {
+                    "time": t.utc_datetime(),
+                    "type": "Upper Transit" if int(e) == 1 else "Lower Transit",
+                }
+            )
 
         return {
             "date": t0_dt.date(),
             "twilight_events": twilight_events,
-            "moon_events": moon_events
+            "moon_events": moon_events,
         }
