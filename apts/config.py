@@ -235,6 +235,26 @@ def get_data_settings() -> str:
     return config.get("data", "mode", fallback="light")
 
 
+def get_light_pollution_settings() -> dict:
+    """
+    Reads the light pollution settings from the [light_pollution] section.
+
+    Returns:
+        dict: A dictionary of light pollution settings.
+    """
+    settings = {
+        "use_online_api": True,
+    }
+
+    if config.has_section("light_pollution"):
+        if config.has_option("light_pollution", "use_online_api"):
+            settings["use_online_api"] = config.getboolean(
+                "light_pollution", "use_online_api"
+            )
+
+    return settings
+
+
 def get_jovian_ephemeris_url() -> str:
     """
     Reads the Jovian ephemeris URL from the [data] section.
