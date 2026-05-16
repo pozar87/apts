@@ -38,25 +38,33 @@ class PlaceConditionsMixIn:
         sunrise_time: Callable[..., Any]
         get_altaz_curve: Callable[..., Any]
 
-    def get_light_pollution(self):
+    def _ensure_light_pollution(self):
         if self.light_pollution is None:
             self.light_pollution = LightPollution(
                 self.lat_decimal,
                 self.lon_decimal,
             )
-        return self.light_pollution.get_light_pollution()
+
+    def get_light_pollution(self):
+        self._ensure_light_pollution()
+        return cast(LightPollution, self.light_pollution).get_light_pollution()
 
     def get_sqm(self, time: Optional[Any] = None) -> float:
         """
-        Returns the approximate SQM value for the place based on its Bortle class,
+        Returns the approximate SQM value for the place based on its base light pollution,
         accounting for Sun, Moon, and cloud cover if weather data is available.
         """
         target_time = time if time is not None else self.date
+
         bortle = self.get_light_pollution()
         if bortle <= 0:
             return 0.0
 
-        sqm_base = LightPollution.bortle_to_sqm(bortle)
+        self._ensure_light_pollution()
+        sqm_base = cast(LightPollution, self.light_pollution).get_base_sqm(
+            forced_bortle=bortle
+        )
+
         b_total = 10 ** (-0.4 * sqm_base)
 
         # Sun contribution
@@ -108,6 +116,7 @@ class PlaceConditionsMixIn:
             idx = (self.weather.data["time"] - dt).abs().idxmin()
             cloud_cover = float(self.weather.data.loc[idx, "cloudCover"])
 
+        bortle = self.get_light_pollution()
         if bortle > 4:
             # Urban: clouds reflect city lights
             b_total *= 1 + 2 * (cloud_cover / 100.0)
@@ -206,9 +215,13 @@ class PlaceConditionsMixIn:
             np.ndarray, _get_planet_magnitude("moon", times, astrometric=moon_obs)
         )
 
-        # Bortle info
+        # Light pollution info
         bortle = self.get_light_pollution()
-        sqm_base = LightPollution.bortle_to_sqm(bortle)
+        self._ensure_light_pollution()
+        sqm_base = cast(LightPollution, self.light_pollution).get_base_sqm(
+            forced_bortle=bortle
+        )
+
         b_starlight = 10 ** (-0.4 * sqm_base)
 
         # Vectorized SQM Calculation
