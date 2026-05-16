@@ -44,13 +44,69 @@ def _generate_polar_skymap(
     flipped_vertically: bool,
     coordinate_system: CoordinateSystem,
 ):
+    is_sh, good_condition_color = _setup_polar_skymap_axes(
+        observation, ax, style, coordinate_system, effective_dark_mode
+    )
+
+    _plot_polar_visibility_overlay(
+        observation,
+        ax,
+        style,
+        coordinate_system,
+        is_sh,
+        observer,
+        good_condition_color,
+    )
+
+    _plot_polar_skymap_objects(
+        observation,
+        ax,
+        style,
+        coordinate_system,
+        observer,
+        effective_dark_mode,
+        star_magnitude_limit,
+        plot_stars,
+        plot_messier,
+        plot_ngc,
+        plot_planets,
+        plot_sun,
+        plot_moon,
+        flipped_horizontally,
+        flipped_vertically,
+        target_name,
+        target_object,
+    )
+
+    _plot_polar_skymap_target(
+        observation,
+        ax,
+        style,
+        coordinate_system,
+        is_sh,
+        observer,
+        target_name,
+        target_object,
+        target_object_data,
+        generation_time_str,
+    )
+
+    return ax.get_figure()
+
+
+def _setup_polar_skymap_axes(
+    observation: "Observation",
+    ax: axes.Axes,
+    style: dict,
+    coordinate_system: CoordinateSystem,
+    effective_dark_mode: bool,
+):
     fig = ax.get_figure()
     if fig:
         fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
     setup_polar_ax(observation, ax, style, coordinate_system)
-    polar_ax = cast(Any, ax)
     is_sh = observation.place.lat_decimal < 0
 
     good_condition_color = style.get(
@@ -58,10 +114,22 @@ def _generate_polar_skymap(
         "#90EE90" if not effective_dark_mode else "#007447",
     )
 
+    return is_sh, good_condition_color
+
+
+def _plot_polar_visibility_overlay(
+    observation: "Observation",
+    ax: axes.Axes,
+    style: dict,
+    coordinate_system: CoordinateSystem,
+    is_sh: bool,
+    observer: Any,
+    good_condition_color: str,
+):
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         theta = numpy.linspace(0, 2 * numpy.pi, 200)
         az_deg = numpy.rad2deg(theta)
-        
+
         # We need these later for plotting the min/max azimuth lines
         min_az_rad = numpy.deg2rad(float(observation.conditions.min_object_azimuth))
         max_az_rad = numpy.deg2rad(float(observation.conditions.max_object_azimuth))
@@ -69,7 +137,10 @@ def _generate_polar_skymap(
         # Get the visibility mask for a range of altitudes at each azimuth
         # In a polar plot, r = 90 - altitude. We want to find the boundary altitude.
         # For the simple case, the boundary is the horizon altitude.
-        if observation.conditions.horizon_file or observation.conditions.horizon_content:
+        if (
+            observation.conditions.horizon_file
+            or observation.conditions.horizon_content
+        ):
             horizon_alt = observation.conditions.horizon.get_altitude(az_deg)
             r_outer_good = 90 - horizon_alt
 
@@ -146,7 +217,8 @@ def _generate_polar_skymap(
                 )
 
         if not (
-            observation.conditions.horizon_file or observation.conditions.horizon_content
+            observation.conditions.horizon_file
+            or observation.conditions.horizon_content
         ) and not (
             float(observation.conditions.min_object_azimuth) == 0.0
             and float(observation.conditions.max_object_azimuth) == 360.0
@@ -182,9 +254,7 @@ def _generate_polar_skymap(
         ra_hours = ra_rad * 12 / numpy.pi
 
         # Create Skyfield Star objects for the entire grid
-        grid_stars = SkyfieldStar(
-            ra_hours=ra_hours.ravel(), dec_degrees=dec_deg.ravel()
-        )
+        grid_stars = SkyfieldStar(ra_hours=ra_hours.ravel(), dec_degrees=dec_deg.ravel())
         alt_flat, az_flat, _ = observer.observe(grid_stars).apparent().altaz()
         alt = Angle(degrees=alt_flat.degrees.reshape(ra_hours.shape))
         az = Angle(degrees=az_flat.degrees.reshape(ra_hours.shape))
@@ -207,6 +277,26 @@ def _generate_polar_skymap(
             alpha=0.1,
         )
 
+
+def _plot_polar_skymap_objects(
+    observation: "Observation",
+    ax: axes.Axes,
+    style: dict,
+    coordinate_system: CoordinateSystem,
+    observer: Any,
+    effective_dark_mode: bool,
+    star_magnitude_limit: Optional[float],
+    plot_stars: bool,
+    plot_messier: bool,
+    plot_ngc: bool,
+    plot_planets: bool,
+    plot_sun: bool,
+    plot_moon: bool,
+    flipped_horizontally: bool,
+    flipped_vertically: bool,
+    target_name: str,
+    target_object: Any,
+):
     if plot_stars:
         _plot_stars_on_skymap(
             observation,
@@ -297,8 +387,24 @@ def _generate_polar_skymap(
             is_target=True,
             coordinate_system=coordinate_system,
         )
+
+
+def _plot_polar_skymap_target(
+    observation: "Observation",
+    ax: axes.Axes,
+    style: dict,
+    coordinate_system: CoordinateSystem,
+    is_sh: bool,
+    observer: Any,
+    target_name: str,
+    target_object: Any,
+    target_object_data: Any,
+    generation_time_str: str,
+):
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
     target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
+
+    polar_ax = cast(Any, ax)
 
     if coordinate_system == CoordinateSystem.HORIZONTAL and bool(
         numpy.any(target_alt.degrees > 0)
@@ -388,5 +494,3 @@ def _generate_polar_skymap(
         ),
         color=style["TEXT_COLOR"],
     )
-
-    return fig
