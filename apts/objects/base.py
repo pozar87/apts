@@ -459,22 +459,35 @@ class Objects(ABC):
         refraction (~34'). This results in high accuracy compared to Skyfield's
         iterative solver, while maintaining excellent performance.
         """
-        # Extract Skyfield Star objects and their coordinates in a vectorized way
-        if "skyfield_object" in df.columns:
-            sky_objs = df["skyfield_object"].to_numpy()
+        # Optimization: prioritize pre-calculated coordinate columns to avoid slow
+        # Python loops and attribute access on Skyfield objects.
+        if "ra_hours" in df.columns and "dec_degrees" in df.columns:
+            ras = df["ra_hours"].to_numpy()
+            decs = df["dec_degrees"].to_numpy()
+            # Check for skyfield_object to determine valid stars, or assume valid
+            # if we have coordinates but no objects yet (lazy loading case).
+            if "skyfield_object" in df.columns:
+                sky_objs = df["skyfield_object"].to_numpy()
+                valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
+            else:
+                valid_mask = np.ones(len(df), dtype=bool)
         else:
-            sky_objs = np.array(
-                [self.get_skyfield_object(row) for _, row in df.iterrows()]
+            # Fallback: Extract Skyfield Star objects and their coordinates in a vectorized way
+            if "skyfield_object" in df.columns:
+                sky_objs = df["skyfield_object"].to_numpy()
+            else:
+                sky_objs = np.array(
+                    [self.get_skyfield_object(row) for _, row in df.iterrows()]
+                )
+
+            valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
+
+            ras = np.array(
+                [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
             )
-
-        valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
-
-        ras = np.array(
-            [obj.ra.hours if isinstance(obj, Star) else 0 for obj in sky_objs]
-        )
-        decs = np.array(
-            [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
-        )
+            decs = np.array(
+                [obj.dec.degrees if isinstance(obj, Star) else 0 for obj in sky_objs]
+            )
 
         return vectorized_geometric_compute(
             self.ts,
