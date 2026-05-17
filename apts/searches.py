@@ -1,6 +1,5 @@
 from skyfield.api import load
 import numpy as np
-import pandas as pd
 from scipy.optimize import brentq
 
 
@@ -163,37 +162,72 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = eph["moon"]
+    earth = eph["earth"]
+
+    # Optimization: Hourly check, vectorized over times
+    num_hours = int((t1 - t0) * 24)
+    if num_hours < 1:
+        num_hours = 1
+    times = ts.linspace(t0, t1, num_hours)
+
+    # Pre-calculate Moon positions once for all stars
+    mpos = earth.at(times).observe(moon)
 
     events = []
 
+    # Optimization: Use pre-calculated float columns if available to avoid Pint overhead
+    if "ra_hours" in bright_stars.columns and "dec_degrees" in bright_stars.columns:
+        ra_hours = bright_stars["ra_hours"].values
+        dec_degrees = bright_stars["dec_degrees"].values
+        names = bright_stars["Name"].values
+    else:
+        # Fallback to slower extraction if columns are missing
+        ra_hours = [
+            star_data["RA"].to("hour").magnitude
+            if hasattr(star_data["RA"], "to")
+            else star_data["RA"]
+            for _, star_data in bright_stars.iterrows()
+        ]
+        dec_degrees = [
+            star_data["Dec"].to("degree").magnitude
+            if hasattr(star_data["Dec"], "to")
+            else star_data["Dec"]
+            for _, star_data in bright_stars.iterrows()
+        ]
+        names = bright_stars["Name"].values
+
     from skyfield.api import Star
 
-    for index, star_data in bright_stars.iterrows():
-        star_df = pd.DataFrame(
-            {
-                "ra_hours": [star_data["RA"].to("hour").magnitude],
-                "dec_degrees": [star_data["Dec"].to("degree").magnitude],
-                "ra_mas_per_year": [0],
-                "dec_mas_per_year": [0],
-                "parallax_mas": [0],
-                "radial_km_per_s": [0],
-                "epoch_year": [2000.0],
-            },
-            index=pd.Index([0]),
-        )
-        star = Star.from_dataframe(star_df)
+    # Optimization: Filter stars by ecliptic latitude to prune candidates.
+    # The Moon stays within ~5.3 degrees of the ecliptic.
+    stars_vector = Star(ra_hours=ra_hours, dec_degrees=dec_degrees)
+    # Observe all stars at t0 for filtering
+    spos_at_t0 = earth.at(t0).observe(stars_vector)
+    lats, _, _ = spos_at_t0.ecliptic_latlon()
+    # Using 10 degree margin for safety
+    mask = np.abs(lats.degrees) < 10.0
 
-        times = ts.linspace(t0, t1, int((t1 - t0) * 24))  # Hourly check
-        for t in times:
-            mpos = eph["earth"].at(t).observe(moon)
-            spos = eph["earth"].at(t).observe(star)
+    indices_to_check = np.where(mask)[0]
 
-            if mpos.separation_from(spos).degrees < 0.5:
-                events.append(
-                    {
-                        "date": t.utc_datetime(),
-                        "event": f"Moon occults {star_data['Name']}",
-                    }
-                )
+    for idx in indices_to_check:
+        star = Star(ra_hours=ra_hours[idx], dec_degrees=dec_degrees[idx])
+        name = names[idx]
+
+        # Observe star at all times (vectorized over times)
+        spos = earth.at(times).observe(star)
+
+        # Vectorized separation calculation
+        seps = mpos.separation_from(spos).degrees
+
+        # Find indices where separation < 0.5 degrees
+        occ_indices = np.where(seps < 0.5)[0]
+
+        for occ_idx in occ_indices:
+            events.append(
+                {
+                    "date": times[occ_idx].utc_datetime(),
+                    "event": f"Moon occults {name}",
+                }
+            )
 
     return events
