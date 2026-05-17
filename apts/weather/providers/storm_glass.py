@@ -34,6 +34,35 @@ class StormGlass(WeatherProvider):
             "rain",
             "snow",
         ]
+        data = None
+        try:
+            json_data, data = self._fetch_raw_data(hours, params)
+            if json_data is None:
+                return self._empty_df()
+
+            df = self._parse_stormglass_hours(json_data, params)
+            df = self._convert_units(df)
+            df = self._standardize_dataframe(df, hours)
+
+            df = self._enrich_with_aurora_data(df)
+            required_columns = self.REQUIRED_COLUMNS[:]
+            if "aurora" not in df.columns:
+                required_columns.remove("aurora")
+
+            # moon columns are added by Weather class
+            for col in ["moonIllumination", "moonWaxing", "seeing", "sqm"]:
+                if col in required_columns:
+                    required_columns.remove(col)
+
+            return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
+
+    def _fetch_raw_data(
+        self, hours: int, params: list[str]
+    ) -> tuple[Optional[dict], Any]:
+        """Fetches raw JSON data from StormGlass API."""
         start = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
         end = start + timedelta(hours=hours)
         url = self.API_URL.format(
@@ -46,141 +75,124 @@ class StormGlass(WeatherProvider):
         )
         self._log_download_url(url)
         headers = {"Authorization": self.api_key}
-        data = None
-        try:
-            with base.get_session().get(url, headers=headers, timeout=10) as data:
-                logger.debug(f"Data {data}")
-                data.raise_for_status()
-                json_data = json.loads(data.text)
+        with base.get_session().get(url, headers=headers, timeout=10) as response:
+            logger.debug(f"Data {response}")
+            response.raise_for_status()
+            json_data = json.loads(response.text)
 
-            if "hours" not in json_data:
-                logger.error(
-                    f"KeyError 'hours' in weather data. Full response: {json_data}"
-                )
-                return self._empty_df()
+        if "hours" not in json_data:
+            logger.error(f"KeyError 'hours' in weather data. Full response: {json_data}")
+            return None, response
 
-            rows = []
-            for item in json_data["hours"]:
-                row = {"time": item["time"]}
-                for p in params:
-                    # Pick 'sg' source if available, otherwise first available
-                    if p in item:
-                        if "sg" in item[p]:
-                            row[p] = item[p]["sg"]
-                        elif item[p]:
-                            row[p] = next(iter(item[p].values()))
-                        else:
-                            row[p] = "none"
+        return json_data, response
+
+    def _parse_stormglass_hours(self, json_data: dict, params: list[str]) -> pd.DataFrame:
+        """Parses the 'hours' list from StormGlass JSON response into a DataFrame."""
+        rows = []
+        for item in json_data["hours"]:
+            row = {"time": item["time"]}
+            for p in params:
+                if p in item:
+                    if "sg" in item[p]:
+                        row[p] = item[p]["sg"]
+                    elif item[p]:
+                        row[p] = next(iter(item[p].values()))
                     else:
                         row[p] = "none"
-                rows.append(row)
+                else:
+                    row[p] = "none"
+            rows.append(row)
+        return pd.DataFrame(rows)
 
-            df = pd.DataFrame(rows)
+    def _convert_units(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Renames columns and converts units for StormGlass data."""
+        rename_map = {
+            "airTemperature": "temperature",
+            "dewPointTemperature": "dewPoint",
+            "precipitation": "precipIntensity",
+        }
+        df.rename(columns=rename_map, inplace=True)
+        df["time"] = pd.to_datetime(df["time"]).dt.tz_convert(self.local_timezone)
 
-            # Rename columns to match the standard format
-            rename_map = {
-                "airTemperature": "temperature",
-                "dewPointTemperature": "dewPoint",
-                "precipitation": "precipIntensity",
-            }
-            df.rename(columns=rename_map, inplace=True)
+        numeric_cols = [
+            "temperature",
+            "dewPoint",
+            "precipIntensity",
+            "humidity",
+            "windSpeed",
+            "cloudCover",
+            "visibility",
+            "pressure",
+            "rain",
+            "snow",
+            "apparentTemperature",
+        ]
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
-            # Convert units and types
-            df["time"] = pd.to_datetime(df["time"]).dt.tz_convert(self.local_timezone)
+        if "windSpeed" in df.columns:
+            df["windSpeed"] *= 3.6
 
-            for col in [
-                "temperature",
-                "dewPoint",
-                "precipIntensity",
-                "humidity",
-                "windSpeed",
-                "cloudCover",
-                "visibility",
-                "pressure",
-                "rain",
-                "snow",
-                "apparentTemperature",
-            ]:
-                if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors="coerce")
+        if "visibility" in df.columns:
+            df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10
+        else:
+            df["fog"] = "none"
 
-            # windSpeed is in m/s, convert to km/h
-            if "windSpeed" in df.columns:
-                df["windSpeed"] *= 3.6
+        df["precipType"] = df.apply(self._get_precip_type, axis=1)
+        return df
 
-            if "visibility" in df.columns:
-                df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
-            else:
-                df["fog"] = "none"
+    def _get_precip_type(self, row: pd.Series) -> str:
+        """Determines precipitation type (none, rain, snow)."""
+        if pd.isna(row.get("precipIntensity")) or row.get("precipIntensity", 0) <= 0:
+            return "none"
+        rain = row.get("rain", 0)
+        snow = row.get("snow", 0)
+        if not pd.isna(snow) and not pd.isna(rain) and snow > rain:
+            return "snow"
+        return "rain"
 
-            # Derive precipType
-            def get_precip_type(row):
-                if (
-                    pd.isna(row.get("precipIntensity"))
-                    or row.get("precipIntensity", 0) <= 0
-                ):
-                    return "none"
-                rain = row.get("rain", 0)
-                snow = row.get("snow", 0)
-                if not pd.isna(snow) and not pd.isna(rain) and snow > rain:
-                    return "snow"
-                return "rain"
-
-            df["precipType"] = df.apply(get_precip_type, axis=1)
-
-            # Ensure all required columns are present
-            required_columns = [
-                "time",
-                "summary",
-                "precipType",
-                "precipProbability",
-                "precipIntensity",
-                "temperature",
-                "apparentTemperature",
-                "dewPoint",
-                "humidity",
-                "windSpeed",
-                "cloudCover",
-                "visibility",
-                "pressure",
-                "ozone",
-                "fog",
-            ]
-
-            # Add missing standard columns
-            df["summary"] = "none"
-            df = cast(pd.DataFrame, df)
-            # Derive a dummy precipProbability based on precipIntensity if not available
-            if (
-                "precipProbability" not in df.columns
-                or bool(df["precipProbability"].isna().all())
-                or bool((df["precipProbability"] == "none").all())
-            ):
-                df["precipProbability"] = df["precipIntensity"].apply(
-                    lambda x: 100 if pd.notna(x) and x != "none" and x > 0 else 0
-                )
-            if (
-                "apparentTemperature" not in df.columns
-                or bool(df["apparentTemperature"].isna().all())
-                or bool((df["apparentTemperature"] == "none").all())
-            ):
-                df["apparentTemperature"] = df["temperature"]
-            df["ozone"] = "none"
-
-            for col in required_columns:
-                if col not in df.columns:
-                    df[col] = "none"
-
-            # Filter by hours
-            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(
-                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+    def _standardize_dataframe(self, df: pd.DataFrame, hours: int) -> pd.DataFrame:
+        """Ensures all standard columns exist and filters by requested hours."""
+        df["summary"] = "none"
+        if (
+            "precipProbability" not in df.columns
+            or bool(df["precipProbability"].isna().all())
+            or bool((df["precipProbability"] == "none").all())
+        ):
+            df["precipProbability"] = df["precipIntensity"].apply(
+                lambda x: 100 if pd.notna(x) and x != "none" and x > 0 else 0
             )
 
-            df = self._enrich_with_aurora_data(df)
-            if "aurora" in df.columns:
-                required_columns.append("aurora")
-            return cast(pd.DataFrame, df[required_columns])
-        except Exception as e:
-            self._log_download_error(e, data.text if data is not None else "")
-            return self._empty_df()
+        if (
+            "apparentTemperature" not in df.columns
+            or bool(df["apparentTemperature"].isna().all())
+            or bool((df["apparentTemperature"] == "none").all())
+        ):
+            df["apparentTemperature"] = df["temperature"]
+
+        df["ozone"] = "none"
+
+        required = [
+            "time",
+            "summary",
+            "precipType",
+            "precipProbability",
+            "precipIntensity",
+            "temperature",
+            "apparentTemperature",
+            "dewPoint",
+            "humidity",
+            "windSpeed",
+            "cloudCover",
+            "visibility",
+            "pressure",
+            "ozone",
+            "fog",
+        ]
+        for col in required:
+            if col not in df.columns:
+                df[col] = "none"
+
+        cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+        return cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
