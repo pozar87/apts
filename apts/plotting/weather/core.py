@@ -1,7 +1,11 @@
-from typing import Optional, cast
+from typing import Any, Optional, cast
+
 import pandas as pd
+
 from apts.i18n import gettext_
+
 from .utils import generic_line_plot, generic_pie_plot, get_plot_setup
+
 
 def plot_clouds(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["cloudCover"])
@@ -12,8 +16,9 @@ def plot_clouds(weather, dark_mode_override: Optional[bool] = None, **args):
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
         ylim=(0, 105),
-        **args
+        **args,
     )
+
 
 def plot_precipitation(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["precipIntensity", "precipProbability"])
@@ -23,18 +28,22 @@ def plot_precipitation(weather, dark_mode_override: Optional[bool] = None, **arg
         gettext_("Probability"),
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
-        **args
+        **args,
     )
 
-def plot_precipitation_type_summary(weather, dark_mode_override: Optional[bool] = None, **args):
+
+def plot_precipitation_type_summary(
+    weather, dark_mode_override: Optional[bool] = None, **args
+):
     data = weather._filter_data(["precipType"])
     return generic_pie_plot(
         data,
         "precipType",
         gettext_("Precipitation type summary"),
         dark_mode_override=dark_mode_override,
-        **args
+        **args,
     )
+
 
 def plot_clouds_summary(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["summary"])
@@ -43,8 +52,9 @@ def plot_clouds_summary(weather, dark_mode_override: Optional[bool] = None, **ar
         "summary",
         gettext_("Cloud summary"),
         dark_mode_override=dark_mode_override,
-        **args
+        **args,
     )
+
 
 def plot_temperature(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["temperature", "apparentTemperature", "dewPoint"])
@@ -54,8 +64,9 @@ def plot_temperature(weather, dark_mode_override: Optional[bool] = None, **args)
         gettext_("Temperature [°C]"),
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
-        **args
+        **args,
     )
+
 
 def plot_wind(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["windSpeed"])
@@ -73,8 +84,9 @@ def plot_wind(weather, dark_mode_override: Optional[bool] = None, **args):
         dark_mode_override=dark_mode_override,
         y="windSpeed",
         ylim=ylim,
-        **args
+        **args,
     )
+
 
 def plot_pressure_and_ozone(weather, dark_mode_override: Optional[bool] = None, **args):
     available_columns = [
@@ -114,11 +126,11 @@ def plot_pressure_and_ozone(weather, dark_mode_override: Optional[bool] = None, 
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
         secondary_y=secondary_y_plot,
-        **args
+        **args,
     )
 
     if not data.empty and secondary_y_plot and hasattr(ax, "right_ax"):
-        ax_secondary = ax.right_ax
+        ax_secondary = cast(Any, ax).right_ax
         ax_secondary.set_ylabel(
             gettext_("Ozone [DU]"),
             color=style["TEXT_COLOR"],
@@ -127,6 +139,7 @@ def plot_pressure_and_ozone(weather, dark_mode_override: Optional[bool] = None, 
         ax_secondary.spines["right"].set_color(style["AXIS_COLOR"])
 
     return ax
+
 
 def plot_visibility(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["visibility"])
@@ -137,8 +150,9 @@ def plot_visibility(weather, dark_mode_override: Optional[bool] = None, **args):
         gettext_("Visibility [km]"),
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
-        **args
+        **args,
     )
+
 
 def plot_fog(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["fog"])
@@ -149,8 +163,9 @@ def plot_fog(weather, dark_mode_override: Optional[bool] = None, **args):
         weather.local_timezone,
         dark_mode_override=dark_mode_override,
         ylim=(0, 105),
-        **args
+        **args,
     )
+
 
 def plot_moon_illumination(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["moonIllumination", "moonWaxing"])
@@ -172,8 +187,9 @@ def plot_moon_illumination(weather, dark_mode_override: Optional[bool] = None, *
         dark_mode_override=dark_mode_override,
         y="moonIllumination",
         ylim=(0, 105),
-        **args
+        **args,
     )
+
 
 def plot_aurora(weather, dark_mode_override: Optional[bool] = None, **args):
     if "aurora" not in weather.data.columns:
@@ -189,8 +205,9 @@ def plot_aurora(weather, dark_mode_override: Optional[bool] = None, **args):
         dark_mode_override=dark_mode_override,
         y="aurora",
         ylim=(0, 105),
-        **args
+        **args,
     )
+
 
 def plot_seeing(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["seeing"])
@@ -202,8 +219,9 @@ def plot_seeing(weather, dark_mode_override: Optional[bool] = None, **args):
         dark_mode_override=dark_mode_override,
         y="seeing",
         ylim=(0, 5.5),
-        **args
+        **args,
     )
+
 
 def plot_sqm(weather, dark_mode_override: Optional[bool] = None, **args):
     data = weather._filter_data(["sqm"])
@@ -215,5 +233,5 @@ def plot_sqm(weather, dark_mode_override: Optional[bool] = None, **args):
         dark_mode_override=dark_mode_override,
         y="sqm",
         ylim=(10, 22.5),
-        **args
+        **args,
     )

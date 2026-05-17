@@ -4,12 +4,16 @@ from typing import TYPE_CHECKING, Optional, cast
 
 if TYPE_CHECKING:
     import matplotlib.figure
-    from ..plotting import Plotter, NullPlotter
+
+    from ..plotting import NullPlotter, Plotter
 
 from .. import plotting as apts_plot
-from ..constants.plot import CoordinateSystem
 from ..conditions import Conditions
+from ..constants.plot import CoordinateSystem
 from ..i18n import language_context
+
+if TYPE_CHECKING:
+    from ..observations.base import Observation
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +26,7 @@ class PlottingMixIn:
     def plot(self) -> "Plotter | NullPlotter":
         if self._plot is None:
             try:
-                self._plot = apts_plot.Plotter(self)
+                self._plot = apts_plot.Plotter(cast("Observation", self))
             except ImportError:
                 # Fallback if dependencies are missing or plotting is disabled
                 self._plot = apts_plot.NullPlotter()

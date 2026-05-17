@@ -5,7 +5,9 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from datetime import datetime
+
     from skyfield.api import Time
+
     from ..conditions import Conditions
     from ..objects.messier import Messier
     from ..objects.ngc import NGC
@@ -35,6 +37,7 @@ class CatalogMixIn:
     def local_messier(self) -> "Messier":
         if self._local_messier is None:
             from apts import catalogs
+
             from ..objects.messier import Messier
 
             self._local_messier = Messier(
@@ -56,6 +59,7 @@ class CatalogMixIn:
     def local_ngc(self) -> "NGC":
         if self._local_ngc is None:
             from apts import catalogs
+
             from ..objects.ngc import NGC
 
             self._local_ngc = NGC(
@@ -67,6 +71,7 @@ class CatalogMixIn:
     def local_stars(self) -> "Stars":
         if self._local_stars is None:
             from apts import catalogs
+
             from ..objects.stars import Stars
 
             self._local_stars = Stars(
@@ -89,13 +94,13 @@ class CatalogMixIn:
             )
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Type" in visible.columns:
-                visible["Type"] = (
-                    cast(pd.Series, bulk_gettext(visible["Type"])).astype("string")
+                visible["Type"] = cast(pd.Series, bulk_gettext(visible["Type"])).astype(
+                    "string"
                 )
             if "Constellation" in visible.columns:
-                visible["Constellation"] = (
-                    cast(pd.Series, bulk_gettext(visible["Constellation"])).astype("string")
-                )
+                visible["Constellation"] = cast(
+                    pd.Series, bulk_gettext(visible["Constellation"])
+                ).astype("string")
             return visible
 
     def get_visible_ngc(self, **args) -> pd.DataFrame:
@@ -122,7 +127,7 @@ class CatalogMixIn:
             )
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
-                visible["Name"] = (
-                    bulk_gettext(visible["Name"]).astype("string")
+                visible["Name"] = cast(pd.Series, bulk_gettext(visible["Name"])).astype(
+                    "string"
                 )
             return visible

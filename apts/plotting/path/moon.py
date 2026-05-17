@@ -1,17 +1,19 @@
 import logging
+from datetime import datetime
 from math import copysign
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from ...config import get_dark_mode
 from ...constants.graphconstants import get_plot_style
 from ...i18n import gettext_
 from ...utils.plot import PlotUtils
-from .utils import is_southern_hemisphere, setup_cardinal_markers, MOON_FONT
+from .utils import MOON_FONT, is_southern_hemisphere, setup_cardinal_markers
 
 if TYPE_CHECKING:
     from ...place import Place
 
 logger = logging.getLogger(__name__)
+
 
 def generate_plot_moon_path(
     place: "Place", dark_mode_override: Optional[bool] = None, **args
@@ -143,7 +145,7 @@ def generate_plot_moon_path(
             )
     ax.set_title(
         gettext_("Moon Path")
-        + f" on {place.date.utc_datetime().strftime('%Y-%m-%d')}",
+        + f" on {cast(datetime, place.date.utc_datetime()).strftime('%Y-%m-%d')}",
         color=style["TEXT_COLOR"],
     )
     PlotUtils.style_legend(ax, style)

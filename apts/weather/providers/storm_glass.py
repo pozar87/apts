@@ -81,12 +81,16 @@ class StormGlass(WeatherProvider):
             json_data = json.loads(response.text)
 
         if "hours" not in json_data:
-            logger.error(f"KeyError 'hours' in weather data. Full response: {json_data}")
+            logger.error(
+                f"KeyError 'hours' in weather data. Full response: {json_data}"
+            )
             return None, response
 
         return json_data, response
 
-    def _parse_stormglass_hours(self, json_data: dict, params: list[str]) -> pd.DataFrame:
+    def _parse_stormglass_hours(
+        self, json_data: dict, params: list[str]
+    ) -> pd.DataFrame:
         """Parses the 'hours' list from StormGlass JSON response into a DataFrame."""
         rows = []
         for item in json_data["hours"]:
@@ -144,11 +148,22 @@ class StormGlass(WeatherProvider):
 
     def _get_precip_type(self, row: pd.Series) -> str:
         """Determines precipitation type (none, rain, snow)."""
-        if pd.isna(row.get("precipIntensity")) or row.get("precipIntensity", 0) <= 0:
+        precip_intensity = row.get("precipIntensity", 0)
+        if (
+            precip_intensity is None
+            or bool(pd.isna(precip_intensity))
+            or bool(precip_intensity <= 0)
+        ):
             return "none"
         rain = row.get("rain", 0)
         snow = row.get("snow", 0)
-        if not pd.isna(snow) and not pd.isna(rain) and snow > rain:
+        if (
+            snow is not None
+            and rain is not None
+            and bool(pd.notna(snow))
+            and bool(pd.notna(rain))
+            and bool(snow > rain)
+        ):
             return "snow"
         return "rain"
 

@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, cast
 
+import pandas as pd
 from matplotlib import figure, pyplot
 
 from apts.config import get_dark_mode
@@ -229,16 +230,15 @@ def plot_skymap(
         flipped_vertically = flip_vertically
     elif equipment_id is not None and zoom_deg is not None:
         # Check if equipment has data method, otherwise assume it's already a DataFrame
-        equipment_data = (
+        equipment_data = cast(
+            pd.DataFrame,
             observation.equipment.data()
             if hasattr(observation.equipment, "data")
-            else observation.equipment
+            else observation.equipment,
         )
         if (
             equipment_data is not None
-            and hasattr(equipment_data, "empty")
             and not equipment_data.empty
-            and hasattr(equipment_data, "columns")
             and "ID" in equipment_data.columns
             and equipment_id in equipment_data["ID"].values
         ):

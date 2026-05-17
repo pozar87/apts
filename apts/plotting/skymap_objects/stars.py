@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, Optional, cast, Any
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
 import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
+
 if TYPE_CHECKING:
     from apts.observations import Observation
 
@@ -87,7 +88,7 @@ def _filter_stars_by_proximity(
     ]
 
     if stars_in_box.empty:
-        return stars_in_box
+        return cast(pd.DataFrame, stars_in_box)
 
     # Precise separation calculation
     if hasattr(target_object, "ra"):
@@ -111,7 +112,7 @@ def _filter_stars_by_proximity(
     cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
 
     separation = numpy.degrees(numpy.arccos(cosine_angle))
-    return stars_in_box[separation < zoom_deg]
+    return cast(pd.DataFrame, stars_in_box[separation < zoom_deg])
 
 
 def _apply_zoom_and_horizon_filter(
@@ -209,7 +210,9 @@ def _plot_bright_stars_on_skymap(
 ):
     bright_stars_df = cast(pd.DataFrame, observation.local_stars.objects.copy())
     if target_name:
-        bright_stars_df = bright_stars_df[bright_stars_df["Name"] != target_name]
+        bright_stars_df = cast(
+            pd.DataFrame, bright_stars_df[bright_stars_df["Name"] != target_name]
+        )
 
     bright_stars_df = _ensure_coordinate_columns(bright_stars_df)
     if bright_stars_df.empty:
@@ -236,7 +239,7 @@ def _plot_bright_stars_on_skymap(
     if not numpy.any(full_mask):
         return
 
-    df_plot = bright_stars_df[full_mask]
+    df_plot = cast(pd.DataFrame, bright_stars_df[full_mask])
     star_color = style.get("EMPHASIS_COLOR", "yellow")
 
     if not is_polar:
@@ -294,6 +297,7 @@ def _plot_stars_on_skymap(
     ignore_horizon: bool = False,
 ):
     import apts.plotting.skymap_objects as api
+
     stars = api.get_hipparcos_data()
 
     if zoom_deg is not None and target_object is not None:
@@ -308,7 +312,7 @@ def _plot_stars_on_skymap(
     else:
         limit = 6.0
 
-    bright_stars = stars[stars["magnitude"] <= limit]
+    bright_stars = cast(pd.DataFrame, stars[stars["magnitude"] <= limit])
     bright_stars = _ensure_coordinate_columns(bright_stars)
 
     if bright_stars.empty:
