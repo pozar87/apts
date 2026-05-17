@@ -52,7 +52,6 @@ def _generate_observation_weather_plot(
     Private helper to generate a weather plot for an observation.
     """
     effective_dark_mode, style = get_plot_setup(dark_mode_override)
-    eff_conditions = conditions or observation.conditions
     if observation.place.weather is None:
         return _handle_no_weather(title, effective_dark_mode, style)
 

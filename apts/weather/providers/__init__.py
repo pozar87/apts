@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any
 from .base import WeatherProvider, get_session, reset_session, _get_aurora_df
 from .meteoblue import Meteoblue
 from .open_weather_map import OpenWeatherMap

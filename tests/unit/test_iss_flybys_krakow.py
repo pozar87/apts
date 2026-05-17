@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timezone
 from skyfield.api import Topos
 from apts.skyfield_searches.satellites import find_iss_flybys
-from apts.cache import get_timescale, get_ephemeris
+from apts.cache import get_ephemeris
 
 class TestISSFlybysKrakow(unittest.TestCase):
     def test_krakow_flybys_april_2026(self):
@@ -10,7 +10,6 @@ class TestISSFlybysKrakow(unittest.TestCase):
         lat, lon = 50.095, 19.89
         topos_observer = Topos(latitude_degrees=lat, longitude_degrees=lon)
 
-        ts = get_timescale()
         eph = get_ephemeris()
         earth = eph['earth']
         vector_observer = earth + topos_observer
