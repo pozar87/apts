@@ -150,6 +150,9 @@ class Equipment(EquipmentPlottingMixIn):
         total_mass_value = path.total_mass()
         total_mass_magnitude = total_mass_value.to("gram").magnitude
 
+        dawes = path.dawes_limit()
+        rayleigh = path.rayleigh_limit()
+
         return [
             path.label(),
             output_type_value,
@@ -160,12 +163,8 @@ class Equipment(EquipmentPlottingMixIn):
             path.fov_height().magnitude,
             path.fov_diagonal().magnitude,
             exit_pupil_value,
-            path.dawes_limit().magnitude
-            if path.dawes_limit() is not None
-            else numpy.nan,
-            path.rayleigh_limit().magnitude
-            if path.rayleigh_limit() is not None
-            else numpy.nan,
+            dawes.magnitude if dawes is not None else numpy.nan,
+            rayleigh.magnitude if rayleigh is not None else numpy.nan,
             path.ideal_planetary_focal_ratio() or numpy.nan,
             path.telescope.limiting_magnitude(),
             path.brightness().magnitude,

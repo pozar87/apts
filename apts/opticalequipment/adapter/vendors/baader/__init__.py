@@ -7,7 +7,10 @@ class BaaderAdapter(Adapter):
     @classmethod
     def _add_factory_methods(cls):
         def create_factory(key):
-            return classmethod(lambda c: c.from_database(c._DATABASE[key]))
+            @classmethod
+            def factory(c):
+                return c.from_database(c._DATABASE[key])
+            return factory
         for key in cls._DATABASE:
             setattr(cls, key, create_factory(key))
 BaaderAdapter._add_factory_methods()
@@ -17,7 +20,10 @@ class BaaderSpacer(Spacer):
     @classmethod
     def _add_factory_methods(cls):
         def create_factory(key):
-            return classmethod(lambda c: c.from_database(c._DATABASE[key]))
+            @classmethod
+            def factory(c):
+                return c.from_database(c._DATABASE[key])
+            return factory
         for key in cls._DATABASE:
             setattr(cls, key, create_factory(key))
 BaaderSpacer._add_factory_methods()

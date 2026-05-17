@@ -26,7 +26,10 @@ class GenericAdapter(Adapter):
     @classmethod
     def _add_factory_methods(cls):
         def create_factory(key):
-            return classmethod(lambda c: c.from_database(c._DATABASE[key]))
+            @classmethod
+            def factory(c):
+                return c.from_database(c._DATABASE[key])
+            return factory
         for key in cls._DATABASE:
             setattr(cls, key, create_factory(key))
 
@@ -48,7 +51,10 @@ class GenericSpacer(Spacer):
     @classmethod
     def _add_factory_methods(cls):
         def create_factory(key):
-            return classmethod(lambda c: c.from_database(c._DATABASE[key]))
+            @classmethod
+            def factory(c):
+                return c.from_database(c._DATABASE[key])
+            return factory
         for key in cls._DATABASE:
             setattr(cls, key, create_factory(key))
 
