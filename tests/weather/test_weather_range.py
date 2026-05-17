@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 import pytz
 import re
@@ -154,4 +155,4 @@ def test_weather_data_filtering():
         # Should have around 49 rows (depends on exact current time vs mocked times)
         # But definitely should be limited
         assert len(df) <= 49
-        assert df.time.max() <= now + datetime.timedelta(hours=48)
+        assert pd.to_datetime(df.time.max()) <= now + datetime.timedelta(hours=48)

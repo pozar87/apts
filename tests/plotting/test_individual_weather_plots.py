@@ -12,7 +12,7 @@ from tests import setup_place
 def mock_weather_instance():
     with patch("apts.weather.base.get_weather_settings") as mock_settings:
         mock_settings.return_value = ("pirateweather", "dummy_key")
-        with patch("apts.weather.base.PirateWeather") as mock_pw:
+        with patch("apts.weather.providers.PirateWeather") as mock_pw:
             mock_provider = mock_pw.return_value
             mock_data = pd.DataFrame(
                 {
