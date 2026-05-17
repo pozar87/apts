@@ -6,6 +6,7 @@ from dateutil.parser import parse as parse_date
 from skyfield.api import Topos
 
 from ... import skyfield_searches
+from ...utils.network import get_session
 from ..rarity import get_rarity
 from ..duration import get_duration
 
@@ -19,7 +20,7 @@ def calculate_space_launches(start_date, end_date):
     end_date_str = end_date.strftime("%Y-%m-%d")
     url = f"https://ll.thespacedevs.com/2.2.0/launch/upcoming/?window_start__gte={start_date_str}&window_end__lte={end_date_str}"
     try:
-        response = requests.get(url, timeout=10)
+        response = get_session().get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
         for launch in data.get("results", []):
@@ -43,7 +44,7 @@ def calculate_space_events(start_date, end_date):
     end_date_str = end_date.strftime("%Y-%m-%d")
     url = f"https://ll.thespacedevs.com/2.2.0/event/upcoming/?date__gte={start_date_str}&date__lte={end_date_str}"
     try:
-        response = requests.get(url, timeout=10)
+        response = get_session().get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
         for event in data.get("results", []):

@@ -5,9 +5,10 @@ from datetime import datetime
 
 
 class TestNasaAPI(unittest.TestCase):
-    @patch("requests.get")
-    def test_get_comets(self, mock_get):
+    @patch("apts.nasa_api.get_session")
+    def test_get_comets(self, mock_get_session):
         # Arrange
+        mock_get = mock_get_session.return_value.get
         mock_get.return_value.json.return_value = {
             "near_earth_objects": {
                 "2024-01-01": [

@@ -52,7 +52,7 @@ class ConfigTest(unittest.TestCase):
             remove_config_path(fake_config_path)
             load_config()  # Reload original config
 
-    @patch("apts.weather.providers.base.requests_cache.CachedSession")
+    @patch("apts.utils.network.requests_cache.CachedSession")
     def test_redis_connection_fallback(self, mock_cached_session):
         # Import redis and its exception class for mocking
         try:
@@ -89,7 +89,7 @@ class ConfigTest(unittest.TestCase):
 
         try:
             # This call should now trigger the fallback logic
-            with self.assertLogs("apts.weather.providers.base", level="WARNING") as cm:
+            with self.assertLogs("apts.utils.network", level="WARNING") as cm:
                 weather_providers.get_session()
 
             # Verify logs
