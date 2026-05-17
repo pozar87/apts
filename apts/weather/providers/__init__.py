@@ -1,5 +1,6 @@
 from typing import Optional, Any
-from .base import WeatherProvider, get_session, reset_session, _get_aurora_df
+from .base import WeatherProvider, _get_aurora_df
+from ...utils.network import get_session, reset_session
 from .meteoblue import Meteoblue
 from .open_weather_map import OpenWeatherMap
 from .pirate_weather import PirateWeather

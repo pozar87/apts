@@ -56,8 +56,8 @@ class LightPollution:
             return None
 
         try:
-            # We import here to avoid circular dependency and leverage existing weather cache
-            from .weather.providers.base import get_session
+            # We import here to avoid circular dependency and leverage existing central cache
+            from .utils.network import get_session
 
             url = "https://www.darkskysites.com/api/site-intelligence"
             params = {"lat": self.lat, "lng": self.lon}

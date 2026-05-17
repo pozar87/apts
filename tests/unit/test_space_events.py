@@ -22,8 +22,9 @@ class SpaceEventsTest(unittest.TestCase):
             events_to_calculate=[EventType.SPACE_LAUNCHES, EventType.SPACE_EVENTS],
         )
 
-    @patch("apts.events.calculations.space.requests.get")
-    def test_calculate_space_launches(self, mock_get):
+    @patch("apts.events.calculations.space.get_session")
+    def test_calculate_space_launches(self, mock_get_session):
+        mock_get = mock_get_session.return_value.get
         mock_launch_response = MagicMock()
         mock_launch_response.json.return_value = {
             "results": [
@@ -55,8 +56,9 @@ class SpaceEventsTest(unittest.TestCase):
                 events_df.iloc[0]["date"], datetime(2023, 1, 26, 14, 22, tzinfo=utc)
             )
 
-    @patch("apts.events.calculations.space.requests.get")
-    def test_calculate_space_events(self, mock_get):
+    @patch("apts.events.calculations.space.get_session")
+    def test_calculate_space_events(self, mock_get_session):
+        mock_get = mock_get_session.return_value.get
         mock_launch_response = MagicMock()
         mock_launch_response.json.return_value = {"results": []}
 
@@ -88,8 +90,9 @@ class SpaceEventsTest(unittest.TestCase):
                 events_df.iloc[0]["date"], datetime(2023, 1, 15, 10, 0, tzinfo=utc)
             )
 
-    @patch("apts.events.calculations.space.requests.get")
-    def test_calculate_space_launches_pl(self, mock_get):
+    @patch("apts.events.calculations.space.get_session")
+    def test_calculate_space_launches_pl(self, mock_get_session):
+        mock_get = mock_get_session.return_value.get
         mock_launch_response = MagicMock()
         mock_launch_response.json.return_value = {
             "results": [
@@ -119,8 +122,9 @@ class SpaceEventsTest(unittest.TestCase):
             # "Space Launch" -> "Start rakiety"
             self.assertEqual(events_df.iloc[0]["type"], "Start rakiety")
 
-    @patch("apts.events.calculations.space.requests.get")
-    def test_calculate_space_events_pl(self, mock_get):
+    @patch("apts.events.calculations.space.get_session")
+    def test_calculate_space_events_pl(self, mock_get_session):
+        mock_get = mock_get_session.return_value.get
         mock_launch_response = MagicMock()
         mock_launch_response.json.return_value = {"results": []}
 

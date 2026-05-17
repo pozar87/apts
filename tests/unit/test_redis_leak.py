@@ -18,7 +18,7 @@ class TestRedisLeak(unittest.TestCase):
 
         self.handler = CaptureHandler(self.log_capture)
         # Ensure we capture from the correct logger
-        self.logger = logging.getLogger("apts.weather.providers.base")
+        self.logger = logging.getLogger("apts.utils.network")
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.WARNING)
 
@@ -26,7 +26,7 @@ class TestRedisLeak(unittest.TestCase):
         self.logger.removeHandler(self.handler)
         reset_session()
 
-    @patch("apts.weather.providers.base.get_cache_settings")
+    @patch("apts.utils.network.get_cache_settings")
     @patch("requests_cache.CachedSession")
     def test_redis_connection_leak_is_masked(self, mock_session, mock_get_cache_settings):
         # Sensitive Redis URL
