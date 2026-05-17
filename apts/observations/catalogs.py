@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class CatalogMixIn:
     if TYPE_CHECKING:
         place: "Place"
-        effective_date: Optional["Time"]
+        effective_date: Optional[Union["datetime", "Time"]]
         conditions: "Conditions"
         start: Optional["datetime"]
         time_limit: Optional["datetime"]
@@ -90,11 +90,11 @@ class CatalogMixIn:
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Type" in visible.columns:
                 visible["Type"] = (
-                    bulk_gettext(visible["Type"]).astype("string")
+                    cast(pd.Series, bulk_gettext(visible["Type"])).astype("string")
                 )
             if "Constellation" in visible.columns:
                 visible["Constellation"] = (
-                    bulk_gettext(visible["Constellation"]).astype("string")
+                    cast(pd.Series, bulk_gettext(visible["Constellation"])).astype("string")
                 )
             return visible
 

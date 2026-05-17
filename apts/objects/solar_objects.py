@@ -150,15 +150,15 @@ class SolarObjects(Objects):
     def _compute_ephem_and_skyfield_data(self, computed_df, observer_to_use, t):
         """Computes Ephem and Skyfield data for each object in computed_df."""
         ephem_object_map = {
-            "mercury": ephem.Mercury,
-            "venus": ephem.Venus,
-            "mars barycenter": ephem.Mars,
-            "jupiter barycenter": ephem.Jupiter,
-            "saturn barycenter": ephem.Saturn,
-            "uranus barycenter": ephem.Uranus,
-            "neptune barycenter": ephem.Neptune,
-            "moon": ephem.Moon,
-            "sun": ephem.Sun,
+            "mercury": getattr(ephem, "Mercury"),
+            "venus": getattr(ephem, "Venus"),
+            "mars barycenter": getattr(ephem, "Mars"),
+            "jupiter barycenter": getattr(ephem, "Jupiter"),
+            "saturn barycenter": getattr(ephem, "Saturn"),
+            "uranus barycenter": getattr(ephem, "Uranus"),
+            "neptune barycenter": getattr(ephem, "Neptune"),
+            "moon": getattr(ephem, "Moon"),
+            "sun": getattr(ephem, "Sun"),
         }
         ephem_observer = self._get_ephem_observer(observer_to_use, t)
         mags, sizes, phases = [], [], []
@@ -288,7 +288,7 @@ class SolarObjects(Objects):
                 tn: planetary.get_simple_name(tn) for tn in unique_tech_names
             }
             visible["Name"] = (
-                visible["TechnicalName"].map(name_map).astype("string")
+                cast(pd.Series, visible["TechnicalName"].map(name_map)).astype("string")
             )
 
         return visible
