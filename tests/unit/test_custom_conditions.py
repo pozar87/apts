@@ -13,8 +13,9 @@ from tests import setup_place
 def mock_weather_data():
     with patch("apts.weather.base.get_weather_settings") as mock_settings:
         mock_settings.return_value = ("pirateweather", "dummy_key")
-        with patch("apts.weather.base.PirateWeather") as mock_pw:
-            mock_provider = mock_pw.return_value
+        with patch("apts.weather.base.get_provider") as mock_gp:
+            mock_provider = MagicMock()
+            mock_gp.return_value = mock_provider
             mock_data = pd.DataFrame(
                 {
                     "time": [
