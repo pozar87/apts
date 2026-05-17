@@ -1,8 +1,8 @@
 import logging
-import requests
 from datetime import datetime, timedelta
 
 from .secrets import mask_text
+from .utils.network import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class NasaAPI:
                 "api_key": self.api_key,
             }
             try:
-                response = requests.get(self.base_url, params=params, timeout=10)
+                response = get_session().get(self.base_url, params=params, timeout=10)
                 response.raise_for_status()
                 data = response.json()
             except Exception as e:
