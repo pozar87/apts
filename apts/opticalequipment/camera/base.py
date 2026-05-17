@@ -10,7 +10,7 @@ class Camera(OutputOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'

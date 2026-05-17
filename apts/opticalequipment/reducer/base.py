@@ -8,7 +8,7 @@ class Reducer(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, extract_number, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -33,7 +33,7 @@ class Flattener(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -58,7 +58,7 @@ class Corrector(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'

@@ -5,7 +5,7 @@ from ...utils import ConnectionType, Gender
 class Barlow(OpticalEquipment):
     @classmethod 
     def normalize_database_entry(cls, entry: dict) -> dict: 
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
+        from ...utils import extract_number
         entry = entry.copy() 
         name = entry.get("name", "") 
         if "magnification" not in entry:
@@ -16,7 +16,7 @@ class Barlow(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, extract_number, Gender
 
         brand = entry["brand"]
         name = entry["name"]

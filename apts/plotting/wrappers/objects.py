@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ...observations import Observation
-    from ...conditions import Conditions
 
 def plot_messier(
     observation: "Observation", dark_mode_override: Optional[bool] = None, **args

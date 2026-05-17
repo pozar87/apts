@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 
 if TYPE_CHECKING:
-    from pint import Quantity
+    pass
 
 from .utils import OpticsUtils
 

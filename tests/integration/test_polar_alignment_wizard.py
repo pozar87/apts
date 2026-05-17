@@ -192,7 +192,7 @@ class TestPolarAlignmentWizardIntegration(unittest.TestCase):
 
         print(f"Tracked position: ({tracked_x:.1f}, {tracked_y:.1f})")
         print(f"Expected Target: ({center_x:.1f}, {center_y + radius:.1f})")
-        print(f"Expected Decoy: (480.0, 620.0)")
+        print("Expected Decoy: (480.0, 620.0)")
 
         self.assertAlmostEqual(tracked_x, center_x, delta=5)
         self.assertAlmostEqual(tracked_y, center_y + radius, delta=5)

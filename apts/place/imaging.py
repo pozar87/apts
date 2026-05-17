@@ -1,5 +1,5 @@
 import datetime
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from apts.constants.twilight import Twilight
 

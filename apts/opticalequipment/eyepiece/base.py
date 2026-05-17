@@ -7,7 +7,7 @@ from ...utils import ConnectionType, Gender
 class Eyepiece(OutputOpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
+        from ...utils import extract_number
         import re
         entry = entry.copy()
         name = entry.get("name", "")
@@ -25,7 +25,7 @@ class Eyepiece(OutputOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
+        from ...utils import map_conn, map_gender
         entry = cls.normalize_database_entry(entry)
         brand = entry.get('brand', 'Unknown')
         name = entry.get('name', 'Unknown')
