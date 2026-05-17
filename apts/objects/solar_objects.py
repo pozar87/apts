@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from ..cache import get_mpcorb_data
-from ..constants import ObjectTableLabels, DSOType
+from ..constants import DSOType, ObjectTableLabels
 from ..utils import MINOR_PLANET_NAMES, planetary
 from .base import Objects
 from .utils import vectorized_geometric_compute
@@ -117,9 +117,7 @@ class SolarObjects(Objects):
             dp._Om = np.deg2rad(
                 minor_planet_details["longitude_of_ascending_node_degrees"]
             )
-            dp._om = np.deg2rad(
-                minor_planet_details["argument_of_perihelion_degrees"]
-            )
+            dp._om = np.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
             dp._a = minor_planet_details["semimajor_axis_au"]
             dp._e = minor_planet_details["eccentricity"]
             dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
@@ -131,8 +129,18 @@ class SolarObjects(Objects):
             packed_epoch = minor_planet_details["epoch_packed"]
             _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
             _MPC_MONTH = {
-                "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6,
-                "7": 7, "8": 8, "9": 9, "A": 10, "B": 11, "C": 12,
+                "1": 1,
+                "2": 2,
+                "3": 3,
+                "4": 4,
+                "5": 5,
+                "6": 6,
+                "7": 7,
+                "8": 8,
+                "9": 9,
+                "A": 10,
+                "B": 11,
+                "C": 12,
             }
             _MPC_DAY = {str(d): d for d in range(1, 10)}
             _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
@@ -150,15 +158,15 @@ class SolarObjects(Objects):
     def _compute_ephem_and_skyfield_data(self, computed_df, observer_to_use, t):
         """Computes Ephem and Skyfield data for each object in computed_df."""
         ephem_object_map = {
-            "mercury": ephem.Mercury,
-            "venus": ephem.Venus,
-            "mars barycenter": ephem.Mars,
-            "jupiter barycenter": ephem.Jupiter,
-            "saturn barycenter": ephem.Saturn,
-            "uranus barycenter": ephem.Uranus,
-            "neptune barycenter": ephem.Neptune,
-            "moon": ephem.Moon,
-            "sun": ephem.Sun,
+            "mercury": getattr(ephem, "Mercury"),
+            "venus": getattr(ephem, "Venus"),
+            "mars barycenter": getattr(ephem, "Mars"),
+            "jupiter barycenter": getattr(ephem, "Jupiter"),
+            "saturn barycenter": getattr(ephem, "Saturn"),
+            "uranus barycenter": getattr(ephem, "Uranus"),
+            "neptune barycenter": getattr(ephem, "Neptune"),
+            "moon": getattr(ephem, "Moon"),
+            "sun": getattr(ephem, "Sun"),
         }
         ephem_observer = self._get_ephem_observer(observer_to_use, t)
         mags, sizes, phases = [], [], []
@@ -284,12 +292,11 @@ class SolarObjects(Objects):
             # instead of row-wise .apply().
             visible["TechnicalName"] = visible["Name"]
             unique_tech_names = visible["TechnicalName"].unique()
-            name_map = {
-                tn: planetary.get_simple_name(tn) for tn in unique_tech_names
-            }
-            visible["Name"] = (
-                visible["TechnicalName"].map(name_map).astype("string")
-            )
+            name_map = {tn: planetary.get_simple_name(tn) for tn in unique_tech_names}
+            visible["Name"] = cast(
+                pd.Series,
+                visible["TechnicalName"].map(name_map),  # pyright: ignore[reportArgumentType]
+            ).astype("string")
 
         return visible
 

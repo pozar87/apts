@@ -23,7 +23,7 @@ class TubeMaterial(Enum):
 class Telescope(OpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number
+        from ...utils import guess_optical_properties
         entry = entry.copy()
         name = entry.get("name", "")
         if "aperture_mm" not in entry and "aperture" not in entry:
@@ -42,7 +42,7 @@ class Telescope(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, extract_number, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties, Gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'

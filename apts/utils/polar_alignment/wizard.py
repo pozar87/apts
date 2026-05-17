@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING, Optional
+
 from .engine import PolarAlignment
+
+if TYPE_CHECKING:
+    pass
 
 
 class PolarAlignmentWizard:
@@ -8,7 +13,7 @@ class PolarAlignmentWizard:
 
     def __init__(self, observation):
         self.observation = observation
-        self.pa = None
+        self.pa: Optional[PolarAlignment] = None
         self.phase = self.PHASE_SELECT_STAR
         self.error = None
         self.instructions = "Please select a target star for polar alignment."
@@ -21,6 +26,7 @@ class PolarAlignmentWizard:
     def add_rotation_frame(self, filepath, ra_rotation_deg):
         if self.phase != self.PHASE_ROTATION:
             raise ValueError(f"Not in rotation phase. Current phase: {self.phase}")
+        assert self.pa is not None
         success = self.pa.add_frame(
             filepath, ra_rotation_deg=ra_rotation_deg, phase="rotation"
         )
@@ -34,6 +40,7 @@ class PolarAlignmentWizard:
         return success
 
     def calculate(self):
+        assert self.pa is not None
         if self.pa is None or len(self.pa.rotation_frames) < 2:
             raise ValueError("Need at least 2 rotation frames to calculate alignment.")
         correction = self.pa.calculate_correction()
@@ -47,6 +54,7 @@ class PolarAlignmentWizard:
         return None
 
     def start_adjustment(self):
+        assert self.pa is not None
         if self.pa is None or self.pa.mount_axis_image is None:
             # Try to calculate if not done yet
             self.calculate()
@@ -59,6 +67,7 @@ class PolarAlignmentWizard:
     def add_adjustment_frame(self, filepath):
         if self.phase != self.PHASE_ADJUSTMENT:
             raise ValueError(f"Not in adjustment phase. Current phase: {self.phase}")
+        assert self.pa is not None
         success = self.pa.add_frame(filepath, phase="adjustment")
         if success:
             correction = self.pa.calculate_correction()

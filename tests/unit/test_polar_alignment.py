@@ -204,7 +204,6 @@ class TestPolarAlignment(unittest.TestCase):
     def test_polar_alignment_hemispheres(self):
         # Northern Hemisphere
         self.mock_observation.place.lat_decimal = 52.2
-        pa_north = PolarAlignment(self.mock_observation, target_star_name="Polaris")
 
         # Southern Hemisphere
         self.mock_observation.place.lat_decimal = -33.9

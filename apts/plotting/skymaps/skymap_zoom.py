@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import numpy
 import pandas as pd
-from matplotlib import axes, pyplot
+from matplotlib import axes, figure, pyplot
 from matplotlib.patches import Ellipse
 
 from apts.constants.plot import CoordinateSystem
@@ -20,9 +20,9 @@ from apts.plotting.utils import (
     calculate_parallactic_angle,
     get_brightness_color,
 )
-from .utils import setup_zoom_ax
 
 from ...constants import ObjectTableLabels
+from .utils import setup_zoom_ax
 
 if TYPE_CHECKING:
     from ...observations import Observation
@@ -52,8 +52,9 @@ def _generate_zoom_skymap(
 ):
     target_alt, target_az, _ = observer.observe(target_object).apparent().altaz()
     target_ra, target_dec, _ = observer.observe(target_object).apparent().radec()
-    if coordinate_system == CoordinateSystem.HORIZONTAL and not observation.conditions.is_visible(
-        target_az.degrees, target_alt.degrees
+    if (
+        coordinate_system == CoordinateSystem.HORIZONTAL
+        and not observation.conditions.is_visible(target_az.degrees, target_alt.degrees)
     ):
         return _handle_below_horizon(target_name, generation_time_str, style)
 
@@ -135,7 +136,7 @@ def _generate_zoom_skymap(
 
 def _handle_below_horizon(
     target_name: str, generation_time_str: str, style: dict
-) -> pyplot.Figure:
+) -> figure.Figure:
     fig, ax = pyplot.subplots(figsize=(10, 10))
     fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
@@ -151,9 +152,7 @@ def _handle_below_horizon(
         color=style["TEXT_COLOR"],
     )
     ax.set_title(
-        gettext_(
-            "Skymap for {target_name} (Generated: {generation_time_str})"
-        ).format(
+        gettext_("Skymap for {target_name} (Generated: {generation_time_str})").format(
             target_name=gettext_(target_name),
             generation_time_str=generation_time_str,
         ),

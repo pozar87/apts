@@ -1,18 +1,16 @@
-from typing import TYPE_CHECKING, Any, Optional
-
+from typing import TYPE_CHECKING, Any, Sequence
 
 if TYPE_CHECKING:
-    from pint import Quantity
-
-from .utils import OpticsUtils
+    pass
 
 from .models.atmospheric import AtmosphericMixIn
-from .models.photometry import PhotometryMixIn
 from .models.exposure import ExposureMixIn
-from .models.planetary import PlanetaryMixIn
 from .models.geometric import GeometricMixIn
-from .models.resolution import ResolutionMixIn
 from .models.mechanical import MechanicalMixIn
+from .models.photometry import PhotometryMixIn
+from .models.planetary import PlanetaryMixIn
+from .models.resolution import ResolutionMixIn
+from .utils import OpticsUtils
 
 
 class OpticalPath(
@@ -28,11 +26,19 @@ class OpticalPath(
     Class representing an optical path in a telescope setup.
     """
 
-    def __init__(self, telescope, barlows, diagonals, filters, others, output=None):
+    def __init__(
+        self,
+        telescope,
+        barlows: Sequence[Any],
+        diagonals,
+        filters: Sequence[Any],
+        others,
+        output=None,
+    ):
         self.telescope = telescope
-        self.barlows = barlows
+        self.barlows = list(barlows)
         self.diagonals = diagonals
-        self.filters = filters
+        self.filters = list(filters)
         if output is None:
             # Handle 5-argument constructor calls for backward compatibility
             self.others = []

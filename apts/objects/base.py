@@ -85,7 +85,7 @@ class Objects(ABC):
             magnitude_values = self.objects["Magnitude"].apply(
                 lambda x: x.magnitude if hasattr(x, "magnitude") else x
             )
-        return self.objects[magnitude_values < max_mag_float].copy()
+        return cast(pd.DataFrame, self.objects[magnitude_values < max_mag_float].copy())
 
     def _get_visible_mocked(self, candidate_objects, conditions, start, stop) -> list:
         """

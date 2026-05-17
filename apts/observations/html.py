@@ -110,11 +110,7 @@ class HtmlExportMixIn:
             if "TechnicalName" in visible_planets_df.columns
             else visible_planets_df.to_html(),
             "messier_table": messier_df.to_html(),
-            "equipment_table": (
-                self.equipment.data()
-                if hasattr(self.equipment, "data")
-                else self.equipment
-            ).to_html(),
+            "equipment_table": self.equipment.data().to_html(),
             "place_name": html.escape(self.place.name),
             "lat": np.rad2deg(self.place.lat),
             "lon": np.rad2deg(self.place.lon),

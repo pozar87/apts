@@ -1,9 +1,12 @@
 from datetime import timedelta
 from typing import Any, cast
+
 import numpy as np
 from skyfield.api import load
-from ..cache import get_timescale, get_ephemeris
+
+from ..cache import get_ephemeris, get_timescale
 from ..utils import planetary
+
 
 def calculate_satellite_magnitude(
     satellite_name, sat_pos_km, sun_pos_km, observer_pos_km, distance_km
@@ -36,6 +39,7 @@ def calculate_satellite_magnitude(
         )
     return 5.0
 
+
 def _find_satellite_flybys(
     topos_observer,
     vector_observer,
@@ -54,11 +58,13 @@ def _find_satellite_flybys(
     t1 = ts.utc(end_date)
 
     try:
-        stations_url = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
+        stations_url = (
+            "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
+        )
         # Load TLE file - no ephemeris needed for satellite data
         # Skyfield will cache this file by default
         satellites = load.tle_file(stations_url)
-        satellite = next(s for s in satellites if s.name == satellite_name)
+        satellite = cast(Any, next(s for s in satellites if s.name == satellite_name))
     except Exception as e:
         # Could be network error, or satellite not in file
         print(f"Could not load TLEs for {satellite_name}: {e}")
@@ -70,7 +76,10 @@ def _find_satellite_flybys(
     t_search_end = ts.utc(end_date + timedelta(minutes=30))
 
     times, events = satellite.find_events(
-        topos_observer, t_search_start, t_search_end, altitude_degrees=rise_altitude_threshold
+        topos_observer,
+        t_search_start,
+        t_search_end,
+        altitude_degrees=rise_altitude_threshold,
     )
 
     events_list = []
@@ -110,10 +119,10 @@ def _find_satellite_flybys(
         # Find rise and set times for this pass at the rise_altitude_threshold
         rise_time = None
         set_time = None
-        if i > 0 and events[i-1] == 0:
-            rise_time = times[i-1]
-        if i < len(events) - 1 and events[i+1] == 2:
-            set_time = times[i+1]
+        if i > 0 and events[i - 1] == 0:
+            rise_time = times[i - 1]
+        if i < len(events) - 1 and events[i + 1] == 2:
+            set_time = times[i + 1]
 
         # Check if satellite is sunlit at any point during the pass
         # where it is at least 2.0 degrees above the horizon.
@@ -127,7 +136,7 @@ def _find_satellite_flybys(
                 topos_observer, t_s_start, t_s_end, altitude_degrees=2.0
             )
             for v_t, v_e in zip(v_times, v_events):
-                if v_e in (0, 1, 2) and satellite.at(v_t).is_sunlit(eph):
+                if v_e in (0, 1, 2) and cast(Any, satellite).at(v_t).is_sunlit(eph):
                     is_sunlit = True
                     break
 
@@ -136,7 +145,9 @@ def _find_satellite_flybys(
 
         # Calculate apparent magnitude
         # We need Sun position relative to Earth center for correct phase angle
-        sun_pos_earth_center = (eph["sun"] - eph["earth"]).at(culmination_time).position.km
+        sun_pos_earth_center = (
+            cast(Any, eph["sun"] - eph["earth"]).at(culmination_time).position.km
+        )
         mag = calculate_satellite_magnitude(
             satellite_name,
             sat.position.km,
@@ -163,6 +174,7 @@ def _find_satellite_flybys(
 
     return events_list
 
+
 def find_iss_flybys(
     topos_observer,
     vector_observer,
@@ -186,6 +198,7 @@ def find_iss_flybys(
         rise_altitude_threshold,
         sun_altitude_threshold,
     )
+
 
 def find_tiangong_flybys(
     topos_observer,

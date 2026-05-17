@@ -1,6 +1,7 @@
 import logging
+from datetime import datetime
 from math import copysign
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from ...config import get_dark_mode
 from ...constants.graphconstants import get_plot_style
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
     from ...place import Place
 
 logger = logging.getLogger(__name__)
+
 
 def generate_plot_sun_path(
     place: "Place", dark_mode_override: Optional[bool] = None, **args
@@ -56,7 +58,7 @@ def generate_plot_sun_path(
 
     ax.set_title(
         gettext_("Sun Path on {date}").format(
-            date=place.date.utc_datetime().strftime("%Y-%m-%d")
+            date=cast(datetime, place.date.utc_datetime()).strftime("%Y-%m-%d")
         ),
         color=style["TEXT_COLOR"],
     )

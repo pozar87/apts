@@ -1,9 +1,13 @@
+from typing import cast
+
 import numpy as np
 from skyfield.api import Star
 from skyfield.searchlib import find_minima
+
 from ...cache import get_timescale
 from ...utils import planetary
 from ..utils import _refine_conjunction
+
 
 def find_conjunctions(
     observer,
@@ -53,6 +57,7 @@ def find_conjunctions(
 
     return events
 
+
 def find_conjunctions_with_star(
     observer,
     body1_name,
@@ -80,6 +85,7 @@ def find_conjunctions_with_star(
             del event["object2"]
 
     return events
+
 
 def find_conjunctions_with_stars(
     observer,
@@ -142,7 +148,7 @@ def find_conjunctions_with_stars(
     # Prepare vectorized Star objects
     if star_names is not None:
         # Optimized path: star_data is already a vectorized Star object
-        stars_vector = star_data
+        stars_vector = cast(Star, star_data)
     else:
         # Legacy path: star_data is a list of (name, Star)
         star_names = [name for name, _ in star_data]
@@ -185,8 +191,8 @@ def find_conjunctions_with_stars(
 
     events = []
     # Pre-cache coordinates for faster Star object creation during refinement
-    v_ra_hours = np.atleast_1d(stars_vector.ra.hours)
-    v_dec_degrees = np.atleast_1d(stars_vector.dec.degrees)
+    v_ra_hours = np.atleast_1d(cast(np.ndarray, stars_vector.ra.hours))
+    v_dec_degrees = np.atleast_1d(cast(np.ndarray, stars_vector.dec.degrees))
 
     for star_idx, time_idx in zip(star_idxs, time_idxs):
         # Refine conjunction time and separation
@@ -211,6 +217,7 @@ def find_conjunctions_with_stars(
         )
 
     return events
+
 
 def _get_conjunction_step_size(body1_name, bodies2_data):
     # Dynamically adjust step size based on moving bodies
@@ -291,7 +298,9 @@ def find_conjunctions_between_moving_bodies(
 
     events = []
     for name2, body2 in bodies2_data:
-        pos2 = _observe_conjunction_body(observer, name2, times, precomputed_positions, body2)
+        pos2 = _observe_conjunction_body(
+            observer, name2, times, precomputed_positions, body2
+        )
         separations = pos1.separation_from(pos2).degrees
 
         # Identify local minima where separation is below threshold

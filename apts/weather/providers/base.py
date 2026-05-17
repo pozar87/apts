@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 
 from apts.secrets import mask_text
-from apts.utils.network import get_session, reset_session
+from apts.utils.network import get_session
 
 logger = logging.getLogger(__name__)
 

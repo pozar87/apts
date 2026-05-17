@@ -105,6 +105,8 @@ class Observation(
             self.observation_local_time = self.start
 
     def _apply_start_time_override(self):
+        assert self.start is not None
+        assert self.conditions.start_time is not None
         if isinstance(self.conditions.start_time, str):
             parts = [int(v) for v in self.conditions.start_time.split(":")]
             h = parts[0]
