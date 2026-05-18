@@ -29,18 +29,35 @@ class WeatherAnalysisMixIn:
         _weather_analysis: Optional[list[dict]]
 
     def _compute_weather_goodness(self, conditions: Optional[Conditions] = None):
-        analysis = self.get_weather_analysis(conditions=conditions)
-        if not analysis:
+        """
+        Calculates the percentage of good observation hours within the window.
+        Uses a fast-path if detailed analysis isn't already cached.
+        """
+        # 1. If we already have a cached analysis, use it.
+        if conditions is None and self._weather_analysis is not None:
+            analysis = self._weather_analysis
+            if not analysis:
+                return 0
+            good_hours = sum(1 for hour in analysis if hour["is_good_hour"])
+            all_hours = len(analysis)
+            return (good_hours / all_hours * 100) if all_hours > 0 else 0
+
+        # 2. Fast-path: calculate goodness ratio without generating detailed records.
+        effective_conditions = conditions or self.conditions
+        hourly_data = self._get_prepared_weather_df()
+
+        if hourly_data.empty:
             return 0
 
-        good_hours = sum(1 for hour in analysis if hour["is_good_hour"])
-        all_hours = len(analysis)
+        from .engine import get_good_hour_mask
+
+        is_good_mask = get_good_hour_mask(hourly_data, effective_conditions)
+        good_hours = is_good_mask.sum()
+        all_hours = len(is_good_mask)
 
         logger.debug("Good hours: {} and all hours: {}".format(good_hours, all_hours))
-        if all_hours == 0:
-            return 0
 
-        return good_hours / all_hours * 100
+        return (good_hours / all_hours * 100) if all_hours > 0 else 0
 
     def _is_moon_condition_met(self, conditions: Conditions) -> bool:
         if not self.start or not self.stop:
