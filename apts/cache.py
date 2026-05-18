@@ -16,6 +16,8 @@ from .config import get_jovian_ephemeris_url, get_minor_planet_settings
 
 logger = logging.getLogger(__name__)
 
+STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
+
 
 @functools.lru_cache(maxsize=None)
 def get_timescale():
@@ -223,6 +225,8 @@ def download_all_data():
     get_hipparcos_data()
     get_mpcorb_data()
     get_jovian_ephemeris()
+    get_timescale()
+    load.tle_file(STATIONS_URL)
 
 
 _SCORE_CACHE = {}

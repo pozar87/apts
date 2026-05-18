@@ -4,7 +4,7 @@ from typing import Any, cast
 import numpy as np
 from skyfield.api import load
 
-from ..cache import get_ephemeris, get_timescale
+from ..cache import STATIONS_URL, get_ephemeris, get_timescale
 from ..utils import planetary
 
 
@@ -58,9 +58,7 @@ def _find_satellite_flybys(
     t1 = ts.utc(end_date)
 
     try:
-        stations_url = (
-            "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
-        )
+        stations_url = STATIONS_URL
         # Load TLE file - no ephemeris needed for satellite data
         # Skyfield will cache this file by default
         satellites = load.tle_file(stations_url)

@@ -230,7 +230,7 @@ class SolarObjects(Objects):
         computed_df = target_df.copy()
 
         self._compute_ephem_and_skyfield_data(computed_df, observer_to_use, t)
-        computed_df[ObjectTableLabels.DSO_TYPE] = DSOType.OTHER
+        computed_df.loc[:, ObjectTableLabels.DSO_TYPE] = DSOType.OTHER.value
 
         if not skip_transits:
             valid_mask = np.ones(len(computed_df), dtype=bool)
