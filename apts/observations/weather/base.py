@@ -217,7 +217,7 @@ class WeatherAnalysisMixIn:
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
 
-        return (
+        return bool(
             self._compute_weather_goodness(conditions=conditions)
             >= effective_conditions.min_weather_goodness
         )
