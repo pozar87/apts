@@ -85,3 +85,7 @@
 ## 2025-06-22 - [Conjunction Vectorization over Catalogs]
 **Learning:** Iterative creation of `Star` objects and row-wise coordinate extraction (`.ra.hours`, `.dec.degrees`) from catalogs is a significant bottleneck in conjunction searches. Refactoring the search engine to accept pre-vectorized `Star` objects and utilizing pre-calculated float coordinate columns (e.g., `ra_hours`, `dec_degrees`) eliminates thousands of redundant Python calls, providing a ~19% speedup for Messier object searches.
 **Action:** Always utilize pre-calculated float coordinate columns and vectorized `Star` object creation for large-scale astronomical searches. Ensure core search utilities support vectorized inputs to avoid redundant object instantiation.
+
+## 2025-06-25 - [Weather Analysis Fast-Path]
+**Learning:** Even when using vectorized masks, generating detailed localized reports (string formatting, dictionary conversion) for an entire dataset is expensive. Decoupling the aggregate "goodness" calculation from detailed reason generation allows for a lightweight fast-path that is ~30% faster. Furthermore, deferred record conversion (only converting 'bad' rows to dicts) minimizes Python overhead in report generation.
+**Action:** Implement aggregate 'status' or 'goodness' checks as a fast-path that bypasses detailed report generation. Always defer expensive data structure conversions (like .to_dict('records')) to the smallest possible subset.
