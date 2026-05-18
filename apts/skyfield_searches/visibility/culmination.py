@@ -71,135 +71,132 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
 
     return events
 
-def find_object_culminations(
-    observer, objects_data, start_date, end_date, sun_alt_threshold=-12
-):
-    """
-    Finds culminations for a list of objects (e.g. Messier catalog).
-    Vectorized over objects using an analytical approach (LST == RA) for fixed objects.
-    """
+def _get_observer_coords(observer: Any) -> tuple[float, float]:
+    """Extracts latitude (deg) and longitude (hours) from the observer object."""
+    lon_hours = 0.0
+    lat_deg = 0.0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "latitude"):
+            lat_deg = vf.latitude.degrees
+            lon_hours = vf.longitude.hours
+            break
+    return lat_deg, lon_hours
+
+def _apply_refraction(altitudes_deg: np.ndarray) -> np.ndarray:
+    """Adds atmospheric refraction at culmination using Bennett's formula."""
+    # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
+    res = altitudes_deg.copy()
+    r_mask = res > -1.0
+    if np.any(r_mask):
+        alts_m = res[r_mask]
+        r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
+        res[r_mask] += r_arcmin / 60.0
+    return res
+
+def _find_fixed_object_culminations(
+    observer: Any,
+    fixed_objects: list[tuple[str, Any]],
+    t0: Any,
+    t1: Any,
+    sun: Any,
+    sun_alt_threshold: float,
+) -> list[dict]:
+    """Finds culminations for fixed objects using a vectorized analytical approach."""
     ts = get_timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
-    sun = eph["sun"]
-
+    lat_deg, lon_hours = _get_observer_coords(observer)
     events = []
-    if not objects_data:
-        return events
 
-    # Separate fixed objects (e.g. Stars, DSOs) from moving objects (e.g. Planets)
-    fixed_objects = []
-    moving_objects = []
-    for name, obj in objects_data:
-        # Fixed objects are typically Star instances with a constant RA/Dec
-        if hasattr(obj, "ra"):
-            fixed_objects.append((name, obj))
-        else:
-            moving_objects.append((name, obj))
+    # Generate reference points for each day in the interval.
+    num_days = int(t1 - t0) + 1
+    day_offsets = np.arange(-1, num_days + 1)
+    t0_dt = cast(Any, t0.utc_datetime())
+    t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
 
-    # 1. Process fixed objects with vectorized analytical approach
-    if fixed_objects:
-        # Extract observer coordinates from the VectorSum object
-        lon_hours = 0.0
-        lat_deg = 0.0
-        for vf in observer.vector_functions:
-            if hasattr(vf, "latitude"):
-                lat_deg = vf.latitude.degrees
-                lon_hours = vf.longitude.hours
-                break
+    names_fixed = [f[0] for f in fixed_objects]
+    num_fixed = len(fixed_objects)
+    ra_fixed = np.array([obj.ra.hours for _, obj in fixed_objects])
+    dec_fixed = np.array([obj.dec.degrees for _, obj in fixed_objects])
 
-        # Generate reference points for each day in the interval.
-        num_days = int(t1 - t0) + 1
-        day_offsets = np.arange(-1, num_days + 1)
-        t0_dt = cast(Any, t0.utc_datetime())
-        t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
+    # Consolidate all fixed objects into a single vectorized Star object
+    stars_vector = Star(ra_hours=ra_fixed, dec_degrees=dec_fixed)
 
-        names_fixed = [f[0] for f in fixed_objects]
-        num_fixed = len(fixed_objects)
-        ra_fixed = np.array([obj.ra.hours for _, obj in fixed_objects])
-        dec_fixed = np.array([obj.dec.degrees for _, obj in fixed_objects])
+    all_t_culm_tt = []
+    all_dec_deg = []
 
-        # Consolidate all fixed objects into a single vectorized Star object
-        stars_vector = Star(ra_hours=ra_fixed, dec_degrees=dec_fixed)
+    # Optimization: Loop over days while vectorizing over all objects (N objects per day)
+    for t_ref in t_refs:
+        # Estimate apparent RA and Dec at mid-day for all objects
+        obs_ref = observer.at(t_ref).observe(stars_vector).apparent()
+        radec_ref = obs_ref.radec(epoch="date")
+        ra_hours = radec_ref[0].hours
+        dec_deg = radec_ref[1].degrees
 
-        all_t_culm_tt = []
-        all_dec_deg = []
+        # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
+        target_gast = (ra_hours - lon_hours) % 24
+        diff_gast = (target_gast - t_ref.gast) % 24
 
-        # Optimization: Loop over days while vectorizing over all objects (N objects per day)
-        for t_ref in t_refs:
-            # Estimate apparent RA and Dec at mid-day for all objects
-            obs_ref = observer.at(t_ref).observe(stars_vector).apparent()
-            radec_ref = obs_ref.radec(epoch="date")
-            ra_hours = radec_ref[0].hours
-            dec_deg = radec_ref[1].degrees
+        # Convert sidereal interval to UT (approx. factor 1.0027379)
+        t_culm_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
 
-            # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
-            target_gast = (ra_hours - lon_hours) % 24
-            diff_gast = (target_gast - t_ref.gast) % 24
+        all_t_culm_tt.append(t_culm_tt)
+        all_dec_deg.append(dec_deg)
 
-            # Convert sidereal interval to UT (approx. factor 1.0027379)
-            t_culm_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
+    # Flatten all potential culminations
+    t_culms_all_tt = np.concatenate(all_t_culm_tt)
+    decs_all_deg = np.concatenate(all_dec_deg)
+    obj_indices_all = np.tile(np.arange(num_fixed), len(t_refs))
 
-            # For stars, a single estimation using apparent coordinates at mid-day
-            # is extremely accurate (error < 0.1s).
-            all_t_culm_tt.append(t_culm_tt)
-            all_dec_deg.append(dec_deg)
+    # Filter culminations that fall within the requested window
+    mask_window = (t_culms_all_tt >= t0.tt) & (t_culms_all_tt <= t1.tt)
 
-        # Flatten all potential culminations
-        t_culms_all_tt = np.concatenate(all_t_culm_tt)
-        decs_all_deg = np.concatenate(all_dec_deg)
-        obj_indices_all = np.tile(np.arange(num_fixed), len(t_refs))
+    t_final_tt = t_culms_all_tt[mask_window]
+    t_final = ts.tt_jd(t_final_tt)
+    dec_final_deg = decs_all_deg[mask_window]
+    obj_indices_final = obj_indices_all[mask_window]
 
-        # Filter culminations that fall within the requested window
-        mask_window = (t_culms_all_tt >= t0.tt) & (t_culms_all_tt <= t1.tt)
+    if len(t_final) > 0:
+        # Sun altitude for visibility check (vectorized)
+        sun_alts_deg = (
+            observer.at(t_final)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
 
-        t_final_tt = t_culms_all_tt[mask_window]
-        t_final = ts.tt_jd(t_final_tt)
-        dec_final_deg = decs_all_deg[mask_window]
-        obj_indices_final = obj_indices_all[mask_window]
+        # Culmination altitude (geometric approximation: 90 - |lat - dec|)
+        alts_final_deg = 90.0 - np.abs(lat_deg - dec_final_deg)
+        alts_final_deg = _apply_refraction(alts_final_deg)
 
-        if len(t_final) > 0:
-            # Sun altitude for visibility check (vectorized)
-            sun_alts_deg = (
-                observer.at(t_final)
-                .observe(sun)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
+        # Visibility threshold: Altitude > 15 deg and Sun below threshold
+        valid_mask = (alts_final_deg > 15) & (sun_alts_deg <= sun_alt_threshold)
+
+        final_names = [names_fixed[i] for i in obj_indices_final[valid_mask]]
+        final_times = t_final[valid_mask]
+        final_alts = alts_final_deg[valid_mask]
+
+        for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": f"{name} Culmination",
+                    "object": name,
+                    "type": "Messier Culmination",
+                    "altitude": float(alt),
+                }
             )
+    return events
 
-            # Culmination altitude (geometric approximation: 90 - |lat - dec|)
-            # Accurate to sub-arcsecond for stars when on the meridian.
-            alts_final_deg = 90.0 - np.abs(lat_deg - dec_final_deg)
-
-            # Add atmospheric refraction at culmination (Bennett's formula)
-            # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
-            r_mask = alts_final_deg > -1.0
-            if np.any(r_mask):
-                alts_m = alts_final_deg[r_mask]
-                r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
-                alts_final_deg[r_mask] += r_arcmin / 60.0
-
-            # Visibility threshold: Altitude > 15 deg and Sun below threshold
-            valid_mask = (alts_final_deg > 15) & (sun_alts_deg <= sun_alt_threshold)
-
-            final_names = [names_fixed[i] for i in obj_indices_final[valid_mask]]
-            final_times = t_final[valid_mask]
-            final_alts = alts_final_deg[valid_mask]
-
-            for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
-                events.append(
-                    {
-                        "date": t.utc_datetime(),
-                        "event": f"{name} Culmination",
-                        "object": name,
-                        "type": "Messier Culmination",
-                        "altitude": float(alt),
-                    }
-                )
-
-    # 2. Process moving objects with the traditional iterative solver
+def _find_moving_object_culminations(
+    observer: Any,
+    moving_objects: list[tuple[str, Any]],
+    t0: Any,
+    t1: Any,
+    sun: Any,
+    sun_alt_threshold: float,
+) -> list[dict]:
+    """Finds culminations for moving objects with the traditional iterative solver."""
+    events = []
     for name, obj in moving_objects:
 
         def altitude_func(t):
@@ -233,5 +230,46 @@ def find_object_culminations(
                             "altitude": float(alt),
                         }
                     )
+    return events
+
+def find_object_culminations(
+    observer, objects_data, start_date, end_date, sun_alt_threshold=-12
+):
+    """
+    Finds culminations for a list of objects (e.g. Messier catalog).
+    Vectorized over objects using an analytical approach (LST == RA) for fixed objects.
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_ephemeris())
+    sun = eph["sun"]
+
+    if not objects_data:
+        return []
+
+    # Separate fixed objects (e.g. Stars, DSOs) from moving objects (e.g. Planets)
+    fixed_objects = []
+    moving_objects = []
+    for name, obj in objects_data:
+        if hasattr(obj, "ra"):
+            fixed_objects.append((name, obj))
+        else:
+            moving_objects.append((name, obj))
+
+    events = []
+    if fixed_objects:
+        events.extend(
+            _find_fixed_object_culminations(
+                observer, fixed_objects, t0, t1, sun, sun_alt_threshold
+            )
+        )
+
+    if moving_objects:
+        events.extend(
+            _find_moving_object_culminations(
+                observer, moving_objects, t0, t1, sun, sun_alt_threshold
+            )
+        )
 
     return events
