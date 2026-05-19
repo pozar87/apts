@@ -363,7 +363,7 @@ class EventsTest(unittest.TestCase):
         self.assertEqual(event_date.hour, 10)
         self.assertAlmostEqual(sun_culmination.iloc[0]["altitude"], 61.2, delta=0.5)
 
-    @patch("apts.events.calculations.planetary.skyfield_searches.find_conjunctions_between_moving_bodies")
+    @patch("apts.events.calculations.planetary.conjunctions.skyfield_searches.find_conjunctions_between_moving_bodies")
     def test_conjunction_precomputation_usage(self, mock_find_conj):
         # Set a date range
         start_date = datetime(2023, 1, 1, tzinfo=utc)
