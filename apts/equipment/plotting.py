@@ -262,7 +262,7 @@ class EquipmentPlottingMixIn:
                 if node_id == GraphConstants.SPACE_ID:
                     layers[node_id] = 0
                 elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
-                    layers[node_id] = 5  # Final sinks
+                    layers[node_id] = 6  # Final sinks - own column
                 elif equipment is not None:
                     # Main equipment nodes
                     if isinstance(
@@ -271,17 +271,15 @@ class EquipmentPlottingMixIn:
                         layers[node_id] = 1
                     elif isinstance(equipment, (Barlow, Diagonal)):
                         layers[node_id] = 2
-                    elif isinstance(equipment, Filter):
-                        layers[node_id] = 3  # Filters get their own column
                     elif isinstance(equipment, (FilterWheel, FilterHolder)):
-                        layers[node_id] = (
-                            4  # Filter wheels/holders get their own column
-                        )
+                        layers[node_id] = 3  # Wheel comes before the filter inside it
+                    elif isinstance(equipment, Filter):
+                        layers[node_id] = 4  # Filters get their own column
                     elif isinstance(equipment, (Eyepiece, Camera)):
                         layers[node_id] = 5
                     else:
                         # Other intermediate equipment (OAG, Rotator, Adapter, etc.)
-                        layers[node_id] = 4
+                        layers[node_id] = 3
                 else:
                     layers[node_id] = 2
 
