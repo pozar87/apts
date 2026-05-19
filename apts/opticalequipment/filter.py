@@ -22,8 +22,8 @@ class Filter(IntermediateOpticalEquipment):
             mass=mass,
             in_connection_type=connection_type,
             out_connection_type=connection_type,
-            in_gender=Gender.MALE,
-            out_gender=Gender.FEMALE,
+            in_gender=Gender.FEMALE,
+            out_gender=Gender.MALE,
         )
         self.name = name
         self.transmission = transmission
