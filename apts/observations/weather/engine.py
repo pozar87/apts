@@ -15,10 +15,7 @@ def compute_condition_masks(
         "is_bad_clouds": hourly_data.cloudCover.isna()
         | (hourly_data.cloudCover > conditions.max_clouds),
         "is_bad_precip_prob": hourly_data.precipProbability.isna()
-        | (
-            hourly_data.precipProbability
-            > conditions.max_precipitation_probability
-        ),
+        | (hourly_data.precipProbability > conditions.max_precipitation_probability),
         "is_bad_precip_intens": hourly_data.precipIntensity.isna()
         | (hourly_data.precipIntensity > conditions.max_precipitation_intensity),
         "is_bad_wind": hourly_data.windSpeed.isna()
@@ -30,8 +27,7 @@ def compute_condition_masks(
         ),
         "is_bad_vis": hourly_data.visibility.isna()
         | (hourly_data.visibility < conditions.min_visibility),
-        "is_bad_fog": hourly_data.fog.isna()
-        | (hourly_data.fog > conditions.max_fog),
+        "is_bad_fog": hourly_data.fog.isna() | (hourly_data.fog > conditions.max_fog),
         "is_bad_moon": (hourly_data["Altitude"] > 0)
         & (hourly_data.moonIllumination > conditions.max_moon_illumination),
         "is_bad_aurora": hourly_data.aurora.isna()
@@ -58,7 +54,8 @@ def get_good_hour_mask(
     if not masks:
         return pd.Series(True, index=hourly_data.index)
 
-    return ~pd.concat(masks.values(), axis=1).any(axis=1)
+    result: pd.Series = ~pd.concat(list(masks.values()), axis=1).any(axis=1)  # type: ignore
+    return result
 
 
 def generate_analysis_records(
@@ -149,9 +146,7 @@ def generate_analysis_records(
                 if masks["is_bad_vis"].iloc[idx]:
                     reason_keys.append("BAD_VIS")
                     reasons.append(
-                        gettext_(
-                            "Visibility %(vis)s km below limit of %(min_vis)s km"
-                        )
+                        gettext_("Visibility %(vis)s km below limit of %(min_vis)s km")
                         % {
                             "vis": f"{row['visibility']:.1f}",
                             "min_vis": conditions.min_visibility,
@@ -180,9 +175,7 @@ def generate_analysis_records(
                 if masks["is_bad_aurora"].iloc[idx]:
                     reason_keys.append("BAD_AURORA")
                     reasons.append(
-                        gettext_(
-                            "Aurora %(aurora)s%% below limit of %(min_aurora)s%%"
-                        )
+                        gettext_("Aurora %(aurora)s%% below limit of %(min_aurora)s%%")
                         % {
                             "aurora": f"{row['aurora']:.1f}",
                             "min_aurora": conditions.min_aurora,
