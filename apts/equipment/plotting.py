@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -19,11 +19,14 @@ from .models import MatplotlibSVGWrapper
 
 logger = logging.getLogger(__name__)
 
+
 class EquipmentPlottingMixIn:
     if TYPE_CHECKING:
+
         def max_zoom(self) -> float: ...
         def _generate_data(self) -> pd.DataFrame: ...
         def _connect(self) -> None: ...
+
         connection_garph: "nx.DiGraph"
 
     def plot_zoom(
@@ -248,6 +251,7 @@ class EquipmentPlottingMixIn:
             from ..opticalequipment.diagonal import Diagonal
             from ..opticalequipment.eyepiece import Eyepiece
             from ..opticalequipment.filter import Filter
+            from ..opticalequipment.filter_wheel import FilterHolder, FilterWheel
             from ..opticalequipment.naked_eye import NakedEye
             from ..opticalequipment.smart_telescope import SmartTelescope
             from ..opticalequipment.telescope import Telescope
@@ -258,19 +262,24 @@ class EquipmentPlottingMixIn:
                 if node_id == GraphConstants.SPACE_ID:
                     layers[node_id] = 0
                 elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
-                    layers[node_id] = 4  # Final sinks
+                    layers[node_id] = 6  # Final sinks - own column
                 elif equipment is not None:
                     # Main equipment nodes
                     if isinstance(
                         equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
                     ):
                         layers[node_id] = 1
-                    elif isinstance(equipment, (Barlow, Diagonal, Filter)):
+                    elif isinstance(equipment, (Barlow, Diagonal)):
                         layers[node_id] = 2
+                    elif isinstance(equipment, (FilterWheel, FilterHolder)):
+                        layers[node_id] = 3  # Wheel comes before the filter inside it
+                    elif isinstance(equipment, Filter):
+                        layers[node_id] = 4  # Filters get their own column
                     elif isinstance(equipment, (Eyepiece, Camera)):
-                        layers[node_id] = 3
+                        layers[node_id] = 5
                     else:
-                        layers[node_id] = 2
+                        # Other intermediate equipment (OAG, Rotator, Adapter, etc.)
+                        layers[node_id] = 3
                 else:
                     layers[node_id] = 2
 
@@ -303,7 +312,15 @@ class EquipmentPlottingMixIn:
         ax.set_facecolor(axes_face_color)
         ax.axis("off")
 
-        return fig, ax, current_node_colors, text_color, edge_color_val, figure_face_color, axes_face_color
+        return (
+            fig,
+            ax,
+            current_node_colors,
+            text_color,
+            edge_color_val,
+            figure_face_color,
+            axes_face_color,
+        )
 
     def plot_connection_graph(
         self,

@@ -12,6 +12,7 @@ class Filter(IntermediateOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
         from ...utils import map_conn
+
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
@@ -31,6 +32,24 @@ class Filter(IntermediateOpticalEquipment):
             mass=mass,
         )
 
+    @staticmethod
+    def _genders_for_connection_type(connection_type):
+        """
+        Determine input/output genders based on the connection type convention.
+
+        For push-fit connections (F_1_25, F_2):
+          - Telescope OUTPUT is FEMALE (receiver), Eyepiece INPUT is MALE (barrel)
+          - So a filter between them needs IN=MALE (to go into telescope), OUT=FEMALE (to receive eyepiece)
+
+        For threaded connections (T2, M42, M48, etc.):
+          - Telescope OUTPUT is MALE (thread), Camera INPUT is FEMALE (receiver)
+          - So a filter between them needs IN=FEMALE, OUT=MALE
+        """
+        if connection_type in (ConnectionType.F_1_25, ConnectionType.F_2):
+            return Gender.MALE, Gender.FEMALE
+        else:
+            return Gender.FEMALE, Gender.MALE
+
     def __init__(
         self,
         name,
@@ -40,14 +59,15 @@ class Filter(IntermediateOpticalEquipment):
         optical_length=0,
         mass=0,
     ):
+        in_gender, out_gender = self._genders_for_connection_type(connection_type)
         super(Filter, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
             in_connection_type=connection_type,
             out_connection_type=connection_type,
-            in_gender=Gender.MALE,
-            out_gender=Gender.FEMALE,
+            in_gender=in_gender,
+            out_gender=out_gender,
         )
         self.name = name
         self.transmission = transmission
