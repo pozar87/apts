@@ -1,17 +1,25 @@
-
 import pytest
+
+from apts.constants import EquipmentTableLabels, GraphConstants, OpticalType
 from apts.equipment import Equipment
-from apts.opticalequipment import Telescope, Camera, Filter, FilterWheel
+from apts.opticalequipment import Camera, Filter, FilterWheel, Telescope
 from apts.utils import ConnectionType, Gender
-from apts.constants import EquipmentTableLabels, OpticalType, GraphConstants
+
 
 def test_filter_registration_and_transmission():
     e = Equipment()
     t = Telescope(150, 750, t2_output=True, vendor="TestTele")
-    c = Camera(22.2, 14.8, 4, 4, vendor="TestCam", quantum_efficiency=0.5, read_noise=3.0)
+    c = Camera(
+        22.2, 14.8, 4, 4, vendor="TestCam", quantum_efficiency=0.5, read_noise=3.0
+    )
 
     # Filter now defaults to FEMALE IN, MALE OUT
-    f = Filter("H-alpha", transmission=0.9, connection_type=ConnectionType.T2, vendor="TestFilter")
+    f = Filter(
+        "H-alpha",
+        transmission=0.9,
+        connection_type=ConnectionType.T2,
+        vendor="TestFilter",
+    )
 
     e.register(t)
     e.register(f)
@@ -20,7 +28,9 @@ def test_filter_registration_and_transmission():
     image_paths = e._get_paths(GraphConstants.IMAGE_ID)
     path_with_filter = None
     for op in image_paths:
-        if any(isinstance(filt, Filter) and filt.name == "H-alpha" for filt in op.filters):
+        if any(
+            isinstance(filt, Filter) and filt.name == "H-alpha" for filt in op.filters
+        ):
             path_with_filter = op
             break
 
@@ -40,18 +50,25 @@ def test_filter_registration_and_transmission():
     assert flux_without is not None
     assert flux_with == pytest.approx(flux_without * 0.9)
 
+
 def test_filter_wheel_paths():
     e = Equipment()
     t = Telescope(150, 750, t2_output=True, vendor="TestTele")
     # FilterWheel IN (FEMALE), OUT (MALE) for T2
-    fw = FilterWheel(vendor="TestWheel",
-                     in_connection_type=ConnectionType.T2,
-                     out_connection_type=ConnectionType.T2,
-                     in_gender=Gender.FEMALE,
-                     out_gender=Gender.MALE)
+    fw = FilterWheel(
+        vendor="TestWheel",
+        in_connection_type=ConnectionType.T2,
+        out_connection_type=ConnectionType.T2,
+        in_gender=Gender.FEMALE,
+        out_gender=Gender.MALE,
+    )
 
-    f1 = Filter("Red", transmission=0.8, connection_type=ConnectionType.T2, vendor="TestFilter")
-    f2 = Filter("Blue", transmission=0.7, connection_type=ConnectionType.T2, vendor="TestFilter")
+    f1 = Filter(
+        "Red", transmission=0.8, connection_type=ConnectionType.T2, vendor="TestFilter"
+    )
+    f2 = Filter(
+        "Blue", transmission=0.7, connection_type=ConnectionType.T2, vendor="TestFilter"
+    )
 
     fw.add_filter(f1)
     fw.add_filter(f2)
@@ -65,17 +82,22 @@ def test_filter_wheel_paths():
     data = e.data()
     image_paths = data[data[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
     labels = image_paths[EquipmentTableLabels.LABEL].tolist()
-    labels = [l for l in labels if "TestTele" in l]
+    labels = [lb for lb in labels if "TestTele" in lb]
 
-    assert any("Red" in l for l in labels)
-    assert any("Blue" in l for l in labels)
-    assert any("Red" not in l and "Blue" not in l and "TestWheel" in l for l in labels)
+    assert any("Red" in lb for lb in labels)
+    assert any("Blue" in lb for lb in labels)
+    assert any(
+        "Red" not in lb and "Blue" not in lb and "TestWheel" in lb for lb in labels
+    )
     assert len(labels) >= 3
+
 
 def test_filter_component_list_and_mass():
     e = Equipment()
     t = Telescope(150, 750, t2_output=True, mass=5000, vendor="TestTele")
-    f = Filter("H-alpha", mass=50, connection_type=ConnectionType.T2, vendor="TestFilter")
+    f = Filter(
+        "H-alpha", mass=50, connection_type=ConnectionType.T2, vendor="TestFilter"
+    )
     c = Camera(22.2, 14.8, 4, 4, mass=500, vendor="TestCam")
 
     e.register(t)
@@ -91,14 +113,18 @@ def test_filter_component_list_and_mass():
 
     assert op.total_mass().magnitude == 5550
 
+
 def test_filter_wheel_mass():
     e = Equipment()
     t = Telescope(150, 750, t2_output=True, mass=5000, vendor="TestTele")
-    fw = FilterWheel(vendor="TestWheel", mass=300,
-                     in_connection_type=ConnectionType.T2,
-                     out_connection_type=ConnectionType.T2,
-                     in_gender=Gender.FEMALE,
-                     out_gender=Gender.MALE)
+    fw = FilterWheel(
+        vendor="TestWheel",
+        mass=300,
+        in_connection_type=ConnectionType.T2,
+        out_connection_type=ConnectionType.T2,
+        in_gender=Gender.FEMALE,
+        out_gender=Gender.MALE,
+    )
 
     f1 = Filter("Red", mass=20, connection_type=ConnectionType.T2, vendor="TestFilter")
     fw.add_filter(f1)
@@ -110,6 +136,11 @@ def test_filter_wheel_mass():
     e.register(c)
 
     image_paths = e._get_paths(GraphConstants.IMAGE_ID)
-    path_bypass = next(op for op in image_paths if len(op.filters) == 0 and any(isinstance(comp, FilterWheel) for comp in op.component_list()))
+    path_bypass = next(
+        op
+        for op in image_paths
+        if len(op.filters) == 0
+        and any(isinstance(comp, FilterWheel) for comp in op.component_list())
+    )
 
     assert path_bypass.total_mass().magnitude == 5820
