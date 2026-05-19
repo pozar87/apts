@@ -19,12 +19,8 @@ class OrionFlattener(Flattener):
         return cls.from_database(cls._DATABASE['Orion_Field_Flattener_M48'])
 
 class OrionCorrector(Corrector):
-    _DATABASE = {'Orion_Coma_Corrector_M48': {'brand': 'Orion', 'name': 'Coma Corrector (M48)', 'type': 'type_corrector', 'optical_length': 0, 'mass': 240, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}, 'Orion_SkyGlow_Broadband_Filter': {'brand': 'Orion', 'name': 'SkyGlow Broadband Filter', 'type': 'type_corrector', 'optical_length': 0, 'mass': 50, 'tside_thread': '2"', 'tside_gender': 'Female', 'cside_thread': '2"', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}
+    _DATABASE = {'Orion_Coma_Corrector_M48': {'brand': 'Orion', 'name': 'Coma Corrector (M48)', 'type': 'type_corrector', 'optical_length': 0, 'mass': 240, 'tside_thread': 'M48', 'tside_gender': 'Female', 'cside_thread': 'M48', 'cside_gender': 'Female', 'reversible': False, 'bf_role': 'start'}}
 
     @classmethod
     def Orion_Coma_Corrector_M48(cls):
         return cls.from_database(cls._DATABASE['Orion_Coma_Corrector_M48'])
-
-    @classmethod
-    def Orion_SkyGlow_Broadband_Filter(cls):
-        return cls.from_database(cls._DATABASE['Orion_SkyGlow_Broadband_Filter'])
