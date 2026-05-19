@@ -42,6 +42,25 @@ def compute_condition_masks(
     }
 
 
+def get_good_hour_mask(
+    hourly_data: pd.DataFrame,
+    conditions: Conditions,
+    masks: Optional[dict[str, pd.Series]] = None,
+) -> pd.Series:
+    """
+    Returns a boolean mask indicating which hours meet all weather conditions.
+    This is much faster than generate_analysis_records as it skips localized
+    string generation and dictionary conversion.
+    """
+    if masks is None:
+        masks = compute_condition_masks(hourly_data, conditions)
+
+    if not masks:
+        return pd.Series(True, index=hourly_data.index)
+
+    return ~pd.concat(masks.values(), axis=1).any(axis=1)
+
+
 def generate_analysis_records(
     hourly_data: pd.DataFrame,
     masks: dict[str, pd.Series],
@@ -50,7 +69,7 @@ def generate_analysis_records(
 ) -> list[dict]:
     """Generates localized analysis records for each hour."""
     # Determine good hours
-    is_good_hour_mask = ~pd.concat(masks.values(), axis=1).any(axis=1)
+    is_good_hour_mask = get_good_hour_mask(hourly_data, conditions, masks=masks)
     hourly_data["is_good_hour"] = is_good_hour_mask
 
     reasons_col = [[] for _ in range(len(hourly_data))]
@@ -61,7 +80,11 @@ def generate_analysis_records(
 
         bad_indices = np.where(~is_good_hour_mask)[0]
         if len(bad_indices) > 0:
-            bad_rows = hourly_data.iloc[bad_indices].to_dict("records")
+            # Optimization: Extract data only for bad hours as Python primitives
+            # and iterate over them. Iterating over a list of dicts is faster
+            # than row access in a large DataFrame.
+            bad_data_subset = hourly_data.iloc[bad_indices]
+            bad_rows = bad_data_subset.to_dict("records")
             for i, row in enumerate(bad_rows):
                 idx = bad_indices[i]
                 reasons = []
