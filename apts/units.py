@@ -1,11 +1,15 @@
-from pint import UnitRegistry
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pint import UnitRegistry
 
 _ureg = None
 
 
-def get_unit_registry() -> UnitRegistry:
+def get_unit_registry() -> "UnitRegistry":
     global _ureg
     if _ureg is None:
+        from pint import UnitRegistry
         _ureg = UnitRegistry()
         # Define astronomical units that might not be in Pint by default
         _ureg.define("mag = [] = magnitude")  # Astronomical magnitude
@@ -20,4 +24,7 @@ def set_unit_registry(registry):
     _ureg = registry
 
 
-ureg = get_unit_registry()
+def __getattr__(name: str) -> Any:
+    if name == "ureg":
+        return get_unit_registry()
+    raise AttributeError(f"module {__name__} has no attribute {name}")
