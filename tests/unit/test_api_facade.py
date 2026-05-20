@@ -28,7 +28,7 @@ class TestApi(unittest.TestCase):
         )
 
         # Verify calls
-        mock_place_class.assert_called_once_with(lat=52.2, lon=21.0, elevation=300)
+        mock_place_class.assert_called_once_with(lat=52.2, lon=21.0, elevation=None)
         mock_equipment_class.assert_called_once()
         mock_observation_class.assert_called_once_with(mock_place, mock_equipment)
 

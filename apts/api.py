@@ -14,7 +14,7 @@ def get_events(
     lon: float,
     start_date: datetime,
     end_date: datetime,
-    elevation: int = 300,
+    elevation: Optional[int] = None,
     events_to_calculate: Optional[List[EventType]] = None,
 ):
     place = Place(lat=lat, lon=lon, elevation=elevation)
