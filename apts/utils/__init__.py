@@ -1,3 +1,5 @@
+from typing import Any
+
 from .planetary import MINOR_PLANET_NAMES
 from .coordinates import decdeg2dms, dms2decdeg
 from .date import format_date, date_format
@@ -5,7 +7,6 @@ from .graph import find_all_paths
 from .text import sanitize_header, extract_number, mask_secret
 from .equipment import ConnectionType, Gender, map_conn, map_gender, guess_optical_properties
 from .plot import PlotUtils
-from ..units import ureg as ureg
 
 __all__ = [
     "ureg",
@@ -24,6 +25,13 @@ __all__ = [
     "map_gender",
     "guess_optical_properties",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "ureg":
+        from ..units import ureg
+        return ureg
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 class Utils:

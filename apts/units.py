@@ -24,32 +24,7 @@ def set_unit_registry(registry):
     _ureg = registry
 
 
-class LazyUnitRegistry:
-    """
-    A lazy proxy for the Pint UnitRegistry.
-    Delays the expensive initialization until the registry is actually accessed.
-    """
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(get_unit_registry(), name)
-
-    def __getitem__(self, key: Any) -> Any:
-        return get_unit_registry()[key]
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return get_unit_registry()(*args, **kwargs)
-
-    def __iter__(self):
-        return iter(get_unit_registry())
-
-    def __dir__(self):
-        return dir(get_unit_registry())
-
-    def __repr__(self):
-        if _ureg is None:
-            return "<LazyUnitRegistry (uninitialized)>"
-        return repr(_ureg)
-
-
-# Export a lazy instance of the registry
-ureg: Any = LazyUnitRegistry()
+def __getattr__(name: str) -> Any:
+    if name == "ureg":
+        return get_unit_registry()
+    raise AttributeError(f"module {__name__} has no attribute {name}")
