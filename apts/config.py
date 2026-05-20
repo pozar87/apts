@@ -255,6 +255,29 @@ def get_light_pollution_settings() -> dict:
     return settings
 
 
+def get_place_settings() -> dict:
+    """
+    Reads the place settings from the [place] section.
+
+    Returns:
+        dict: A dictionary of place settings.
+    """
+    settings = {
+        "use_online_elevation_api": True,
+        "default_elevation": 300,
+    }
+
+    if config.has_section("place"):
+        if config.has_option("place", "use_online_elevation_api"):
+            settings["use_online_elevation_api"] = config.getboolean(
+                "place", "use_online_elevation_api"
+            )
+        if config.has_option("place", "default_elevation"):
+            settings["default_elevation"] = config.getint("place", "default_elevation")
+
+    return settings
+
+
 def get_jovian_ephemeris_url() -> str:
     """
     Reads the Jovian ephemeris URL from the [data] section.

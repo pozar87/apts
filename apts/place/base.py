@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dateutil import tz
 
+from ..config import get_place_settings
+from .elevation import get_elevation
+
 if TYPE_CHECKING:
     from ..light_pollution import LightPollution
     from ..weather import Weather
@@ -38,7 +41,7 @@ class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
         lat,
         lon,
         name="",
-        elevation=300,
+        elevation=None,
         date=datetime.datetime.now(datetime.UTC),
     ):
         self.ts = get_timescale()
@@ -52,6 +55,16 @@ class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
         self._lat_decimal = lat
         self._lon_decimal = lon
         self.name = name
+
+        # Handle elevation
+        if elevation is None:
+            settings = get_place_settings()
+            if settings.get("use_online_elevation_api", True):
+                elevation = get_elevation(lat, lon)
+
+            if elevation is None:
+                elevation = settings.get("default_elevation", 300)
+
         self.elevation = elevation
         self.location = Topos(
             latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation)
