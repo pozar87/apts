@@ -14,47 +14,33 @@ if TYPE_CHECKING:
     from apts.observations import Observation
 
 
-def _plot_messier_on_skymap(
-    observation: "Observation",
-    ax,
-    observer,
-    is_polar,
-    target_name: str,
-    flipped_horizontally: bool = False,
-    flipped_vertically: bool = False,
-    coordinate_system: CoordinateSystem = cast(
-        CoordinateSystem, CoordinateSystem.HORIZONTAL
-    ),
-    plot_labels: bool = True,
-    ignore_horizon: bool = False,
-):
-    import apts.plotting.skymap_objects as api
+def _prepare_messier_data(
+    observation: "Observation", target_name: str, ignore_horizon: bool
+) -> pd.DataFrame:
+    """Fetch, filter, and prepare Messier objects for plotting."""
     if ignore_horizon:
         visible_messier = observation.local_messier.objects
     else:
         visible_messier = observation.get_visible_messier()
+
     if visible_messier.empty:
-        return
+        return pd.DataFrame()
 
     # Filter out target object and reset index for array matching/safe iteration
-    plot_df = visible_messier[
-        visible_messier[ObjectTableLabels.MESSIER] != target_name
-    ].copy().reset_index(drop=True)
+    plot_df = (
+        visible_messier[visible_messier[ObjectTableLabels.MESSIER] != target_name]
+        .copy()
+        .reset_index(drop=True)
+    )
 
     if plot_df.empty:
-        return
+        return pd.DataFrame()
 
     # Ensure RA/Dec float columns exist for vectorization (handling mocks/incomplete data in tests)
-    # Optimization: reset_index(drop=True) is called here to ensure positional access is safe.
-    plot_df = plot_df.reset_index(drop=True)
     if "ra_hours" not in plot_df.columns or "dec_degrees" not in plot_df.columns:
-        # Reset index to ensure loc[i] works correctly after filtering
-        plot_df = plot_df.reset_index(drop=True)
         ras, decs = [], []
-        # Using index-based loop to avoid potential issues with MagicMock Series
         for i in range(len(plot_df)):
             m_name = plot_df.iloc[i][ObjectTableLabels.MESSIER]
-            # Try to get coordinates from the catalog or object itself
             m_obj = observation.local_messier.find_by_name(m_name)
             if m_obj and hasattr(m_obj, "ra"):
                 ras.append(m_obj.ra.hours)
@@ -70,17 +56,17 @@ def _plot_messier_on_skymap(
         plot_df["dec_degrees"] = decs
 
     # Ensure valid coordinates and reset index for array matching
-    plot_df = (
+    return (
         cast(pd.DataFrame, plot_df)
         .dropna(subset=["ra_hours", "dec_degrees"])
         .reset_index(drop=True)
     )
 
-    if plot_df.empty:
-        return
 
-    # Restoration of original plotting logic: use individual observations if bulk fails (for tests)
-    # or if we are dealing with a non-vectorized observer.
+def _observe_messier_batch(
+    plot_df: pd.DataFrame, observation: "Observation", observer: Any
+):
+    """Observe all Messier objects, attempting vectorized observation first."""
     try:
         # 1. Attempt bulk observation
         stars_vector = Star(
@@ -126,6 +112,13 @@ def _plot_messier_on_skymap(
         dec_deg = numpy.atleast_1d(dec_deg)
         ra_rad = numpy.atleast_1d(ra_rad)
 
+    return alt_deg, az_deg, ra_hours, dec_deg, ra_rad
+
+
+def _get_messier_visual_properties(plot_df: pd.DataFrame):
+    """Calculate dimensions, colors, and names for Messier objects."""
+    import apts.plotting.skymap_objects as api
+
     # Extract dimensions using vectorized pandas operations to avoid pint Quantity overhead
     def get_dim(col_name, default_val=1.0):
         if col_name in plot_df.columns:
@@ -147,13 +140,51 @@ def _plot_messier_on_skymap(
     types = [gettext_(t) for t in cast(list, types_raw)]
     edge_colors = [get_messier_color(t, effective_dark_mode) for t in types]
     magnitudes_raw = cast(Any, plot_df).get("Magnitude", [10.0] * len(plot_df))
-    magnitudes = [
-        getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)
-    ]
+    magnitudes = [getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)]
     face_colors = [api.get_brightness_color(m) for m in magnitudes]
 
     # Names for annotation
     names = plot_df[ObjectTableLabels.MESSIER].to_numpy()
+
+    return widths_deg, heights_deg, pos_angles, edge_colors, face_colors, names
+
+
+def _plot_messier_on_skymap(
+    observation: "Observation",
+    ax,
+    observer,
+    is_polar,
+    target_name: str,
+    flipped_horizontally: bool = False,
+    flipped_vertically: bool = False,
+    coordinate_system: CoordinateSystem = cast(
+        CoordinateSystem, CoordinateSystem.HORIZONTAL
+    ),
+    plot_labels: bool = True,
+    ignore_horizon: bool = False,
+):
+    import apts.plotting.skymap_objects as api
+    plot_df = _prepare_messier_data(observation, target_name, ignore_horizon)
+
+    if plot_df.empty:
+        return
+
+    (
+        alt_deg,
+        az_deg,
+        ra_hours,
+        dec_deg,
+        ra_rad,
+    ) = _observe_messier_batch(plot_df, observation, observer)
+
+    (
+        widths_deg,
+        heights_deg,
+        pos_angles,
+        edge_colors,
+        face_colors,
+        names,
+    ) = _get_messier_visual_properties(plot_df)
 
     # Restoration of original plotting loop with helper function to ensure visual consistency
     # while retaining the performance benefits of bulk Skyfield observations.
