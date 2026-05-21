@@ -199,7 +199,7 @@ class WeatherAnalysisMixIn:
         if not force and not self._is_moon_condition_met(effective_conditions):
             return False
 
-        if self.place.weather is None:
+        if force or self.place.weather is None:
             logger.info(
                 "is_weather_good: self.place.weather is None, calling get_weather."
             )
@@ -216,6 +216,18 @@ class WeatherAnalysisMixIn:
             )
         else:
             logger.info("is_weather_good: self.place.weather already exists.")
+
+        if force:
+            analysis = self.get_weather_analysis(
+                conditions=conditions, provider_name=provider_name, force=force
+            )
+            if not analysis:
+                return False
+            good_hours = sum(1 for hour in analysis if hour["is_good_hour"])
+            return bool(
+                (good_hours / len(analysis) * 100)
+                >= effective_conditions.min_weather_goodness
+            )
 
         return bool(
             self._compute_weather_goodness(conditions=conditions)
