@@ -3,17 +3,91 @@ from typing import Any
 
 from . import cache
 from .cache import download_all_data
+from .catalogs import Catalogs
 
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only
 from .constants.event_types import EventType
-from .equipment import Equipment
-from .i18n import set_language
-from .notify import Notify
-from .observations import Observation
-from .place import Place
-from .utils import Utils
-from .weather import Weather
+
+logger = logging.getLogger(__name__)
+
+# Global objects that are lazy-loaded
+_pd = None
+_sns = None
+_Observation = None
+_Place = None
+_Equipment = None
+_Weather = None
+_Utils = None
+_Notify = None
+_set_language = None
+
+
+def __getattr__(name: str) -> Any:
+    global _pd, _sns, _Observation, _Place, _Equipment, _Weather, _Utils, _Notify, _set_language
+    if name == "pd":
+        if _pd is None:
+            import pandas as pd
+
+            # Disable label trimming in pandas tables
+            pd.set_option("display.max_colwidth", None)
+            _pd = pd
+        return _pd
+    if name == "sns":
+        if _sns is None:
+            import seaborn as sns
+
+            _sns = sns
+        return _sns
+    if name == "Observation":
+        if _Observation is None:
+            from .observations import Observation
+
+            _Observation = Observation
+        return _Observation
+    if name == "Place":
+        if _Place is None:
+            from .place import Place
+
+            _Place = Place
+        return _Place
+    if name == "Equipment":
+        if _Equipment is None:
+            from .equipment import Equipment
+
+            _Equipment = Equipment
+        return _Equipment
+    if name == "Weather":
+        if _Weather is None:
+            from .weather import Weather
+
+            _Weather = Weather
+        return _Weather
+    if name == "Utils":
+        if _Utils is None:
+            from .utils import Utils
+
+            _Utils = Utils
+        return _Utils
+    if name == "Notify":
+        if _Notify is None:
+            from .notify import Notify
+
+            _Notify = Notify
+        return _Notify
+    if name == "set_language":
+        if _set_language is None:
+            from .i18n import set_language
+
+            _set_language = set_language
+        return _set_language
+
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+# Initialize catalogs eagerly as an instance of Catalogs
+# This maintains the original public API where 'apts.catalogs' is the Catalogs instance.
+catalogs = Catalogs()
 
 __all__ = [
     "Catalogs",
@@ -30,37 +104,6 @@ __all__ = [
     "set_language",
     "download_all_data",
 ]
-
-logger = logging.getLogger(__name__)
-
-# Global objects that are lazy-loaded
-_pd = None
-_sns = None
-_catalogs = None
-
-
-def __getattr__(name: str) -> Any:
-    global _pd, _sns, _catalogs
-    if name == "pd":
-        if _pd is None:
-            import pandas as pd
-
-            # Disable label trimming in pandas tables
-            pd.set_option("display.max_colwidth", None)
-            _pd = pd
-        return _pd
-    if name == "sns":
-        if _sns is None:
-            import seaborn as sns
-
-            _sns = sns
-        return _sns
-    if name == "catalogs":
-        if _catalogs is None:
-            from .catalogs import Catalogs
-            _catalogs = Catalogs()
-        return _catalogs
-    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 def preload_data():

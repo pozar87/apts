@@ -1,11 +1,11 @@
 import logging
-import pandas as pd
+from typing import TYPE_CHECKING
 
-from .messier import get_messier
-from .ngc import get_ngc
-from .stars import get_bright_stars
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = logging.getLogger(__name__)
+
 
 class Catalogs:
     """
@@ -17,15 +17,21 @@ class Catalogs:
         pass
 
     @property
-    def MESSIER(self) -> pd.DataFrame:
+    def MESSIER(self) -> "pd.DataFrame":
+        from .messier import get_messier
+
         return get_messier()
 
     @property
-    def NGC(self) -> pd.DataFrame:
+    def NGC(self) -> "pd.DataFrame":
+        from .ngc import get_ngc
+
         return get_ngc()
 
     @property
-    def BRIGHT_STARS(self) -> pd.DataFrame:
+    def BRIGHT_STARS(self) -> "pd.DataFrame":
+        from .stars import get_bright_stars
+
         return get_bright_stars()
 
 def initialize_catalogs():
