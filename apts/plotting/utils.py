@@ -1,3 +1,4 @@
+import functools
 import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Optional, cast
@@ -224,6 +225,54 @@ def create_ra_zoom_mask(ra_hours, xlim):
         return (ra_hours >= ra_min) & (ra_hours <= ra_max)
 
 
+@functools.lru_cache(maxsize=128)
+def _get_astrometric_shading_data(
+    lat_rad: float,
+    lon_rad: float,
+    elevation: float,
+    start_date: datetime,
+    end_date: datetime,
+):
+    """
+    Internal cached helper to calculate Sun and Moon rising/setting events.
+    """
+    from skyfield.api import Topos
+
+    from apts.cache import get_ephemeris, get_timescale
+
+    ts = get_timescale()
+    eph = get_ephemeris()
+    location = Topos(
+        latitude_degrees=numpy.rad2deg(lat_rad),
+        longitude_degrees=numpy.rad2deg(lon_rad),
+        elevation_m=float(elevation),
+    )
+
+    t0 = ts.from_datetime(start_date)
+    t1 = ts.from_datetime(end_date)
+
+    # 1. Sun
+    f_sun = almanac.risings_and_settings(eph, eph["sun"], location)
+    t_sun, y_sun = almanac.find_discrete(t0, t1, f_sun)
+    sun_events = [
+        (t.astimezone(start_date.tzinfo), bool(y)) for t, y in zip(t_sun, y_sun)
+    ]
+    sun_init_up = bool(f_sun(t0))
+
+    # 2. Moon
+    f_moon = almanac.risings_and_settings(eph, eph["moon"], location)
+    t_moon, y_moon = almanac.find_discrete(t0, t1, f_moon)
+    moon_events = [
+        (t.astimezone(start_date.tzinfo), bool(y)) for t, y in zip(t_moon, y_moon)
+    ]
+    moon_init_up = bool(f_moon(t0))
+
+    return {
+        "sun": {"init_up": sun_init_up, "events": sun_events},
+        "moon": {"init_up": moon_init_up, "events": moon_events},
+    }
+
+
 def mark_observation(
     observation: "Observation", plot, dark_mode_enabled: bool, style: dict
 ):
@@ -239,6 +288,12 @@ def mark_observation(
         x_min, x_max = original_xlim
         # Handle both numeric and datetime plot limits
         if isinstance(x_min, (float, int, numpy.number)):
+            # Matplotlib date numbers. We need to be careful here:
+            # If the axis is not initialized, x_min/x_max might be defaults like 0.0, 1.0
+            # which represent 1970-01-01. This can lead to huge searches.
+            if x_min < 1.0:  # Roughly 1970
+                raise ValueError("Plot limits appear uninitialized (too early)")
+
             start_date = mdates.num2date(x_min, tz=observation.place.local_timezone)
             end_date = mdates.num2date(x_max, tz=observation.place.local_timezone)
         else:
@@ -248,6 +303,13 @@ def mark_observation(
         # Ensure we have datetime objects before proceeding
         if not isinstance(start_date, datetime) or not isinstance(end_date, datetime):
             raise ValueError("Plot limits are not valid datetime objects")
+
+        # Sanity check: don't search more than 31 days.
+        # This prevents runaway calculations if axis limits are somehow extreme.
+        if (end_date - start_date).days > 31:
+            logger.debug(f"Plot range too large ({(end_date - start_date).days} days), limiting to 31.")
+            end_date = start_date + timedelta(days=31)
+
     except Exception as e:
         logger.debug(f"Could not determine plot range for multi-day marking: {e}")
         # Fallback to marking primary observation window if possible
@@ -260,27 +322,21 @@ def mark_observation(
 
     # Use skyfield almanac for accurate and comprehensive day/night and moon marking
     try:
-        ts = observation.place.ts
-        eph = observation.place.eph
-        location = observation.place.location
-
-        # Search range slightly wider than visible range to catch transitions at edges
-        t0 = ts.from_datetime(start_date)
-        t1 = ts.from_datetime(end_date)
+        shading_data = _get_astrometric_shading_data(
+            observation.place.lat,
+            observation.place.lon,
+            observation.place.elevation,
+            start_date,
+            end_date,
+        )
 
         alpha = 0.15 if dark_mode_enabled else 0.25
 
         # 1. Sun (Day and Night periods)
-        f_sun = almanac.risings_and_settings(eph, eph["sun"], location)
-        t_sun, y_sun = almanac.find_discrete(t0, t1, f_sun)
-
-        # Determine state at start_date
-        sun_is_up = bool(f_sun(t0))
+        sun_is_up = shading_data["sun"]["init_up"]
         current_t = start_date
 
-        # Iterate through sunrise/sunset events
-        for t, y in zip(t_sun, y_sun):
-            transition_time = t.astimezone(observation.place.local_timezone)
+        for transition_time, next_up in shading_data["sun"]["events"]:
             color_key = "DAY_SPAN_COLOR" if sun_is_up else "SPAN_BACKGROUND_COLOR"
             plot.axvspan(
                 current_t,
@@ -290,7 +346,7 @@ def mark_observation(
                 label="_nolegend_",
             )
             current_t = transition_time
-            sun_is_up = bool(y)  # 1 for rising, 0 for setting
+            sun_is_up = next_up
 
         # Last Sun segment to end_date
         color_key = "DAY_SPAN_COLOR" if sun_is_up else "SPAN_BACKGROUND_COLOR"
@@ -303,14 +359,10 @@ def mark_observation(
         )
 
         # 2. Moon (Moon Presence periods)
-        f_moon = almanac.risings_and_settings(eph, eph["moon"], location)
-        t_moon, y_moon = almanac.find_discrete(t0, t1, f_moon)
-
-        moon_is_up = bool(f_moon(t0))
+        moon_is_up = shading_data["moon"]["init_up"]
         current_t = start_date
 
-        for t, y in zip(t_moon, y_moon):
-            transition_time = t.astimezone(observation.place.local_timezone)
+        for transition_time, next_up in shading_data["moon"]["events"]:
             if moon_is_up:
                 plot.axvspan(
                     current_t,
@@ -320,7 +372,7 @@ def mark_observation(
                     label="_nolegend_",
                 )
             current_t = transition_time
-            moon_is_up = bool(y)
+            moon_is_up = next_up
 
         # Last Moon segment to end_date
         if moon_is_up:

@@ -101,6 +101,10 @@ def test_plot_weather_still_works(mock_weather_instance):
     obs = Observation(place=place, equipment=MagicMock())
 
     # Just verify it doesn't crash and calls the new individual plot functions
-    with patch("apts.plotting.weather.plots.generate_plot_clouds") as mock_clouds:
+    with (
+        patch("apts.plotting.weather.plots.generate_plot_clouds") as mock_clouds,
+        patch("apts.plotting.weather.plots.mark_observation"),
+        patch("apts.plotting.weather.plots.mark_good_conditions"),
+    ):
         obs.plot_weather()
         mock_clouds.assert_called_once()
