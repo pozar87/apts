@@ -55,6 +55,10 @@ class Plotter:
         # Trigger ImportError if matplotlib is missing
         import matplotlib.pyplot  # noqa: F401
 
+        from .utils import setup_plotting_style
+
+        setup_plotting_style()
+
     def messier(self, **args):
         return plot_messier(self.observation, **args)
 
