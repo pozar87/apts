@@ -7,7 +7,12 @@ from .conditions import PlaceConditionsMixIn
 
 class PlaceImagingMixIn(PlaceConditionsMixIn):
     def get_imaging_window(
-        self, skyfield_object, min_altitude=30, target_date=None
+        self,
+        skyfield_object,
+        min_altitude=30,
+        target_date=None,
+        astro_twilight_start=None,
+        astro_twilight_end=None,
     ) -> dict:
         """
         Calculate total continuous minutes an object remains above the threshold during "darkness"
@@ -15,26 +20,29 @@ class PlaceImagingMixIn(PlaceConditionsMixIn):
         Provides start_time and end_time for this window.
         """
         # 1. Determine the night window (astronomical twilight)
-        # We look for the night following the given target_date or self.date
-        t_start = (
-            target_date
-            if target_date is not None
-            else cast(datetime.datetime, self.date.utc_datetime()).replace(
-                tzinfo=datetime.timezone.utc
+        if astro_twilight_start is None or astro_twilight_end is None:
+            # We look for the night following the given target_date or self.date
+            t_start = (
+                target_date
+                if target_date is not None
+                else cast(datetime.datetime, self.date.utc_datetime()).replace(
+                    tzinfo=datetime.timezone.utc
+                )
             )
-        )
-        # Ensure it's a datetime
-        if isinstance(t_start, datetime.date) and not isinstance(
-            t_start, datetime.datetime
-        ):
-            t_start = datetime.datetime.combine(t_start, datetime.time.min).replace(
-                tzinfo=self.local_timezone
+            # Ensure it's a datetime
+            if isinstance(t_start, datetime.date) and not isinstance(
+                t_start, datetime.datetime
+            ):
+                t_start = datetime.datetime.combine(t_start, datetime.time.min).replace(
+                    tzinfo=self.local_timezone
+                )
+
+            # Get sunset and sunrise (astronomical twilight)
+            astro_twilight_start = self.sunset_time(
+                start_search_from=t_start, twilight=Twilight.ASTRONOMICAL
             )
 
-        # Get sunset and sunrise (astronomical twilight)
-        astro_twilight_start = self.sunset_time(
-            start_search_from=t_start, twilight=Twilight.ASTRONOMICAL
-        )
+        # Re-check in case sunset_time returned None
         if astro_twilight_start is None:
             return {
                 "total_minutes": 0,
@@ -42,9 +50,10 @@ class PlaceImagingMixIn(PlaceConditionsMixIn):
                 "end_time": None,
             }
 
-        astro_twilight_end = self.sunrise_time(
-            start_search_from=astro_twilight_start, twilight=Twilight.ASTRONOMICAL
-        )
+        if astro_twilight_end is None:
+            astro_twilight_end = self.sunrise_time(
+                start_search_from=astro_twilight_start, twilight=Twilight.ASTRONOMICAL
+            )
         if astro_twilight_end is None:
             return {
                 "total_minutes": 0,

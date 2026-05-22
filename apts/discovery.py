@@ -51,13 +51,23 @@ class DiscoveryService:
         # valid astrophotography target and should not appear in top picks.
         combined_df = combined_df[combined_df["Name"] != "sun"]
 
+        # Pre-calculate astronomical twilight for the given date
+        # to avoid redundant searches for every object.
+        from .constants.twilight import Twilight
+        t_twilight = date if date is not None else place.date
+        twilight_start = place.sunset_time(start_search_from=t_twilight, twilight=Twilight.ASTRONOMICAL)
+        twilight_end = None
+        if twilight_start:
+            twilight_end = place.sunrise_time(start_search_from=twilight_start, twilight=Twilight.ASTRONOMICAL)
+        twilight_times = (twilight_start, twilight_end) if twilight_start and twilight_end else None
+
         # Filtering for reasonable visibility (optional optimization)
         # For now, we'll score everything, but typically you'd filter by magnitude or altitude first
 
         scored_objects = []
 
         for _, row in combined_df.iterrows():
-            score_data = scorer.calculate_total_score(row, time=date)
+            score_data = scorer.calculate_total_score(row, time=date, twilight_times=twilight_times)
             if score_data:
                 name = row.get("Name")
                 # Some Messier objects have Name = "-" (no common name).

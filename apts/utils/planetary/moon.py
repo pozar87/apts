@@ -94,14 +94,31 @@ def get_moon_distance(time):
     return cast(Any, earth).at(time).observe(moon).distance().km
 
 
+# Cache for Moon's astrometric position to avoid redundant observations
+# in high-frequency loops (e.g., discovery scoring).
+_moon_pos_cache = {}
+
+
 def get_moon_separation(obj, observer, time):
     """
     Calculates the angular distance in degrees between the target object and the Moon.
     """
+    global _moon_pos_cache
     eph = get_ephemeris()
     moon = eph["moon"]
     astrometric_obj = observer.at(time).observe(obj).apparent()
-    astrometric_moon = observer.at(time).observe(moon).apparent()
+
+    # Use a simple cache key based on time and observer identity
+    cache_key = (time.tt, id(observer))
+    if cache_key in _moon_pos_cache:
+        astrometric_moon = _moon_pos_cache[cache_key]
+    else:
+        astrometric_moon = observer.at(time).observe(moon).apparent()
+        # Keep cache size small
+        if len(_moon_pos_cache) > 100:
+            _moon_pos_cache.clear()
+        _moon_pos_cache[cache_key] = astrometric_moon
+
     return astrometric_obj.separation_from(astrometric_moon).degrees
 
 

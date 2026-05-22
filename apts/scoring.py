@@ -90,7 +90,7 @@ class SuitabilityScorer:
         else:
             return 1
 
-    def calculate_total_score(self, target_row, time=None):
+    def calculate_total_score(self, target_row, time=None, twilight_times=None):
         """
         Calculate total score for a target given its data row and observation time.
         """
@@ -143,7 +143,14 @@ class SuitabilityScorer:
             s_alt = self.score_altitude(altitude)
 
             # 2. Imaging Window
-            window_info = self.place.get_imaging_window(skyfield_obj, target_date=time)
+            twilight_start = twilight_times[0] if twilight_times else None
+            twilight_end = twilight_times[1] if twilight_times else None
+            window_info = self.place.get_imaging_window(
+                skyfield_obj,
+                target_date=time,
+                astro_twilight_start=twilight_start,
+                astro_twilight_end=twilight_end,
+            )
             s_win = self.score_imaging_window(window_info["total_minutes"])
 
             # 3. FOV Fit
