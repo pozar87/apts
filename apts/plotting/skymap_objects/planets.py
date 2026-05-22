@@ -77,6 +77,7 @@ def _plot_solar_system_object_on_skymap(
 ):
     """Helper to plot a solar system object, handling regular and target styles."""
     import apts.plotting.skymap_objects as api
+
     obj = observation.local_planets.find_by_name(object_name)
     if not obj:
         return  # Object not found
@@ -100,8 +101,53 @@ def _plot_solar_system_object_on_skymap(
 
     size_deg = api.get_object_angular_size_deg(observation, object_name)
 
-    # Determine colors and markers
+    # Determine visual parameters
     effective_dark_mode = api.get_dark_mode()
+    edge_color, face_color, marker, linestyle, linewidth = (
+        _get_solar_system_object_visual_params(
+            object_name, effective_dark_mode, style, is_target
+        )
+    )
+
+    # Calculate coordinates
+    x, y = _get_solar_system_object_position(
+        observation, alt, az, ra, dec, coordinate_system, is_polar
+    )
+
+    if is_polar:
+        size = _get_solar_system_object_visual_size(
+            observation, object_name, is_target, size_deg
+        )
+        _draw_solar_system_object_polar(
+            ax, x, y, size, edge_color, marker, display_name, is_target, plot_labels
+        )
+    else:  # Cartesian / Zoomed
+        ellipse_width = (
+            size_deg
+            if coordinate_system == CoordinateSystem.HORIZONTAL
+            else size_deg / (15 * numpy.cos(numpy.deg2rad(dec.degrees)))
+        )
+
+        _draw_solar_system_object_cartesian(
+            ax,
+            x,
+            y,
+            ellipse_width,
+            size_deg,
+            edge_color,
+            face_color,
+            linewidth,
+            linestyle,
+            display_name,
+            is_target,
+            plot_labels,
+        )
+
+
+def _get_solar_system_object_visual_params(
+    object_name: str, effective_dark_mode: bool, style: dict, is_target: bool
+):
+    """Determines colors, markers, and line styles based on the object and its target status."""
     default_color = style.get("EMPHASIS_COLOR", "yellow")
     edge_color = get_planet_color(
         planetary.get_simple_name(object_name), effective_dark_mode, default_color
@@ -119,75 +165,99 @@ def _plot_solar_system_object_on_skymap(
         linestyle = "--"
         linewidth = 2
 
+    return edge_color, face_color, marker, linestyle, linewidth
+
+
+def _get_solar_system_object_visual_size(
+    observation: "Observation", object_name: str, is_target: bool, size_deg: float
+):
+    """Calculates the magnitude-based visual size for polar maps."""
+    visual_size = 0
+    if not is_target:
+        try:
+            # Find the planet data to get its magnitude
+            technical_name = planetary.get_technical_name(object_name)
+            planets_df = observation.local_planets.objects
+            object_data = planets_df[planets_df[ObjectTableLabels.NAME] == technical_name]
+            if not object_data.empty:
+                magnitude = object_data.iloc[0].get(ObjectTableLabels.MAGNITUDE)
+                if hasattr(magnitude, "magnitude"):
+                    magnitude = magnitude.magnitude
+                if pd.notna(magnitude):
+                    # Default limit for polar skymaps is 4.5
+                    limit = 4.5
+                    visual_size = (limit + 1 - float(magnitude)) * 5
+        except Exception:
+            # Fallback to a sensible default if magnitude calculation fails
+            visual_size = 20
+
+    return max(size_deg * 200, visual_size)
+
+
+def _get_solar_system_object_position(
+    observation: "Observation", alt, az, ra, dec, coordinate_system, is_polar
+):
+    """Calculates coordinates for plotting based on the coordinate system and projection."""
     if is_polar:
-        # Use a combination of actual angular size and visual size based on magnitude
-        # just like stars, but only as a minimum for visibility on the whole sky map.
-        visual_size = 0
-        if not is_target:
-            try:
-                # Find the planet data to get its magnitude
-                technical_name = planetary.get_technical_name(object_name)
-                planets_df = observation.local_planets.objects
-                object_data = planets_df[
-                    planets_df[ObjectTableLabels.NAME] == technical_name
-                ]
-                if not object_data.empty:
-                    magnitude = object_data.iloc[0].get(ObjectTableLabels.MAGNITUDE)
-                    if hasattr(magnitude, "magnitude"):
-                        magnitude = magnitude.magnitude
-                    if pd.notna(magnitude):
-                        # Default limit for polar skymaps is 4.5
-                        limit = 4.5
-                        visual_size = (limit + 1 - float(magnitude)) * 5
-            except Exception:
-                # Fallback to a sensible default if magnitude calculation fails
-                visual_size = 20
-
-        size = max(size_deg * 200, visual_size)
-
         if coordinate_system == CoordinateSystem.HORIZONTAL:
-            x, y = az.radians, 90 - alt.degrees
+            return az.radians, 90 - alt.degrees
         else:
             is_sh = observation.place.lat_decimal < 0
-            x, y = ra.radians, 90 + dec.degrees if is_sh else 90 - dec.degrees
-        ax.scatter(x, y, s=size, color=edge_color, marker=marker)
-        if not is_target and plot_labels:
-            ax.annotate(
-                display_name,
-                (x, y),
-                textcoords="offset points",
-                xytext=(5, 5),
-                color=edge_color,
-            )
-    else:  # Cartesian / Zoomed
-        x_coord, y_coord = (
-            (az.degrees, alt.degrees)
-            if coordinate_system == CoordinateSystem.HORIZONTAL
-            else (ra.hours, dec.degrees)
-        )
-        ellipse_width = (
-            size_deg
-            if coordinate_system == CoordinateSystem.HORIZONTAL
-            else size_deg / (15 * numpy.cos(numpy.deg2rad(dec.degrees)))
+            return ra.radians, 90 + dec.degrees if is_sh else 90 - dec.degrees
+    else:
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            return az.degrees, alt.degrees
+        else:
+            return ra.hours, dec.degrees
+
+
+def _draw_solar_system_object_polar(
+    ax, x, y, size, color, marker, display_name, is_target, plot_labels
+):
+    """Handles the Matplotlib scatter and annotation for polar skymaps."""
+    ax.scatter(x, y, s=size, color=color, marker=marker)
+    if not is_target and plot_labels:
+        ax.annotate(
+            display_name,
+            (x, y),
+            textcoords="offset points",
+            xytext=(5, 5),
+            color=color,
         )
 
-        ellipse = Ellipse(
-            xy=(x_coord, y_coord),
-            width=ellipse_width,
-            height=size_deg,
-            angle=0,
-            edgecolor=edge_color,
-            facecolor=face_color,
-            linewidth=linewidth,
-            linestyle=linestyle,
-            alpha=0.6,
+
+def _draw_solar_system_object_cartesian(
+    ax,
+    x,
+    y,
+    width,
+    height,
+    edge_color,
+    face_color,
+    linewidth,
+    linestyle,
+    display_name,
+    is_target,
+    plot_labels,
+):
+    """Handles the Matplotlib Ellipse and annotation for cartesian/zoomed skymaps."""
+    ellipse = Ellipse(
+        xy=(x, y),
+        width=width,
+        height=height,
+        angle=0,
+        edgecolor=edge_color,
+        facecolor=face_color,
+        linewidth=linewidth,
+        linestyle=linestyle,
+        alpha=0.6,
+    )
+    ax.add_patch(ellipse)
+    if not is_target and plot_labels:
+        ax.annotate(
+            display_name,
+            (x, y),
+            textcoords="offset points",
+            xytext=(5, 5),
+            color=edge_color,
         )
-        ax.add_patch(ellipse)
-        if not is_target and plot_labels:
-            ax.annotate(
-                display_name,
-                (x_coord, y_coord),
-                textcoords="offset points",
-                xytext=(5, 5),
-                color=edge_color,
-            )
