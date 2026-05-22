@@ -148,6 +148,42 @@ def get_brightness_color(magnitude: Optional[float]) -> str:
     return str(final_color_val)
 
 
+_style_initialized = False
+
+
+def setup_plotting_style():
+    """
+    Initializes the Seaborn plotting style based on the configuration.
+    """
+    global _style_initialized
+    if _style_initialized:
+        return
+
+    import seaborn as sns
+
+    from apts.config import config
+
+    allowed_styles = ["white", "dark", "whitegrid", "darkgrid", "ticks"]
+    seaborn_style = config.get("style", "seaborn", fallback="whitegrid")
+    if seaborn_style not in allowed_styles:
+        logger.warning(
+            f"Invalid seaborn style '{seaborn_style}' in config. Using default 'whitegrid'."
+        )
+        seaborn_style = "whitegrid"
+
+    try:
+        sns.set_style(seaborn_style)  # pyright: ignore
+        logger.info(f"Seaborn style set to '{seaborn_style}'")
+    except ValueError:
+        # This is a fallback, in case of unexpected issues with seaborn
+        logger.warning(
+            f"Could not set seaborn style to '{seaborn_style}'. Using default 'whitegrid'."
+        )
+        sns.set_style("whitegrid")
+
+    _style_initialized = True
+
+
 def normalize_dates(start, stop):
     if start is None or stop is None:
         return (None, None)

@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
     from ..plotting import NullPlotter, Plotter
 
-from .. import plotting as apts_plot
 from ..conditions import Conditions
 from ..constants.plot import CoordinateSystem
 from ..i18n import language_context
@@ -26,6 +25,8 @@ class PlottingMixIn:
     def plot(self) -> "Plotter | NullPlotter":
         if self._plot is None:
             try:
+                from .. import plotting as apts_plot
+
                 self._plot = apts_plot.Plotter(cast("Observation", self))
             except ImportError:
                 # Fallback if dependencies are missing or plotting is disabled

@@ -1,11 +1,8 @@
 import logging.config
-
-import pandas as pd
-import seaborn as sns
+from typing import Any
 
 from . import cache
 from .cache import download_all_data
-from .catalogs import Catalogs
 
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only
@@ -36,31 +33,34 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-# Seaborn style from the imported config
-allowed_styles = ["white", "dark", "whitegrid", "darkgrid", "ticks"]
-seaborn_style = config.get("style", "seaborn", fallback="whitegrid")
-if seaborn_style not in allowed_styles:
-    logger.warning(
-        f"Invalid seaborn style '{seaborn_style}' in config. Using default 'whitegrid'."
-    )
-    seaborn_style = "whitegrid"
-
-try:
-    sns.set_style(seaborn_style)  # pyright: ignore
-    logger.info(f"Seaborn style set to '{seaborn_style}'")
-except ValueError:
-    # This is a fallback, in case of unexpected issues with seaborn
-    logger.warning(
-        f"Could not set seaborn style to '{seaborn_style}'. Using default 'whitegrid'."
-    )
-    sns.set_style("whitegrid")
+# Global objects that are lazy-loaded
+_pd = None
+_sns = None
+_catalogs = None
 
 
-# Disable label trimming in pandas tables
-pd.set_option("display.max_colwidth", None)
+def __getattr__(name: str) -> Any:
+    global _pd, _sns, _catalogs
+    if name == "pd":
+        if _pd is None:
+            import pandas as pd
 
-# Initialize catalogs
-catalogs = Catalogs()
+            # Disable label trimming in pandas tables
+            pd.set_option("display.max_colwidth", None)
+            _pd = pd
+        return _pd
+    if name == "sns":
+        if _sns is None:
+            import seaborn as sns
+
+            _sns = sns
+        return _sns
+    if name == "catalogs":
+        if _catalogs is None:
+            from .catalogs import Catalogs
+            _catalogs = Catalogs()
+        return _catalogs
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 def preload_data():
