@@ -145,20 +145,22 @@ class StormGlass(WeatherProvider):
             df["fog"] = "none"
 
         # Optimization: Vectorized precipitation type calculation to avoid slow apply(axis=1).
-        precip = pd.to_numeric(df["precipIntensity"], errors="coerce").fillna(0)
-        rain = pd.to_numeric(df.get("rain"), errors="coerce")
-        snow = pd.to_numeric(df.get("snow"), errors="coerce")
+        precip = cast(pd.Series, pd.to_numeric(df["precipIntensity"], errors="coerce")).fillna(0)
+        rain_raw = df.get("rain")
+        rain = cast(pd.Series, pd.to_numeric(rain_raw, errors="coerce")) if rain_raw is not None else None
+        snow_raw = df.get("snow")
+        snow = cast(pd.Series, pd.to_numeric(snow_raw, errors="coerce")) if snow_raw is not None else None
 
         # Default is rain
         precip_type = np.full(len(df), "rain", dtype=object)
 
         # Condition for none: intensity <= 0
-        precip_type[precip <= 0] = "none"
+        precip_type[cast(pd.Series, precip <= 0)] = "none"
 
         # Condition for snow: intensity > 0 AND snow > rain
         if snow is not None and rain is not None:
             snow_mask = (precip > 0) & snow.notna() & rain.notna() & (snow > rain)
-            precip_type[snow_mask] = "snow"
+            precip_type[cast(pd.Series, snow_mask)] = "snow"
 
         df["precipType"] = precip_type
         return df
@@ -199,8 +201,8 @@ class StormGlass(WeatherProvider):
             or bool((df["precipProbability"] == "none").all())
         ):
             # Optimization: Vectorized precipitation probability calculation to avoid slow apply().
-            precip_nums = pd.to_numeric(df["precipIntensity"], errors="coerce").fillna(0)
-            df["precipProbability"] = (precip_nums > 0).astype(int) * 100
+            precip_nums = cast(pd.Series, pd.to_numeric(df["precipIntensity"], errors="coerce")).fillna(0)
+            df["precipProbability"] = (cast(pd.Series, precip_nums > 0)).astype(int) * 100
 
         if (
             "apparentTemperature" not in df.columns

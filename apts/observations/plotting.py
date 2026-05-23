@@ -30,11 +30,15 @@ class PlottingMixIn:
                 self._plot = apts_plot.Plotter(cast("Observation", self))
             except ImportError:
                 # Fallback if dependencies are missing or plotting is disabled
-                self._plot = apts_plot.NullPlotter()
+                from ..plotting.dispatcher import NullPlotter
+
+                self._plot = NullPlotter()
             except Exception as e:
                 # Fallback for any other initialization error
                 logger.warning(f"Failed to initialize plotter: {e}")
-                self._plot = apts_plot.NullPlotter()
+                from ..plotting.dispatcher import NullPlotter
+
+                self._plot = NullPlotter()
         return self._plot
 
     @plot.setter

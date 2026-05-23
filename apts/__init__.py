@@ -1,5 +1,5 @@
 import logging.config
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from . import cache
 from .cache import download_all_data
@@ -8,6 +8,15 @@ from .catalogs import Catalogs
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only
 from .constants.event_types import EventType
+
+if TYPE_CHECKING:
+    from .observations import Observation
+    from .place import Place
+    from .equipment import Equipment
+    from .weather import Weather
+    from .utils import Utils
+    from .notify import Notify
+    from .i18n import set_language
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +112,7 @@ __all__ = [
     "preload_essential_data",
     "set_language",
     "download_all_data",
+    "config",
 ]
 
 
