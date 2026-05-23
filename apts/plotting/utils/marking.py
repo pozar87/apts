@@ -2,7 +2,7 @@ import functools
 import logging
 import numpy
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional, Tuple, Dict, Any
+from typing import TYPE_CHECKING, Tuple, Dict, Any
 from matplotlib import dates as mdates
 from skyfield import almanac
 

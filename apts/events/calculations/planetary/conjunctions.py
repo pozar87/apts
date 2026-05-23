@@ -1,6 +1,5 @@
 import logging
 import time
-from datetime import timezone
 from itertools import combinations
 from concurrent.futures import as_completed
 

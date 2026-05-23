@@ -15,9 +15,14 @@ def extract_database(filepath):
     return None
 
 class TestAskarSpecsStatic(unittest.TestCase):
+    db: dict
+
     @classmethod
     def setUpClass(cls):
-        cls.db = extract_database('apts/opticalequipment/telescope/vendors/askar.py')
+        db = extract_database('apts/opticalequipment/telescope/vendors/askar.py')
+        if db is None:
+            raise ValueError("Could not find _DATABASE in askar.py")
+        cls.db = db
 
     def test_fra300_pro(self):
         specs = self.db['Askar_FRA300_Pro']

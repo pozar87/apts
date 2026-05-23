@@ -1,4 +1,7 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..units import ureg
 
 from .planetary import MINOR_PLANET_NAMES
 from .coordinates import decdeg2dms, dms2decdeg

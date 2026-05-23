@@ -1,6 +1,5 @@
 import logging
 import time
-from datetime import timezone
 
 from .... import skyfield_searches
 from ...rarity import get_rarity
