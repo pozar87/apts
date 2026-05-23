@@ -46,13 +46,22 @@ class TestISSFlybysKrakow(unittest.TestCase):
 
         self.assertEqual(len(flybys), 3, f"Expected 3 visible flybys, found {len(flybys)}: {flybys}")
 
-        # Verify specific flybys
-        # Flyby 1 (~22:52 UTC)
-        self.assertTrue(any(f['culmination_time'].hour == 22 and f['culmination_time'].minute == 52 for f in flybys))
-        # Flyby 2 (~00:28 UTC)
-        self.assertTrue(any(f['culmination_time'].hour == 0 and f['culmination_time'].minute == 28 for f in flybys))
-        # Flyby 3 (~02:05 UTC)
-        self.assertTrue(any(f['culmination_time'].hour == 2 and f['culmination_time'].minute == 5 for f in flybys))
+        # Verify specific flybys with a 2-minute tolerance to account for TLE drift
+        def assert_flyby_near(target_time, label):
+            found = False
+            for f in flybys:
+                diff = abs((f['culmination_time'] - target_time).total_seconds())
+                if diff <= 120: # 2 minutes
+                    found = True
+                    break
+            self.assertTrue(found, f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}")
+
+        # Flyby 1 (~22:52 UTC on 29th)
+        assert_flyby_near(datetime(2026, 4, 29, 22, 52, tzinfo=timezone.utc), "22:52")
+        # Flyby 2 (~00:28 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 0, 28, tzinfo=timezone.utc), "00:28")
+        # Flyby 3 (~02:05 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 2, 5, tzinfo=timezone.utc), "02:05")
 
 if __name__ == "__main__":
     unittest.main()
