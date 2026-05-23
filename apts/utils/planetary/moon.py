@@ -103,7 +103,6 @@ def get_moon_separation(obj, observer, time):
     """
     Calculates the angular distance in degrees between the target object and the Moon.
     """
-    global _moon_pos_cache
     eph = get_ephemeris()
     moon = eph["moon"]
     astrometric_obj = observer.at(time).observe(obj).apparent()
