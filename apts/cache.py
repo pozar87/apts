@@ -5,11 +5,13 @@ import logging
 import os
 import re
 import zlib
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
-import pandas as pd
+# Expose heavy classes for unit tests that patch them at module level
 from skyfield.api import Loader, load
-from skyfield.data import hipparcos, mpc
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 from . import data_loader
 from .config import get_jovian_ephemeris_url, get_minor_planet_settings
@@ -64,10 +66,13 @@ def get_jovian_ephemeris():
 
 
 @functools.lru_cache(maxsize=None)
-def get_hipparcos_data() -> pd.DataFrame:
+def get_hipparcos_data() -> "pd.DataFrame":
     """
     Returns a cached Hipparcos catalog as a pandas DataFrame.
     """
+    import pandas as pd
+    from skyfield.data import hipparcos
+
     # Ensure the 'data' directory exists
     data_dir = "data"
     if not os.path.exists(data_dir):
@@ -120,12 +125,15 @@ def get_hipparcos_data() -> pd.DataFrame:
 
 
 @functools.lru_cache(maxsize=None)
-def get_mpcorb_data() -> pd.DataFrame:
+def get_mpcorb_data() -> "pd.DataFrame":
     """
     Returns a cached Minor Planet Center orbit catalog as a pandas DataFrame.
     If 'load_only' is specified in the [minor_planets] config, only those
     planets will be loaded.
     """
+    import pandas as pd
+    from skyfield.data import mpc
+
     planets_to_load = get_minor_planet_settings()
     path = data_loader.get_mpcorb_path()
 
@@ -198,11 +206,12 @@ def get_mpcorb_data() -> pd.DataFrame:
 
 
 @functools.lru_cache(maxsize=None)
-def get_nasa_comets_data(start_date, end_date) -> pd.DataFrame:
+def get_nasa_comets_data(start_date, end_date) -> "pd.DataFrame":
     """
     Returns a cached comets catalog as a pandas DataFrame.
     Data is from NASA NeoWs API.
     """
+    import pandas as pd
     from .config import get_api_key
     from .nasa_api import NasaAPI
 
