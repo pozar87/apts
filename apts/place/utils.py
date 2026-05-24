@@ -3,7 +3,6 @@ from functools import lru_cache
 from typing import Any
 
 import numpy as np
-from timezonefinder import TimezoneFinder
 
 from ..skyfield_searches.visibility import (
     get_twilight_time_utc,
@@ -26,6 +25,7 @@ class TFProxy:
 
     def __getattr__(self, name):
         if self._instance is None:
+            from timezonefinder import TimezoneFinder
             self._instance = TimezoneFinder()
         return getattr(self._instance, name)
 

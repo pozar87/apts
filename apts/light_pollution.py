@@ -41,9 +41,6 @@ class LightPollution:
         self.lon = lon
         self.settings = get_light_pollution_settings()
         self._api_data = None
-        # Lazily load the image data into the class-level cache if not already loaded.
-        # This significantly improves performance when multiple LightPollution objects are created.
-        self._load_image()
 
     def _get_from_api(self):
         """
@@ -81,6 +78,11 @@ class LightPollution:
         # Image dimensions: 14400x5600
         # Latitude range: 75N to 65S -> 140 degrees
         # Longitude range: 180W to 180E -> 360 degrees
+
+        # Lazily load the image data into the class-level cache if not already loaded.
+        # This significantly improves performance when multiple LightPollution objects are created.
+        self._load_image()
+
         if self._SIZE is None:
             return 0, 0
         img_width, img_height = self._SIZE
