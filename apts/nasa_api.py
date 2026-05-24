@@ -3,13 +3,14 @@ from datetime import datetime, timedelta
 
 from .secrets import mask_text
 from .utils.network import get_session
+from .config import get_api_key
 
 logger = logging.getLogger(__name__)
 
 
 class NasaAPI:
-    def __init__(self, api_key="DEMO_KEY"):
-        self.api_key = api_key
+    def __init__(self, api_key=None):
+        self.api_key = api_key or get_api_key("nasa") or "DEMO_KEY"
         self.base_url = "https://api.nasa.gov/neo/rest/v1/feed"
 
     def get_comets(self, start_date: datetime, end_date: datetime):

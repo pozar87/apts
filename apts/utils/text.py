@@ -2,10 +2,11 @@ import re
 from typing import Optional, Any
 
 def sanitize_header(value: str) -> str:
-    """Removes newlines to prevent header injection and crashes."""
+    """Removes control characters to prevent header injection and crashes."""
     if not value:
         return ""
-    return str(value).replace("\n", "").replace("\r", "")
+    # Remove all ASCII control characters (0-31 and 127)
+    return re.sub(r"[\x00-\x1f\x7f]", "", str(value))
 
 
 def mask_secret(secret: Any) -> str:
