@@ -135,3 +135,65 @@ def vectorized_geometric_compute(
     )
 
     return transits, alts, rises, sets
+
+def vectorized_geometric_imaging_duration(
+    lat_deg,
+    ras,
+    decs,
+    valid_mask,
+    transits,
+    dark_start,
+    dark_end,
+    min_altitude=30.0
+):
+    """
+    Fast calculation of imaging window duration (minutes above threshold during darkness)
+    for a set of Stars using vectorized geometric formulas.
+
+    transits: pd.Series of UTC transit times (unlocalized)
+    dark_start, dark_end: datetime objects (UTC)
+    """
+    sidereal_to_solar = 0.99726957
+    lat_rad = np.deg2rad(lat_deg)
+    decs_rad = np.deg2rad(decs)
+    # Target altitude in radians
+    h0_rad = np.deg2rad(min_altitude)
+
+    # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
+    # We ignore refraction for this higher-altitude threshold (30 deg) as it is negligible (~0.03 deg)
+    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
+        np.cos(lat_rad) * np.cos(decs_rad)
+    )
+
+    # Hour angle in solar hours
+    H_hours = np.full(len(ras), np.nan)
+    # Objects within the range where they actually reach the threshold
+    h_mask = valid_mask & (cos_H >= -1) & (cos_H <= 1)
+    H_hours[h_mask] = (
+        np.arccos(np.clip(cos_H[h_mask], -1.0, 1.0))
+        * (12.0 / np.pi)
+        * sidereal_to_solar
+    )
+
+    H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")
+    rising_times = (transits - H_delta).dt.floor("s")
+    setting_times = (transits + H_delta).dt.floor("s")
+
+    # Ensure all inputs are localized to UTC for comparison
+    dark_start_ts = pd.Timestamp(dark_start).tz_localize(None)
+    dark_end_ts = pd.Timestamp(dark_end).tz_localize(None)
+
+    # Function to intersect [rise, set] with [dark_start, dark_end]
+    # We use vectorized pandas/numpy operations
+    rises_utc = rising_times.dt.tz_localize(None)
+    sets_utc = setting_times.dt.tz_localize(None)
+
+    win_starts = np.maximum(rises_utc, dark_start_ts)
+    win_ends = np.minimum(sets_utc, dark_end_ts)
+
+    durations = (win_ends - win_starts).dt.total_seconds() / 60.0
+    # Set negative durations (never above threshold during darkness) to 0
+    # Also handle NaN cases for objects that never reach min_altitude
+    durations = np.where((durations > 0) & h_mask, durations, 0.0)
+
+    return durations.tolist()
