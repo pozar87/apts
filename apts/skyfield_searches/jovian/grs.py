@@ -36,26 +36,29 @@ def find_jupiter_grs_transits(
     setattr(abs_diff, "step_days", 0.1)
     times, _ = find_minima(t0, t1, abs_diff)
 
+    if not len(times):
+        return []
+
+    # Vectorized visibility check
+    j_obs = observer.at(times).observe(jupiter).apparent()
+    alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+    s_obs = observer.at(times).observe(sun).apparent()
+    sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+    elongation = j_obs.separation_from(s_obs).degrees
+
+    visible_mask = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
+
     events = []
-    for t in times:
-        # Check visibility: Jupiter above horizon, Sun below -6 degrees, and separation > 10
-        j_obs = observer.at(t).observe(jupiter).apparent()
-        alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-
-        if alt.degrees > 0:
-            s_obs = observer.at(t).observe(sun).apparent()
-            sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-            elongation = j_obs.separation_from(s_obs).degrees
-
-            if sun_alt <= -6 and elongation > 10:
-                events.append(
-                    {
-                        "date": t.utc_datetime(),
-                        "event": "Jupiter Great Red Spot Transit",
-                        "object": "Jupiter",
-                        "type": "Jupiter GRS Transit",
-                        "altitude": float(alt.degrees),
-                    }
-                )
+    for i, t in enumerate(times):
+        if visible_mask[i]:
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": "Jupiter Great Red Spot Transit",
+                    "object": "Jupiter",
+                    "type": "Jupiter GRS Transit",
+                    "altitude": float(alt.degrees[i]),
+                }
+            )
 
     return events
