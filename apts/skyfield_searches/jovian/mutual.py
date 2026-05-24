@@ -87,20 +87,16 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                         observer_elevation = vf.elevation.m
                         break
 
-                # Visibility: Jupiter above horizon and Sun below -6
+                # Visibility: Jupiter above horizon, Sun below -6, and separation from Sun > 10.
                 # Special elevation -9999 bypasses topocentric checks for global indexing
                 if observer_elevation == -9999:
                     visible = np.ones(len(t) if is_array else 1, dtype=bool)
                 else:
                     alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-                    sun_alt = (
-                        observer.at(t)
-                        .observe(sun)
-                        .apparent(deflectors=(10, 599))
-                        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                        .degrees
-                    )
-                    visible = (alt.degrees > 0) & (sun_alt <= -6)
+                    s_obs = observer.at(t).observe(sun).apparent(deflectors=(10, 599))
+                    sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+                    elongation = j_obs.separation_from(s_obs).degrees
+                    visible = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
 
                 if is_array:
                     res[visible & occ & m1_front] = 1

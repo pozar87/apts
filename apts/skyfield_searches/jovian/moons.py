@@ -47,16 +47,13 @@ def find_jovian_moon_events(observer, start_date, end_date):
             # Time when light left Jupiter system
             t_emitted = ts.tt_jd(t.tt - j_obs.light_time)
 
-            # Visibility check: Jupiter above horizon and Sun below -6 degrees
+            # Visibility check: Jupiter above horizon, Sun below -6 degrees,
+            # and Jupiter far enough from the Sun (elongation > 10 degrees).
             alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-            sun_alt = (
-                observer.at(t)
-                .observe(sun)
-                .apparent(deflectors=(10, 599))
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
-            visible = (alt.degrees > 0) & (sun_alt <= -6)
+            s_obs = observer.at(t).observe(sun).apparent(deflectors=(10, 599))
+            sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+            elongation = j_obs.separation_from(s_obs).degrees
+            visible = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
 
             # 2. Ellipsoidal body parameters
             re = astronomy.JUPITER_RADIUS_KM

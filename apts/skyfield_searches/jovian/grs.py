@@ -38,20 +38,16 @@ def find_jupiter_grs_transits(
 
     events = []
     for t in times:
-        # Check visibility: Jupiter above horizon and Sun below -6 degrees
+        # Check visibility: Jupiter above horizon, Sun below -6 degrees, and separation > 10
         j_obs = observer.at(t).observe(jupiter).apparent()
         alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
         if alt.degrees > 0:
-            sun_alt = (
-                observer.at(t)
-                .observe(sun)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
+            s_obs = observer.at(t).observe(sun).apparent()
+            sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+            elongation = j_obs.separation_from(s_obs).degrees
 
-            if sun_alt <= -6:
+            if sun_alt <= -6 and elongation > 10:
                 events.append(
                     {
                         "date": t.utc_datetime(),
