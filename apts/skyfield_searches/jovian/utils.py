@@ -22,6 +22,85 @@ def _get_jovian_moon_objects(eph):
             moon_objs[moon_id] = eph[jup300_ids[moon_id]]
     return moon_map, moon_objs
 
+class JovianSearchContext:
+    """
+    Caches Skyfield observations to be shared across Jovian event searches.
+    Reduces redundant calculations of Jupiter, Sun, and Moon positions.
+    """
+
+    def __init__(self, observer, eph, ts):
+        from ...utils import planetary
+
+        self.observer = observer
+        self.ts = ts
+        self.planetary = planetary
+        self.jupiter = eph["jupiter barycenter"]
+        self.sun = eph["sun"]
+        self.moon_map, self.moon_objs = _get_jovian_moon_objects(eph)
+        self._cache = {}
+
+    def _get_time_key(self, t):
+        if hasattr(t, "shape") and t.shape:
+            # For arrays, use first, last and length as a proxy for identity
+            return (t.tt[0], t.tt[-1], len(t.tt))
+        return t.tt
+
+    def get_basic_data(self, t):
+        key = self._get_time_key(t)
+        if key not in self._cache:
+            j_obs = self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
+            s_obs = self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
+            t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
+            sun_from_j = (
+                self.jupiter.at(t_emitted).observe(self.sun).apparent(deflectors=(10, 599))
+            )
+
+            # Jupiter's pole at emission time (IAU 2015 model)
+            alpha0_deg, delta0_deg = self.planetary.get_planet_pole_coords(
+                "jupiter", t_emitted
+            )
+            alpha0 = np.radians(alpha0_deg)
+            delta0 = np.radians(delta0_deg)
+            z_pole = np.array(
+                [
+                    np.cos(delta0) * np.cos(alpha0),
+                    np.cos(delta0) * np.sin(alpha0),
+                    np.sin(delta0),
+                ]
+            )
+
+            self._cache[key] = {
+                "j_obs": j_obs,
+                "s_obs": s_obs,
+                "t_emitted": t_emitted,
+                "sun_from_j": sun_from_j,
+                "z_pole": z_pole,
+                "moons": {},
+                "moons_sun": {},
+            }
+        return self._cache[key]
+
+    def get_moon_obs(self, t, moon_id):
+        data = self.get_basic_data(t)
+        if moon_id not in data["moons"]:
+            data["moons"][moon_id] = (
+                self.observer.at(t)
+                .observe(self.moon_objs[moon_id])
+                .apparent(deflectors=(10, 599))
+            )
+        return data["moons"][moon_id]
+
+    def get_moon_sun_obs(self, t, moon_id):
+        data = self.get_basic_data(t)
+        if moon_id not in data["moons_sun"]:
+            data["moons_sun"][moon_id] = (
+                self.sun.at(data["t_emitted"])
+                .observe(self.moon_objs[moon_id])
+                .apparent(deflectors=(10, 599))
+            )
+        return data["moons_sun"][moon_id]
+
+
 def is_inside_ellipsoid_projection(p_vec, u_vec, z_pole, re, rp):
     """
     Checks if point p is within the projection of an ellipsoid along direction u.

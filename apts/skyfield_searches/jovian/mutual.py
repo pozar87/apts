@@ -3,7 +3,7 @@ import numpy as np
 from skyfield import almanac
 from ...cache import get_timescale
 from ...constants import astronomy
-from .utils import _get_jovian_moon_objects
+from .utils import _get_jovian_moon_objects, JovianSearchContext
 
 # Radii from constants (Galilean moons are spherical enough for this)
 GALILEAN_MOON_RADII = {
@@ -29,7 +29,7 @@ def _get_moon_angular_radius(moon_id, distance_km):
     return np.degrees(np.arcsin(GALILEAN_MOON_RADII[moon_id] / distance_km))
 
 
-def _is_jovian_event_visible(observer, t, j_obs, sun, observer_elevation, is_array):
+def _is_jovian_event_visible(t, j_obs, s_obs, observer_elevation, is_array):
     """Checks if Jupiter is above horizon, Sun is below -6 degrees and elongation > 10."""
     # Visibility: Jupiter above horizon, Sun below -6, and separation from Sun > 10.
     # Special elevation -9999 bypasses topocentric checks for global indexing
@@ -37,7 +37,6 @@ def _is_jovian_event_visible(observer, t, j_obs, sun, observer_elevation, is_arr
         return np.ones(len(t) if is_array else 1, dtype=bool)
 
     alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-    s_obs = observer.at(t).observe(sun).apparent(deflectors=(10, 599))
     sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
     elongation = j_obs.separation_from(s_obs).degrees
     return (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
@@ -66,15 +65,10 @@ def _append_jovian_mutual_event(events, te, state_val, m1_name, m2_name, is_star
 class JovianMutualState:
     """Calculates the mutual state (occultation/eclipse) between two Jovian moons."""
 
-    def __init__(self, observer, jupiter, sun, m1_obj, m2_obj, id1, id2, ts, elevation):
-        self.observer = observer
-        self.jupiter = jupiter
-        self.sun = sun
-        self.m1_obj = m1_obj
-        self.m2_obj = m2_obj
+    def __init__(self, ctx, id1, id2, elevation):
+        self.ctx = ctx
         self.id1 = id1
         self.id2 = id2
-        self.ts = ts
         self.elevation = elevation
 
     def __call__(self, t):
@@ -84,8 +78,8 @@ class JovianMutualState:
         res = np.zeros(len(t) if is_array else 1, dtype=int)
 
         # 1. Earth perspective (Occultations)
-        m1_e = self.observer.at(t).observe(self.m1_obj).apparent(deflectors=(10, 599))
-        m2_e = self.observer.at(t).observe(self.m2_obj).apparent(deflectors=(10, 599))
+        m1_e = self.ctx.get_moon_obs(t, self.id1)
+        m2_e = self.ctx.get_moon_obs(t, self.id2)
         sep_e = m1_e.separation_from(m2_e).degrees
 
         r1 = _get_moon_angular_radius(self.id1, m1_e.distance().km)
@@ -95,11 +89,9 @@ class JovianMutualState:
         m1_front = m1_e.distance().km < m2_e.distance().km
 
         # 2. Sun perspective (Eclipses)
-        j_obs = self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
-        t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
-
-        m1_s = self.sun.at(t_emitted).observe(self.m1_obj).apparent(deflectors=(10, 599))
-        m2_s = self.sun.at(t_emitted).observe(self.m2_obj).apparent(deflectors=(10, 599))
+        data = self.ctx.get_basic_data(t)
+        m1_s = self.ctx.get_moon_sun_obs(t, self.id1)
+        m2_s = self.ctx.get_moon_sun_obs(t, self.id2)
         sep_s = m1_s.separation_from(m2_s).degrees
 
         r1_s = _get_moon_angular_radius(self.id1, m1_s.distance().km)
@@ -109,7 +101,7 @@ class JovianMutualState:
         m1_caster = m1_s.distance().km < m2_s.distance().km
 
         visible = _is_jovian_event_visible(
-            self.observer, t, j_obs, self.sun, self.elevation, is_array
+            t, data["j_obs"], data["s_obs"], self.elevation, is_array
         )
 
         if is_array:
@@ -118,11 +110,17 @@ class JovianMutualState:
             res[visible & ecl & m1_caster] = 3
             res[visible & ecl & ~m1_caster] = 4
         else:
-            if visible:
-                if occ:
-                    res[0] = 1 if m1_front else 2
-                elif ecl:
-                    res[0] = 3 if m1_caster else 4
+            v_val = visible if np.isscalar(visible) else (visible[0] if visible.size > 0 else False)
+            if v_val:
+                occ_val = occ if np.isscalar(occ) else (occ[0] if occ.size > 0 else False)
+                if occ_val:
+                    m1f_val = m1_front if np.isscalar(m1_front) else (m1_front[0] if m1_front.size > 0 else False)
+                    res[0] = 1 if m1f_val else 2
+                else:
+                    ecl_val = ecl if np.isscalar(ecl) else (ecl[0] if ecl.size > 0 else False)
+                    if ecl_val:
+                        m1c_val = m1_caster if np.isscalar(m1_caster) else (m1_caster[0] if m1_caster.size > 0 else False)
+                        res[0] = 3 if m1c_val else 4
         return res
 
 
@@ -140,9 +138,7 @@ def find_jovian_mutual_events(observer, start_date, end_date):
     eph = cast(Any, get_jovian_ephemeris())
 
     try:
-        jupiter = eph["jupiter barycenter"]
-        sun = eph["sun"]
-        moon_map, moon_objs = _get_jovian_moon_objects(eph)
+        ctx = JovianSearchContext(observer, eph, ts)
     except KeyError:
         return []
 
@@ -150,18 +146,14 @@ def find_jovian_mutual_events(observer, start_date, end_date):
     elevation = _get_observer_elevation(observer)
 
     # Check all pairs of moons
-    moon_ids = list(moon_map.keys())
+    moon_ids = list(ctx.moon_map.keys())
 
     for i, id1 in enumerate(moon_ids):
         for id2 in moon_ids[i + 1 :]:
-            m1_name = moon_map[id1]
-            m2_name = moon_map[id2]
-            m1_obj = moon_objs[id1]
-            m2_obj = moon_objs[id2]
+            m1_name = ctx.moon_map[id1]
+            m2_name = ctx.moon_map[id2]
 
-            mutual_state = JovianMutualState(
-                observer, jupiter, sun, m1_obj, m2_obj, id1, id2, ts, elevation
-            )
+            mutual_state = JovianMutualState(ctx, id1, id2, elevation)
 
             # Step of 5 minutes is safe for fast-moving Jovian moons
             setattr(mutual_state, "step_days", 0.0035)
