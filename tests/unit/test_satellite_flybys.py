@@ -20,10 +20,10 @@ class TestSatelliteFlybys(unittest.TestCase):
         self.start_date = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         self.end_date = self.start_date + timedelta(days=1)
 
-    @patch("apts.skyfield_searches.satellites.load.tle_file")
-    @patch("apts.skyfield_searches.satellites.get_timescale")
-    @patch("apts.skyfield_searches.satellites.planetary.get_skyfield_obj")
-    @patch("apts.skyfield_searches.satellites.get_ephemeris")
+    @patch("apts.skyfield_searches.satellites.flybys.load.tle_file")
+    @patch("apts.skyfield_searches.satellites.flybys.get_timescale")
+    @patch("apts.skyfield_searches.satellites.flybys.planetary.get_skyfield_obj")
+    @patch("apts.skyfield_searches.satellites.flybys.get_ephemeris")
     def test_find_satellite_flybys_logic(
         self, mock_eph, mock_get_obj, mock_ts, mock_tle
     ):
@@ -136,7 +136,7 @@ class TestSatelliteFlybys(unittest.TestCase):
         self.assertLess(events[0]["peak_magnitude"], 0)
         self.assertEqual(events[0]["peak_altitude"], 45)
 
-    @patch("apts.skyfield_searches.satellites._find_satellite_flybys")
+    @patch("apts.skyfield_searches.satellites.flybys._find_satellite_flybys")
     def test_find_iss_flybys_wrapper(self, mock_find):
         find_iss_flybys(
             self.topos_observer, self.vector_observer, self.start_date, self.end_date
@@ -145,7 +145,7 @@ class TestSatelliteFlybys(unittest.TestCase):
         args = mock_find.call_args[0]
         self.assertEqual(args[4], "ISS (ZARYA)")
 
-    @patch("apts.skyfield_searches.satellites._find_satellite_flybys")
+    @patch("apts.skyfield_searches.satellites.flybys._find_satellite_flybys")
     def test_find_tiangong_flybys_wrapper(self, mock_find):
         find_tiangong_flybys(
             self.topos_observer, self.vector_observer, self.start_date, self.end_date
