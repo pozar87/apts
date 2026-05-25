@@ -15,12 +15,22 @@ def find_moon_libration_maxima(observer, start_date, end_date):
     sun = planetary.get_skyfield_obj("sun")
     moon_sf = planetary.get_skyfield_obj("moon")
 
+    # Observer elevation for global indexing
+    observer_elevation = 0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "elevation"):
+            observer_elevation = vf.elevation.m
+            break
+
+    # Oracle: Use topocentric libration if not global indexing
+    lib_observer = observer if observer_elevation != -9999 else None
+
     def libration_lon(t):
-        lon, _ = planetary.get_moon_libration(t)
+        lon, _ = planetary.get_moon_libration(t, observer=lib_observer)
         return lon
 
     def libration_lat(t):
-        _, lat = planetary.get_moon_libration(t)
+        _, lat = planetary.get_moon_libration(t, observer=lib_observer)
         return lat
 
     # Step of 2 days is safe for libration cycles (~27.3 days)
@@ -48,13 +58,6 @@ def find_moon_libration_maxima(observer, start_date, end_date):
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
             .degrees
         )
-
-        # Observer elevation for global indexing
-        observer_elevation = 0
-        for vf in observer.vector_functions:
-            if hasattr(vf, "elevation"):
-                observer_elevation = vf.elevation.m
-                break
 
         is_visible = (m_alt.degrees > 0 and s_alt <= -6) or observer_elevation == -9999
 

@@ -13,53 +13,21 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     moon = planetary.get_skyfield_obj("moon")
     earth = cast(Any, planetary.get_skyfield_obj("earth"))
 
-    target_stars = [
-        "Sirius",
-        "Arcturus",
-        "Rigel",
-        "Procyon",
-        "Betelgeuse",
-        "Altair",
-        "Aldebaran",
-        "Antares",
-        "Spica",
-        "Pollux",
-        "Fomalhaut",
-        "Regulus",
-        "Adhara",
-        "Bellatrix",
-        "El Nath",
-        "Alnilam",
-        "Alnitak",
-        "Wezen",
-        "Alhena",
-        "Mirzam",
-        "Alphard",
-        "Hamal",
-        "Beta Tauri",
-    ]
-
-    events = []
-
-    stars_to_check = bright_stars[bright_stars["Name"].str.strip().isin(target_stars)]
-
-    # Optimization: Pre-filter stars based on ecliptic latitude.
+    # Optimization: Filter stars close to the ecliptic (within 10 degrees)
     # The Moon stays within ~5.3 degrees of the ecliptic.
-    star_objs_all = stars_to_check["skyfield_object"].tolist()
-    star_names_all = stars_to_check["Name"].tolist()
+    v_ra_hours_all = bright_stars["ra_hours"].to_numpy()
+    v_dec_degrees_all = bright_stars["dec_degrees"].to_numpy()
+    star_names_all = bright_stars["Name"].to_numpy()
 
-    # Observe all stars at once using a vectorized Star object
-    # Optimization: use pre-calculated float columns instead of list comprehension over Star objects
-    stars_vector = Star(
-        ra_hours=stars_to_check["ra_hours"].to_numpy(),
-        dec_degrees=stars_to_check["dec_degrees"].to_numpy(),
-    )
-    spos_at_t0_all = earth.at(t0).observe(stars_vector)
+    stars_vector_all = Star(ra_hours=v_ra_hours_all, dec_degrees=v_dec_degrees_all)
+    spos_at_t0_all = earth.at(t0).observe(stars_vector_all)
     lats, _, _ = spos_at_t0_all.ecliptic_latlon()
 
-    # Filter using vectorized mask
-    mask = np.abs(lats.degrees) < 10
-    star_objects = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
+    mask_ecliptic = np.abs(lats.degrees) < 10
+    v_ra_hours = v_ra_hours_all[mask_ecliptic]
+    v_dec_degrees = v_dec_degrees_all[mask_ecliptic]
+    star_names = star_names_all[mask_ecliptic]
+    stars_vector = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
 
     # Check every 2 minutes for precision
     num_steps = int((t1 - t0) * 24 * 30)
@@ -72,42 +40,42 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     coarse_times = times[coarse_idx]
 
     # Topocentric position for Moon (coarse)
-    # Refraction is not critical here for the coarse filter
     mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
     m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
     moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
 
-    # Unit vectors for Moon (coarse)
+    # Unit vectors for Moon (coarse): (3, M)
     m_au_coarse = mpos_coarse.position.au
     u_moon_coarse = m_au_coarse / np.linalg.norm(m_au_coarse, axis=0)
 
-    for star_name, star_obj in star_objects:
-        # Use ICRS position once (t0) for coarse filter - very fast.
-        # This filters out stars far from the Moon's path.
-        spos_star = earth.at(t0).observe(star_obj)
-        u_star = spos_star.position.au / np.linalg.norm(spos_star.position.au)
+    # Unit vectors for Stars (fixed at t0 in ICRS): (3, N)
+    spos_stars = earth.at(t0).observe(stars_vector)
+    stars_au = spos_stars.position.au
+    u_stars = stars_au / np.linalg.norm(stars_au, axis=0)
 
-        # Dot product for coarse separations
-        dot_coarse = u_star @ u_moon_coarse
-        sep_coarse = np.degrees(np.arccos(np.clip(dot_coarse, -1.0, 1.0)))
+    # Vectorized coarse separations: (N, M)
+    # Using matrix multiplication to find separations between all stars and all Moon positions.
+    dot_products = u_stars.T @ u_moon_coarse
+    sep_coarse = np.degrees(np.arccos(np.clip(dot_products, -1.0, 1.0)))
 
-        # Potential occultation: coarse separation < angular radius + small margin (for parallax/aberration)
-        # Moon parallax is up to ~1 deg, aberration is ~20 arcsec.
-        # Using Topocentric Moon and ICRS Star at t0, so only need to cover Star motion (aberration/parallax).
-        # Parallax for Stars is tiny (<1"), aberration ~20". Using 0.1 deg margin for safety.
-        potential_mask = (sep_coarse < moon_rad_coarse + 0.1) & (
-            m_alt_coarse.degrees > -1
-        )
+    # Potential occultation: coarse separation < angular radius + margin (0.2 deg for safety)
+    # Broadcast moon_rad_coarse (M,) to (N, M) and m_alt_coarse (M,) to (N, M)
+    potential_mask = (sep_coarse < moon_rad_coarse + 0.2) & (m_alt_coarse.degrees > -1)
 
-        if not potential_mask.any():
-            continue
+    events = []
+    # Identify stars with potential occultations
+    star_candidate_idxs = np.where(potential_mask.any(axis=1))[0]
 
-        # For potential candidates, perform high-precision check only near those windows
-        # Expand windows to ensure we don't miss transitions
+    for star_idx in star_candidate_idxs:
+        star_name = star_names[star_idx]
+        star_obj = Star(ra_hours=v_ra_hours[star_idx], dec_degrees=v_dec_degrees[star_idx])
+
+        # Find time windows for this star
+        star_potential_mask = potential_mask[star_idx]
         window_indices = np.unique(
             np.concatenate(
                 [
-                    np.clip(coarse_idx[potential_mask] + offset, 0, num_steps - 1)
+                    np.clip(coarse_idx[star_potential_mask] + offset, 0, num_steps - 1)
                     for offset in range(-15, 16)  # +/- 30 mins around potential event
                 ]
             )
