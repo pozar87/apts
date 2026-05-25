@@ -14,32 +14,9 @@ GALILEAN_MOON_RADII = {
 }
 
 
-def _get_observer_elevation(observer):
-    """Extracts elevation from observer vector functions."""
-    observer_elevation = 0
-    for vf in observer.vector_functions:
-        if hasattr(vf, "elevation"):
-            observer_elevation = vf.elevation.m
-            break
-    return observer_elevation
-
-
 def _get_moon_angular_radius(moon_id, distance_km):
     """Calculates the apparent angular radius of a moon in degrees."""
     return np.degrees(np.arcsin(GALILEAN_MOON_RADII[moon_id] / distance_km))
-
-
-def _is_jovian_event_visible(t, j_obs, s_obs, observer_elevation, is_array):
-    """Checks if Jupiter is above horizon, Sun is below -6 degrees and elongation > 10."""
-    # Visibility: Jupiter above horizon, Sun below -6, and separation from Sun > 10.
-    # Special elevation -9999 bypasses topocentric checks for global indexing
-    if observer_elevation == -9999:
-        return np.ones(len(t) if is_array else 1, dtype=bool)
-
-    alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-    sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-    elongation = j_obs.separation_from(s_obs).degrees
-    return (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
 
 
 def _append_jovian_mutual_event(events, te, state_val, m1_name, m2_name, is_start):
@@ -100,9 +77,7 @@ class JovianMutualState:
         ecl = sep_s < (r1_s + r2_s)
         m1_caster = m1_s.distance().km < m2_s.distance().km
 
-        visible = _is_jovian_event_visible(
-            t, data["j_obs"], data["s_obs"], self.elevation, is_array
-        )
+        visible = self.ctx.get_visibility(t)
 
         if is_array:
             res[visible & occ & m1_front] = 1
@@ -143,7 +118,6 @@ def find_jovian_mutual_events(observer, start_date, end_date):
         return []
 
     events = []
-    elevation = _get_observer_elevation(observer)
 
     # Check all pairs of moons
     moon_ids = list(ctx.moon_map.keys())
@@ -153,7 +127,7 @@ def find_jovian_mutual_events(observer, start_date, end_date):
             m1_name = ctx.moon_map[id1]
             m2_name = ctx.moon_map[id2]
 
-            mutual_state = JovianMutualState(ctx, id1, id2, elevation)
+            mutual_state = JovianMutualState(ctx, id1, id2, ctx.elevation)
 
             # Step of 5 minutes is safe for fast-moving Jovian moons
             setattr(mutual_state, "step_days", 0.0035)

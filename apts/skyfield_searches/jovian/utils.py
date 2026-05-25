@@ -4,6 +4,16 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def _get_observer_elevation(observer):
+    """Extracts elevation from observer vector functions."""
+    observer_elevation = 0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "elevation"):
+            observer_elevation = vf.elevation.m
+            break
+    return observer_elevation
+
+
 def _get_jovian_moon_objects(eph):
     """
     Helper to get Galilean moon objects from ephemeris, handling different kernel IDs.
@@ -37,6 +47,7 @@ class JovianSearchContext:
         self.jupiter = eph["jupiter barycenter"]
         self.sun = eph["sun"]
         self.moon_map, self.moon_objs = _get_jovian_moon_objects(eph)
+        self.elevation = _get_observer_elevation(observer)
         self._cache = {}
 
     def _get_time_key(self, t):
@@ -48,11 +59,15 @@ class JovianSearchContext:
     def get_basic_data(self, t):
         key = self._get_time_key(t)
         if key not in self._cache:
-            j_obs = self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
+            j_obs = (
+                self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
+            )
             s_obs = self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
             t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
             sun_from_j = (
-                self.jupiter.at(t_emitted).observe(self.sun).apparent(deflectors=(10, 599))
+                self.jupiter.at(t_emitted)
+                .observe(self.sun)
+                .apparent(deflectors=(10, 599))
             )
 
             # Jupiter's pole at emission time (IAU 2015 model)
@@ -79,6 +94,27 @@ class JovianSearchContext:
                 "moons_sun": {},
             }
         return self._cache[key]
+
+    def get_visibility(self, t):
+        """
+        Calculates and caches Jupiter visibility (altitude, sun altitude, elongation).
+        """
+        data = self.get_basic_data(t)
+        if "visible" not in data:
+            is_array = hasattr(t, "shape") and t.shape != ()
+            # Special elevation -9999 bypasses topocentric checks for global indexing
+            if self.elevation == -9999:
+                data["visible"] = np.ones(len(t) if is_array else 1, dtype=bool)
+            else:
+                j_obs = data["j_obs"]
+                s_obs = data["s_obs"]
+                alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+                sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[
+                    0
+                ].degrees
+                elongation = j_obs.separation_from(s_obs).degrees
+                data["visible"] = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
+        return data["visible"]
 
     def get_moon_obs(self, t, moon_id):
         data = self.get_basic_data(t)
@@ -109,10 +145,11 @@ def is_inside_ellipsoid_projection(p_vec, u_vec, z_pole, re, rp):
     """
     # Dots along z_pole
     if p_vec.ndim > 1:
-        p_z = np.sum(p_vec * z_pole, axis=0)
-        u_z = np.sum(u_vec * z_pole, axis=0)
-        p_u = np.sum(p_vec * u_vec, axis=0)
-        p_sq = np.sum(p_vec * p_vec, axis=0)
+        # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0) for large arrays
+        p_z = np.einsum("ij,ij->j", p_vec, z_pole)
+        u_z = np.einsum("ij,ij->j", u_vec, z_pole)
+        p_u = np.einsum("ij,ij->j", p_vec, u_vec)
+        p_sq = np.einsum("ij,ij->j", p_vec, p_vec)
     else:
         p_z = np.dot(p_vec, z_pole)
         u_z = np.dot(u_vec, z_pole)
