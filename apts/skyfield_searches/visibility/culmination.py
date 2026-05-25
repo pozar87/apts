@@ -5,72 +5,6 @@ from skyfield.searchlib import find_maxima
 from ...cache import get_timescale, get_ephemeris
 from ...utils import planetary
 
-def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
-    ts = get_timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-    eph = cast(Any, get_ephemeris())
-    sun = eph["sun"]
-
-    planets = [
-        "sun",
-        "moon",
-        "mercury",
-        "venus",
-        "mars barycenter",
-        "jupiter barycenter",
-        "saturn barycenter",
-        "uranus barycenter",
-        "neptune barycenter",
-    ]
-    planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
-
-    events = []
-
-    for name, obj in planet_objs:
-
-        def altitude(t):
-            # Account for atmospheric refraction for high-precision culmination altitude
-            return (
-                observer.at(t)
-                .observe(obj)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
-
-        setattr(altitude, "step_days", 0.5)  # Check twice a day
-        times, altitudes = find_maxima(t0, t1, altitude)
-
-        simple_name = planetary.get_simple_name(name)
-
-        for t, alt in zip(cast(Any, times), altitudes):
-            if alt > 0:
-                # Visibility check: For non-solar objects, Sun must be below threshold
-                sun_alt = (
-                    observer.at(t)
-                    .observe(sun)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
-                visible = True
-                if simple_name != "Sun" and sun_alt > sun_alt_threshold:
-                    visible = False
-
-                if visible:
-                    events.append(
-                        {
-                            "date": t.utc_datetime(),
-                            "event": f"{simple_name} Culmination",
-                            "object": simple_name,
-                            "type": "Culmination",
-                            "altitude": float(alt),
-                        }
-                    )
-
-    return events
-
 def _get_observer_coords(observer: Any) -> tuple[float, float]:
     """Extracts latitude (deg) and longitude (hours) from the observer object."""
     lon_hours = 0.0
@@ -92,6 +26,111 @@ def _apply_refraction(altitudes_deg: np.ndarray) -> np.ndarray:
         r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
         res[r_mask] += r_arcmin / 60.0
     return res
+
+def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
+    """
+    Finds culminations for major solar system objects.
+    Vectorized over days using an analytical approach (LST == RA).
+    """
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_ephemeris())
+    sun = eph["sun"]
+
+    planets = [
+        "sun",
+        "moon",
+        "mercury",
+        "venus",
+        "mars barycenter",
+        "jupiter barycenter",
+        "saturn barycenter",
+        "uranus barycenter",
+        "neptune barycenter",
+    ]
+    planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
+
+    lat_deg, lon_hours = _get_observer_coords(observer)
+
+    num_days = int(t1 - t0) + 1
+    day_offsets = np.arange(-1, num_days + 1)
+    t0_dt = cast(Any, t0.utc_datetime())
+    t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
+
+    events = []
+
+    for name, obj in planet_objs:
+        simple_name = planetary.get_simple_name(name)
+
+        # Iteration 1: estimate at t_refs
+        obs_ref = observer.at(t_refs).observe(obj).apparent()
+        ra_hours = obs_ref.radec(epoch="date")[0].hours
+
+        target_gast = (ra_hours - lon_hours) % 24
+        diff_gast = (target_gast - t_refs.gast) % 24
+        diff_gast[diff_gast > 12] -= 24
+
+        t_culm_tt = t_refs.tt + (diff_gast / 1.002737909) / 24.0
+        t_culm = ts.tt_jd(t_culm_tt)
+
+        # Iteration 2: refine at estimated t_culm
+        obs_ref = observer.at(t_culm).observe(obj).apparent()
+        ra_hours = obs_ref.radec(epoch="date")[0].hours
+
+        target_gast = (ra_hours - lon_hours) % 24
+        diff_gast = (target_gast - t_culm.gast) % 24
+        diff_gast[diff_gast > 12] -= 24
+
+        t_final_tt = t_culm.tt + (diff_gast / 1.002737909) / 24.0
+        t_final = ts.tt_jd(t_final_tt)
+
+        # Filter within window
+        mask = (t_final_tt >= t0.tt) & (t_final_tt <= t1.tt)
+        t_final = t_final[mask]
+
+        if len(t_final) == 0:
+            continue
+
+        # Calculate precise altitudes and Sun altitudes at culmination times
+        obs_final = observer.at(t_final).observe(obj).apparent()
+        alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+
+        # Visibility filter: altitude > 0
+        mask_alt = alts_final_deg > 0
+        t_final = t_final[mask_alt]
+        alts_final_deg = alts_final_deg[mask_alt]
+
+        if len(t_final) == 0:
+            continue
+
+        sun_alts_deg = (
+            observer.at(t_final)
+            .observe(sun)
+            .apparent()
+            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
+            .degrees
+        )
+
+        visible_mask = np.ones(len(t_final), dtype=bool)
+        if simple_name != "Sun":
+            visible_mask = sun_alts_deg <= sun_alt_threshold
+
+        final_times = t_final[visible_mask]
+        final_alts = alts_final_deg[visible_mask]
+
+        for t, alt in zip(cast(Any, final_times), final_alts):
+            events.append(
+                {
+                    "date": t.utc_datetime(),
+                    "event": f"{simple_name} Culmination",
+                    "object": simple_name,
+                    "type": "Culmination",
+                    "altitude": float(alt),
+                }
+            )
+
+    return events
 
 def _find_fixed_object_culminations(
     observer: Any,
