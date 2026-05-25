@@ -1,43 +1,54 @@
 from datetime import timedelta
 from typing import Any, cast
 
-import numpy as np
 from skyfield.api import load
 
-from ..cache import STATIONS_URL, get_ephemeris, get_timescale
-from ..utils import planetary
+from ...cache import STATIONS_URL, get_ephemeris, get_timescale
+from ...utils import planetary
+from .magnitude import calculate_satellite_magnitude
 
 
-def calculate_satellite_magnitude(
-    satellite_name, sat_pos_km, sun_pos_km, observer_pos_km, distance_km
-):
-    """Calculates the apparent magnitude of a satellite."""
-    # Vector from satellite to sun
-    vec_sat_sun = sun_pos_km - sat_pos_km
+def _load_satellite(satellite_name: str):
+    """Loads a satellite by name from the TLE data."""
+    try:
+        stations_url = STATIONS_URL
+        # Load TLE file - no ephemeris needed for satellite data
+        # Skyfield will cache this file by default
+        satellites = load.tle_file(stations_url)
+        return cast(Any, next(s for s in satellites if s.name == satellite_name))
+    except Exception as e:
+        # Could be network error, or satellite not in file
+        print(f"Could not load TLEs for {satellite_name}: {e}")
+        return None
 
-    # Vector from satellite to observer
-    vec_sat_obs = observer_pos_km - sat_pos_km
 
-    # Calculate phase angle beta
-    norm_sun = np.linalg.norm(vec_sat_sun)
-    norm_obs = np.linalg.norm(vec_sat_obs)
+def _get_pass_times(i, events, times):
+    """Extracts rise and set times for a given culmination event index."""
+    rise_time = None
+    set_time = None
+    if i > 0 and events[i - 1] == 0:
+        rise_time = times[i - 1]
+    if i < len(events) - 1 and events[i + 1] == 2:
+        set_time = times[i + 1]
+    return rise_time, set_time
 
-    if norm_sun > 0 and norm_obs > 0:
-        cos_beta = np.dot(vec_sat_sun, vec_sat_obs) / (norm_sun * norm_obs)
-        beta = np.arccos(np.clip(cos_beta, -1.0, 1.0))
 
-        # Phase function for diffuse sphere
-        phi = (np.sin(beta) + (np.pi - beta) * np.cos(beta)) / np.pi
+def _check_sunlight(satellite, culmination_time, topos_observer, ts, eph):
+    """Determines if the satellite is sunlit during its pass."""
+    sat_at_t = cast(Any, satellite).at(culmination_time)
+    if sat_at_t.is_sunlit(eph):
+        return True
 
-        # Standard magnitude (at 1000km, 0 phase)
-        # ISS is approx -1.8, Tiangong is approx 0.0
-        m_std = -1.8 if "ISS" in satellite_name else 0.0
-
-        # Apparent magnitude
-        return float(
-            m_std + 5 * np.log10(distance_km / 1000.0) - 2.5 * np.log10(max(phi, 1e-9))
-        )
-    return 5.0
+    # Check for sunlight at the 2.0-degree altitude points.
+    t_s_start = ts.utc(culmination_time.utc_datetime() - timedelta(minutes=15))
+    t_s_end = ts.utc(culmination_time.utc_datetime() + timedelta(minutes=15))
+    v_times, v_events = satellite.find_events(
+        topos_observer, t_s_start, t_s_end, altitude_degrees=2.0
+    )
+    for v_t, v_e in zip(v_times, v_events):
+        if v_e in (0, 1, 2) and cast(Any, satellite).at(v_t).is_sunlit(eph):
+            return True
+    return False
 
 
 def _find_satellite_flybys(
@@ -57,15 +68,8 @@ def _find_satellite_flybys(
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    try:
-        stations_url = STATIONS_URL
-        # Load TLE file - no ephemeris needed for satellite data
-        # Skyfield will cache this file by default
-        satellites = load.tle_file(stations_url)
-        satellite = cast(Any, next(s for s in satellites if s.name == satellite_name))
-    except Exception as e:
-        # Could be network error, or satellite not in file
-        print(f"Could not load TLEs for {satellite_name}: {e}")
+    satellite = _load_satellite(satellite_name)
+    if satellite is None:
         return []
 
     # Find rise/culmination/set events above `rise_altitude_threshold`
@@ -115,30 +119,9 @@ def _find_satellite_flybys(
             continue
 
         # Find rise and set times for this pass at the rise_altitude_threshold
-        rise_time = None
-        set_time = None
-        if i > 0 and events[i - 1] == 0:
-            rise_time = times[i - 1]
-        if i < len(events) - 1 and events[i + 1] == 2:
-            set_time = times[i + 1]
+        rise_time, set_time = _get_pass_times(i, events, times)
 
-        # Check if satellite is sunlit at any point during the pass
-        # where it is at least 2.0 degrees above the horizon.
-        is_sunlit = sat.is_sunlit(eph)
-
-        if not is_sunlit:
-            # Check for sunlight at the 2.0-degree altitude points.
-            t_s_start = ts.utc(culmination_time.utc_datetime() - timedelta(minutes=15))
-            t_s_end = ts.utc(culmination_time.utc_datetime() + timedelta(minutes=15))
-            v_times, v_events = satellite.find_events(
-                topos_observer, t_s_start, t_s_end, altitude_degrees=2.0
-            )
-            for v_t, v_e in zip(v_times, v_events):
-                if v_e in (0, 1, 2) and cast(Any, satellite).at(v_t).is_sunlit(eph):
-                    is_sunlit = True
-                    break
-
-        if not is_sunlit:
+        if not _check_sunlight(satellite, culmination_time, topos_observer, ts, eph):
             continue
 
         # Calculate apparent magnitude

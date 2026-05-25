@@ -14,11 +14,11 @@ class TestSatelliteFlybysMultiple(unittest.TestCase):
         self.start_date = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         self.end_date = self.start_date + timedelta(days=1)
 
-    @patch("apts.skyfield_searches.satellites.load.tle_file")
-    @patch("apts.skyfield_searches.satellites.get_timescale")
-    @patch("apts.skyfield_searches.satellites.planetary.get_skyfield_obj")
-    @patch("apts.skyfield_searches.satellites.get_ephemeris")
-    @patch("apts.skyfield_searches.satellites.calculate_satellite_magnitude")
+    @patch("apts.skyfield_searches.satellites.flybys.load.tle_file")
+    @patch("apts.skyfield_searches.satellites.flybys.get_timescale")
+    @patch("apts.skyfield_searches.satellites.flybys.planetary.get_skyfield_obj")
+    @patch("apts.skyfield_searches.satellites.flybys.get_ephemeris")
+    @patch("apts.skyfield_searches.satellites.flybys.calculate_satellite_magnitude")
     def test_multiple_flybys_detection(
         self, mock_mag, mock_eph, mock_get_obj, mock_ts, mock_tle
     ):
