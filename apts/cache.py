@@ -219,9 +219,9 @@ def get_nasa_comets_data(start_date, end_date) -> "pd.DataFrame":
     nasa_api = NasaAPI(api_key)
     comets = nasa_api.get_comets(start_date, end_date)
     records = []
-    for date in comets["near_earth_objects"]:
+    for date in comets.get("near_earth_objects", {}):
         for comet in comets["near_earth_objects"][date]:
-            if "comet" in comet["name"].lower():
+            if "comet" in comet.get("name", "").lower():
                 records.append(comet)
     return pd.DataFrame(records)
 
