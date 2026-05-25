@@ -61,8 +61,55 @@ class DiscoveryService:
             twilight_end = place.sunrise_time(start_search_from=twilight_start, twilight=Twilight.ASTRONOMICAL)
         twilight_times = (twilight_start, twilight_end) if twilight_start and twilight_end else None
 
-        # Filtering for reasonable visibility (optional optimization)
-        # For now, we'll score everything, but typically you'd filter by magnitude or altitude first
+        # ---------------------------------------------------------------------
+        # Vectorized Bulk Pre-calculations (Optimization)
+        # ---------------------------------------------------------------------
+        import numpy as np
+        from skyfield.api import Star
+        from .objects.utils import vectorized_geometric_imaging_duration
+
+        # 1. Bulk Moon Separation and Altitude
+        t_twilight_sf = t_twilight if isinstance(t_twilight, type(place.ts.now())) else place.ts.utc(t_twilight)
+        observer_at_t = place.observer.at(t_twilight_sf)
+        moon_pos = observer_at_t.observe(place.moon).apparent()
+
+        # Identify Stars for vectorized observation
+        is_star = combined_df["skyfield_object"].apply(lambda x: isinstance(x, Star))
+        stars_df = combined_df[is_star]
+
+        if not stars_df.empty:
+            stars_vector = Star(
+                ra_hours=stars_df["ra_hours"].values.astype(float),
+                dec_degrees=stars_df["dec_degrees"].values.astype(float)
+            )
+            stars_obs = observer_at_t.observe(stars_vector).apparent()
+            combined_df.loc[is_star, "moon_separation"] = moon_pos.separation_from(stars_obs).degrees
+            combined_df.loc[is_star, ObjectTableLabels.ALTITUDE] = stars_obs.altaz()[0].degrees
+
+        # Other objects (moving) - still iterative but few (planets)
+        for idx in combined_df[~is_star].index:
+            obj = combined_df.loc[idx, "skyfield_object"]
+            if obj:
+                obj_obs = observer_at_t.observe(obj).apparent()
+                combined_df.loc[idx, "moon_separation"] = moon_pos.separation_from(obj_obs).degrees
+                combined_df.loc[idx, ObjectTableLabels.ALTITUDE] = obj_obs.altaz()[0].degrees
+
+        # 2. Bulk Imaging Window (for Stars)
+        if twilight_times and not stars_df.empty:
+            # Transit times are needed for geometric duration calculation
+            transits = pd.to_datetime(stars_df[ObjectTableLabels.TRANSIT])
+            durations = vectorized_geometric_imaging_duration(
+                place.lat_decimal,
+                stars_df["ra_hours"].values.astype(float),
+                stars_df["dec_degrees"].values.astype(float),
+                np.ones(len(stars_df), dtype=bool),
+                transits,
+                twilight_times[0].utc_datetime(),
+                twilight_times[1].utc_datetime()
+            )
+            combined_df.loc[is_star, "window_minutes"] = durations
+
+        # ---------------------------------------------------------------------
 
         scored_objects = []
 

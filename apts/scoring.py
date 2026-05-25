@@ -126,32 +126,45 @@ class SuitabilityScorer:
         # Get values from target_row
         try:
             # 1. Altitude
-            skyfield_obj = target_row.get("skyfield_object")
-            if pd.isna(skyfield_obj) or skyfield_obj is None:
-                # Try to reconstruct if missing
-                from .objects import Objects
+            if ObjectTableLabels.ALTITUDE in target_row and pd.notna(target_row[ObjectTableLabels.ALTITUDE]):
+                altitude = float(target_row[ObjectTableLabels.ALTITUDE])
+            else:
+                skyfield_obj = target_row.get("skyfield_object")
+                if pd.isna(skyfield_obj) or skyfield_obj is None:
+                    # Try to reconstruct if missing
+                    from .objects import Objects
 
-                if pd.isna(target_row["ra_hours"]) or pd.isna(
-                    target_row["dec_degrees"]
-                ):
-                    return None
-                skyfield_obj = Objects.fixed_body(
-                    target_row["ra_hours"], target_row["dec_degrees"]
-                )
+                    if pd.isna(target_row["ra_hours"]) or pd.isna(
+                        target_row["dec_degrees"]
+                    ):
+                        return None
+                    skyfield_obj = Objects.fixed_body(
+                        target_row["ra_hours"], target_row["dec_degrees"]
+                    )
 
-            altitude = self.place.get_altitude(skyfield_obj, time)
+                altitude = self.place.get_altitude(skyfield_obj, time)
             s_alt = self.score_altitude(altitude)
 
             # 2. Imaging Window
-            twilight_start = twilight_times[0] if twilight_times else None
-            twilight_end = twilight_times[1] if twilight_times else None
-            window_info = self.place.get_imaging_window(
-                skyfield_obj,
-                target_date=time,
-                astro_twilight_start=twilight_start,
-                astro_twilight_end=twilight_end,
-            )
-            s_win = self.score_imaging_window(window_info["total_minutes"])
+            if "window_minutes" in target_row and pd.notna(target_row["window_minutes"]):
+                total_minutes = float(target_row["window_minutes"])
+            else:
+                skyfield_obj = target_row.get("skyfield_object")
+                if pd.isna(skyfield_obj) or skyfield_obj is None:
+                    from .objects import Objects
+                    skyfield_obj = Objects.fixed_body(
+                        target_row["ra_hours"], target_row["dec_degrees"]
+                    )
+                twilight_start = twilight_times[0] if twilight_times else None
+                twilight_end = twilight_times[1] if twilight_times else None
+                window_info = self.place.get_imaging_window(
+                    skyfield_obj,
+                    target_date=time,
+                    astro_twilight_start=twilight_start,
+                    astro_twilight_end=twilight_end,
+                )
+                total_minutes = window_info["total_minutes"]
+            s_win = self.score_imaging_window(total_minutes)
 
             # 3. FOV Fit
             from .optics.utils import OpticsUtils
@@ -182,9 +195,17 @@ class SuitabilityScorer:
                 s_fov = self.score_fov_fit(fov_ratio)
 
             # 4. Moon Penalty
-            from .utils.planetary import get_moon_separation
-
-            moon_sep = get_moon_separation(skyfield_obj, self.place.observer, time)
+            if "moon_separation" in target_row and pd.notna(target_row["moon_separation"]):
+                moon_sep = float(target_row["moon_separation"])
+            else:
+                from .utils.planetary import get_moon_separation
+                skyfield_obj = target_row.get("skyfield_object")
+                if pd.isna(skyfield_obj) or skyfield_obj is None:
+                    from .objects import Objects
+                    skyfield_obj = Objects.fixed_body(
+                        target_row["ra_hours"], target_row["dec_degrees"]
+                    )
+                moon_sep = get_moon_separation(skyfield_obj, self.place.observer, time)
             s_moon = self.score_moon_penalty(moon_sep)
 
             # 5. Brightness
@@ -201,7 +222,7 @@ class SuitabilityScorer:
                 "s_moon": s_moon,
                 "s_bright": s_bright,
                 "altitude": altitude,
-                "window_minutes": window_info["total_minutes"],
+                "window_minutes": total_minutes,
                 "moon_separation": moon_sep,
             }
             set_cached_score(scorer_id, object_id, timestamp, result)
