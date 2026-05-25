@@ -121,26 +121,31 @@ def get_moon_separation(obj, observer, time):
     return astrometric_obj.separation_from(astrometric_moon).degrees
 
 
-def get_moon_libration(time: Any) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
+def get_moon_libration(
+    time: Any, observer: Any = None
+) -> tuple[float, float] | tuple[np.ndarray, np.ndarray]:
     """
     Returns the Moon's libration in longitude and latitude in degrees.
     Uses the IAU 2015 rotation model for high precision and vectorization.
     Supports both scalar and array Skyfield Time objects.
+    If observer is provided, returns topocentric libration.
     """
     eph = get_ephemeris()
-    earth = eph["earth"]
     moon = eph["moon"]
 
-    # Observation of Earth from Moon center (includes light-time correction)
-    astrometric = cast(Any, moon).at(time).observe(earth).apparent()
-    v_me = astrometric.position.au
+    # Observation of Earth (or observer) from Moon center (includes light-time correction)
+    if observer is None:
+        observer = eph["earth"]
+
+    astrometric = cast(Any, moon).at(time).observe(observer).apparent()
+    v_mo = astrometric.position.au
 
     alpha0, delta0, W = _get_moon_orientation_elements(time)
 
     if hasattr(time, "shape") and time.shape:
-        u_v = v_me / np.linalg.norm(v_me, axis=0)
+        u_v = v_mo / np.linalg.norm(v_mo, axis=0)
     else:
-        u_v = v_me / np.linalg.norm(v_me)
+        u_v = v_mo / np.linalg.norm(v_mo)
 
     # Transformation to selenographic frame
     # x_node = intersection of Moon's equator and ICRS equator

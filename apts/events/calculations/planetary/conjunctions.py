@@ -10,7 +10,9 @@ from ...duration import get_duration
 
 logger = logging.getLogger(__name__)
 
-def calculate_conjunctions(ts, observer, start_date, end_date, executor):
+def calculate_conjunctions(
+    ts, observer, start_date, end_date, executor, precomputed_positions=None
+):
     start_time = time.time()
     events = []
     planets_data = {
@@ -20,33 +22,32 @@ def calculate_conjunctions(ts, observer, start_date, end_date, executor):
     moon_display_name = "Moon"
     moon_obj = planetary.get_skyfield_obj(moon)
 
-    # Pre-compute positions for all bodies involved in conjunctions
-    step = 0.01
-    num_steps = int(
-        (end_date - start_date).total_seconds() / (step * 86400)
-    )
-    if num_steps < 2:
-        num_steps = 2
-    times = ts.linspace(
-        ts.utc(start_date), ts.utc(end_date), num_steps
-    )
+    if precomputed_positions is None:
+        # Pre-compute positions for all bodies involved in conjunctions
+        step = 0.01
+        num_steps = int((end_date - start_date).total_seconds() / (step * 86400))
+        if num_steps < 2:
+            num_steps = 2
+        times = ts.linspace(ts.utc(start_date), ts.utc(end_date), num_steps)
 
-    precomputed = {}
-    obs_at_times = observer.at(times)
+        precomputed = {}
+        obs_at_times = observer.at(times)
 
-    def _observe(name, obj):
-        return name.lower(), obs_at_times.observe(obj)
+        def _observe(name, obj):
+            return name.lower(), obs_at_times.observe(obj)
 
-    # Optimization: Parallelize high-precision observations using the passed executor.
-    # Benchmarking confirms ~2.2x speedup for this pre-computation step.
-    precompute_futures = [
-        executor.submit(_observe, p, obj) for p, obj in planets_data.items()
-    ]
-    precompute_futures.append(executor.submit(_observe, moon, moon_obj))
+        # Optimization: Parallelize high-precision observations using the passed executor.
+        # Benchmarking confirms ~2.2x speedup for this pre-computation step.
+        precompute_futures = [
+            executor.submit(_observe, p, obj) for p, obj in planets_data.items()
+        ]
+        precompute_futures.append(executor.submit(_observe, moon, moon_obj))
 
-    for future in as_completed(precompute_futures):
-        name, pos = future.result()
-        precomputed[name] = pos
+        for future in as_completed(precompute_futures):
+            name, pos = future.result()
+            precomputed[name] = pos
+    else:
+        precomputed = precomputed_positions
 
     futures = {}
 

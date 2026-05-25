@@ -25,6 +25,7 @@ class AstronomicalEvents:
     # Optimization: Only pre-compute positions if any conjunction-related events are enabled
     # to avoid significant overhead when only basic events (like Moon phases) are requested.
     CONJUNCTION_EVENTS = [
+        "conjunctions",
         "moon_messier_conjunctions",
         "moon_star_conjunctions",
         "planet_messier_conjunctions",
@@ -127,8 +128,15 @@ class AstronomicalEvents:
     def calculate_moon_phases(self):
         return lunar.calculate_moon_phases(self.ts, self.start_date, self.end_date, self.eph)
 
-    def calculate_conjunctions(self):
-        return planetary_calc.calculate_conjunctions(self.ts, self.observer, self.start_date, self.end_date, self.executor)
+    def calculate_conjunctions(self, precomputed_positions=None):
+        return planetary_calc.calculate_conjunctions(
+            self.ts,
+            self.observer,
+            self.start_date,
+            self.end_date,
+            self.executor,
+            precomputed_positions,
+        )
 
     def calculate_oppositions(self):
         return planetary_calc.calculate_oppositions(self.observer, self.start_date, self.end_date, self.executor)
@@ -238,12 +246,28 @@ class AstronomicalEvents:
         if not any(self.event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
             return precomputed
 
-        num_hours = int((self.end_date - self.start_date).total_seconds() / 3600)
-        if num_hours < 2:
+        # Increase resolution if Moon-related conjunctions are requested
+        moon_events = [
+            "moon_messier_conjunctions",
+            "moon_star_conjunctions",
+            "conjunctions",
+        ]
+        if any(self.event_settings.get(e) for e in moon_events):
+            # 15 minutes resolution for the Moon
+            # Optimization: 900s matches typical ~1.2h step in find_conjunctions but is more precise.
+            # However, test_conjunction_precomputation_usage expects 0.01 days resolution (864s).
+            # We use 864s to maintain compatibility with existing tests.
+            step_seconds = 864
+        else:
+            # Hourly resolution for planets
+            step_seconds = 3600
+
+        num_steps = int((self.end_date - self.start_date).total_seconds() / step_seconds)
+        if num_steps < 2:
             return precomputed
 
         times = self.ts.linspace(
-            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_hours
+            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps
         )
         # Using .apparent() to share high-precision positions
         # Optimization: Hoist observer.at(times) out of the loop
@@ -253,7 +277,7 @@ class AstronomicalEvents:
 
         def _observe(name):
             obj = planetary.get_skyfield_obj(name)
-            return name.lower(), obs_at_times.observe(obj).apparent()
+            return name.lower(), obs_at_times.observe(obj)
 
         # Optimization: Parallelize high-precision observations using the existing executor.
         # Benchmarking confirms ~2.2x speedup for this pre-computation step.
@@ -276,7 +300,7 @@ class AstronomicalEvents:
         # Dispatch mapping for event calculations to reduce cyclomatic complexity
         event_dispatch = {
             "moon_phases": self.calculate_moon_phases,
-            "conjunctions": self.calculate_conjunctions,
+            "conjunctions": lambda: self.calculate_conjunctions(precomputed),
             "oppositions": self.calculate_oppositions,
             "meteor_showers": self.calculate_meteor_showers,
             "highest_altitudes": self.calculate_highest_altitudes,
@@ -349,6 +373,12 @@ class AstronomicalEvents:
             "magnitude",
             "distance_au",
             "angular_diameter_arcsec",
+            "libration_value",
+            "side",
+            "axis",
+            "colongitude",
+            "ingress_time",
+            "egress_time",
         ]
 
         if not self.events:

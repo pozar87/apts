@@ -151,19 +151,35 @@ class TestAstronomicalEvents(unittest.TestCase):
         events_instance.executor = MagicMock()
         mock_executor_instance = events_instance.executor
 
-        mock_futures = [MagicMock(), MagicMock()]
+        # Pre-computation futures (for the 8 bodies)
+        num_precompute = 8
+        precompute_mock_futures = [MagicMock() for _ in range(num_precompute)]
+        for i, (future, name) in enumerate(
+            zip(
+                precompute_mock_futures,
+                list(planetary.CONJUNCTION_PLANETS.keys()) + ["moon"],
+            )
+        ):
+            future.result.return_value = (name.lower(), MagicMock())
+
+        # Main event futures
+        num_events = 2
+        mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
 
-        mock_executor_instance.submit.side_effect = mock_futures
-        mock_as_completed.return_value = iter(mock_futures)
+        mock_executor_instance.submit.side_effect = precompute_mock_futures + mock_futures
+
+        # as_completed should return precompute futures first, then main event futures
+        mock_as_completed.side_effect = [iter(precompute_mock_futures), iter(mock_futures)]
 
         events_instance.get_events()
 
-        # Check that submit was called only for the selected events
-        self.assertEqual(mock_executor_instance.submit.call_count, 2)
-        mock_as_completed.assert_called_once()
-        self.assertEqual(len(mock_as_completed.call_args[0][0]), 2)
+        # Check that submit was called only for the selected events + precompute
+        self.assertEqual(mock_executor_instance.submit.call_count, num_events + num_precompute)
+        self.assertEqual(mock_as_completed.call_count, 2)
+        # Verify the second call to as_completed was for the 2 main events
+        self.assertEqual(len(mock_as_completed.call_args_list[1][0][0]), num_events)
 
 
 if __name__ == "__main__":
