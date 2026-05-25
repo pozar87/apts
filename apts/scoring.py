@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+import numpy as np
 import pandas as pd
 
 from .cache import get_cached_score, set_cached_score
@@ -89,6 +90,65 @@ class SuitabilityScorer:
             return 4
         else:
             return 1
+
+    def calculate_scores_bulk(self, df):
+        """
+        Vectorized calculation of scores for a DataFrame of targets.
+        Requires 'Altitude', 'window_minutes', 'fov_ratio', 'moon_separation',
+        and 'Magnitude_float' columns.
+        """
+        # 1. Altitude
+        alt = df[ObjectTableLabels.ALTITUDE].to_numpy()
+        s_alt = np.select(
+            [alt >= 65, alt >= 50, alt >= 35, alt >= 20],
+            [30, 25, 18, 10],
+            default=0
+        )
+
+        # 2. Imaging Window
+        hours = df["window_minutes"].to_numpy() / 60.0
+        s_win = np.select(
+            [hours >= 5, hours >= 3, hours >= 2, hours >= 1],
+            [20, 16, 12, 8],
+            default=0
+        )
+
+        # 3. FOV Fit
+        fov = df["fov_ratio"].to_numpy()
+        s_fov = np.select(
+            [(fov >= 30) & (fov <= 110), (fov >= 10) & (fov <= 200)],
+            [30, 18],
+            default=0
+        )
+
+        # 4. Moon Penalty
+        moon_sep = df["moon_separation"].to_numpy()
+        if self.filter_strategy == FilterStrategy.NARROWBAND:
+            s_moon = np.full(len(df), 20)
+        else:
+            s_moon = np.maximum(0, 20 - (moon_sep * 0.22))
+
+        # 5. Brightness
+        mag = df["Magnitude_float"].to_numpy()
+        s_bright = np.select(
+            [mag < 5, mag < 8, mag < 11],
+            [10, 7, 4],
+            default=1
+        )
+
+        total_score = s_alt + s_win + s_fov + s_moon + s_bright
+
+        return pd.DataFrame({
+            "total_score": total_score,
+            "s_alt": s_alt,
+            "s_win": s_win,
+            "s_fov": s_fov,
+            "s_moon": s_moon,
+            "s_bright": s_bright,
+            "altitude": alt,
+            "window_minutes": df["window_minutes"].to_numpy(),
+            "moon_separation": moon_sep,
+        }, index=df.index)
 
     def calculate_total_score(self, target_row, time=None, twilight_times=None):
         """

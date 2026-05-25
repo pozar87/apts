@@ -94,46 +94,86 @@ class DiscoveryService:
                 combined_df.loc[idx, "moon_separation"] = moon_pos.separation_from(obj_obs).degrees
                 combined_df.loc[idx, ObjectTableLabels.ALTITUDE] = obj_obs.altaz()[0].degrees
 
-        # 2. Bulk Imaging Window (for Stars)
-        if twilight_times and not stars_df.empty:
-            # Transit times are needed for geometric duration calculation
-            transits = pd.to_datetime(stars_df[ObjectTableLabels.TRANSIT])
-            durations = vectorized_geometric_imaging_duration(
-                place.lat_decimal,
-                stars_df["ra_hours"].values.astype(float),
-                stars_df["dec_degrees"].values.astype(float),
-                np.ones(len(stars_df), dtype=bool),
-                transits,
-                twilight_times[0].utc_datetime(),
-                twilight_times[1].utc_datetime()
+        # Ensure window_minutes column exists
+        combined_df["window_minutes"] = 0.0
+
+        # 2. Bulk Imaging Window (for Stars and Moving objects)
+        if twilight_times:
+            # Stars
+            if not stars_df.empty:
+                transits = pd.to_datetime(stars_df[ObjectTableLabels.TRANSIT])
+                durations = vectorized_geometric_imaging_duration(
+                    place.lat_decimal,
+                    stars_df["ra_hours"].values.astype(float),
+                    stars_df["dec_degrees"].values.astype(float),
+                    np.ones(len(stars_df), dtype=bool),
+                    transits,
+                    twilight_times[0],
+                    twilight_times[1]
+                )
+                combined_df.loc[is_star, "window_minutes"] = durations
+
+            # Moving objects (planets) - fall back to iterative get_imaging_window but only for planets
+            for idx in combined_df[~is_star].index:
+                obj = combined_df.loc[idx, "skyfield_object"]
+                if obj:
+                    window_info = place.get_imaging_window(
+                        obj,
+                        target_date=t_twilight,
+                        astro_twilight_start=twilight_times[0],
+                        astro_twilight_end=twilight_times[1],
+                    )
+                    combined_df.loc[idx, "window_minutes"] = window_info["total_minutes"]
+
+        # 3. Bulk FOV Fit
+        from .optics.utils import OpticsUtils
+        sensor_size = (
+            equipment_path.output.sensor_width.to("mm").magnitude,
+            equipment_path.output.sensor_height.to("mm").magnitude,
+        )
+        focal_length = (
+            (
+                equipment_path.telescope.focal_length
+                * equipment_path.effective_barlow()
             )
-            combined_df.loc[is_star, "window_minutes"] = durations
+            .to("mm")
+            .magnitude
+        )
+        combined_df["fov_ratio"] = OpticsUtils.calculate_fov_ratio(
+            (combined_df[ObjectTableLabels.SIZE_MAJOR].values, combined_df[ObjectTableLabels.SIZE_MINOR].values),
+            sensor_size,
+            focal_length
+        )
 
         # ---------------------------------------------------------------------
 
+        # 4. Vectorized Scoring
+        scores_df = scorer.calculate_scores_bulk(combined_df)
+
+        # Update combined_df with score results and cleanup names
+        combined_df["Score"] = scores_df["total_score"]
+
+        # Prepare result dictionaries efficiently
+        # Use a vectorized name fallback logic
+        name_fallback = combined_df["Name"].fillna("-").replace({"-": "", "nan": ""})
+        is_missing_name = (name_fallback == "")
+        if is_missing_name.any():
+            fallback_values = combined_df["Messier"].fillna(combined_df["NGC"]).fillna("Unknown")
+            combined_df.loc[is_missing_name, "Name"] = fallback_values[is_missing_name]
+
+        # Convert to final results list
+        results_df = combined_df.sort_values("Score", ascending=False).head(limit)
+
         scored_objects = []
+        for idx, row in results_df.iterrows():
+            scored_objects.append({
+                "Name": row["Name"],
+                "Type": row[ObjectTableLabels.DSO_TYPE],
+                "Score": row["Score"],
+                "Details": scores_df.loc[idx].to_dict()
+            })
 
-        for _, row in combined_df.iterrows():
-            score_data = scorer.calculate_total_score(row, time=date, twilight_times=twilight_times)
-            if score_data:
-                name = row.get("Name")
-                # Some Messier objects have Name = "-" (no common name).
-                # Fall back to the Messier or NGC identifier so we never
-                # show "Unknown" in the UI and links remain functional.
-                if not name or str(name).strip() in ("-", "", "nan"):
-                    name = row.get("Messier") or row.get("NGC") or "Unknown"
-                obj_info = {
-                    "Name": name,
-                    "Type": row.get(ObjectTableLabels.DSO_TYPE),
-                    "Score": score_data["total_score"],
-                    "Details": score_data,
-                }
-                scored_objects.append(obj_info)
-
-        # Sort by Score descending
-        scored_objects.sort(key=lambda x: x["Score"], reverse=True)
-
-        return scored_objects[:limit]
+        return scored_objects
 
 
 class TimelineGenerator:

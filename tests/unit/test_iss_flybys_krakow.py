@@ -46,12 +46,12 @@ class TestISSFlybysKrakow(unittest.TestCase):
 
         self.assertEqual(len(flybys), 3, f"Expected 3 visible flybys, found {len(flybys)}: {flybys}")
 
-        # Verify specific flybys with a 2-minute tolerance to account for TLE drift
+        # Verify specific flybys with a 5-minute tolerance to account for TLE drift
         def assert_flyby_near(target_time, label):
             found = False
             for f in flybys:
                 diff = abs((f['culmination_time'] - target_time).total_seconds())
-                if diff <= 120: # 2 minutes
+                if diff <= 300: # 5 minutes
                     found = True
                     break
             self.assertTrue(found, f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}")

@@ -2,6 +2,8 @@ import functools
 import operator
 from typing import TYPE_CHECKING, Any, Sequence, Union, cast
 
+import numpy as np
+
 if TYPE_CHECKING:
     from pint import Quantity
     from ..opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
@@ -115,8 +117,6 @@ class OpticsUtils:
         sensor_size: tuple (width, height) in mm
         focal_length: focal length in mm
         """
-        import numpy as np
-
         # Handle potential pint.Quantity objects in object_size
         obj_major_arcmin = (
             object_size[0].magnitude
@@ -129,6 +129,14 @@ class OpticsUtils:
             else object_size[1]
         )
 
+        # Convert to float and handle None/NaN
+        if hasattr(obj_major_arcmin, "__iter__") and not isinstance(obj_major_arcmin, (str, bytes)):
+            obj_major_arcmin = np.array(obj_major_arcmin, dtype=float)
+            obj_minor_arcmin = np.array(obj_minor_arcmin, dtype=float)
+        else:
+            obj_major_arcmin = float(obj_major_arcmin or 0)
+            obj_minor_arcmin = float(obj_minor_arcmin or 0)
+
         obj_major_deg = obj_major_arcmin / 60.0
         obj_minor_deg = obj_minor_arcmin / 60.0
 
@@ -140,4 +148,4 @@ class OpticsUtils:
         ratio_h = obj_minor_deg / fov_h_deg
 
         # Use the maximum ratio to ensure it's not "clipped"
-        return max(ratio_w, ratio_h) * 100.0
+        return np.maximum(ratio_w, ratio_h) * 100.0
