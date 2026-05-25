@@ -180,16 +180,31 @@ def vectorized_geometric_imaging_duration(
     setting_times = (transits + H_delta).dt.floor("s")
 
     # Ensure all inputs are localized to UTC for comparison
-    dark_start_ts = pd.Timestamp(dark_start).tz_localize(None)
-    dark_end_ts = pd.Timestamp(dark_end).tz_localize(None)
+    def to_utc_naive(dt):
+        if hasattr(dt, "utc_datetime"):
+            dt = dt.utc_datetime()
+        ts = pd.Timestamp(dt)
+        if ts.tz is not None:
+            return ts.tz_convert(None)
+        return ts
+
+    dark_start_ts = to_utc_naive(dark_start)
+    dark_end_ts = to_utc_naive(dark_end)
 
     # Function to intersect [rise, set] with [dark_start, dark_end]
     # We use vectorized pandas/numpy operations
     rises_utc = rising_times.dt.tz_localize(None)
     sets_utc = setting_times.dt.tz_localize(None)
 
-    win_starts = np.maximum(rises_utc, dark_start_ts)
-    win_ends = np.minimum(sets_utc, dark_end_ts)
+    # Ensure index preservation for correct assignment back to DataFrame
+    win_starts = pd.Series(
+        np.maximum(rises_utc.values, dark_start_ts.to_datetime64()),
+        index=transits.index
+    )
+    win_ends = pd.Series(
+        np.minimum(sets_utc.values, dark_end_ts.to_datetime64()),
+        index=transits.index
+    )
 
     durations = (win_ends - win_starts).dt.total_seconds() / 60.0
     # Set negative durations (never above threshold during darkness) to 0
