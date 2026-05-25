@@ -106,9 +106,15 @@ def calculate_nasa_comets(start_date, end_date):
     events = []
     try:
         comets = cache.get_nasa_comets_data(start_date, end_date)
-        for name, close_approach_data in zip(
-            comets["name"], comets["close_approach_data"]
-        ):
+        if comets.empty:
+            return []
+
+        for _, row in comets.iterrows():
+            name = row.get("name", "Unknown Comet")
+            close_approach_data = row.get("close_approach_data", [])
+            if not close_approach_data:
+                continue
+
             event_data = {
                 "date": parse_date(
                     close_approach_data[0]["close_approach_date_full"]  # type: ignore
