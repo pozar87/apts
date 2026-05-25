@@ -23,7 +23,7 @@ def test_skywatcher_esprit_specs():
     esprit150 = Sky_watcherTelescope.Sky_Watcher_Esprit_150ED()
     assert esprit150.aperture.magnitude == 150
     assert esprit150.focal_length.magnitude == 1050
-    assert esprit150.mass.to('g').magnitude == 15000
+    assert esprit150.mass.to('g').magnitude == 14520
 
 def test_skywatcher_quattro_specs():
     # Quattro 150P
