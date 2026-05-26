@@ -117,25 +117,52 @@ class OpticsUtils:
         sensor_size: tuple (width, height) in mm
         focal_length: focal length in mm
         """
-        # Handle potential pint.Quantity objects in object_size
-        obj_major_arcmin = (
-            object_size[0].magnitude
-            if hasattr(object_size[0], "magnitude")
-            else object_size[0]
-        )
-        obj_minor_arcmin = (
-            object_size[1].magnitude
-            if hasattr(object_size[1], "magnitude")
-            else object_size[1]
-        )
 
-        # Convert to float and handle None/NaN
-        if hasattr(obj_major_arcmin, "__iter__") and not isinstance(obj_major_arcmin, (str, bytes)):
-            obj_major_arcmin = np.array(obj_major_arcmin, dtype=float)
-            obj_minor_arcmin = np.array(obj_minor_arcmin, dtype=float)
-        else:
-            obj_major_arcmin = float(obj_major_arcmin or 0)
-            obj_minor_arcmin = float(obj_minor_arcmin or 0)
+        def _get_magnitude(data):
+            if hasattr(data, "to"):
+                # It's a Quantity (scalar or array-wrapped)
+                return data.to("arcminute").magnitude
+            if isinstance(data, (np.ndarray, list, tuple)):
+                # If we have a list of Quantities, np.array() might try to be too smart
+                # and fail if they are heterogeneous or have different units.
+                # Let's handle it by checking if it's a list/tuple and converting elements
+                if isinstance(data, (list, tuple)):
+                    # Check if any element is a Quantity
+                    if any(hasattr(v, "to") for v in data):
+                        return np.array(
+                            [
+                                (
+                                    v.to("arcminute").magnitude
+                                    if hasattr(v, "to")
+                                    else float(v or 0)
+                                )
+                                for v in data
+                            ],
+                            dtype=float,
+                        )
+
+                data_array = np.array(data)
+                # Check if it contains Quantities (object dtype)
+                if data_array.dtype == object and len(data_array) > 0:
+                    # Check first element to see if it's a Quantity
+                    if hasattr(data_array[0], "to"):
+                        return np.array(
+                            [
+                                (
+                                    v.to("arcminute").magnitude
+                                    if hasattr(v, "to")
+                                    else float(v or 0)
+                                )
+                                for v in data_array
+                            ],
+                            dtype=float,
+                        )
+                return data_array.astype(float)
+            return float(data or 0)
+
+        # Handle potential pint.Quantity objects in object_size
+        obj_major_arcmin = _get_magnitude(object_size[0])
+        obj_minor_arcmin = _get_magnitude(object_size[1])
 
         obj_major_deg = obj_major_arcmin / 60.0
         obj_minor_deg = obj_minor_arcmin / 60.0
