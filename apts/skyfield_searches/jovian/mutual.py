@@ -52,6 +52,12 @@ class JovianMutualState:
         # Returns: 0: None, 1: m1 occults m2, 2: m2 occults m1,
         # 3: m1 eclipses m2, 4: m2 eclipses m1
         is_array = hasattr(t, "shape") and t.shape != ()
+
+        # Optimized: Early return if Jupiter is not visible
+        visible = self.ctx.get_visibility(t)
+        if not np.any(visible):
+            return np.zeros(len(t) if is_array else 1, dtype=int)
+
         res = np.zeros(len(t) if is_array else 1, dtype=int)
 
         # 1. Earth perspective (Occultations)
@@ -77,24 +83,38 @@ class JovianMutualState:
         ecl = sep_s < (r1_s + r2_s)
         m1_caster = m1_s.distance().km < m2_s.distance().km
 
-        visible = self.ctx.get_visibility(t)
-
         if is_array:
             res[visible & occ & m1_front] = 1
             res[visible & occ & ~m1_front] = 2
             res[visible & ecl & m1_caster] = 3
             res[visible & ecl & ~m1_caster] = 4
         else:
-            v_val = visible if np.isscalar(visible) else (visible[0] if visible.size > 0 else False)
+            v_val = (
+                visible
+                if np.isscalar(visible)
+                else (visible[0] if visible.size > 0 else False)
+            )
             if v_val:
-                occ_val = occ if np.isscalar(occ) else (occ[0] if occ.size > 0 else False)
+                occ_val = (
+                    occ if np.isscalar(occ) else (occ[0] if occ.size > 0 else False)
+                )
                 if occ_val:
-                    m1f_val = m1_front if np.isscalar(m1_front) else (m1_front[0] if m1_front.size > 0 else False)
+                    m1f_val = (
+                        m1_front
+                        if np.isscalar(m1_front)
+                        else (m1_front[0] if m1_front.size > 0 else False)
+                    )
                     res[0] = 1 if m1f_val else 2
                 else:
-                    ecl_val = ecl if np.isscalar(ecl) else (ecl[0] if ecl.size > 0 else False)
+                    ecl_val = (
+                        ecl if np.isscalar(ecl) else (ecl[0] if ecl.size > 0 else False)
+                    )
                     if ecl_val:
-                        m1c_val = m1_caster if np.isscalar(m1_caster) else (m1_caster[0] if m1_caster.size > 0 else False)
+                        m1c_val = (
+                            m1_caster
+                            if np.isscalar(m1_caster)
+                            else (m1_caster[0] if m1_caster.size > 0 else False)
+                        )
                         res[0] = 3 if m1c_val else 4
         return res
 

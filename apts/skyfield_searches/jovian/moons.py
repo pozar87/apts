@@ -39,12 +39,16 @@ def find_jovian_moon_events(observer, start_date, end_date):
             All gated by visibility.
             """
             is_array = hasattr(t, "shape") and t.shape != ()
+
+            # Visibility check (cached in ctx)
+            # Optimized: Early return if Jupiter is not visible
+            visible = ctx.get_visibility(t)
+            if not np.any(visible):
+                return np.zeros(len(t) if is_array else 1, dtype=int)
+
             data = ctx.get_basic_data(t)
             j_obs = data["j_obs"]
             m_obs = ctx.get_moon_obs(t, moon_id)
-
-            # Visibility check (cached in ctx)
-            visible = ctx.get_visibility(t)
 
             # Vector from Jupiter to Moon
             p_m = m_obs.position.km - j_obs.position.km
@@ -56,12 +60,13 @@ def find_jovian_moon_events(observer, start_date, end_date):
 
             # Earth perspective (Transits and Occultations)
             p_j_e = -j_obs.position.km
+            d_j_e = j_obs.distance().km
             if is_array:
-                u_e = p_j_e / np.linalg.norm(p_j_e, axis=0)
+                u_e = p_j_e / d_j_e
                 # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0)
                 p_m_u_e = np.einsum("ij,ij->j", p_m, u_e)
             else:
-                u_e = p_j_e / np.linalg.norm(p_j_e)
+                u_e = p_j_e / d_j_e
                 p_m_u_e = np.dot(p_m, u_e)
 
             in_projection_e = is_inside_ellipsoid_projection(p_m, u_e, z_pole, re, rp)
@@ -70,12 +75,13 @@ def find_jovian_moon_events(observer, start_date, end_date):
 
             # Sun perspective (Shadows and Eclipses)
             p_j_s = data["sun_from_j"].position.km
+            d_j_s = data["sun_from_j"].distance().km
             if is_array:
-                u_s = p_j_s / np.linalg.norm(p_j_s, axis=0)
+                u_s = p_j_s / d_j_s
                 # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0)
                 p_m_u_s = np.einsum("ij,ij->j", p_m, u_s)
             else:
-                u_s = p_j_s / np.linalg.norm(p_j_s)
+                u_s = p_j_s / d_j_s
                 p_m_u_s = np.dot(p_m, u_s)
 
             in_projection_s = is_inside_ellipsoid_projection(p_m, u_s, z_pole, re, rp)

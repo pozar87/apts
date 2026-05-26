@@ -56,13 +56,29 @@ class JovianSearchContext:
             return (t.tt[0], t.tt[-1], len(t.tt))
         return t.tt
 
-    def get_basic_data(self, t):
+    def _get_entry(self, t):
+        """Internal helper to get or create a cache entry."""
         key = self._get_time_key(t)
         if key not in self._cache:
-            j_obs = (
-                self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
-            )
-            s_obs = self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
+            self._cache[key] = {"moons": {}, "moons_sun": {}}
+        return self._cache[key]
+
+    def get_basic_data(self, t):
+        data = self._get_entry(t)
+        if "z_pole" not in data:
+            # Ensure apparent positions are available
+            if "j_obs" not in data:
+                data["j_obs"] = (
+                    self.observer.at(t)
+                    .observe(self.jupiter)
+                    .apparent(deflectors=(10, 599))
+                )
+            if "s_obs" not in data:
+                data["s_obs"] = (
+                    self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
+                )
+
+            j_obs = data["j_obs"]
             t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
             sun_from_j = (
                 self.jupiter.at(t_emitted)
@@ -84,30 +100,41 @@ class JovianSearchContext:
                 ]
             )
 
-            self._cache[key] = {
-                "j_obs": j_obs,
-                "s_obs": s_obs,
-                "t_emitted": t_emitted,
-                "sun_from_j": sun_from_j,
-                "z_pole": z_pole,
-                "moons": {},
-                "moons_sun": {},
-            }
-        return self._cache[key]
+            data["t_emitted"] = t_emitted
+            data["sun_from_j"] = sun_from_j
+            data["z_pole"] = z_pole
+
+        return data
 
     def get_visibility(self, t):
         """
         Calculates and caches Jupiter visibility (altitude, sun altitude, elongation).
+        Uses a coarse geocentric check first to avoid expensive apparent() calls.
         """
-        data = self.get_basic_data(t)
+        data = self._get_entry(t)
         if "visible" not in data:
             is_array = hasattr(t, "shape") and t.shape != ()
             # Special elevation -9999 bypasses topocentric checks for global indexing
             if self.elevation == -9999:
                 data["visible"] = np.ones(len(t) if is_array else 1, dtype=bool)
             else:
+                # High-precision checks
+                if "j_obs" not in data:
+                    data["j_obs"] = (
+                        self.observer.at(t)
+                        .observe(self.jupiter)
+                        .apparent(deflectors=(10, 599))
+                    )
+                if "s_obs" not in data:
+                    data["s_obs"] = (
+                        self.observer.at(t)
+                        .observe(self.sun)
+                        .apparent(deflectors=(10, 599))
+                    )
+
                 j_obs = data["j_obs"]
                 s_obs = data["s_obs"]
+
                 alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
                 sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[
                     0
