@@ -43,13 +43,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             j_obs = data["j_obs"]
             m_obs = ctx.get_moon_obs(t, moon_id)
 
-            # Visibility check
-            alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-            sun_alt = data["s_obs"].altaz(temperature_C=10.0, pressure_mbar=1013.25)[
-                0
-            ].degrees
-            elongation = j_obs.separation_from(data["s_obs"]).degrees
-            visible = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
+            # Visibility check (cached in ctx)
+            visible = ctx.get_visibility(t)
 
             # Vector from Jupiter to Moon
             p_m = m_obs.position.km - j_obs.position.km
@@ -63,7 +58,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             p_j_e = -j_obs.position.km
             if is_array:
                 u_e = p_j_e / np.linalg.norm(p_j_e, axis=0)
-                p_m_u_e = np.sum(p_m * u_e, axis=0)
+                # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0)
+                p_m_u_e = np.einsum("ij,ij->j", p_m, u_e)
             else:
                 u_e = p_j_e / np.linalg.norm(p_j_e)
                 p_m_u_e = np.dot(p_m, u_e)
@@ -76,7 +72,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
             p_j_s = data["sun_from_j"].position.km
             if is_array:
                 u_s = p_j_s / np.linalg.norm(p_j_s, axis=0)
-                p_m_u_s = np.sum(p_m * u_s, axis=0)
+                # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0)
+                p_m_u_s = np.einsum("ij,ij->j", p_m, u_s)
             else:
                 u_s = p_j_s / np.linalg.norm(p_j_s)
                 p_m_u_s = np.dot(p_m, u_s)
