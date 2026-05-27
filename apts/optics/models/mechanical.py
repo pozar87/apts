@@ -22,6 +22,9 @@ class MechanicalMixIn:
         from ...opticalequipment.naked_eye import NakedEye
         from ...opticalequipment.smart_telescope import SmartTelescope
 
+        if hasattr(self, "_path") and self._path is not None:
+            return ", ".join([str(item) for item in self._path])
+
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
             return str(self.telescope)
         return ", ".join(

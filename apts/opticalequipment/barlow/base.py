@@ -28,12 +28,14 @@ class Barlow(OpticalEquipment):
         map_conn(entry.get("cside_thread"))
         cg = map_gender(entry.get("cside_gender"))
         mag = extract_number(name, prefix="x") or 2.0
+        t2_out = entry.get("t2_output", False)
         return cls(
             mag,
             vendor=vendor,
             connection_type=tt,
             in_gender=tg or Gender.MALE,
             out_gender=cg or Gender.FEMALE,
+            t2_output=t2_out,
             mass=mass,
             optical_length=ol,
         )
