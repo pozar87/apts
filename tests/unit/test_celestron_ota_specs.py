@@ -18,6 +18,14 @@ class TestCelestronOTASpecs(unittest.TestCase):
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 114)
         self.assertEqual(scope.mass.to('gram').magnitude, 20410)
 
+    def test_nexstar_4se_specs(self):
+        scope = CelestronTelescope.Celestron_NexStar_4SE()
+        self.assertEqual(scope.get_vendor(), "Celestron NexStar 4SE")
+        self.assertEqual(scope.aperture.to('mm').magnitude, 102)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 1325)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 35)
+        self.assertEqual(scope.mass.to('gram').magnitude, 2722)
+
     def test_c6_ota_specs(self):
         scope = CelestronTelescope.Celestron_C6_OTA()
         self.assertEqual(scope.get_vendor(), "Celestron C6 OTA")
