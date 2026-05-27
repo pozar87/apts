@@ -68,6 +68,10 @@ class AstronomicalEvents:
             self.ts, self.observer, self.start_date, self.end_date
         )
 
+    @property
+    def CONJUNCTION_EVENTS(self):
+        return self.precomputation_engine.CONJUNCTION_EVENTS
+
     def shutdown(self):
         self.executor.shutdown(wait=True)
 
@@ -265,11 +269,11 @@ class AstronomicalEvents:
         }
 
         for event_key, func in event_dispatch.items():
-            if self.settings_manager.is_enabled(event_key):
+            if self.event_settings.get(event_key):
                 futures.append(executor.submit(func))
 
         # Handle special cases for golden_hour and blue_hour which share a function
-        if self.settings_manager.is_enabled("golden_hour") or self.settings_manager.is_enabled("blue_hour"):
+        if self.event_settings.get("golden_hour") or self.event_settings.get("blue_hour"):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
 
         for future in as_completed(futures):
