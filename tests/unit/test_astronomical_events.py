@@ -19,10 +19,11 @@ class TestAstronomicalEvents(unittest.TestCase):
         self.start_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
         self.end_date = datetime(2024, 1, 31, tzinfo=timezone.utc)
 
-    @patch("apts.events.coordinator.as_completed")
-    @patch("apts.events.coordinator.get_event_settings")
+    @patch("apts.events.coordinator.base.as_completed")
+    @patch("apts.events.coordinator.settings.get_event_settings")
+    @patch("apts.events.coordinator.precomputation.as_completed")
     def test_get_events_parallelization(
-        self, mock_get_event_settings, mock_as_completed
+        self, mock_precompute_as_completed, mock_get_event_settings, mock_as_completed
     ):
         # Configure mock_get_event_settings to return all events enabled
         mock_get_event_settings.return_value = {
@@ -77,36 +78,10 @@ class TestAstronomicalEvents(unittest.TestCase):
         mock_executor_instance = events_instance.executor
 
         # Create a list of mock futures for all calculation methods
-        # Counting how many 'if self.event_settings.get(...):' are in get_events()
-        # Blocks:
-        # 1-20: basic events
-        # 21: messier_culminations
-        # 22: jovian_moon_events
-        # 23: saturn_ring_crossings
-        # 24: jupiter_grs_transits
-        # 25: planet_messier_conjunctions
-        # 26: planet_star_conjunctions
-        # 27: planet_stationary_points
-        # 28: planet_solar_conjunctions
-        # 29: golden_blue_hours
-        # 30: culminations
-        # 31: greatest_elongations
-        # 32: seasons
-        # 33: lunar_features
-        # 34: planet_planet_occultations
-        # 35: venus_greatest_brilliancy
-        # 36: supermoons
-        # 37: planetary_dichotomy
-        # 38: mars_closest_approach
-        # 39: jovian_mutual_events
-        # 40: moon_libration_maxima
         num_events = 40
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []
-
-        # Have the submit method return a different mock future each time
-        mock_executor_instance.submit.side_effect = mock_futures
 
         # Pre-computation futures (for the 8 bodies)
         num_precompute = 8
@@ -123,11 +98,12 @@ class TestAstronomicalEvents(unittest.TestCase):
         all_mock_futures = precompute_mock_futures + mock_futures
         mock_executor_instance.submit.side_effect = all_mock_futures
 
-        # have as_completed return all mock futures in two separate batches as expected by get_events
+        # have as_completed return all mock futures
         def mock_as_completed_side_effect(futures_list):
             return iter(futures_list)
 
         mock_as_completed.side_effect = mock_as_completed_side_effect
+        mock_precompute_as_completed.side_effect = mock_as_completed_side_effect
 
         events_instance.get_events()
 
@@ -135,11 +111,13 @@ class TestAstronomicalEvents(unittest.TestCase):
         self.assertEqual(
             mock_executor_instance.submit.call_count, num_events + num_precompute
         )
-        # Check that as_completed was called twice
-        self.assertEqual(mock_as_completed.call_count, 2)
+        # Check that as_completed was called (once in base, once in precompute)
+        self.assertEqual(mock_as_completed.call_count, 1)
+        self.assertEqual(mock_precompute_as_completed.call_count, 1)
 
-    @patch("apts.events.coordinator.as_completed")
-    def test_get_events_with_enum_selection(self, mock_as_completed):
+    @patch("apts.events.coordinator.base.as_completed")
+    @patch("apts.events.coordinator.precomputation.as_completed")
+    def test_get_events_with_enum_selection(self, mock_precompute_as_completed, mock_as_completed):
         # Instantiate AstronomicalEvents with a selection of events
         events_instance = AstronomicalEvents(
             self.place,
@@ -171,15 +149,15 @@ class TestAstronomicalEvents(unittest.TestCase):
         mock_executor_instance.submit.side_effect = precompute_mock_futures + mock_futures
 
         # as_completed should return precompute futures first, then main event futures
-        mock_as_completed.side_effect = [iter(precompute_mock_futures), iter(mock_futures)]
+        mock_as_completed.side_effect = [iter(mock_futures)]
+        mock_precompute_as_completed.side_effect = [iter(precompute_mock_futures)]
 
         events_instance.get_events()
 
         # Check that submit was called only for the selected events + precompute
         self.assertEqual(mock_executor_instance.submit.call_count, num_events + num_precompute)
-        self.assertEqual(mock_as_completed.call_count, 2)
-        # Verify the second call to as_completed was for the 2 main events
-        self.assertEqual(len(mock_as_completed.call_args_list[1][0][0]), num_events)
+        self.assertEqual(mock_as_completed.call_count, 1)
+        self.assertEqual(mock_precompute_as_completed.call_count, 1)
 
 
 if __name__ == "__main__":

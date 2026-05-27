@@ -7,31 +7,25 @@ from typing import List, Optional
 import pandas as pd
 from skyfield.api import Topos
 
-from ..cache import get_ephemeris, get_timescale
-from ..catalogs import Catalogs
-from ..config import get_event_settings
-from ..constants.event_types import EventType
-from ..utils import planetary
-from .rarity import get_rarity
-from .duration import get_duration
-from .translator import translate_events
-from .calculations import lunar, planetary as planetary_calc, space, sky
+from ...cache import get_ephemeris, get_timescale
+from ...catalogs import Catalogs
+from ...constants.event_types import EventType
+from ..rarity import get_rarity
+from ..duration import get_duration
+from ..translator import translate_events
+from ..calculations import lunar, planetary as planetary_calc, space, sky
+
+from .settings import EventSettingsManager
+from .precomputation import PrecomputationEngine
 
 logger = logging.getLogger(__name__)
 
 utc = timezone.utc
 
 class AstronomicalEvents:
-    # Optimization: Only pre-compute positions if any conjunction-related events are enabled
-    # to avoid significant overhead when only basic events (like Moon phases) are requested.
-    CONJUNCTION_EVENTS = [
-        "conjunctions",
-        "moon_messier_conjunctions",
-        "moon_star_conjunctions",
-        "planet_messier_conjunctions",
-        "planet_star_conjunctions",
-        "planetary_dichotomy",
-    ]
+    """
+    Coordinates the calculation of various astronomical events.
+    """
 
     def __init__(
         self,
@@ -51,8 +45,8 @@ class AstronomicalEvents:
             )
 
         self.place = place
-        self.start_date = start_date.astimezone(utc)  # Ensure start_date is UTC
-        self.end_date = end_date.astimezone(utc)  # Ensure end_date is UTC
+        self.start_date = start_date.astimezone(utc)
+        self.end_date = end_date.astimezone(utc)
         self.ts = get_timescale()
         self.eph = get_ephemeris()
         self.observer = self.eph["earth"] + Topos(
@@ -61,48 +55,26 @@ class AstronomicalEvents:
             elevation_m=self.place.elevation,
         )
         self.events = []
-        # Load global settings from config
-        config_settings = get_event_settings()
 
-        # Default settings: most are True, some expensive ones are False
-        self.event_settings = {event.value: True for event in EventType}
-        # Disable expensive events by default
-        self.event_settings["golden_hour"] = False
-        self.event_settings["blue_hour"] = False
-        self.event_settings["culminations"] = False
-        self.event_settings["jovian_moon_events"] = False
-
-        # Override with config settings if present
-        for key, value in config_settings.items():
-            if key in self.event_settings:
-                self.event_settings[key] = value
-
-        logger.debug(
-            f"AstronomicalEvents initialized. Config-based settings: {self.event_settings}"
-        )
-
-        if events_to_calculate is not None:
-            # If a list of events is provided, it should explicitly enable those
-            # but ONLY if they are not explicitly disabled in config.
-            # This allows tests to force-enable events (as they have no config)
-            # while respecting user settings in real environments.
-            events_to_calculate_str = [str(e) for e in events_to_calculate]
-            logger.debug(f"Limiting to events_to_calculate: {events_to_calculate_str}")
-            new_settings = {event.value: False for event in EventType}
-            for e_str in events_to_calculate_str:
-                # Use config if present, otherwise default to True for the requested event
-                new_settings[e_str] = config_settings.get(e_str, True)
-            self.event_settings = new_settings
-            logger.debug(f"Final event_settings after override: {self.event_settings}")
+        # Modularized configuration management
+        self.settings_manager = EventSettingsManager(events_to_calculate)
+        self.event_settings = self.settings_manager.get_all()
 
         self.executor = ThreadPoolExecutor()
         self.catalogs = Catalogs()
+
+        # Modularized pre-computation
+        self.precomputation_engine = PrecomputationEngine(
+            self.ts, self.observer, self.start_date, self.end_date
+        )
 
     def shutdown(self):
         self.executor.shutdown(wait=True)
 
     def translate_events(self, df: pd.DataFrame) -> pd.DataFrame:
         return translate_events(df)
+
+    # region Calculation Wrappers (Maintained for backward compatibility)
 
     def calculate_venus_greatest_brilliancy(self):
         return planetary_calc.calculate_venus_greatest_brilliancy(self.observer, self.start_date, self.end_date)
@@ -231,6 +203,8 @@ class AstronomicalEvents:
     def calculate_jovian_mutual_events(self):
         return planetary_calc.calculate_jovian_mutual_events(self.observer, self.start_date, self.end_date)
 
+    # endregion
+
     def _get_rarity(self, event_type: str, data: dict) -> int:
         return get_rarity(event_type, data)
 
@@ -238,57 +212,7 @@ class AstronomicalEvents:
         return get_duration(event_type, data)
 
     def _precompute_positions(self):
-        """
-        Pre-compute positions for moving bodies often used in multiple searches
-        to improve overall calculation efficiency.
-        """
-        precomputed = {}
-        if not any(self.event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
-            return precomputed
-
-        # Increase resolution if Moon-related conjunctions are requested
-        moon_events = [
-            "moon_messier_conjunctions",
-            "moon_star_conjunctions",
-            "conjunctions",
-        ]
-        if any(self.event_settings.get(e) for e in moon_events):
-            # 15 minutes resolution for the Moon
-            # Optimization: 900s matches typical ~1.2h step in find_conjunctions but is more precise.
-            # However, test_conjunction_precomputation_usage expects 0.01 days resolution (864s).
-            # We use 864s to maintain compatibility with existing tests.
-            step_seconds = 864
-        else:
-            # Hourly resolution for planets
-            step_seconds = 3600
-
-        num_steps = int((self.end_date - self.start_date).total_seconds() / step_seconds)
-        if num_steps < 2:
-            return precomputed
-
-        times = self.ts.linspace(
-            self.ts.utc(self.start_date), self.ts.utc(self.end_date), num_steps
-        )
-        # Using .apparent() to share high-precision positions
-        # Optimization: Hoist observer.at(times) out of the loop
-        obs_at_times = self.observer.at(times)
-
-        bodies_to_precompute = list(planetary.CONJUNCTION_PLANETS.keys()) + ["moon"]
-
-        def _observe(name):
-            obj = planetary.get_skyfield_obj(name)
-            return name.lower(), obs_at_times.observe(obj)
-
-        # Optimization: Parallelize high-precision observations using the existing executor.
-        # Benchmarking confirms ~2.2x speedup for this pre-computation step.
-        precompute_futures = [
-            self.executor.submit(_observe, name) for name in bodies_to_precompute
-        ]
-        for future in as_completed(precompute_futures):
-            name, pos = future.result()
-            precomputed[name] = pos
-
-        return precomputed
+        return self.precomputation_engine.precompute_positions(self.event_settings, self.executor)
 
     def get_events(self):
         start_time = time.time()
@@ -341,11 +265,11 @@ class AstronomicalEvents:
         }
 
         for event_key, func in event_dispatch.items():
-            if self.event_settings.get(event_key):
+            if self.settings_manager.is_enabled(event_key):
                 futures.append(executor.submit(func))
 
         # Handle special cases for golden_hour and blue_hour which share a function
-        if self.event_settings.get("golden_hour") or self.event_settings.get("blue_hour"):
+        if self.settings_manager.is_enabled("golden_hour") or self.settings_manager.is_enabled("blue_hour"):
             futures.append(executor.submit(self.calculate_golden_blue_hours))
 
         for future in as_completed(futures):
