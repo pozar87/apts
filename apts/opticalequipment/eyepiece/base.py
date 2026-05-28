@@ -78,7 +78,7 @@ class Eyepiece(OutputOpticalEquipment):
         Register ocular in optical equipment graph. Ocular node is build out of two vertices:
         ocular node and its input. Ocular node is automatically connected with output IMAGE node.
         """
-        super()._register(equipment)
+        super().register(equipment)
         equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
     def __str__(self):

@@ -6,6 +6,9 @@ from apts.opticalequipment.diagonal import Diagonal
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.oag import OAG
+from apts.opticalequipment.smart_telescope import SmartTelescope
+from apts.opticalequipment.filter_wheel import FilterWheel
+from apts.opticalequipment.filter import Filter
 from apts.utils import ConnectionType, Gender
 from apts.constants import GraphConstants
 
@@ -71,6 +74,52 @@ class TestEquipmentConnections(unittest.TestCase):
         self.assertEqual(len(imaging_paths), 1) # Telescope (T2) -> Camera
         self.assertEqual(imaging_paths[0].output, cam)
         self.assertEqual(imaging_paths[0].telescope, t)
+
+    def test_smart_telescope_no_connections(self):
+        # Smart telescope should be a closed system
+        st = SmartTelescope(30, 160, 30, 20, 3840, 2160, "ZWO Seestar")
+        # An eyepiece that should NOT be able to connect
+        ep = Eyepiece(20, "Test Eyepiece", connection_type=ConnectionType.F_1_25)
+
+        e = Equipment()
+        e.register(st)
+        e.register(ep)
+
+        # Verify no visual paths through Seestar
+        visual_paths = e._get_paths(GraphConstants.EYE_ID)
+        # Only NakedEye should be present
+        self.assertEqual(len(visual_paths), 1)
+        self.assertTrue(any("Naked Eye" in path.label() for path in visual_paths))
+
+        # Verify Seestar imaging path
+        imaging_paths = e._get_paths(GraphConstants.IMAGE_ID)
+        self.assertEqual(len(imaging_paths), 1)
+        self.assertEqual(imaging_paths[0].telescope, st)
+        self.assertEqual(imaging_paths[0].output, st)
+
+    def test_filter_wheel_registration(self):
+        # Setup: Telescope -> FilterWheel (with Filter) -> Camera
+        # Telescope output is FEMALE (receiver) for T2? Wait, Telescope.connection_gender defaults to FEMALE.
+        # But for T2 (threaded), usually Telescope is MALE.
+        t = Telescope(80, 600, "Test Telescope", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
+        fw = FilterWheel("Test Wheel", in_connection_type=ConnectionType.T2, out_connection_type=ConnectionType.T2,
+                         in_gender=Gender.FEMALE, out_gender=Gender.MALE)
+        f = Filter("Test Filter", vendor="Test Vendor", connection_type=ConnectionType.T2)
+        fw.add_filter(f)
+        cam = Camera(36, 24, 6000, 4000, "Test Camera", connection_type=ConnectionType.T2)
+
+        e = Equipment()
+        e.register(t)
+        e.register(fw)
+        e.register(cam)
+
+        # Verify imaging path through filter
+        imaging_paths = e._get_paths(GraphConstants.IMAGE_ID)
+        # Multiple paths because FilterWheel can be bypassed (direct Telescope -> Camera) if genders match
+        # and FilterWheel also provides paths.
+        self.assertGreaterEqual(len(imaging_paths), 1)
+        # Check if any path contains the filter
+        self.assertTrue(any(f in path.component_list() for path in imaging_paths))
 
 if __name__ == "__main__":
     unittest.main()

@@ -62,6 +62,10 @@ class SmartTelescope(Telescope):
             t2_output=False,
             mass=mass,
         )
+        # Smart telescope is a closed system, so we don't want any inputs or outputs
+        self._inputs = []
+        self._outputs = []
+
         ureg = get_unit_registry()
         self.sensor_width = cast(Any, sensor_width * ureg.mm)
         self.sensor_height = cast(Any, sensor_height * ureg.mm)
@@ -161,7 +165,7 @@ class SmartTelescope(Telescope):
         A smart telescope is a direct connection from SPACE to IMAGE.
         """
         # Register the telescope node itself
-        super(Telescope, self)._register(equipment)
+        super(Telescope, self).register(equipment)
         # Connect telescope node to space node
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
         # Connect telescope node to the final image node
