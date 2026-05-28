@@ -128,7 +128,7 @@ class Camera(OutputOpticalEquipment):
         return OpticalType.IMAGE
 
     def register(self, equipment):
-        super()._register(equipment)
+        super().register(equipment)
         equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 
     def is_visual_output(self):

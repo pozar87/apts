@@ -139,6 +139,9 @@ class OpticalEquipment:
         return name.split(OpticalEquipment._SEPARATOR)[0]
 
     def register(self, equipment):
+        """
+        Register this equipment in the optical graph.
+        """
         self._register(equipment)
 
     def _register(self, equipment):
