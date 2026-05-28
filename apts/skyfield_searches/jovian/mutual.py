@@ -3,7 +3,7 @@ import numpy as np
 from skyfield import almanac
 from ...cache import get_timescale
 from ...constants import astronomy
-from .utils import _get_jovian_moon_objects, JovianSearchContext
+from .utils import JovianSearchContext
 
 # Radii from constants (Galilean moons are spherical enough for this)
 GALILEAN_MOON_RADII = {
@@ -39,86 +39,6 @@ def _append_jovian_mutual_event(events, te, state_val, m1_name, m2_name, is_star
     )
 
 
-class JovianMutualState:
-    """Calculates the mutual state (occultation/eclipse) between two Jovian moons."""
-
-    def __init__(self, ctx, id1, id2, elevation):
-        self.ctx = ctx
-        self.id1 = id1
-        self.id2 = id2
-        self.elevation = elevation
-
-    def __call__(self, t):
-        # Returns: 0: None, 1: m1 occults m2, 2: m2 occults m1,
-        # 3: m1 eclipses m2, 4: m2 eclipses m1
-        is_array = hasattr(t, "shape") and t.shape != ()
-
-        # Optimized: Early return if Jupiter is not visible
-        visible = self.ctx.get_visibility(t)
-        if not np.any(visible):
-            return np.zeros(len(t) if is_array else 1, dtype=int)
-
-        res = np.zeros(len(t) if is_array else 1, dtype=int)
-
-        # 1. Earth perspective (Occultations)
-        m1_e = self.ctx.get_moon_obs(t, self.id1)
-        m2_e = self.ctx.get_moon_obs(t, self.id2)
-        sep_e = m1_e.separation_from(m2_e).degrees
-
-        r1 = _get_moon_angular_radius(self.id1, m1_e.distance().km)
-        r2 = _get_moon_angular_radius(self.id2, m2_e.distance().km)
-
-        occ = sep_e < (r1 + r2)
-        m1_front = m1_e.distance().km < m2_e.distance().km
-
-        # 2. Sun perspective (Eclipses)
-        data = self.ctx.get_basic_data(t)
-        m1_s = self.ctx.get_moon_sun_obs(t, self.id1)
-        m2_s = self.ctx.get_moon_sun_obs(t, self.id2)
-        sep_s = m1_s.separation_from(m2_s).degrees
-
-        r1_s = _get_moon_angular_radius(self.id1, m1_s.distance().km)
-        r2_s = _get_moon_angular_radius(self.id2, m2_s.distance().km)
-
-        ecl = sep_s < (r1_s + r2_s)
-        m1_caster = m1_s.distance().km < m2_s.distance().km
-
-        if is_array:
-            res[visible & occ & m1_front] = 1
-            res[visible & occ & ~m1_front] = 2
-            res[visible & ecl & m1_caster] = 3
-            res[visible & ecl & ~m1_caster] = 4
-        else:
-            v_val = (
-                visible
-                if np.isscalar(visible)
-                else (visible[0] if visible.size > 0 else False)
-            )
-            if v_val:
-                occ_val = (
-                    occ if np.isscalar(occ) else (occ[0] if occ.size > 0 else False)
-                )
-                if occ_val:
-                    m1f_val = (
-                        m1_front
-                        if np.isscalar(m1_front)
-                        else (m1_front[0] if m1_front.size > 0 else False)
-                    )
-                    res[0] = 1 if m1f_val else 2
-                else:
-                    ecl_val = (
-                        ecl if np.isscalar(ecl) else (ecl[0] if ecl.size > 0 else False)
-                    )
-                    if ecl_val:
-                        m1c_val = (
-                            m1_caster
-                            if np.isscalar(m1_caster)
-                            else (m1_caster[0] if m1_caster.size > 0 else False)
-                        )
-                        res[0] = 3 if m1c_val else 4
-        return res
-
-
 def find_jovian_mutual_events(observer, start_date, end_date):
     """
     Finds mutual events between Jovian moons:
@@ -138,30 +58,98 @@ def find_jovian_mutual_events(observer, start_date, end_date):
         return []
 
     events = []
-
-    # Check all pairs of moons
     moon_ids = list(ctx.moon_map.keys())
-
+    pairs = []
     for i, id1 in enumerate(moon_ids):
         for id2 in moon_ids[i + 1 :]:
-            m1_name = ctx.moon_map[id1]
-            m2_name = ctx.moon_map[id2]
+            pairs.append((id1, id2))
 
-            mutual_state = JovianMutualState(ctx, id1, id2, ctx.elevation)
+    def state_func(t):
+        """
+        Computes mutual states for all 6 moon pairs.
+        Returns a combined mask (3 bits per pair, 18 bits total).
+        Bits per pair: 0: None, 1: m1 occ m2, 2: m2 occ m1, 3: m1 ecl m2, 4: m2 ecl m1
+        """
+        is_array = hasattr(t, "shape") and t.shape != ()
+        visible = ctx.get_visibility(t)
 
-            # Step of 5 minutes is safe for fast-moving Jovian moons
-            setattr(mutual_state, "step_days", 0.0035)
-            t_events, y_events = almanac.find_discrete(t0, t1, mutual_state)
+        if not is_array:
+            if not visible:
+                return 0
+            t_eval = t
+        else:
+            if not np.any(visible):
+                return np.zeros(len(t), dtype=int)
+            t_eval = t[visible]
 
-            if len(t_events) == 0:
-                continue
+        # Use a helper to extract scalar values if needed to avoid ambiguous truth value errors
+        def _get_val(v):
+            return v if np.isscalar(v) else (v[0] if v.size > 0 else False)
 
-            y_start = mutual_state(t0)
-            y_prev = y_start[0] if hasattr(y_start, "shape") else y_start
+        data = ctx.get_basic_data(t_eval)
+        res_acc = np.zeros(len(t_eval) if is_array else 1, dtype=int)
 
-            for te, ye in zip(t_events, y_events):
-                _append_jovian_mutual_event(events, te, y_prev, m1_name, m2_name, False)
-                _append_jovian_mutual_event(events, te, ye, m1_name, m2_name, True)
-                y_prev = ye
+        # Pre-fetch all moon observations to avoid redundant calls in the loop
+        moons_e = {mid: ctx.get_moon_obs(t_eval, mid) for mid in moon_ids}
+        moons_s = {mid: ctx.get_moon_sun_obs(t_eval, mid) for mid in moon_ids}
+
+        for i, (id1, id2) in enumerate(pairs):
+            # Earth perspective
+            m1_e = moons_e[id1]
+            m2_e = moons_e[id2]
+            sep_e = m1_e.separation_from(m2_e).degrees
+            r1 = _get_moon_angular_radius(id1, m1_e.distance().km)
+            r2 = _get_moon_angular_radius(id2, m2_e.distance().km)
+
+            occ = sep_e < (r1 + r2)
+            m1_front = m1_e.distance().km < m2_e.distance().km
+
+            # Sun perspective
+            m1_s = moons_s[id1]
+            m2_s = moons_s[id2]
+            sep_s = m1_s.separation_from(m2_s).degrees
+            r1_s = _get_moon_angular_radius(id1, m1_s.distance().km)
+            r2_s = _get_moon_angular_radius(id2, m2_s.distance().km)
+
+            ecl = sep_s < (r1_s + r2_s)
+            m1_caster = m1_s.distance().km < m2_s.distance().km
+
+            pair_state = np.zeros_like(res_acc)
+            if is_array:
+                pair_state[occ & m1_front] = 1
+                pair_state[occ & ~m1_front] = 2
+                pair_state[ecl & m1_caster] = 3
+                pair_state[ecl & ~m1_caster] = 4
+            else:
+                if _get_val(occ):
+                    pair_state = 1 if _get_val(m1_front) else 2
+                elif _get_val(ecl):
+                    pair_state = 3 if _get_val(m1_caster) else 4
+
+            res_acc |= (pair_state.astype(int) << (3 * i))
+
+        if not is_array:
+            return int(np.atleast_1d(res_acc)[0])
+        else:
+            final_res = np.zeros(len(t), dtype=int)
+            final_res[visible] = res_acc
+            return final_res
+
+    setattr(state_func, "step_days", 0.0035)  # ~5 minutes
+    t_events, y_events = almanac.find_discrete(t0, t1, state_func)
+
+    y_start = state_func(t0)
+    y_prev = int(np.atleast_1d(y_start)[0])
+
+    for te, ye in zip(t_events, y_events):
+        for i, (id1, id2) in enumerate(pairs):
+            p_prev = (y_prev >> (3 * i)) & 0x7
+            p_curr = (ye >> (3 * i)) & 0x7
+            if p_prev != p_curr:
+                m1_name = ctx.moon_map[id1]
+                m2_name = ctx.moon_map[id2]
+                _append_jovian_mutual_event(events, te, p_prev, m1_name, m2_name, False)
+                _append_jovian_mutual_event(events, te, p_curr, m1_name, m2_name, True)
+        y_prev = ye
 
     return events
