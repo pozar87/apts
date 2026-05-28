@@ -51,10 +51,9 @@ class FlipMirror(IntermediateOpticalEquipment):
         from ...utils import ConnectionType, Gender
         self.diagonal_connection_type = diagonal_connection_type or ConnectionType.F_1_25
         self.diagonal_gender = diagonal_gender or Gender.FEMALE
+        self.add_output(self.diagonal_connection_type, self.diagonal_gender)
 
     def register(self, equipment):
         super(FlipMirror, self).register(equipment)
-        # Add additional diagonal output
-        self._register_output(equipment, self.diagonal_connection_type, self.diagonal_gender)
 
     _DATABASE = {}

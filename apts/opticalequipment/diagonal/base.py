@@ -70,13 +70,14 @@ class Diagonal(IntermediateOpticalEquipment):
         self.is_erecting = is_erecting
         self.t2_output = t2_output
 
+        if self.t2_output:
+            self.add_output(ConnectionType.T2, Gender.MALE)
+
     def register(self, equipment):
         """
         Register diagonal in optical equipment graph.
         """
         super(Diagonal, self).register(equipment)
-        if self.t2_output:
-            self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
         return f"{self.vendor}"

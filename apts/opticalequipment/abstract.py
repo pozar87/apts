@@ -62,6 +62,20 @@ class OpticalEquipment:
         self.optical_length = cast(Any, (optical_length or 0) * get_unit_registry().mm)
         self.mass = cast(Any, (mass or 0) * get_unit_registry().gram)
         self.attached_equipment = []
+        self._inputs = []
+        self._outputs = []
+
+    def add_input(self, connection_type, gender=None):
+        """
+        Add an input port to this equipment.
+        """
+        self._inputs.append((connection_type, gender))
+
+    def add_output(self, connection_type, gender=None):
+        """
+        Add an output port to this equipment.
+        """
+        self._outputs.append((connection_type, gender))
 
     def attach(self, equipment: "OpticalEquipment"):
         """
@@ -130,6 +144,15 @@ class OpticalEquipment:
     def _register(self, equipment):
         # Register equipment node
         equipment.add_vertex(self.id(), self)
+
+        # Register all inputs
+        for connection_type, gender in self._inputs:
+            self._register_input(equipment, connection_type, gender)
+
+        # Register all outputs
+        for connection_type, gender in self._outputs:
+            self._register_output(equipment, connection_type, gender)
+
         # Register attached equipment
         for att in self.attached_equipment:
             att.register(equipment)
@@ -190,12 +213,10 @@ class IntermediateOpticalEquipment(OpticalEquipment):
         self.in_gender = in_gender
         self.out_gender = out_gender
 
-    def register(self, equipment):
-        super(IntermediateOpticalEquipment, self)._register(equipment)
         if self.in_connection_type:
-            self._register_input(equipment, self.in_connection_type, self.in_gender)
+            self.add_input(self.in_connection_type, self.in_gender)
         if self.out_connection_type:
-            self._register_output(equipment, self.out_connection_type, self.out_gender)
+            self.add_output(self.out_connection_type, self.out_gender)
 
 
 class OutputOpticalEquipment(OpticalEquipment):

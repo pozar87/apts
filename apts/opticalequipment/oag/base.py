@@ -53,8 +53,7 @@ class OAG(IntermediateOpticalEquipment):
         from ...utils import ConnectionType, Gender
         self.guide_connection_type = guide_connection_type or ConnectionType.M42
         self.guide_gender = guide_gender or Gender.MALE
+        self.add_output(self.guide_connection_type, self.guide_gender)
 
     def register(self, equipment):
         super(OAG, self).register(equipment)
-        # Add additional guide output
-        self._register_output(equipment, self.guide_connection_type, self.guide_gender)

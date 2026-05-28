@@ -91,6 +91,10 @@ class Telescope(OpticalEquipment):
         self.tube_material = tube_material
         self.backfocus = cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
 
+        self.add_output(self.connection_type, self.connection_gender)
+        if self.t2_output:
+            self.add_output(ConnectionType.T2, Gender.MALE)
+
     def focal_ratio(self):
         return self.focal_length / self.aperture
 
@@ -185,11 +189,8 @@ class Telescope(OpticalEquipment):
         Register telescope in optical equipment graph. Telescope node is build out of two vertices:
         telescope node and its output. Telescope node is automatically connected with SPACE node.
         """
-        super(Telescope, self)._register(equipment)
-        self._register_output(equipment, self.connection_type, self.connection_gender)
+        super(Telescope, self).register(equipment)
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
-        if self.t2_output:
-            self._register_output(equipment, ConnectionType.T2, Gender.MALE)
 
     def __str__(self):
         return '{} {}/{}'.format(self.get_vendor(), cast(Any, self.aperture).magnitude, cast(Any, self.focal_length).magnitude)
