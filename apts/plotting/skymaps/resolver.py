@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING, Any, Optional, Tuple
 if TYPE_CHECKING:
     from ...observations import Observation
 
-def resolve_target(observation: "Observation", target_name: str) -> Tuple[Optional[Any], Optional[Any]]:
+
+def resolve_target(
+    observation: "Observation", target_name: str
+) -> Tuple[Optional[Any], Optional[Any]]:
     """
     Resolves a target name into a Skyfield object and its associated data.
     Searches through Messier, NGC, Stars, and Planets catalogs.
@@ -14,7 +17,7 @@ def resolve_target(observation: "Observation", target_name: str) -> Tuple[Option
     # Search logic that mirrors find_by_name methods
     # Messier
     result_df = observation.local_messier.objects[
-        observation.local_messier.objects["Messier"] == target_name
+        observation.local_messier.objects["Messier"].isin([target_name])
     ]
     if not result_df.empty:
         target_object_data = result_df.iloc[0]
@@ -24,8 +27,8 @@ def resolve_target(observation: "Observation", target_name: str) -> Tuple[Option
     else:
         # NGC
         result_df = observation.local_ngc.objects[
-            (observation.local_ngc.objects["NGC"] == target_name)
-            | (observation.local_ngc.objects["Name"] == target_name)
+            (observation.local_ngc.objects["NGC"].isin([target_name]))
+            | (observation.local_ngc.objects["Name"].isin([target_name]))
         ]
         if not result_df.empty:
             target_object_data = result_df.iloc[0]
@@ -35,7 +38,7 @@ def resolve_target(observation: "Observation", target_name: str) -> Tuple[Option
         else:
             # Stars
             result_df = observation.local_stars.objects[
-                observation.local_stars.objects["Name"] == target_name
+                observation.local_stars.objects["Name"].isin([target_name])
             ]
             if not result_df.empty:
                 target_object_data = result_df.iloc[0]
