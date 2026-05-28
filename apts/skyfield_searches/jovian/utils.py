@@ -141,17 +141,18 @@ class JovianSearchContext:
 
     def _compute_full_visibility(self, t, data):
         """High-precision visibility calculation."""
-        if "j_obs" not in data:
-            data["j_obs"] = (
-                self.observer.at(t).observe(self.jupiter).apparent(deflectors=(10, 599))
+        if "j_obs_vis" not in data:
+            # Use deflectors=() for faster visibility checks (horizon/twilight)
+            data["j_obs_vis"] = (
+                self.observer.at(t).observe(self.jupiter).apparent(deflectors=())
             )
-        if "s_obs" not in data:
-            data["s_obs"] = (
-                self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
+        if "s_obs_vis" not in data:
+            data["s_obs_vis"] = (
+                self.observer.at(t).observe(self.sun).apparent(deflectors=())
             )
 
-        j_obs = data["j_obs"]
-        s_obs = data["s_obs"]
+        j_obs = data["j_obs_vis"]
+        s_obs = data["s_obs_vis"]
 
         alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
         sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
