@@ -48,6 +48,8 @@ class Eyepiece(OutputOpticalEquipment):
         self._field_of_view = cast(Any, field_of_view * get_unit_registry().deg)
         self.field_stop = cast(Any, field_stop * get_unit_registry().mm) if field_stop is not None else None
 
+        self.add_input(self._connection_type, self._connection_gender)
+
     def _zoom_divider(self):
         return self.focal_length
 
@@ -77,7 +79,6 @@ class Eyepiece(OutputOpticalEquipment):
         ocular node and its input. Ocular node is automatically connected with output IMAGE node.
         """
         super()._register(equipment)
-        self._register_input(equipment, self._connection_type, self._connection_gender)
         equipment.add_edge(self.id(), GraphConstants.EYE_ID)
 
     def __str__(self):

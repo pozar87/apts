@@ -67,6 +67,8 @@ class Camera(OutputOpticalEquipment):
         else:
             self._pixel_size = None
 
+        self.add_input(self.connection_type, self.connection_gender)
+
     def pixel_size(self) -> Any:
         ureg = get_unit_registry()
         if self._pixel_size is not None:
@@ -127,7 +129,6 @@ class Camera(OutputOpticalEquipment):
 
     def register(self, equipment):
         super()._register(equipment)
-        self._register_input(equipment, self.connection_type, self.connection_gender)
         equipment.add_edge(self.id(), GraphConstants.IMAGE_ID)
 
     def is_visual_output(self):

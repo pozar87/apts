@@ -72,11 +72,6 @@ class Filter(IntermediateOpticalEquipment):
         self.name = name
         self.transmission = transmission
 
-    def register(self, equipment):
-        """
-        Register filter in optical equipment graph.
-        """
-        super(Filter, self).register(equipment)
 
     def __str__(self):
         return f"{self.name} ({self.vendor})"
