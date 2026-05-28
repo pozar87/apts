@@ -12,6 +12,7 @@ class SkyWatcherBarlow(Barlow):
             "tside_gender": "Male",
             "cside_thread": '1.25"',
             "cside_gender": "Female",
+            "t2_output": True,
             "reversible": False,
             "bf_role": "start",
         },

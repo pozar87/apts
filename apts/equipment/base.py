@@ -277,23 +277,17 @@ class Equipment(EquipmentPlottingMixIn):
                     ):
                         # Match genders - only different genders can connect
                         in_gender = in_node_data.get(NodeLabels.CONNECTION_GENDER)
-                        if connection_type not in [
+
+                        # If both genders are specified, they must be different
+                        if connection_gender is not None and in_gender is not None:
+                            if connection_gender == in_gender:
+                                continue
+                        # If either gender is missing and it's NOT a push-fit (1.25" or 2"),
+                        # we cannot assume they connect.
+                        elif connection_type not in [
                             ConnectionType.F_1_25,
                             ConnectionType.F_2,
                         ]:
-                            if (
-                                connection_gender is None
-                                or in_gender is None
-                                or connection_gender == in_gender
-                            ):
-                                # Gender missing or same gender cannot connect
-                                continue
-                        elif (
-                            connection_gender is not None
-                            and in_gender is not None
-                            and connection_gender == in_gender
-                        ):
-                            # If genders are explicitly provided and same, still skip
                             continue
 
                         # Connect all outputs with all inputs, excluding connecting part to itself

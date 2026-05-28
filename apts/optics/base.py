@@ -34,6 +34,7 @@ class OpticalPath(
         filters: Sequence[Any],
         others,
         output=None,
+        path=None,
     ):
         self.telescope = telescope
         self.barlows = list(barlows)
@@ -46,6 +47,8 @@ class OpticalPath(
         else:
             self.others = others
             self.output = output
+        # Store original path to preserve physical order
+        self._path = list(path) if path is not None else None
         # Cache for expensive calculations
         self._cache = {}
 
@@ -54,18 +57,13 @@ class OpticalPath(
         telescope, barlows, diagonals, filters, others, output = OpticsUtils.expand(
             path
         )
-        return cls(telescope, barlows, diagonals, filters, others, output)
+        return cls(telescope, barlows, diagonals, filters, others, output, path=path)
 
     def elements(self) -> frozenset[Any]:
         """
         Return immutable set of elements - used for removing redundant optical paths
         """
-        elements: set[Any] = set((self.telescope, self.output))
-        elements |= set(self.barlows)
-        elements |= set(self.diagonals)
-        elements |= set(self.filters)
-        elements |= set(self.others)
-        return frozenset(elements)
+        return frozenset(self.component_list())
 
     def component_list(self) -> list[Any]:
         """
@@ -74,6 +72,9 @@ class OpticalPath(
         from ..opticalequipment.binoculars import Binoculars
         from ..opticalequipment.naked_eye import NakedEye
         from ..opticalequipment.smart_telescope import SmartTelescope
+
+        if self._path is not None:
+            return self._path
 
         if isinstance(self.telescope, (Binoculars, NakedEye, SmartTelescope)):
             return [self.telescope]

@@ -44,11 +44,18 @@ class Gender(Enum):
         return str(self.value)
 
 
+# Pre-sorted connection types for efficient matching in map_conn
+# Sorted by length of value descending to avoid partial matches (e.g., "T2" matching "2" before "T2")
+_SORTED_CONNECTION_TYPES = sorted(
+    ConnectionType, key=lambda ct: len(str(ct.value)), reverse=True
+)
+
+
 def map_conn(thread_str):
     if not thread_str:
         return ConnectionType.F_1_25  # Default
     # Try to match ConnectionType
-    for ct in ConnectionType:
+    for ct in _SORTED_CONNECTION_TYPES:
         if ct.value.lower() in thread_str.lower():
             return ct
     return ConnectionType.F_1_25
