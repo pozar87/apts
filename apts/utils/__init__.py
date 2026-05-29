@@ -27,6 +27,7 @@ __all__ = [
     "map_conn",
     "map_gender",
     "guess_optical_properties",
+    "optics",
 ]
 
 
@@ -34,6 +35,9 @@ def __getattr__(name: str) -> Any:
     if name == "ureg":
         from ..units import ureg
         return ureg
+    if name == "optics":
+        from ..optics import calculations as optics
+        return optics
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 

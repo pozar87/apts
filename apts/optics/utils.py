@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..opticalequipment.smart_telescope import SmartTelescope
 
 from ..units import get_unit_registry
-from ..utils import optics as optics_utils
+from . import calculations as optics_utils
 from ..opticalequipment.binoculars import Binoculars
 from ..opticalequipment.naked_eye import NakedEye
 

@@ -3,7 +3,7 @@ from typing import Optional, TYPE_CHECKING, Any
 import numpy
 from ...units import get_unit_registry
 from ...constants import astronomy
-from ...utils import optics as optics_utils
+from .. import calculations as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity

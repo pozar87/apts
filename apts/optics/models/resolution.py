@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 from ...constants import astronomy
 from ...units import get_unit_registry
+from .. import calculations as optics_utils
 
 
 class ResolutionMixIn:
@@ -108,7 +109,6 @@ class ResolutionMixIn:
             return None
         # Effective focal ratio
         fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
-        from ...utils import optics as optics_utils
         diameter_um = optics_utils.calculate_airy_disk_diameter(fr, wavelength_nm)
         return float(diameter_um) * get_unit_registry().micrometer
 
