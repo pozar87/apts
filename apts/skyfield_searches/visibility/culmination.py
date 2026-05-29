@@ -159,30 +159,25 @@ def _find_fixed_object_culminations(
     # Consolidate all fixed objects into a single vectorized Star object
     stars_vector = Star(ra_hours=ra_fixed, dec_degrees=dec_fixed)
 
-    all_t_culm_tt = []
-    all_dec_deg = []
+    # Observe all objects ONCE at the middle of the interval.
+    # For fixed objects, RA/Dec (epoch of date) changes very slowly (precession/nutation).
+    # This single observation is sufficient for estimation over 30+ days.
+    t_mid = ts.tt_jd((t0.tt + t1.tt) / 2.0)
+    obs_ref = observer.at(t_mid).observe(stars_vector).apparent()
+    radec_ref = obs_ref.radec(epoch="date")
+    ra_hours = radec_ref[0].hours
+    dec_deg = radec_ref[1].degrees
 
-    # Optimization: Loop over days while vectorizing over all objects (N objects per day)
-    for t_ref in t_refs:
-        # Estimate apparent RA and Dec at mid-day for all objects
-        obs_ref = observer.at(t_ref).observe(stars_vector).apparent()
-        radec_ref = obs_ref.radec(epoch="date")
-        ra_hours = radec_ref[0].hours
-        dec_deg = radec_ref[1].degrees
+    # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
+    # Use broadcasting: ra_hours is (M,), t_refs.gast is (D,) -> target_gast is (M, D)
+    target_gast = (ra_hours[:, None] - lon_hours) % 24
+    diff_gast = (target_gast - t_refs.gast[None, :]) % 24
+    diff_gast[diff_gast > 12] -= 24
 
-        # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
-        target_gast = (ra_hours - lon_hours) % 24
-        diff_gast = (target_gast - t_ref.gast) % 24
-
-        # Convert sidereal interval to UT (approx. factor 1.0027379)
-        t_culm_tt = t_ref.tt + (diff_gast / 1.002737909) / 24.0
-
-        all_t_culm_tt.append(t_culm_tt)
-        all_dec_deg.append(dec_deg)
-
-    # Flatten all potential culminations
-    t_culms_all_tt = np.concatenate(all_t_culm_tt)
-    decs_all_deg = np.concatenate(all_dec_deg)
+    # Convert sidereal interval to UT (approx. factor 1.0027379)
+    # Result is (M, D), transpose and flatten to (M*D,) to match obj_indices_all
+    t_culms_all_tt = (t_refs.tt[None, :] + (diff_gast / 1.002737909) / 24.0).T.flatten()
+    decs_all_deg = np.tile(dec_deg, len(t_refs))
     obj_indices_all = np.tile(np.arange(num_fixed), len(t_refs))
 
     # Filter culminations that fall within the requested window
@@ -194,25 +189,34 @@ def _find_fixed_object_culminations(
     obj_indices_final = obj_indices_all[mask_window]
 
     if len(t_final) > 0:
-        # Sun altitude for visibility check (vectorized)
+        # Culmination altitude (geometric approximation: 90 - |lat - dec|)
+        alts_final_deg = 90.0 - np.abs(lat_deg - dec_final_deg)
+        alts_final_deg = _apply_refraction(alts_final_deg)
+
+        # Pre-filter by altitude to avoid redundant Sun observations
+        alt_mask = alts_final_deg > 15
+        t_candidates = t_final[alt_mask]
+        obj_indices_candidates = obj_indices_final[alt_mask]
+        alts_candidates = alts_final_deg[alt_mask]
+
+        if len(t_candidates) == 0:
+            return events
+
+        # Sun altitude for visibility check (vectorized only for altitude-valid candidates)
         sun_alts_deg = (
-            observer.at(t_final)
+            observer.at(t_candidates)
             .observe(sun)
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
             .degrees
         )
 
-        # Culmination altitude (geometric approximation: 90 - |lat - dec|)
-        alts_final_deg = 90.0 - np.abs(lat_deg - dec_final_deg)
-        alts_final_deg = _apply_refraction(alts_final_deg)
+        # Visibility threshold: Sun below threshold
+        valid_mask = sun_alts_deg <= sun_alt_threshold
 
-        # Visibility threshold: Altitude > 15 deg and Sun below threshold
-        valid_mask = (alts_final_deg > 15) & (sun_alts_deg <= sun_alt_threshold)
-
-        final_names = [names_fixed[i] for i in obj_indices_final[valid_mask]]
-        final_times = t_final[valid_mask]
-        final_alts = alts_final_deg[valid_mask]
+        final_names = [names_fixed[i] for i in obj_indices_candidates[valid_mask]]
+        final_times = t_candidates[valid_mask]
+        final_alts = alts_candidates[valid_mask]
 
         for t, name, alt in zip(cast(Any, final_times), final_names, final_alts):
             events.append(
