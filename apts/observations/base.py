@@ -74,8 +74,12 @@ class Observation(
     def _init_window_from_times(self, start_time: datetime, end_time: datetime):
         self.start = start_time
         self.stop = end_time
-        self.effective_date = start_time  # Use start_time as effective date for calculations
-        self.observation_local_time = start_time  # Use start_time as local observation time
+        self.effective_date = self.place.ts.utc(
+            start_time
+        )  # Convert to Skyfield Time for moon/weather calculations
+        self.observation_local_time = (
+            start_time  # Use start_time as local observation time
+        )
 
     def _init_window_from_target_date(self, target_date):
         if self.sun_observation:
