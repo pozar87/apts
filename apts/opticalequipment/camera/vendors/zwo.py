@@ -480,7 +480,7 @@ class ZwoCamera(Camera):
             "height": 1216,
             "mass": 60,
             "name": "ASI174MM Mini",
-            "optical_length": 6.5,
+            "optical_length": 12.5, # Verified via official ZWO specs (12.5mm backfocus)
             "pixel_size_um": 5.86,
             "quantum_efficiency_pct": 77,
             "read_noise_e": 6.0,
@@ -488,7 +488,7 @@ class ZwoCamera(Camera):
             "sensor_height_mm": 7.1,
             "sensor_width_mm": 11.3,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",
             "type": "type_camera",
             "width": 1936,
         },
