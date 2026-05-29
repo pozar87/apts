@@ -1,5 +1,5 @@
 import logging.config
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from . import cache
 from .cache import download_all_data
@@ -10,13 +10,13 @@ from .config import config, should_auto_preload_data, should_preload_essential_o
 from .constants.event_types import EventType
 
 if TYPE_CHECKING:
+    from .equipment import Equipment
+    from .i18n import set_language
+    from .notify import Notify
     from .observations import Observation
     from .place import Place
-    from .equipment import Equipment
-    from .weather import Weather
     from .utils import Utils
-    from .notify import Notify
-    from .i18n import set_language
+    from .weather import Weather
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,16 @@ _set_language = None
 
 
 def __getattr__(name: str) -> Any:
-    global _pd, _sns, _Observation, _Place, _Equipment, _Weather, _Utils, _Notify, _set_language
+    global \
+        _pd, \
+        _sns, \
+        _Observation, \
+        _Place, \
+        _Equipment, \
+        _Weather, \
+        _Utils, \
+        _Notify, \
+        _set_language
     if name == "pd":
         if _pd is None:
             import pandas as pd
@@ -153,4 +162,4 @@ if should_auto_preload_data():
         preload_data()
 
 
-__version__ = "0.14.9"
+__version__ = "0.14.10"
