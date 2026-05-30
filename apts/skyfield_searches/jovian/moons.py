@@ -34,6 +34,8 @@ def find_jovian_moon_events(observer, start_date, end_date):
         Returns a 16-bit combined mask (4 bits per moon).
         Bits: 1: transit, 2: occultation, 4: shadow, 8: eclipse.
         """
+        from .utils import is_inside_ellipsoid_projection_fast
+
         is_array = hasattr(t, "shape") and t.shape != ()
         visible = ctx.get_visibility(t)
 
@@ -62,18 +64,32 @@ def find_jovian_moon_events(observer, start_date, end_date):
         d_j_s = sun_from_j.distance().km
         u_s = p_j_s / d_j_s[None, :] if is_array else p_j_s / d_j_s
 
+        if is_array:
+            u_z_e = np.einsum("ij,ij->j", u_e, z_pole)
+            u_z_s = np.einsum("ij,ij->j", u_s, z_pole)
+        else:
+            u_z_e = np.dot(u_e, z_pole)
+            u_z_s = np.dot(u_s, z_pole)
+
+        u_prime_sq_e = (1.0 - u_z_e**2) / re**2 + u_z_e**2 / rp**2
+        u_prime_sq_s = (1.0 - u_z_s**2) / re**2 + u_z_s**2 / rp**2
+
         if not is_array:
             res = 0
             for i, moon_id in enumerate(ctx.moon_map.keys()):
                 m_obs = ctx.get_moon_obs(t_eval, moon_id)
                 p_m = m_obs.position.km - j_obs.position.km
+
+                p_z = np.dot(p_m, z_pole)
+                p_sq = np.dot(p_m, p_m)
                 p_m_u_e = np.dot(p_m, u_e)
                 p_m_u_s = np.dot(p_m, u_s)
-                in_projection_e = is_inside_ellipsoid_projection(
-                    p_m, u_e, z_pole, re, rp
+
+                in_projection_e = is_inside_ellipsoid_projection_fast(
+                    p_z, p_m_u_e, p_sq, u_z_e, re, rp, u_prime_sq_e
                 )
-                in_projection_s = is_inside_ellipsoid_projection(
-                    p_m, u_s, z_pole, re, rp
+                in_projection_s = is_inside_ellipsoid_projection_fast(
+                    p_z, p_m_u_s, p_sq, u_z_s, re, rp, u_prime_sq_s
                 )
                 moon_mask = (
                     (in_projection_e & (p_m_u_e > 0)).astype(int)
@@ -89,13 +105,17 @@ def find_jovian_moon_events(observer, start_date, end_date):
             for i, moon_id in enumerate(ctx.moon_map.keys()):
                 m_obs = ctx.get_moon_obs(t_eval, moon_id)
                 p_m = m_obs.position.km - j_obs.position.km
+
+                p_z = np.einsum("ij,ij->j", p_m, z_pole)
+                p_sq = np.einsum("ij,ij->j", p_m, p_m)
                 p_m_u_e = np.einsum("ij,ij->j", p_m, u_e)
                 p_m_u_s = np.einsum("ij,ij->j", p_m, u_s)
-                in_projection_e = is_inside_ellipsoid_projection(
-                    p_m, u_e, z_pole, re, rp
+
+                in_projection_e = is_inside_ellipsoid_projection_fast(
+                    p_z, p_m_u_e, p_sq, u_z_e, re, rp, u_prime_sq_e
                 )
-                in_projection_s = is_inside_ellipsoid_projection(
-                    p_m, u_s, z_pole, re, rp
+                in_projection_s = is_inside_ellipsoid_projection_fast(
+                    p_z, p_m_u_s, p_sq, u_z_s, re, rp, u_prime_sq_s
                 )
                 moon_mask = (
                     (in_projection_e & (p_m_u_e > 0)).astype(int)

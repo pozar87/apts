@@ -93,3 +93,7 @@
 ## 2025-05-24 - [Skyfield AltAz Optimization via Manual Apparent Wrapping]
 **Learning:** Skyfield's `.altaz()` requires an `Apparent` object, but `.apparent()` triggers expensive Standard calculations (nutation, aberration, deflection). When accuracy requirements are loose (e.g., visibility gating), manually wrapping an `Astrometric` position in an `Apparent` object bypasses these bottlenecks.
 **Action:** Use `app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t); app.center = pos.center` to perform fast AltAz checks.
+
+## 2025-06-25 - [Geometric Projection Hoisting]
+**Learning:** In geometric searches involving multiple bodies observed from the same sources (e.g., Earth and Sun projecting onto Galilean moons), many projection parameters are invariant across the bodies. Hoisting pole-direction dot products and scaled projection radii out of the body iteration loop, and reusing intermediate dot products (`p_z`, `p_sq`) across different projection targets, significantly reduces redundant NumPy operations.
+**Action:** Always identify and hoist invariant geometric parameters out of iteration loops in complex astronomical state functions.
