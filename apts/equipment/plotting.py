@@ -244,18 +244,6 @@ class EquipmentPlottingMixIn:
             # Categorize nodes into logical steps of the optical path
             layers = {}
 
-            # Import equipment classes locally to avoid circular dependencies
-            from ..opticalequipment.barlow import Barlow
-            from ..opticalequipment.binoculars import Binoculars
-            from ..opticalequipment.camera import Camera
-            from ..opticalequipment.diagonal import Diagonal
-            from ..opticalequipment.eyepiece import Eyepiece
-            from ..opticalequipment.filter import Filter
-            from ..opticalequipment.filter_wheel import FilterHolder, FilterWheel
-            from ..opticalequipment.naked_eye import NakedEye
-            from ..opticalequipment.smart_telescope import SmartTelescope
-            from ..opticalequipment.telescope import Telescope
-
             for node_id, data in node_data:
                 equipment = data.get(NodeLabels.EQUIPMENT)
 
@@ -264,22 +252,8 @@ class EquipmentPlottingMixIn:
                 elif node_id in [GraphConstants.EYE_ID, GraphConstants.IMAGE_ID]:
                     layers[node_id] = 6  # Final sinks - own column
                 elif equipment is not None:
-                    # Main equipment nodes
-                    if isinstance(
-                        equipment, (Telescope, Binoculars, NakedEye, SmartTelescope)
-                    ):
-                        layers[node_id] = 1
-                    elif isinstance(equipment, (Barlow, Diagonal)):
-                        layers[node_id] = 2
-                    elif isinstance(equipment, (FilterWheel, FilterHolder)):
-                        layers[node_id] = 3  # Wheel comes before the filter inside it
-                    elif isinstance(equipment, Filter):
-                        layers[node_id] = 4  # Filters get their own column
-                    elif isinstance(equipment, (Eyepiece, Camera)):
-                        layers[node_id] = 5
-                    else:
-                        # Other intermediate equipment (OAG, Rotator, Adapter, etc.)
-                        layers[node_id] = 3
+                    # Use polymorphic path_layer attribute if available
+                    layers[node_id] = getattr(equipment, "path_layer", 3)
                 else:
                     layers[node_id] = 2
 

@@ -12,6 +12,8 @@ class SmartTelescope(Telescope):
     Class representing a smart telescope, which is a telescope and a camera in one.
     """
 
+    path_layer = 1
+
     @classmethod
     def from_database(cls, entry):
         brand = entry["brand"]

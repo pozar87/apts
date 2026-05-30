@@ -9,6 +9,8 @@ class NakedEye(OutputOpticalEquipment):
     Class representing the naked eye
     """
 
+    path_layer = 1
+
     def __init__(
         self,
         magnification=1,

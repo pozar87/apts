@@ -5,6 +5,8 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
 class Eyepiece(OutputOpticalEquipment):
+    path_layer = 5
+
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
         from ...utils import extract_number
