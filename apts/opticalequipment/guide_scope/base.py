@@ -6,7 +6,7 @@ from ...utils import ConnectionType, Gender
 class GuideScope(Telescope):
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties, Gender
+        from ...utils import map_conn, map_gender, guess_optical_properties
 
         brand = entry["brand"]
         name = entry["name"]
@@ -17,12 +17,12 @@ class GuideScope(Telescope):
         cg = map_gender(entry.get("cside_gender"))
         aperture, focal_length = guess_optical_properties(name)
         bf_val = entry.get("bf_role") == "start"
+        outputs = [(ct, cg)] if ct else []
         return cls(
             aperture or 30,
             focal_length or 120,
             vendor=vendor,
-            connection_type=ct,
-            connection_gender=cg or Gender.FEMALE,
+            outputs=outputs,
             backfocus=ol if bf_val else None,
             mass=mass,
             optical_length=ol,
@@ -33,8 +33,7 @@ class GuideScope(Telescope):
         aperture,
         focal_length,
         vendor="unknown guide scope",
-        connection_type=ConnectionType.F_1_25,
-        connection_gender=Gender.FEMALE,
+        outputs=None,
         backfocus=None,
         mass=0,
         optical_length=0,
@@ -43,8 +42,7 @@ class GuideScope(Telescope):
             aperture,
             focal_length,
             vendor,
-            connection_type=connection_type,
-            connection_gender=connection_gender,
+            outputs=outputs,
             backfocus=backfocus,
             mass=mass,
             optical_length=optical_length,

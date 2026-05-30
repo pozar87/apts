@@ -19,7 +19,7 @@ from apts.opticalequipment import (
 )
 from apts.opticalequipment.telescope import TelescopeType
 from apts.units import ureg
-from apts.utils import ConnectionType
+from apts.utils import ConnectionType, Gender
 
 from tests import setup_equipment
 
@@ -138,7 +138,7 @@ def test_multi_barlow():
 
 def test_camera_path_with_setup_equipment():  # Renamed
     e = setup_equipment()
-    # The telescope from setup_equipment() is Telescope(150, 750, t2_output=True, vendor="unknown telescope")
+    # The telescope from setup_equipment() is Telescope(150, 750, vendor="unknown telescope", outputs=[(ConnectionType.T2, Gender.MALE)])
     # Let's find this telescope instance from the equipment graph for later assertion
     # NodeLabels is already imported at the top
     setup_tele = None
@@ -422,8 +422,8 @@ def test_telescope_to_camera_direct_t2():
     # from apts.opticalequipment import Telescope, Camera # Already imported
 
     # Telescope with T2 output
-    # Parameters: aperture, focal_length, vendor="unknown telescope", t2_output=False
-    tele = Telescope(150, 750, t2_output=True, vendor="TestScopeT2")
+    # Parameters: aperture, focal_length, vendor="unknown telescope"
+    tele = Telescope(150, 750, vendor="TestScopeT2", outputs=[(ConnectionType.T2, Gender.MALE)])
     # Camera defaults to T2 connection
     # Parameters: chip_w, chip_h, pixel_w, pixel_h, vendor="unknown camera"
     cam = Camera(22.2, 14.8, 4, 4, vendor="TestCamT2")
@@ -504,9 +504,7 @@ def test_telescope_barlow_t2_camera():
     # Barlow with 1.25" input, but T2 output
     barlow_t2 = Barlow(
         magnification=2.0,
-        connection_type=ConnectionType.F_1_25,
-        t2_output=True,
-        vendor="BarlowT2Out",
+        outputs=[(ConnectionType.T2, Gender.MALE), ConnectionType.F_1_25],
     )
     # Camera defaults to T2 connection
     cam = Camera(12.48, 9.98, 2, 2, vendor="MicroCam")
@@ -582,8 +580,7 @@ def test_telescope_std_barlow_t2_camera_variation():
     tele = Telescope(100, 500, vendor="ScopeStdOut")  # Default F_1_25 output
     barlow = Barlow(
         magnification=1.5,
-        connection_type=ConnectionType.F_1_25,  # Standard input
-        t2_output=True,
+        outputs=[(ConnectionType.T2, Gender.MALE), ConnectionType.F_1_25],  # Standard input
         vendor="BarlowT2Var",
     )
     cam = Camera(10, 10, 5, 5, vendor="CamT2Var")  # T2 input
@@ -656,15 +653,15 @@ def test_telescope_std_barlow_t2_camera_variation():
     assert target_op.fov().magnitude == pytest.approx(expected_fov)
 
 
-def test_connection_specificity_tele_no_t2_output_to_t2_camera():
+def test_connection_specificity_tele_no_t2_to_t2_camera():
     """Test Telescope (no T2 out) does not connect to Camera (only T2 in)."""
     eq = Equipment()  # Use Equipment class
     # OpticalType, GraphConstants, ConnectionType are imported at the top
     # from apts.opticalequipment import Telescope, Camera # Already imported
 
-    # Telescope with F_1_25 output, t2_output=False by default
+    # Telescope with F_1_25 output by default
     tele_no_t2 = Telescope(
-        80, 400, vendor="TeleNoT2", connection_type=ConnectionType.F_1_25
+        80, 400, vendor="TeleNoT2", outputs=[ConnectionType.F_1_25]
     )
     # Camera with only T2 input (default)
     cam_t2_only = Camera(10, 10, 5, 5, vendor="CamOnlyT2")
@@ -692,18 +689,17 @@ def test_connection_specificity_tele_no_t2_output_to_t2_camera():
     )
 
 
-def test_connection_specificity_barlow_no_t2_output_to_t2_camera():
+def test_connection_specificity_barlow_no_t2_to_t2_camera():
     """Test Barlow (no T2 out) does not connect to Camera (only T2 in) in a sequence."""
     eq = Equipment()  # Use Equipment class
     # OpticalType, GraphConstants, ConnectionType are imported at the top
     # from apts.opticalequipment import Telescope, Barlow, Camera # Already imported
 
     tele = Telescope(100, 500, vendor="SeqScope")  # Standard F_1_25 output
-    # Barlow with F_1_25 input, but t2_output explicitly False
+    # Barlow with F_1_25 input, but T2 output not present
     barlow_no_t2 = Barlow(
         magnification=2.0,
-        connection_type=ConnectionType.F_1_25,
-        t2_output=False,
+        outputs=[ConnectionType.F_1_25],
         vendor="BarlowNoT2",
     )
     cam_t2_only = Camera(10, 10, 5, 5, vendor="SeqCamT2")  # T2 input
@@ -742,8 +738,8 @@ def test_camera_path_brightness_is_nan():
     eq = Equipment()  # Use Equipment class
     # Telescope with T2 output
     scope_t2 = Telescope(
-        aperture=80, focal_length=400, vendor="TestScopeT2", t2_output=True
-    )
+        aperture=80, focal_length=400, vendor="TestScopeT2"
+    , outputs=[(ConnectionType.T2, Gender.MALE)])
     # Camera with T2 input (default)
     cam = Camera(
         sensor_width=22.2,
@@ -780,7 +776,7 @@ def test_eyepiece_path_brightness_is_numeric():
         focal_length=10,
         vendor="TestEPVisual",
         field_of_view=50,
-        connection_type=ConnectionType.F_1_25,
+        inputs=[ConnectionType.F_1_25],
     )
 
     eq.register(scope)
@@ -987,7 +983,7 @@ def test_plot_connection_graph_global_light(mock_nx_draw, mock_get_global_dark_m
 def test_plot_connection_graph_svg_override_dark(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
-    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
+    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>")
     mock_plot_connection_graph.return_value = mock_plot_instance
 
     eq.plot_connection_graph_svg(dark_mode_override=True)
@@ -1038,7 +1034,7 @@ def test_flipped_view_with_camera():
     # Refractor with camera (no diagonal) is flipped horizontally and vertically
     e = Equipment()
     e.register(
-        Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, t2_output=True)
+        Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR, outputs=[(ConnectionType.T2, Gender.MALE)])
     )
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
@@ -1050,7 +1046,7 @@ def test_flipped_view_with_camera():
     # Refractor with star diagonal and camera is flipped horizontally, but not vertically
     e = Equipment()
     e.register(Telescope(150, 750, telescope_type=TelescopeType.REFRACTOR))
-    e.register(Diagonal(t2_output=True))
+    e.register(Diagonal(outputs=[(ConnectionType.T2, Gender.MALE)]))
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
     image_paths = df[df[EquipmentTableLabels.TYPE] == OpticalType.IMAGE.name]
@@ -1062,8 +1058,8 @@ def test_flipped_view_with_camera():
     e = Equipment()
     e.register(
         Telescope(
-            150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR, t2_output=True
-        )
+            150, 750, telescope_type=TelescopeType.NEWTONIAN_REFLECTOR
+        , outputs=[(ConnectionType.T2, Gender.MALE)])
     )
     e.register(Camera(10, 10, 1, 1))
     df = e.data()
@@ -1077,7 +1073,7 @@ def test_flipped_view_with_camera():
 def test_plot_connection_graph_svg_override_light(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
-    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
+    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>")
     mock_plot_connection_graph.return_value = mock_plot_instance
 
     eq.plot_connection_graph_svg(dark_mode_override=False)
@@ -1091,7 +1087,7 @@ def test_plot_connection_graph_svg_override_light(mock_plot_connection_graph):
 def test_plot_connection_graph_svg_override_none(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
-    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
+    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>")
     mock_plot_connection_graph.return_value = mock_plot_instance
 
     eq.plot_connection_graph_svg(dark_mode_override=None)
@@ -1105,7 +1101,7 @@ def test_plot_connection_graph_svg_override_none(mock_plot_connection_graph):
 def test_plot_connection_graph_svg_no_override(mock_plot_connection_graph):
     eq = Equipment()
     mock_plot_instance = MagicMock()
-    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>",)
+    mock_plot_instance._repr_svg_.return_value = ("<svg_output_string>")
     mock_plot_connection_graph.return_value = mock_plot_instance
 
     eq.plot_connection_graph_svg()  # Call without dark_mode_override

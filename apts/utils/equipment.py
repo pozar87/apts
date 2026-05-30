@@ -10,18 +10,24 @@ class ConnectionType(Enum):
     M48 = "M48"
     M54 = "M54"
     M56 = "M56"
+    M60 = "M60"
     M63 = "M63"
     M68 = "M68"
     M72 = "M72"
     M81 = "M81"
     M82 = "M82"
     M84 = "M84"
+    M90 = "M90"
     M92 = "M92"
     M117 = "M117"
+    M28_5 = "M28.5"
     EOS = "EOS"
+    EOS_M = "EOS M"
+    EOS_R = "EOS R"
     CANON_RF = "Canon RF"
     NIKON_F = "Nikon F"
     NIKON_Z = "Nikon Z"
+    SONY_A = "Sony A"
     SONY_E = "Sony E"
     FUJI_X = "Fuji X"
     MFT = "MFT"
@@ -67,6 +73,17 @@ def map_gender(gender_str):
     if gender_str in ["Female", "F"]:
         return Gender.FEMALE
     return None
+
+
+def get_default_gender(connection_type, is_input):
+    """
+    Get the default gender for a connection type based on common astronomical conventions.
+    - Push-fit (1.25", 2"): Input is Male (barrel), Output is Female (receiver).
+    - Threaded (T2, M42, M48, etc.): Input is Female, Output is Male.
+    """
+    if connection_type in (ConnectionType.F_1_25, ConnectionType.F_2):
+        return Gender.MALE if is_input else Gender.FEMALE
+    return Gender.FEMALE if is_input else Gender.MALE
 
 
 def guess_optical_properties(name: str):

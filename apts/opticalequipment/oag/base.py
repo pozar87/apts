@@ -7,7 +7,7 @@ class OAG(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -22,10 +22,8 @@ class OAG(IntermediateOpticalEquipment):
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection_type=tt,
-            out_connection_type=ct,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
+            in_connection=(tt, tg) if tt else None,
+            out_connection=(ct, cg) if ct else None,
         )
 
     def __init__(
@@ -33,27 +31,34 @@ class OAG(IntermediateOpticalEquipment):
         vendor,
         optical_length=0,
         mass=0,
-        in_connection_type=None,
-        out_connection_type=None,
-        in_gender=None,
-        out_gender=None,
-        guide_connection_type=None,
-        guide_gender=None,
+        in_connection=None,
+        out_connection=None,
+        guide_connection=None,
     ):
         super(OAG, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
-            in_connection_type=in_connection_type,
-            out_connection_type=out_connection_type,
-            in_gender=in_gender,
-            out_gender=out_gender,
+            in_connection=in_connection,
+            out_connection=out_connection,
         )
         self._type = OpticalType.OAG
-        from ...utils import ConnectionType, Gender
-        self.guide_connection_type = guide_connection_type or ConnectionType.M42
-        self.guide_gender = guide_gender or Gender.MALE
-        self.add_output(self.guide_connection_type, self.guide_gender)
+        if guide_connection:
+            if isinstance(guide_connection, tuple):
+                self.add_output(*guide_connection)
+            else:
+                self.add_output(guide_connection)
+        else:
+            from ...utils import ConnectionType
+            self.add_output(ConnectionType.M42)
+
+    @property
+    def guide_connection_type(self):
+        return self._outputs[1][0] if len(self._outputs) > 1 else None
+
+    @property
+    def guide_gender(self):
+        return self._outputs[1][1] if len(self._outputs) > 1 else None
 
     def register(self, equipment):
         super(OAG, self).register(equipment)

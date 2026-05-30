@@ -9,7 +9,7 @@ class Reducer(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, extract_number, Gender
+        from ...utils import map_conn, map_gender, extract_number
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -21,10 +21,10 @@ class Reducer(IntermediateOpticalEquipment):
         cg = map_gender(entry.get('cside_gender'))
         mag = extract_number(name, suffix='x') or 0.8
         bf = entry.get('required_backfocus', 55)
-        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
+        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection=(tt, tg) if tt else None, out_connection=(ct, cg) if ct else None)
 
-    def __init__(self, vendor, magnification=0.8, optical_length=0, mass=0, required_backfocus=None, in_connection_type=None, out_connection_type=None, in_gender=Gender.MALE, out_gender=Gender.FEMALE):
-        super(Reducer, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
+    def __init__(self, vendor, magnification=0.8, optical_length=0, mass=0, required_backfocus=None, in_connection=None, out_connection=None, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
+        super(Reducer, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection=in_connection, out_connection=out_connection, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
         self._type = OpticalType.REDUCER
         self.magnification = magnification
         self.required_backfocus = required_backfocus * get_unit_registry().mm if required_backfocus is not None else None
@@ -35,7 +35,7 @@ class Flattener(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -47,10 +47,10 @@ class Flattener(IntermediateOpticalEquipment):
         cg = map_gender(entry.get('cside_gender'))
         mag = 1.0
         bf = entry.get('required_backfocus', 55)
-        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
+        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection=(tt, tg) if tt else None, out_connection=(ct, cg) if ct else None)
 
-    def __init__(self, vendor, magnification=1.0, optical_length=0, mass=0, required_backfocus=None, in_connection_type=None, out_connection_type=None, in_gender=Gender.MALE, out_gender=Gender.FEMALE):
-        super(Flattener, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
+    def __init__(self, vendor, magnification=1.0, optical_length=0, mass=0, required_backfocus=None, in_connection=None, out_connection=None, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
+        super(Flattener, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection=in_connection, out_connection=out_connection, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
         self._type = OpticalType.FLATTENER
         self.magnification = magnification
         self.required_backfocus = required_backfocus * get_unit_registry().mm if required_backfocus is not None else None
@@ -61,7 +61,7 @@ class Corrector(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -73,10 +73,10 @@ class Corrector(IntermediateOpticalEquipment):
         cg = map_gender(entry.get('cside_gender'))
         mag = 1.0
         bf = entry.get('required_backfocus', 55)
-        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection_type=tt, out_connection_type=ct, in_gender=tg or Gender.MALE, out_gender=cg or Gender.FEMALE)
+        return cls(vendor, magnification=mag, optical_length=ol, mass=mass, required_backfocus=bf, in_connection=(tt, tg) if tt else None, out_connection=(ct, cg) if ct else None)
 
-    def __init__(self, vendor, magnification=1.0, optical_length=0, mass=0, required_backfocus=None, in_connection_type=None, out_connection_type=None, in_gender=Gender.MALE, out_gender=Gender.FEMALE):
-        super(Corrector, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
+    def __init__(self, vendor, magnification=1.0, optical_length=0, mass=0, required_backfocus=None, in_connection=None, out_connection=None, in_connection_type=None, out_connection_type=None, in_gender=None, out_gender=None):
+        super(Corrector, self).__init__(vendor, optical_length=optical_length, mass=mass, in_connection=in_connection, out_connection=out_connection, in_connection_type=in_connection_type, out_connection_type=out_connection_type, in_gender=in_gender, out_gender=out_gender)
         self._type = OpticalType.CORRECTOR
         self.magnification = magnification
         self.required_backfocus = required_backfocus * get_unit_registry().mm if required_backfocus is not None else None

@@ -61,8 +61,8 @@ class SmartTelescope(Telescope):
             focal_length,
             vendor,
             telescope_type=None,
-            t2_output=False,
             mass=mass,
+            outputs=[], # Smart telescope has no outputs
         )
         # Smart telescope is a closed system, so we don't want any inputs or outputs
         self._inputs = []

@@ -13,9 +13,9 @@ from apts.utils import ConnectionType, Gender
 from apts.constants import GraphConstants
 
 class TestEquipmentConnections(unittest.TestCase):
-    def test_telescope_t2_output(self):
-        # Telescope with both 1.25" and T2 output
-        t = Telescope(80, 600, "Test Telescope", connection_type=ConnectionType.F_1_25, t2_output=True)
+    def test_telescope_multiple_outputs(self):
+        # Telescope with both 1.25" and T2 outputs
+        t = Telescope(80, 600, "Test Telescope", outputs=[(ConnectionType.T2, Gender.MALE), ConnectionType.F_1_25])
         e = Equipment()
         e.register(t)
 
@@ -32,8 +32,8 @@ class TestEquipmentConnections(unittest.TestCase):
 
     def test_oag_multiple_outputs(self):
         # OAG has a main output and a guide output
-        oag = OAG("Test OAG", in_connection_type=ConnectionType.T2, out_connection_type=ConnectionType.T2,
-                  guide_connection_type=ConnectionType.M42)
+        oag = OAG("Test OAG", in_connection=ConnectionType.T2, out_connection=ConnectionType.T2,
+                  guide_connection=ConnectionType.M42)
         e = Equipment()
         e.register(oag)
 
@@ -53,10 +53,10 @@ class TestEquipmentConnections(unittest.TestCase):
     def test_path_finding_multiple_outputs(self):
         # Setup: Telescope (1.25" and T2) -> Barlow (1.25") -> Eyepiece (1.25")
         #                                  -> Camera (T2)
-        t = Telescope(80, 600, "Test Telescope", connection_type=ConnectionType.F_1_25, t2_output=True)
-        b = Barlow(2, "Test Barlow", connection_type=ConnectionType.F_1_25)
-        ep = Eyepiece(20, "Test Eyepiece", connection_type=ConnectionType.F_1_25)
-        cam = Camera(36, 24, 6000, 4000, "Test Camera", connection_type=ConnectionType.T2)
+        t = Telescope(80, 600, "Test Telescope", outputs=[(ConnectionType.T2, Gender.MALE), ConnectionType.F_1_25])
+        b = Barlow(2, "Test Barlow", outputs=ConnectionType.F_1_25)
+        ep = Eyepiece(20, "Test Eyepiece", inputs=ConnectionType.F_1_25)
+        cam = Camera(36, 24, 6000, 4000, "Test Camera", inputs=ConnectionType.T2)
 
         e = Equipment()
         e.register(t)
@@ -79,7 +79,7 @@ class TestEquipmentConnections(unittest.TestCase):
         # Smart telescope should be a closed system
         st = SmartTelescope(30, 160, 30, 20, 3840, 2160, "ZWO Seestar")
         # An eyepiece that should NOT be able to connect
-        ep = Eyepiece(20, "Test Eyepiece", connection_type=ConnectionType.F_1_25)
+        ep = Eyepiece(20, "Test Eyepiece", inputs=ConnectionType.F_1_25)
 
         e = Equipment()
         e.register(st)
@@ -101,12 +101,11 @@ class TestEquipmentConnections(unittest.TestCase):
         # Setup: Telescope -> FilterWheel (with Filter) -> Camera
         # Telescope output is FEMALE (receiver) for T2? Wait, Telescope.connection_gender defaults to FEMALE.
         # But for T2 (threaded), usually Telescope is MALE.
-        t = Telescope(80, 600, "Test Telescope", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
-        fw = FilterWheel("Test Wheel", in_connection_type=ConnectionType.T2, out_connection_type=ConnectionType.T2,
-                         in_gender=Gender.FEMALE, out_gender=Gender.MALE)
+        t = Telescope(80, 600, "Test Telescope", outputs=[(ConnectionType.T2, Gender.MALE)])
+        fw = FilterWheel("Test Wheel", in_connection=(ConnectionType.T2, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE))
         f = Filter("Test Filter", vendor="Test Vendor", connection_type=ConnectionType.T2)
         fw.add_filter(f)
-        cam = Camera(36, 24, 6000, 4000, "Test Camera", connection_type=ConnectionType.T2)
+        cam = Camera(36, 24, 6000, 4000, "Test Camera", inputs=ConnectionType.T2)
 
         e = Equipment()
         e.register(t)

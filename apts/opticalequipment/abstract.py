@@ -52,6 +52,8 @@ class OpticalEquipment:
         vendor: str,
         optical_length: float = 0,
         mass: float = 0,
+        inputs: list | None = None,
+        outputs: list | None = None,
     ):
         if np.isnan(focal_length):
             raise ValueError("focal_length cannot be NaN")
@@ -66,16 +68,42 @@ class OpticalEquipment:
         self._inputs = []
         self._outputs = []
 
+        if inputs:
+            if not isinstance(inputs, list):
+                inputs = [inputs]
+            for inp in inputs:
+                if isinstance(inp, tuple):
+                    self.add_input(*inp)
+                else:
+                    self.add_input(inp)
+
+        if outputs:
+            if not isinstance(outputs, list):
+                outputs = [outputs]
+            for outp in outputs:
+                if isinstance(outp, tuple):
+                    self.add_output(*outp)
+                else:
+                    self.add_output(outp)
+
     def add_input(self, connection_type, gender=None):
         """
         Add an input port to this equipment.
         """
+        from ..utils import get_default_gender
+
+        if gender is None:
+            gender = get_default_gender(connection_type, is_input=True)
         self._inputs.append((connection_type, gender))
 
     def add_output(self, connection_type, gender=None):
         """
         Add an output port to this equipment.
         """
+        from ..utils import get_default_gender
+
+        if gender is None:
+            gender = get_default_gender(connection_type, is_input=False)
         self._outputs.append((connection_type, gender))
 
     def attach(self, equipment: "OpticalEquipment"):
@@ -129,11 +157,21 @@ class OpticalEquipment:
     def id(self):
         return self._id
 
-    def in_id(self, connection_type):
-        return self._SEPARATOR.join([self._id, connection_type.name, self.IN])
+    def in_id(self, connection_type, gender=None):
+        from ..utils import get_default_gender
 
-    def out_id(self, connection_type):
-        return self._SEPARATOR.join([self._id, connection_type.name, self.OUT])
+        if gender is None:
+            gender = get_default_gender(connection_type, is_input=True)
+        parts = [self._id, connection_type.name, str(gender), self.IN]
+        return self._SEPARATOR.join(parts)
+
+    def out_id(self, connection_type, gender=None):
+        from ..utils import get_default_gender
+
+        if gender is None:
+            gender = get_default_gender(connection_type, is_input=False)
+        parts = [self._id, connection_type.name, str(gender), self.OUT]
+        return self._SEPARATOR.join(parts)
 
     @staticmethod
     def get_parent_id(name: str):
@@ -168,26 +206,26 @@ class OpticalEquipment:
     ):
         # Add output node
         equipment.add_vertex(
-            self.out_id(connection_type),
+            self.out_id(connection_type, gender),
             node_type=OpticalType.OUTPUT,
             connection_type=connection_type,
             connection_gender=gender,
         )
         # Connect node to its output
-        equipment.add_edge(self.id(), self.out_id(connection_type))
+        equipment.add_edge(self.id(), self.out_id(connection_type, gender))
 
     def _register_input(
         self, equipment, connection_type=ConnectionType.F_1_25, gender=None
     ):
         # Add input node
         equipment.add_vertex(
-            self.in_id(connection_type),
+            self.in_id(connection_type, gender),
             node_type=OpticalType.INPUT,
             connection_type=connection_type,
             connection_gender=gender,
         )
         # Connect node to its input
-        equipment.add_edge(self.in_id(connection_type), self.id())
+        equipment.add_edge(self.in_id(connection_type, gender), self.id())
 
     def __str__(self):
         # Format: <vendor>
@@ -204,29 +242,62 @@ class IntermediateOpticalEquipment(OpticalEquipment):
         vendor,
         optical_length=0.0,
         mass=0.0,
+        in_connection=None,
+        out_connection=None,
+        # Legacy arguments for backward compatibility
         in_connection_type=None,
         out_connection_type=None,
         in_gender=None,
         out_gender=None,
     ):
+        # Merge legacy arguments into new ones
+        if in_connection is None:
+            if in_connection_type is not None:
+                in_connection = (in_connection_type, in_gender)
+        if out_connection is None:
+            if out_connection_type is not None:
+                out_connection = (out_connection_type, out_gender)
+
         super(IntermediateOpticalEquipment, self).__init__(
             focal_length=0.0, vendor=vendor, optical_length=optical_length, mass=mass
         )
-        self.in_connection_type = in_connection_type
-        self.out_connection_type = out_connection_type
-        self.in_gender = in_gender
-        self.out_gender = out_gender
 
-        if self.in_connection_type:
-            self.add_input(self.in_connection_type, self.in_gender)
-        if self.out_connection_type:
-            self.add_output(self.out_connection_type, self.out_gender)
+        if in_connection:
+            if isinstance(in_connection, tuple):
+                self.add_input(*in_connection)
+            else:
+                self.add_input(in_connection)
+
+        if out_connection:
+            if isinstance(out_connection, tuple):
+                self.add_output(*out_connection)
+            else:
+                self.add_output(out_connection)
+
+    @property
+    def in_connection_type(self):
+        return self._inputs[0][0] if self._inputs else None
+
+    @property
+    def in_gender(self):
+        return self._inputs[0][1] if self._inputs else None
+
+    @property
+    def out_connection_type(self):
+        return self._outputs[0][0] if self._outputs else None
+
+    @property
+    def out_gender(self):
+        return self._outputs[0][1] if self._outputs else None
 
 
 class OutputOpticalEquipment(OpticalEquipment):
-    def __init__(self, focal_length, vendor, optical_length=0.0, mass=0.0):
+    def __init__(self, focal_length, vendor, optical_length=0.0, mass=0.0, inputs=None, connection_type=None, connection_gender=None):
+        if inputs is None:
+            if connection_type is not None:
+                inputs = [(connection_type, connection_gender)]
         super().__init__(
-            focal_length, vendor, optical_length=optical_length, mass=mass
+            focal_length, vendor, optical_length=optical_length, mass=mass, inputs=inputs
         )
 
     def is_visual_output(self) -> bool:

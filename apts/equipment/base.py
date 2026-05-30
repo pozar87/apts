@@ -368,4 +368,5 @@ class Equipment(EquipmentPlottingMixIn):
         """
         Register any optical equipment in a optical graph.
         """
+        self._connected = False
         optical_eqipment.register(self)

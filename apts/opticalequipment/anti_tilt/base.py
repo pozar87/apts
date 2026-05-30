@@ -5,7 +5,7 @@ from ...constants import OpticalType
 class AntiTilt(IntermediateOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -20,10 +20,8 @@ class AntiTilt(IntermediateOpticalEquipment):
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection_type=tt,
-            out_connection_type=ct,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
+            in_connection=(tt, tg) if tt else None,
+            out_connection=(ct, cg) if ct else None,
         )
 
     def __init__(
@@ -31,19 +29,15 @@ class AntiTilt(IntermediateOpticalEquipment):
         vendor,
         optical_length=0,
         mass=0,
-        in_connection_type=None,
-        out_connection_type=None,
-        in_gender=None,
-        out_gender=None,
+        in_connection=None,
+        out_connection=None,
     ):
         super(AntiTilt, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
-            in_connection_type=in_connection_type,
-            out_connection_type=out_connection_type,
-            in_gender=in_gender,
-            out_gender=out_gender,
+            in_connection=in_connection,
+            out_connection=out_connection,
         )
         self._type = OpticalType.ANTI_TILT
 

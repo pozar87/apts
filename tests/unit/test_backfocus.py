@@ -20,19 +20,12 @@ class TestBackfocus(unittest.TestCase):
             magnification=0.8,
             optical_length=10,
             required_backfocus=55,
-            in_connection_type=ConnectionType.M42,
-            out_connection_type=ConnectionType.M42,
+            in_connection=ConnectionType.M42,
+            out_connection=ConnectionType.M42,
         )
 
         # Spacer: Input M42 Male, Output M42 Female
-        s = Spacer(
-            "Test Spacer",
-            optical_length=20,
-            in_connection_type=ConnectionType.M42,
-            out_connection_type=ConnectionType.M42,
-            in_gender=Gender.MALE,
-            out_gender=Gender.FEMALE,
-        )
+        s = Spacer("Test Spacer", optical_length=20, in_connection=(ConnectionType.M42, Gender.FEMALE), out_connection=(ConnectionType.M42, Gender.MALE))
 
         # Camera: Input M42 Male (override default Female if needed, but actually Camera input is Female usually... wait)
         # In my code: Camera(connection_gender=Gender.FEMALE) by default.
@@ -47,8 +40,7 @@ class TestBackfocus(unittest.TestCase):
             6000,
             4000,
             vendor="Test Cam",
-            connection_type=ConnectionType.M42,
-            connection_gender=Gender.MALE,
+            inputs=[(ConnectionType.M42, Gender.FEMALE)],
             backfocus=17.5,
         )
 
@@ -70,16 +62,7 @@ class TestBackfocus(unittest.TestCase):
         t = Telescope(
             80, 480, vendor="Test Scope", mass=2000, connection_type=ConnectionType.M42
         )
-        c = Camera(
-            23.5,
-            15.7,
-            6000,
-            4000,
-            vendor="Test Cam",
-            mass=500,
-            connection_type=ConnectionType.M42,
-            connection_gender=Gender.MALE,
-        )
+        c = Camera(23.5, 15.7, 6000, 4000, vendor="Test Cam", mass=500, inputs=[(ConnectionType.M42, Gender.FEMALE)])
 
         eq = Equipment()
         eq.register(t)
@@ -93,12 +76,12 @@ class TestBackfocus(unittest.TestCase):
         self.assertEqual(cast(Any, path.total_mass()).magnitude, 2500)
 
     def test_total_mass_with_attached(self):
-        t = Telescope(80, 480, mass=2000, connection_type=ConnectionType.M42)
+        t = Telescope(80, 480, mass=2000, outputs=ConnectionType.M42)
         # Attach a focuser motor
         f = Focuser("EAF", mass=500)
         t.attach(f)
 
-        c = Camera(23.5, 15.7, 6000, 4000, mass=300, connection_type=ConnectionType.M42, connection_gender=Gender.MALE)
+        c = Camera(23.5, 15.7, 6000, 4000, mass=300, inputs=[(ConnectionType.M42, Gender.FEMALE)])
 
         from apts.optics import OpticalPath
         path = OpticalPath.from_path([t, c])
