@@ -11,9 +11,10 @@ from ..utils import ConnectionType
 
 class OpticalEquipment:
 
-    _DATABASE: dict[Any, Any] = {} 
+    _DATABASE: dict[Any, Any] = {}
+    path_layer: int = 3
 
-    @classmethod 
+    @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict: 
         """ 
         Normalizes a database entry by ensuring it has consistent keys and guessed properties. 

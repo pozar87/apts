@@ -44,6 +44,8 @@ class Diagonal(IntermediateOpticalEquipment):
     Class representing a star diagonal.
     """
 
+    path_layer = 2
+
     def __init__(
         self,
         vendor="unknown diagonal",

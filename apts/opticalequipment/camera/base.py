@@ -6,6 +6,7 @@ from ...units import get_unit_registry
 from ...utils import ConnectionType, Gender
 
 class Camera(OutputOpticalEquipment):
+    path_layer = 5
     _DATABASE = {}
 
     @classmethod

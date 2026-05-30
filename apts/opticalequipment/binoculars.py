@@ -21,6 +21,8 @@ class Binoculars(OutputOpticalEquipment):
     Class representing binoculars
     """
 
+    path_layer = 1
+
     def __init__(
         self,
         magnification,

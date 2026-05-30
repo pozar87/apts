@@ -21,6 +21,8 @@ class TubeMaterial(Enum):
     GLASS_FIBER = 8e-06
 
 class Telescope(OpticalEquipment):
+    path_layer = 1
+
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
         from ...utils import guess_optical_properties

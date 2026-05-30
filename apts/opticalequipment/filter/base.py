@@ -7,6 +7,8 @@ class Filter(IntermediateOpticalEquipment):
     Class representing a filter.
     """
 
+    path_layer = 4
+
     _DATABASE = {}
 
     @classmethod

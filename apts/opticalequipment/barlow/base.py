@@ -44,6 +44,8 @@ class Barlow(OpticalEquipment):
   Class representing Barlow lenses
   """
 
+    path_layer = 2
+
     def __init__(
         self,
         magnification,
