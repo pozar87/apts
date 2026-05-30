@@ -1,3 +1,4 @@
+from apts.utils import ConnectionType, Gender
 from apts import equipment, observations, place, opticalequipment
 import datetime
 
@@ -5,7 +6,12 @@ import datetime
 def setup_equipment():
     # Setup basic equipment
     e = equipment.Equipment()
-    e.register(opticalequipment.Telescope(150, 750, t2_output=True))
+    # Register telescope with both 1.25" and T2 outputs
+    e.register(
+        opticalequipment.Telescope(
+            150, 750, outputs=[ConnectionType.F_1_25, ConnectionType.T2]
+        )
+    )
     e.register(opticalequipment.Eyepiece(25))
     return e
 

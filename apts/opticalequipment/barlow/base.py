@@ -16,7 +16,7 @@ class Barlow(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, extract_number, Gender
+        from ...utils import map_conn, map_gender, extract_number
 
         brand = entry["brand"]
         name = entry["name"]
@@ -25,17 +25,23 @@ class Barlow(OpticalEquipment):
         mass = entry.get("mass", 0)
         tt = map_conn(entry.get("tside_thread"))
         tg = map_gender(entry.get("tside_gender"))
-        map_conn(entry.get("cside_thread"))
+        ct = map_conn(entry.get("cside_thread"))
         cg = map_gender(entry.get("cside_gender"))
         mag = extract_number(name, prefix="x") or 2.0
-        t2_out = entry.get("t2_output", False)
+
+        inputs = [(tt, tg)] if tt else []
+        outputs = entry.get("outputs")
+        if outputs is None:
+            outputs = [(ct, cg)] if ct else []
+            if entry.get("t2_output", False):
+                from ...utils import Gender
+                outputs.append((ConnectionType.T2, Gender.MALE))
+
         return cls(
             mag,
             vendor=vendor,
-            connection_type=tt,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
-            t2_output=t2_out,
+            inputs=inputs,
+            outputs=outputs,
             mass=mass,
             optical_length=ol,
         )
@@ -50,26 +56,46 @@ class Barlow(OpticalEquipment):
         self,
         magnification,
         vendor="unknown barlow",
-        connection_type=ConnectionType.F_1_25,
-        in_gender=Gender.MALE,
-        out_gender=Gender.FEMALE,
-        t2_output=False,
+        inputs=None,
+        outputs=None,
         mass=0.0,
         optical_length=0.0,
+        connection_type=None,
+        in_gender=None,
+        out_gender=None,
     ):
+        if inputs is None:
+            if connection_type:
+                inputs = [(connection_type, in_gender)]
+            else:
+                inputs = [ConnectionType.F_1_25]
+        if outputs is None:
+            if connection_type:
+                outputs = [(connection_type, out_gender)]
+            else:
+                outputs = [ConnectionType.F_1_25]
+
         super(Barlow, self).__init__(
-            0, vendor, mass=mass, optical_length=optical_length
+            0,
+            vendor,
+            mass=mass,
+            optical_length=optical_length,
+            inputs=inputs,
+            outputs=outputs,
         )
-        self.connection_type = connection_type
-        self.in_gender = in_gender
-        self.out_gender = out_gender
-        self.t2_output = t2_output
         self.magnification = magnification
 
-        self.add_input(self.connection_type, self.in_gender)
-        self.add_output(self.connection_type, self.out_gender)
-        if self.t2_output:
-            self.add_output(ConnectionType.T2, Gender.MALE)
+    @property
+    def connection_type(self):
+        return self._inputs[0][0] if self._inputs else None
+
+    @property
+    def in_gender(self):
+        return self._inputs[0][1] if self._inputs else None
+
+    @property
+    def out_gender(self):
+        return self._outputs[0][1] if self._outputs else None
 
     def register(self, equipment):
         """

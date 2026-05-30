@@ -7,7 +7,7 @@ class FilterWheel(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -22,10 +22,8 @@ class FilterWheel(IntermediateOpticalEquipment):
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection_type=tt,
-            out_connection_type=ct,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
+            in_connection=(tt, tg) if tt else None,
+            out_connection=(ct, cg) if ct else None,
         )
 
     def __init__(
@@ -33,19 +31,15 @@ class FilterWheel(IntermediateOpticalEquipment):
         vendor,
         optical_length=0,
         mass=0,
-        in_connection_type=None,
-        out_connection_type=None,
-        in_gender=None,
-        out_gender=None,
+        in_connection=None,
+        out_connection=None,
     ):
         super(FilterWheel, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
-            in_connection_type=in_connection_type,
-            out_connection_type=out_connection_type,
-            in_gender=in_gender,
-            out_gender=out_gender,
+            in_connection=in_connection,
+            out_connection=out_connection,
         )
         self._type = OpticalType.FILTER_WHEEL
         self.filters = []
@@ -62,9 +56,9 @@ class FilterWheel(IntermediateOpticalEquipment):
         for f in self.filters:
             # Connect filter wheel node to filter input
             # This allows the optical path to go: Wheel_IN -> Wheel_Node -> Filter_IN -> Filter_Node -> Filter_OUT -> Wheel_OUT
-            equipment.add_edge(self.id(), f.in_id(f.in_connection_type))
+            equipment.add_edge(self.id(), f.in_id(f.in_connection_type, f.in_gender))
             # Connect filter output to filter wheel output
-            equipment.add_edge(f.out_id(f.out_connection_type), self.out_id(self.out_connection_type))
+            equipment.add_edge(f.out_id(f.out_connection_type, f.out_gender), self.out_id(self.out_connection_type, self.out_gender))
 
 
 class FilterHolder(IntermediateOpticalEquipment):
@@ -72,7 +66,7 @@ class FilterHolder(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -87,10 +81,8 @@ class FilterHolder(IntermediateOpticalEquipment):
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection_type=tt,
-            out_connection_type=ct,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
+            in_connection=(tt, tg) if tt else None,
+            out_connection=(ct, cg) if ct else None,
         )
 
     def __init__(
@@ -98,19 +90,15 @@ class FilterHolder(IntermediateOpticalEquipment):
         vendor,
         optical_length=0,
         mass=0,
-        in_connection_type=None,
-        out_connection_type=None,
-        in_gender=None,
-        out_gender=None,
+        in_connection=None,
+        out_connection=None,
     ):
         super(FilterHolder, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
-            in_connection_type=in_connection_type,
-            out_connection_type=out_connection_type,
-            in_gender=in_gender,
-            out_gender=out_gender,
+            in_connection=in_connection,
+            out_connection=out_connection,
         )
         self._type = OpticalType.FILTER_HOLDER
         self.filters = []
@@ -126,6 +114,6 @@ class FilterHolder(IntermediateOpticalEquipment):
         super(FilterHolder, self).register(equipment)
         for f in self.filters:
             # Connect filter holder node to filter input
-            equipment.add_edge(self.id(), f.in_id(f.in_connection_type))
+            equipment.add_edge(self.id(), f.in_id(f.in_connection_type, f.in_gender))
             # Connect filter output to filter holder output
-            equipment.add_edge(f.out_id(f.out_connection_type), self.out_id(self.out_connection_type))
+            equipment.add_edge(f.out_id(f.out_connection_type, f.out_gender), self.out_id(self.out_connection_type, self.out_gender))

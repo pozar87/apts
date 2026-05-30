@@ -3,6 +3,7 @@
 
 import os
 
+from apts.utils import ConnectionType, Gender
 from apts import Equipment, opticalequipment, observations, place
 from apts.config import get_plot_format
 from matplotlib import pyplot
@@ -14,7 +15,7 @@ if not os.path.exists("test_plots"):
 # --- Equipment and Location Setup ---
 my_equipment = Equipment()
 sky_watcher = "SW"
-my_equipment.register(opticalequipment.Telescope(150, 750, sky_watcher, t2_output=True))
+my_equipment.register(opticalequipment.Telescope(150, 750, sky_watcher, outputs=[(ConnectionType.T2, Gender.MALE)]))
 my_place = place.Place(lat=50.1637973, lon=19.7855169, name="Zelków")
 my_observation = observations.Observation(my_place, my_equipment)
 

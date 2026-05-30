@@ -39,18 +39,31 @@ class Eyepiece(OutputOpticalEquipment):
         fs = entry.get('field_stop_mm')
         mass = entry.get('mass', 0)
         ol = entry.get('optical_length', 0)
-        return cls(fl, vendor=vendor, field_of_view=fov, field_stop=fs, connection_type=tt, connection_gender=tg or Gender.MALE, mass=mass, optical_length=ol)
+        inputs = [(tt, tg)] if tt else []
+        return cls(fl, vendor=vendor, field_of_view=fov, field_stop=fs, inputs=inputs, mass=mass, optical_length=ol)
 
     '\n  Class representing ocular\n  '
 
-    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, field_stop=None, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE, mass=0.0, optical_length=0.0):
-        super().__init__(focal_length, vendor, mass=mass, optical_length=optical_length)
-        self._connection_type = connection_type
-        self._connection_gender = connection_gender
+    def __init__(self, focal_length, vendor='unknown ocular', field_of_view=70, field_stop=None, inputs=None, mass=0.0, optical_length=0.0, connection_type=None, connection_gender=None):
+        if inputs is None:
+            if connection_type:
+                inputs = [(connection_type, connection_gender)]
+            else:
+                inputs = [ConnectionType.F_1_25]
+
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+        super().__init__(focal_length, vendor, mass=mass, optical_length=optical_length, inputs=inputs)
         self._field_of_view = cast(Any, field_of_view * get_unit_registry().deg)
         self.field_stop = cast(Any, field_stop * get_unit_registry().mm) if field_stop is not None else None
 
-        self.add_input(self._connection_type, self._connection_gender)
+    @property
+    def connection_type(self):
+        return self._inputs[0][0] if self._inputs else None
+
+    @property
+    def connection_gender(self):
+        return self._inputs[0][1] if self._inputs else None
 
     def _zoom_divider(self):
         return self.focal_length

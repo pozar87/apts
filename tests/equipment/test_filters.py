@@ -8,7 +8,7 @@ from apts.utils import ConnectionType, Gender
 
 def test_filter_registration_and_transmission():
     e = Equipment()
-    t = Telescope(150, 750, t2_output=True, vendor="TestTele")
+    t = Telescope(150, 750, vendor="TestTele", outputs=[(ConnectionType.T2, Gender.MALE)])
     c = Camera(
         22.2, 14.8, 4, 4, vendor="TestCam", quantum_efficiency=0.5, read_noise=3.0
     )
@@ -53,14 +53,11 @@ def test_filter_registration_and_transmission():
 
 def test_filter_wheel_paths():
     e = Equipment()
-    t = Telescope(150, 750, t2_output=True, vendor="TestTele")
+    t = Telescope(150, 750, vendor="TestTele", outputs=[(ConnectionType.T2, Gender.MALE)])
     # FilterWheel IN (FEMALE), OUT (MALE) for T2
     fw = FilterWheel(
         vendor="TestWheel",
-        in_connection_type=ConnectionType.T2,
-        out_connection_type=ConnectionType.T2,
-        in_gender=Gender.FEMALE,
-        out_gender=Gender.MALE,
+        in_connection=(ConnectionType.T2, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE),
     )
 
     f1 = Filter(
@@ -94,7 +91,7 @@ def test_filter_wheel_paths():
 
 def test_filter_component_list_and_mass():
     e = Equipment()
-    t = Telescope(150, 750, t2_output=True, mass=5000, vendor="TestTele")
+    t = Telescope(150, 750, mass=5000, vendor="TestTele", outputs=[(ConnectionType.T2, Gender.MALE)])
     f = Filter(
         "H-alpha", mass=50, connection_type=ConnectionType.T2, vendor="TestFilter"
     )
@@ -116,14 +113,11 @@ def test_filter_component_list_and_mass():
 
 def test_filter_wheel_mass():
     e = Equipment()
-    t = Telescope(150, 750, t2_output=True, mass=5000, vendor="TestTele")
+    t = Telescope(150, 750, mass=5000, vendor="TestTele", outputs=[(ConnectionType.T2, Gender.MALE)])
     fw = FilterWheel(
         vendor="TestWheel",
         mass=300,
-        in_connection_type=ConnectionType.T2,
-        out_connection_type=ConnectionType.T2,
-        in_gender=Gender.FEMALE,
-        out_gender=Gender.MALE,
+        in_connection=(ConnectionType.T2, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE),
     )
 
     f1 = Filter("Red", mass=20, connection_type=ConnectionType.T2, vendor="TestFilter")

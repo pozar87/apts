@@ -19,7 +19,7 @@ class Diagonal(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -30,14 +30,21 @@ class Diagonal(IntermediateOpticalEquipment):
         tg = map_gender(entry.get("tside_gender"))
         ct = map_conn(entry.get("cside_thread"))
         cg = map_gender(entry.get("cside_gender"))
+        in_conn = (tt, tg) if tt else None
+
+        outputs = entry.get("outputs")
+        if outputs is None:
+            outputs = [(ct, cg)] if ct else []
+            if entry.get("t2_output", False):
+                from ...utils import Gender
+                outputs.append((ConnectionType.T2, Gender.MALE))
+
         return cls(
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection_type=tt,
-            out_connection_type=ct,
-            in_gender=tg or Gender.MALE,
-            out_gender=cg or Gender.FEMALE,
+            in_connection=in_conn,
+            outputs=outputs,
         )
 
     """
@@ -49,31 +56,47 @@ class Diagonal(IntermediateOpticalEquipment):
     def __init__(
         self,
         vendor="unknown diagonal",
-        connection_type=ConnectionType.F_1_25,
         is_erecting=False,
-        t2_output=False,
         optical_length=0.0,
         mass=0.0,
-        in_connection_type=None,
-        out_connection_type=None,
+        in_connection=None,
+        out_connection=None,
+        connection_type=None,
         in_gender=None,
         out_gender=None,
+        outputs=None,
     ):
+        if in_connection is None:
+            if connection_type:
+                in_connection = (connection_type, in_gender)
+            else:
+                in_connection = ConnectionType.F_1_25
+
+        if out_connection is None:
+            if connection_type:
+                out_connection = (connection_type, out_gender)
+            else:
+                out_connection = ConnectionType.F_1_25
+
         super(Diagonal, self).__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
-            in_connection_type=in_connection_type or connection_type,
-            out_connection_type=out_connection_type or connection_type,
-            in_gender=in_gender or Gender.MALE,
-            out_gender=out_gender or Gender.FEMALE,
+            in_connection=in_connection,
+            out_connection=out_connection,
         )
-        self.connection_type = connection_type or in_connection_type
         self.is_erecting = is_erecting
-        self.t2_output = t2_output
 
-        if self.t2_output:
-            self.add_output(ConnectionType.T2, Gender.MALE)
+        if outputs:
+            for outp in outputs:
+                if isinstance(outp, tuple):
+                    self.add_output(*outp)
+                else:
+                    self.add_output(outp)
+
+    @property
+    def connection_type(self):
+        return self.in_connection_type
 
     def register(self, equipment):
         """

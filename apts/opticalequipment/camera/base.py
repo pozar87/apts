@@ -11,7 +11,7 @@ class Camera(OutputOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
         brand = entry['brand']
         name = entry['name']
         vendor = f'{brand} {name}'
@@ -38,10 +38,11 @@ class Camera(OutputOpticalEquipment):
             w = w if w is not None else w_h
             h = h if h is not None else h_h
 
+        inputs = [(tt, tg)] if tt else []
+
         return cls(sw, sh, w, h,
                    vendor=vendor,
-                   connection_type=tt,
-                   connection_gender=tg or Gender.FEMALE,
+                   inputs=inputs,
                    backfocus=ol,
                    mass=mass,
                    optical_length=ol,
@@ -51,10 +52,16 @@ class Camera(OutputOpticalEquipment):
                    quantum_efficiency=entry.get('quantum_efficiency_pct'))
     '\n  Class representing DSLR camera mounted via T2 adapter\n  '
 
-    def __init__(self, sensor_width: float, sensor_height: float, width: int, height: int, vendor: str = 'unknown camera', connection_type: ConnectionType = ConnectionType.T2, connection_gender: Gender = Gender.FEMALE, pixel_size: float | None = None, read_noise: float | None = None, full_well: float | None = None, quantum_efficiency: float | None = None, backfocus: float | None = None, mass: float = 0, optical_length: float = 0):
-        super().__init__(0, vendor, mass=mass, optical_length=optical_length)
-        self.connection_type = connection_type
-        self.connection_gender = connection_gender
+    def __init__(self, sensor_width: float, sensor_height: float, width: int, height: int, vendor: str = 'unknown camera', inputs: list | None = None, pixel_size: float | None = None, read_noise: float | None = None, full_well: float | None = None, quantum_efficiency: float | None = None, backfocus: float | None = None, mass: float = 0, optical_length: float = 0, connection_type=None, connection_gender=None):
+        if inputs is None:
+            if connection_type:
+                inputs = [(connection_type, connection_gender)]
+            else:
+                inputs = [ConnectionType.T2]
+
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+        super().__init__(0, vendor, mass=mass, optical_length=optical_length, inputs=inputs)
         self.sensor_width = cast(Any, sensor_width * get_unit_registry().mm)
         self.sensor_height = cast(Any, sensor_height * get_unit_registry().mm)
         self.width = width
@@ -68,7 +75,13 @@ class Camera(OutputOpticalEquipment):
         else:
             self._pixel_size = None
 
-        self.add_input(self.connection_type, self.connection_gender)
+    @property
+    def connection_type(self):
+        return self._inputs[0][0] if self._inputs else None
+
+    @property
+    def connection_gender(self):
+        return self._inputs[0][1] if self._inputs else None
 
     def pixel_size(self) -> Any:
         ureg = get_unit_registry()

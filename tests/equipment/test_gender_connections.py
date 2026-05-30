@@ -58,8 +58,8 @@ def test_gender_matching_blocked_same_gender():
     labels2 = data2[EquipmentTableLabels.LABEL].tolist()
     assert not any("TeleFemale" in label and "CamFemale" in label for label in labels2)
 
-def test_gender_matching_blocked_missing_gender():
-    """Test that connections are blocked if any gender is missing."""
+def test_gender_defaulting_works():
+    """Test that connections work using default genders when not specified."""
     # None to MALE
     e1 = Equipment()
     tele_none = Telescope(150, 750, vendor="TeleNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
@@ -82,13 +82,13 @@ def test_gender_matching_blocked_missing_gender():
     cam_none2 = Camera(10, 10, 100, 100, vendor="CamNone", connection_type=ConnectionType.T2, connection_gender=cast(Any, None))
     e3.register(tele_none2)
     e3.register(cam_none2)
-    assert not any("TeleNone" in label and "CamNone" in label for label in e3.data()[EquipmentTableLabels.LABEL])
+    assert any("TeleNone" in label and "CamNone" in label for label in e3.data()[EquipmentTableLabels.LABEL])
 
 def test_explicit_t2_gender_on_telescope():
     """Test that Telescope T2 output now has a gender and connects to camera."""
     e = Equipment()
-    # By default, t2_output=True should now register a MALE T2 output
-    tele = Telescope(150, 750, vendor="TeleT2", t2_output=True)
+    # Explicitly register a MALE T2 output
+    tele = Telescope(150, 750, vendor="TeleT2", outputs=[(ConnectionType.T2, Gender.MALE)])
     # Camera T2 input is FEMALE by default
     cam = Camera(10, 10, 100, 100, vendor="CamT2")
 

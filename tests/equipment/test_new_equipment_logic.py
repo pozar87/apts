@@ -30,15 +30,15 @@ def test_attached_equipment_mass():
 def test_filter_wheel_paths():
     e = Equipment()
     # Use T2 consistently for connections
-    t = Telescope(80, 480, vendor="Refractor", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
+    t = Telescope(80, 480, vendor="Refractor", outputs=[(ConnectionType.T2, Gender.MALE)])
 
-    fw = FilterWheel("EFW", in_connection_type=ConnectionType.T2, out_connection_type=ConnectionType.T2, in_gender=Gender.FEMALE, out_gender=Gender.MALE)
+    fw = FilterWheel("EFW", in_connection=(ConnectionType.T2, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE))
     f1 = Filter("Red", connection_type=ConnectionType.T2)
     f2 = Filter("Green", connection_type=ConnectionType.T2)
     fw.add_filter(f1)
     fw.add_filter(f2)
 
-    c = Camera(10, 10, 1000, 1000, vendor="Cam", connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE)
+    c = Camera(10, 10, 1000, 1000, vendor="Cam", inputs=[(ConnectionType.T2, Gender.FEMALE)])
 
     e.register(t)
     e.register(fw)
@@ -59,12 +59,12 @@ def test_filter_wheel_paths():
 
 def test_oag_paths():
     e = Equipment()
-    t = Telescope(80, 480, vendor="Refractor", connection_type=ConnectionType.T2, connection_gender=Gender.MALE)
+    t = Telescope(80, 480, vendor="Refractor", outputs=[(ConnectionType.T2, Gender.MALE)])
 
-    oag = OAG("ZWO OAG", in_connection_type=ConnectionType.T2, out_connection_type=ConnectionType.T2, in_gender=Gender.FEMALE, out_gender=Gender.MALE, guide_connection_type=ConnectionType.T2, guide_gender=Gender.MALE)
+    oag = OAG("ZWO OAG", in_connection=(ConnectionType.T2, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE), guide_connection=(ConnectionType.T2, Gender.MALE))
 
-    main_cam = Camera(10, 10, 1000, 1000, vendor="Main Cam", connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE)
-    guide_cam = Camera(5, 5, 500, 500, vendor="Guide Cam", connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE)
+    main_cam = Camera(10, 10, 1000, 1000, vendor="Main Cam", inputs=[(ConnectionType.T2, Gender.FEMALE)])
+    guide_cam = Camera(5, 5, 500, 500, vendor="Guide Cam", inputs=[(ConnectionType.T2, Gender.FEMALE)])
 
     e.register(t)
     e.register(oag)
@@ -86,20 +86,17 @@ def test_flip_mirror_paths():
     e = Equipment()
     # Use unique connection types to enforce the path: t -> fm -> (cam OR eye)
     # Telescope to FlipMirror input: M48
-    t = Telescope(80, 480, vendor="Refractor", connection_type=ConnectionType.M48, connection_gender=Gender.MALE)
+    t = Telescope(80, 480, vendor="Refractor", outputs=[(ConnectionType.M48, Gender.MALE)])
 
     # FlipMirror: IN=M48, OUT1=T2, OUT2=1.25
-    fm = FlipMirror("Baader FlipMirror",
-                    in_connection_type=ConnectionType.M48, in_gender=Gender.FEMALE,
-                    out_connection_type=ConnectionType.T2, out_gender=Gender.MALE,
-                    diagonal_connection_type=ConnectionType.F_1_25, diagonal_gender=Gender.FEMALE)
+    fm = FlipMirror("Baader FlipMirror", in_connection=(ConnectionType.M48, Gender.FEMALE), out_connection=(ConnectionType.T2, Gender.MALE), diagonal_connection=(ConnectionType.F_1_25, Gender.FEMALE))
 
     # Camera: T2
-    cam = Camera(10, 10, 1000, 1000, vendor="Cam", connection_type=ConnectionType.T2, connection_gender=Gender.FEMALE)
+    cam = Camera(10, 10, 1000, 1000, vendor="Cam", inputs=[(ConnectionType.T2, Gender.FEMALE)])
 
     # Eyepiece: 1.25
     from apts.opticalequipment.eyepiece import Eyepiece
-    eye = Eyepiece(20, vendor="Plossl", field_of_view=50, connection_type=ConnectionType.F_1_25, connection_gender=Gender.MALE)
+    eye = Eyepiece(20, vendor="Plossl", field_of_view=50, inputs=[(ConnectionType.F_1_25, Gender.MALE)])
 
     e.register(t)
     e.register(fm)
@@ -157,13 +154,13 @@ def test_nested_attachments():
 
 def test_supporting_equipment_in_path():
     e = Equipment()
-    t = Telescope(80, 480, vendor="Refractor", connection_type=ConnectionType.M48, connection_gender=Gender.MALE)
+    t = Telescope(80, 480, vendor="Refractor", outputs=[(ConnectionType.M48, Gender.MALE)])
 
     # Use unique connection M68 between Rotator and Focuser to force the order
-    rot = Rotator("Falcon", in_connection_type=ConnectionType.M48, in_gender=Gender.FEMALE, out_connection_type=ConnectionType.M68, out_gender=Gender.MALE)
-    foc = Focuser("ESATTO", in_connection_type=ConnectionType.M68, in_gender=Gender.FEMALE, out_connection_type=ConnectionType.M42, out_gender=Gender.MALE)
+    rot = Rotator("Falcon", in_connection=(ConnectionType.M48, Gender.FEMALE), out_connection=(ConnectionType.M68, Gender.MALE))
+    foc = Focuser("ESATTO", in_connection=(ConnectionType.M68, Gender.FEMALE), out_connection=(ConnectionType.M42, Gender.MALE))
 
-    cam = Camera(10, 10, 1000, 1000, vendor="Cam", connection_type=ConnectionType.M42, connection_gender=Gender.FEMALE)
+    cam = Camera(10, 10, 1000, 1000, vendor="Cam", inputs=[(ConnectionType.M42, Gender.FEMALE)])
 
     e.register(t)
     e.register(rot)
@@ -179,14 +176,14 @@ def test_supporting_equipment_in_path():
 
 def test_spacer_adapter_anti_tilt():
     e = Equipment()
-    t = Telescope(80, 480, connection_type=ConnectionType.M54, connection_gender=Gender.MALE)
+    t = Telescope(80, 480, outputs=[(ConnectionType.M54, Gender.MALE)])
 
     # Use chain of unique connections: M54 -> M56 -> M63 -> M48 -> M42
-    at = AntiTilt("TiltPlate", in_connection_type=ConnectionType.M54, in_gender=Gender.FEMALE, out_connection_type=ConnectionType.M56, out_gender=Gender.MALE)
-    sp = Spacer("10mm Spacer", in_connection_type=ConnectionType.M56, in_gender=Gender.FEMALE, out_connection_type=ConnectionType.M63, out_gender=Gender.MALE, optical_length=10)
-    ad = Adapter("M54 to M42", in_connection_type=ConnectionType.M63, in_gender=Gender.FEMALE, out_connection_type=ConnectionType.M42, out_gender=Gender.MALE)
+    at = AntiTilt("TiltPlate", in_connection=(ConnectionType.M54, Gender.FEMALE), out_connection=(ConnectionType.M56, Gender.MALE))
+    sp = Spacer("10mm Spacer", in_connection=(ConnectionType.M56, Gender.FEMALE), out_connection=(ConnectionType.M63, Gender.MALE), optical_length=10)
+    ad = Adapter("M54 to M42", in_connection=(ConnectionType.M63, Gender.FEMALE), out_connection=(ConnectionType.M42, Gender.MALE))
 
-    cam = Camera(10, 10, 1000, 1000, connection_type=ConnectionType.M42, connection_gender=Gender.FEMALE)
+    cam = Camera(10, 10, 1000, 1000, inputs=[(ConnectionType.M42, Gender.FEMALE)])
 
     e.register(t)
     e.register(at)
@@ -200,3 +197,44 @@ def test_spacer_adapter_anti_tilt():
     assert "TiltPlate" in path.label()
     assert "10mm Spacer" in path.label()
     assert "M54 to M42" in path.label()
+
+def test_gender_exclusivity():
+    """
+    Verify that components with matching genders (e.g., two Male M42 ports)
+    do not connect, while opposing genders do.
+    """
+    # Test Case 1: Matching genders block connection
+    # Telescope(M54 Male) -> Adapter(M54 Female IN, M42 Female OUT) -> Camera(M42 Female IN)
+    # The last connection (F to F) should fail.
+    # Direct Telescope to Camera should fail due to size mismatch (M54 vs M42).
+    t = Telescope(80, 480, outputs=[(ConnectionType.M54, Gender.MALE)])
+    ad = Adapter("M54F-M42F Coupler", in_connection=(ConnectionType.M54, Gender.FEMALE), out_connection=(ConnectionType.M42, Gender.FEMALE))
+    c = Camera(10, 10, 1000, 1000, inputs=[(ConnectionType.M42, Gender.FEMALE)])
+
+    e1 = Equipment()
+    e1.register(t)
+    e1.register(ad)
+    e1.register(c)
+
+    paths1 = e1._get_paths("Image")
+    assert len(paths1) == 0
+
+    # Test Case 2: Adding a gender changer resolves the blockage
+    # Telescope(M) -> Adapter(F, F) -> GenderChanger(M, M) -> Camera(F)
+    gc = Adapter("M42M-M42M Gender Changer", in_connection=(ConnectionType.M42, Gender.MALE), out_connection=(ConnectionType.M42, Gender.MALE))
+    e1.register(gc)
+
+    paths2 = e1._get_paths("Image")
+    assert len(paths2) == 1
+    label = paths2[0].label()
+    assert "M54F-M42F Coupler" in label
+    assert "M42M-M42M Gender Changer" in label
+
+    # Test Case 3: Push-fit connections (1.25") allow connecting if one or both genders are missing
+    # (Existing legacy behavior)
+    e3 = Equipment()
+    t3 = Telescope(80, 480, outputs=[(ConnectionType.F_1_25, None)])
+    c3 = Camera(10, 10, 1000, 1000, inputs=[(ConnectionType.F_1_25, None)])
+    e3.register(t3)
+    e3.register(c3)
+    assert len(e3._get_paths("Image")) == 1

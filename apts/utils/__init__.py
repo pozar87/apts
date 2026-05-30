@@ -8,7 +8,7 @@ from .coordinates import decdeg2dms, dms2decdeg
 from .date import format_date, date_format
 from .graph import find_all_paths
 from .text import sanitize_header, extract_number, mask_secret
-from .equipment import ConnectionType, Gender, map_conn, map_gender, guess_optical_properties
+from .equipment import ConnectionType, Gender, map_conn, map_gender, guess_optical_properties, get_default_gender
 from .plot import PlotUtils
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "map_conn",
     "map_gender",
     "guess_optical_properties",
+    "get_default_gender",
     "optics",
 ]
 
@@ -53,5 +54,6 @@ class Utils:
     annotate_plot = staticmethod(PlotUtils.annotate_plot_simple)
     map_conn = staticmethod(map_conn)
     map_gender = staticmethod(map_gender)
+    get_default_gender = staticmethod(get_default_gender)
     extract_number = staticmethod(extract_number)
     guess_optical_properties = staticmethod(guess_optical_properties)
