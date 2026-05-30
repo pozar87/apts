@@ -745,12 +745,12 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 19200,
             "height": 976,
-            "mass": 60,
+            "mass": 100, # Verified via official ZWO specs (0.1kg)
             "name": "ASI224MC",
             "optical_length": 12.5,
             "pixel_size_um": 3.75,
             "quantum_efficiency_pct": 80,
-            "read_noise_e": 0.75,
+            "read_noise_e": 0.8, # Verified via official high-gain specs (0.8e)
             "reversible": False,
             "sensor_height_mm": 3.6,
             "sensor_width_mm": 4.8,
@@ -758,7 +758,7 @@ class ZwoCamera(Camera):
             "tside_thread": "CS",
             "type": "type_camera",
             "width": 1304,
-        },
+        }, # Verified via manufacturer product page: https://www.zwoastro.com/product/asi224mc/
         "ZWO_ASI_2400MC_Pro": {
             "bf_role": "end",
             "brand": "ZWO",
