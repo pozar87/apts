@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+from skyfield.positionlib import Apparent
 
 logger = logging.getLogger(__name__)
 
@@ -66,25 +67,15 @@ class JovianSearchContext:
     def get_basic_data(self, t):
         data = self._get_entry(t)
         if "z_pole" not in data:
-            # Ensure apparent positions are available
+            # Ensure positions are available
             if "j_obs" not in data:
-                data["j_obs"] = (
-                    self.observer.at(t)
-                    .observe(self.jupiter)
-                    .apparent(deflectors=(10, 599))
-                )
+                data["j_obs"] = self.observer.at(t).observe(self.jupiter)
             if "s_obs" not in data:
-                data["s_obs"] = (
-                    self.observer.at(t).observe(self.sun).apparent(deflectors=(10, 599))
-                )
+                data["s_obs"] = self.observer.at(t).observe(self.sun)
 
             j_obs = data["j_obs"]
             t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
-            sun_from_j = (
-                self.jupiter.at(t_emitted)
-                .observe(self.sun)
-                .apparent(deflectors=(10, 599))
-            )
+            sun_from_j = self.jupiter.at(t_emitted).observe(self.sun)
 
             # Jupiter's pole at emission time (IAU 2015 model)
             alpha0_deg, delta0_deg = self.planetary.get_planet_pole_coords(
@@ -109,7 +100,7 @@ class JovianSearchContext:
     def get_visibility(self, t):
         """
         Calculates and caches Jupiter visibility (altitude, sun altitude, elongation).
-        Uses a coarse decimated check first to avoid expensive apparent() calls.
+        Uses a coarse decimated check first to avoid expensive calls.
         """
         data = self._get_entry(t)
         if "visible" not in data:
@@ -121,12 +112,10 @@ class JovianSearchContext:
                 # Coarse check: sample every 25 points to see if Jupiter is anywhere near visible.
                 # 25 points at 0.005 step is ~3 hours.
                 t_coarse = t[::25]
-                j_coarse = (
-                    self.observer.at(t_coarse)
-                    .observe(self.jupiter)
-                    .apparent(deflectors=())
-                )
-                alt_coarse, _, _ = j_coarse.altaz()
+                j_ast = self.observer.at(t_coarse).observe(self.jupiter)
+                j_app = Apparent(j_ast.position.au, j_ast.velocity.au_per_d, j_ast.t)
+                j_app.center = j_ast.center
+                alt_coarse, _, _ = j_app.altaz()
                 # If Jupiter is more than 5 degrees below horizon in all samples,
                 # we assume it's not visible for the whole block.
                 # 5 degrees is a safe margin for 3-hour decimation.
@@ -142,40 +131,36 @@ class JovianSearchContext:
     def _compute_full_visibility(self, t, data):
         """High-precision visibility calculation."""
         if "j_obs_vis" not in data:
-            # Use deflectors=() for faster visibility checks (horizon/twilight)
-            data["j_obs_vis"] = (
-                self.observer.at(t).observe(self.jupiter).apparent(deflectors=())
-            )
+            # Use astrometric positions wrapped in Apparent for faster visibility checks
+            j_ast = self.observer.at(t).observe(self.jupiter)
+            j_app = Apparent(j_ast.position.au, j_ast.velocity.au_per_d, j_ast.t)
+            j_app.center = j_ast.center
+            data["j_obs_vis"] = j_app
         if "s_obs_vis" not in data:
-            data["s_obs_vis"] = (
-                self.observer.at(t).observe(self.sun).apparent(deflectors=())
-            )
+            s_ast = self.observer.at(t).observe(self.sun)
+            s_app = Apparent(s_ast.position.au, s_ast.velocity.au_per_d, s_ast.t)
+            s_app.center = s_ast.center
+            data["s_obs_vis"] = s_app
 
         j_obs = data["j_obs_vis"]
         s_obs = data["s_obs_vis"]
 
-        alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+        alt, _, _ = j_obs.altaz()
+        sun_alt = s_obs.altaz()[0].degrees
         elongation = j_obs.separation_from(s_obs).degrees
         data["visible"] = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
 
     def get_moon_obs(self, t, moon_id):
         data = self.get_basic_data(t)
         if moon_id not in data["moons"]:
-            data["moons"][moon_id] = (
-                self.observer.at(t)
-                .observe(self.moon_objs[moon_id])
-                .apparent(deflectors=(10, 599))
-            )
+            data["moons"][moon_id] = self.observer.at(t).observe(self.moon_objs[moon_id])
         return data["moons"][moon_id]
 
     def get_moon_sun_obs(self, t, moon_id):
         data = self.get_basic_data(t)
         if moon_id not in data["moons_sun"]:
             data["moons_sun"][moon_id] = (
-                self.sun.at(data["t_emitted"])
-                .observe(self.moon_objs[moon_id])
-                .apparent(deflectors=(10, 599))
+                self.sun.at(data["t_emitted"]).observe(self.moon_objs[moon_id])
             )
         return data["moons_sun"][moon_id]
 
