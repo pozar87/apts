@@ -89,3 +89,7 @@
 ## 2025-05-25 - [StormGlass Precipitation Vectorization]
 **Learning:** Replacing row-wise `df.apply(axis=1)` with vectorized NumPy masking and `pd.to_numeric(errors='coerce')` in weather data providers eliminates significant Python loop overhead. This approach provides a ~6.7x speedup for 10,000 rows while improving robustness when handling API-specific string fallbacks like "none".
 **Action:** Always replace row-wise `apply` calls with vectorized NumPy/Pandas operations in data normalization layers.
+
+## 2025-05-24 - [Skyfield AltAz Optimization via Manual Apparent Wrapping]
+**Learning:** Skyfield's `.altaz()` requires an `Apparent` object, but `.apparent()` triggers expensive Standard calculations (nutation, aberration, deflection). When accuracy requirements are loose (e.g., visibility gating), manually wrapping an `Astrometric` position in an `Apparent` object bypasses these bottlenecks.
+**Action:** Use `app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t); app.center = pos.center` to perform fast AltAz checks.

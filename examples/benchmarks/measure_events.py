@@ -20,6 +20,7 @@ def benchmark_events():
         ("Lunar Planetary Occultations", events_coord.calculate_lunar_planetary_occultations),
         ("Conjunctions", events_coord.calculate_conjunctions),
         ("Planet-Star Conjunctions", events_coord.calculate_planet_star_conjunctions),
+        ("Planet Stationary Points", events_coord.calculate_planet_stationary_points),
         ("NASA Comets", events_coord.calculate_nasa_comets),
     ]
 
