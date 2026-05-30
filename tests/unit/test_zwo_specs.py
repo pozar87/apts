@@ -59,5 +59,12 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.quantum_efficiency, 91)
         self.assertEqual(cam.optical_length.to('mm').magnitude, 6.5)
 
+    def test_asi224_specs(self):
+        cam = ZwoCamera.ZWO_ASI_224MC()
+        self.assertEqual(cam.mass.to('gram').magnitude, 100)
+        self.assertEqual(cam.read_noise, 0.8)
+        self.assertEqual(cam.quantum_efficiency, 80)
+        self.assertEqual(cam.full_well, 19200)
+
 if __name__ == '__main__':
     unittest.main()
