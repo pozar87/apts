@@ -13,7 +13,7 @@ class Filter(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn
+        from ...utils import map_conn, map_gender
 
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
