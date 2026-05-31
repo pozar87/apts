@@ -9,7 +9,7 @@ def test_notify_leak_on_login_error(caplog):
     recipient = "test@example.com"
 
     # Better way to mock config
-    with patch("apts.notify.config") as mock_config:
+    with patch("apts.notify.client.config") as mock_config:
         mock_config.get.side_effect = lambda section, option, fallback=None: {
             ("notification", "smtp_host"): "smtp.example.com",
             ("notification", "smtp_user"): "user@example.com",
@@ -21,7 +21,7 @@ def test_notify_leak_on_login_error(caplog):
 
         notify = Notify(recipient)
 
-        with patch("smtplib.SMTP") as mock_smtp:
+        with patch("apts.notify.client.smtplib.SMTP") as mock_smtp:
             instance = mock_smtp.return_value
             # Make sure ehlo and starttls don't fail
             instance.ehlo.return_value = (250, b"ok")

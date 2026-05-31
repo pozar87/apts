@@ -19,12 +19,12 @@ class TestNotify(unittest.TestCase):
         self.notify = Notify("test@example.com")
         self.notify.sender_email = "test_sender@example.com"  # Set a sender email
 
-    @patch("apts.notify.get_plot_format")
-    @patch("apts.notify.smtplib.SMTP")
+    @patch("apts.notify.composer.get_plot_format")
+    @patch("apts.notify.client.smtplib.SMTP")
     @patch.object(
         Notify, "_send_email"
     )  # Mock _send_email to capture the Message object
-    @patch.object(Notify, "attach_image", autospec=True)  # Spy on attach_image
+    @patch("apts.notify.composer.NotificationComposer.attach_image")  # Spy on attach_image
     def test_send_with_default_template(
         self,
         mock_attach_image_spy,
@@ -90,8 +90,8 @@ class TestNotify(unittest.TestCase):
             )
             self.assertEqual(mock_attach_image_spy.call_count, 3)
 
-    @patch("apts.notify.smtplib.SMTP")
-    @patch.object(Notify, "attach_image", autospec=True)
+    @patch("apts.notify.client.smtplib.SMTP")
+    @patch("apts.notify.composer.NotificationComposer.attach_image")
     def test_send_with_custom_template(self, mock_attach_image, mock_smtp):
         """Test that send passes custom template to to_html"""
         mock_smtp_instance = mock_smtp.return_value
@@ -111,8 +111,8 @@ class TestNotify(unittest.TestCase):
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon, detailed checks in test_send_with_default_template
 
-    @patch("apts.notify.smtplib.SMTP")
-    @patch.object(Notify, "attach_image", autospec=True)
+    @patch("apts.notify.client.smtplib.SMTP")
+    @patch("apts.notify.composer.NotificationComposer.attach_image")
     def test_send_with_custom_css(self, mock_attach_image, mock_smtp):
         """Test that send passes custom CSS to to_html"""
         mock_smtp_instance = mock_smtp.return_value
@@ -130,8 +130,8 @@ class TestNotify(unittest.TestCase):
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon
 
-    @patch("apts.notify.smtplib.SMTP")
-    @patch.object(Notify, "attach_image", autospec=True)
+    @patch("apts.notify.client.smtplib.SMTP")
+    @patch("apts.notify.composer.NotificationComposer.attach_image")
     def test_send_with_custom_template_and_css(self, mock_attach_image, mock_smtp):
         """Test that send passes both custom template and CSS to to_html"""
         mock_smtp_instance = mock_smtp.return_value
@@ -152,10 +152,10 @@ class TestNotify(unittest.TestCase):
         self.assertTrue(mock_smtp_instance.sendmail.called)
         # mock_attach_image is spied upon
 
-    @patch("apts.notify.get_plot_format")
-    @patch("apts.notify.smtplib.SMTP")
+    @patch("apts.notify.composer.get_plot_format")
+    @patch("apts.notify.client.smtplib.SMTP")
     @patch.object(Notify, "_send_email")  # Mock _send_email as it's called by send()
-    @patch.object(Notify, "attach_image", autospec=True)  # Spy on attach_image
+    @patch("apts.notify.composer.NotificationComposer.attach_image")  # Spy on attach_image
     def test_send_no_plots_if_plotting_fails(
         self,
         mock_attach_image_spy,
@@ -246,9 +246,9 @@ class TestNotify(unittest.TestCase):
         mock_send_email_internal.assert_called_once()
         mock_attach_image_spy.assert_not_called()
 
-    @patch("apts.notify.smtplib.SMTP")
+    @patch("apts.notify.client.smtplib.SMTP")
     @patch.object(Notify, "_send_email")
-    @patch("apts.notify.gettext_")
+    @patch("apts.notify.composer.gettext_")
     def test_send_with_translation(self, mock_gettext, mock_send_email, mock_smtp):
         """Test that send uses the correct language."""
 
