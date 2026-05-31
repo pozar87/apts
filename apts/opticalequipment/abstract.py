@@ -299,12 +299,27 @@ class IntermediateOpticalEquipment(OpticalEquipment):
 
 
 class OutputOpticalEquipment(OpticalEquipment):
-    def __init__(self, focal_length, vendor, optical_length=0.0, mass=0.0, inputs=None, connection_type=None, connection_gender=None):
+    def __init__(
+        self,
+        focal_length,
+        vendor,
+        optical_length=0.0,
+        mass=0.0,
+        inputs=None,
+        outputs=None,
+        connection_type=None,
+        connection_gender=None,
+    ):
         if inputs is None:
             if connection_type is not None:
                 inputs = [(connection_type, connection_gender)]
         super().__init__(
-            focal_length, vendor, optical_length=optical_length, mass=mass, inputs=inputs
+            focal_length,
+            vendor,
+            optical_length=optical_length,
+            mass=mass,
+            inputs=inputs,
+            outputs=outputs,
         )
 
     def is_visual_output(self) -> bool:
