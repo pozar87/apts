@@ -29,13 +29,22 @@ class Barlow(OpticalEquipment):
         cg = map_gender(entry.get("cside_gender"))
         mag = extract_number(name, prefix="x") or 2.0
 
-        inputs = [(tt, tg)] if tt else []
+        inputs = entry.get("inputs")
+        if inputs is None:
+            inputs = [(tt, tg)] if tt else []
+        else:
+            from ...utils import map_conn, map_gender
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+
         outputs = entry.get("outputs")
         if outputs is None:
             outputs = [(ct, cg)] if ct else []
             if entry.get("t2_output", False):
                 from ...utils import Gender
                 outputs.append((ConnectionType.T2, Gender.MALE))
+        else:
+            from ...utils import map_conn, map_gender
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
 
         return cls(
             mag,

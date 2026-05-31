@@ -18,12 +18,25 @@ class OAG(IntermediateOpticalEquipment):
         tg = map_gender(entry.get("tside_gender"))
         ct = map_conn(entry.get("cside_thread"))
         cg = map_gender(entry.get("cside_gender"))
+
+        inputs = entry.get("inputs")
+        if inputs is None:
+            inputs = [(tt, tg)] if tt else []
+        else:
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+
+        outputs = entry.get("outputs")
+        if outputs is None:
+            outputs = [(ct, cg)] if ct else []
+        else:
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
         return cls(
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection=(tt, tg) if tt else None,
-            out_connection=(ct, cg) if ct else None,
+            inputs=inputs,
+            outputs=outputs,
         )
 
     def __init__(
@@ -31,6 +44,8 @@ class OAG(IntermediateOpticalEquipment):
         vendor,
         optical_length=0,
         mass=0,
+        inputs=None,
+        outputs=None,
         in_connection=None,
         out_connection=None,
         guide_connection=None,
@@ -39,6 +54,8 @@ class OAG(IntermediateOpticalEquipment):
             vendor,
             optical_length=optical_length,
             mass=mass,
+            inputs=inputs,
+            outputs=outputs,
             in_connection=in_connection,
             out_connection=out_connection,
         )

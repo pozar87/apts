@@ -38,7 +38,12 @@ class Camera(OutputOpticalEquipment):
             w = w if w is not None else w_h
             h = h if h is not None else h_h
 
-        inputs = [(tt, tg)] if tt else []
+        inputs = entry.get('inputs')
+        if inputs is None:
+            inputs = [(tt, tg)] if tt else []
+        else:
+            from ...utils import map_conn, map_gender
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
 
         return cls(sw, sh, w, h,
                    vendor=vendor,

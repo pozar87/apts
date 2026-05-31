@@ -7,7 +7,7 @@ from .abstract import OutputOpticalEquipment
 class Binoculars(OutputOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
-        from ..utils import extract_number
+        from ..utils import extract_number, map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -15,7 +15,17 @@ class Binoculars(OutputOpticalEquipment):
         mass = entry.get("mass", 0)
         mag = extract_number(name) or 10
         obj = extract_number(name, prefix=f"{int(mag)}x") or 50
-        return cls(mag, obj, vendor, 60, mass=mass)
+
+        ct = map_conn(entry.get('cside_thread'))
+        cg = map_gender(entry.get('cside_gender'))
+
+        outputs = entry.get('outputs')
+        if outputs is None:
+            outputs = [(ct, cg)] if ct else []
+        else:
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
+        return cls(mag, obj, vendor, 60, mass=mass, outputs=outputs)
 
     """
     Class representing binoculars
@@ -31,11 +41,12 @@ class Binoculars(OutputOpticalEquipment):
         apparent_fov_deg,
         focal_length=1,
         mass=0,
+        outputs=None,
     ):
         # Call grandparent's init (OpticalEquipment)
         # We use a nominal focal_length (e.g., 1mm) because it's required by OpticalEquipment,
         # but not really used in the traditional sense for optical train calculations with binoculars.
-        super().__init__(focal_length=focal_length, vendor=vendor, mass=mass)
+        super().__init__(focal_length=focal_length, vendor=vendor, mass=mass, outputs=outputs)
 
         self.magnification = magnification
         self.objective_diameter = objective_diameter * get_unit_registry().mm

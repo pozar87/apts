@@ -13,7 +13,7 @@ class Filter(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn
+        from ...utils import map_conn, map_gender
 
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
@@ -25,6 +25,15 @@ class Filter(IntermediateOpticalEquipment):
         trans = entry.get("transmission", 1.0)
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
+
+        inputs = entry.get("inputs")
+        if inputs:
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+
+        outputs = entry.get("outputs")
+        if outputs:
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
         return cls(
             name,
             vendor=vendor,
@@ -32,6 +41,8 @@ class Filter(IntermediateOpticalEquipment):
             transmission=trans,
             optical_length=ol,
             mass=mass,
+            inputs=inputs,
+            outputs=outputs,
         )
 
     def __init__(
@@ -44,6 +55,8 @@ class Filter(IntermediateOpticalEquipment):
         mass=0,
         in_connection=None,
         out_connection=None,
+        inputs=None,
+        outputs=None,
     ):
         super(Filter, self).__init__(
             vendor,
@@ -51,6 +64,8 @@ class Filter(IntermediateOpticalEquipment):
             mass=mass,
             in_connection=in_connection or connection_type,
             out_connection=out_connection or connection_type,
+            inputs=inputs,
+            outputs=outputs,
         )
         self.name = name
         self.transmission = transmission
