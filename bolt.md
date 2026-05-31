@@ -9,8 +9,8 @@ Initial benchmarking of all astronomical event calculations identified the follo
 | **Lunar Planetary Occultations** | 3.02s | 0.26s | ~11.6x |
 | **Culminations** | 3.32s | 0.20s | ~16.6x |
 | **NASA Comets** | 1.73s (Failed) | 0.25s | - |
-| **Jovian Mutual Events** | 2.51s | - | - |
-| **Jovian Moon Events** | 2.21s | - | - |
+| **Jovian Mutual Events** | 2.51s | 1.25s | ~2x |
+| **Jovian Moon Events** | 2.21s | 2.42s | - |
 | **Conjunctions** | 1.05s | - | - |
 
 *Note: Satellite flybys (ISS/Tiangong) reported ~135s due to network timeouts in the sandbox environment.*
@@ -47,4 +47,5 @@ The most significant bottleneck among successfully running events was optimized 
 - **Bypass Apparent Positions:** Replaced expensive `.apparent()` calls with `.observe()` (astrometric positions) for relative Jovian moon positioning. This avoids redundant `iau2000a` nutation and gravitational deflection calculations that are negligible for these discrete searches.
 - **Lightweight AltAz Wrapper:** Implemented a lightweight `Apparent` object wrapper to satisfy Skyfield's `altaz()` requirements for visibility gating without the full overhead of Standard apparent calculations.
 - **Refraction Bypass:** Removed expensive atmospheric refraction refinements from visibility gating (`alt > 0`, `sun_alt <= -6`).
-- **Result:** ~17-24% speedup in Jovian moon and mutual event searches.
+- **Geometric Hoisting:** Refactored invariant pole-direction dot products and scaled projection radii outside the Galilean moon loop in `apts/skyfield_searches/jovian/moons.py`. Reused moon-specific intermediate dot products (`p_z`, `p_sq`) across both Earth and Sun projection checks.
+- **Result:** ~17-24% speedup from Skyfield optimizations, plus an additional ~22% speedup from geometric hoisting in moon events.

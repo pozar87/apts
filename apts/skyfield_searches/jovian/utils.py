@@ -184,10 +184,26 @@ def is_inside_ellipsoid_projection(p_vec, u_vec, z_pole, re, rp):
         p_u = np.dot(p_vec, u_vec)
         p_sq = np.dot(p_vec, p_vec)
 
+    return is_inside_ellipsoid_projection_fast(p_z, p_u, p_sq, u_z, re, rp)
+
+
+def is_inside_ellipsoid_projection_fast(p_z, p_u, p_sq, u_z, re, rp, u_prime_sq=None):
+    """
+    Checks if point p is within the projection of an ellipsoid along direction u.
+    Uses pre-calculated dot products to avoid redundant computations.
+
+    p_z: dot(p, z_pole)
+    p_u: dot(p, u)
+    p_sq: dot(p, p)
+    u_z: dot(u, z_pole)
+    u_prime_sq: pre-calculated (1.0 - u_z**2) / re**2 + u_z**2 / rp**2 (optional)
+    """
+    if u_prime_sq is None:
+        u_prime_sq = (1.0 - u_z**2) / re**2 + u_z**2 / rp**2
+
     # Scaled space parameters
     p_prime_sq = (p_sq - p_z**2) / re**2 + p_z**2 / rp**2
     p_prime_u_prime = (p_u - p_z * u_z) / re**2 + (p_z * u_z) / rp**2
-    u_prime_sq = (1.0 - u_z**2) / re**2 + u_z**2 / rp**2
 
     # Projected distance squared: |P'|^2 - (P' . U')^2 / |U'|^2
     return p_prime_sq - (p_prime_u_prime**2 / u_prime_sq) <= 1.000001
