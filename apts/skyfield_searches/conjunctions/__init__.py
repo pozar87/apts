@@ -3,6 +3,7 @@ from .base import (
     find_conjunctions_with_star,
     find_conjunctions_with_stars,
     find_conjunctions_between_moving_bodies,
+    find_all_pairs_conjunctions,
 )
 from .planets import (
     find_planet_solar_conjunctions,
@@ -20,6 +21,7 @@ __all__ = [
     "find_conjunctions_with_star",
     "find_conjunctions_with_stars",
     "find_conjunctions_between_moving_bodies",
+    "find_all_pairs_conjunctions",
     "find_planet_solar_conjunctions",
     "find_mercury_inferior_conjunctions",
     "find_planet_planet_occultations",

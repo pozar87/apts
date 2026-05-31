@@ -31,6 +31,7 @@ from .conjunctions import (
     find_conjunctions_with_star,
     find_conjunctions_with_stars,
     find_conjunctions_between_moving_bodies,
+    find_all_pairs_conjunctions,
     find_planet_solar_conjunctions,
     find_planet_planet_occultations,
 )
@@ -90,6 +91,7 @@ __all__ = [
     "find_conjunctions_with_star",
     "find_conjunctions_with_stars",
     "find_conjunctions_between_moving_bodies",
+    "find_all_pairs_conjunctions",
     "find_lunar_occultations",
     "calculate_satellite_magnitude",
     "_find_satellite_flybys",

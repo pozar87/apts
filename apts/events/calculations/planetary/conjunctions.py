@@ -49,23 +49,24 @@ def calculate_conjunctions(
     else:
         precomputed = precomputed_positions
 
+    # Optimized: Use vectorized all-pairs search for planets and Moon-planet conjunctions.
+    # This reduces the number of tasks from ~22 to 2, and leverages NumPy for separations.
     futures = {}
 
-    for (p1, p1_obj), (p2, p2_obj) in combinations(planets_data.items(), 2):
-        p1_name = planetary.get_simple_name(p1)
-        p2_name = planetary.get_simple_name(p2)
-        future = executor.submit(
-            skyfield_searches.find_conjunctions_between_moving_bodies,
-            observer,
-            p1,
-            [(p2_name, p2_obj)],
-            start_date,
-            end_date,
-            threshold_degrees=5.0,
-            precomputed_positions=precomputed,
-        )
-        futures[future] = p1_name
+    # 1. Planet-Planet conjunctions
+    future_planets = executor.submit(
+        skyfield_searches.find_all_pairs_conjunctions,
+        observer,
+        list(planets_data.items()),
+        start_date,
+        end_date,
+        threshold_degrees=5.0,
+        precomputed_positions=precomputed,
+    )
+    futures[future_planets] = "Planets"
 
+    # 2. Moon-Planet conjunctions
+    # Pre-simplify names for consistent output formatting
     planet_list = [
         (planetary.get_simple_name(p), obj) for p, obj in planets_data.items()
     ]
@@ -82,12 +83,13 @@ def calculate_conjunctions(
     futures[future_moon] = moon_display_name
 
     for future in as_completed(futures):
-        obj1_name = futures[future]
+        source = futures[future]
         found_events = future.result()
         for event in found_events:
             event["type"] = "Conjunction"
             event["event"] = "Conjunction"
-            event["object1"] = obj1_name
+            if source == moon_display_name:
+                event["object1"] = moon_display_name
             event["rarity"] = get_rarity("Conjunction", event)
             event["duration"] = get_duration("Conjunction", event)
             events.append(event)
