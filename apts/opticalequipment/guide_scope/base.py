@@ -17,7 +17,13 @@ class GuideScope(Telescope):
         cg = map_gender(entry.get("cside_gender"))
         aperture, focal_length = guess_optical_properties(name)
         bf_val = entry.get("bf_role") == "start"
-        outputs = [(ct, cg)] if ct else []
+
+        outputs = entry.get("outputs")
+        if outputs is None:
+            outputs = [(ct, cg)] if ct else []
+        else:
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
         return cls(
             aperture or 30,
             focal_length or 120,

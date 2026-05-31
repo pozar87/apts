@@ -39,7 +39,12 @@ class Eyepiece(OutputOpticalEquipment):
         fs = entry.get('field_stop_mm')
         mass = entry.get('mass', 0)
         ol = entry.get('optical_length', 0)
-        inputs = [(tt, tg)] if tt else []
+        inputs = entry.get('inputs')
+        if inputs is None:
+            inputs = [(tt, tg)] if tt else []
+        else:
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+
         return cls(fl, vendor=vendor, field_of_view=fov, field_stop=fs, inputs=inputs, mass=mass, optical_length=ol)
 
     '\n  Class representing ocular\n  '

@@ -85,6 +85,12 @@ class Telescope(OpticalEquipment):
             if entry.get('t2_output', False):
                 from ...utils import Gender
                 outputs.append((ConnectionType.T2, Gender.MALE))
+        else:
+            from ...utils import map_conn, map_gender
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
+        # Optimization: remove t2_output check in a future version after all databases are updated.
+        # For now, it's safer to keep it for items that might not have migrated to 'outputs' list.
 
         return cls(aperture or 80, focal_length or 500, vendor=vendor, outputs=outputs, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
     '\n    Class representing telescope\n    '

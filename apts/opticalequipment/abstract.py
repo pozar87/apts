@@ -249,6 +249,8 @@ class IntermediateOpticalEquipment(OpticalEquipment):
         out_connection_type=None,
         in_gender=None,
         out_gender=None,
+        inputs=None,
+        outputs=None,
     ):
         # Merge legacy arguments into new ones
         if in_connection is None:
@@ -259,7 +261,12 @@ class IntermediateOpticalEquipment(OpticalEquipment):
                 out_connection = (out_connection_type, out_gender)
 
         super(IntermediateOpticalEquipment, self).__init__(
-            focal_length=0.0, vendor=vendor, optical_length=optical_length, mass=mass
+            focal_length=0.0,
+            vendor=vendor,
+            optical_length=optical_length,
+            mass=mass,
+            inputs=inputs,
+            outputs=outputs,
         )
 
         if in_connection:

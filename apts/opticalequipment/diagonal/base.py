@@ -30,7 +30,12 @@ class Diagonal(IntermediateOpticalEquipment):
         tg = map_gender(entry.get("tside_gender"))
         ct = map_conn(entry.get("cside_thread"))
         cg = map_gender(entry.get("cside_gender"))
-        in_conn = (tt, tg) if tt else None
+        inputs = entry.get("inputs")
+        if inputs is None:
+            inputs = [(tt, tg)] if tt else []
+        else:
+            from ...utils import map_conn, map_gender
+            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
 
         outputs = entry.get("outputs")
         if outputs is None:
@@ -38,12 +43,15 @@ class Diagonal(IntermediateOpticalEquipment):
             if entry.get("t2_output", False):
                 from ...utils import Gender
                 outputs.append((ConnectionType.T2, Gender.MALE))
+        else:
+            from ...utils import map_conn, map_gender
+            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
 
         return cls(
             vendor,
             optical_length=ol,
             mass=mass,
-            in_connection=in_conn,
+            inputs=inputs,
             outputs=outputs,
         )
 
@@ -59,20 +67,21 @@ class Diagonal(IntermediateOpticalEquipment):
         is_erecting=False,
         optical_length=0.0,
         mass=0.0,
+        inputs=None,
+        outputs=None,
         in_connection=None,
         out_connection=None,
         connection_type=None,
         in_gender=None,
         out_gender=None,
-        outputs=None,
     ):
-        if in_connection is None:
+        if inputs is None and in_connection is None:
             if connection_type:
                 in_connection = (connection_type, in_gender)
             else:
                 in_connection = ConnectionType.F_1_25
 
-        if out_connection is None:
+        if outputs is None and out_connection is None:
             if connection_type:
                 out_connection = (connection_type, out_gender)
             else:
@@ -82,17 +91,12 @@ class Diagonal(IntermediateOpticalEquipment):
             vendor,
             optical_length=optical_length,
             mass=mass,
+            inputs=inputs,
+            outputs=outputs,
             in_connection=in_connection,
             out_connection=out_connection,
         )
         self.is_erecting = is_erecting
-
-        if outputs:
-            for outp in outputs:
-                if isinstance(outp, tuple):
-                    self.add_output(*outp)
-                else:
-                    self.add_output(outp)
 
     @property
     def connection_type(self):
