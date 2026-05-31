@@ -6,7 +6,7 @@ class TestSentinelSecurity(unittest.TestCase):
     def test_notify_str_masking(self):
         # Setup Notify with sensitive smtp_user
         recipient = "recipient@example.com"
-        with patch('apts.notify.config') as mock_config:
+        with patch('apts.notify.client.config') as mock_config:
             mock_config.get.side_effect = lambda section, option, fallback=None, **kwargs: \
                        "secret_user" if option == "smtp_user" else fallback
             mock_config.getint.return_value = 587
@@ -19,28 +19,28 @@ class TestSentinelSecurity(unittest.TestCase):
 
     def test_notify_init_warning_masking(self):
         recipient = "recipient@example.com"
-        with patch('apts.notify.config') as mock_config:
+        with patch('apts.notify.client.config') as mock_config:
             mock_config.get.side_effect = lambda section, option, fallback=None, **kwargs: \
                        "secret_user" if option == "smtp_user" else (None if option == "smtp_host" else fallback)
             mock_config.getint.return_value = 587
             mock_config.getboolean.return_value = True
 
-            with patch('apts.notify.logger.warning') as mock_warning:
+            with patch('apts.notify.client.logger.warning') as mock_warning:
                 Notify(recipient)
                 mock_warning.assert_called_once()
                 warning_msg = mock_warning.call_args[0][0]
                 self.assertIn("user ('secr...user')", warning_msg)
                 self.assertNotIn("secret_user", warning_msg)
 
-    @patch('apts.notify.smtplib.SMTP')
-    @patch('apts.notify.logger.error')
+    @patch('apts.notify.client.smtplib.SMTP')
+    @patch('apts.notify.client.logger.error')
     def test_notify_send_email_exception_masking(self, mock_logger_error, mock_smtp):
         recipient = "recipient@example.com"
         # Mock SMTP login to fail with an exception containing secrets
         mock_smtp_instance = mock_smtp.return_value
         mock_smtp_instance.login.side_effect = Exception("Error for user secret_user with password secret_pass")
 
-        with patch('apts.notify.config') as mock_config:
+        with patch('apts.notify.client.config') as mock_config:
             mock_config.get.side_effect = lambda section, option, fallback=None, **kwargs: \
                        "secret_user" if option == "smtp_user" else ("secret_pass" if option == "smtp_password" else ("smtp.host.com" if option == "smtp_host" else fallback))
             mock_config.getint.return_value = 587
