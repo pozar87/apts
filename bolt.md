@@ -11,7 +11,7 @@ Initial benchmarking of all astronomical event calculations identified the follo
 | **NASA Comets** | 1.73s (Failed) | 0.25s | - |
 | **Jovian Mutual Events** | 2.51s | 1.25s | ~2x |
 | **Jovian Moon Events** | 2.21s | 2.42s | - |
-| **Conjunctions** | 1.05s | - | - |
+| **Conjunctions** | 16.45s (1yr) | 6.40s (1yr) | ~2.5x |
 
 *Note: Satellite flybys (ISS/Tiangong) reported ~135s due to network timeouts in the sandbox environment.*
 
@@ -49,3 +49,10 @@ The most significant bottleneck among successfully running events was optimized 
 - **Refraction Bypass:** Removed expensive atmospheric refraction refinements from visibility gating (`alt > 0`, `sun_alt <= -6`).
 - **Geometric Hoisting:** Refactored invariant pole-direction dot products and scaled projection radii outside the Galilean moon loop in `apts/skyfield_searches/jovian/moons.py`. Reused moon-specific intermediate dot products (`p_z`, `p_sq`) across both Earth and Sun projection checks.
 - **Result:** ~17-24% speedup from Skyfield optimizations, plus an additional ~22% speedup from geometric hoisting in moon events.
+
+## Conjunction Optimization (2025-05-24)
+**Optimization Strategy:**
+- **Full Vectorization:** Replaced individual planet-pair searches with a fully vectorized approach using `np.einsum` to calculate all-pairs separations simultaneously.
+- **Task Reduction:** Reduced the number of independent tasks dispatched to the `ThreadPoolExecutor` from ~22 (one per pair) to 2 (one for all planet pairs, one for all moon-planet pairs).
+- **Broadcasting Efficiency:** Leveraged NumPy broadcasting to observe and calculate unit vectors for all bodies at all times in a single pass before cross-calculating dot products.
+- **Result:** ~2.5x speedup for a 1-year range (from 16.45s to 6.40s).
