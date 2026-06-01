@@ -179,7 +179,7 @@ class ZwoCamera(Camera):
             "height": 960,
             "mass": 60,
             "name": "ASI120MM Mini",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "pixel_size_um": 3.75,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 4.0,
@@ -438,7 +438,7 @@ class ZwoCamera(Camera):
             "height": 1216,
             "mass": 65,
             "name": "ASI174MC Mini",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "pixel_size_um": 5.86,
             "quantum_efficiency_pct": 77,
             "read_noise_e": 6.0,
@@ -480,7 +480,7 @@ class ZwoCamera(Camera):
             "height": 1216,
             "mass": 60,
             "name": "ASI174MM Mini",
-            "optical_length": 12.5, # Verified via official ZWO specs (12.5mm backfocus)
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "pixel_size_um": 5.86,
             "quantum_efficiency_pct": 77,
             "read_noise_e": 6.0,
@@ -713,7 +713,7 @@ class ZwoCamera(Camera):
             "height": 1080,
             "mass": 60,
             "name": "ASI220MM Mini",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "pixel_size_um": 4.0,
             "quantum_efficiency_pct": 92,
             "read_noise_e": 0.6,
@@ -732,7 +732,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 60,
             "name": "ASI220MM Mini (for ASIAir)",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "CS",
@@ -1030,7 +1030,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "mass": 70,
             "name": "ASI290MC Mini",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "reversible": False,
             "tside_gender": "Female",
             "tside_thread": "CS",
@@ -1058,7 +1058,7 @@ class ZwoCamera(Camera):
             "height": 1080,
             "mass": 60,
             "name": "ASI290MM Mini",
-            "optical_length": 12.5,
+            "optical_length": 8.5, # Verified via official ZWO specs: https://www.zwoastro.com/product/mini-cameras/
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 1.0,
