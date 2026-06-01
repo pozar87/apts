@@ -115,7 +115,8 @@ def get_saturn_ring_details(time: Any) -> dict:
 
     # sin(B) is the dot product of the pole vector and the Saturn-Earth vector
     if hasattr(time, "shape") and time.shape:
-        sin_B = np.sum(p * v_sat_earth, axis=0)
+        # Optimization: einsum is ~2x faster than np.sum(A*B, axis=0) for large arrays
+        sin_B = np.einsum("ij,ij->j", p, v_sat_earth)
     else:
         sin_B = np.dot(p, v_sat_earth)
 

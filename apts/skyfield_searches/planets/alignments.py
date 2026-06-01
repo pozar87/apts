@@ -3,6 +3,7 @@ from datetime import timedelta
 from collections import defaultdict
 import numpy as np
 from skyfield.searchlib import find_minima
+from skyfield.positionlib import Apparent
 from ...cache import get_timescale, get_ephemeris
 from ...utils import planetary
 from ...constants import astronomy
@@ -285,19 +286,36 @@ def find_planet_alignments(observer, start_date, end_date):
     # Pre-calculate longitudes, altitudes and sun altitude vectorized
     longitudes = []
     altitudes = []
+
+    # Optimization: Consolidate observations.
+    # We use a single topocentric observation for both ecliptic longitude and altitude.
+    # While alignments are traditionally geocentric, the topocentric difference is
+    # negligible for discovery thresholds (arcseconds vs degrees).
     for _, obj in planet_objs:
-        # Longitudes are geocentric ecliptic
-        lons = cast(Any, earth).at(times).observe(obj).ecliptic_latlon()[1].degrees
+        # Topocentric observation
+        obj_topo_ast = observer.at(times).observe(obj)
+
+        # 1. Ecliptic longitudes (topocentric)
+        lons = obj_topo_ast.ecliptic_latlon()[1].degrees
         longitudes.append(lons)
 
-        # Altitudes are topocentric (from observer)
-        alts = observer.at(times).observe(obj).apparent().altaz()[0].degrees
+        # 2. Altitude for visibility gating
+        # Optimization: Use astrometric positions wrapped in Apparent for faster visibility checks.
+        # This bypasses expensive nutation/aberration calculations while maintaining sufficient
+        # accuracy for horizon gating.
+        obj_app = Apparent(obj_topo_ast.position.au, obj_topo_ast.velocity.au_per_d, obj_topo_ast.t)
+        obj_app.center = obj_topo_ast.center
+        alts = obj_app.altaz()[0].degrees
         altitudes.append(alts)
 
     longitudes = np.array(longitudes)  # (n_planets, n_times)
     altitudes = np.array(altitudes)  # (n_planets, n_times)
 
-    sun_alts = observer.at(times).observe(sun).apparent().altaz()[0].degrees
+    # Optimization: Use manual Apparent for Sun visibility check as well
+    sun_topo_ast = observer.at(times).observe(sun)
+    sun_app = Apparent(sun_topo_ast.position.au, sun_topo_ast.velocity.au_per_d, sun_topo_ast.t)
+    sun_app.center = sun_topo_ast.center
+    sun_alts = sun_app.altaz()[0].degrees
     is_dark = sun_alts < -6
 
     # Calculate stats for every hour
