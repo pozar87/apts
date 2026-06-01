@@ -43,6 +43,6 @@ def test_zwo_uncooled_planetary_remains_short():
     assert cam.optical_length.to("mm").magnitude == 12.5
 
 def test_zwo_mini_remains_short():
-    # Mini cameras are typically 12.5mm or 8.5mm depending on model
+    # Mini cameras have a native backfocus of 8.5mm
     cam = ZwoCamera.ZWO_ASI_120MM_Mini()
-    assert cam.optical_length.to("mm").magnitude == 12.5
+    assert cam.optical_length.to("mm").magnitude == 8.5
