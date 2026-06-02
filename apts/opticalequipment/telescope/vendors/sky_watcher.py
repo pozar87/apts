@@ -149,13 +149,13 @@ class Sky_watcherTelescope(Telescope):
          'cside_gender': 'Female',
          'cside_thread': 'M48',
          'focal_length_mm': 600,
-         'mass': 2600,
+         'mass': 2470,
          'name': 'Black Diamond ED80',
          'optical_length': 0,
          'reversible': False,
          'tside_gender': '',
          'tside_thread': '',
-         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs
+         'type': 'type_refractor'}, # Verified via Sky-Watcher official specs (2.47 kg OTA) http://skywatcher.com/product/bk-80ed-otaw/
         'Sky_Watcher_Equinox_100': {'aperture_mm': 100,
          'bf_role': '',
          'brand': 'Sky-Watcher',
