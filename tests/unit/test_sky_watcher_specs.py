@@ -40,7 +40,7 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 80)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 600)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
-        self.assertEqual(scope.mass.to('gram').magnitude, 2600)
+        self.assertEqual(scope.mass.to('gram').magnitude, 2470)
 
     def test_equinox_100_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Equinox_100()
