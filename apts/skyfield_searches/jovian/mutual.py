@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, cast, List, Dict
 import numpy as np
 from skyfield import almanac
 from ...cache import get_timescale
@@ -39,39 +39,22 @@ def _append_jovian_mutual_event(events, te, state_val, m1_name, m2_name, is_star
     )
 
 
-def find_jovian_mutual_events(observer, start_date, end_date):
+class JovianMutualState:
     """
-    Finds mutual events between Jovian moons:
-    - Mutual Occultations: one moon occults another as seen from Earth.
-    - Mutual Eclipses: one moon's shadow falls on another.
+    Computes mutual states for all 6 moon pairs.
+    Returns a combined mask (3 bits per pair, 18 bits total).
+    Bits per pair: 0: None, 1: m1 occ m2, 2: m2 occ m1, 3: m1 ecl m2, 4: m2 ecl m1
     """
-    from ...cache import get_jovian_ephemeris
 
-    ts = get_timescale()
-    t0 = ts.utc(start_date)
-    t1 = ts.utc(end_date)
-    eph = cast(Any, get_jovian_ephemeris())
+    def __init__(self, ctx: JovianSearchContext, pairs: List):
+        self.ctx = ctx
+        self.pairs = pairs
+        self.moon_ids = list(ctx.moon_map.keys())
+        self.step_days = 0.0035  # ~5 minutes
 
-    try:
-        ctx = JovianSearchContext(observer, eph, ts)
-    except KeyError:
-        return []
-
-    events = []
-    moon_ids = list(ctx.moon_map.keys())
-    pairs = []
-    for i, id1 in enumerate(moon_ids):
-        for id2 in moon_ids[i + 1 :]:
-            pairs.append((id1, id2))
-
-    def state_func(t):
-        """
-        Computes mutual states for all 6 moon pairs.
-        Returns a combined mask (3 bits per pair, 18 bits total).
-        Bits per pair: 0: None, 1: m1 occ m2, 2: m2 occ m1, 3: m1 ecl m2, 4: m2 ecl m1
-        """
+    def __call__(self, t):
         is_array = hasattr(t, "shape") and t.shape != ()
-        visible = ctx.get_visibility(t)
+        visible = self.ctx.get_visibility(t)
 
         if not is_array:
             if not visible:
@@ -82,18 +65,27 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                 return np.zeros(len(t), dtype=int)
             t_eval = t[visible]
 
+        res_acc = self._compute_pair_states(t_eval, is_array)
+
+        if not is_array:
+            return int(np.atleast_1d(res_acc)[0])
+        else:
+            final_res = np.zeros(len(t), dtype=int)
+            final_res[visible] = res_acc
+            return final_res
+
+    def _compute_pair_states(self, t_eval, is_array):
         # Use a helper to extract scalar values if needed to avoid ambiguous truth value errors
         def _get_val(v):
             return v if np.isscalar(v) else (v[0] if v.size > 0 else False)
 
-        data = ctx.get_basic_data(t_eval)
         res_acc = np.zeros(len(t_eval) if is_array else 1, dtype=int)
 
         # Pre-fetch all moon observations to avoid redundant calls in the loop
-        moons_e = {mid: ctx.get_moon_obs(t_eval, mid) for mid in moon_ids}
-        moons_s = {mid: ctx.get_moon_sun_obs(t_eval, mid) for mid in moon_ids}
+        moons_e = {mid: self.ctx.get_moon_obs(t_eval, mid) for mid in self.moon_ids}
+        moons_s = {mid: self.ctx.get_moon_sun_obs(t_eval, mid) for mid in self.moon_ids}
 
-        for i, (id1, id2) in enumerate(pairs):
+        for i, (id1, id2) in enumerate(self.pairs):
             # Earth perspective
             m1_e = moons_e[id1]
             m2_e = moons_e[id2]
@@ -122,20 +114,40 @@ def find_jovian_mutual_events(observer, start_date, end_date):
                 pair_state[ecl & ~m1_caster] = 4
             else:
                 if _get_val(occ):
-                    pair_state = 1 if _get_val(m1_front) else 2
+                    pair_state[:] = 1 if _get_val(m1_front) else 2
                 elif _get_val(ecl):
-                    pair_state = 3 if _get_val(m1_caster) else 4
+                    pair_state[:] = 3 if _get_val(m1_caster) else 4
 
             res_acc |= (pair_state.astype(int) << (3 * i))
+        return res_acc
 
-        if not is_array:
-            return int(np.atleast_1d(res_acc)[0])
-        else:
-            final_res = np.zeros(len(t), dtype=int)
-            final_res[visible] = res_acc
-            return final_res
 
-    setattr(state_func, "step_days", 0.0035)  # ~5 minutes
+def find_jovian_mutual_events(observer, start_date, end_date):
+    """
+    Finds mutual events between Jovian moons:
+    - Mutual Occultations: one moon occults another as seen from Earth.
+    - Mutual Eclipses: one moon's shadow falls on another.
+    """
+    from ...cache import get_jovian_ephemeris
+
+    ts = get_timescale()
+    t0 = ts.utc(start_date)
+    t1 = ts.utc(end_date)
+    eph = cast(Any, get_jovian_ephemeris())
+
+    try:
+        ctx = JovianSearchContext(observer, eph, ts)
+    except KeyError:
+        return []
+
+    moon_ids = list(ctx.moon_map.keys())
+    pairs = []
+    for i, id1 in enumerate(moon_ids):
+        for id2 in moon_ids[i + 1 :]:
+            pairs.append((id1, id2))
+
+    events = []
+    state_func = JovianMutualState(ctx, pairs)
     t_events, y_events = almanac.find_discrete(t0, t1, state_func)
 
     y_start = state_func(t0)
