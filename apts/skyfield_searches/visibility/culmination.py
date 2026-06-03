@@ -4,6 +4,7 @@ from skyfield.api import Star
 from skyfield.searchlib import find_maxima
 from ...cache import get_timescale, get_ephemeris
 from ...utils import planetary
+from ..utils import fast_altaz
 
 def _get_observer_coords(observer: Any) -> tuple[float, float]:
     """Extracts latitude (deg) and longitude (hours) from the observer object."""
@@ -64,7 +65,10 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
         simple_name = planetary.get_simple_name(name)
 
         # Iteration 1: estimate at t_refs
-        obs_ref = observer.at(t_refs).observe(obj).apparent()
+        # Optimization: for coarse estimation of RA, we use .observe() (astrometric)
+        # instead of .apparent(). This is significantly faster and sufficient for
+        # finding the initial guess of the transit time.
+        obs_ref = observer.at(t_refs).observe(obj)
         ra_hours = obs_ref.radec(epoch="date")[0].hours
 
         target_gast = (ra_hours - lon_hours) % 24
@@ -75,7 +79,8 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
         t_culm = ts.tt_jd(t_culm_tt)
 
         # Iteration 2: refine at estimated t_culm
-        obs_ref = observer.at(t_culm).observe(obj).apparent()
+        # Optimization: same as Iteration 1, use .observe() for fast RA estimation.
+        obs_ref = observer.at(t_culm).observe(obj)
         ra_hours = obs_ref.radec(epoch="date")[0].hours
 
         target_gast = (ra_hours - lon_hours) % 24
@@ -104,13 +109,8 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
         if len(t_final) == 0:
             continue
 
-        sun_alts_deg = (
-            observer.at(t_final)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
+        # Optimization: Use fast_altaz for Sun visibility check.
+        sun_alts_deg = fast_altaz(observer.at(t_final), sun)[0].degrees
 
         visible_mask = np.ones(len(t_final), dtype=bool)
         if simple_name != "Sun":
@@ -203,13 +203,8 @@ def _find_fixed_object_culminations(
             return events
 
         # Sun altitude for visibility check (vectorized only for altitude-valid candidates)
-        sun_alts_deg = (
-            observer.at(t_candidates)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
+        # Optimization: Use fast_altaz for Sun visibility check.
+        sun_alts_deg = fast_altaz(observer.at(t_candidates), sun)[0].degrees
 
         # Visibility threshold: Sun below threshold
         valid_mask = sun_alts_deg <= sun_alt_threshold
@@ -243,26 +238,17 @@ def _find_moving_object_culminations(
     for name, obj in moving_objects:
 
         def altitude_func(t):
-            return (
-                observer.at(t)
-                .observe(obj)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
+            # Optimization: Use fast_altaz within the iterative search function.
+            # This provides a major speedup for finding the maxima.
+            return fast_altaz(observer.at(t), obj)[0].degrees
 
         setattr(altitude_func, "step_days", 0.5)
         times, altitudes = find_maxima(t0, t1, altitude_func)
 
         for t, alt in zip(cast(Any, times), altitudes):
             if alt > 15:
-                sun_alt = (
-                    observer.at(t)
-                    .observe(sun)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
+                # Optimization: Use fast_altaz for Sun visibility check.
+                sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
                 if sun_alt <= sun_alt_threshold:
                     events.append(
                         {

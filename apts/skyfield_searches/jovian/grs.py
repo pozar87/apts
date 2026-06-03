@@ -2,6 +2,7 @@ import numpy as np
 from skyfield.searchlib import find_minima
 from ...cache import get_timescale
 from ...utils import planetary
+from ..utils import fast_altaz
 
 def find_jupiter_grs_transits(
     observer,
@@ -42,8 +43,9 @@ def find_jupiter_grs_transits(
     # Vectorized visibility check
     j_obs = observer.at(times).observe(jupiter).apparent()
     alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-    s_obs = observer.at(times).observe(sun).apparent()
-    sun_alt = s_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+    # Optimization: Use fast_altaz for Sun visibility check.
+    sun_alt = fast_altaz(observer.at(times), sun)[0].degrees
+    s_obs = observer.at(times).observe(sun)
     elongation = j_obs.separation_from(s_obs).degrees
 
     visible_mask = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
