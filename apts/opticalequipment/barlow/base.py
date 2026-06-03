@@ -1,13 +1,14 @@
+from ...utils import ConnectionType
 from ..abstract import OpticalEquipment
-from ...utils import ConnectionType, Gender
 
 
 class Barlow(OpticalEquipment):
-    @classmethod 
-    def normalize_database_entry(cls, entry: dict) -> dict: 
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
         from ...utils import extract_number
-        entry = entry.copy() 
-        name = entry.get("name", "") 
+
+        entry = entry.copy()
+        name = entry.get("name", "")
         if "magnification" not in entry:
             mag = extract_number(name, prefix="x")
             if mag:
@@ -16,7 +17,7 @@ class Barlow(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, extract_number
+        from ...utils import extract_number, map_conn, map_gender
 
         brand = entry["brand"]
         name = entry["name"]
@@ -34,17 +35,26 @@ class Barlow(OpticalEquipment):
             inputs = [(tt, tg)] if tt else []
         else:
             from ...utils import map_conn, map_gender
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+
+            inputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in inputs
+            ]
 
         outputs = entry.get("outputs")
         if outputs is None:
             outputs = [(ct, cg)] if ct else []
             if entry.get("t2_output", False):
                 from ...utils import Gender
+
                 outputs.append((ConnectionType.T2, Gender.MALE))
         else:
             from ...utils import map_conn, map_gender
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
+            outputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in outputs
+            ]
 
         return cls(
             mag,

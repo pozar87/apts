@@ -1,9 +1,12 @@
-import numpy
 from typing import Any, cast
-from ..abstract import OutputOpticalEquipment
+
+import numpy
+
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
-from ...utils import ConnectionType, Gender
+from ...utils import ConnectionType
+from ..abstract import OutputOpticalEquipment
+
 
 class Camera(OutputOpticalEquipment):
     path_layer = 5
@@ -12,24 +15,25 @@ class Camera(OutputOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
         from ...utils import map_conn, map_gender
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
-        ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
-        tt = map_conn(entry.get('tside_thread'))
-        tg = map_gender(entry.get('tside_gender'))
-        sw, sh = (entry.get('sensor_width_mm'), entry.get('sensor_height_mm'))
-        w, h = (entry.get('width'), entry.get('height'))
+
+        brand = entry["brand"]
+        name = entry["name"]
+        vendor = f"{brand} {name}"
+        ol = entry.get("optical_length", 0)
+        mass = entry.get("mass", 0)
+        tt = map_conn(entry.get("tside_thread"))
+        tg = map_gender(entry.get("tside_gender"))
+        sw, sh = (entry.get("sensor_width_mm"), entry.get("sensor_height_mm"))
+        w, h = (entry.get("width"), entry.get("height"))
 
         # If any of the values are missing, try heuristics
         if sw is None or sh is None or w is None or h is None:
             sw_h, sh_h = (23.5, 15.7)
             w_h, h_h = (6000, 4000)
-            if 'full frame' in name.lower() or '36x24' in name.lower():
+            if "full frame" in name.lower() or "36x24" in name.lower():
                 sw_h, sh_h = (35.9, 23.9)
                 w_h, h_h = (8256, 5504)
-            elif '4/3' in name.lower() or 'micro four thirds' in name.lower():
+            elif "4/3" in name.lower() or "micro four thirds" in name.lower():
                 sw_h, sh_h = (17.3, 13.0)
                 w_h, h_h = (4656, 3520)
 
@@ -38,26 +42,53 @@ class Camera(OutputOpticalEquipment):
             w = w if w is not None else w_h
             h = h if h is not None else h_h
 
-        inputs = entry.get('inputs')
+        inputs = entry.get("inputs")
         if inputs is None:
             inputs = [(tt, tg)] if tt else []
         else:
             from ...utils import map_conn, map_gender
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
 
-        return cls(sw, sh, w, h,
-                   vendor=vendor,
-                   inputs=inputs,
-                   backfocus=ol,
-                   mass=mass,
-                   optical_length=ol,
-                   pixel_size=entry.get('pixel_size_um'),
-                   read_noise=entry.get('read_noise_e'),
-                   full_well=entry.get('full_well_e'),
-                   quantum_efficiency=entry.get('quantum_efficiency_pct'))
-    '\n  Class representing DSLR camera mounted via T2 adapter\n  '
+            inputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in inputs
+            ]
 
-    def __init__(self, sensor_width: float, sensor_height: float, width: int, height: int, vendor: str = 'unknown camera', inputs: list | None = None, pixel_size: float | None = None, read_noise: float | None = None, full_well: float | None = None, quantum_efficiency: float | None = None, backfocus: float | None = None, mass: float = 0, optical_length: float = 0, connection_type=None, connection_gender=None):
+        return cls(
+            sw,
+            sh,
+            w,
+            h,
+            vendor=vendor,
+            inputs=inputs,
+            backfocus=ol,
+            mass=mass,
+            optical_length=ol,
+            pixel_size=entry.get("pixel_size_um"),
+            read_noise=entry.get("read_noise_e"),
+            full_well=entry.get("full_well_e"),
+            quantum_efficiency=entry.get("quantum_efficiency_pct"),
+        )
+
+    "\n  Class representing DSLR camera mounted via T2 adapter\n  "
+
+    def __init__(
+        self,
+        sensor_width: float,
+        sensor_height: float,
+        width: int,
+        height: int,
+        vendor: str = "unknown camera",
+        inputs: list | None = None,
+        pixel_size: float | None = None,
+        read_noise: float | None = None,
+        full_well: float | None = None,
+        quantum_efficiency: float | None = None,
+        backfocus: float | None = None,
+        mass: float = 0,
+        optical_length: float = 0,
+        connection_type=None,
+        connection_gender=None,
+    ):
         if inputs is None:
             if connection_type:
                 inputs = [(connection_type, connection_gender)]
@@ -66,7 +97,9 @@ class Camera(OutputOpticalEquipment):
 
         if not isinstance(inputs, list):
             inputs = [inputs]
-        super().__init__(0, vendor, mass=mass, optical_length=optical_length, inputs=inputs)
+        super().__init__(
+            0, vendor, mass=mass, optical_length=optical_length, inputs=inputs
+        )
         self.sensor_width = cast(Any, sensor_width * get_unit_registry().mm)
         self.sensor_height = cast(Any, sensor_height * get_unit_registry().mm)
         self.width = width
@@ -74,7 +107,11 @@ class Camera(OutputOpticalEquipment):
         self.read_noise = read_noise
         self.full_well = full_well
         self.quantum_efficiency = quantum_efficiency
-        self.backfocus = cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
+        self.backfocus = (
+            cast(Any, backfocus * get_unit_registry().mm)
+            if backfocus is not None
+            else None
+        )
         if pixel_size is not None:
             self._pixel_size = cast(Any, pixel_size * get_unit_registry().micrometer)
         else:
@@ -108,14 +145,14 @@ class Camera(OutputOpticalEquipment):
         return float(numpy.log2(self.full_well / self.read_noise))
 
     def _zoom_divider(self):
-        return numpy.sqrt(self.sensor_width ** 2 + self.sensor_height ** 2)
+        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
 
     def field_of_view_width(self, telescope, zoom, barlow_magnification):
         """
         Calculates horizontal field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to('mm').magnitude
-        d = self.sensor_width.to('mm').magnitude
+        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d = self.sensor_width.to("mm").magnitude
         if f == 0:
             return 0 * get_unit_registry().deg
         return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
@@ -124,8 +161,8 @@ class Camera(OutputOpticalEquipment):
         """
         Calculates vertical field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to('mm').magnitude
-        d = self.sensor_height.to('mm').magnitude
+        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d = self.sensor_height.to("mm").magnitude
         if f == 0:
             return 0 * get_unit_registry().deg
         return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
@@ -134,8 +171,11 @@ class Camera(OutputOpticalEquipment):
         """
         Calculates diagonal field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to('mm').magnitude
-        d = numpy.sqrt(self.sensor_width.to('mm').magnitude ** 2 + self.sensor_height.to('mm').magnitude ** 2)
+        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d = numpy.sqrt(
+            self.sensor_width.to("mm").magnitude ** 2
+            + self.sensor_height.to("mm").magnitude ** 2
+        )
         if f == 0:
             return 0 * get_unit_registry().deg
         return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
@@ -154,4 +194,6 @@ class Camera(OutputOpticalEquipment):
         return False
 
     def __str__(self):
-        return '{} {}x{}'.format(self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude)
+        return "{} {}x{}".format(
+            self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude
+        )

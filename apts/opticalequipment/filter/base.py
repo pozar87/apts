@@ -1,4 +1,4 @@
-from ...utils import ConnectionType, Gender
+from ...utils import ConnectionType
 from ..abstract import IntermediateOpticalEquipment
 
 
@@ -28,11 +28,17 @@ class Filter(IntermediateOpticalEquipment):
 
         inputs = entry.get("inputs")
         if inputs:
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
+            inputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in inputs
+            ]
 
         outputs = entry.get("outputs")
         if outputs:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+            outputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in outputs
+            ]
 
         return cls(
             name,
@@ -69,7 +75,6 @@ class Filter(IntermediateOpticalEquipment):
         )
         self.name = name
         self.transmission = transmission
-
 
     def __str__(self):
         return f"{self.name} ({self.vendor})"
