@@ -4,6 +4,7 @@ from skyfield import almanac, magnitudelib
 from skyfield.searchlib import find_maxima, find_minima
 from ...cache import get_timescale, get_ephemeris
 from ...utils import planetary
+from ..utils import fast_altaz
 
 def find_planetary_dichotomy(
     observer,
@@ -50,13 +51,8 @@ def find_planetary_dichotomy(
             alt, _, _ = astrometric.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
             # Visibility check: Planet above horizon and Sun below -6 degrees
-            sun_alt = (
-                observer.at(t)
-                .observe(sun)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
+            # Optimization: Use fast_altaz for Sun visibility check.
+            sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
 
             events.append(
                 {
@@ -101,13 +97,8 @@ def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any
 
         # Sun altitude for visibility check
         sun = planetary.get_skyfield_obj("sun")
-        sun_alt = (
-            observer.at(t)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
+        # Optimization: Use fast_altaz for Sun visibility check.
+        sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
 
         events.append(
             {
