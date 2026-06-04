@@ -1,17 +1,21 @@
-import numpy
-from ..abstract import OpticalEquipment
-from ...units import get_unit_registry
-from ...utils import ConnectionType, Gender
-from ...constants import GraphConstants, astronomy
 from enum import Enum
-from typing import Optional, Any, cast
+from typing import Any, Optional, cast
+
+import numpy
+
+from ...constants import GraphConstants, astronomy
+from ...units import get_unit_registry
+from ...utils import ConnectionType
+from ..abstract import OpticalEquipment
+
 
 class TelescopeType(Enum):
-    REFRACTOR = 'refractor'
-    NEWTONIAN_REFLECTOR = 'newtonian_reflector'
-    SCHMIDT_CASSEGRAIN = 'schmidt_cassegrain'
-    MAKSUTOV_CASSEGRAIN = 'maksutov_cassegrain'
-    CATADIOPTRIC = 'catadioptric'
+    REFRACTOR = "refractor"
+    NEWTONIAN_REFLECTOR = "newtonian_reflector"
+    SCHMIDT_CASSEGRAIN = "schmidt_cassegrain"
+    MAKSUTOV_CASSEGRAIN = "maksutov_cassegrain"
+    CATADIOPTRIC = "catadioptric"
+
 
 class TubeMaterial(Enum):
     ALUMINUM = 2.31e-05
@@ -20,12 +24,14 @@ class TubeMaterial(Enum):
     BRASS = 1.9e-05
     GLASS_FIBER = 8e-06
 
+
 class Telescope(OpticalEquipment):
     path_layer = 1
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
         from ...utils import guess_optical_properties
+
         entry = entry.copy()
         name = entry.get("name", "")
         if "aperture_mm" not in entry and "aperture" not in entry:
@@ -44,71 +50,115 @@ class Telescope(OpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender, guess_optical_properties
-        brand = entry['brand']
-        name = entry['name']
-        vendor = f'{brand} {name}'
-        ol = entry.get('optical_length', 0)
-        mass = entry.get('mass', 0)
-        ct = map_conn(entry.get('cside_thread'))
-        cg = map_gender(entry.get('cside_gender'))
+        from ...utils import guess_optical_properties, map_conn, map_gender
+
+        brand = entry["brand"]
+        name = entry["name"]
+        vendor = f"{brand} {name}"
+        ol = entry.get("optical_length", 0)
+        mass = entry.get("mass", 0)
+        ct = map_conn(entry.get("cside_thread"))
+        cg = map_gender(entry.get("cside_gender"))
 
         # Use explicit aperture and focal length if available, otherwise guess
-        aperture = entry.get('aperture_mm')
-        focal_length = entry.get('focal_length_mm')
+        aperture = entry.get("aperture_mm")
+        focal_length = entry.get("focal_length_mm")
         if aperture is None or focal_length is None:
             g_aperture, g_focal_length = guess_optical_properties(name)
             aperture = aperture or g_aperture
             focal_length = focal_length or g_focal_length
 
-        central_obstruction = entry.get('central_obstruction_mm', 0)
+        central_obstruction = entry.get("central_obstruction_mm", 0)
 
         # Map type string to TelescopeType enum
-        type_str = entry.get('type', '')
+        type_str = entry.get("type", "")
         telescope_type = TelescopeType.REFRACTOR  # Default
-        if 'refractor' in type_str:
+        if "refractor" in type_str:
             telescope_type = TelescopeType.REFRACTOR
-        elif 'newtonian' in type_str:
+        elif "newtonian" in type_str:
             telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
-        elif 'schmidt_cassegrain' in type_str or 'sct' in type_str:
+        elif "schmidt_cassegrain" in type_str or "sct" in type_str:
             telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
-        elif 'maksutov' in type_str:
+        elif "maksutov" in type_str:
             telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
-        elif 'catadioptric' in type_str or 'astrograph' in type_str:
+        elif "catadioptric" in type_str or "astrograph" in type_str:
             telescope_type = TelescopeType.CATADIOPTRIC
 
-        bf_val = entry.get('bf_role') == 'start'
+        bf_val = entry.get("bf_role") == "start"
 
-        outputs = entry.get('outputs')
+        outputs = entry.get("outputs")
         if outputs is None:
             outputs = [(ct, cg)] if ct else []
-            if entry.get('t2_output', False):
+            if entry.get("t2_output", False):
                 from ...utils import Gender
+
                 outputs.append((ConnectionType.T2, Gender.MALE))
         else:
             from ...utils import map_conn, map_gender
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+
+            outputs = [
+                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
+                for c, g in outputs
+            ]
 
         # Optimization: remove t2_output check in a future version after all databases are updated.
         # For now, it's safer to keep it for items that might not have migrated to 'outputs' list.
 
-        return cls(aperture or 80, focal_length or 500, vendor=vendor, outputs=outputs, backfocus=ol if bf_val else None, mass=mass, optical_length=ol, telescope_type=telescope_type, central_obstruction=central_obstruction)
-    '\n    Class representing telescope\n    '
+        return cls(
+            aperture or 80,
+            focal_length or 500,
+            vendor=vendor,
+            outputs=outputs,
+            backfocus=ol if bf_val else None,
+            mass=mass,
+            optical_length=ol,
+            telescope_type=telescope_type,
+            central_obstruction=central_obstruction,
+        )
 
-    def __init__(self, aperture, focal_length, vendor='unknown telescope', outputs=None, telescope_type: Optional[TelescopeType]=TelescopeType.REFRACTOR, focuser_step_size=None, tube_material: Optional[TubeMaterial]=TubeMaterial.ALUMINUM, backfocus=None, mass=0.0, optical_length=0.0, central_obstruction=0.0, connection_type=None, connection_gender=None):
+    "\n    Class representing telescope\n    "
+
+    def __init__(
+        self,
+        aperture,
+        focal_length,
+        vendor="unknown telescope",
+        outputs=None,
+        telescope_type: Optional[TelescopeType] = TelescopeType.REFRACTOR,
+        focuser_step_size=None,
+        tube_material: Optional[TubeMaterial] = TubeMaterial.ALUMINUM,
+        backfocus=None,
+        mass=0.0,
+        optical_length=0.0,
+        central_obstruction=0.0,
+        connection_type=None,
+        connection_gender=None,
+    ):
         if outputs is None:
             if connection_type:
                 outputs = [(connection_type, connection_gender)]
             else:
                 outputs = [ConnectionType.F_1_25]
 
-        super(Telescope, self).__init__(focal_length, vendor, mass=mass, optical_length=optical_length, outputs=outputs)
+        super(Telescope, self).__init__(
+            focal_length,
+            vendor,
+            mass=mass,
+            optical_length=optical_length,
+            outputs=outputs,
+        )
         self.aperture = cast(Any, aperture * get_unit_registry().mm)
-        self.central_obstruction = cast(Any, central_obstruction * get_unit_registry().mm)
+        self.central_obstruction = cast(
+            Any, central_obstruction * get_unit_registry().mm
+        )
         self.telescope_type = telescope_type
         self.focuser_step_size = focuser_step_size
         self.tube_material = tube_material
-        self.backfocus = cast(Any, backfocus * get_unit_registry().mm) if backfocus is not None else None
+        self.backfocus = (
+            cast(Any, backfocus * get_unit_registry().mm)
+            if backfocus is not None
+            else None
+        )
 
     @property
     def connection_type(self):
@@ -126,14 +176,14 @@ class Telescope(OpticalEquipment):
         Calculate the light gathering area of the telescope, accounting for central obstruction.
         :return: area in mm^2
         """
-        return numpy.pi * (self.aperture ** 2 - self.central_obstruction ** 2) / 4.0
+        return numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
 
     def effective_aperture(self):
         """
         Return the diameter of a clear aperture that would have the same light-gathering area.
         :return: effective aperture in mm
         """
-        return numpy.sqrt(self.aperture ** 2 - self.central_obstruction ** 2)
+        return numpy.sqrt(self.aperture**2 - self.central_obstruction**2)
 
     def dawes_limit(self):
         """
@@ -141,7 +191,10 @@ class Telescope(OpticalEquipment):
         https://en.wikipedia.org/wiki/Dawes%27_limit
         :return: limit in arcsecond
         """
-        return round((11.6 / self.aperture.to('cm')).magnitude, 3) * get_unit_registry().arcsecond
+        return (
+            round((11.6 / self.aperture.to("cm")).magnitude, 3)
+            * get_unit_registry().arcsecond
+        )
 
     def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
@@ -164,7 +217,7 @@ class Telescope(OpticalEquipment):
         Uses effective aperture diameter for better accuracy when central obstruction is present.
         :return: range in magnitude
         """
-        return 7.7 + 5 * numpy.log10(self.effective_aperture().to('cm').magnitude)
+        return 7.7 + 5 * numpy.log10(self.effective_aperture().to("cm").magnitude)
 
     def light_grasp_ratio(self, other_aperture):
         """
@@ -174,7 +227,7 @@ class Telescope(OpticalEquipment):
         :return: ratio between telescope and other aperture
         """
         other_aperture *= get_unit_registry().mm
-        return self.effective_aperture() ** 2 / other_aperture ** 2
+        return self.effective_aperture() ** 2 / other_aperture**2
 
     def highest_useful_magnification(self) -> float:
         """
@@ -216,4 +269,8 @@ class Telescope(OpticalEquipment):
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
 
     def __str__(self):
-        return '{} {}/{}'.format(self.get_vendor(), cast(Any, self.aperture).magnitude, cast(Any, self.focal_length).magnitude)
+        return "{} {}/{}".format(
+            self.get_vendor(),
+            cast(Any, self.aperture).magnitude,
+            cast(Any, self.focal_length).magnitude,
+        )
