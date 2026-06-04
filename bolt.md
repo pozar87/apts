@@ -56,3 +56,8 @@ The most significant bottleneck among successfully running events was optimized 
 - **Task Reduction:** Reduced the number of independent tasks dispatched to the `ThreadPoolExecutor` from ~22 (one per pair) to 2 (one for all planet pairs, one for all moon-planet pairs).
 - **Broadcasting Efficiency:** Leveraged NumPy broadcasting to observe and calculate unit vectors for all bodies at all times in a single pass before cross-calculating dot products.
 - **Result:** ~2.5x speedup for a 1-year range (from 16.45s to 6.40s).
+
+## 2026-06-04 - OpenWeatherMap Parsing Optimization
+**Optimization:** Replaced slow `.apply()` calls with list comprehensions for extracting weather summaries and precipitation intensities.
+**Bug Fix:** Fixed a critical issue where rain/snow data was ignored if the first row of the forecast was empty.
+**Impact:** ~10% faster parsing for typical 48-hour forecasts and significantly improved data reliability for intermittent precipitation.

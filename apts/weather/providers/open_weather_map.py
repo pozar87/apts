@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Tuple, cast
 
+import numpy as np
 import pandas as pd
 
 from . import base
@@ -38,13 +39,11 @@ class OpenWeatherMap(WeatherProvider):
 
             df = pd.DataFrame(json_data["hourly"])
 
-            # The 'weather' column contains a list with a dictionary, extract the description
-            df["summary"] = df["weather"].apply(
-                lambda x: x[0]["description"] if x else "none"
-            )
-            df["precipType"] = df["weather"].apply(
-                lambda x: x[0]["main"] if x else "none"
-            )
+            # Optimization: Extract weather details using list comprehensions which are faster
+            # than .apply() for typical OWM response sizes (~48-168 rows).
+            weather_vals = df["weather"].values
+            df["summary"] = [x[0]["description"] if x else "none" for x in weather_vals]
+            df["precipType"] = [x[0]["main"] if x else "none" for x in weather_vals]
 
             # Rename columns to match the standard format
             rename_map = {
@@ -61,17 +60,20 @@ class OpenWeatherMap(WeatherProvider):
             }
             df.rename(columns=rename_map, inplace=True)
 
-            # precipIntensity
-            if "rain" in df.columns and isinstance(df["rain"].iloc[0], dict):
-                df["precipIntensity"] = df["rain"].apply(
-                    lambda x: x.get("1h", 0) if isinstance(x, dict) else 0
-                )
-            elif "snow" in df.columns and isinstance(df["snow"].iloc[0], dict):
-                df["precipIntensity"] = df["snow"].apply(
-                    lambda x: x.get("1h", 0) if isinstance(x, dict) else 0
-                )
-            else:
-                df["precipIntensity"] = 0
+            # Optimization: Extract precipIntensity using list comprehensions.
+            # This also fixes a bug where rain/snow was missed if the first row was None.
+            precip_intensity = np.zeros(len(df))
+            if "rain" in df.columns:
+                rain_vals = df["rain"].values
+                precip_intensity += [
+                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in rain_vals
+                ]
+            if "snow" in df.columns:
+                snow_vals = df["snow"].values
+                precip_intensity += [
+                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in snow_vals
+                ]
+            df["precipIntensity"] = precip_intensity
 
             # Convert units and types
             df["time"] = (
