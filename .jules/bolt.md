@@ -97,3 +97,7 @@
 ## 2025-06-25 - [Geometric Projection Hoisting]
 **Learning:** In geometric searches involving multiple bodies observed from the same sources (e.g., Earth and Sun projecting onto Galilean moons), many projection parameters are invariant across the bodies. Hoisting pole-direction dot products and scaled projection radii out of the body iteration loop, and reusing intermediate dot products (`p_z`, `p_sq`) across different projection targets, significantly reduces redundant NumPy operations.
 **Action:** Always identify and hoist invariant geometric parameters out of iteration loops in complex astronomical state functions.
+
+## 2026-06-04 - [OWM Parsing Optimization and Robustness]
+**Learning:** For small DataFrames typically encountered in weather API responses (~48 rows), iterating with list comprehensions over `.values` can be faster than Pandas `.apply()` due to reduced function call overhead. More importantly, relying on `df[col].iloc[0]` to check for column data presence is a bug-prone anti-pattern; it misses data if the first row is null but subsequent rows are not.
+**Action:** Use list comprehensions for row-wise extraction on small datasets. Always prefer vectorized logic or full-column iteration over single-row type checks to ensure data robustness.

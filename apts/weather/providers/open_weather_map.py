@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Tuple, cast
 
+import numpy as np
 import pandas as pd
 
 from . import base
@@ -96,7 +97,15 @@ class OpenWeatherMap(WeatherProvider):
                 logger.error(
                     f"KeyError 'hourly' in weather data. Full response: {json_data}"
                 )
-            return self._empty_df()
+                return self._empty_df()
+
+            df = pd.DataFrame(json_data["hourly"])
+
+            # Optimization: Extract weather details using list comprehensions which are faster
+            # than .apply() for typical OWM response sizes (~48-168 rows).
+            weather_vals = df["weather"].values
+            df["summary"] = [x[0]["description"] if x else "none" for x in weather_vals]
+            df["precipType"] = [x[0]["main"] if x else "none" for x in weather_vals]
 
         df = pd.DataFrame(json_data["hourly"])
         df = self._extract_weather_info(df)
@@ -112,26 +121,77 @@ class OpenWeatherMap(WeatherProvider):
                 "clouds": "cloudCover",
                 "visibility": "visibility",
                 "pressure": "pressure",
-            },
-            inplace=True,
-        )
-        df = self._extract_precipitation_intensity(df)
-        df = self._convert_units_and_types(df)
+            }
+            df.rename(columns=rename_map, inplace=True)
 
-        # Ensure all required columns are present
-        required_columns = self.REQUIRED_COLUMNS[:-4]  # base standard columns
-        for col in required_columns:
-            if col not in df.columns:
-                df[col] = "none"
+            # Optimization: Extract precipIntensity using list comprehensions.
+            # This also fixes a bug where rain/snow was missed if the first row was None.
+            precip_intensity = np.zeros(len(df))
+            if "rain" in df.columns:
+                rain_vals = df["rain"].values
+                precip_intensity += [
+                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in rain_vals
+                ]
+            if "snow" in df.columns:
+                snow_vals = df["snow"].values
+                precip_intensity += [
+                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in snow_vals
+                ]
+            df["precipIntensity"] = precip_intensity
 
-        # Filter by hours
-        cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-        df = cast(pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)])
+            # Convert units and types
+            df["time"] = (
+                pd.to_datetime(df["time"], unit="s")
+                .dt.tz_localize("UTC")
+                .dt.tz_convert(self.local_timezone)
+            )
+            if "precipProbability" in df.columns:
+                df["precipProbability"] *= 100
 
-        df = self._enrich_with_aurora_data(df)
-        if "aurora" in df.columns:
-            required_columns.append("aurora")
+            if "humidity" in df.columns:
+                df["humidity"] /= 100
 
-        # Ensure we only return columns that are actually in the dataframe
-        final_cols = [c for c in required_columns if c in df.columns]
-        return cast(pd.DataFrame, df[final_cols])
+            # Convert wind speed from m/s to km/h
+            if "windSpeed" in df.columns:
+                df["windSpeed"] *= 3.6
+
+            # Convert visibility from meters to km
+            if "visibility" in df.columns:
+                df["visibility"] /= 1000
+            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce")
+            df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
+
+            # Ensure all required columns are present
+            required_columns = [
+                "time",
+                "summary",
+                "precipType",
+                "precipProbability",
+                "precipIntensity",
+                "temperature",
+                "apparentTemperature",
+                "dewPoint",
+                "humidity",
+                "windSpeed",
+                "cloudCover",
+                "visibility",
+                "pressure",
+                "ozone",
+            ]
+            for col in required_columns:
+                if col not in df.columns:
+                    df[col] = "none"
+
+            # Filter by hours
+            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+            df = cast(
+                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+            )
+
+            df = self._enrich_with_aurora_data(df)
+            if "aurora" in df.columns:
+                required_columns.append("aurora")
+            return cast(pd.DataFrame, df[required_columns])
+        except Exception as e:
+            self._log_download_error(e, data.text if data is not None else "")
+            return self._empty_df()
