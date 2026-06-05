@@ -92,37 +92,33 @@ class OpenWeatherMap(WeatherProvider):
         self._log_download_url(url)
 
         json_data = self._parse_json_response(url)
-        if not json_data or "hourly" not in json_data:
-            if json_data and "hourly" not in json_data:
-                logger.error(
-                    f"KeyError 'hourly' in weather data. Full response: {json_data}"
-                )
-                return self._empty_df()
+        if not json_data:
+            logger.error("No weather data received.")
+            return self._empty_df()
+        if "hourly" not in json_data:
+            logger.error(
+                f"KeyError 'hourly' in weather data. Full response: {json_data}"
+            )
+            return self._empty_df()
 
+        try:
             df = pd.DataFrame(json_data["hourly"])
-
-            # Optimization: Extract weather details using list comprehensions which are faster
-            # than .apply() for typical OWM response sizes (~48-168 rows).
-            weather_vals = df["weather"].values
-            df["summary"] = [x[0]["description"] if x else "none" for x in weather_vals]
-            df["precipType"] = [x[0]["main"] if x else "none" for x in weather_vals]
-
-        df = pd.DataFrame(json_data["hourly"])
-        df = self._extract_weather_info(df)
-        df.rename(
-            columns={
-                "dt": "time",
-                "pop": "precipProbability",
-                "temp": "temperature",
-                "feels_like": "apparentTemperature",
-                "dew_point": "dewPoint",
-                "humidity": "humidity",
-                "wind_speed": "windSpeed",
-                "clouds": "cloudCover",
-                "visibility": "visibility",
-                "pressure": "pressure",
-            }
-            df.rename(columns=rename_map, inplace=True)
+            df = self._extract_weather_info(df)
+            df.rename(
+                columns={
+                    "dt": "time",
+                    "pop": "precipProbability",
+                    "temp": "temperature",
+                    "feels_like": "apparentTemperature",
+                    "dew_point": "dewPoint",
+                    "humidity": "humidity",
+                    "wind_speed": "windSpeed",
+                    "clouds": "cloudCover",
+                    "visibility": "visibility",
+                    "pressure": "pressure",
+                },
+                inplace=True,
+            )
 
             # Optimization: Extract precipIntensity using list comprehensions.
             # This also fixes a bug where rain/snow was missed if the first row was None.
