@@ -66,5 +66,13 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.quantum_efficiency, 80)
         self.assertEqual(cam.full_well, 19200)
 
+    def test_asi174mm_specs(self):
+        cam = ZwoCamera.ZWO_ASI_174MM()
+        self.assertEqual(cam.mass.to('gram').magnitude, 140)
+        self.assertEqual(cam.read_noise, 3.5)
+        self.assertEqual(cam.quantum_efficiency, 78)
+        self.assertEqual(cam.connection_type.value, "CS")
+        self.assertEqual(cam.backfocus.to('mm').magnitude, 6.5)
+
 if __name__ == '__main__':
     unittest.main()

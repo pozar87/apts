@@ -459,20 +459,20 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 32000,
             "height": 1216,
-            "mass": 60,
+            "mass": 140,  # Verified via official ZWO specs (0.14kg)
             "name": "ASI174MM",
             "optical_length": 6.5,
             "pixel_size_um": 5.86,
-            "quantum_efficiency_pct": 77,
-            "read_noise_e": 6.0,
+            "quantum_efficiency_pct": 78,  # Verified peak QE
+            "read_noise_e": 3.5,  # Verified via official specs (minimum 3.5e)
             "reversible": False,
             "sensor_height_mm": 7.1,
             "sensor_width_mm": 11.3,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Native thread for 6.5mm backfocus
             "type": "type_camera",
             "width": 1936,
-        },
+        },  # Verified via manufacturer product page: https://www.zwoastro.com/product/asi174mm/
         "ZWO_ASI_174MM_Mini": {
             "bf_role": "end",
             "brand": "ZWO",
