@@ -207,5 +207,13 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
         self.assertEqual(scope.mass.to('gram').magnitude, 2600)
 
+    def test_evostar_150ed_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Evostar_150ED()
+        self.assertEqual(scope.mass.to('gram').magnitude, 9500)
+
+    def test_evostar_150dx_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Evostar_150DX()
+        self.assertEqual(scope.mass.to('gram').magnitude, 9980)
+
 if __name__ == '__main__':
     unittest.main()
