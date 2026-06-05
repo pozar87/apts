@@ -2,20 +2,16 @@ import logging
 import types
 import unittest.mock
 from abc import ABC, abstractmethod
-from datetime import timedelta
 from typing import Any, cast
 
 import numpy as np
 import pandas as pd
-import pytz
-from skyfield import almanac as skyfield_almanac
 from skyfield.api import Star
-from skyfield.searchlib import find_discrete
 
 from . import almanac, visibility
 from ..cache import get_timescale
 from ..constants import ObjectTableLabels
-from .utils import calculate_refraction, vectorized_geometric_compute
+from .utils import vectorized_geometric_compute
 
 logger = logging.getLogger(__name__)
 

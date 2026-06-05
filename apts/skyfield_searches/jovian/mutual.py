@@ -1,4 +1,4 @@
-from typing import Any, cast, List, Dict
+from typing import Any, cast, List
 import numpy as np
 from skyfield import almanac
 from ...cache import get_timescale

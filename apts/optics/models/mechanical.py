@@ -15,6 +15,8 @@ class MechanicalMixIn:
         others: list[Any]
         output: Any
         _cache: dict[str, Any]
+        _path: Optional[list]
+
         def effective_barlow(self) -> float: ...
 
     def label(self) -> str:

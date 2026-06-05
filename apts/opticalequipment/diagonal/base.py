@@ -5,7 +5,7 @@ from ...utils import ConnectionType, Gender
 class Diagonal(IntermediateOpticalEquipment):
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import map_conn, map_gender, Gender
+        from ...utils import map_conn, map_gender
         entry = entry.copy()
         if "in_connection_type" not in entry and "tside_thread" in entry:
             entry["in_connection_type"] = map_conn(entry.get("tside_thread")).value

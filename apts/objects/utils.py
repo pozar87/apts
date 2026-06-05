@@ -1,8 +1,10 @@
+from datetime import timedelta
+from typing import Any, cast
+
 import numpy as np
 import pandas as pd
 import pytz
-from datetime import timedelta
-from typing import Any, cast
+
 
 def calculate_refraction(alt_deg):
     """
@@ -22,6 +24,7 @@ def calculate_refraction(alt_deg):
 
     return refraction_deg[0] if np.isscalar(alt_deg) else refraction_deg
 
+
 def vectorized_geometric_compute(
     ts,
     lat_deg,
@@ -31,7 +34,7 @@ def vectorized_geometric_compute(
     ras,
     decs,
     valid_mask,
-    df_len
+    df_len,
 ):
     """
     Generic vectorized transit, altitude, rising, and setting calculation.
@@ -136,15 +139,9 @@ def vectorized_geometric_compute(
 
     return transits, alts, rises, sets
 
+
 def vectorized_geometric_imaging_duration(
-    lat_deg,
-    ras,
-    decs,
-    valid_mask,
-    transits,
-    dark_start,
-    dark_end,
-    min_altitude=30.0
+    lat_deg, ras, decs, valid_mask, transits, dark_start, dark_end, min_altitude=30.0
 ):
     """
     Fast calculation of imaging window duration (minutes above threshold during darkness)
@@ -175,7 +172,7 @@ def vectorized_geometric_imaging_duration(
         * sidereal_to_solar
     )
 
-    H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")
+    H_delta = pd.to_timedelta(H_hours * 3600, unit="s").round("s")  # type: ignore[arg-type]
     rising_times = (transits - H_delta).dt.floor("s")
     setting_times = (transits + H_delta).dt.floor("s")
 
@@ -199,11 +196,10 @@ def vectorized_geometric_imaging_duration(
     # Ensure index preservation for correct assignment back to DataFrame
     win_starts = pd.Series(
         np.maximum(rises_utc.values, dark_start_ts.to_datetime64()),
-        index=transits.index
+        index=transits.index,
     )
     win_ends = pd.Series(
-        np.minimum(sets_utc.values, dark_end_ts.to_datetime64()),
-        index=transits.index
+        np.minimum(sets_utc.values, dark_end_ts.to_datetime64()), index=transits.index
     )
 
     durations = (win_ends - win_starts).dt.total_seconds() / 60.0

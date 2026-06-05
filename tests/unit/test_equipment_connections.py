@@ -2,7 +2,6 @@ import unittest
 from apts.equipment import Equipment
 from apts.opticalequipment.telescope import Telescope
 from apts.opticalequipment.barlow import Barlow
-from apts.opticalequipment.diagonal import Diagonal
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.camera import Camera
 from apts.opticalequipment.oag import OAG

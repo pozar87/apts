@@ -1,15 +1,22 @@
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..units import ureg
 
-from .planetary import MINOR_PLANET_NAMES
 from .coordinates import decdeg2dms, dms2decdeg
-from .date import format_date, date_format
+from .date import date_format, format_date
+from .equipment import (
+    ConnectionType,
+    Gender,
+    get_default_gender,
+    guess_optical_properties,
+    map_conn,
+    map_gender,
+)
 from .graph import find_all_paths
-from .text import sanitize_header, extract_number, mask_secret
-from .equipment import ConnectionType, Gender, map_conn, map_gender, guess_optical_properties, get_default_gender
+from .planetary import MINOR_PLANET_NAMES
 from .plot import PlotUtils
+from .text import extract_number, mask_secret, sanitize_header
 
 __all__ = [
     "ureg",
@@ -28,16 +35,18 @@ __all__ = [
     "map_gender",
     "guess_optical_properties",
     "get_default_gender",
-    "optics",
+    "optics",  # pyright: ignore[reportUnsupportedDunderAll]
 ]
 
 
 def __getattr__(name: str) -> Any:
     if name == "ureg":
         from ..units import ureg
+
         return ureg
     if name == "optics":
         from ..optics import calculations as optics
+
         return optics
     raise AttributeError(f"module {__name__} has no attribute {name}")
 

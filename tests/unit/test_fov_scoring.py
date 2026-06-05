@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-import pandas as pd
 from apts.optics.utils import OpticsUtils
 from apts.units import get_unit_registry
 

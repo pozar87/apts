@@ -1,12 +1,13 @@
 from datetime import timedelta
 from typing import Any, cast
-from skyfield.searchlib import find_minima
+
 from skyfield.positionlib import Apparent
+from skyfield.searchlib import find_minima
+
 from ..cache import get_ephemeris, get_timescale
 
-def fast_altaz(
-    observer_at_times, skyfield_obj, temperature_C=None, pressure_mbar=None
-):
+
+def fast_altaz(observer_at_times, skyfield_obj, temperature_C=None, pressure_mbar=None):
     """
     Fast AltAz calculation that bypasses expensive nutation, aberration, and
     light deflection calculations (Standard Apparent) by manually wrapping
@@ -19,7 +20,8 @@ def fast_altaz(
     pos = observer_at_times.observe(skyfield_obj)
     app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t)
     app.center = pos.center
-    return app.altaz(temperature_C=temperature_C, pressure_mbar=pressure_mbar)
+    return app.altaz(temperature_C=temperature_C, pressure_mbar=pressure_mbar)  # type: ignore[arg-type]
+
 
 def _refine_conjunction(observer, obj1, obj2, rough_t):
     """
@@ -53,6 +55,7 @@ def _refine_conjunction(observer, obj1, obj2, rough_t):
     p1 = observer.at(rough_t).observe(obj1).apparent()
     p2 = observer.at(rough_t).observe(obj2).apparent()
     return rough_t, p1.separation_from(p2).degrees
+
 
 def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     """

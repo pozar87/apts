@@ -1,12 +1,14 @@
-from typing import Any, cast
-from datetime import timedelta
 from collections import defaultdict
+from datetime import timedelta
+from typing import Any, cast
+
 import numpy as np
-from skyfield.searchlib import find_minima
 from skyfield.positionlib import Apparent
-from ...cache import get_timescale, get_ephemeris
-from ...utils import planetary
+from skyfield.searchlib import find_minima
+
+from ...cache import get_ephemeris, get_timescale
 from ...constants import astronomy
+from ...utils import planetary
 
 # Thresholds for different numbers of planets (number: arc_degrees)
 _PLANET_ALIGNMENT_THRESHOLDS = {
@@ -48,18 +50,23 @@ def find_oppositions(observer, planet_name, start_date, end_date):
         astrometric = observer.at(t).observe(planet).apparent()
 
         mag = planetary.get_planet_magnitude(planet_name, t, astrometric=astrometric)
-        dist_km = planetary.get_planet_distance_km(planet_name, t, astrometric=astrometric)
+        dist_km = planetary.get_planet_distance_km(
+            planet_name, t, astrometric=astrometric
+        )
         diam = planetary.get_planet_angular_diameter(planet_name, t, observer=observer)
 
-        events.append({
-            "date": t.utc_datetime(),
-            "planet": planet_name,
-            "magnitude": float(mag),
-            "distance_au": float(dist_km / astronomy.AU_KM),
-            "angular_diameter_arcsec": float(diam)
-        })
+        events.append(
+            {
+                "date": t.utc_datetime(),
+                "planet": planet_name,
+                "magnitude": float(mag),
+                "distance_au": float(dist_km / astronomy.AU_KM),
+                "angular_diameter_arcsec": float(diam),
+            }
+        )
 
     return events
+
 
 def find_mars_closest_approach(start_date, end_date, observer=None):
     """
@@ -114,6 +121,7 @@ def find_mars_closest_approach(start_date, end_date, observer=None):
         events.append(event)
 
     return events
+
 
 def _get_best_alignment_at_time(lons_at_t):
     """
@@ -268,8 +276,6 @@ def find_planet_alignments(observer, start_date, end_date):
         "neptune barycenter",
     ]
     planet_objs = [(p, planetary.get_skyfield_obj(p)) for p in planets]
-    eph = get_ephemeris()
-    earth = eph["earth"]
     sun = planetary.get_skyfield_obj("sun")
 
     # Use 1-hour steps to find best visibility and alignment
@@ -278,9 +284,7 @@ def find_planet_alignments(observer, start_date, end_date):
         return []
 
     num_steps = int(duration_days * 24) + 1
-    t_list = [
-        t_start.utc_datetime() + timedelta(hours=i) for i in range(num_steps)
-    ]
+    t_list = [t_start.utc_datetime() + timedelta(hours=i) for i in range(num_steps)]
     times = ts.from_datetimes(t_list)
 
     # Pre-calculate longitudes, altitudes and sun altitude vectorized
@@ -303,7 +307,9 @@ def find_planet_alignments(observer, start_date, end_date):
         # Optimization: Use astrometric positions wrapped in Apparent for faster visibility checks.
         # This bypasses expensive nutation/aberration calculations while maintaining sufficient
         # accuracy for horizon gating.
-        obj_app = Apparent(obj_topo_ast.position.au, obj_topo_ast.velocity.au_per_d, obj_topo_ast.t)
+        obj_app = Apparent(
+            obj_topo_ast.position.au, obj_topo_ast.velocity.au_per_d, obj_topo_ast.t
+        )
         obj_app.center = obj_topo_ast.center
         alts = obj_app.altaz()[0].degrees
         altitudes.append(alts)
@@ -313,10 +319,12 @@ def find_planet_alignments(observer, start_date, end_date):
 
     # Optimization: Use manual Apparent for Sun visibility check as well
     sun_topo_ast = observer.at(times).observe(sun)
-    sun_app = Apparent(sun_topo_ast.position.au, sun_topo_ast.velocity.au_per_d, sun_topo_ast.t)
+    sun_app = Apparent(
+        sun_topo_ast.position.au, sun_topo_ast.velocity.au_per_d, sun_topo_ast.t
+    )
     sun_app.center = sun_topo_ast.center
     sun_alts = sun_app.altaz()[0].degrees
-    is_dark = sun_alts < -6
+    is_dark = sun_alts < -6  # type: ignore[operator]
 
     # Calculate stats for every hour
     step_results = _calculate_step_results(times, longitudes, altitudes, is_dark)

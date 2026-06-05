@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta
-from apts import Observation, Place, Equipment
+from apts import Place
 from apts.events import AstronomicalEvents
 
 def benchmark_events():

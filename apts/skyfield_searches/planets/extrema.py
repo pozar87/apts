@@ -1,10 +1,13 @@
 from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac, magnitudelib
 from skyfield.searchlib import find_maxima, find_minima
-from ...cache import get_timescale, get_ephemeris
+
+from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
 from ..utils import fast_altaz
+
 
 def find_planetary_dichotomy(
     observer,
@@ -61,11 +64,12 @@ def find_planetary_dichotomy(
                     "object": simple_name,
                     "type": "Planetary Dichotomy",
                     "altitude": float(alt.degrees),
-                    "is_visible": bool(alt.degrees > 0 and sun_alt <= -6),
+                    "is_visible": bool(alt.degrees > 0 and sun_alt <= -6),  # type: ignore[operator]
                 }
             )
 
     return events
+
 
 def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any):
     """
@@ -82,7 +86,7 @@ def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any
 
     def magnitude(t):
         astrometric = earth.at(t).observe(venus)
-        return magnitudelib.planetary_magnitude(astrometric)
+        return magnitudelib.planetary_magnitude(astrometric)  # type: ignore[arg-type]
 
     # Venus greatest brilliancy occurs every ~584 days.
     # A step of 30 days is safe to find the minimum.
@@ -108,11 +112,12 @@ def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any
                 "type": "Venus Greatest Brilliancy",
                 "magnitude": float(mag),
                 "altitude": float(alt.degrees),
-                "sun_altitude": float(sun_alt),
+                "sun_altitude": float(sun_alt),  # type: ignore[arg-type]
             }
         )
 
     return events
+
 
 def find_stationary_points(observer, planet_name, start_date, end_date):
     """
@@ -131,8 +136,12 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
         t_minus = ts.tt_jd(t.tt - dt)
         t_plus = ts.tt_jd(t.tt + dt)
 
-        ra1 = observer.at(t_minus).observe(planet).apparent().radec(epoch="date")[0].hours
-        ra2 = observer.at(t_plus).observe(planet).apparent().radec(epoch="date")[0].hours
+        ra1 = (
+            observer.at(t_minus).observe(planet).apparent().radec(epoch="date")[0].hours
+        )
+        ra2 = (
+            observer.at(t_plus).observe(planet).apparent().radec(epoch="date")[0].hours
+        )
 
         # Handle wrap-around at 24h
         diff = (ra2 - ra1 + 12) % 24 - 12
@@ -161,6 +170,7 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
         )
     return events
 
+
 def find_highest_altitude(observer, planet, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -186,6 +196,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
     max_altitude_index = np.argmax(altitudes)
 
     return times[max_altitude_index].utc_datetime(), altitudes[max_altitude_index]
+
 
 def find_greatest_elongations(observer, start_date, end_date):
     """
