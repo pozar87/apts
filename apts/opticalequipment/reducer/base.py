@@ -1,7 +1,6 @@
 from ..abstract import IntermediateOpticalEquipment
 from ...constants import OpticalType
 from ...units import get_unit_registry
-from ...utils import Gender
 
 class Reducer(IntermediateOpticalEquipment):
     path_layer = 2

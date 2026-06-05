@@ -2,7 +2,7 @@ from typing import Any, cast
 from ..abstract import OutputOpticalEquipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
-from ...utils import ConnectionType, Gender
+from ...utils import ConnectionType
 
 class Eyepiece(OutputOpticalEquipment):
     path_layer = 5

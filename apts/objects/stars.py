@@ -1,14 +1,9 @@
-import pandas as pd
-import pytz
-from datetime import timedelta
 from types import SimpleNamespace
 
-from skyfield.api import Star
 
 from .base import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
-from .utils import calculate_refraction
 
 
 class Stars(Objects):

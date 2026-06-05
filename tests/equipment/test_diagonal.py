@@ -1,7 +1,6 @@
 from apts.utils import ConnectionType, Gender
 from apts.opticalequipment.diagonal import Diagonal
 from apts.equipment import Equipment
-from apts.utils import ConnectionType
 
 
 def test_diagonal_init():

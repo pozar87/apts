@@ -189,5 +189,5 @@ class OpenWeatherMap(WeatherProvider):
                 required_columns.append("aurora")
             return cast(pd.DataFrame, df[required_columns])
         except Exception as e:
-            self._log_download_error(e, data.text if data is not None else "")
+            self._log_download_error(e, "")
             return self._empty_df()

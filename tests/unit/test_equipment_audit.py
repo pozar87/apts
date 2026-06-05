@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.celestron import CelestronTelescope
 from apts.opticalequipment.telescope.vendors.bresser import BresserTelescope
 from apts.opticalequipment.telescope.vendors.gso import GsoTelescope

@@ -1,6 +1,5 @@
 from ..telescope import Telescope
 from ...constants import OpticalType
-from ...utils import ConnectionType, Gender
 
 
 class GuideScope(Telescope):

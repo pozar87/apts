@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Iterable
+from typing import Dict, Any, Iterable
 import pandas as pd
 from ..i18n import get_language, gettext_
 
