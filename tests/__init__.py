@@ -1,6 +1,7 @@
-from apts.utils import ConnectionType, Gender
-from apts import equipment, observations, place, opticalequipment
 import datetime
+
+from apts import equipment, observations, opticalequipment, place
+from apts.utils import ConnectionType
 
 
 def setup_equipment():

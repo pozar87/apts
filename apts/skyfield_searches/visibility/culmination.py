@@ -1,10 +1,13 @@
 from typing import Any, cast
+
 import numpy as np
 from skyfield.api import Star
 from skyfield.searchlib import find_maxima
-from ...cache import get_timescale, get_ephemeris
+
+from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
 from ..utils import fast_altaz
+
 
 def _get_observer_coords(observer: Any) -> tuple[float, float]:
     """Extracts latitude (deg) and longitude (hours) from the observer object."""
@@ -17,6 +20,7 @@ def _get_observer_coords(observer: Any) -> tuple[float, float]:
             break
     return lat_deg, lon_hours
 
+
 def _apply_refraction(altitudes_deg: np.ndarray) -> np.ndarray:
     """Adds atmospheric refraction at culmination using Bennett's formula."""
     # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
@@ -27,6 +31,7 @@ def _apply_refraction(altitudes_deg: np.ndarray) -> np.ndarray:
         r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
         res[r_mask] += r_arcmin / 60.0
     return res
+
 
 def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
     """
@@ -99,7 +104,9 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
 
         # Calculate precise altitudes and Sun altitudes at culmination times
         obs_final = observer.at(t_final).observe(obj).apparent()
-        alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+        alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[
+            0
+        ].degrees
 
         # Visibility filter: altitude > 0
         mask_alt = alts_final_deg > 0
@@ -114,7 +121,7 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
 
         visible_mask = np.ones(len(t_final), dtype=bool)
         if simple_name != "Sun":
-            visible_mask = sun_alts_deg <= sun_alt_threshold
+            visible_mask = sun_alts_deg <= sun_alt_threshold  # type: ignore[operator]
 
         final_times = t_final[visible_mask]
         final_alts = alts_final_deg[visible_mask]
@@ -131,6 +138,7 @@ def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
             )
 
     return events
+
 
 def _find_fixed_object_culminations(
     observer: Any,
@@ -171,8 +179,8 @@ def _find_fixed_object_culminations(
     # At culmination: LST == RA => GAST + Lon == RA => GAST == RA - Lon
     # Use broadcasting: ra_hours is (M,), t_refs.gast is (D,) -> target_gast is (M, D)
     target_gast = (ra_hours[:, None] - lon_hours) % 24
-    diff_gast = (target_gast - t_refs.gast[None, :]) % 24
-    diff_gast[diff_gast > 12] -= 24
+    diff_gast = (target_gast - t_refs.gast[None, :]) % 24  # type: ignore[index]
+    diff_gast[diff_gast > 12] -= 24  # type: ignore[operator]
 
     # Convert sidereal interval to UT (approx. factor 1.0027379)
     # Result is (M, D), transpose and flatten to (M*D,) to match obj_indices_all
@@ -207,7 +215,7 @@ def _find_fixed_object_culminations(
         sun_alts_deg = fast_altaz(observer.at(t_candidates), sun)[0].degrees
 
         # Visibility threshold: Sun below threshold
-        valid_mask = sun_alts_deg <= sun_alt_threshold
+        valid_mask = sun_alts_deg <= sun_alt_threshold  # type: ignore[operator]
 
         final_names = [names_fixed[i] for i in obj_indices_candidates[valid_mask]]
         final_times = t_candidates[valid_mask]
@@ -224,6 +232,7 @@ def _find_fixed_object_culminations(
                 }
             )
     return events
+
 
 def _find_moving_object_culminations(
     observer: Any,
@@ -249,7 +258,7 @@ def _find_moving_object_culminations(
             if alt > 15:
                 # Optimization: Use fast_altaz for Sun visibility check.
                 sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
-                if sun_alt <= sun_alt_threshold:
+                if sun_alt <= sun_alt_threshold:  # type: ignore[operator]
                     events.append(
                         {
                             "date": t.utc_datetime(),
@@ -260,6 +269,7 @@ def _find_moving_object_culminations(
                         }
                     )
     return events
+
 
 def find_object_culminations(
     observer, objects_data, start_date, end_date, sun_alt_threshold=-12

@@ -1,8 +1,10 @@
 import numpy as np
 from skyfield.searchlib import find_minima
+
 from ...cache import get_timescale
 from ...utils import planetary
 from ..utils import fast_altaz
+
 
 def find_jupiter_grs_transits(
     observer,
@@ -48,7 +50,7 @@ def find_jupiter_grs_transits(
     s_obs = observer.at(times).observe(sun)
     elongation = j_obs.separation_from(s_obs).degrees
 
-    visible_mask = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)
+    visible_mask = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)  # type: ignore[operator]
 
     events = []
     for i, t in enumerate(times):

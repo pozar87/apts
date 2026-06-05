@@ -1,5 +1,7 @@
-from typing import Dict, Any, Iterable
+from typing import Any, Dict, Iterable, cast
+
 import pandas as pd
+
 from ..i18n import get_language, gettext_
 
 
@@ -40,15 +42,18 @@ def _apply_translation(series: pd.Series, translation_map: Dict) -> pd.Series:
     if has_list:
         # Lists are not hashable, so we use tuples for the mapping but still
         # need to handle input list types correctly in apply.
-        return series.apply(
-            lambda x: (
-                translation_map[tuple(x)]
-                if isinstance(x, list)
-                else translation_map.get(x, x)
-            )
+        return cast(
+            pd.Series,
+            series.apply(
+                lambda x: (
+                    translation_map[tuple(x)]
+                    if isinstance(x, list)
+                    else translation_map.get(x, x)
+                )
+            ),
         )
     else:
-        return series.apply(lambda x: translation_map.get(x, x))
+        return cast(pd.Series, series.apply(lambda x: translation_map.get(x, x)))
 
 
 def translate_events(df: pd.DataFrame) -> pd.DataFrame:
@@ -76,8 +81,9 @@ def translate_events(df: pd.DataFrame) -> pd.DataFrame:
 
     for col in columns_to_translate:
         if col in df.columns:
-            unique_values = _get_unique_values(df[col])
+            col_series = cast(pd.Series, df[col])
+            unique_values = _get_unique_values(col_series)
             translation_map = _build_translation_map(unique_values)
-            df[col] = _apply_translation(df[col], translation_map)
+            df[col] = _apply_translation(col_series, translation_map)
 
     return df

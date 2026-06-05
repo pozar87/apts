@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 from skyfield.positionlib import Apparent
 
@@ -32,6 +33,7 @@ def _get_jovian_moon_objects(eph):
             )
             moon_objs[moon_id] = eph[jup300_ids[moon_id]]
     return moon_map, moon_objs
+
 
 class JovianSearchContext:
     """
@@ -119,7 +121,7 @@ class JovianSearchContext:
                 # If Jupiter is more than 5 degrees below horizon in all samples,
                 # we assume it's not visible for the whole block.
                 # 5 degrees is a safe margin for 3-hour decimation.
-                if np.all(alt_coarse.degrees < -5.0):
+                if np.all(alt_coarse.degrees < -5.0):  # type: ignore[operator]
                     data["visible"] = np.zeros(len(t), dtype=bool)
                 else:
                     # Fallback to high-precision for the whole block
@@ -153,14 +155,16 @@ class JovianSearchContext:
     def get_moon_obs(self, t, moon_id):
         data = self.get_basic_data(t)
         if moon_id not in data["moons"]:
-            data["moons"][moon_id] = self.observer.at(t).observe(self.moon_objs[moon_id])
+            data["moons"][moon_id] = self.observer.at(t).observe(
+                self.moon_objs[moon_id]
+            )
         return data["moons"][moon_id]
 
     def get_moon_sun_obs(self, t, moon_id):
         data = self.get_basic_data(t)
         if moon_id not in data["moons_sun"]:
-            data["moons_sun"][moon_id] = (
-                self.sun.at(data["t_emitted"]).observe(self.moon_objs[moon_id])
+            data["moons_sun"][moon_id] = self.sun.at(data["t_emitted"]).observe(
+                self.moon_objs[moon_id]
             )
         return data["moons_sun"][moon_id]
 
