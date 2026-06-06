@@ -2,56 +2,28 @@ from ..base import Rotator
 
 
 class AstopticsRotator(Rotator):
-    _DATABASE = {
-        "ASToptics_Rotator_M42": {
-            "brand": "ASToptics",
-            "name": "Rotator (M42)",
-            "type": "type_rotator",
-            "optical_length": 10,
-            "mass": 200,
-            "tside_thread": "M42",
-            "tside_gender": "Male",
-            "cside_thread": "M42",
-            "cside_gender": "Female",
-            "reversible": False,
-            "bf_role": "",
-        },
-        "ASToptics_Rotator_M48": {
-            "brand": "ASToptics",
-            "name": "Rotator (M48)",
-            "type": "type_rotator",
-            "optical_length": 11,
-            "mass": 250,
-            "tside_thread": "M48",
-            "tside_gender": "Male",
-            "cside_thread": "M48",
-            "cside_gender": "Female",
-            "reversible": False,
-            "bf_role": "",
-        },
-        "ASToptics_Rotator_M54": {
-            "brand": "ASToptics",
-            "name": "Rotator (M54)",
-            "type": "type_rotator",
-            "optical_length": 12,
-            "mass": 300,
-            "tside_thread": "M54",
-            "tside_gender": "Male",
-            "cside_thread": "M54",
-            "cside_gender": "Female",
-            "reversible": False,
-            "bf_role": "",
-        },
-    }
+    _DATABASE = {'ASToptics_Rotator_M42': {'brand': 'ASToptics', 'name':
+        'Rotator (M42)', 'type': 'type_rotator', 'optical_length': 10,
+        'mass': 200, 'tside_thread': 'M42', 'tside_gender': 'Female',
+        'cside_thread': 'M42', 'cside_gender': 'Male', 'reversible': False,
+        'bf_role': ''}, 'ASToptics_Rotator_M48': {'brand': 'ASToptics',
+        'name': 'Rotator (M48)', 'type': 'type_rotator', 'optical_length': 
+        11, 'mass': 250, 'tside_thread': 'M48', 'tside_gender': 'Female',
+        'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False,
+        'bf_role': ''}, 'ASToptics_Rotator_M54': {'brand': 'ASToptics',
+        'name': 'Rotator (M54)', 'type': 'type_rotator', 'optical_length': 
+        12, 'mass': 300, 'tside_thread': 'M54', 'tside_gender': 'Female',
+        'cside_thread': 'M54', 'cside_gender': 'Male', 'reversible': False,
+        'bf_role': ''}}
 
     @classmethod
     def ASToptics_Rotator_M42(cls):
-        return cls.from_database(cls._DATABASE["ASToptics_Rotator_M42"])
+        return cls.from_database(cls._DATABASE['ASToptics_Rotator_M42'])
 
     @classmethod
     def ASToptics_Rotator_M48(cls):
-        return cls.from_database(cls._DATABASE["ASToptics_Rotator_M48"])
+        return cls.from_database(cls._DATABASE['ASToptics_Rotator_M48'])
 
     @classmethod
     def ASToptics_Rotator_M54(cls):
-        return cls.from_database(cls._DATABASE["ASToptics_Rotator_M54"])
+        return cls.from_database(cls._DATABASE['ASToptics_Rotator_M54'])
