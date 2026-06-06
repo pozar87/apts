@@ -82,8 +82,9 @@ class OpenWeatherMap(WeatherProvider):
 
     def _post_process_data(self, df: pd.DataFrame, hours: int) -> pd.DataFrame:
         # Ensure all required columns are present from the base class
+        # (excluding aurora which is added by _enrich_with_aurora_data)
         for col in self.REQUIRED_COLUMNS:
-            if col not in df.columns:
+            if col not in df.columns and col != "aurora":
                 df[col] = "none"
 
         # Filter by hours
@@ -93,6 +94,12 @@ class OpenWeatherMap(WeatherProvider):
         )
 
         df = self._enrich_with_aurora_data(df)
+
+        # Final check for required columns
+        for col in self.REQUIRED_COLUMNS:
+            if col not in df.columns:
+                df[col] = "none"
+
         return cast(pd.DataFrame, df[self.REQUIRED_COLUMNS])
 
     def download_data(
