@@ -213,10 +213,7 @@ class Objects(ABC):
                 ).to_numpy()
             else:
                 skyfield_objs = np.array(
-                    [
-                        self.get_skyfield_object(row)
-                        for _, row in candidate_objects.iterrows()
-                    ]
+                    [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
                 )
             is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
 

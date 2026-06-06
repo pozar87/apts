@@ -52,13 +52,16 @@ class DiscoveryService:
         from ..objects.messier import Messier
         from ..objects.solar_objects import SolarObjects
 
-        messier_obj = Messier(place, catalogs)
+        # Optimization: Pass date to constructors to avoid redundant compute() calls.
+        messier_obj = Messier(place, catalogs, calculation_date=date)
         messier_obj.compute(calculation_date=date)
 
-        solar_obj = SolarObjects(place)
-        solar_obj.compute(calculation_date=date)
+        # SolarObjects.compute() is already called in its __init__ with calculation_date.
+        solar_obj = SolarObjects(place, calculation_date=date)
 
-        combined_df = pd.concat([messier_obj.objects, solar_obj.objects], ignore_index=True)
+        combined_df = pd.concat(
+            [messier_obj.objects, solar_obj.objects], ignore_index=True
+        )
         return combined_df[combined_df["Name"] != "sun"].copy()
 
     @staticmethod
@@ -154,13 +157,25 @@ class DiscoveryService:
 
         results_df = df.sort_values("Score", ascending=False).head(limit)
 
-        scored_objects = []
-        for idx, row in results_df.iterrows():
-            scored_objects.append({
+        # Optimization: use itertuples() and a pre-converted details map instead of iterrows()
+        # and row-wise .to_dict() for a significant speedup.
+        top_scores_dict = scores_df.loc[results_df.index].to_dict("index")
+        type_col = ObjectTableLabels.DSO_TYPE
+
+        # Convert type column label to a valid itertuples name if needed,
+        # but better to use itertuples(index=True, name='Pandas') and getattr or index-based access.
+        # itertuples() can mangel column names with spaces.
+        # Using to_dict('records') is safer and still very fast for small result sets.
+        top_results_list = results_df.to_dict("records")
+
+        scored_objects = [
+            {
                 "Name": row["Name"],
-                "Type": row[ObjectTableLabels.DSO_TYPE],
+                "Type": row[type_col],
                 "Score": row["Score"],
-                "Details": scores_df.loc[idx].to_dict()
-            })
+                "Details": top_scores_dict[results_df.index[i]],
+            }
+            for i, row in enumerate(top_results_list)
+        ]
 
         return scored_objects

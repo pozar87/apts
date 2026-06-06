@@ -61,3 +61,11 @@ The most significant bottleneck among successfully running events was optimized 
 **Optimization:** Replaced slow `.apply()` calls with list comprehensions for extracting weather summaries and precipitation intensities.
 **Bug Fix:** Fixed a critical issue where rain/snow data was ignored if the first row of the forecast was empty.
 **Impact:** ~10% faster parsing for typical 48-hour forecasts and significantly improved data reliability for intermittent precipitation.
+
+## 2026-06-10 - Discovery and Scoring Optimization
+**Optimization:**
+- Eliminated redundant `compute()` calls in `DiscoveryService` by passing the target date to object constructors.
+- Replaced slow Pandas `iterrows()` with `itertuples()` in `Objects.get_visible` and `SolarObjects`.
+- Optimized `DiscoveryService._format_discovery_results` using `.to_dict('records')` for result formatting.
+- Updated all `get_skyfield_object` implementations to robustly handle `NamedTuple` inputs.
+**Impact:** ~42% speedup in `DiscoveryService.get_top_picks` (Warsaw 30-day discovery benchmark: 0.64s -> 0.37s).
