@@ -1,5 +1,7 @@
-import os, importlib, inspect
-from apts.utils import map_conn, map_gender, get_default_gender, Gender
+import os
+import importlib
+import inspect
+from apts.utils import map_conn, map_gender, get_default_gender
 from apts.opticalequipment.abstract import OpticalEquipment
 from apts.opticalequipment.telescope.base import Telescope
 from apts.opticalequipment.eyepiece.base import Eyepiece
