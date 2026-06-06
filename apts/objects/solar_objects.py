@@ -69,7 +69,10 @@ class SolarObjects(Objects):
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
-        name_to_use = obj.get("TechnicalName", obj.Name)
+        name_to_use = (
+            obj.get("TechnicalName") or obj.get("Name") if isinstance(obj, dict) else
+            getattr(obj, "TechnicalName", getattr(obj, "Name", None))
+        )
         try:
             return self._get_skyfield_object_cached(name_to_use)
         except (ValueError, KeyError):
@@ -175,8 +178,9 @@ class SolarObjects(Objects):
         obs_at_t = observer_to_use.observer.at(t)
         sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
 
-        for _, row in computed_df.iterrows():
-            object_name = cast(str, row[ObjectTableLabels.NAME])
+        # Optimization: use itertuples() for faster row access than iterrows()
+        for row in computed_df.itertuples():
+            object_name = cast(str, row.Name)
             # Ephem
             if object_name in MINOR_PLANET_NAMES.values():
                 mag, size, phase = self._compute_minor_planet_ephem(
@@ -194,7 +198,9 @@ class SolarObjects(Objects):
             sizes.append(size)
             phases.append(phase)
             # Skyfield
-            sky_obj = self.get_skyfield_object(row)
+            # Convert row (NamedTuple) to dict for get_skyfield_object which expects Series/dict
+            row_dict = row._asdict()
+            sky_obj = self.get_skyfield_object(row_dict)
             sky_objs.append(sky_obj)
             if sky_obj:
                 pos = obs_at_t.observe(sky_obj).apparent()
