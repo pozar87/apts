@@ -82,5 +82,21 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.backfocus, Quantity(6.5, "millimeter"))
 
 
-if __name__ == "__main__":
+    def test_asi120_specs(self):
+        # Test the classic USB2.0 models (Mono and Color)
+        cam_mm = ZwoCamera.ZWO_ASI_120MM()
+        self.assertEqual(cam_mm.mass.to('gram').magnitude, 100)
+
+        cam_mc = ZwoCamera.ZWO_ASI_120MC()
+        self.assertEqual(cam_mc.mass.to('gram').magnitude, 100)
+
+        # Test the USB3.0 'S' model
+        cam_mcs = ZwoCamera.ZWO_ASI_120MC_S()
+        self.assertEqual(cam_mcs.mass.to('gram').magnitude, 100)
+
+        # Test the special ASIAir variant
+        cam_air = ZwoCamera.ZWO_ASI_120MM_S_for_ASIAir()
+        self.assertEqual(cam_air.mass.to('gram').magnitude, 100)
+
+if __name__ == '__main__':
     unittest.main()
