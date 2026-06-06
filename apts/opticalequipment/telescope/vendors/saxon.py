@@ -2,34 +2,99 @@ from ..base import Telescope
 
 
 class SaxonTelescope(Telescope):
-    _DATABASE = {'Saxon_Saxon_72ED': {'brand': 'Saxon', 'name':
-        'Saxon 72ED', 'type': 'type_refractor', 'optical_length': 0, 'mass':
-        1800, 'tside_thread': '', 'tside_gender': '', 'cside_thread': 'M48',
-        'cside_gender': 'Male', 'reversible': False, 'bf_role': ''},
-        'Saxon_Saxon_80ED': {'brand': 'Saxon', 'name': 'Saxon 80ED', 'type':
-        'type_refractor', 'optical_length': 0, 'mass': 2400, 'tside_thread':
-        '', 'tside_gender': '', 'cside_thread': 'M48', 'cside_gender':
-        'Male', 'reversible': False, 'bf_role': ''}, 'Saxon_Saxon_102ED': {
-        'brand': 'Saxon', 'name': 'Saxon 102ED', 'type': 'type_refractor',
-        'optical_length': 0, 'mass': 4000, 'tside_thread': '',
-        'tside_gender': '', 'cside_thread': 'M48', 'cside_gender': 'Male',
-        'reversible': False, 'bf_role': ''}, 'Saxon_Saxon_127_Mak': {
-        'brand': 'Saxon', 'name': 'Saxon 127 Mak', 'type': 'type_telescope',
-        'optical_length': 0, 'mass': 3400, 'tside_thread': '',
-        'tside_gender': '', 'cside_thread': '1.25"', 'cside_gender':
-        'Female', 'reversible': False, 'bf_role': ''},
-        'Saxon_Saxon_150_Mak': {'brand': 'Saxon', 'name': 'Saxon 150 Mak',
-        'type': 'type_telescope', 'optical_length': 0, 'mass': 5000,
-        'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"',
-        'cside_gender': 'Female', 'reversible': False, 'bf_role': ''},
-        'Saxon_Saxon_200P_Dob': {'brand': 'Saxon', 'name': 'Saxon 200P Dob',
-        'type': 'type_telescope', 'optical_length': 0, 'mass': 8000,
-        'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"',
-        'cside_gender': 'Female', 'reversible': False, 'bf_role': ''},
-        'Saxon_Saxon_250P_Dob': {'brand': 'Saxon', 'name': 'Saxon 250P Dob',
-        'type': 'type_telescope', 'optical_length': 0, 'mass': 11000,
-        'tside_thread': '', 'tside_gender': '', 'cside_thread': '2"',
-        'cside_gender': 'Female', 'reversible': False, 'bf_role': ''}}
+    _DATABASE = {
+        "Saxon_Saxon_72ED": {
+            "brand": "Saxon",
+            "name": "Saxon 72ED",
+            "type": "type_refractor",
+            "optical_length": 0,
+            "mass": 1800,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_80ED": {
+            "brand": "Saxon",
+            "name": "Saxon 80ED",
+            "type": "type_refractor",
+            "optical_length": 0,
+            "mass": 2400,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_102ED": {
+            "brand": "Saxon",
+            "name": "Saxon 102ED",
+            "type": "type_refractor",
+            "optical_length": 0,
+            "mass": 4000,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_127_Mak": {
+            "brand": "Saxon",
+            "name": "Saxon 127 Mak",
+            "type": "type_telescope",
+            "optical_length": 0,
+            "mass": 3400,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "1.25\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_150_Mak": {
+            "brand": "Saxon",
+            "name": "Saxon 150 Mak",
+            "type": "type_telescope",
+            "optical_length": 0,
+            "mass": 5000,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "2\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_200P_Dob": {
+            "brand": "Saxon",
+            "name": "Saxon 200P Dob",
+            "type": "type_telescope",
+            "optical_length": 0,
+            "mass": 8000,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "2\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "",
+        },
+        "Saxon_Saxon_250P_Dob": {
+            "brand": "Saxon",
+            "name": "Saxon 250P Dob",
+            "type": "type_telescope",
+            "optical_length": 0,
+            "mass": 11000,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "2\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "",
+        },
+    }
 
     @classmethod
     def Saxon_Saxon_72ED(cls):

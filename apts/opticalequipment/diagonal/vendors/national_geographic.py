@@ -4,13 +4,13 @@ class NationalGeographicDiagonal(Diagonal):
     _DATABASE = {
         "National_Geographic_Mirror_Diagonal_1_25": {
             "brand": "National Geographic",
-            "name": 'Mirror Diagonal (1.25")',
+            "name": "Mirror Diagonal (1.25\")",
             "type": "type_diagonal",
             "optical_length": 0,
             "mass": 80,
-            "tside_thread": '1.25"',
+            "tside_thread": "1.25\"",
             "tside_gender": "Male",
-            "cside_thread": '1.25"',
+            "cside_thread": "1.25\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",

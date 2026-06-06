@@ -2,10 +2,21 @@ from ..base import Focuser
 
 
 class MicroTouchFocuser(Focuser):
-    _DATABASE = {'MicroTouch_WR35_Focuser': {'brand': 'MicroTouch', 'name':
-        'WR35 Focuser', 'type': 'type_focuser', 'optical_length': 0, 'mass':
-        200, 'tside_thread': '', 'tside_gender': 'Male', 'cside_thread': '',
-        'cside_gender': 'Female', 'reversible': False, 'bf_role': ''}}
+    _DATABASE = {
+        "MicroTouch_WR35_Focuser": {
+            "brand": "MicroTouch",
+            "name": "WR35 Focuser",
+            "type": "type_focuser",
+            "optical_length": 0,
+            "mass": 200,
+            "tside_thread": "",
+            "tside_gender": "Male",
+            "cside_thread": "",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "",
+        },
+    }
 
     @classmethod
     def MicroTouch_WR35_Focuser(cls):

@@ -5,20 +5,20 @@ class OptolongFilter(Filter):
     _DATABASE = {
         "Optolong_L_Pro_2": {
             "brand": "Optolong",
-            "name": 'L-Pro (2")',
+            "name": "L-Pro (2\")",
             "type": "type_filter",
             "optical_length": 0,
             "mass": 50,
-            "tside_thread": '2"',
+            "tside_thread": "2\"",
             "transmission": 0.9,
         },
         "Optolong_L_Pro_1_25": {
             "brand": "Optolong",
-            "name": 'L-Pro (1.25")',
+            "name": "L-Pro (1.25\")",
             "type": "type_filter",
             "optical_length": 0,
             "mass": 30,
-            "tside_thread": '1.25"',
+            "tside_thread": "1.25\"",
             "transmission": 0.9,
         },
     }

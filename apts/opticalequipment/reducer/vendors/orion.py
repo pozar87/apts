@@ -22,11 +22,21 @@ class OrionReducer(Reducer):
 
 
 class OrionFlattener(Flattener):
-    _DATABASE = {'Orion_Field_Flattener_M48': {'brand': 'Orion', 'name':
-        'Field Flattener (M48)', 'type': 'type_flattener', 'optical_length':
-        0, 'mass': 200, 'tside_thread': 'M48', 'tside_gender': 'Female',
-        'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False,
-        'bf_role': 'start'}}
+    _DATABASE = {
+        "Orion_Field_Flattener_M48": {
+            "brand": "Orion",
+            "name": "Field Flattener (M48)",
+            "type": "type_flattener",
+            "optical_length": 0,
+            "mass": 200,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "start",
+        },
+    }
 
     @classmethod
     def Orion_Field_Flattener_M48(cls):
@@ -34,12 +44,93 @@ class OrionFlattener(Flattener):
 
 
 class OrionCorrector(Corrector):
-    _DATABASE = {'Orion_Coma_Corrector_M48': {'brand': 'Orion', 'name':
-        'Coma Corrector (M48)', 'type': 'type_corrector', 'optical_length':
-        0, 'mass': 240, 'tside_thread': 'M48', 'tside_gender': 'Female',
-        'cside_thread': 'M48', 'cside_gender': 'Male', 'reversible': False,
-        'bf_role': 'start'}}
+    _DATABASE = {
+        "Orion_Coma_Corrector_M48": {
+            "brand": "Orion",
+            "name": "Coma Corrector (M48)",
+            "type": "type_corrector",
+            "optical_length": 0,
+            "mass": 240,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "start",
+        },
+    }
 
     @classmethod
     def Orion_Coma_Corrector_M48(cls):
         return cls.from_database(cls._DATABASE['Orion_Coma_Corrector_M48'])
+    _DATABASE = {
+        "Orion_Field_Flattener_M48": {
+            "brand": "Orion",
+            "name": "Field Flattener (M48)",
+            "type": "type_flattener",
+            "optical_length": 0,
+            "mass": 200,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "start",
+        },
+    }
+    _DATABASE = {
+        "Orion_0_85x_Reducer": {
+            "brand": "Orion",
+            "name": "0.85x Reducer",
+            "type": "type_reducer",
+            "optical_length": 0,
+            "mass": 220,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "start",
+        },
+        "Orion_0_5x_Focal_Reducer": {
+            "brand": "Orion",
+            "name": "0.5x Focal Reducer",
+            "type": "type_reducer",
+            "optical_length": 0,
+            "mass": 300,
+            "tside_thread": "1.25\"",
+            "tside_gender": "Male",
+            "cside_thread": "1.25\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "start",
+        },
+    }
+    _DATABASE = {
+        "Orion_0_85x_Reducer": {
+            "brand": "Orion",
+            "name": "0.85x Reducer",
+            "type": "type_reducer",
+            "optical_length": 0,
+            "mass": 220,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "start",
+        },
+        "Orion_0_5x_Focal_Reducer": {
+            "brand": "Orion",
+            "name": "0.5x Focal Reducer",
+            "type": "type_reducer",
+            "optical_length": 0,
+            "mass": 300,
+            "tside_thread": "1.25\"",
+            "tside_gender": "Male",
+            "cside_thread": "1.25\"",
+            "cside_gender": "Female",
+            "reversible": False,
+            "bf_role": "start",
+        },
+    }

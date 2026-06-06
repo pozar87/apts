@@ -9,9 +9,9 @@ class OrionFilter(Filter):
             "type": "type_filter",
             "optical_length": 0,
             "mass": 50,
-            "tside_thread": '2"',
+            "tside_thread": "2\"",
             "transmission": 0.95,
-        }
+        },
     }
 
     @classmethod
