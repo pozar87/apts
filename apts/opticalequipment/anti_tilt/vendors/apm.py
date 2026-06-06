@@ -10,9 +10,9 @@ class APMAntiTilt(AntiTilt):
             "optical_length": 8,
             "mass": 55,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class APMAntiTilt(AntiTilt):
 
     @classmethod
     def APM_Tilt_Adjuster_M54(cls):
-        return cls.from_database(cls._DATABASE["APM_Tilt_Adjuster_M54"])
+        return cls.from_database(cls._DATABASE['APM_Tilt_Adjuster_M54'])

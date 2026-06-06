@@ -10,9 +10,9 @@ class NationalGeographicGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 240,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,5 @@ class NationalGeographicGuideScope(GuideScope):
 
     @classmethod
     def National_Geographic_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["National_Geographic_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE[
+            'National_Geographic_Guide_Scope_50mm'])

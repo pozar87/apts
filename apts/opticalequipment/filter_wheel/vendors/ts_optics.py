@@ -10,9 +10,9 @@ class TsOpticsFilterHolder(FilterHolder):
             "optical_length": 25,
             "mass": 200,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class TsOpticsFilterHolder(FilterHolder):
             "optical_length": 25,
             "mass": 230,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class TsOpticsFilterHolder(FilterHolder):
 
     @classmethod
     def TS_Optics_Filter_Drawer_M48(cls):
-        return cls.from_database(cls._DATABASE["TS_Optics_Filter_Drawer_M48"])
+        return cls.from_database(cls._DATABASE['TS_Optics_Filter_Drawer_M48'])
 
     @classmethod
     def TS_Optics_Filter_Drawer_M54(cls):
-        return cls.from_database(cls._DATABASE["TS_Optics_Filter_Drawer_M54"])
+        return cls.from_database(cls._DATABASE['TS_Optics_Filter_Drawer_M54'])

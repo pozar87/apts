@@ -10,9 +10,9 @@ class GerdNeumannAntiTilt(AntiTilt):
             "optical_length": 4,
             "mass": 45,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class GerdNeumannAntiTilt(AntiTilt):
             "optical_length": 4,
             "mass": 55,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class GerdNeumannAntiTilt(AntiTilt):
             "optical_length": 4,
             "mass": 70,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class GerdNeumannAntiTilt(AntiTilt):
 
     @classmethod
     def Gerd_Neumann_Tilt_Plate_M48(cls):
-        return cls.from_database(cls._DATABASE["Gerd_Neumann_Tilt_Plate_M48"])
+        return cls.from_database(cls._DATABASE['Gerd_Neumann_Tilt_Plate_M48'])
 
     @classmethod
     def Gerd_Neumann_Tilt_Plate_M54(cls):
-        return cls.from_database(cls._DATABASE["Gerd_Neumann_Tilt_Plate_M54"])
+        return cls.from_database(cls._DATABASE['Gerd_Neumann_Tilt_Plate_M54'])
 
     @classmethod
     def Gerd_Neumann_Tilt_Plate_M68(cls):
-        return cls.from_database(cls._DATABASE["Gerd_Neumann_Tilt_Plate_M68"])
+        return cls.from_database(cls._DATABASE['Gerd_Neumann_Tilt_Plate_M68'])

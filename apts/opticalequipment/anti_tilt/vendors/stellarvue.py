@@ -10,9 +10,9 @@ class StellarvueAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 45,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class StellarvueAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 60,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class StellarvueAntiTilt(AntiTilt):
 
     @classmethod
     def Stellarvue_Tilt_Plate_M48(cls):
-        return cls.from_database(cls._DATABASE["Stellarvue_Tilt_Plate_M48"])
+        return cls.from_database(cls._DATABASE['Stellarvue_Tilt_Plate_M48'])
 
     @classmethod
     def Stellarvue_Tilt_Plate_M68(cls):
-        return cls.from_database(cls._DATABASE["Stellarvue_Tilt_Plate_M68"])
+        return cls.from_database(cls._DATABASE['Stellarvue_Tilt_Plate_M68'])

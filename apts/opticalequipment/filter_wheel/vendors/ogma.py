@@ -10,9 +10,9 @@ class OgmaFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 380,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class OgmaFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 420,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class OgmaFilterWheel(FilterWheel):
             "optical_length": 21,
             "mass": 600,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class OgmaFilterWheel(FilterWheel):
 
     @classmethod
     def OGMA_OGC_FW7_M42(cls):
-        return cls.from_database(cls._DATABASE["OGMA_OGC_FW7_M42"])
+        return cls.from_database(cls._DATABASE['OGMA_OGC_FW7_M42'])
 
     @classmethod
     def OGMA_OGC_FW5_M48(cls):
-        return cls.from_database(cls._DATABASE["OGMA_OGC_FW5_M48"])
+        return cls.from_database(cls._DATABASE['OGMA_OGC_FW5_M48'])
 
     @classmethod
     def OGMA_OGC_FW9_M54(cls):
-        return cls.from_database(cls._DATABASE["OGMA_OGC_FW9_M54"])
+        return cls.from_database(cls._DATABASE['OGMA_OGC_FW9_M54'])

@@ -10,9 +10,9 @@ class TakahashiAntiTilt(AntiTilt):
             "optical_length": 8,
             "mass": 55,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class TakahashiAntiTilt(AntiTilt):
             "optical_length": 8,
             "mass": 70,
             "tside_thread": "M82",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M82",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class TakahashiAntiTilt(AntiTilt):
 
     @classmethod
     def Takahashi_Tilt_Adjuster_M54(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Tilt_Adjuster_M54"])
+        return cls.from_database(cls._DATABASE['Takahashi_Tilt_Adjuster_M54'])
 
     @classmethod
     def Takahashi_Tilt_Adjuster_M82(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Tilt_Adjuster_M82"])
+        return cls.from_database(cls._DATABASE['Takahashi_Tilt_Adjuster_M82'])

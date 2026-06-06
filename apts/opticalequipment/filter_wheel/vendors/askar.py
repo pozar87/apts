@@ -10,9 +10,9 @@ class AskarFilterWheel(FilterWheel):
             "optical_length": 19,
             "mass": 310,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class AskarFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 450,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class AskarFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 550,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class AskarFilterWheel(FilterWheel):
 
     @classmethod
     def Askar_Filter_Wheel_5x_M42(cls):
-        return cls.from_database(cls._DATABASE["Askar_Filter_Wheel_5x_M42"])
+        return cls.from_database(cls._DATABASE['Askar_Filter_Wheel_5x_M42'])
 
     @classmethod
     def Askar_Filter_Wheel_7x_M48(cls):
-        return cls.from_database(cls._DATABASE["Askar_Filter_Wheel_7x_M48"])
+        return cls.from_database(cls._DATABASE['Askar_Filter_Wheel_7x_M48'])
 
     @classmethod
     def Askar_Filter_Wheel_7x_M54(cls):
-        return cls.from_database(cls._DATABASE["Askar_Filter_Wheel_7x_M54"])
+        return cls.from_database(cls._DATABASE['Askar_Filter_Wheel_7x_M54'])

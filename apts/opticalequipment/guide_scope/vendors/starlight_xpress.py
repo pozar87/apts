@@ -10,9 +10,9 @@ class StarlightXpressGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 300,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class StarlightXpressGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 280,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,10 @@ class StarlightXpressGuideScope(GuideScope):
 
     @classmethod
     def Starlight_Xpress_Lodestar_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Starlight_Xpress_Lodestar_Guide_Scope"])
+        return cls.from_database(cls._DATABASE[
+            'Starlight_Xpress_Lodestar_Guide_Scope'])
 
     @classmethod
     def Starlight_Xpress_SX_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["Starlight_Xpress_SX_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE[
+            'Starlight_Xpress_SX_Guide_Scope_50mm'])

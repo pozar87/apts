@@ -10,9 +10,9 @@ class TecnoskyGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 110,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class TecnoskyGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 310,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class TecnoskyGuideScope(GuideScope):
 
     @classmethod
     def Tecnosky_30mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Tecnosky_30mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Tecnosky_30mm_Guide_Scope'])
 
     @classmethod
     def Tecnosky_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Tecnosky_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Tecnosky_60mm_Guide_Scope'])

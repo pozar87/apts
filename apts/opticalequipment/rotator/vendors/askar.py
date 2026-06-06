@@ -10,9 +10,9 @@ class AskarRotator(Rotator):
             "optical_length": 11,
             "mass": 280,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class AskarRotator(Rotator):
             "optical_length": 12,
             "mass": 310,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class AskarRotator(Rotator):
 
     @classmethod
     def Askar_Rotator_M48(cls):
-        return cls.from_database(cls._DATABASE["Askar_Rotator_M48"])
+        return cls.from_database(cls._DATABASE['Askar_Rotator_M48'])
 
     @classmethod
     def Askar_Rotator_M54(cls):
-        return cls.from_database(cls._DATABASE["Askar_Rotator_M54"])
+        return cls.from_database(cls._DATABASE['Askar_Rotator_M54'])

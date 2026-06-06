@@ -10,9 +10,9 @@ class AltairGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 330,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class AltairGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 140,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class AltairGuideScope(GuideScope):
 
     @classmethod
     def Altair_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Altair_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Altair_60mm_Guide_Scope'])
 
     @classmethod
     def Altair_30mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Altair_30mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Altair_30mm_Guide_Scope'])

@@ -10,9 +10,9 @@ class FliFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 600,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class FliFilterWheel(FilterWheel):
             "optical_length": 22,
             "mass": 800,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class FliFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 700,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -49,9 +49,9 @@ class FliFilterWheel(FilterWheel):
             "optical_length": 18,
             "mass": 400,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -62,9 +62,9 @@ class FliFilterWheel(FilterWheel):
             "optical_length": 22,
             "mass": 750,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -72,20 +72,20 @@ class FliFilterWheel(FilterWheel):
 
     @classmethod
     def FLI_CFW_2_7_M54(cls):
-        return cls.from_database(cls._DATABASE["FLI_CFW_2_7_M54"])
+        return cls.from_database(cls._DATABASE['FLI_CFW_2_7_M54'])
 
     @classmethod
     def FLI_CFW_3_10_M68(cls):
-        return cls.from_database(cls._DATABASE["FLI_CFW_3_10_M68"])
+        return cls.from_database(cls._DATABASE['FLI_CFW_3_10_M68'])
 
     @classmethod
     def FLI_Atlas_M54(cls):
-        return cls.from_database(cls._DATABASE["FLI_Atlas_M54"])
+        return cls.from_database(cls._DATABASE['FLI_Atlas_M54'])
 
     @classmethod
     def FLI_CenterLine_M42(cls):
-        return cls.from_database(cls._DATABASE["FLI_CenterLine_M42"])
+        return cls.from_database(cls._DATABASE['FLI_CenterLine_M42'])
 
     @classmethod
     def FLI_CenterLine_M68(cls):
-        return cls.from_database(cls._DATABASE["FLI_CenterLine_M68"])
+        return cls.from_database(cls._DATABASE['FLI_CenterLine_M68'])

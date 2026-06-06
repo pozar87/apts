@@ -10,9 +10,9 @@ class IdasFilterHolder(FilterHolder):
             "optical_length": 8,
             "mass": 120,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class IdasFilterHolder(FilterHolder):
 
     @classmethod
     def IDAS_Filter_Holder_M48(cls):
-        return cls.from_database(cls._DATABASE["IDAS_Filter_Holder_M48"])
+        return cls.from_database(cls._DATABASE['IDAS_Filter_Holder_M48'])

@@ -10,9 +10,9 @@ class WilliamOpticsGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 300,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class WilliamOpticsGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 150,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class WilliamOpticsGuideScope(GuideScope):
 
     @classmethod
     def William_Optics_UniGuide_50mm(cls):
-        return cls.from_database(cls._DATABASE["William_Optics_UniGuide_50mm"])
+        return cls.from_database(cls._DATABASE['William_Optics_UniGuide_50mm'])
 
     @classmethod
     def William_Optics_UniGuide_32mm(cls):
-        return cls.from_database(cls._DATABASE["William_Optics_UniGuide_32mm"])
+        return cls.from_database(cls._DATABASE['William_Optics_UniGuide_32mm'])

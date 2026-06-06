@@ -10,9 +10,9 @@ class PegasusGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 260,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class PegasusGuideScope(GuideScope):
 
     @classmethod
     def Pegasus_50mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Pegasus_50mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Pegasus_50mm_Guide_Scope'])

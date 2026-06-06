@@ -10,9 +10,9 @@ class OptecRotator(Rotator):
             "optical_length": 12,
             "mass": 500,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class OptecRotator(Rotator):
             "optical_length": 12,
             "mass": 450,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class OptecRotator(Rotator):
 
     @classmethod
     def Optec_Gemini_Rotator_M68(cls):
-        return cls.from_database(cls._DATABASE["Optec_Gemini_Rotator_M68"])
+        return cls.from_database(cls._DATABASE['Optec_Gemini_Rotator_M68'])
 
     @classmethod
     def Optec_Gemini_Rotator_M54(cls):
-        return cls.from_database(cls._DATABASE["Optec_Gemini_Rotator_M54"])
+        return cls.from_database(cls._DATABASE['Optec_Gemini_Rotator_M54'])

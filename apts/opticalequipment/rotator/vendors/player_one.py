@@ -10,9 +10,9 @@ class PlayerOneRotator(Rotator):
             "optical_length": 11,
             "mass": 250,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class PlayerOneRotator(Rotator):
 
     @classmethod
     def Player_One_Ares_Rotator_M54(cls):
-        return cls.from_database(cls._DATABASE["Player_One_Ares_Rotator_M54"])
+        return cls.from_database(cls._DATABASE['Player_One_Ares_Rotator_M54'])

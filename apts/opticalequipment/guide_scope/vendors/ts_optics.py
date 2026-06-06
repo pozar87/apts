@@ -10,9 +10,9 @@ class TSOpticsGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 260,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class TSOpticsGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 310,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class TSOpticsGuideScope(GuideScope):
 
     @classmethod
     def TS_Optics_50mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["TS_Optics_50mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['TS_Optics_50mm_Guide_Scope'])
 
     @classmethod
     def TS_Optics_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["TS_Optics_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['TS_Optics_60mm_Guide_Scope'])

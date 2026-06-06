@@ -10,9 +10,9 @@ class iOptronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 320,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class iOptronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 120,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class iOptronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 310,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class iOptronGuideScope(GuideScope):
 
     @classmethod
     def iOptron_iGuide_60mm(cls):
-        return cls.from_database(cls._DATABASE["iOptron_iGuide_60mm"])
+        return cls.from_database(cls._DATABASE['iOptron_iGuide_60mm'])
 
     @classmethod
     def iOptron_Guide_Scope_30mm(cls):
-        return cls.from_database(cls._DATABASE["iOptron_Guide_Scope_30mm"])
+        return cls.from_database(cls._DATABASE['iOptron_Guide_Scope_30mm'])
 
     @classmethod
     def iOptron_Guide_Scope_60mm(cls):
-        return cls.from_database(cls._DATABASE["iOptron_Guide_Scope_60mm"])
+        return cls.from_database(cls._DATABASE['iOptron_Guide_Scope_60mm'])

@@ -1,5 +1,6 @@
 from ..base import Barlow
 
+
 class TakahashiBarlow(Barlow):
     _DATABASE = {
         "Takahashi_Extender_Q_1_6x": {
@@ -9,9 +10,9 @@ class TakahashiBarlow(Barlow):
             "optical_length": 0,
             "mass": 300,
             "tside_thread": "M82",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "start",
         },
@@ -22,21 +23,21 @@ class TakahashiBarlow(Barlow):
             "optical_length": 0,
             "mass": 350,
             "tside_thread": "M82",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "start",
         },
         "Takahashi_2x_Extender_Q_1_25": {
             "brand": "Takahashi",
-            "name": '2x Extender-Q (1.25")',
+            "name": "2x Extender-Q (1.25\")",
             "type": "type_barlow",
             "optical_length": 0,
             "mass": 180,
-            "tside_thread": '1.25"',
+            "tside_thread": "1.25\"",
             "tside_gender": "Male",
-            "cside_thread": '1.25"',
+            "cside_thread": "1.25\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "start",
@@ -48,9 +49,9 @@ class TakahashiBarlow(Barlow):
             "optical_length": 0,
             "mass": 400,
             "tside_thread": "M82",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "start",
         },
@@ -61,21 +62,21 @@ class TakahashiBarlow(Barlow):
             "optical_length": 0,
             "mass": 250,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "start",
         },
         "Takahashi_Barlow_2x_1_25": {
             "brand": "Takahashi",
-            "name": 'Barlow 2x (1.25")',
+            "name": "Barlow 2x (1.25\")",
             "type": "type_barlow",
             "optical_length": 0,
             "mass": 140,
-            "tside_thread": '1.25"',
+            "tside_thread": "1.25\"",
             "tside_gender": "Male",
-            "cside_thread": '1.25"',
+            "cside_thread": "1.25\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "start",
@@ -87,9 +88,9 @@ class TakahashiBarlow(Barlow):
             "optical_length": 0,
             "mass": 150,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "start",
         },
@@ -97,28 +98,28 @@ class TakahashiBarlow(Barlow):
 
     @classmethod
     def Takahashi_Extender_Q_1_6x(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Extender_Q_1_6x"])
+        return cls.from_database(cls._DATABASE['Takahashi_Extender_Q_1_6x'])
 
     @classmethod
     def Takahashi_Extender_CQ_1_7x(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Extender_CQ_1_7x"])
+        return cls.from_database(cls._DATABASE['Takahashi_Extender_CQ_1_7x'])
 
     @classmethod
     def Takahashi_2x_Extender_Q_1_25(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_2x_Extender_Q_1_25"])
+        return cls.from_database(cls._DATABASE['Takahashi_2x_Extender_Q_1_25'])
 
     @classmethod
     def Takahashi_Extender_C_2_27x(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Extender_C_2_27x"])
+        return cls.from_database(cls._DATABASE['Takahashi_Extender_C_2_27x'])
 
     @classmethod
     def Takahashi_Extender_EX_1_5x(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Extender_EX_1_5x"])
+        return cls.from_database(cls._DATABASE['Takahashi_Extender_EX_1_5x'])
 
     @classmethod
     def Takahashi_Barlow_2x_1_25(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Barlow_2x_1_25"])
+        return cls.from_database(cls._DATABASE['Takahashi_Barlow_2x_1_25'])
 
     @classmethod
     def Takahashi_Barlow_1_6x_M42(cls):
-        return cls.from_database(cls._DATABASE["Takahashi_Barlow_1_6x_M42"])
+        return cls.from_database(cls._DATABASE['Takahashi_Barlow_1_6x_M42'])

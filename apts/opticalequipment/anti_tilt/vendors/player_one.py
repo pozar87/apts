@@ -10,9 +10,9 @@ class PlayerOneAntiTilt(AntiTilt):
             "optical_length": 8,
             "mass": 40,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class PlayerOneAntiTilt(AntiTilt):
             "optical_length": 10,
             "mass": 60,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class PlayerOneAntiTilt(AntiTilt):
 
     @classmethod
     def Player_One_Tilt_Adjuster_M42(cls):
-        return cls.from_database(cls._DATABASE["Player_One_Tilt_Adjuster_M42"])
+        return cls.from_database(cls._DATABASE['Player_One_Tilt_Adjuster_M42'])
 
     @classmethod
     def Player_One_Tilt_Adjuster_M54(cls):
-        return cls.from_database(cls._DATABASE["Player_One_Tilt_Adjuster_M54"])
+        return cls.from_database(cls._DATABASE['Player_One_Tilt_Adjuster_M54'])

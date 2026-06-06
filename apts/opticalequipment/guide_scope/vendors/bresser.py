@@ -10,9 +10,9 @@ class BresserGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 250,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class BresserGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 260,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class BresserGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 310,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class BresserGuideScope(GuideScope):
 
     @classmethod
     def Bresser_50mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Bresser_50mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Bresser_50mm_Guide_Scope'])
 
     @classmethod
     def Bresser_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["Bresser_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE['Bresser_Guide_Scope_50mm'])
 
     @classmethod
     def Bresser_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Bresser_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Bresser_60mm_Guide_Scope'])

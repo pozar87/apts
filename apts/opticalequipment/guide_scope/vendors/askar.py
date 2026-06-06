@@ -10,9 +10,9 @@ class AskarGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 600,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class AskarGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 200,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class AskarGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 150,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class AskarGuideScope(GuideScope):
 
     @classmethod
     def Askar_FMA135_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Askar_FMA135_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Askar_FMA135_Guide_Scope'])
 
     @classmethod
     def Askar_40mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Askar_40mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Askar_40mm_Guide_Scope'])
 
     @classmethod
     def Askar_32mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Askar_32mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Askar_32mm_Guide_Scope'])

@@ -10,9 +10,9 @@ class CelestronAntiTilt(AntiTilt):
             "optical_length": 8,
             "mass": 70,
             "tside_thread": "SC (Schmidt-Cassegrain)",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class CelestronAntiTilt(AntiTilt):
 
     @classmethod
     def Celestron_Tilt_Adjuster_SC(cls):
-        return cls.from_database(cls._DATABASE["Celestron_Tilt_Adjuster_SC"])
+        return cls.from_database(cls._DATABASE['Celestron_Tilt_Adjuster_SC'])

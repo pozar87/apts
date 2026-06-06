@@ -10,9 +10,9 @@ class BaaderOAG(OAG):
             "optical_length": 20,
             "mass": 300,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class BaaderOAG(OAG):
 
     @classmethod
     def Baader_FlipMirror_OAG(cls):
-        return cls.from_database(cls._DATABASE["Baader_FlipMirror_OAG"])
+        return cls.from_database(cls._DATABASE['Baader_FlipMirror_OAG'])

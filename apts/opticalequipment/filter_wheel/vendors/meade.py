@@ -10,9 +10,9 @@ class MeadeFilterWheel(FilterWheel):
             "optical_length": 19,
             "mass": 320,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class MeadeFilterWheel(FilterWheel):
 
     @classmethod
     def Meade_Series_6000_FW_M42(cls):
-        return cls.from_database(cls._DATABASE["Meade_Series_6000_FW_M42"])
+        return cls.from_database(cls._DATABASE['Meade_Series_6000_FW_M42'])

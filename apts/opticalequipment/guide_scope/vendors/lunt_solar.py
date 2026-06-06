@@ -10,9 +10,9 @@ class LuntSolarGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 270,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class LuntSolarGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 280,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,9 @@ class LuntSolarGuideScope(GuideScope):
 
     @classmethod
     def Lunt_Solar_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["Lunt_Solar_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE['Lunt_Solar_Guide_Scope_50mm'])
 
     @classmethod
     def Lunt_Solar_Guide_Scope_50mm_Solar(cls):
-        return cls.from_database(cls._DATABASE["Lunt_Solar_Guide_Scope_50mm_Solar"])
+        return cls.from_database(cls._DATABASE[
+            'Lunt_Solar_Guide_Scope_50mm_Solar'])

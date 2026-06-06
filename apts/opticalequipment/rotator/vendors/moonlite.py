@@ -10,9 +10,9 @@ class MoonliteRotator(Rotator):
             "optical_length": 11,
             "mass": 220,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class MoonliteRotator(Rotator):
             "optical_length": 11,
             "mass": 270,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class MoonliteRotator(Rotator):
 
     @classmethod
     def Moonlite_Rotator_M42(cls):
-        return cls.from_database(cls._DATABASE["Moonlite_Rotator_M42"])
+        return cls.from_database(cls._DATABASE['Moonlite_Rotator_M42'])
 
     @classmethod
     def Moonlite_Rotator_M48(cls):
-        return cls.from_database(cls._DATABASE["Moonlite_Rotator_M48"])
+        return cls.from_database(cls._DATABASE['Moonlite_Rotator_M48'])

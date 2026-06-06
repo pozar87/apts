@@ -10,9 +10,9 @@ class QHYAntiTilt(AntiTilt):
             "optical_length": 10,
             "mass": 70,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class QHYAntiTilt(AntiTilt):
 
     @classmethod
     def QHY_Tilt_Adjuster_M54(cls):
-        return cls.from_database(cls._DATABASE["QHY_Tilt_Adjuster_M54"])
+        return cls.from_database(cls._DATABASE['QHY_Tilt_Adjuster_M54'])

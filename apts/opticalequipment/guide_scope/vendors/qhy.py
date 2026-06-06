@@ -10,9 +10,9 @@ class QHYGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 130,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class QHYGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 320,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class QHYGuideScope(GuideScope):
 
     @classmethod
     def QHY_Mini_Guide_Scope_30mm(cls):
-        return cls.from_database(cls._DATABASE["QHY_Mini_Guide_Scope_30mm"])
+        return cls.from_database(cls._DATABASE['QHY_Mini_Guide_Scope_30mm'])
 
     @classmethod
     def QHY_Mini_Guide_Scope_60mm(cls):
-        return cls.from_database(cls._DATABASE["QHY_Mini_Guide_Scope_60mm"])
+        return cls.from_database(cls._DATABASE['QHY_Mini_Guide_Scope_60mm'])

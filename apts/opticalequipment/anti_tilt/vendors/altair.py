@@ -10,9 +10,9 @@ class AltairAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 40,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class AltairAntiTilt(AntiTilt):
             "optical_length": 6,
             "mass": 50,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class AltairAntiTilt(AntiTilt):
 
     @classmethod
     def Altair_Tilt_Adjuster_M42(cls):
-        return cls.from_database(cls._DATABASE["Altair_Tilt_Adjuster_M42"])
+        return cls.from_database(cls._DATABASE['Altair_Tilt_Adjuster_M42'])
 
     @classmethod
     def Altair_Tilt_Adjuster_M48(cls):
-        return cls.from_database(cls._DATABASE["Altair_Tilt_Adjuster_M48"])
+        return cls.from_database(cls._DATABASE['Altair_Tilt_Adjuster_M48'])

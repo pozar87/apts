@@ -10,9 +10,9 @@ class LacertaGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 130,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class LacertaGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 270,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,9 @@ class LacertaGuideScope(GuideScope):
 
     @classmethod
     def Lacerta_Micro_Guide_Scope_30mm(cls):
-        return cls.from_database(cls._DATABASE["Lacerta_Micro_Guide_Scope_30mm"])
+        return cls.from_database(cls._DATABASE[
+            'Lacerta_Micro_Guide_Scope_30mm'])
 
     @classmethod
     def Lacerta_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["Lacerta_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE['Lacerta_Guide_Scope_50mm'])

@@ -10,9 +10,9 @@ class StarlightXpressFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 300,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class StarlightXpressFilterWheel(FilterWheel):
             "optical_length": 21,
             "mass": 600,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class StarlightXpressFilterWheel(FilterWheel):
             "optical_length": 22,
             "mass": 700,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,15 @@ class StarlightXpressFilterWheel(FilterWheel):
 
     @classmethod
     def Starlight_Xpress_SX_Mini_Wheel(cls):
-        return cls.from_database(cls._DATABASE["Starlight_Xpress_SX_Mini_Wheel"])
+        return cls.from_database(cls._DATABASE[
+            'Starlight_Xpress_SX_Mini_Wheel'])
 
     @classmethod
     def Starlight_Xpress_SX_USB_Wheel_M54(cls):
-        return cls.from_database(cls._DATABASE["Starlight_Xpress_SX_USB_Wheel_M54"])
+        return cls.from_database(cls._DATABASE[
+            'Starlight_Xpress_SX_USB_Wheel_M54'])
 
     @classmethod
     def Starlight_Xpress_SX_Maxi_Wheel_M68(cls):
-        return cls.from_database(cls._DATABASE["Starlight_Xpress_SX_Maxi_Wheel_M68"])
+        return cls.from_database(cls._DATABASE[
+            'Starlight_Xpress_SX_Maxi_Wheel_M68'])

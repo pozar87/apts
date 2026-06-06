@@ -10,9 +10,9 @@ class SaxonGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 250,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class SaxonGuideScope(GuideScope):
 
     @classmethod
     def Saxon_Guide_Scope_50mm(cls):
-        return cls.from_database(cls._DATABASE["Saxon_Guide_Scope_50mm"])
+        return cls.from_database(cls._DATABASE['Saxon_Guide_Scope_50mm'])

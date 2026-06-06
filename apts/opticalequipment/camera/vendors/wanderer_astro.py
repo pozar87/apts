@@ -23,7 +23,7 @@ class Wanderer_astroCamera(Camera):
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.6,
             "full_well_e": 40000,
-        }
+        },
     }
 
     @classmethod

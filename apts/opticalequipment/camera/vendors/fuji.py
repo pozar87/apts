@@ -334,7 +334,7 @@ class FujiCamera(Camera):
             "optical_length": 17.7,
             "mass": 478,
             "tside_thread": "None",
-            "tside_gender": "None",
+            "tside_gender": "Male",
             "cside_thread": "",
             "cside_gender": "",
             "reversible": False,
@@ -385,84 +385,84 @@ class FujiCamera(Camera):
 
     @classmethod
     def Fuji_X_T4(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T4"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T4'])
 
     @classmethod
     def Fuji_X_T5(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T5"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T5'])
 
     @classmethod
     def Fuji_X_T3(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T3"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T3'])
 
     @classmethod
     def Fuji_X_T2(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T2"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T2'])
 
     @classmethod
     def Fuji_X_T30_II(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T30_II"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T30_II'])
 
     @classmethod
     def Fuji_X_H2(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_H2"])
+        return cls.from_database(cls._DATABASE['Fuji_X_H2'])
 
     @classmethod
     def Fuji_X_H2S(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_H2S"])
+        return cls.from_database(cls._DATABASE['Fuji_X_H2S'])
 
     @classmethod
     def Fuji_X_S20(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_S20"])
+        return cls.from_database(cls._DATABASE['Fuji_X_S20'])
 
     @classmethod
     def Fuji_X_S10(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_S10"])
+        return cls.from_database(cls._DATABASE['Fuji_X_S10'])
 
     @classmethod
     def Fuji_X_E4(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_E4"])
+        return cls.from_database(cls._DATABASE['Fuji_X_E4'])
 
     @classmethod
     def Fuji_X_T50(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T50"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T50'])
 
     @classmethod
     def Fuji_X_T1(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T1"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T1'])
 
     @classmethod
     def Fuji_X_T20(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_T20"])
+        return cls.from_database(cls._DATABASE['Fuji_X_T20'])
 
     @classmethod
     def Fuji_X_A7(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_A7"])
+        return cls.from_database(cls._DATABASE['Fuji_X_A7'])
 
     @classmethod
     def Fuji_X_Pro3(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_Pro3"])
+        return cls.from_database(cls._DATABASE['Fuji_X_Pro3'])
 
     @classmethod
     def Fuji_X_Pro2(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_Pro2"])
+        return cls.from_database(cls._DATABASE['Fuji_X_Pro2'])
 
     @classmethod
     def Fuji_X_E3(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_E3"])
+        return cls.from_database(cls._DATABASE['Fuji_X_E3'])
 
     @classmethod
     def Fuji_X_E2(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_E2"])
+        return cls.from_database(cls._DATABASE['Fuji_X_E2'])
 
     @classmethod
     def Fuji_X100V(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X100V"])
+        return cls.from_database(cls._DATABASE['Fuji_X100V'])
 
     @classmethod
     def Fuji_X_A5(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_A5"])
+        return cls.from_database(cls._DATABASE['Fuji_X_A5'])
 
     @classmethod
     def Fuji_X_A3(cls):
-        return cls.from_database(cls._DATABASE["Fuji_X_A3"])
+        return cls.from_database(cls._DATABASE['Fuji_X_A3'])

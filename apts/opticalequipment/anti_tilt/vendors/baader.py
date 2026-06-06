@@ -10,9 +10,9 @@ class BaaderAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 60,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class BaaderAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 70,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class BaaderAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 80,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -49,9 +49,9 @@ class BaaderAntiTilt(AntiTilt):
             "optical_length": 5,
             "mass": 100,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -59,16 +59,16 @@ class BaaderAntiTilt(AntiTilt):
 
     @classmethod
     def Baader_Anti_tilt_Adapter_M42(cls):
-        return cls.from_database(cls._DATABASE["Baader_Anti_tilt_Adapter_M42"])
+        return cls.from_database(cls._DATABASE['Baader_Anti_tilt_Adapter_M42'])
 
     @classmethod
     def Baader_Anti_tilt_Adapter_M48(cls):
-        return cls.from_database(cls._DATABASE["Baader_Anti_tilt_Adapter_M48"])
+        return cls.from_database(cls._DATABASE['Baader_Anti_tilt_Adapter_M48'])
 
     @classmethod
     def Baader_Anti_tilt_Adapter_M54(cls):
-        return cls.from_database(cls._DATABASE["Baader_Anti_tilt_Adapter_M54"])
+        return cls.from_database(cls._DATABASE['Baader_Anti_tilt_Adapter_M54'])
 
     @classmethod
     def Baader_Anti_tilt_Adapter_M68(cls):
-        return cls.from_database(cls._DATABASE["Baader_Anti_tilt_Adapter_M68"])
+        return cls.from_database(cls._DATABASE['Baader_Anti_tilt_Adapter_M68'])

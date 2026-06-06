@@ -10,9 +10,9 @@ class OmegonOAG(OAG):
             "optical_length": 15,
             "mass": 165,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class OmegonOAG(OAG):
             "optical_length": 17,
             "mass": 190,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class OmegonOAG(OAG):
 
     @classmethod
     def Omegon_OAG_M42(cls):
-        return cls.from_database(cls._DATABASE["Omegon_OAG_M42"])
+        return cls.from_database(cls._DATABASE['Omegon_OAG_M42'])
 
     @classmethod
     def Omegon_OAG_M48(cls):
-        return cls.from_database(cls._DATABASE["Omegon_OAG_M48"])
+        return cls.from_database(cls._DATABASE['Omegon_OAG_M48'])

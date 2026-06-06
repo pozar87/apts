@@ -10,9 +10,9 @@ class ZWOGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 150,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "CS",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class ZWOGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 350,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class ZWOGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 500,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class ZWOGuideScope(GuideScope):
 
     @classmethod
     def ZWO_30mm_Mini_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["ZWO_30mm_Mini_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['ZWO_30mm_Mini_Guide_Scope'])
 
     @classmethod
     def ZWO_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["ZWO_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['ZWO_60mm_Guide_Scope'])
 
     @classmethod
     def ZWO_120mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["ZWO_120mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['ZWO_120mm_Guide_Scope'])

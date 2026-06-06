@@ -10,9 +10,9 @@ class SbigFilterWheel(FilterWheel):
             "optical_length": 18,
             "mass": 350,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class SbigFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 600,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class SbigFilterWheel(FilterWheel):
             "optical_length": 22,
             "mass": 800,
             "tside_thread": "M68",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M68",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class SbigFilterWheel(FilterWheel):
 
     @classmethod
     def SBIG_FW5_8300_M42(cls):
-        return cls.from_database(cls._DATABASE["SBIG_FW5_8300_M42"])
+        return cls.from_database(cls._DATABASE['SBIG_FW5_8300_M42'])
 
     @classmethod
     def SBIG_FW8_STT_M54(cls):
-        return cls.from_database(cls._DATABASE["SBIG_FW8_STT_M54"])
+        return cls.from_database(cls._DATABASE['SBIG_FW8_STT_M54'])
 
     @classmethod
     def SBIG_FW7_STX_M68(cls):
-        return cls.from_database(cls._DATABASE["SBIG_FW7_STX_M68"])
+        return cls.from_database(cls._DATABASE['SBIG_FW7_STX_M68'])

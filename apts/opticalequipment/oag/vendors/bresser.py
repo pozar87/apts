@@ -10,9 +10,9 @@ class BresserOAG(OAG):
             "optical_length": 15,
             "mass": 160,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class BresserOAG(OAG):
 
     @classmethod
     def Bresser_OAG_M42(cls):
-        return cls.from_database(cls._DATABASE["Bresser_OAG_M42"])
+        return cls.from_database(cls._DATABASE['Bresser_OAG_M42'])

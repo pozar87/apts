@@ -10,9 +10,9 @@ class SharpstarOAG(OAG):
             "optical_length": 17,
             "mass": 185,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class SharpstarOAG(OAG):
             "optical_length": 20,
             "mass": 280,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class SharpstarOAG(OAG):
 
     @classmethod
     def Sharpstar_OAG_M48(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_OAG_M48"])
+        return cls.from_database(cls._DATABASE['Sharpstar_OAG_M48'])
 
     @classmethod
     def Sharpstar_OAG_M54(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_OAG_M54"])
+        return cls.from_database(cls._DATABASE['Sharpstar_OAG_M54'])

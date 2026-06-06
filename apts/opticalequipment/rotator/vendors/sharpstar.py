@@ -10,9 +10,9 @@ class SharpstarRotator(Rotator):
             "optical_length": 11,
             "mass": 270,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class SharpstarRotator(Rotator):
             "optical_length": 12,
             "mass": 300,
             "tside_thread": "M54",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M54",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,8 @@ class SharpstarRotator(Rotator):
 
     @classmethod
     def Sharpstar_Rotator_M48(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_Rotator_M48"])
+        return cls.from_database(cls._DATABASE['Sharpstar_Rotator_M48'])
 
     @classmethod
     def Sharpstar_Rotator_M54(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_Rotator_M54"])
+        return cls.from_database(cls._DATABASE['Sharpstar_Rotator_M54'])

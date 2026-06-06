@@ -10,9 +10,9 @@ class CelestronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 650,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class CelestronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 280,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -36,9 +36,9 @@ class CelestronGuideScope(GuideScope):
             "optical_length": 0,
             "mass": 340,
             "tside_thread": "",
-            "tside_gender": "",
+            "tside_gender": "Male",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -46,12 +46,12 @@ class CelestronGuideScope(GuideScope):
 
     @classmethod
     def Celestron_80mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Celestron_80mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Celestron_80mm_Guide_Scope'])
 
     @classmethod
     def Celestron_50mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Celestron_50mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Celestron_50mm_Guide_Scope'])
 
     @classmethod
     def Celestron_60mm_Guide_Scope(cls):
-        return cls.from_database(cls._DATABASE["Celestron_60mm_Guide_Scope"])
+        return cls.from_database(cls._DATABASE['Celestron_60mm_Guide_Scope'])

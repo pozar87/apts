@@ -10,9 +10,9 @@ class OrionOAG(OAG):
             "optical_length": 12,
             "mass": 170,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -20,4 +20,4 @@ class OrionOAG(OAG):
 
     @classmethod
     def Orion_Thin_OAG_M48(cls):
-        return cls.from_database(cls._DATABASE["Orion_Thin_OAG_M48"])
+        return cls.from_database(cls._DATABASE['Orion_Thin_OAG_M48'])

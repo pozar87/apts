@@ -10,9 +10,9 @@ class SharpstarFilterWheel(FilterWheel):
             "optical_length": 18,
             "mass": 290,
             "tside_thread": "M42",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M42",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -23,9 +23,9 @@ class SharpstarFilterWheel(FilterWheel):
             "optical_length": 20,
             "mass": 440,
             "tside_thread": "M48",
-            "tside_gender": "Male",
+            "tside_gender": "Female",
             "cside_thread": "M48",
-            "cside_gender": "Female",
+            "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
         },
@@ -33,8 +33,10 @@ class SharpstarFilterWheel(FilterWheel):
 
     @classmethod
     def Sharpstar_Filter_Wheel_5x_M42(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_Filter_Wheel_5x_M42"])
+        return cls.from_database(cls._DATABASE['Sharpstar_Filter_Wheel_5x_M42']
+            )
 
     @classmethod
     def Sharpstar_Filter_Wheel_7x_M48(cls):
-        return cls.from_database(cls._DATABASE["Sharpstar_Filter_Wheel_7x_M48"])
+        return cls.from_database(cls._DATABASE['Sharpstar_Filter_Wheel_7x_M48']
+            )
