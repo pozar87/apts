@@ -41,21 +41,20 @@ class OpenWeatherMap(WeatherProvider):
         return df
 
     def _extract_precipitation_intensity(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Optimization: Using list comprehension instead of .apply() for better performance
-        # This also fixes a bug where precipIntensity was entirely ignored if the first
-        # row was NaN (due to iloc[0] checks).
+        # Optimization: Extract precipIntensity using list comprehensions.
+        # This also fixes a bug where rain/snow was missed if the first row was None.
+        precip_intensity = np.zeros(len(df))
         if "rain" in df.columns:
-            rain_col = df["rain"].values
-            df["precipIntensity"] = [
-                r.get("1h", 0) if isinstance(r, dict) else 0 for r in rain_col
+            rain_vals = df["rain"].values
+            precip_intensity += [
+                x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in rain_vals
             ]
-        elif "snow" in df.columns:
-            snow_col = df["snow"].values
-            df["precipIntensity"] = [
-                s.get("1h", 0) if isinstance(s, dict) else 0 for s in snow_col
+        if "snow" in df.columns:
+            snow_vals = df["snow"].values
+            precip_intensity += [
+                x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in snow_vals
             ]
-        else:
-            df["precipIntensity"] = 0
+        df["precipIntensity"] = precip_intensity
         return df
 
     def _convert_units_and_types(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -80,6 +79,39 @@ class OpenWeatherMap(WeatherProvider):
         df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce")
         df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
         return df
+
+    def _post_process_data(self, df: pd.DataFrame, hours: int) -> pd.DataFrame:
+        # Ensure all required columns are present
+        required_columns = [
+            "time",
+            "summary",
+            "precipType",
+            "precipProbability",
+            "precipIntensity",
+            "temperature",
+            "apparentTemperature",
+            "dewPoint",
+            "humidity",
+            "windSpeed",
+            "cloudCover",
+            "visibility",
+            "pressure",
+            "ozone",
+        ]
+        for col in required_columns:
+            if col not in df.columns:
+                df[col] = "none"
+
+        # Filter by hours
+        cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
+        df = cast(
+            pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
+        )
+
+        df = self._enrich_with_aurora_data(df)
+        if "aurora" in df.columns:
+            required_columns.append("aurora")
+        return cast(pd.DataFrame, df[required_columns])
 
     def download_data(
         self,
@@ -120,74 +152,9 @@ class OpenWeatherMap(WeatherProvider):
                 inplace=True,
             )
 
-            # Optimization: Extract precipIntensity using list comprehensions.
-            # This also fixes a bug where rain/snow was missed if the first row was None.
-            precip_intensity = np.zeros(len(df))
-            if "rain" in df.columns:
-                rain_vals = df["rain"].values
-                precip_intensity += [
-                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in rain_vals
-                ]
-            if "snow" in df.columns:
-                snow_vals = df["snow"].values
-                precip_intensity += [
-                    x.get("1h", 0.0) if isinstance(x, dict) else 0.0 for x in snow_vals
-                ]
-            df["precipIntensity"] = precip_intensity
-
-            # Convert units and types
-            df["time"] = (
-                pd.to_datetime(df["time"], unit="s")
-                .dt.tz_localize("UTC")
-                .dt.tz_convert(self.local_timezone)
-            )
-            if "precipProbability" in df.columns:
-                df["precipProbability"] *= 100
-
-            if "humidity" in df.columns:
-                df["humidity"] /= 100
-
-            # Convert wind speed from m/s to km/h
-            if "windSpeed" in df.columns:
-                df["windSpeed"] *= 3.6
-
-            # Convert visibility from meters to km
-            if "visibility" in df.columns:
-                df["visibility"] /= 1000
-            df["visibility"] = pd.to_numeric(df["visibility"], errors="coerce")
-            df["fog"] = (10 - df["visibility"].clip(0, 10)) * 10  # Fog in [%]
-
-            # Ensure all required columns are present
-            required_columns = [
-                "time",
-                "summary",
-                "precipType",
-                "precipProbability",
-                "precipIntensity",
-                "temperature",
-                "apparentTemperature",
-                "dewPoint",
-                "humidity",
-                "windSpeed",
-                "cloudCover",
-                "visibility",
-                "pressure",
-                "ozone",
-            ]
-            for col in required_columns:
-                if col not in df.columns:
-                    df[col] = "none"
-
-            # Filter by hours
-            cutoff = datetime.now(timezone.utc) + timedelta(hours=hours)
-            df = cast(
-                pd.DataFrame, df[df.time <= cutoff.astimezone(self.local_timezone)]
-            )
-
-            df = self._enrich_with_aurora_data(df)
-            if "aurora" in df.columns:
-                required_columns.append("aurora")
-            return cast(pd.DataFrame, df[required_columns])
+            df = self._extract_precipitation_intensity(df)
+            df = self._convert_units_and_types(df)
+            return self._post_process_data(df, hours)
         except Exception as e:
             self._log_download_error(e, "")
             return self._empty_df()
