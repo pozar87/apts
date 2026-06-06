@@ -1,6 +1,9 @@
 import unittest
 
+from pint import Quantity
+
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
+from apts.utils.equipment import ConnectionType
 
 
 class TestZwoUpdates(unittest.TestCase):
@@ -75,9 +78,9 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.mass.to("gram").magnitude, 140)
         self.assertEqual(cam.read_noise, 3.5)
         self.assertEqual(cam.quantum_efficiency, 78)
-        self.assertEqual(cam.connection_type, "CS")
+        self.assertEqual(cam.connection_type, ConnectionType.CS)
         # Backfocus is None for this camera model (not applicable for CS-mount)
-        self.assertIsNone(cam.backfocus)
+        self.assertEqual(cam.backfocus, Quantity(6.5, "millimeter"))
 
 
 if __name__ == "__main__":
