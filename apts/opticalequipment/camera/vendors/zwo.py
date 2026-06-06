@@ -120,7 +120,7 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "mass": 60,
+            "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MC",
             "optical_length": 12.5,
             "reversible": False,
@@ -135,7 +135,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 13000,
             "height": 960,
-            "mass": 60,
+            "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MC-S",
             "optical_length": 12.5,
             "pixel_size_um": 3.75,
@@ -156,7 +156,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 13000,
             "height": 960,
-            "mass": 60,
+            "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MM",
             "optical_length": 12.5,
             "pixel_size_um": 3.75,
@@ -197,7 +197,7 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "mass": 60,
+            "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MM-S (for ASIAir)",
             "optical_length": 12.5,
             "reversible": False,
