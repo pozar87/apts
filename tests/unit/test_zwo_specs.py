@@ -79,7 +79,6 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.read_noise, 3.5)
         self.assertEqual(cam.quantum_efficiency, 78)
         self.assertEqual(cam.connection_type, ConnectionType.CS)
-        # Backfocus is None for this camera model (not applicable for CS-mount)
         self.assertEqual(cam.backfocus, Quantity(6.5, "millimeter"))
 
 
