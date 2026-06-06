@@ -81,24 +81,8 @@ class OpenWeatherMap(WeatherProvider):
         return df
 
     def _post_process_data(self, df: pd.DataFrame, hours: int) -> pd.DataFrame:
-        # Ensure all required columns are present
-        required_columns = [
-            "time",
-            "summary",
-            "precipType",
-            "precipProbability",
-            "precipIntensity",
-            "temperature",
-            "apparentTemperature",
-            "dewPoint",
-            "humidity",
-            "windSpeed",
-            "cloudCover",
-            "visibility",
-            "pressure",
-            "ozone",
-        ]
-        for col in required_columns:
+        # Ensure all required columns are present from the base class
+        for col in self.REQUIRED_COLUMNS:
             if col not in df.columns:
                 df[col] = "none"
 
@@ -109,9 +93,7 @@ class OpenWeatherMap(WeatherProvider):
         )
 
         df = self._enrich_with_aurora_data(df)
-        if "aurora" in df.columns:
-            required_columns.append("aurora")
-        return cast(pd.DataFrame, df[required_columns])
+        return cast(pd.DataFrame, df[self.REQUIRED_COLUMNS])
 
     def download_data(
         self,
