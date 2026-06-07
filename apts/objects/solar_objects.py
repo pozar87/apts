@@ -69,14 +69,24 @@ class SolarObjects(Objects):
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
-        name_to_use = (
-            obj.get("TechnicalName") or obj.get("Name") if isinstance(obj, dict) else
-            getattr(obj, "TechnicalName", getattr(obj, "Name", None))
-        )
-        try:
-            return self._get_skyfield_object_cached(name_to_use)
-        except (ValueError, KeyError):
-            return None
+        # Try to identify the object name from namedtuple, Series, or dict
+        name_to_use = getattr(obj, "TechnicalName", getattr(obj, "Name", None))
+
+        if name_to_use is None and isinstance(obj, dict):
+            name_to_use = obj.get("TechnicalName") or obj.get("Name")
+
+        if name_to_use is not None:
+            try:
+                return self._get_skyfield_object_cached(name_to_use)
+            except (ValueError, KeyError):
+                pass
+
+        # Fallback: check for pre-calculated skyfield_object attribute
+        sky_obj = getattr(obj, "skyfield_object", None)
+        if sky_obj is None and isinstance(obj, dict):
+            sky_obj = obj.get("skyfield_object")
+
+        return sky_obj if sky_obj is not None and pd.notna(sky_obj) else None
 
     def _prepare_observer(self, calculation_date):
         """Prepares the observer and time for computation."""

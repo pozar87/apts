@@ -57,12 +57,17 @@ class Stars(Objects):
         return computed_df
 
     def get_skyfield_object(self, obj):
-        if "skyfield_object" in obj:
+        if hasattr(obj, "skyfield_object"):
+            return getattr(obj, "skyfield_object")
+        if isinstance(obj, dict) and "skyfield_object" in obj:
             return obj["skyfield_object"]
 
         # Reconstruct if possible
-        if "ra_hours" in obj and "dec_degrees" in obj:
-            return self.fixed_body(obj["ra_hours"], obj["dec_degrees"])
+        ra = getattr(obj, "ra_hours", obj.get("ra_hours") if isinstance(obj, dict) else None)
+        dec = getattr(obj, "dec_degrees", obj.get("dec_degrees") if isinstance(obj, dict) else None)
+
+        if ra is not None and dec is not None:
+            return self.fixed_body(ra, dec)
 
         return None
 

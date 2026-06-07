@@ -67,15 +67,24 @@ class Messier(Objects):
 
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
-        if hasattr(obj, "name") and obj.name in self.objects.index:
-            return self.get_skyfield_object_cached(obj.name)
+        # Identify object ID from namedtuple (Index) or Series (name)
+        obj_id = getattr(obj, "Index", getattr(obj, "name", None))
 
-        if "skyfield_object" in obj:
+        if obj_id is not None and obj_id in self.objects.index:
+            return self.get_skyfield_object_cached(obj_id)
+
+        # Fallback: check for pre-calculated skyfield_object
+        if hasattr(obj, "skyfield_object"):
+            return getattr(obj, "skyfield_object")
+        if isinstance(obj, dict) and "skyfield_object" in obj:
             return obj["skyfield_object"]
 
-        # Reconstruct if possible
-        if "ra_hours" in obj and "dec_degrees" in obj:
-            return self.fixed_body(obj["ra_hours"], obj["dec_degrees"])
+        # Reconstruct if possible (using attributes or dictionary keys)
+        ra = getattr(obj, "ra_hours", obj.get("ra_hours") if isinstance(obj, dict) else None)
+        dec = getattr(obj, "dec_degrees", obj.get("dec_degrees") if isinstance(obj, dict) else None)
+
+        if ra is not None and dec is not None:
+            return self.fixed_body(ra, dec)
 
         return None
 
