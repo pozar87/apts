@@ -864,7 +864,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 127,
             "focal_length_mm": 1250,
-            "central_obstruction_mm": 51,
+            "central_obstruction_mm": 40,
         },
         "Celestron_Omni_XLT_150": {
             "brand": "Celestron",
