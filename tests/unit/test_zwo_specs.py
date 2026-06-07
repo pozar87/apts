@@ -38,10 +38,8 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.read_noise, 0.6)
         self.assertEqual(cam.quantum_efficiency, 91)
 
-        # Test V2 variant via from_database check indirectly
-        cam_v2 = ZwoCamera.ZWO_ASI_585MC_V2()
-        self.assertEqual(cam_v2.mass.to("gram").magnitude, 155)
-        self.assertEqual(cam_v2.full_well, 40000)
+        # Test mass standardization
+        self.assertEqual(cam.mass.to("gram").magnitude, 126)
 
     def test_asi678_specs(self):
         cam = ZwoCamera.ZWO_ASI_678MC()
@@ -64,7 +62,7 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.full_well, 38500)
         self.assertEqual(cam.read_noise, 0.46)
         self.assertEqual(cam.quantum_efficiency, 91)
-        self.assertEqual(cam.optical_length.to("mm").magnitude, 6.5)
+        self.assertEqual(cam.optical_length.to("mm").magnitude, 12.5)
 
     def test_asi224_specs(self):
         cam = ZwoCamera.ZWO_ASI_224MC()

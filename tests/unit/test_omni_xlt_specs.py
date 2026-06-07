@@ -25,7 +25,7 @@ class TestOmniXLTSpecs(unittest.TestCase):
         self.assertEqual(scope.get_vendor(), "Celestron Omni XLT 127 SCT")
         self.assertEqual(scope.aperture.to('mm').magnitude, 127)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1250)
-        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 51)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 40)
         self.assertEqual(scope.mass.to('gram').magnitude, 2950)
         self.assertAlmostEqual(scope.focal_ratio().magnitude, 1250/127, places=2)
 

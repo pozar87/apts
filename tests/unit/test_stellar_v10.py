@@ -27,8 +27,8 @@ def test_askar_71f_specs():
 
 def test_zwo_asi664mc_optical_length():
     camera = ZwoCamera.ZWO_ASI_664MC()
-    # Corrected value should be 6.5
-    assert camera.optical_length.magnitude == 6.5
+    # Corrected value should be 12.5
+    assert camera.optical_length.magnitude == 12.5
 
 def test_qhy_factory_refactor():
     # Verify they still return the correct models with expected properties
