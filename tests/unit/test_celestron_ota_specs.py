@@ -40,7 +40,7 @@ class TestCelestronOTASpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 150)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1500)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 56)
-        self.assertEqual(scope.mass.to('gram').magnitude, 4540)
+        self.assertEqual(scope.mass.to('gram').magnitude, 4536)
 
     def test_c8_ota_specs(self):
         scope = CelestronTelescope.Celestron_C8_OTA()

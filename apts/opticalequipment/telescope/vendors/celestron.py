@@ -23,7 +23,7 @@ class CelestronTelescope(Telescope):
             "name": "Advanced VX 6 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -167,7 +167,7 @@ class CelestronTelescope(Telescope):
             "name": "Astro-Fi 6 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -375,39 +375,7 @@ class CelestronTelescope(Telescope):
             "name": "C6-A XLT (OTA)",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
-            "tside_thread": "",
-            "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
-            "reversible": False,
-            "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 1500,
-            "central_obstruction_mm": 56,
-        },
-        "Celestron_C6_EdgeHD": {
-            "brand": "Celestron",
-            "name": "C6 EdgeHD",
-            "type": "catadioptric",
-            "optical_length": 0,
-            "mass": 4540,
-            "tside_thread": "",
-            "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
-            "reversible": False,
-            "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 1500,
-            "central_obstruction_mm": 56,
-        },
-        "Celestron_C6_EdgeHD_OTA": {
-            "brand": "Celestron",
-            "name": "C6 EdgeHD OTA",
-            "type": "catadioptric",
-            "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -423,7 +391,7 @@ class CelestronTelescope(Telescope):
             "name": "C6 OTA",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -439,7 +407,7 @@ class CelestronTelescope(Telescope):
             "name": "C6 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -791,7 +759,7 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 6SE",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 3600,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -823,7 +791,7 @@ class CelestronTelescope(Telescope):
             "name": "NexStar Evolution 6",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -1015,7 +983,7 @@ class CelestronTelescope(Telescope):
             "name": "StarBright XLT C6-A-XLT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4540,
+            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -1224,14 +1192,6 @@ class CelestronTelescope(Telescope):
     @classmethod
     def Celestron_C6_A_XLT_OTA(cls):
         return cls.from_database(cls._DATABASE['Celestron_C6_A_XLT_OTA'])
-
-    @classmethod
-    def Celestron_C6_EdgeHD(cls):
-        return cls.from_database(cls._DATABASE['Celestron_C6_EdgeHD'])
-
-    @classmethod
-    def Celestron_C6_EdgeHD_OTA(cls):
-        return cls.from_database(cls._DATABASE['Celestron_C6_EdgeHD_OTA'])
 
     @classmethod
     def Celestron_C6_OTA(cls):
