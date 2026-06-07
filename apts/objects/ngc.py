@@ -176,16 +176,17 @@ class NGC(Objects):
                 dec_degrees=obj["dec_degrees"].to_numpy(),
             )
 
-        # Case 2: Individual object (Series or dict)
-        if "skyfield_object" in obj and pd.notna(obj["skyfield_object"]):
-            return obj["skyfield_object"]
+        # Case 2: Individual object (Series, dict, or namedtuple)
+        sky_obj = getattr(obj, "skyfield_object", obj.get("skyfield_object") if isinstance(obj, dict) else None)
+        if sky_obj is not None and pd.notna(sky_obj):
+            return sky_obj
 
         # Reconstruct if missing (lazy loading or unpickled)
-        if "ra_hours" in obj and "dec_degrees" in obj:
-            sky_obj = self.fixed_body(obj["ra_hours"], obj["dec_degrees"])
-            # If obj is a Series from self.objects, we might want to cache it back
-            # However, we're in a read-only context here (obj might be a copy)
-            return sky_obj
+        ra = getattr(obj, "ra_hours", obj.get("ra_hours") if isinstance(obj, dict) else None)
+        dec = getattr(obj, "dec_degrees", obj.get("dec_degrees") if isinstance(obj, dict) else None)
+
+        if ra is not None and dec is not None:
+            return self.fixed_body(ra, dec)
 
         return None
 
