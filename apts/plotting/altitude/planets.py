@@ -60,7 +60,16 @@ def generate_plot_planets(
 
     default_planet_color = plot_colors.get(OpticalType.GENERIC, "#888888")
 
-    for _, planet in planets_df.iterrows():
+    # Optimization: Pre-calculate observer_at_times once for all planets
+    observer_at_times = None
+    if plot_start is not None and plot_end is not None:
+        t0 = observation.place.ts.utc(plot_start)
+        t1 = observation.place.ts.utc(plot_end)
+        times = observation.place.ts.linspace(t0, t1, 100)
+        observer_at_times = observation.place.observer.at(times)
+
+    # Optimization: use itertuples() for faster row access
+    for planet in planets_df.itertuples():
         _plot_single_planet_curve(
             observation,
             ax,
@@ -70,6 +79,7 @@ def generate_plot_planets(
             effective_dark_mode,
             default_planet_color,
             style,
+            observer_at_times=observer_at_times,
         )
 
     if plot_start is not None and plot_end is not None:
@@ -136,15 +146,25 @@ def _plot_single_planet_curve(
     effective_dark_mode,
     default_planet_color,
     style,
+    observer_at_times=None,
 ):
-    name = planet[ObjectTableLabels.NAME]
-    skyfield_object = observation.local_planets.get_skyfield_object(planet)
+    # planet is a NamedTuple from itertuples()
+    name = getattr(planet, ObjectTableLabels.NAME)
+    # Convert NamedTuple to dict for get_skyfield_object which expects Series/dict
+    planet_dict = planet._asdict()
+    skyfield_object = observation.local_planets.get_skyfield_object(planet_dict)
 
-    # Get curve for extended range
-    curve_df = observation.place.get_altaz_curve(skyfield_object, plot_start, plot_end)
+    # Get curve for extended range, using pre-calculated observer position and fast mode
+    curve_df = observation.place.get_altaz_curve(
+        skyfield_object,
+        plot_start,
+        plot_end,
+        observer_at_times=observer_at_times,
+        fast=True,
+    )
 
     specific_planet_color = get_planet_color(
-        planetary.get_simple_name(str(planet["TechnicalName"])),
+        planetary.get_simple_name(str(getattr(planet, "TechnicalName"))),
         effective_dark_mode,
         default_planet_color,  # type: ignore
     )
@@ -179,10 +199,10 @@ def _plot_single_planet_curve(
         observation, ax, curve_df, time_series, valid_times, specific_planet_color, name
     )
 
-    rising_time = planet[ObjectTableLabels.RISING]
+    rising_time = getattr(planet, ObjectTableLabels.RISING)
     if pd.notna(rising_time):  # type: ignore
         ax.scatter(rising_time, 0, marker="^", color=specific_planet_color, s=100)
-    setting_time = planet[ObjectTableLabels.SETTING]
+    setting_time = getattr(planet, ObjectTableLabels.SETTING)
     if pd.notna(setting_time):  # type: ignore
         ax.scatter(setting_time, 0, marker="v", color=specific_planet_color, s=100)
 
