@@ -61,8 +61,8 @@ def test_individual_weather_plots(mock_weather_instance, plot_method, weather_me
         mock_method.return_value = mock_ax
 
         with (
-            patch("apts.plotting.weather.plots.mark_observation") as mock_mark_obs,
-            patch("apts.plotting.weather.plots.mark_good_conditions") as mock_mark_good,
+            patch("apts.plotting.weather.utils.mark_observation") as mock_mark_obs,
+            patch("apts.plotting.weather.utils.mark_good_conditions") as mock_mark_good,
         ):
             getattr(obs, plot_method)()
 
@@ -103,8 +103,8 @@ def test_plot_weather_still_works(mock_weather_instance):
     # Just verify it doesn't crash and calls the new individual plot functions
     with (
         patch("apts.plotting.weather.plots.generate_plot_clouds") as mock_clouds,
-        patch("apts.plotting.weather.plots.mark_observation"),
-        patch("apts.plotting.weather.plots.mark_good_conditions"),
+        patch("apts.plotting.weather.utils.mark_observation"),
+        patch("apts.plotting.weather.utils.mark_good_conditions"),
     ):
         obs.plot_weather()
         mock_clouds.assert_called_once()
