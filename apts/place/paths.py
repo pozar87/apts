@@ -9,12 +9,35 @@ from skyfield.api import Time
 from .conditions import PlaceConditionsMixIn
 
 class PlacePathsMixIn(PlaceConditionsMixIn):
-    def get_altaz_curve(self, skyfield_object, start_time, end_time, num_points=100):
-        t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
-        t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
-        times = self.ts.linspace(t0, t1, num_points)
+    def get_altaz_curve(
+        self,
+        skyfield_object,
+        start_time,
+        end_time,
+        num_points=100,
+        observer_at_times=None,
+        fast=False,
+    ):
+        if observer_at_times is not None:
+            times = observer_at_times.t
+        else:
+            t0 = start_time if isinstance(start_time, Time) else self.ts.utc(start_time)
+            t1 = end_time if isinstance(end_time, Time) else self.ts.utc(end_time)
+            times = self.ts.linspace(t0, t1, num_points)
+            observer_at_times = self.observer.at(times)
 
-        alt, az, _ = self.observer.at(times).observe(skyfield_object).apparent().altaz()
+        if fast:
+            # Fast AltAz calculation that bypasses expensive nutation, aberration,
+            # and light deflection calculations (Standard Apparent) by manually
+            # wrapping an Astrometric position in an Apparent object.
+            from skyfield.positionlib import Apparent
+
+            pos = observer_at_times.observe(skyfield_object)
+            app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t)
+            app.center = pos.center
+            alt, az, _ = app.altaz()
+        else:
+            alt, az, _ = observer_at_times.observe(skyfield_object).apparent().altaz()
 
         # Vectorized conversion to datetime
         utcs = times.utc_datetime()
@@ -79,10 +102,14 @@ class PlacePathsMixIn(PlaceConditionsMixIn):
             valid_mask = df["UTC_datetime"].notna()
 
         if bool(valid_mask.any()):
-            # Convert valid datetimes back to a Skyfield Time vector
-            times_vec = self.ts.from_datetimes(
-                df.loc[valid_mask, "UTC_datetime"].tolist()
-            )
+            # Reconstruct valid Skyfield Time vector from existing list in DataFrame.
+            # This is significantly faster than self.ts.from_datetimes().
+            valid_times_list = df.loc[valid_mask, "Time"].tolist()
+            # Re-wrap list of Time objects into a single vectorized Time object
+            tt = np.array([t.tt for t in valid_times_list])
+            delta_t = np.array([t.delta_t for t in valid_times_list])
+            times_vec = Time(self.ts, tt, delta_t)
+
             moon_phase_angles = almanac.moon_phase(self.eph, times_vec).degrees
             df.loc[valid_mask, "Phase"] = (
                 cast(np.ndarray[Any, Any], moon_phase_angles) / 360.0

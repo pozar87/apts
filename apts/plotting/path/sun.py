@@ -79,10 +79,12 @@ def generate_plot_sun_path(
     ax.set_ylim(bottom=-10, top=90)
 
     # Plot time for altitudes
-    for _, obj_row in data.dropna().iloc[::6, :].iterrows():
-        altitude = obj_row["Sun altitude"]
-        azimuth = obj_row["Azimuth"]
-        local_time = obj_row["Local_time"]
+    # Optimization: Using to_dict('records') for small loops is faster than iterrows()
+    # and more robust than itertuples() when column names contain spaces or vary (mocks).
+    for obj_row in data.dropna().iloc[::6, :].to_dict("records"):
+        altitude = obj_row.get("Sun altitude", 0)
+        azimuth = obj_row.get("Azimuth", 0)
+        local_time = obj_row.get("Local_time", "")
         if altitude > 0:
             ax.annotate(
                 local_time,

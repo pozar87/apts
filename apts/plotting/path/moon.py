@@ -85,10 +85,12 @@ def _plot_moon_phase_info(
 
 def _annotate_moon_path_times(ax: Any, data: Any, style: dict, is_southern: bool):
     """Annotates time for altitudes on the moon path plot."""
-    for _, obj_row in data.dropna().iloc[::6, :].iterrows():
-        altitude = obj_row["Moon altitude"]
-        azimuth = obj_row["Azimuth"]
-        local_time = obj_row["Local_time"]
+    # Optimization: Using to_dict('records') for small loops is faster than iterrows()
+    # and more robust than itertuples() when column names contain spaces or vary (mocks).
+    for obj_row in data.dropna().iloc[::6, :].to_dict("records"):
+        altitude = obj_row.get("Moon altitude", 0)
+        azimuth = obj_row.get("Azimuth", 0)
+        local_time = obj_row.get("Local_time", "")
 
         if altitude > 0:
             if is_southern:
