@@ -305,8 +305,9 @@ class Objects(ABC):
             if "skyfield_object" in df.columns:
                 sky_objs = df["skyfield_object"].to_numpy()
             else:
+                # Optimization: itertuples() is significantly faster than iterrows()
                 sky_objs = np.array(
-                    [self.get_skyfield_object(row) for _, row in df.iterrows()]
+                    [self.get_skyfield_object(row) for row in df.itertuples()]
                 )
 
             valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])

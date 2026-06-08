@@ -101,3 +101,7 @@
 ## 2026-06-04 - [OWM Parsing Optimization and Robustness]
 **Learning:** For small DataFrames typically encountered in weather API responses (~48 rows), iterating with list comprehensions over `.values` can be faster than Pandas `.apply()` due to reduced function call overhead. More importantly, relying on `df[col].iloc[0]` to check for column data presence is a bug-prone anti-pattern; it misses data if the first row is null but subsequent rows are not.
 **Action:** Use list comprehensions for row-wise extraction on small datasets. Always prefer vectorized logic or full-column iteration over single-row type checks to ensure data robustness.
+
+## 2025-06-28 - [Iterrows vs Itertuples Optimization]
+**Learning:** Replacing Pandas `.iterrows()` with `.itertuples()` or `.to_dict('records')` provides a massive performance boost (~4x) in iteration-heavy logic. While `.itertuples()` is generally faster, it returns NamedTuples which do not support dictionary-style `['col']` indexing. Implementing robust attribute access via `getattr(obj, 'col', default)` in downstream consumers (like `get_skyfield_object`) is essential to avoid breaking changes when switching iteration methods.
+**Action:** Always prefer `.itertuples()` or `.to_dict('records')` over `.iterrows()`. Ensure receiving methods use `getattr` or support both Series and NamedTuples.

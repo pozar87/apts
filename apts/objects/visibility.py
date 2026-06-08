@@ -9,7 +9,9 @@ def get_visible_mocked(objects_instance, candidate_objects, conditions, start, s
     Calculates visibility for objects when the place.get_altaz_curve is mocked.
     """
     visible_objects_indices = []
-    for index, row in candidate_objects.iterrows():
+    # Optimization: itertuples() is significantly faster than iterrows()
+    for row in candidate_objects.itertuples():
+        index = row.Index
         skyfield_object = objects_instance.get_skyfield_object(row)
         if skyfield_object is None:
             continue

@@ -109,7 +109,8 @@ def calculate_nasa_comets(start_date, end_date):
         if comets.empty:
             return []
 
-        for _, row in comets.iterrows():
+        # Optimization: to_dict('records') is faster than iterrows() for small DataFrames
+        for row in comets.to_dict("records"):
             name = row.get("name", "Unknown Comet")
             close_approach_data = row.get("close_approach_data", [])
             if not close_approach_data:
