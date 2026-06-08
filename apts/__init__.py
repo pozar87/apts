@@ -1,5 +1,5 @@
 import logging.config
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from . import cache
 from .cache import download_all_data
@@ -20,85 +20,89 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Global objects that are lazy-loaded
-_pd = None
-_sns = None
-_Observation = None
-_Place = None
-_Equipment = None
-_Weather = None
-_Utils = None
-_Notify = None
-_set_language = None
+
+def _load_pd():
+    import pandas as pd
+
+    # Disable label trimming in pandas tables
+    pd.set_option("display.max_colwidth", None)
+    return pd
+
+
+def _load_sns():
+    import seaborn as sns
+
+    return sns
+
+
+def _load_observation():
+    from .observations import Observation
+
+    return Observation
+
+
+def _load_place():
+    from .place import Place
+
+    return Place
+
+
+def _load_equipment():
+    from .equipment import Equipment
+
+    return Equipment
+
+
+def _load_weather():
+    from .weather import Weather
+
+    return Weather
+
+
+def _load_utils():
+    from .utils import Utils
+
+    return Utils
+
+
+def _load_notify():
+    from .notify import Notify
+
+    return Notify
+
+
+def _load_set_language():
+    from .i18n import set_language
+
+    return set_language
+
+
+# Registry of loader functions for lazy-loaded attributes
+_LOADERS: Dict[str, Callable[[], Any]] = {
+    "pd": _load_pd,
+    "sns": _load_sns,
+    "Observation": _load_observation,
+    "Place": _load_place,
+    "Equipment": _load_equipment,
+    "Weather": _load_weather,
+    "Utils": _load_utils,
+    "Notify": _load_notify,
+    "set_language": _load_set_language,
+}
+
+# Cache for lazy-loaded attributes
+_CACHE: Dict[str, Any] = {}
 
 
 def __getattr__(name: str) -> Any:
-    global \
-        _pd, \
-        _sns, \
-        _Observation, \
-        _Place, \
-        _Equipment, \
-        _Weather, \
-        _Utils, \
-        _Notify, \
-        _set_language
-    if name == "pd":
-        if _pd is None:
-            import pandas as pd
-
-            # Disable label trimming in pandas tables
-            pd.set_option("display.max_colwidth", None)
-            _pd = pd
-        return _pd
-    if name == "sns":
-        if _sns is None:
-            import seaborn as sns
-
-            _sns = sns
-        return _sns
-    if name == "Observation":
-        if _Observation is None:
-            from .observations import Observation
-
-            _Observation = Observation
-        return _Observation
-    if name == "Place":
-        if _Place is None:
-            from .place import Place
-
-            _Place = Place
-        return _Place
-    if name == "Equipment":
-        if _Equipment is None:
-            from .equipment import Equipment
-
-            _Equipment = Equipment
-        return _Equipment
-    if name == "Weather":
-        if _Weather is None:
-            from .weather import Weather
-
-            _Weather = Weather
-        return _Weather
-    if name == "Utils":
-        if _Utils is None:
-            from .utils import Utils
-
-            _Utils = Utils
-        return _Utils
-    if name == "Notify":
-        if _Notify is None:
-            from .notify import Notify
-
-            _Notify = Notify
-        return _Notify
-    if name == "set_language":
-        if _set_language is None:
-            from .i18n import set_language
-
-            _set_language = set_language
-        return _set_language
+    """
+    Lazy-load modules and classes when they are first accessed.
+    This improves initial import time for the library.
+    """
+    if name in _LOADERS:
+        if name not in _CACHE:
+            _CACHE[name] = _LOADERS[name]()
+        return _CACHE[name]
 
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
