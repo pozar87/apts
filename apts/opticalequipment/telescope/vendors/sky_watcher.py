@@ -971,7 +971,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 1500,
-            "mass": 19500,
+            "mass": 21000,  # Verified via Sky-Watcher USA (46 lbs OTA)
             "name": "Skyliner 300P",
             "optical_length": 0,
             "reversible": False,
@@ -1207,7 +1207,7 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 153,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 42,
+            "central_obstruction_mm": 34.5,  # Verified via Sky-Watcher Global specs for 150/1200
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 1200,
@@ -1220,7 +1220,7 @@ class Sky_watcherTelescope(Telescope):
             "type": "newtonian_reflector",
         },
         "Sky_Watcher_Traditional_Dob_8": {
-            "aperture_mm": 200,
+            "aperture_mm": 203,  # Verified via Sky-Watcher USA (8" = 203.2mm)
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 47,
@@ -1257,7 +1257,7 @@ class Sky_watcherTelescope(Telescope):
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 48,
             "cside_gender": "Female",
-            "cside_thread": "2\"",
+            "cside_thread": "1.25\"",  # Verified via Sky-Watcher USA (1.25" helical focuser)
             "focal_length_mm": 750,
             "mass": 4800,
             "name": "Virtuoso GTi 150P",
