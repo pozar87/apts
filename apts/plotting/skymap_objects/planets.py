@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import numpy
 import pandas as pd
+from types import SimpleNamespace
 from matplotlib.patches import Ellipse
 
 from apts.constants.graphconstants import get_planet_color
@@ -37,15 +38,27 @@ def _plot_planets_on_skymap(
         target_technical_name = (
             planetary.get_technical_name(target_name) if target_name else None
         )
-        for _, p_obj in visible_planets.iterrows():
-            planet_name = p_obj[ObjectTableLabels.NAME]
-            technical_name = p_obj.get("TechnicalName", planet_name)
+        # Optimization: use itertuples() for faster iteration over visible planets
+        for p_obj in visible_planets.itertuples():
+            planet_name = getattr(p_obj, ObjectTableLabels.NAME)
+            technical_name = getattr(p_obj, "TechnicalName", planet_name)
             if (
                 planet_name == target_name
                 or technical_name == target_name
                 or technical_name == target_technical_name
             ):
                 continue  # Skip the target object, it will be plotted separately
+
+            # Optimization: pass pre-calculated coordinates if available
+            alt_deg = getattr(p_obj, ObjectTableLabels.CURRENT_ALT, None)
+            az_deg = getattr(p_obj, ObjectTableLabels.CURRENT_AZ, None)
+            ra_h = getattr(p_obj, ObjectTableLabels.RA, None)
+            dec_d = getattr(p_obj, ObjectTableLabels.DEC, None)
+            size_deg = None
+            size_major_label = ObjectTableLabels.SIZE_MAJOR.replace(" ", "_")
+            if hasattr(p_obj, size_major_label):
+                size_deg = getattr(p_obj, size_major_label) / 60.0
+
             _plot_solar_system_object_on_skymap(
                 observation,
                 ax,
@@ -57,6 +70,11 @@ def _plot_planets_on_skymap(
                 coordinate_system=coordinate_system,
                 plot_labels=plot_labels,
                 ignore_horizon=ignore_horizon,
+                alt_deg=alt_deg,
+                az_deg=az_deg,
+                ra_hours=ra_h,
+                dec_deg=dec_d,
+                size_deg=size_deg,
             )
 
 
@@ -74,6 +92,11 @@ def _plot_solar_system_object_on_skymap(
     ),
     plot_labels: bool = True,
     ignore_horizon: bool = False,
+    alt_deg: Optional[float] = None,
+    az_deg: Optional[float] = None,
+    ra_hours: Optional[float] = None,
+    dec_deg: Optional[float] = None,
+    size_deg: Optional[float] = None,
 ):
     """Helper to plot a solar system object, handling regular and target styles."""
     import apts.plotting.skymap_objects as api
@@ -85,11 +108,23 @@ def _plot_solar_system_object_on_skymap(
     if display_name is None:
         display_name = gettext_(planetary.get_simple_name(object_name))
 
-    # Optimization: perform a single observation and apparent position calculation.
-    # Apparent positions are expensive; reusing the result for Alt/Az and RA/Dec avoids redundant work.
-    astrometric = observer.observe(obj).apparent()
-    alt, az, _ = astrometric.altaz()
-    ra, dec, _ = astrometric.radec()
+    if (
+        alt_deg is not None
+        and az_deg is not None
+        and ra_hours is not None
+        and dec_deg is not None
+    ):
+        # Use pre-calculated values
+        alt = SimpleNamespace(degrees=alt_deg, radians=numpy.deg2rad(alt_deg))
+        az = SimpleNamespace(degrees=az_deg, radians=numpy.deg2rad(az_deg))
+        ra = SimpleNamespace(hours=ra_hours, radians=numpy.deg2rad(ra_hours * 15.0))
+        dec = SimpleNamespace(degrees=dec_deg, radians=numpy.deg2rad(dec_deg))
+    else:
+        # Optimization: perform a single observation and apparent position calculation.
+        # Apparent positions are expensive; reusing the result for Alt/Az and RA/Dec avoids redundant work.
+        astrometric = observer.observe(obj).apparent()
+        alt, az, _ = astrometric.altaz()
+        ra, dec, _ = astrometric.radec()
 
     is_below_horizon = numpy.all(numpy.asarray(alt.degrees) <= 0)
     if (
@@ -99,7 +134,8 @@ def _plot_solar_system_object_on_skymap(
     ):
         return
 
-    size_deg = api.get_object_angular_size_deg(observation, object_name)
+    if size_deg is None:
+        size_deg = api.get_object_angular_size_deg(observation, object_name)
 
     # Determine visual parameters
     effective_dark_mode = api.get_dark_mode()
