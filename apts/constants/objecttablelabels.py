@@ -36,3 +36,6 @@ class ObjectTableLabels:
     DSO_TYPE = "DSO Type"
     SIZE_MAJOR = "Size Major"
     SIZE_MINOR = "Size Minor"
+
+    CURRENT_ALT = "current_alt"
+    CURRENT_AZ = "current_az"

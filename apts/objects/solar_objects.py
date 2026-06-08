@@ -70,10 +70,12 @@ class SolarObjects(Objects):
     def get_skyfield_object(self, obj):
         """Get skyfield object with caching when possible."""
         # Try to identify the object name from namedtuple, Series, or dict
-        name_to_use = getattr(obj, "TechnicalName", getattr(obj, "Name", None))
+        name_to_use = getattr(obj, "TechnicalName", None)
+        if name_to_use is None:
+            name_to_use = getattr(obj, ObjectTableLabels.NAME, None)
 
         if name_to_use is None and isinstance(obj, dict):
-            name_to_use = obj.get("TechnicalName") or obj.get("Name")
+            name_to_use = obj.get("TechnicalName") or obj.get(ObjectTableLabels.NAME)
 
         if name_to_use is not None:
             try:
@@ -184,6 +186,7 @@ class SolarObjects(Objects):
         ephem_observer = self._get_ephem_observer(observer_to_use, t)
         mags, sizes, phases = [], [], []
         ras, decs, dists, elongs, sky_objs = [], [], [], [], []
+        current_alts, current_azs = [], []
 
         obs_at_t = observer_to_use.observer.at(t)
         sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
@@ -215,15 +218,20 @@ class SolarObjects(Objects):
             if sky_obj:
                 pos = obs_at_t.observe(sky_obj).apparent()
                 ra, dec, dist = pos.radec()
+                alt, az, _ = pos.altaz()
                 ras.append(ra.hours)
                 decs.append(dec.degrees)
                 dists.append(dist.au)
                 elongs.append(pos.separation_from(sun_pos).degrees)
+                current_alts.append(alt.degrees)
+                current_azs.append(az.degrees)
             else:
                 ras.append(np.nan)
                 decs.append(np.nan)
                 dists.append(np.nan)
                 elongs.append(np.nan)
+                current_alts.append(np.nan)
+                current_azs.append(np.nan)
 
         computed_df[ObjectTableLabels.MAGNITUDE] = mags
         computed_df["Magnitude_float"] = [m if pd.notna(m) else 99 for m in mags]
@@ -239,6 +247,8 @@ class SolarObjects(Objects):
         computed_df[ObjectTableLabels.DEC] = decs
         computed_df[ObjectTableLabels.DISTANCE] = dists
         computed_df[ObjectTableLabels.ELONGATION] = elongs
+        computed_df[ObjectTableLabels.CURRENT_ALT] = current_alts
+        computed_df[ObjectTableLabels.CURRENT_AZ] = current_azs
 
     def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
         observer_to_use, t = self._prepare_observer(calculation_date)
