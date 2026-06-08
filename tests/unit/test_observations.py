@@ -191,6 +191,70 @@ class TestObservationInitialization(unittest.TestCase):
         self.assertEqual(observation.time_limit, observation.stop)
 
 
+class TestObservationTwilightFallback(unittest.TestCase):
+    def setUp(self):
+        self.place = MagicMock()
+        self.place.name = "High Lat Place"
+        self.place.local_timezone = datetime.timezone.utc
+        self.place.ts = MagicMock()
+        self.place.ts.utc.side_effect = lambda dt: dt
+        self.equipment = MagicMock()
+        self.target_date = datetime.date(2025, 6, 21)
+
+    def test_fallback_mechanism(self):
+        """Test that observation falls back to less strict twilights."""
+        # Arrange: simulate Astronomical and Nautical not reached, but Civil reached.
+        def side_effect(target_date=None, start_search_from=None, twilight=None, horizon_degrees=-0.8333):
+            if twilight == Twilight.ASTRONOMICAL:
+                return None
+            if twilight == Twilight.NAUTICAL:
+                return None
+            if twilight == Twilight.CIVIL:
+                if "rise" in str(self.place.sunrise_time.call_args) or (start_search_from and "rise" in str(self.place.sunrise_time.call_args)): # This is a bit hacky due to how MagicMock records calls
+                     return pd.Timestamp("2025-06-22 02:00:00", tz="UTC")
+                return pd.Timestamp("2025-06-21 22:00:00", tz="UTC")
+            return pd.Timestamp("2025-06-21 20:00:00", tz="UTC")
+
+        self.place.sunset_time.side_effect = [None, None, pd.Timestamp("2025-06-21 22:00:00", tz="UTC")]
+        self.place.sunrise_time.side_effect = [pd.Timestamp("2025-06-22 02:00:00", tz="UTC")]
+
+        conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+        )
+
+        # Assert
+        self.assertEqual(observation.start, pd.Timestamp("2025-06-21 22:00:00", tz="UTC"))
+        self.assertEqual(observation.stop, pd.Timestamp("2025-06-22 02:00:00", tz="UTC"))
+        # Verify fallback occurred (Astronomical -> Nautical -> Civil)
+        self.assertEqual(self.place.sunset_time.call_count, 3)
+
+    def test_effective_date_set_when_no_window(self):
+        """Test that effective_date is set even if no twilight window is found."""
+        # Arrange: simulate all twilights returning None (polar day)
+        self.place.sunset_time.return_value = None
+        conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
+
+        # Act
+        observation = Observation(
+            place=self.place,
+            equipment=self.equipment,
+            conditions=conditions,
+            target_date=self.target_date,
+        )
+
+        # Assert
+        self.assertIsNone(observation.start)
+        self.assertIsNone(observation.stop)
+        self.assertIsNotNone(observation.effective_date)
+        self.assertIsNotNone(observation.observation_local_time)
+
+
 class TestObservationTemplate(unittest.TestCase):
     def setUp(self):
         # Start patcher to avoid Redis connection errors in CI
