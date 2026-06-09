@@ -79,8 +79,12 @@ class Objects(ABC):
         if "Magnitude_float" in self.objects.columns:
             magnitude_values = self.objects["Magnitude_float"]
         else:
-            magnitude_values = self.objects["Magnitude"].apply(
-                lambda x: x.magnitude if hasattr(x, "magnitude") else x
+            # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
+            magnitude_values = np.array(
+                [
+                    x.magnitude if hasattr(x, "magnitude") else x
+                    for x in self.objects["Magnitude"].values
+                ]
             )
         return cast(pd.DataFrame, self.objects[magnitude_values < max_mag_float].copy())
 
