@@ -54,17 +54,18 @@ class SvbonyTelescope(Telescope):
             "brand": "SVBony",
             "name": "SV503 102ED",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 4000,
+            "optical_length": 101.9, # Verified via Svbony (Back Focus Length)
+            "mass": 5700, # Verified via Svbony (Tube weight with rings)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",
+            "cside_gender": "Female",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 102,
             "focal_length_mm": 714,
             "central_obstruction_mm": 0,
+            # Source: https://www.svbony.com/products/sv503-102f7-ed-doublet-refractor
         },
         "SVBony_SV550_80ED": {
             "brand": "SVBony",
