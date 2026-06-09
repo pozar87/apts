@@ -1,11 +1,13 @@
 import datetime
 import logging
+from typing import Optional, Any
 
 import numpy as np
 import pandas as pd
 
-from .cache import get_cached_score, set_cached_score
-from .constants import FilterStrategy, ObjectTableLabels
+from ..cache import get_cached_score, set_cached_score
+from ..constants import FilterStrategy, ObjectTableLabels
+from .rules import ALTITUDE_RULE, WINDOW_RULE, FOV_RULE, BRIGHTNESS_RULE, MOON_RULE
 
 logger = logging.getLogger(__name__)
 
@@ -21,149 +23,82 @@ class SuitabilityScorer:
         self.equipment_path = equipment_path
         self.filter_strategy = filter_strategy
 
-    def score_altitude(self, altitude):
-        """
-        S_alt: Altitude score (Max 30 pts)
-        ≥65°: 30pts; ≥50°: 25pts; ≥35°: 18pts; ≥20°: 10pts
-        """
-        if altitude >= 65:
-            return 30
-        elif altitude >= 50:
-            return 25
-        elif altitude >= 35:
-            return 18
-        elif altitude >= 20:
-            return 10
-        else:
-            return 0
+    def score_altitude(self, altitude: float) -> int:
+        """S_alt: Altitude score (Max 30 pts)"""
+        return ALTITUDE_RULE.score(altitude)
 
-    def score_imaging_window(self, window_minutes):
-        """
-        S_win: Imaging Window score (Max 20 pts)
-        Time >30° alt. ≥5h: 20pts; ≥3h: 16pts; ≥2h: 12pts; ≥1h: 8pts
-        """
-        hours = window_minutes / 60.0
-        if hours >= 5:
-            return 20
-        elif hours >= 3:
-            return 16
-        elif hours >= 2:
-            return 12
-        elif hours >= 1:
-            return 8
-        else:
-            return 0
+    def score_imaging_window(self, window_minutes: float) -> int:
+        """S_win: Imaging Window score (Max 20 pts)"""
+        return WINDOW_RULE.score(window_minutes / 60.0)
 
-    def score_fov_fit(self, fov_ratio):
-        """
-        S_fov: FOV Fit score (Max 30 pts)
-        30%-110%: 30pts; 10%-200%: 18pts
-        """
-        if 30 <= fov_ratio <= 110:
-            return 30
-        elif 10 <= fov_ratio <= 200:
-            return 18
-        else:
-            return 0
+    def score_fov_fit(self, fov_ratio: float) -> int:
+        """S_fov: FOV Fit score (Max 30 pts)"""
+        return FOV_RULE.score(fov_ratio)
 
-    def score_moon_penalty(self, moon_separation):
-        """
-        S_moon: Moon Penalty score (Max 20 pts)
-        NB Mode: 20pts (Static)
-        BB Mode: max(0, 20 - (Dist_moon * 0.22))
-        """
-        if self.filter_strategy == FilterStrategy.NARROWBAND:
-            return 20
-        else:
-            return max(0, 20 - (moon_separation * 0.22))
+    def score_moon_penalty(self, moon_separation: float) -> float:
+        """S_moon: Moon Penalty score (Max 20 pts)"""
+        return MOON_RULE.score(
+            moon_separation, self.filter_strategy == FilterStrategy.NARROWBAND
+        )
 
-    def score_brightness(self, magnitude):
-        """
-        S_bright: Brightness score (Max 10 pts)
-        Mag < 5: 10pts; 5.0-7.9: 7pts; 8.0-10.9: 4pts; ≥11: 1pt
-        """
-        if magnitude < 5:
-            return 10
-        elif magnitude < 8:
-            return 7
-        elif magnitude < 11:
-            return 4
-        else:
-            return 1
+    def score_brightness(self, magnitude: float) -> int:
+        """S_bright: Brightness score (Max 10 pts)"""
+        return BRIGHTNESS_RULE.score(magnitude)
 
-    def calculate_scores_bulk(self, df):
+    def calculate_scores_bulk(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Vectorized calculation of scores for a DataFrame of targets.
-        Requires 'Altitude', 'window_minutes', 'fov_ratio', 'moon_separation',
-        and 'Magnitude_float' columns.
         """
-        # 1. Altitude
         alt = df[ObjectTableLabels.ALTITUDE].to_numpy()
-        s_alt = np.select(
-            [alt >= 65, alt >= 50, alt >= 35, alt >= 20],
-            [30, 25, 18, 10],
-            default=0
-        )
+        s_alt = ALTITUDE_RULE.score_bulk(alt)
 
-        # 2. Imaging Window
         hours = df["window_minutes"].to_numpy() / 60.0
-        s_win = np.select(
-            [hours >= 5, hours >= 3, hours >= 2, hours >= 1],
-            [20, 16, 12, 8],
-            default=0
-        )
+        s_win = WINDOW_RULE.score_bulk(hours)
 
-        # 3. FOV Fit
         fov = df["fov_ratio"].to_numpy()
-        s_fov = np.select(
-            [(fov >= 30) & (fov <= 110), (fov >= 10) & (fov <= 200)],
-            [30, 18],
-            default=0
-        )
+        s_fov = FOV_RULE.score_bulk(fov)
 
-        # 4. Moon Penalty
         moon_sep = df["moon_separation"].to_numpy()
-        if self.filter_strategy == FilterStrategy.NARROWBAND:
-            s_moon = np.full(len(df), 20)
-        else:
-            s_moon = np.maximum(0, 20 - (moon_sep * 0.22))
-
-        # 5. Brightness
-        mag = df["Magnitude_float"].to_numpy()
-        s_bright = np.select(
-            [mag < 5, mag < 8, mag < 11],
-            [10, 7, 4],
-            default=1
+        s_moon = MOON_RULE.score_bulk(
+            moon_sep, self.filter_strategy == FilterStrategy.NARROWBAND
         )
+
+        mag = df["Magnitude_float"].to_numpy()
+        s_bright = BRIGHTNESS_RULE.score_bulk(mag)
 
         total_score = s_alt + s_win + s_fov + s_moon + s_bright
 
-        return pd.DataFrame({
-            "total_score": total_score,
-            "s_alt": s_alt,
-            "s_win": s_win,
-            "s_fov": s_fov,
-            "s_moon": s_moon,
-            "s_bright": s_bright,
-            "altitude": alt,
-            "window_minutes": df["window_minutes"].to_numpy(),
-            "moon_separation": moon_sep,
-        }, index=df.index)
+        return pd.DataFrame(
+            {
+                "total_score": total_score,
+                "s_alt": s_alt,
+                "s_win": s_win,
+                "s_fov": s_fov,
+                "s_moon": s_moon,
+                "s_bright": s_bright,
+                "altitude": alt,
+                "window_minutes": df["window_minutes"].to_numpy(),
+                "moon_separation": moon_sep,
+            },
+            index=df.index,
+        )
 
-    def _get_skyfield_obj(self, target_row):
+    def _get_skyfield_obj(self, target_row: Any):
         """Helper to get or reconstruct Skyfield object from target row."""
         skyfield_obj = target_row.get("skyfield_object")
         if pd.notna(skyfield_obj) and skyfield_obj is not None:
             return skyfield_obj
 
-        from .objects import Objects
+        from ..objects import Objects
 
         if pd.isna(target_row["ra_hours"]) or pd.isna(target_row["dec_degrees"]):
             return None
 
         return Objects.fixed_body(target_row["ra_hours"], target_row["dec_degrees"])
 
-    def _get_altitude_for_scoring(self, target_row, skyfield_obj, time):
+    def _get_altitude_for_scoring(
+        self, target_row: Any, skyfield_obj: Any, time: Any
+    ) -> Optional[float]:
         """Helper to retrieve altitude for scoring."""
         if ObjectTableLabels.ALTITUDE in target_row and pd.notna(
             target_row[ObjectTableLabels.ALTITUDE]
@@ -175,7 +110,9 @@ class SuitabilityScorer:
 
         return self.place.get_altitude(skyfield_obj, time)
 
-    def _get_window_for_scoring(self, target_row, skyfield_obj, time, twilight_times):
+    def _get_window_for_scoring(
+        self, target_row: Any, skyfield_obj: Any, time: Any, twilight_times: Any
+    ) -> Optional[float]:
         """Helper to retrieve imaging window for scoring."""
         if "window_minutes" in target_row and pd.notna(target_row["window_minutes"]):
             return float(target_row["window_minutes"])
@@ -194,7 +131,7 @@ class SuitabilityScorer:
         )
         return window_info["total_minutes"]
 
-    def _get_fov_ratio_for_scoring(self, target_row):
+    def _get_fov_ratio_for_scoring(self, target_row: Any) -> Optional[float]:
         """Helper to calculate FOV ratio for scoring."""
         object_size = (
             target_row[ObjectTableLabels.SIZE_MAJOR],
@@ -204,7 +141,7 @@ class SuitabilityScorer:
         if pd.isna(object_size[0]):
             return None
 
-        from .optics.utils import OpticsUtils
+        from ..optics.utils import OpticsUtils
 
         sensor_size = (
             self.equipment_path.output.sensor_width.to("mm").magnitude,
@@ -220,7 +157,9 @@ class SuitabilityScorer:
         )
         return OpticsUtils.calculate_fov_ratio(object_size, sensor_size, focal_length)
 
-    def _get_moon_sep_for_scoring(self, target_row, skyfield_obj, time):
+    def _get_moon_sep_for_scoring(
+        self, target_row: Any, skyfield_obj: Any, time: Any
+    ) -> Optional[float]:
         """Helper to retrieve moon separation for scoring."""
         if "moon_separation" in target_row and pd.notna(target_row["moon_separation"]):
             return float(target_row["moon_separation"])
@@ -228,11 +167,13 @@ class SuitabilityScorer:
         if skyfield_obj is None:
             return None
 
-        from .utils.planetary import get_moon_separation
+        from ..utils.planetary import get_moon_separation
 
         return get_moon_separation(skyfield_obj, self.place.observer, time)
 
-    def calculate_total_score(self, target_row, time=None, twilight_times=None):
+    def calculate_total_score(
+        self, target_row: Any, time: Any = None, twilight_times: Any = None
+    ):
         """
         Calculate total score for a target given its data row and observation time.
         """
