@@ -25,7 +25,18 @@ def test_sv503_102ed_specs():
     telescope = SvbonyTelescope.SVBony_SV503_102ED()
     assert telescope.aperture.magnitude == 102
     assert telescope.focal_length.magnitude == 714
-    assert telescope.mass.magnitude == 4000
+    assert telescope.mass.magnitude == 5700
+    assert telescope.central_obstruction.magnitude == 0
+    assert telescope.optical_length.magnitude == 101.9
+    assert telescope.backfocus.magnitude == 101.9
+    assert telescope.connection_type.value == "2"
+    assert telescope.connection_gender.value == "F"
+
+def test_sv503_80_specs():
+    telescope = SvbonyTelescope.SVBony_SV503_80()
+    assert telescope.aperture.magnitude == 80
+    assert telescope.focal_length.magnitude == 560
+    assert telescope.mass.magnitude == 3000
     assert telescope.central_obstruction.magnitude == 0
 
 def test_sv550_60_specs():
@@ -63,9 +74,3 @@ def test_sv48p_102_specs():
     assert telescope.mass.magnitude == 3400
     assert telescope.central_obstruction.magnitude == 0
 
-def test_sv503_80_specs():
-    telescope = SvbonyTelescope.SVBony_SV503_80()
-    assert telescope.aperture.magnitude == 80
-    assert telescope.focal_length.magnitude == 560
-    assert telescope.mass.magnitude == 3000
-    assert telescope.central_obstruction.magnitude == 0
