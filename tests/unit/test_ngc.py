@@ -47,6 +47,21 @@ class TestNGC(unittest.TestCase):
         none_obj = self.ngc.find_by_name("NGC 999999")
         self.assertIsNone(none_obj)
 
+    def test_find_by_ic_id(self):
+        # Test finding by IC ID
+        # IC 71 is a known object in the data (as seen from awk output)
+        obj = self.ngc.find_by_name("IC 71")
+        self.assertIsNotNone(obj)
+
+        # Test normalization
+        obj2 = self.ngc.find_by_name("IC0071")
+        self.assertIsNotNone(obj2)
+
+        # Test finding IC ID that is not in Name column but in IC column
+        # IC 1577 has Name IC0048 but IC 1577 (as seen from awk output)
+        obj3 = self.ngc.find_by_name("IC 1577")
+        self.assertIsNotNone(obj3)
+
     def test_get_skyfield_object(self):
         # Find a row that has coordinates to reconstruct skyfield object
         valid_rows = self.ngc.objects[self.ngc.objects["ra_hours"].notnull()]

@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Optional, Tuple
 
+from ...constants.objecttablelabels import ObjectTableLabels
+
 if TYPE_CHECKING:
     from ...observations import Observation
 
@@ -25,16 +27,27 @@ def resolve_target(
             target_object_data
         )
     else:
-        # NGC
-        result_df = observation.local_ngc.objects[
-            (observation.local_ngc.objects["NGC"].isin([target_name]))
-            | (observation.local_ngc.objects["Name"].isin([target_name]))
-        ]
-        if not result_df.empty:
-            target_object_data = result_df.iloc[0]
-            target_object = observation.local_ngc.get_skyfield_object(
-                target_object_data
+        # NGC / IC
+        target_object = observation.local_ngc.find_by_name(target_name)
+        if target_object is not None:
+            # We need to find the data too.
+            # Since find_by_name only returns the skyfield object,
+            # we re-run the mask to get the row.
+            # Alternatively, we could refactor find_by_name to return both.
+            # For now, to keep it simple and correct:
+            from ...objects.ngc import NGC
+
+            norm_name = NGC.normalize_name(target_name)
+            ngc_objs = observation.local_ngc.objects
+            mask = (ngc_objs[ObjectTableLabels.NGC].apply(NGC.normalize_name) == norm_name) | (
+                ngc_objs[ObjectTableLabels.NAME].apply(NGC.normalize_name) == norm_name
             )
+            if ObjectTableLabels.IC in ngc_objs.columns:
+                mask |= ngc_objs[ObjectTableLabels.IC].apply(NGC.normalize_name) == norm_name
+
+            result_df = ngc_objs[mask]
+            if not result_df.empty:
+                target_object_data = result_df.iloc[0]
         else:
             # Stars
             result_df = observation.local_stars.objects[
