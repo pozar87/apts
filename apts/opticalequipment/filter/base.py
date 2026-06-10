@@ -1,5 +1,5 @@
 from ...utils import ConnectionType
-from ..abstract import IntermediateOpticalEquipment
+from ..base import IntermediateOpticalEquipment
 
 
 class Filter(IntermediateOpticalEquipment):

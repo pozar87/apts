@@ -6,7 +6,7 @@ import numpy
 from ...constants import GraphConstants, astronomy
 from ...units import get_unit_registry
 from ...utils import ConnectionType
-from ..abstract import OpticalEquipment
+from ..base import OpticalEquipment
 
 
 class TelescopeType(Enum):

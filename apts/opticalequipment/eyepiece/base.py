@@ -1,5 +1,5 @@
 from typing import Any, cast
-from ..abstract import OutputOpticalEquipment
+from ..base import OutputOpticalEquipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType

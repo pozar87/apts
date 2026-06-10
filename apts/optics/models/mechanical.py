@@ -57,7 +57,7 @@ class MechanicalMixIn:
         if "total_mass" in self._cache:
             return self._cache["total_mass"]
 
-        from ...opticalequipment.abstract import OpticalEquipment
+        from ...opticalequipment.base import OpticalEquipment
 
         all_equipment: set[OpticalEquipment] = set()
         for item in (

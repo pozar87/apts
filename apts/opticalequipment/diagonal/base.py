@@ -1,4 +1,4 @@
-from ..abstract import IntermediateOpticalEquipment
+from ..base import IntermediateOpticalEquipment
 from ...utils import ConnectionType, Gender
 
 
