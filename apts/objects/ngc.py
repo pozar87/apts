@@ -1,3 +1,4 @@
+import re
 from types import SimpleNamespace
 
 import pandas as pd
@@ -190,13 +191,51 @@ class NGC(Objects):
 
         return None
 
+    @staticmethod
+    def normalize_name(n):
+        """
+        Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
+        """
+        if not isinstance(n, str) or pd.isna(n):
+            return n
+        n = n.replace(" ", "").upper()
+
+        match = re.match(r"^(NGC|IC)(\d+)$", n)
+        if match:
+            prefix, number = match.groups()
+            return f"{prefix}{int(number):04d}"
+        return n
+
     def find_by_name(self, name):
         """
-        Finds a NGC object by its name (e.g., "NGC 224").
+        Finds a NGC object by its name (e.g., "NGC 224" or "IC 71").
         """
-        result = self.objects[
-            (self.objects["NGC"] == name) | (self.objects["Name"] == name)
-        ]
+        norm_name = self.normalize_name(name)
+
+        # Optimization: only normalize columns if they are not already normalized
+        # But for correctness with various possible formats in the CSV, we apply it.
+        if self.objects.empty:
+            return None
+
+        mask = pd.Series(False, index=self.objects.index)
+
+        if ObjectTableLabels.NGC in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name) == norm_name
+            )
+
+        if ObjectTableLabels.NAME in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NAME].apply(self.normalize_name)
+                == norm_name
+            )
+
+        if ObjectTableLabels.IC in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.IC].apply(self.normalize_name) == norm_name
+            )
+
+        result = self.objects[mask]
         if not result.empty:
             return self.get_skyfield_object(result.iloc[0])
         return None

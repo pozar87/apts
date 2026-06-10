@@ -67,7 +67,7 @@ def _load_ngc_with_units():
     ngc_df["Constellation"] = ngc_df["Constellation"].map(constellation_map)  # type: ignore
 
     # Set proper dtypes for string columns
-    string_columns = ["Name", "Type", "Constellation", "NGC"]
+    string_columns = ["Name", "Type", "Constellation", "NGC", "IC"]
     for column in string_columns:
         if column in ngc_df.columns:
             ngc_df[column] = ngc_df[column].astype("string")

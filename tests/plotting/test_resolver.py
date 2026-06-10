@@ -40,6 +40,20 @@ class MockCatalog:
     def get_skyfield_object(self, obj_row):
         return self._skyfield_return
 
+    def find_by_name(self, name):
+        from apts.objects.ngc import NGC
+
+        norm_name = NGC.normalize_name(name)
+        mask = (self.objects[self._column_name].apply(NGC.normalize_name) == norm_name) | (
+            self.objects["Name"].apply(NGC.normalize_name) == norm_name
+        )
+        if "IC" in self.objects.columns:
+            mask |= self.objects["IC"].apply(NGC.normalize_name) == norm_name
+        res = self.objects[mask]
+        if not res.empty:
+            return self.get_skyfield_object(res.iloc[0])
+        return None
+
 
 class MockPlanets:
     def find_by_name(self, name):
