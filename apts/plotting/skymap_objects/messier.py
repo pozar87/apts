@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy
 import pandas as pd
@@ -7,6 +7,7 @@ from skyfield.api import Star
 from apts.constants.graphconstants import get_messier_color
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
+
 from ...constants import ObjectTableLabels
 from .utils import _plot_celestial_object
 
@@ -28,7 +29,7 @@ def _prepare_messier_data(
 
     # Filter out target object and reset index for array matching/safe iteration
     plot_df = (
-        visible_messier[visible_messier[ObjectTableLabels.MESSIER] != target_name]
+        visible_messier[~visible_messier[ObjectTableLabels.MESSIER].isin([target_name])]
         .copy()
         .reset_index(drop=True)
     )
@@ -49,7 +50,9 @@ def _prepare_messier_data(
                 # Fallback to direct column access with Quantity support
                 row = plot_df.iloc[i]
                 r_val = row.get("ra_hours", row.get(ObjectTableLabels.RA, numpy.nan))
-                d_val = row.get("dec_degrees", row.get(ObjectTableLabels.DEC, numpy.nan))
+                d_val = row.get(
+                    "dec_degrees", row.get(ObjectTableLabels.DEC, numpy.nan)
+                )
                 ras.append(getattr(r_val, "magnitude", r_val))
                 decs.append(getattr(d_val, "magnitude", d_val))
         plot_df["ra_hours"] = ras
@@ -164,6 +167,7 @@ def _plot_messier_on_skymap(
     ignore_horizon: bool = False,
 ):
     import apts.plotting.skymap_objects as api
+
     plot_df = _prepare_messier_data(observation, target_name, ignore_horizon)
 
     if plot_df.empty:
