@@ -1,7 +1,7 @@
 from ..constants import OpticalType, GraphConstants, astronomy
 from ..i18n import gettext_ as _
 from ..units import get_unit_registry
-from .abstract import OutputOpticalEquipment
+from .base import OutputOpticalEquipment
 
 
 class Binoculars(OutputOpticalEquipment):

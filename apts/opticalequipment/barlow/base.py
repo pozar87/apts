@@ -1,5 +1,5 @@
 from ...utils import ConnectionType
-from ..abstract import OpticalEquipment
+from ..base import OpticalEquipment
 
 
 class Barlow(OpticalEquipment):

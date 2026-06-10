@@ -5,7 +5,7 @@ import numpy
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
-from ..abstract import OutputOpticalEquipment
+from ..base import OutputOpticalEquipment
 
 
 class Camera(OutputOpticalEquipment):

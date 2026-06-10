@@ -2,7 +2,7 @@ import importlib
 import inspect
 import os
 
-from apts.opticalequipment.abstract import OpticalEquipment
+from apts.opticalequipment.base import OpticalEquipment
 from apts.opticalequipment.camera.base import Camera
 from apts.opticalequipment.eyepiece.base import Eyepiece
 from apts.opticalequipment.telescope.base import Telescope

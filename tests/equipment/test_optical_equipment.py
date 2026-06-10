@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from apts.opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
+from apts.opticalequipment.base import OpticalEquipment, OutputOpticalEquipment
 from apts.opticalequipment.barlow import Barlow
 from apts.opticalequipment.eyepiece import Eyepiece
 from apts.opticalequipment.telescope import Telescope

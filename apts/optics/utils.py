@@ -6,7 +6,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from pint import Quantity
-    from ..opticalequipment.abstract import OpticalEquipment, OutputOpticalEquipment
+    from ..opticalequipment.base import OpticalEquipment, OutputOpticalEquipment
     from ..opticalequipment.smart_telescope import SmartTelescope
 
 from ..units import get_unit_registry

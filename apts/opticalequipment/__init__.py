@@ -2,7 +2,11 @@ from .barlow import Barlow
 from .telescope import Telescope
 from .camera import Camera
 from .eyepiece import Eyepiece
-from .abstract import OpticalEquipment
+from .base import (
+    OpticalEquipment,
+    IntermediateOpticalEquipment,
+    OutputOpticalEquipment,
+)
 from .binoculars import Binoculars
 from .naked_eye import NakedEye
 from .diagonal import Diagonal
@@ -24,6 +28,8 @@ __all__ = [
     "Camera",
     "Eyepiece",
     "OpticalEquipment",
+    "IntermediateOpticalEquipment",
+    "OutputOpticalEquipment",
     "Binoculars",
     "NakedEye",
     "Diagonal",
