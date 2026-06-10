@@ -16,13 +16,16 @@ def get_visible_mocked(objects_instance, candidate_objects, conditions, start, s
         if skyfield_object is None:
             continue
         altaz_df = objects_instance.place.get_altaz_curve(skyfield_object, start, stop)
-        altitude_values = altaz_df["Altitude"].apply(
-            lambda x: x.magnitude if hasattr(x, "magnitude") else x
+        # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
+        altitude_values = [
+            x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Altitude"].values
+        ]
+        azimuth_values = [
+            x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Azimuth"].values
+        ]
+        visible_condition = conditions.is_visible(
+            np.array(azimuth_values), np.array(altitude_values)
         )
-        azimuth_values = altaz_df["Azimuth"].apply(
-            lambda x: x.magnitude if hasattr(x, "magnitude") else x
-        )
-        visible_condition = conditions.is_visible(azimuth_values, altitude_values)
         if cast(Any, visible_condition.any()):
             visible_objects_indices.append(index)
     return visible_objects_indices

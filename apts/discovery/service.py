@@ -84,7 +84,8 @@ class DiscoveryService:
         moon_pos = observer_at_t.observe(place.moon).apparent()
 
         # Identify Stars vs Moving Objects
-        is_star = df["skyfield_object"].apply(lambda x: isinstance(x, Star))
+        # Optimization: list comprehension over .values is faster than .apply() for type checking.
+        is_star = np.array([isinstance(x, Star) for x in df["skyfield_object"].values])
         stars_df = df[is_star]
 
         # 1. Altitude and Moon Separation
