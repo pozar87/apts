@@ -214,9 +214,21 @@ class NGC(Objects):
 
         # Optimization: only normalize columns if they are not already normalized
         # But for correctness with various possible formats in the CSV, we apply it.
-        mask = (
-            self.objects[ObjectTableLabels.NGC].apply(self.normalize_name) == norm_name
-        ) | (self.objects[ObjectTableLabels.NAME].apply(self.normalize_name) == norm_name)
+        if self.objects.empty:
+            return None
+
+        mask = pd.Series(False, index=self.objects.index)
+
+        if ObjectTableLabels.NGC in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name) == norm_name
+            )
+
+        if ObjectTableLabels.NAME in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NAME].apply(self.normalize_name)
+                == norm_name
+            )
 
         if ObjectTableLabels.IC in self.objects.columns:
             mask |= (
