@@ -139,7 +139,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 530,
-            "mass": 2920,
+            "mass": 2920,  # Verified via Sky-Watcher Global (2.92 kg OTA Weight)
             "name": "Evolux 82ED",
             "optical_length": 0,
             "reversible": False,
@@ -267,7 +267,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Male",
             "cside_thread": "M54",
             "focal_length_mm": 1050,
-            "mass": 15000,
+            "mass": 14520,  # Verified via Sky-Watcher Global (14.52 kg Tube Weight)
             "name": "Esprit 150ED",
             "optical_length": 0,
             "reversible": False,
@@ -379,7 +379,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Male",
             "cside_thread": "M48",
             "focal_length_mm": 420,
-            "mass": 1950,
+            "mass": 2000,  # Verified via Sky-Watcher Global (2.0 kg OTA Weight)
             "name": "Evostar 72ED",
             "optical_length": 0,
             "reversible": False,
