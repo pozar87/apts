@@ -211,7 +211,8 @@ def _plot_bright_stars_on_skymap(
     bright_stars_df = cast(pd.DataFrame, observation.local_stars.objects.copy())
     if target_name:
         bright_stars_df = cast(
-            pd.DataFrame, bright_stars_df[bright_stars_df["Name"] != target_name]
+            pd.DataFrame,
+            bright_stars_df[~bright_stars_df["Name"].isin([target_name])],
         )
 
     bright_stars_df = _ensure_coordinate_columns(bright_stars_df)

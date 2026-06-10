@@ -1,12 +1,13 @@
-from typing import TYPE_CHECKING, Optional, cast, Any
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
 import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
+
 from ...constants import ObjectTableLabels
-from .utils import _parse_ra, _parse_dec, _plot_celestial_object
+from .utils import _parse_dec, _parse_ra, _plot_celestial_object
 
 if TYPE_CHECKING:
     from apts.observations import Observation
@@ -159,7 +160,7 @@ def _get_ngc_plot_mask(
     else:
         is_above_horizon = alt_all_deg > 0
 
-    mask = (names != target_name) & is_above_horizon
+    mask = (~numpy.isin(names, [target_name])) & is_above_horizon
     return mask, names
 
 
