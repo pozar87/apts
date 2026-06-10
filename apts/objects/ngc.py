@@ -1,10 +1,10 @@
-import re
 from types import SimpleNamespace
 
 import pandas as pd
 
 from .base import Objects
 from ..catalogs import Catalogs
+from ..catalogs.ngc import normalize_name as internal_normalize_name
 from ..constants import ObjectTableLabels
 
 
@@ -196,15 +196,7 @@ class NGC(Objects):
         """
         Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
         """
-        if not isinstance(n, str) or pd.isna(n):
-            return n
-        n = n.replace(" ", "").upper()
-
-        match = re.match(r"^(NGC|IC)(\d+)$", n)
-        if match:
-            prefix, number = match.groups()
-            return f"{prefix}{int(number):04d}"
-        return n
+        return internal_normalize_name(n)
 
     def find_by_name(self, name):
         """
@@ -212,27 +204,34 @@ class NGC(Objects):
         """
         norm_name = self.normalize_name(name)
 
-        # Optimization: only normalize columns if they are not already normalized
-        # But for correctness with various possible formats in the CSV, we apply it.
         if self.objects.empty:
             return None
 
         mask = pd.Series(False, index=self.objects.index)
 
-        if ObjectTableLabels.NGC in self.objects.columns:
+        # Optimization: use pre-calculated normalized columns if available
+        if "NGC_norm" in self.objects.columns:
+            mask |= self.objects["NGC_norm"] == norm_name
+        elif ObjectTableLabels.NGC in self.objects.columns:
             mask |= (
-                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name) == norm_name
+                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name)
+                == norm_name
             )
 
-        if ObjectTableLabels.NAME in self.objects.columns:
+        if "Name_norm" in self.objects.columns:
+            mask |= self.objects["Name_norm"] == norm_name
+        elif ObjectTableLabels.NAME in self.objects.columns:
             mask |= (
                 self.objects[ObjectTableLabels.NAME].apply(self.normalize_name)
                 == norm_name
             )
 
-        if ObjectTableLabels.IC in self.objects.columns:
+        if "IC_norm" in self.objects.columns:
+            mask |= self.objects["IC_norm"] == norm_name
+        elif ObjectTableLabels.IC in self.objects.columns:
             mask |= (
-                self.objects[ObjectTableLabels.IC].apply(self.normalize_name) == norm_name
+                self.objects[ObjectTableLabels.IC].apply(self.normalize_name)
+                == norm_name
             )
 
         result = self.objects[mask]
