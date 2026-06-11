@@ -105,7 +105,3 @@
 ## 2025-06-28 - [Iterrows vs Itertuples Optimization]
 **Learning:** Replacing Pandas `.iterrows()` with `.itertuples()` or `.to_dict('records')` provides a massive performance boost (~4x) in iteration-heavy logic. While `.itertuples()` is generally faster, it returns NamedTuples which do not support dictionary-style `['col']` indexing. Implementing robust attribute access via `getattr(obj, 'col', default)` in downstream consumers (like `get_skyfield_object`) is essential to avoid breaking changes when switching iteration methods.
 **Action:** Always prefer `.itertuples()` or `.to_dict('records')` over `.iterrows()`. Ensure receiving methods use `getattr` or support both Series and NamedTuples.
-
-## 2025-07-02 - [Pre-calculated Catalog Search Columns]
-**Learning:** Repeatedly applying complex string normalization (regex, etc.) via `df.apply()` during catalog searches is a major bottleneck. Pre-calculating these normalized versions once during catalog load and storing them in dedicated columns allows for vectorized equality checks, yielding a massive speedup (~17x).
-**Action:** Always pre-calculate and store normalized search keys for large catalogs during initialization.
