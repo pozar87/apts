@@ -87,6 +87,16 @@ class TestResolveTargetPandasCompatibility(unittest.TestCase):
             )
         if stars_df is None:
             stars_df = pd.DataFrame({"Name": pd.array([], dtype="string")})
+        from apts.catalogs.ngc import normalize_name
+
+        if not ngc_df.empty:
+            if "NGC" in ngc_df.columns:
+                ngc_df["NGC_norm"] = ngc_df["NGC"].apply(normalize_name)
+            if "Name" in ngc_df.columns:
+                ngc_df["Name_norm"] = ngc_df["Name"].apply(normalize_name)
+            if "IC" in ngc_df.columns:
+                ngc_df["IC_norm"] = ngc_df["IC"].apply(normalize_name)
+
         return SimpleNamespace(
             local_messier=MockCatalog(
                 messier_df, "Messier", skyfield_return="mock_skyfield_obj"

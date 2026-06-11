@@ -1,4 +1,5 @@
 import logging
+import re
 import urllib.parse
 from importlib import resources
 from typing import cast
@@ -120,6 +121,15 @@ def _load_ngc_with_units():
         object
     )
 
+    # Optimization: Pre-calculate normalized search columns to avoid expensive
+    # row-wise .apply(normalize_name) during runtime lookups.
+    if ObjectTableLabels.NGC in ngc_df.columns:
+        ngc_df["NGC_norm"] = ngc_df[ObjectTableLabels.NGC].apply(normalize_name)
+    if ObjectTableLabels.IC in ngc_df.columns:
+        ngc_df["IC_norm"] = ngc_df[ObjectTableLabels.IC].apply(normalize_name)
+    if ObjectTableLabels.NAME in ngc_df.columns:
+        ngc_df["Name_norm"] = ngc_df[ObjectTableLabels.NAME].apply(normalize_name)
+
     # Add external links (vectorized list comprehension)
     quoted_names = [urllib.parse.quote(str(x)) for x in ngc_df["Name"]]
     ngc_df[ObjectTableLabels.SIMBAD] = [
@@ -133,6 +143,20 @@ def _load_ngc_with_units():
     ]
 
     return ngc_df
+
+def normalize_name(n):
+    """
+    Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
+    """
+    if not isinstance(n, str) or pd.isna(n):
+        return n
+    n = n.replace(" ", "").upper()
+
+    match = re.match(r"^(NGC|IC)(\d+)$", n)
+    if match:
+        prefix, number = match.groups()
+        return f"{prefix}{int(number):04d}"
+    return n
 
 def get_ngc() -> pd.DataFrame:
     global _ngc_df
