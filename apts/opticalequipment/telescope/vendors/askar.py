@@ -231,16 +231,17 @@ class AskarTelescope(Telescope):
             "name": "FMA 180 Pro",
             "type": "type_refractor",
             "optical_length": 0,
-            "mass": 395,
+            "mass": 800, # Verified via Sharpstar/Askar official specs (800g for Pro version)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M42",
+            "cside_thread": "M48", # Verified via Sharpstar/Askar official specs (M48x0.75 male)
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
             "aperture_mm": 40,
             "focal_length_mm": 180,
             "central_obstruction_mm": 0,
+            # Source: https://www.sharpstar-optics.com/Products_1/69.html
         },
         "Askar_FMA_230": {
             "brand": "Askar",

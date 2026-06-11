@@ -14,6 +14,22 @@ logger = logging.getLogger(__name__)
 
 _ngc_df = None
 
+
+def normalize_name(n):
+    """
+    Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
+    """
+    if not isinstance(n, str) or pd.isna(n):
+        return n
+    n = n.replace(" ", "").upper()
+
+    match = re.match(r"^(NGC|IC)(\d+)$", n)
+    if match:
+        prefix, number = match.groups()
+        return f"{prefix}{int(number):04d}"
+    return n
+
+
 def _load_ngc_with_units():
     # Load NGC catalogue data
     ngc_df = pd.read_csv(
@@ -104,6 +120,15 @@ def _load_ngc_with_units():
     # These are restored lazily only for visible objects in NGC.get_visible().
     ngc_df["ra_hours"] = ra_hours.values
     ngc_df["dec_degrees"] = dec_degrees.values
+
+    # Optimization: Pre-calculate normalized names to avoid slow apply() during search
+    # and skymap resolution.
+    if ObjectTableLabels.NGC in ngc_df.columns:
+        ngc_df["NGC_norm"] = ngc_df[ObjectTableLabels.NGC].apply(normalize_name)
+    if ObjectTableLabels.IC in ngc_df.columns:
+        ngc_df["IC_norm"] = ngc_df[ObjectTableLabels.IC].apply(normalize_name)
+    if ObjectTableLabels.NAME in ngc_df.columns:
+        ngc_df["Name_norm"] = ngc_df[ObjectTableLabels.NAME].apply(normalize_name)
 
     magnitudes = cast(
         pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")

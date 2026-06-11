@@ -4,7 +4,7 @@ import pandas as pd
 
 from .base import Objects
 from ..catalogs import Catalogs
-from ..catalogs.ngc import normalize_name
+from ..catalogs.ngc import normalize_name as internal_normalize_name
 from ..constants import ObjectTableLabels
 
 
@@ -193,7 +193,10 @@ class NGC(Objects):
 
     @staticmethod
     def normalize_name(n):
-        return normalize_name(n)
+        """
+        Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
+        """
+        return internal_normalize_name(n)
 
     def find_by_name(self, name):
         """
@@ -206,13 +209,30 @@ class NGC(Objects):
 
         mask = pd.Series(False, index=self.objects.index)
 
-        # Optimization: use pre-calculated normalized search columns
+        # Optimization: use pre-calculated normalized columns if available
         if "NGC_norm" in self.objects.columns:
             mask |= self.objects["NGC_norm"] == norm_name
+        elif ObjectTableLabels.NGC in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name)
+                == norm_name
+            )
+
         if "Name_norm" in self.objects.columns:
             mask |= self.objects["Name_norm"] == norm_name
+        elif ObjectTableLabels.NAME in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.NAME].apply(self.normalize_name)
+                == norm_name
+            )
+
         if "IC_norm" in self.objects.columns:
             mask |= self.objects["IC_norm"] == norm_name
+        elif ObjectTableLabels.IC in self.objects.columns:
+            mask |= (
+                self.objects[ObjectTableLabels.IC].apply(self.normalize_name)
+                == norm_name
+            )
 
         result = self.objects[mask]
         if not result.empty:
