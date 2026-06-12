@@ -106,17 +106,34 @@ def get_visible_stars(
         # Geometric altitude and azimuth calculation
         sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_h
 
-        # Convert to degrees and add atmospheric refraction
-        true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
-        apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
+        # Optimization: if only simple altitude check is needed, we can bypass
+        # expensive arctan2, arcsin, and refraction calculations for the grid.
+        if not conditions.horizon_content and not conditions.horizon_file and \
+           conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
+            # For simple altitude, we can compare sin_alt directly.
+            # We need to account for refraction in the threshold itself.
+            min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
+            # Threshold sin_alt: objects are visible if apparent_alt >= min_alt.
+            # apparent_alt = true_alt + refraction(true_alt).
+            # We find the true_alt that corresponds to apparent_alt = min_alt.
+            # Since refraction is small and monotonic, we can approximate:
+            # true_alt_threshold = min_alt - refraction(min_alt)
+            true_alt_threshold = min_alt - calculate_refraction(min_alt)
+            sin_alt_threshold = np.sin(np.deg2rad(true_alt_threshold))
 
-        # Determine azimuth
-        x = cos_h * sin_lat - tan_dec * cos_lat
-        y = sin_h
-        az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+            visible_at_times = sin_alt >= sin_alt_threshold
+        else:
+            # Full calculation needed for complex horizon or azimuth constraints
+            true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+            apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
 
-        # Determine visibility using conditions
-        visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
+            # Determine azimuth
+            x = cos_h * sin_lat - tan_dec * cos_lat
+            y = sin_h
+            az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+
+            # Determine visibility using conditions
+            visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
 
         # Combine and check if visible at ANY time point
         visible_mask[active_stars_indices] = np.any(visible_at_times, axis=1)
