@@ -109,3 +109,11 @@
 ## 2025-07-02 - [Pre-calculated Catalog Search Columns]
 **Learning:** Repeatedly applying complex string normalization (regex, etc.) via `df.apply()` during catalog searches is a major bottleneck. Pre-calculating these normalized versions once during catalog load and storing them in dedicated columns allows for vectorized equality checks, yielding a massive speedup (~17x).
 **Action:** Always pre-calculate and store normalized search keys for large catalogs during initialization.
+
+## 2025-07-03 - [Fast-Path Altitude Gating]
+**Learning:** When performing visibility gating on a time grid, calculating apparent coordinates (with refraction) for every point is extremely expensive ((N \times M)$). For the primary use case of a simple altitude threshold (no complex horizon or azimuth constraints), converting the threshold into the same space as pre-calculated geometric values (like ) allows for direct array comparison. This bypasses thousands of calls to , , and iterative refraction formulas.
+**Action:** Always implement a fast-path for simple geometric thresholds before falling back to full coordinate transformations. Convert the threshold once (using first-order refraction approximation if needed) instead of transforming the entire data grid.
+
+## 2025-07-03 - [Fast-Path Altitude Gating]
+**Learning:** When performing visibility gating on a time grid, calculating apparent coordinates (with refraction) for every point is extremely expensive ($O(N \times M)$). For the primary use case of a simple altitude threshold (no complex horizon or azimuth constraints), converting the threshold into the same space as pre-calculated geometric values (like `sin_alt`) allows for direct array comparison. This bypasses thousands of calls to `arcsin`, `arctan2`, and iterative refraction formulas.
+**Action:** Always implement a fast-path for simple geometric thresholds before falling back to full coordinate transformations. Convert the threshold once (using first-order refraction approximation if needed) instead of transforming the entire data grid.
