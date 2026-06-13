@@ -250,23 +250,28 @@ def _draw_ngc_cartesian(
     if "Mag" in visible_ngc_plot.columns:
         magnitudes = visible_ngc_plot.loc[mask, "Mag"].to_numpy()
     elif "Magnitude" in visible_ngc_plot.columns:
-        magnitudes = visible_ngc_plot.loc[mask, "Magnitude"].to_numpy()
+        magnitudes_raw = visible_ngc_plot.loc[mask, "Magnitude"].values
+        magnitudes = numpy.array(
+            [getattr(m, "magnitude", m) for m in magnitudes_raw], dtype=float
+        )
     else:
         magnitudes = numpy.full(len(active_names), 10.0)
 
-    for i in range(len(active_names)):
-        parallactic_angle = api.calculate_parallactic_angle(
-            observation.place.lat, active_decs[i], active_azs[i]
-        )
-        angle = api.calculate_ellipse_angle(
-            pos_angles[i],
-            parallactic_angle,
-            coordinate_system,
-            flipped_horizontally,
-            flipped_vertically,
-        )
-        face_color = api.get_brightness_color(magnitudes[i])
+    # Optimization: pre-calculate all rotation angles using vectorized geometric functions
+    parallactic_angles = api.calculate_parallactic_angle(
+        observation.place.lat_decimal, active_decs, active_azs
+    )
+    angles = api.calculate_ellipse_angle(
+        pos_angles,
+        parallactic_angles,
+        coordinate_system,
+        flipped_horizontally,
+        flipped_vertically,
+    )
+    # Optimization: use vectorized brightness color calculation
+    face_colors = api.get_brightness_color(magnitudes)
 
+    for i in range(len(active_names)):
         _plot_celestial_object(
             ax,
             name=cast(str, active_names[i]),
@@ -276,8 +281,8 @@ def _draw_ngc_cartesian(
             dec_deg=float(active_decs[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=angle,
-            face_color=face_color,
+            angle=float(angles[i]),
+            face_color=str(face_colors[i]),
             edge_color="green",
             is_polar=False,
             ra_rad=float(active_ras_r[i]),
