@@ -143,8 +143,11 @@ def _get_messier_visual_properties(plot_df: pd.DataFrame):
     types = [gettext_(t) for t in cast(list, types_raw)]
     edge_colors = [get_messier_color(t, effective_dark_mode) for t in types]
     magnitudes_raw = cast(Any, plot_df).get("Magnitude", [10.0] * len(plot_df))
-    magnitudes = [getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)]
-    face_colors = [api.get_brightness_color(m) for m in magnitudes]
+    magnitudes = numpy.array(
+        [getattr(x, "magnitude", x) for x in cast(list, magnitudes_raw)]
+    )
+    # Optimization: use vectorized brightness color calculation
+    face_colors = api.get_brightness_color(magnitudes)
 
     # Names for annotation
     names = plot_df[ObjectTableLabels.MESSIER].to_numpy()
@@ -190,23 +193,24 @@ def _plot_messier_on_skymap(
         names,
     ) = _get_messier_visual_properties(plot_df)
 
+    # Optimization: pre-calculate all rotation angles using vectorized geometric functions
+    parallactic_angles = api.calculate_parallactic_angle(
+        observation.place.lat_decimal, dec_deg, az_deg
+    )
+    angles = api.calculate_ellipse_angle(
+        pos_angles,
+        parallactic_angles,
+        coordinate_system,
+        flipped_horizontally,
+        flipped_vertically,
+    )
+
     # Restoration of original plotting loop with helper function to ensure visual consistency
     # while retaining the performance benefits of bulk Skyfield observations.
     for i in range(len(alt_deg)):
         # Restore original filtering: only plot objects above the horizon unless ignore_horizon is True
         if alt_deg[i] <= 0 and not ignore_horizon:
             continue
-
-        parallactic_angle = api.calculate_parallactic_angle(
-            observation.place.lat, dec_deg[i], az_deg[i]
-        )
-        angle = api.calculate_ellipse_angle(
-            pos_angles[i],
-            parallactic_angle,
-            coordinate_system,
-            flipped_horizontally,
-            flipped_vertically,
-        )
 
         _plot_celestial_object(
             ax,
@@ -217,8 +221,8 @@ def _plot_messier_on_skymap(
             dec_deg=float(dec_deg[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=angle,
-            face_color=face_colors[i],
+            angle=float(angles[i]),
+            face_color=str(face_colors[i]),
             edge_color=edge_colors[i],
             is_polar=is_polar,
             ra_rad=float(ra_rad[i]),

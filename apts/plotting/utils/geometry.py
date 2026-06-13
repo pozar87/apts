@@ -1,6 +1,6 @@
 import numpy
 import pandas as pd
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
@@ -13,54 +13,74 @@ if TYPE_CHECKING:
 
 
 def calculate_parallactic_angle(
-    latitude_deg: float, declination: Any, azimuth: Any
-) -> float:
-    """Calculates the parallactic angle in degrees."""
+    latitude_deg: float,
+    declination: Union[float, numpy.ndarray, Angle],
+    azimuth: Union[float, numpy.ndarray, Angle],
+) -> Union[float, numpy.ndarray]:
+    """
+    Calculates the parallactic angle in degrees.
+    Optimization: supports vectorized NumPy arrays for declination and azimuth.
+    """
     dec_deg = (
-        declination.degrees if hasattr(declination, "degrees") else float(declination)
+        declination.degrees if hasattr(declination, "degrees") else numpy.asarray(declination)
     )
-    if abs(dec_deg) > 89.99:
-        return 0.0
+    # Mask for objects too close to poles to avoid division by zero/instability
+    mask = numpy.abs(dec_deg) <= 89.99
 
     lat_rad = numpy.deg2rad(latitude_deg)
     dec_rad = (
-        declination.radians if hasattr(declination, "radians") else numpy.deg2rad(dec_deg)
+        declination.radians
+        if hasattr(declination, "radians")
+        else numpy.deg2rad(numpy.asarray(declination))
     )
     az_rad = (
         azimuth.radians
         if hasattr(azimuth, "radians")
-        else numpy.deg2rad(azimuth)
+        else numpy.deg2rad(numpy.asarray(azimuth))
     )
 
-    sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
-    sin_q = numpy.clip(sin_q, -1.0, 1.0)
-    q_rad = numpy.arcsin(sin_q)
-    return numpy.rad2deg(q_rad)
+    q_rad = numpy.zeros_like(dec_rad)
+
+    # Calculate only for non-polar objects
+    if numpy.any(mask):
+        sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
+        sin_q = numpy.clip(sin_q, -1.0, 1.0)
+        q_rad = numpy.where(mask, numpy.arcsin(sin_q), 0.0)
+
+    res = numpy.rad2deg(q_rad)
+    return float(res) if numpy.isscalar(res) else res
 
 
 def calculate_ellipse_angle(
-    pos_angle: float,
-    parallactic_angle: float | Angle,
+    pos_angle: Union[float, numpy.ndarray],
+    parallactic_angle: Union[float, numpy.ndarray, Angle],
     coordinate_system: CoordinateSystem,
     flipped_horizontally: bool,
     flipped_vertically: bool,
-) -> float:
-    """Calculates the final rotation angle for a celestial object's ellipse."""
+) -> Union[float, numpy.ndarray]:
+    """
+    Calculates the final rotation angle for a celestial object's ellipse.
+    Optimization: supports vectorized NumPy arrays for pos_angle and parallactic_angle.
+    """
+    pos_angle_arr = numpy.asarray(pos_angle)
+
     if coordinate_system == CoordinateSystem.HORIZONTAL:
-        if hasattr(parallactic_angle, "degrees"):
-            angle = pos_angle - cast(Any, parallactic_angle).degrees
-        else:
-            angle = pos_angle - cast(float, parallactic_angle)
-        angle = -angle
+        p_angle_deg = (
+            parallactic_angle.degrees
+            if hasattr(parallactic_angle, "degrees")
+            else numpy.asarray(parallactic_angle)
+        )
+        angle = -(pos_angle_arr - p_angle_deg)
     else:  # EQUATORIAL
-        angle = -pos_angle
+        angle = -pos_angle_arr
 
     if flipped_horizontally:
         angle = -angle
     if flipped_vertically:
         angle = 180 - angle
 
-    return angle % 360
+    res = angle % 360
+    return float(res) if numpy.isscalar(res) else res
 
 
 def get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
