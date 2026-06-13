@@ -15,7 +15,7 @@ class TestTakahashiSpecs(unittest.TestCase):
         telescope = TakahashiTelescope.Takahashi_FSQ_106ED()
         self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 106)
         self.assertEqual(telescope.focal_length.to(get_unit_registry().mm).magnitude, 530)
-        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 6800)
+        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 7000)
         self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 0)
         self.assertEqual(telescope.focal_ratio().magnitude, 5.0)
 
