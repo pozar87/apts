@@ -21,16 +21,16 @@ class TakahashiTelescope(Telescope):
         },
         "Takahashi_FSQ_106ED": {
             "brand": "Takahashi",
-            "name": "FSQ-106ED",
+            "name": "FSQ-106EDX4",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 6800,
+            "optical_length": 178,  # Verified via Takahashi Europe (178mm metal back distance)
+            "mass": 7000,  # Verified via Takahashi Europe (7.0kg for EDX4 OTA)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M82",
+            "cside_thread": "M92",  # Verified via Takahashi Europe (Oversized focuser for EDX4)
             "cside_gender": "Male",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 106,
             "focal_length_mm": 530,
             "central_obstruction_mm": 0,
