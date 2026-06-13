@@ -21,7 +21,7 @@ class TestObservationTimeLimitLogic(unittest.TestCase):
         self.start = pd.Timestamp("2024-01-01 18:00:00", tz="UTC")
         self.stop = pd.Timestamp("2024-01-02 06:00:00", tz="UTC")
 
-        with patch("apts.observations.Observation._normalize_window", return_value=(self.start, self.stop)):
+        with patch("apts.observations.window.ObservationWindow._normalize_window", return_value=(self.start, self.stop)):
             self.obs = Observation(self.place, self.equipment, self.conditions)
             self.obs.start = self.start
             self.obs.stop = self.stop
