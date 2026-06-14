@@ -20,7 +20,7 @@ class TestFitsAnalyzer(unittest.TestCase):
         star = 1000 * np.exp(-((x - self.star_x)**2 + (y - self.star_y)**2) / (2 * sigma**2))
         self.data += star.astype(np.float32)
 
-    @patch("apts.utils.fits_analyzer.fits.open")
+    @patch("apts.utils.fits_analyzer.loader.fits.open")
     def test_load_fits(self, mock_fits_open):
         # Mock FITS structure
         mock_hdu = MagicMock()
@@ -33,7 +33,7 @@ class TestFitsAnalyzer(unittest.TestCase):
         np.testing.assert_array_equal(analyzer.data, self.data)
         self.assertEqual(analyzer.header["EXPTIME"], 30.0)
 
-    @patch("apts.utils.fits_analyzer.fits.open")
+    @patch("apts.utils.fits_analyzer.loader.fits.open")
     def test_load_fits_no_data(self, mock_fits_open):
         mock_hdu = MagicMock()
         mock_hdu.data = None
