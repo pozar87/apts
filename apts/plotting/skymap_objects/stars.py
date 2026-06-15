@@ -20,14 +20,16 @@ def _ensure_coordinate_columns(df: pd.DataFrame) -> pd.DataFrame:
     # RA handling
     if "ra_hours" not in df.columns and "RA" in df.columns:
         if hasattr(df["RA"].iloc[0], "magnitude"):  # type: ignore
-            df["ra_hours"] = df["RA"].apply(lambda x: getattr(x, "magnitude", x))  # type: ignore
+            # Optimization: list comprehension over .values is faster than .apply() for simple attribute access.
+            df["ra_hours"] = [getattr(x, "magnitude", x) for x in df["RA"].values]
         else:
             df["ra_hours"] = df["RA"]
 
     # Dec handling
     if "dec_degrees" not in df.columns and "Dec" in df.columns:
         if hasattr(df["Dec"].iloc[0], "magnitude"):  # type: ignore
-            df["dec_degrees"] = df["Dec"].apply(lambda x: getattr(x, "magnitude", x))  # type: ignore
+            # Optimization: list comprehension over .values is faster than .apply() for simple attribute access.
+            df["dec_degrees"] = [getattr(x, "magnitude", x) for x in df["Dec"].values]
         else:
             df["dec_degrees"] = df["Dec"]
 
@@ -37,9 +39,10 @@ def _ensure_coordinate_columns(df: pd.DataFrame) -> pd.DataFrame:
             df["magnitude"] = df["Magnitude_float"]
         elif "Magnitude" in df.columns:
             if hasattr(df["Magnitude"].iloc[0], "magnitude"):  # type: ignore
-                df["magnitude"] = df["Magnitude"].apply(  # type: ignore
-                    lambda x: getattr(x, "magnitude", x)
-                )
+                # Optimization: list comprehension over .values is faster than .apply() for simple attribute access.
+                df["magnitude"] = [
+                    getattr(x, "magnitude", x) for x in df["Magnitude"].values
+                ]
             else:
                 df["magnitude"] = df["Magnitude"]
 
