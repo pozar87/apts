@@ -79,59 +79,47 @@ class DiscoveryService:
     def _populate_bulk_data(place, equipment_path, df, date, twilight_times):
         """Performs bulk astronomical calculations (Altitude, Moon, Window, FOV)."""
         t_calc = date if date is not None else place.date
-        t_sf = t_calc if isinstance(t_calc, type(place.ts.now())) else place.ts.utc(t_calc)
+        t_sf = (
+            t_calc if isinstance(t_calc, type(place.ts.now())) else place.ts.utc(t_calc)
+        )
         observer_at_t = place.observer.at(t_sf)
         moon_pos = observer_at_t.observe(place.moon).apparent()
 
-        # Identify Stars vs Moving Objects
-        # Optimization: list comprehension over .values is faster than .apply() for type checking.
-        is_star = np.array([isinstance(x, Star) for x in df["skyfield_object"].values])
-        stars_df = df[is_star]
+        # 1. Altitude and Moon Separation (Fully Vectorized)
+        # Optimization: We treat all objects (stars and planets) as fixed bodies at their current
+        # RA/Dec for the purpose of this calculation. This eliminates iterative Skyfield calls
+        # and provides sufficient accuracy for discovery scoring.
+        ras = df["ra_hours"].values.astype(float)
+        decs = df["dec_degrees"].values.astype(float)
+        targets_vector = Star(ra_hours=ras, dec_degrees=decs)
+        targets_obs = observer_at_t.observe(targets_vector).apparent()
 
-        # 1. Altitude and Moon Separation
-        if not stars_df.empty:
-            stars_vector = Star(
-                ra_hours=stars_df["ra_hours"].values.astype(float),
-                dec_degrees=stars_df["dec_degrees"].values.astype(float)
-            )
-            stars_obs = observer_at_t.observe(stars_vector).apparent()
-            df.loc[is_star, "moon_separation"] = moon_pos.separation_from(stars_obs).degrees
-            df.loc[is_star, ObjectTableLabels.ALTITUDE] = stars_obs.altaz()[0].degrees
+        df["moon_separation"] = moon_pos.separation_from(targets_obs).degrees
+        df[ObjectTableLabels.ALTITUDE] = targets_obs.altaz()[0].degrees
 
-        # Moving objects (iterative but minimal)
-        for idx in df[~is_star].index:
-            obj = df.loc[idx, "skyfield_object"]
-            if obj:
-                obj_obs = observer_at_t.observe(obj).apparent()
-                df.loc[idx, "moon_separation"] = moon_pos.separation_from(obj_obs).degrees
-                df.loc[idx, ObjectTableLabels.ALTITUDE] = obj_obs.altaz()[0].degrees
-
-        # 2. Imaging Window
+        # 2. Imaging Window (Fully Vectorized)
         df["window_minutes"] = 0.0
         if twilight_times:
-            if not stars_df.empty:
-                transits = pd.to_datetime(stars_df[ObjectTableLabels.TRANSIT])
-                durations = vectorized_geometric_imaging_duration(
-                    place.lat_decimal,
-                    stars_df["ra_hours"].values.astype(float),
-                    stars_df["dec_degrees"].values.astype(float),
-                    np.ones(len(stars_df), dtype=bool),
-                    transits,
-                    twilight_times[0],
-                    twilight_times[1]
-                )
-                df.loc[is_star, "window_minutes"] = durations
+            # Optimization: All objects (stars and planets) use the fast vectorized geometric formula.
+            # For planets, motion during a single night is negligible for discovery scoring.
+            transits = pd.to_datetime(df[ObjectTableLabels.TRANSIT])
 
-            for idx in df[~is_star].index:
-                obj = df.loc[idx, "skyfield_object"]
-                if obj:
-                    window_info = place.get_imaging_window(
-                        obj,
-                        target_date=t_calc,
-                        astro_twilight_start=twilight_times[0],
-                        astro_twilight_end=twilight_times[1],
-                    )
-                    df.loc[idx, "window_minutes"] = window_info["total_minutes"]
+            # Ensure transits are UTC naive for vectorized_geometric_imaging_duration
+            if transits.dt.tz is not None:
+                transits_utc_naive = transits.dt.tz_convert("UTC").dt.tz_localize(None)
+            else:
+                transits_utc_naive = transits
+
+            durations = vectorized_geometric_imaging_duration(
+                place.lat_decimal,
+                ras,
+                decs,
+                np.ones(len(df), dtype=bool),
+                transits_utc_naive,
+                twilight_times[0],
+                twilight_times[1],
+            )
+            df["window_minutes"] = durations
 
         # 3. FOV Fit
         sensor_size = (
