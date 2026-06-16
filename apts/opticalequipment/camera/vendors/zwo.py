@@ -422,13 +422,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "mass": 60,
+            "full_well_e": 32000,
+            "height": 1216,
+            "mass": 140,  # Verified via official ZWO manual (0.14kg)
             "name": "ASI174MC",
             "optical_length": 6.5,
+            "pixel_size_um": 5.86,
+            "quantum_efficiency_pct": 77,
+            "read_noise_e": 3.5,
             "reversible": False,
+            "sensor_height_mm": 7.1,
+            "sensor_width_mm": 11.3,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Standard for uncooled ASI pancake cameras
             "type": "type_camera",
+            "width": 1936,
         },
         "ZWO_ASI_174MC_Mini": {
             "bf_role": "end",
