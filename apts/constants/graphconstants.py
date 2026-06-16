@@ -1,5 +1,6 @@
 from typing import Optional
 
+from functools import lru_cache
 from aenum import Enum, auto
 
 
@@ -202,12 +203,13 @@ def get_planet_color(
     return colors_dict.get(planet_name, default_color)
 
 
-def get_messier_color(
-    messier_type: str, dark_mode_enabled: bool, default_color: Optional[str] = None
-) -> str:
+@lru_cache(maxsize=128)
+def _get_messier_color_cached(
+    messier_type: str, dark_mode_enabled: bool, language: str
+) -> Optional[str]:
     """
-    Retrieves the specific color for a Messier object type based on the theme.
-    Handles translated messier_type by matching against translated technical names.
+    Internal helper to retrieve Messier color with caching.
+    Returns None if no specific match is found.
     """
     from apts.i18n import gettext_
 
@@ -216,23 +218,47 @@ def get_messier_color(
     else:
         colors_dict = GraphConstants.MESSIER_COLORS_LIGHT
 
-    if default_color is None:
-        default_color = colors_dict["Other"]
-
     # Iterate through technical names, translate them and check for match
     for tech_name, color in colors_dict.items():
+        if tech_name == "Other":
+            continue
         if gettext_(tech_name) == messier_type:
             return color
 
-    # Special case for "Galaxy" and "Nebula" if they are part of the translated string
-    # but not an exact match (e.g. "Spiral Galaxy" matching "Galaxy" if "Spiral Galaxy" was missing)
-    # However, we have specific entries for most types now.
+    # Special case for "Galaxy" and "Nebula"
     if gettext_("Galaxy") in messier_type:
         return colors_dict["Galaxy"]
     if gettext_("Nebula") in messier_type:
         return colors_dict["Nebula"]
 
-    return default_color
+    return None
+
+
+def get_messier_color(
+    messier_type: str, dark_mode_enabled: bool, default_color: Optional[str] = None
+) -> str:
+    """
+    Retrieves the specific color for a Messier object type based on the theme.
+    Handles translated messier_type by matching against translated technical names.
+    Optimization: utilizes a cached helper to avoid redundant translation matching loops.
+    """
+    from apts.i18n import get_language
+
+    color = _get_messier_color_cached(
+        messier_type, dark_mode_enabled, get_language()
+    )
+
+    if color is not None:
+        return color
+
+    if default_color is not None:
+        return default_color
+
+    return (
+        GraphConstants.MESSIER_COLORS_DARK["Other"]
+        if dark_mode_enabled
+        else GraphConstants.MESSIER_COLORS_LIGHT["Other"]
+    )
 
 
 # Translatable object types for Babel

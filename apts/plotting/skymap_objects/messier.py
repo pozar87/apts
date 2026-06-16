@@ -6,7 +6,7 @@ from skyfield.api import Star
 
 from apts.constants.graphconstants import get_messier_color
 from apts.constants.plot import CoordinateSystem
-from apts.i18n import gettext_
+from apts.i18n import bulk_gettext, gettext_
 
 from ...constants import ObjectTableLabels
 from .utils import _plot_celestial_object
@@ -140,7 +140,8 @@ def _get_messier_visual_properties(plot_df: pd.DataFrame):
     effective_dark_mode = api.get_dark_mode()
     # Cast potential Series outputs from .get() to satisfy Pyright
     types_raw = cast(Any, plot_df).get("Type", ["Other"] * len(plot_df))
-    types = [gettext_(t) for t in cast(list, types_raw)]
+    # Optimization: use bulk_gettext to avoid redundant translation calls for ~15 unique types.
+    types = cast(list, bulk_gettext(types_raw))
     edge_colors = [get_messier_color(t, effective_dark_mode) for t in types]
     magnitudes_raw = cast(Any, plot_df).get("Magnitude", [10.0] * len(plot_df))
     magnitudes = numpy.array(
