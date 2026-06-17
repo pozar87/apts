@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import requests
 
@@ -22,19 +23,26 @@ def _get_aurora_df(lat, lon, local_timezone) -> pd.DataFrame:
     try:
         with get_session().get(url, timeout=10) as data:
             data.raise_for_status()
-            json_data = json.loads(data.text)
+            # Optimization: use .json() which might be cached/optimized in some session handlers
+            json_data = data.json()
             if "coordinates" not in json_data:
                 logger.error(
                     f"KeyError 'coordinates' in aurora data. Full response: {json_data}"
                 )
                 return pd.DataFrame(columns=pd.Index(["time", "aurora"]))
 
-            df = pd.DataFrame(
-                json_data["coordinates"], columns=pd.Index(["lon", "lat", "aurora"])
-            )
-            df["dist"] = (df["lat"] - lat) ** 2 + (df["lon"] - lon) ** 2
-            closest = df.loc[df["dist"].idxmin()]
-            aurora_val = closest["aurora"]
+            # Optimization: Use NumPy for the 64,800-point coordinate search.
+            # Creating a full DataFrame for this temporary calculation is expensive.
+            coords = np.array(json_data["coordinates"])
+            # coords is [lon, lat, aurora]
+            lons = coords[:, 0]
+            lats = coords[:, 1]
+            vals = coords[:, 2]
+
+            # Simple Euclidean distance squared (same as previous logic)
+            dists_sq = (lats - lat) ** 2 + (lons - lon) ** 2
+            closest_idx = np.argmin(dists_sq)
+            aurora_val = vals[closest_idx]
 
             aurora_df = pd.DataFrame(
                 [[json_data["Forecast Time"], aurora_val]],
@@ -114,12 +122,8 @@ class WeatherProvider(ABC):
         """
         aurora_df = _get_aurora_df(self.lat, self.lon, self.local_timezone)
         if not aurora_df.empty:
-            aurora_df["time"] = aurora_df["time"].astype(df["time"].dtype)
-            df = pd.merge_asof(
-                df.sort_values("time"),
-                aurora_df.sort_values("time"),
-                on="time",
-                direction="nearest",
-            )
-            df["aurora"] = df["aurora"].ffill().bfill()
+            # Optimization: Since aurora_df currently only contains a single global
+            # forecast point, we can avoid the expensive merge_asof and sorting.
+            # This provides a significant speedup for large weather DataFrames.
+            df["aurora"] = aurora_df["aurora"].iloc[0]
         return df
