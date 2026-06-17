@@ -459,7 +459,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 750,
-            "mass": 5900,
+            "mass": 4930,  # Verified via Sky-Watcher Global and Wex Photo Video (4.93 kg OTA weight)
             "name": "Explorer 150P",
             "optical_length": 0,
             "reversible": False,
