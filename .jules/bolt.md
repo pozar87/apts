@@ -117,3 +117,11 @@
 ## 2025-07-03 - [Fast-Path Altitude Gating]
 **Learning:** When performing visibility gating on a time grid, calculating apparent coordinates (with refraction) for every point is extremely expensive ($O(N \times M)$). For the primary use case of a simple altitude threshold (no complex horizon or azimuth constraints), converting the threshold into the same space as pre-calculated geometric values (like `sin_alt`) allows for direct array comparison. This bypasses thousands of calls to `arcsin`, `arctan2`, and iterative refraction formulas.
 **Action:** Always implement a fast-path for simple geometric thresholds before falling back to full coordinate transformations. Convert the threshold once (using first-order refraction approximation if needed) instead of transforming the entire data grid.
+
+## 2025-05-26 - [Vectorized Aurora Coordinate Search]
+**Learning:** Performing a 2D nearest-neighbor search on a 64,800-point grid (1-degree resolution) using Pandas DataFrame instantiation and Series-based distance calculation is significantly slower than using raw NumPy arrays. Additionally, for a single-point global forecast, using  is extremely inefficient compared to direct scalar assignment.
+**Action:** Use NumPy broadcasting and `np.argmin` for large coordinate searches. Prefer scalar assignment over complex merges when the enrichment data consists of a single value applied to all time points.
+
+## 2025-05-26 - [Vectorized Aurora Coordinate Search]
+**Learning:** Performing a 2D nearest-neighbor search on a 64,800-point grid (1-degree resolution) using Pandas DataFrame instantiation and Series-based distance calculation is significantly slower than using raw NumPy arrays. Additionally, for a single-point global forecast, using `pd.merge_asof` is extremely inefficient compared to direct scalar assignment.
+**Action:** Use NumPy broadcasting and `np.argmin` for large coordinate searches. Prefer scalar assignment over complex merges when the enrichment data consists of a single value applied to all time points.
