@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from types import SimpleNamespace
 from skyfield.data import mpc
 from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN_KM3_S2
@@ -83,9 +84,11 @@ def get_skyfield_obj(planet_name: str):
         raise RuntimeError(f"Failed to create Skyfield object for '{planet_name}': {e}")
 
 
+@lru_cache(maxsize=8)
 def get_reverse_translated_planet_names(language: str) -> dict:
     """
     Returns a dictionary mapping translated planet names back to their English originals.
+    Optimization: cached to avoid repeatedly building the same dictionary and calling gettext_ repeatedly.
     """
     reverse_map = {}
     with language_context(language):
