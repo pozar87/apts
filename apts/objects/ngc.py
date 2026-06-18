@@ -94,10 +94,12 @@ class NGC(Objects):
 
             # Identify which visible objects still need Quantity restoration in master catalog
             # We use Magnitude_float comparison as Magnitude column might contain floats
-            restoration_mask = visible["Magnitude"].apply(
-                lambda x: not hasattr(x, "magnitude")
+            # Optimization: list comprehension over .values is faster than .apply()
+            restoration_mask = pd.Series(
+                [not hasattr(x, "magnitude") for x in visible["Magnitude"].values],
+                index=visible.index,
             )
-            if bool(restoration_mask.any()):
+            if restoration_mask.any():
                 indices_to_restore = visible.index[restoration_mask]
 
                 # Magnitude restoration
