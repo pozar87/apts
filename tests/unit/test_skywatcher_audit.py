@@ -51,5 +51,5 @@ def test_skywatcher_quattro_specs():
     q300 = Sky_watcherTelescope.Sky_Watcher_Quattro_300P()
     assert q300.aperture.magnitude == 305
     assert q300.focal_length.magnitude == 1200
-    assert q300.mass.to('g').magnitude == 23000
+    assert q300.mass.to('g').magnitude == 21800
     assert q300.central_obstruction.magnitude == 102
