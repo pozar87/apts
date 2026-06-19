@@ -763,7 +763,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Male",
             "cside_thread": "M48",
             "focal_length_mm": 1200,
-            "mass": 21800,  # Verified via Altair Astro (21.8 kg Tube Weight - https://altairastro.com/sky-watcher-quattro-300p-512-p.asp)
+            "mass": 21800,  # Verified via Altair Astro technical specs (21.8 kg Tube Weight - https://altairastro.com/sky-watcher-quattro-300p-512-p.asp)
             "name": "Quattro 300P",
             "optical_length": 0,
             "reversible": False,
