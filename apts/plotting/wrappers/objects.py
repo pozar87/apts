@@ -56,3 +56,13 @@ def plot_sun_and_moon_path(
     return base_plot_sun_and_moon_path(
         observation, dark_mode_override=dark_mode_override, **args
     )
+
+
+def plot_jovian_moons(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
+    from ..jovian_moons import generate_plot_jovian_moons
+
+    return generate_plot_jovian_moons(
+        observation, dark_mode_override=dark_mode_override, **args
+    )
