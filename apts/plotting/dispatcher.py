@@ -12,6 +12,7 @@ from .wrappers.objects import (
     plot_visible_planets,
     plot_visible_planets_svg,
     plot_sun_and_moon_path,
+    plot_jovian_moons,
 )
 from .wrappers.weather import (
     plot_weather,
@@ -125,6 +126,9 @@ class Plotter:
     def sun_and_moon_path(self, **args):
         return plot_sun_and_moon_path(self.observation, **args)
 
+    def jovian_moons(self, **args):
+        return plot_jovian_moons(self.observation, **args)
+
 
 __all__ = [
     "Plotter",
@@ -150,4 +154,5 @@ __all__ = [
     "plot_visible_planets",
     "plot_visible_planets_svg",
     "plot_sun_and_moon_path",
+    "plot_jovian_moons",
 ]

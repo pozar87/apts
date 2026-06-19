@@ -65,6 +65,18 @@ class CelestialPlottingMixIn:
                 dark_mode_override=dark_mode_override, **args
             )
 
+    def plot_jovian_moons(
+        self,
+        plot_date: Optional[datetime] = None,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.jovian_moons(
+                plot_date=plot_date, dark_mode_override=dark_mode_override, **args
+            )
+
     def plot_skymap(
         self,
         target_name: Optional[str] = None,
