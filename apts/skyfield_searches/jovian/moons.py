@@ -61,6 +61,8 @@ class JovianMoonState:
 
         res = 0
         for i, moon_id in enumerate(self.ctx.moon_map.keys()):
+            if moon_id not in self.ctx.moon_objs:
+                continue
             m_obs = self.ctx.get_moon_obs(t, moon_id)
             p_m = m_obs.position.km - j_obs.position.km
 
@@ -111,6 +113,8 @@ class JovianMoonState:
 
         mask_acc = np.zeros(len(t_eval), dtype=int)
         for i, moon_id in enumerate(self.ctx.moon_map.keys()):
+            if moon_id not in self.ctx.moon_objs:
+                continue
             m_obs = self.ctx.get_moon_obs(t_eval, moon_id)
             p_m = m_obs.position.km - j_obs.position.km
 
