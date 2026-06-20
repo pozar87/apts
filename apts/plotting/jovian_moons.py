@@ -115,6 +115,8 @@ def generate_plot_jovian_moons(
     cos_j_dec = np.cos(j_dec.radians)
 
     for i, (moon_id, moon_name) in enumerate(ctx.moon_map.items()):
+        if moon_id not in ctx.moon_objs:
+            continue
         m_obs = observation.place.observer.at(t).observe(ctx.moon_objs[moon_id]).apparent()
         m_ra, m_dec, m_dist = m_obs.radec()
 

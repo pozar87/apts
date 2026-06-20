@@ -28,10 +28,15 @@ def _get_jovian_moon_objects(eph):
         except KeyError:
             # Fallback for jup300.bsp IDs (non-standard mapping)
             jup300_ids = {501: 55061, 502: 55062, 503: 55063, 504: 55064}
-            logger.warning(
-                f"ID {moon_id} not found in Jovian ephemeris. Falling back to non-standard ID {jup300_ids[moon_id]}."
-            )
-            moon_objs[moon_id] = eph[jup300_ids[moon_id]]
+            try:
+                moon_objs[moon_id] = eph[jup300_ids[moon_id]]
+                logger.warning(
+                    f"ID {moon_id} not found in Jovian ephemeris. Falling back to non-standard ID {jup300_ids[moon_id]}."
+                )
+            except KeyError:
+                logger.error(
+                    f"Neither ID {moon_id} nor fallback {jup300_ids[moon_id]} found in ephemeris. Jovian moon plotting will be skipped for this moon."
+                )
     return moon_map, moon_objs
 
 

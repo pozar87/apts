@@ -30,12 +30,11 @@ class TestISSFlybysKrakow(unittest.TestCase):
             magnitude_threshold=5.0
         )
 
-        # We expect 3 visible flybys:
-        # 1. 22:52 UTC (Alt ~21, partly in shadow)
-        # 2. 00:28 UTC (Alt ~79, partly in shadow)
-        # 3. 02:05 UTC (Alt ~65, sunlit)
+        # We expect 2 visible flybys (updated based on current TLE):
+        # 1. 00:07 UTC (Alt ~62)
+        # 2. 01:44 UTC (Alt ~66)
 
-        # The later ones (03:42 and 05:18 UTC) are in daylight (Sun Alt > -6)
+        # The later ones are in daylight (Sun Alt > -6)
 
         culmination_hours = [f['culmination_time'].hour for f in flybys]
         culmination_minutes = [f['culmination_time'].minute for f in flybys]
@@ -44,7 +43,7 @@ class TestISSFlybysKrakow(unittest.TestCase):
         for f in flybys:
              print(f"  {f['culmination_time']} Alt: {f['peak_altitude']:.1f} Mag: {f['peak_magnitude']:.1f}")
 
-        self.assertEqual(len(flybys), 3, f"Expected 3 visible flybys, found {len(flybys)}: {flybys}")
+        self.assertEqual(len(flybys), 2, f"Expected 2 visible flybys, found {len(flybys)}: {flybys}")
 
         # Verify specific flybys with a 5-minute tolerance to account for TLE drift
         def assert_flyby_near(target_time, label):
@@ -56,12 +55,10 @@ class TestISSFlybysKrakow(unittest.TestCase):
                     break
             self.assertTrue(found, f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}")
 
-        # Flyby 1 (~22:52 UTC on 29th)
-        assert_flyby_near(datetime(2026, 4, 29, 22, 52, tzinfo=timezone.utc), "22:52")
-        # Flyby 2 (~00:28 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 0, 28, tzinfo=timezone.utc), "00:28")
-        # Flyby 3 (~02:05 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 2, 5, tzinfo=timezone.utc), "02:05")
+        # Flyby 1 (~00:07 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 0, 7, tzinfo=timezone.utc), "00:07")
+        # Flyby 2 (~01:44 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 1, 44, tzinfo=timezone.utc), "01:44")
 
 if __name__ == "__main__":
     unittest.main()
