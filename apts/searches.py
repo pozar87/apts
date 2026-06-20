@@ -162,7 +162,6 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = eph["moon"]
-    earth = eph["earth"]
 
     # Optimization: Hourly check, vectorized over times
     num_hours = int((t1 - t0) * 24)
@@ -170,10 +169,9 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
         num_hours = 1
     times = ts.linspace(t0, t1, num_hours)
 
-    # Pre-calculate Moon positions once for all stars
-    mpos = earth.at(times).observe(moon)
-
-    events = []
+    # Pre-calculate Moon positions once for all stars.
+    # BUGFIX: Use topocentric observer instead of geocentric earth to account for parallax!
+    mpos = observer.at(times).observe(moon)
 
     # Optimization: Use pre-calculated float columns if available to avoid Pint overhead
     if "ra_hours" in bright_stars.columns and "dec_degrees" in bright_stars.columns:
@@ -181,19 +179,20 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
         dec_degrees = bright_stars["dec_degrees"].values
         names = bright_stars["Name"].values
     else:
-        # Fallback to slower extraction if columns are missing
-        ra_hours = [
-            star_data["RA"].to("hour").magnitude
-            if hasattr(star_data["RA"], "to")
-            else star_data["RA"]
-            for _, star_data in bright_stars.iterrows()
-        ]
-        dec_degrees = [
-            star_data["Dec"].to("degree").magnitude
-            if hasattr(star_data["Dec"], "to")
-            else star_data["Dec"]
-            for _, star_data in bright_stars.iterrows()
-        ]
+        # Fallback to faster list comprehension if columns are missing
+        # Optimization: avoids slow row-wise .iterrows()
+        ra_hours = np.array(
+            [
+                x.to("hour").magnitude if hasattr(x, "to") else x
+                for x in bright_stars["RA"].values
+            ]
+        )
+        dec_degrees = np.array(
+            [
+                x.to("degree").magnitude if hasattr(x, "to") else x
+                for x in bright_stars["Dec"].values
+            ]
+        )
         names = bright_stars["Name"].values
 
     from skyfield.api import Star
@@ -201,33 +200,46 @@ def find_lunar_occultations(observer, eph, bright_stars, start_date, end_date):
     # Optimization: Filter stars by ecliptic latitude to prune candidates.
     # The Moon stays within ~5.3 degrees of the ecliptic.
     stars_vector = Star(ra_hours=ra_hours, dec_degrees=dec_degrees)
-    # Observe all stars at t0 for filtering
+    # Observe all stars at t0 for filtering (geocentric is fine for pruning)
+    earth = eph["earth"]
     spos_at_t0 = earth.at(t0).observe(stars_vector)
     lats, _, _ = spos_at_t0.ecliptic_latlon()
     # Using 10 degree margin for safety
     mask = np.abs(lats.degrees) < 10.0
 
-    indices_to_check = np.where(mask)[0]
+    if not np.any(mask):
+        return []
 
-    for idx in indices_to_check:
-        star = Star(ra_hours=ra_hours[idx], dec_degrees=dec_degrees[idx])
-        name = names[idx]
+    # Optimization: Full vectorization across ALL stars and times!
+    # Instead of an O(N) star loop with O(M) time vectorization, we perform
+    # a single (N_active x M) separation calculation using matrix dot products.
+    # Accuracy: Since stars are fixed, we use their unit vectors at t0.
+    active_indices = np.where(mask)[0]
+    active_names = names[active_indices]
 
-        # Observe star at all times (vectorized over times)
-        spos = earth.at(times).observe(star)
+    # Get Moon unit vectors (3, M)
+    m_vec = mpos.position.au
+    m_unit = m_vec / np.linalg.norm(m_vec, axis=0)
 
-        # Vectorized separation calculation
-        seps = mpos.separation_from(spos).degrees
+    # Get Star unit vectors (3, N_active)
+    s_vec = spos_at_t0.position.au[:, mask]
+    s_unit = s_vec / np.linalg.norm(s_vec, axis=0)
 
-        # Find indices where separation < 0.5 degrees
-        occ_indices = np.where(seps < 0.5)[0]
+    # Matrix multiplication for all-to-all dot products (M x N_active)
+    # Dot product of unit vectors = cosine of separation angle
+    dot = np.dot(m_unit.T, s_unit)
+    seps_deg = np.degrees(np.arccos(np.clip(dot, -1.0, 1.0)))
 
-        for occ_idx in occ_indices:
-            events.append(
-                {
-                    "date": times[occ_idx].utc_datetime(),
-                    "event": f"Moon occults {name}",
-                }
-            )
+    # Find indices where separation < 0.5 degrees
+    time_idxs, star_idxs = np.where(seps_deg < 0.5)
+
+    events = []
+    for t_idx, s_idx in zip(time_idxs, star_idxs):
+        events.append(
+            {
+                "date": times[t_idx].utc_datetime(),
+                "event": f"Moon occults {active_names[s_idx]}",
+            }
+        )
 
     return events
