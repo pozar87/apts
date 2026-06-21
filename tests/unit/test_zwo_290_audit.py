@@ -28,5 +28,30 @@ class TestZwo290Audit(unittest.TestCase):
         self.assertEqual(cam.read_noise, 1.0)
         self.assertEqual(cam.quantum_efficiency, 80)
 
+    def test_asi290mm_audited_specs(self):
+        """
+        Verify the audited specifications for ZWO ASI290MM (uncooled).
+        Reference: https://all-startelescope.com/products/zwo-asi290mm-usb3-0-mono-asi290mm
+        """
+        cam = ZwoCamera.ZWO_ASI_290MM()
+
+        # Physical & Connection
+        self.assertEqual(cam.vendor, "ZWO ASI290MM")
+        self.assertEqual(cam.mass.to("gram").magnitude, 120)
+        self.assertEqual(cam.connection_type, ConnectionType.CS)
+        self.assertEqual(cam.optical_length.to("mm").magnitude, 12.5)
+
+        # Sensor Dimensions & Resolution
+        self.assertEqual(cam.sensor_width.to("mm").magnitude, 5.6)
+        self.assertEqual(cam.sensor_height.to("mm").magnitude, 3.2)
+        self.assertEqual(cam.width, 1936)
+        self.assertEqual(cam.height, 1096)
+
+        # Sensor Performance
+        self.assertEqual(cam.pixel_size().to("micrometer").magnitude, 2.9)
+        self.assertEqual(cam.full_well, 14600)
+        self.assertEqual(cam.read_noise, 1.0)
+        self.assertEqual(cam.quantum_efficiency, 80)
+
 if __name__ == '__main__':
     unittest.main()
