@@ -29,6 +29,7 @@ class NGC(Objects):
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
+        exclude_messier=True,
         **kwargs,
     ) -> pd.DataFrame:
         # Override get_visible to lazily restore skyfield objects BEFORE
@@ -56,6 +57,9 @@ class NGC(Objects):
         )
 
         candidate_mask = self.objects["Magnitude_float"] < max_mag
+
+        if exclude_messier and "M" in self.objects.columns:
+            candidate_mask &= self.objects["M"].isna()
 
         # 2. Restore skyfield_objects for candidates only
         if "skyfield_object" not in self.objects.columns:

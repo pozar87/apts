@@ -33,6 +33,7 @@ class HtmlExportMixIn:
         def get_hourly_weather_analysis(self, language: Optional[str] = None) -> List[dict]: ...
         def get_visible_planets(self, language: Optional[str] = None) -> pd.DataFrame: ...
         def get_visible_messier(self, language: Optional[str] = None) -> pd.DataFrame: ...
+        def get_visible_ngc(self, language: Optional[str] = None) -> pd.DataFrame: ...
 
     def to_html(
         self,
@@ -99,6 +100,7 @@ class HtmlExportMixIn:
 
         visible_planets_df = self.get_visible_planets(language=language)
         messier_df = self.get_visible_messier(language=language)
+        ngc_df = self.get_visible_ngc(language=language)
 
         return {
             "title": "APTS",
@@ -106,10 +108,23 @@ class HtmlExportMixIn:
             "stop": Utils.format_date(self.stop),
             "planets_count": len(visible_planets_df),
             "messier_count": len(messier_df),
+            "ngc_count": len(ngc_df),
             "planets_table": visible_planets_df.drop(columns=["TechnicalName"]).to_html()
             if "TechnicalName" in visible_planets_df.columns
             else visible_planets_df.to_html(),
             "messier_table": messier_df.to_html(),
+            "ngc_table": ngc_df.drop(
+                columns=[
+                    "ra_hours",
+                    "dec_degrees",
+                    "skyfield_object",
+                    "NGC_norm",
+                    "IC_norm",
+                    "Name_norm",
+                    "Magnitude_float",
+                ],
+                errors="ignore",
+            ).to_html(),
             "equipment_table": self.equipment.data().to_html(),
             "place_name": html.escape(self.place.name),
             "lat": np.rad2deg(self.place.lat),

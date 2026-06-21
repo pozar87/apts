@@ -45,6 +45,15 @@ class CelestialPlottingMixIn:
         with language_context(language):
             return self.plot.messier(dark_mode_override=dark_mode_override, **args)
 
+    def plot_ngc(
+        self,
+        dark_mode_override: Optional[bool] = None,
+        language: Optional[str] = None,
+        **args,
+    ):
+        with language_context(language):
+            return self.plot.ngc(dark_mode_override=dark_mode_override, **args)
+
     def plot_planets(
         self,
         dark_mode_override: Optional[bool] = None,
