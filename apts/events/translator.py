@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, cast
+from typing import Any, Dict, Iterable, Tuple, cast
 
 import pandas as pd
 
@@ -11,9 +11,10 @@ def _get_unique_values(series: pd.Series) -> Iterable:
         return series.unique()
     except TypeError:
         # Fallback for columns containing unhashable types (e.g., lists)
+        # Optimization: use .values for faster iteration
         unique_values = []
         seen = set()
-        for item in series:
+        for item in series.values:
             h_item = tuple(item) if isinstance(item, list) else item
             if h_item not in seen:
                 seen.add(h_item)
@@ -21,37 +22,43 @@ def _get_unique_values(series: pd.Series) -> Iterable:
         return unique_values
 
 
-def _build_translation_map(unique_values: Iterable) -> Dict[Any, Any]:
-    """Builds a mapping from original values to translated ones."""
+def _build_translation_map(unique_values: Iterable) -> Tuple[Dict[Any, Any], bool]:
+    """
+    Builds a mapping from original values to translated ones.
+    Returns the map and a boolean indicating if it contains list-based keys.
+    """
     translation_map = {}
+    has_list = False
     for val in unique_values:
         if isinstance(val, list):
             translation_map[tuple(val)] = [gettext_(item) for item in val]
+            has_list = True
         elif isinstance(val, str):
             translation_map[val] = gettext_(val)
         else:
             translation_map[val] = val
-    return translation_map
+    return translation_map, has_list
 
 
-def _apply_translation(series: pd.Series, translation_map: Dict) -> pd.Series:
+def _apply_translation(
+    series: pd.Series, translation_map: Dict, has_list: bool
+) -> pd.Series:
     """Applies the translation map to a series."""
-    # Check if we have any list keys in the map
-    has_list = any(isinstance(k, tuple) for k in translation_map.keys())
-
     if has_list:
         # Lists are not hashable, so we use tuples for the mapping but still
         # need to handle input list types correctly.
-        # Optimization: for lists, we still use apply as they are not hashable for map.
-        return cast(
-            pd.Series,
-            series.apply(
-                lambda x: (
+        # Optimization: replaces slow pd.Series.apply() with a list comprehension
+        # over .values to avoid Pandas overhead in tight loops.
+        return pd.Series(
+            [
+                (
                     translation_map[tuple(x)]
                     if isinstance(x, list)
                     else translation_map.get(x, x)
                 )
-            ),
+                for x in series.values
+            ],
+            index=series.index,
         )
     else:
         # Optimization: use vectorized map() + fillna() for significantly faster translation.
@@ -86,7 +93,7 @@ def translate_events(df: pd.DataFrame) -> pd.DataFrame:
         if col in df.columns:
             col_series = cast(pd.Series, df[col])
             unique_values = _get_unique_values(col_series)
-            translation_map = _build_translation_map(unique_values)
-            df[col] = _apply_translation(col_series, translation_map)
+            translation_map, has_list = _build_translation_map(unique_values)
+            df[col] = _apply_translation(col_series, translation_map, has_list)
 
     return df
