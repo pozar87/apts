@@ -103,14 +103,29 @@ class CatalogMixIn:
                 ).astype("string")
             return visible
 
-    def get_visible_ngc(self, **args) -> pd.DataFrame:
-        return self.local_ngc.get_visible(
-            self.conditions,
-            self.start,
-            self.time_limit,
-            limiting_magnitude=self.limiting_magnitude,
-            **args,
-        )
+    def get_visible_ngc(
+        self, language: Optional[str] = None, **args
+    ) -> pd.DataFrame:
+        with language_context(language):
+            from ..i18n import bulk_gettext
+
+            visible = self.local_ngc.get_visible(
+                self.conditions,
+                self.start,
+                self.time_limit,
+                limiting_magnitude=self.limiting_magnitude,
+                **args,
+            )
+            # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
+            if "Type" in visible.columns:
+                visible["Type"] = cast(pd.Series, bulk_gettext(visible["Type"])).astype(
+                    "string"
+                )
+            if "Constellation" in visible.columns:
+                visible["Constellation"] = cast(
+                    pd.Series, bulk_gettext(visible["Constellation"])
+                ).astype("string")
+            return visible
 
     def get_visible_planets(
         self, language: Optional[str] = None, **args

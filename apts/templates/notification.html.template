@@ -60,7 +60,7 @@
             </tr>
             <tr>
           <td>Number of visiable objects</td>
-          <td>Solar Objects $planets_count, Messier: $messier_count</td>
+          <td>Solar Objects $planets_count, Messier: $messier_count, NGC: $ngc_count</td>
         </tr>
       </table>
     </div>
@@ -75,6 +75,10 @@
     <div>
       <h2>Messier</h2>
       $messier_table
+    </div>
+    <div>
+      <h2>NGC/IC</h2>
+      $ngc_table
     </div>
     <div>
       <h2>Equipment</h2>

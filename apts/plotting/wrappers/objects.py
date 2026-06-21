@@ -13,6 +13,16 @@ def plot_messier(
     )
 
 
+def plot_ngc(
+    observation: "Observation", dark_mode_override: Optional[bool] = None, **args
+):
+    from ..altitude import generate_plot_ngc
+
+    return generate_plot_ngc(
+        observation, dark_mode_override=dark_mode_override, **args
+    )
+
+
 def plot_planets(
     observation: "Observation", dark_mode_override: Optional[bool] = None, **args
 ):

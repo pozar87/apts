@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 from .wrappers.objects import (
     plot_messier,
+    plot_ngc,
     plot_planets,
     plot_skymap,
     plot_visible_planets,
@@ -62,6 +63,9 @@ class Plotter:
 
     def messier(self, **args):
         return plot_messier(self.observation, **args)
+
+    def ngc(self, **args):
+        return plot_ngc(self.observation, **args)
 
     def planets(self, **args):
         return plot_planets(self.observation, **args)
@@ -134,6 +138,7 @@ __all__ = [
     "Plotter",
     "NullPlotter",
     "plot_messier",
+    "plot_ngc",
     "plot_planets",
     "plot_weather",
     "plot_clouds",
