@@ -14,6 +14,7 @@ from .equipment import (
     map_gender,
 )
 from .graph import find_all_paths
+from .math import find_extrema
 from .planetary import MINOR_PLANET_NAMES
 from .plot import PlotUtils
 from .text import extract_number, mask_secret, sanitize_header
@@ -26,6 +27,7 @@ __all__ = [
     "format_date",
     "date_format",
     "find_all_paths",
+    "find_extrema",
     "sanitize_header",
     "extract_number",
     "mask_secret",
@@ -53,6 +55,7 @@ def __getattr__(name: str) -> Any:
 
 class Utils:
     find_all_paths = staticmethod(find_all_paths)
+    find_extrema = staticmethod(find_extrema)
     decdeg2dms = staticmethod(decdeg2dms)
     dms2decdeg = staticmethod(dms2decdeg)
     format_date = staticmethod(format_date)
