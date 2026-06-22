@@ -1,16 +1,18 @@
-import pytest
 import datetime
 import unittest
-from unittest.mock import patch, MagicMock
-from apts.weather import Weather
-from apts.constants.graphconstants import get_plot_style
-from tests import setup_place
-from requests_mock import ANY
-from apts.observations import Observation
-from apts.conditions import Conditions
-import pytz
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
+import pytest
+import pytz
+from requests_mock import ANY
+
+from apts.conditions import Conditions
+from apts.constants.graphconstants import get_plot_style
 from apts.i18n import gettext_
+from apts.observations import Observation
+from apts.weather import Weather
+from tests import setup_place
 
 # MOCK DATA
 PIRATE_WEATHER_MOCK = {
@@ -44,7 +46,7 @@ VISUAL_CROSSING_MOCK = {
                     "datetimeEpoch": 1624000000,
                     "conditions": "Clear",
                     "preciptype": ["rain"],
-                    "precipprob": 0.2,
+                    "precipprob": 20,
                     "precip": 0.1,
                     "temp": 20,
                     "feelslike": 21,
@@ -143,6 +145,7 @@ def test_weather_providers(
     elif provider_name == "meteoblue":
         assert data["windSpeed"] == 5
         assert pd.isna(data["ozone"])
+
 
 @pytest.mark.parametrize(
     "provider_name, mock_response",
@@ -322,7 +325,8 @@ def test_weather_provider_key_error(requests_mock):
     mock_response_missing_key = {"wrong_key": {}}
 
     with patch(
-        "apts.weather.base.get_weather_settings", return_value=("pirateweather", "dummy_key")
+        "apts.weather.base.get_weather_settings",
+        return_value=("pirateweather", "dummy_key"),
     ):
         requests_mock.get(ANY, json=mock_response_missing_key)
         weather = Weather(lat=0, lon=0, local_timezone=pytz.utc)
