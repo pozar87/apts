@@ -34,6 +34,10 @@ def _filter_ngc_by_zoom(
         )
 
     if not cast(pd.DataFrame, visible_ngc).empty:
+        # Optimization: pre-calculate float coords if missing (e.g. in tests)
+        # using faster vectorized approach from catalogs.ngc
+        visible_ngc = _ensure_ngc_coordinates(visible_ngc)
+
         if zoom_deg is not None and target_object is not None:
             if hasattr(target_object, "ra"):
                 ra_center_hours = target_object.ra.hours
@@ -50,14 +54,6 @@ def _filter_ngc_by_zoom(
             ra_max = ra_center_hours + ra_margin_hours
             dec_min = dec_center_degrees - deg_margin
             dec_max = dec_center_degrees + deg_margin
-
-            # Optimization: use pre-calculated float coords from catalog
-            if (
-                "ra_hours" not in visible_ngc.columns
-                or "dec_degrees" not in visible_ngc.columns
-            ):
-                visible_ngc["ra_hours"] = visible_ngc["RA"].apply(_parse_ra)
-                visible_ngc["dec_degrees"] = visible_ngc["Dec"].apply(_parse_dec)
 
             ngc_in_box = visible_ngc[
                 (visible_ngc["ra_hours"] >= ra_min)
@@ -108,13 +104,30 @@ def _ensure_ngc_coordinates(visible_ngc: pd.DataFrame) -> pd.DataFrame:
             visible_ngc = visible_ngc.copy()
             if "RA_parsed" in visible_ngc.columns:
                 visible_ngc["ra_hours"] = visible_ngc["RA_parsed"]
-            else:
-                visible_ngc["ra_hours"] = visible_ngc["RA"].apply(_parse_ra)
+            elif "RA" in visible_ngc.columns:
+                # Optimization: use vectorized parsing instead of .apply()
+                ras_split = visible_ngc["RA"].str.split(":", expand=True)
+                for col in range(3):
+                    if col not in ras_split.columns:
+                        ras_split[col] = 0
+                h_ra = pd.to_numeric(ras_split[0], errors="coerce")
+                m_ra = pd.to_numeric(ras_split[1], errors="coerce").fillna(0)
+                s_ra = pd.to_numeric(ras_split[2], errors="coerce").fillna(0)
+                visible_ngc["ra_hours"] = h_ra + m_ra / 60.0 + s_ra / 3600.0
 
             if "Dec_parsed" in visible_ngc.columns:
                 visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
-            else:
-                visible_ngc["dec_degrees"] = visible_ngc["Dec"].apply(_parse_dec)
+            elif "Dec" in visible_ngc.columns:
+                # Optimization: use vectorized parsing instead of .apply()
+                decs_signs = visible_ngc["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
+                decs_split = visible_ngc["Dec"].str.lstrip("+-").str.split(":", expand=True)
+                for col in range(3):
+                    if col not in decs_split.columns:
+                        decs_split[col] = 0
+                h_dec = pd.to_numeric(decs_split[0], errors="coerce")
+                m_dec = pd.to_numeric(decs_split[1], errors="coerce").fillna(0)
+                s_dec = pd.to_numeric(decs_split[2], errors="coerce").fillna(0)
+                visible_ngc["dec_degrees"] = decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0)
     return visible_ngc
 
 
