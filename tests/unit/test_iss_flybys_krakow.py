@@ -1,8 +1,11 @@
 import unittest
 from datetime import datetime, timezone
+
 from skyfield.api import Topos
-from apts.skyfield_searches.satellites import find_iss_flybys
+
 from apts.cache import get_ephemeris
+from apts.skyfield_searches.satellites import find_iss_flybys
+
 
 class TestISSFlybysKrakow(unittest.TestCase):
     def test_krakow_flybys_april_2026(self):
@@ -11,7 +14,7 @@ class TestISSFlybysKrakow(unittest.TestCase):
         topos_observer = Topos(latitude_degrees=lat, longitude_degrees=lon)
 
         eph = get_ephemeris()
-        earth = eph['earth']
+        earth = eph["earth"]
         vector_observer = earth + topos_observer
 
         # User provided date: 30 April 2026.
@@ -27,38 +30,49 @@ class TestISSFlybysKrakow(unittest.TestCase):
             vector_observer,
             start_date,
             end_date,
-            magnitude_threshold=5.0
+            magnitude_threshold=5.0,
         )
 
-        # We expect 2 visible flybys (updated based on current TLE):
-        # 1. 00:07 UTC (Alt ~62)
-        # 2. 01:44 UTC (Alt ~66)
+        # We expect 3 visible flybys (updated based on current TLE):
+        # 1. 22:52 UTC on 29th (Alt ~21)
+        # 2. 00:28 UTC on 30th (Alt ~79)
+        # 3. 02:05 UTC on 30th (Alt ~65)
 
-        # The later ones are in daylight (Sun Alt > -6)
+        culmination_hours = [f["culmination_time"].hour for f in flybys]
+        culmination_minutes = [f["culmination_time"].minute for f in flybys]
 
-        culmination_hours = [f['culmination_time'].hour for f in flybys]
-        culmination_minutes = [f['culmination_time'].minute for f in flybys]
-
-        print(f"Found {len(flybys)} flybys at {culmination_hours}:{culmination_minutes}")
+        print(
+            f"Found {len(flybys)} flybys at {culmination_hours}:{culmination_minutes}"
+        )
         for f in flybys:
-             print(f"  {f['culmination_time']} Alt: {f['peak_altitude']:.1f} Mag: {f['peak_magnitude']:.1f}")
+            print(
+                f"  {f['culmination_time']} Alt: {f['peak_altitude']:.1f} Mag: {f['peak_magnitude']:.1f}"
+            )
 
-        self.assertEqual(len(flybys), 2, f"Expected 2 visible flybys, found {len(flybys)}: {flybys}")
+        self.assertEqual(
+            len(flybys), 3, f"Expected 3 visible flybys, found {len(flybys)}: {flybys}"
+        )
 
         # Verify specific flybys with a 5-minute tolerance to account for TLE drift
         def assert_flyby_near(target_time, label):
             found = False
             for f in flybys:
-                diff = abs((f['culmination_time'] - target_time).total_seconds())
-                if diff <= 300: # 5 minutes
+                diff = abs((f["culmination_time"] - target_time).total_seconds())
+                if diff <= 300:  # 5 minutes
                     found = True
                     break
-            self.assertTrue(found, f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}")
+            self.assertTrue(
+                found,
+                f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}",
+            )
 
-        # Flyby 1 (~00:07 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 0, 7, tzinfo=timezone.utc), "00:07")
-        # Flyby 2 (~01:44 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 1, 44, tzinfo=timezone.utc), "01:44")
+        # Flyby 1 (~22:52 UTC on 29th)
+        assert_flyby_near(datetime(2026, 4, 29, 22, 52, tzinfo=timezone.utc), "22:52")
+        # Flyby 2 (~00:28 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 0, 28, tzinfo=timezone.utc), "00:28")
+        # Flyby 3 (~02:05 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 2, 5, tzinfo=timezone.utc), "02:05")
+
 
 if __name__ == "__main__":
     unittest.main()
