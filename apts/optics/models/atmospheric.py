@@ -4,7 +4,7 @@ from ...units import get_unit_registry
 if TYPE_CHECKING:
     from pint import Quantity
 
-from .. import calculations as optics_utils
+from ..calculations import atmospheric as optics_utils
 from ..utils import OpticsUtils
 
 
