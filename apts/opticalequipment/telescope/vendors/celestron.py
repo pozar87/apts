@@ -448,7 +448,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 203.2,
             "focal_length_mm": 2032,
-            "central_obstruction_mm": 69,
+            "central_obstruction_mm": 64, # Verified via official Celestron documentation (64mm / 31% obstruction) - https://www.celestron.com/products/edgehd-8-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C8_EdgeHD_OTA": {
             "brand": "Celestron",
@@ -464,7 +464,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 203.2,
             "focal_length_mm": 2032,
-            "central_obstruction_mm": 69,
+            "central_obstruction_mm": 64, # Verified via official Celestron documentation (64mm / 31% obstruction) - https://www.celestron.com/products/edgehd-8-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C8_OTA": {
             "brand": "Celestron",
