@@ -2,7 +2,7 @@ import math
 from typing import Optional, TYPE_CHECKING
 import numpy
 from ...units import get_unit_registry
-from .. import calculations as optics_utils
+from ..calculations import photometry as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity

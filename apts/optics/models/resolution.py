@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 from ...constants import astronomy
 from ...units import get_unit_registry
-from .. import calculations as optics_utils
+from ..calculations import resolution as optics_utils
 
 
 class ResolutionMixIn:
