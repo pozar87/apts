@@ -1,6 +1,6 @@
 import numpy
 import pandas as pd
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Union
 from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem

@@ -1,5 +1,3 @@
-import networkx as nx
-
 from ...config import get_dark_mode as get_dark_mode
 from .base import BaseEquipmentPlottingMixIn as BaseEquipmentPlottingMixIn
 from .graph import GraphEquipmentPlottingMixIn as GraphEquipmentPlottingMixIn

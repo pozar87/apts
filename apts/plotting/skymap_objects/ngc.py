@@ -7,7 +7,7 @@ from skyfield.api import Star
 from apts.constants.plot import CoordinateSystem
 
 from ...constants import ObjectTableLabels
-from .utils import _parse_dec, _parse_ra, _plot_celestial_object
+from .utils import _plot_celestial_object
 
 if TYPE_CHECKING:
     from apts.observations import Observation

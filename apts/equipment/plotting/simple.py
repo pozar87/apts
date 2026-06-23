@@ -10,7 +10,7 @@ from ...utils import decdeg2dms, dms2decdeg
 from .base import BaseEquipmentPlottingMixIn
 
 if TYPE_CHECKING:
-    import pandas as pd
+    pass
 
 
 class SimpleEquipmentPlottingMixIn(BaseEquipmentPlottingMixIn):

@@ -14,7 +14,6 @@ from apts.constants.graphconstants import get_planet_color, get_plot_style
 from apts.i18n import gettext_
 from apts.skyfield_searches.jovian.moons import JovianMoonState
 from apts.skyfield_searches.jovian.utils import JovianSearchContext
-from apts.utils import planetary
 
 if TYPE_CHECKING:
     from ..observations import Observation
@@ -138,7 +137,7 @@ def generate_plot_jovian_moons(
         # Check if moon is in front (Transit)
         is_transit = bool(moon_mask & 1)
         # Check if shadow is on Jupiter
-        is_shadow = bool(moon_mask & 4)
+        # is_shadow = bool(moon_mask & 4)
 
         if not is_behind:
             m_radius_arcsec = (

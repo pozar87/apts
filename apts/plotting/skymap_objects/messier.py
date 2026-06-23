@@ -6,7 +6,7 @@ from skyfield.api import Star
 
 from apts.constants.graphconstants import get_messier_color
 from apts.constants.plot import CoordinateSystem
-from apts.i18n import bulk_gettext, gettext_
+from apts.i18n import bulk_gettext
 
 from ...constants import ObjectTableLabels
 from .utils import _plot_celestial_object
