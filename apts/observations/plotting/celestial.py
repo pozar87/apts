@@ -78,12 +78,32 @@ class CelestialPlottingMixIn:
         self,
         plot_date: Optional[datetime] = None,
         dark_mode_override: Optional[bool] = None,
+        flip_horizontally: Optional[bool] = None,
+        flip_vertically: Optional[bool] = None,
         language: Optional[str] = None,
         **args,
     ):
+        """
+        Generates and displays a visualization of Jupiter and its Galilean moons.
+
+        Args:
+            plot_date (Optional[datetime]): The specific date and time for the visualization.
+            dark_mode_override (Optional[bool]): If set, overrides the system's dark mode setting.
+            flip_horizontally (Optional[bool]): If True, the plot's horizontal axis is inverted.
+            flip_vertically (Optional[bool]): If True, the plot's vertical axis is inverted.
+            language (Optional[str]): Language for translation.
+            **args: Additional keyword arguments to pass to the plotting function, including `equipment_id` and `zoom_arcmin`.
+
+        Returns:
+            A matplotlib Figure object.
+        """
         with language_context(language):
             return self.plot.jovian_moons(
-                plot_date=plot_date, dark_mode_override=dark_mode_override, **args
+                plot_date=plot_date,
+                dark_mode_override=dark_mode_override,
+                flip_horizontally=flip_horizontally,
+                flip_vertically=flip_vertically,
+                **args,
             )
 
     def plot_skymap(
