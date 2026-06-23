@@ -1,6 +1,5 @@
 import logging
 import math
-import numpy as np
 from ..fits_analyzer import FitsAnalyzer
 from . import tracking, geometry, calculations, plotting
 

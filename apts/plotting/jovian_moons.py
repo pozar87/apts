@@ -14,7 +14,6 @@ from apts.constants.graphconstants import get_planet_color, get_plot_style
 from apts.i18n import gettext_
 from apts.skyfield_searches.jovian.moons import JovianMoonState
 from apts.skyfield_searches.jovian.utils import JovianSearchContext
-from apts.utils import planetary
 
 if TYPE_CHECKING:
     from ..observations import Observation
@@ -138,7 +137,7 @@ def generate_plot_jovian_moons(
         # Check if moon is in front (Transit)
         is_transit = bool(moon_mask & 1)
         # Check if shadow is on Jupiter
-        is_shadow = bool(moon_mask & 4)
+        # is_shadow = bool(moon_mask & 4)
 
         if not is_behind:
             m_radius_arcsec = (
@@ -190,7 +189,13 @@ def generate_plot_jovian_moons(
     ax.set_xlabel(gettext_("Relative RA (arcsec)"), color=style["TEXT_COLOR"])
     ax.set_ylabel(gettext_("Relative Dec (arcsec)"), color=style["TEXT_COLOR"])
 
-    t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)
+    # t can be either a datetime (from observation.effective_date) or a Skyfield Time
+    from skyfield.api import Time as SkyfieldTime
+
+    if isinstance(t, SkyfieldTime):
+        t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)  # type: ignore[union-attr]
+    else:
+        t_dt = t.astimezone(observation.place.local_timezone)
     ax.set_title(
         gettext_("Jupiter and Galilean Moons ({date})").format(
             date=t_dt.strftime("%Y-%m-%d %H:%M %Z")

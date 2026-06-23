@@ -1,7 +1,6 @@
 from .loader import load_data, is_xisf, byte_unshuffle, load_xisf
 from .fitter import detect_stars, fit_stars, fit_one_star, gaussian_2d
 from .classification import build_surface, classify_backfocus
-from .constants import ANALYSIS_DEFAULTS
 
 
 class FitsAnalyzer:

@@ -6,7 +6,7 @@ from skyfield.api import Star
 
 from apts.constants.graphconstants import get_messier_color
 from apts.constants.plot import CoordinateSystem
-from apts.i18n import bulk_gettext, gettext_
+from apts.i18n import bulk_gettext
 
 from ...constants import ObjectTableLabels
 from .utils import _plot_celestial_object
@@ -222,7 +222,9 @@ def _plot_messier_on_skymap(
             dec_deg=float(dec_deg[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=float(angles[i]),
+            angle=float(angles[i])
+            if isinstance(angles, numpy.ndarray)
+            else float(angles),
             face_color=str(face_colors[i]),
             edge_color=edge_colors[i],
             is_polar=is_polar,

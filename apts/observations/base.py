@@ -1,11 +1,10 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Union
 
 from skyfield.api import Time
 
 from ..conditions import Conditions
-from ..constants.twilight import Twilight
 from .catalogs import CatalogMixIn
 from .events import EventsMixIn
 from .html import HtmlExportMixIn

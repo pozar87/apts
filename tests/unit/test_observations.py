@@ -203,20 +203,35 @@ class TestObservationTwilightFallback(unittest.TestCase):
 
     def test_fallback_mechanism(self):
         """Test that observation falls back to less strict twilights."""
+
         # Arrange: simulate Astronomical and Nautical not reached, but Civil reached.
-        def side_effect(target_date=None, start_search_from=None, twilight=None, horizon_degrees=-0.8333):
+        def side_effect(
+            target_date=None,
+            start_search_from=None,
+            twilight=None,
+            horizon_degrees=-0.8333,
+        ):
             if twilight == Twilight.ASTRONOMICAL:
                 return None
             if twilight == Twilight.NAUTICAL:
                 return None
             if twilight == Twilight.CIVIL:
-                if "rise" in str(self.place.sunrise_time.call_args) or (start_search_from and "rise" in str(self.place.sunrise_time.call_args)): # This is a bit hacky due to how MagicMock records calls
-                     return pd.Timestamp("2025-06-22 02:00:00", tz="UTC")
+                if "rise" in str(self.place.sunrise_time.call_args) or (
+                    start_search_from
+                    and "rise" in str(self.place.sunrise_time.call_args)
+                ):  # This is a bit hacky due to how MagicMock records calls
+                    return pd.Timestamp("2025-06-22 02:00:00", tz="UTC")
                 return pd.Timestamp("2025-06-21 22:00:00", tz="UTC")
             return pd.Timestamp("2025-06-21 20:00:00", tz="UTC")
 
-        self.place.sunset_time.side_effect = [None, None, pd.Timestamp("2025-06-21 22:00:00", tz="UTC")]
-        self.place.sunrise_time.side_effect = [pd.Timestamp("2025-06-22 02:00:00", tz="UTC")]
+        self.place.sunset_time.side_effect = [
+            None,
+            None,
+            pd.Timestamp("2025-06-21 22:00:00", tz="UTC"),
+        ]
+        self.place.sunrise_time.side_effect = [
+            pd.Timestamp("2025-06-22 02:00:00", tz="UTC")
+        ]
 
         conditions = Conditions(twilight=Twilight.ASTRONOMICAL)
 
@@ -229,8 +244,12 @@ class TestObservationTwilightFallback(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(observation.start, pd.Timestamp("2025-06-21 22:00:00", tz="UTC"))
-        self.assertEqual(observation.stop, pd.Timestamp("2025-06-22 02:00:00", tz="UTC"))
+        self.assertEqual(
+            observation.start, pd.Timestamp("2025-06-21 22:00:00", tz="UTC")
+        )
+        self.assertEqual(
+            observation.stop, pd.Timestamp("2025-06-22 02:00:00", tz="UTC")
+        )
         # Verify fallback occurred (Astronomical -> Nautical -> Civil)
         self.assertEqual(self.place.sunset_time.call_count, 3)
 
@@ -287,15 +306,15 @@ class TestObservationTemplate(unittest.TestCase):
         if self.observation.start is None:
             self.observation.start = pd.Timestamp(
                 "2025/02/18 18:00:00", tz=obs_local_tz
-            )
+            )  # type: ignore[assignment]
 
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)  # type: ignore[operator, assignment]
             else:
                 self.observation.stop = pd.Timestamp(
                     "2025/02/19 02:00:00", tz=obs_local_tz
-                )
+                )  # type: ignore[assignment]
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
@@ -308,7 +327,7 @@ class TestObservationTemplate(unittest.TestCase):
                 h = parts[0]
                 m = parts[1] if len(parts) > 1 else 0
                 s = parts[2] if len(parts) > 2 else 0
-                time_limit_dt = self.observation.start.replace(
+                time_limit_dt = self.observation.start.replace(  # type: ignore[union-attr]
                     hour=h,
                     minute=m,
                     second=s,
@@ -317,11 +336,11 @@ class TestObservationTemplate(unittest.TestCase):
                     time_limit_dt
                     if cast(Any, time_limit_dt) > cast(Any, self.observation.start)
                     else time_limit_dt + pd.Timedelta(days=1)
-                )
+                )  # type: ignore[assignment]
             else:
                 self.observation.time_limit = pd.Timestamp(
                     "2025/02/19 02:00:00", tz=obs_local_tz
-                )
+                )  # type: ignore[assignment]
 
         self.default_template_content = """<!doctype html>
 <html>
@@ -342,7 +361,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html uses the default template when no custom template is provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+        cast(
+            Any, self.observation.place.weather
+        ).get_critical_data.return_value = pd.DataFrame(
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
@@ -370,7 +391,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html uses a custom template when provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+        cast(
+            Any, self.observation.place.weather
+        ).get_critical_data.return_value = pd.DataFrame(
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
@@ -404,7 +427,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test that to_html injects custom CSS when provided"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+        cast(
+            Any, self.observation.place.weather
+        ).get_critical_data.return_value = pd.DataFrame(
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
@@ -430,7 +455,9 @@ class TestObservationTemplate(unittest.TestCase):
         """Test to_html with an actual temporary template file"""
         mock_weather_init.return_value = None
         self.observation.place.weather = MagicMock()
-        self.observation.place.weather.get_critical_data.return_value = pd.DataFrame(
+        cast(
+            Any, self.observation.place.weather
+        ).get_critical_data.return_value = pd.DataFrame(
             {
                 "time": pd.to_datetime([]).tz_localize("UTC"),
                 "cloudCover": [],
@@ -489,15 +516,15 @@ class TestObservationPlottingStyles(unittest.TestCase):
         if self.observation.start is None:
             self.observation.start = pd.Timestamp(
                 "2025/02/18 18:00:00", tz=obs_local_tz
-            )
+            )  # type: ignore[assignment]
 
         if self.observation.stop is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
-                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)
+                self.observation.stop = self.observation.start + pd.Timedelta(hours=8)  # type: ignore[operator, assignment]
             else:
                 self.observation.stop = pd.Timestamp(
                     "2025/02/19 02:00:00", tz=obs_local_tz
-                )
+                )  # type: ignore[assignment]
 
         if self.observation.time_limit is None:
             if pd.api.types.is_datetime64_any_dtype(self.observation.start):
@@ -510,7 +537,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
                 h = parts[0]
                 m = parts[1] if len(parts) > 1 else 0
                 s = parts[2] if len(parts) > 2 else 0
-                time_limit_dt = self.observation.start.replace(
+                time_limit_dt = self.observation.start.replace(  # type: ignore[union-attr]
                     hour=h,
                     minute=m,
                     second=s,
@@ -519,11 +546,11 @@ class TestObservationPlottingStyles(unittest.TestCase):
                     time_limit_dt
                     if cast(Any, time_limit_dt) > cast(Any, self.observation.start)
                     else time_limit_dt + pd.Timedelta(days=1)
-                )
+                )  # type: ignore[assignment]
             else:
                 self.observation.time_limit = pd.Timestamp(
                     "2025/02/19 02:00:00", tz=obs_local_tz
-                )
+                )  # type: ignore[assignment]
 
         # Mock the get_visible_messier to return a non-empty DataFrame
         # to avoid early exit from _generate_plot_messier
@@ -863,7 +890,7 @@ class TestObservationPlottingStyles(unittest.TestCase):
         t1 = self.observation.place.ts.utc(self.observation.stop)
         mock_curve_df = pd.DataFrame(
             {
-                "Time": list(self.observation.place.ts.linspace(t0, t1, 10)),
+                "Time": list(cast(Any, self.observation.place.ts.linspace(t0, t1, 10))),
                 "Altitude": [10, 20, 30, 40, 50, 40, 30, 20, 10, 0],
                 "Azimuth": [180] * 10,
             }
@@ -980,13 +1007,13 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.place.local_timezone = self.test_tz
         self.obs.start = self.base_date.replace(
             hour=18, minute=0, second=0, microsecond=0
-        )
+        )  # type: ignore[assignment]
         self.obs.stop = (self.base_date + timedelta(days=1)).replace(
             hour=6, minute=0, second=0, microsecond=0
-        )  # Next day
+        )  # type: ignore[assignment]  # Next day
         self.obs.time_limit = (self.base_date + timedelta(days=1)).replace(
             hour=2, minute=0, second=0, microsecond=0
-        )
+        )  # type: ignore[assignment]
 
         # Mock conditions
         self.obs.conditions = Conditions()  # Use default conditions or mock as needed
@@ -999,7 +1026,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         # Mock place.weather and its methods
         self.obs.place.weather = MagicMock()
-        self.obs.place.weather.download_data.return_value = {"hourly": {"data": []}}
+        cast(Any, self.obs.place.weather).download_data.return_value = {
+            "hourly": {"data": []}
+        }
         # Explicitly mock get_weather method on self.obs.place to ensure it's a mock object
         self.obs.place.get_weather = MagicMock()
 
@@ -1063,16 +1092,21 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         num_hours = 3
         mock_weather_df = self._generate_weather_data(num_hours, [True] * num_hours)
         # Add values that are safely within thresholds
-        mock_weather_df['seeing'] = 1.0
-        mock_weather_df['sqm'] = 21.0
-        mock_weather_df['aurora'] = 100.0
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        mock_weather_df["seeing"] = 1.0
+        mock_weather_df["sqm"] = 21.0
+        mock_weather_df["aurora"] = 100.0
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(len(results), num_hours)
         for i in range(num_hours):
-            self.assertTrue(results[i]["is_good_hour"], f"Hour {i} should be good. Reasons: {results[i].get('reasons')}")
+            self.assertTrue(
+                results[i]["is_good_hour"],
+                f"Hour {i} should be good. Reasons: {results[i].get('reasons')}",
+            )
             self.assertEqual(len(results[i]["reasons"]), 0)
             self.assertEqual(results[i]["time"], mock_weather_df["time"].iloc[i])
 
@@ -1115,7 +1149,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 }
             )
         mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
@@ -1123,9 +1159,11 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.assertTrue(results[0]["is_good_hour"])
         self.assertFalse(results[1]["is_good_hour"])
         self.assertEqual(len(results[1]["reasons"]), 1)
-        expected_reason = "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
-            cloud_cover=f"{(self.obs.conditions.max_clouds + 5):.1f}",
-            max_clouds=self.obs.conditions.max_clouds,
+        expected_reason = (
+            "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
+                cloud_cover=f"{(self.obs.conditions.max_clouds + 5):.1f}",
+                max_clouds=self.obs.conditions.max_clouds,
+            )
         )
         self.assertIn(expected_reason, results[1]["reasons"])
         self.assertTrue(results[2]["is_good_hour"])
@@ -1183,20 +1221,26 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             }
         )
         mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(len(results), num_hours)
         self.assertFalse(results[0]["is_good_hour"])
         self.assertEqual(len(results[0]["reasons"]), 2)
-        expected_cloud_reason = "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
-            cloud_cover=f"{cloud_bad:.1f}",
-            max_clouds=self.obs.conditions.max_clouds,
+        expected_cloud_reason = (
+            "Cloud cover {cloud_cover}% exceeds limit of {max_clouds}%".format(
+                cloud_cover=f"{cloud_bad:.1f}",
+                max_clouds=self.obs.conditions.max_clouds,
+            )
         )
-        expected_wind_reason = "Wind speed {wind_speed} km/h exceeds limit of {max_wind} km/h".format(
-            wind_speed=f"{wind_bad:.1f}",
-            max_wind=self.obs.conditions.max_wind,
+        expected_wind_reason = (
+            "Wind speed {wind_speed} km/h exceeds limit of {max_wind} km/h".format(
+                wind_speed=f"{wind_bad:.1f}",
+                max_wind=self.obs.conditions.max_wind,
+            )
         )
         self.assertIn(expected_cloud_reason, results[0]["reasons"])
         self.assertIn(expected_wind_reason, results[0]["reasons"])
@@ -1212,7 +1256,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df = self._generate_weather_data(
             num_hours_data, [True] * num_hours_data
         )
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
@@ -1226,19 +1272,21 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # so data for 18, 19, 20 should be included (3 hours)
         self.obs.start = self.base_date.replace(
             hour=18, minute=0, second=0, microsecond=0
-        )
+        )  # type: ignore[assignment]
         self.obs.stop = self.base_date.replace(
             hour=21, minute=0, second=0, microsecond=0
-        )  # Beyond time_limit
+        )  # type: ignore[assignment]  # Beyond time_limit
         self.obs.time_limit = self.base_date.replace(
             hour=20, minute=0, second=0, microsecond=0
-        )
+        )  # type: ignore[assignment]
 
         num_hours_data = 5  # Provide more data than needed (18, 19, 20, 21, 22)
         mock_weather_df = self._generate_weather_data(
             num_hours_data, [True] * num_hours_data
         )
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
 
         results = self.obs.get_hourly_weather_analysis()
 
@@ -1266,7 +1314,7 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
 
         results = self.obs.get_hourly_weather_analysis()
 
-        self.obs.place.get_weather.assert_called_once()
+        cast(Any, self.obs.place).get_weather.assert_called_once()
         self.assertEqual(len(results), num_hours)
         self.assertTrue(results[0]["is_good_hour"])
 
@@ -1289,14 +1337,18 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
-            temp=f"{temp_bad:.1f}",
-            min_temp=self.obs.conditions.min_temperature,
-            max_temp=self.obs.conditions.max_temperature,
+        expected_reason = (
+            "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
+                temp=f"{temp_bad:.1f}",
+                min_temp=self.obs.conditions.min_temperature,
+                max_temp=self.obs.conditions.max_temperature,
+            )
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
@@ -1319,14 +1371,18 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
-            temp=f"{temp_bad:.1f}",
-            min_temp=self.obs.conditions.min_temperature,
-            max_temp=self.obs.conditions.max_temperature,
+        expected_reason = (
+            "Temperature {temp}°C out of range ({min_temp} - {max_temp}°C)".format(
+                temp=f"{temp_bad:.1f}",
+                min_temp=self.obs.conditions.min_temperature,
+                max_temp=self.obs.conditions.max_temperature,
+            )
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
@@ -1352,21 +1408,21 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             }
         ]
         mock_weather_df = pd.DataFrame(data_rows)
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertFalse(results[0]["is_good_hour"])
-        expected_reason = (
-            "Precipitation probability {precip_prob}% exceeds limit of {max_precip_prob}%".format(
-                precip_prob=f"{precip_bad:.1f}",
-                max_precip_prob=self.obs.conditions.max_precipitation_probability,
-            )
+        expected_reason = "Precipitation probability {precip_prob}% exceeds limit of {max_precip_prob}%".format(
+            precip_prob=f"{precip_bad:.1f}",
+            max_precip_prob=self.obs.conditions.max_precipitation_probability,
         )
         self.assertIn(expected_reason, results[0]["reasons"])
 
     def test_get_hourly_weather_analysis_empty_data_from_critical(self):
         """Test when get_critical_data returns an empty DataFrame."""
-        self.obs.place.weather.get_critical_data.return_value = pd.DataFrame(
+        cast(Any, self.obs.place.weather).get_critical_data.return_value = pd.DataFrame(
             columns=pd.Index(
                 [
                     "time",
@@ -1392,26 +1448,28 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(results, [])
-        self.obs.place.weather.get_critical_data.assert_not_called()
+        cast(Any, self.obs.place.weather).get_critical_data.assert_not_called()
 
         # Restore start and test with stop = None
-        self.obs.start = pd.Timestamp("2024-01-01 18:00:00", tz=self.test_tz)
+        self.obs.start = pd.Timestamp("2024-01-01 18:00:00", tz=self.test_tz)  # type: ignore[assignment]
         self.obs.stop = None
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(results, [])
-        self.obs.place.weather.get_critical_data.assert_not_called()
+        cast(Any, self.obs.place.weather).get_critical_data.assert_not_called()
 
         # Restore stop and test with time_limit = None
         # It should now proceed without filtering if time_limit is missing
-        self.obs.stop = pd.Timestamp("2024-01-02 06:00:00", tz=self.test_tz)
-        self.obs.time_limit = None
+        self.obs.stop = pd.Timestamp("2024-01-02 06:00:00", tz=self.test_tz)  # type: ignore[assignment]
+        self.obs.time_limit = None  # type: ignore[assignment]
         # Use an empty dataframe to trigger early return after data fetch
-        self.obs.place.weather.get_critical_data.return_value = pd.DataFrame()
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = pd.DataFrame()
         results = self.obs.get_hourly_weather_analysis()
 
         self.assertEqual(results, [])
-        self.obs.place.weather.get_critical_data.assert_called()
+        cast(Any, self.obs.place.weather).get_critical_data.assert_called()
 
     def test_is_weather_good(self):
         """Test the is_weather_good method."""
@@ -1424,10 +1482,14 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df_good = self._generate_weather_data(
             num_hours_good, [True] * num_hours_good
         )
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_good
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_good
         self.obs.conditions.min_weather_goodness = 50  # 50% good hours required
         self.assertTrue(self.obs.is_weather_good())
-        self.obs.place.weather.get_critical_data.assert_called_once()  # Verify it was called
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.assert_called_once()  # Verify it was called
 
         # Test Case 2: Some bad weather, but overall good enough
         self.obs._weather_analysis = None  # Reset cache
@@ -1437,10 +1499,12 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df_mixed = self._generate_weather_data(
             num_hours_mixed, [True, True, True, False]
         )
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_mixed
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_mixed
         self.obs.conditions.min_weather_goodness = 70  # 70% good hours required
         self.assertTrue(self.obs.is_weather_good())
-        self.obs.place.weather.get_critical_data.assert_called_once()
+        cast(Any, self.obs.place.weather).get_critical_data.assert_called_once()
 
         # Test Case 3: Too much bad weather, overall not good enough
         self.obs._weather_analysis = None  # Reset cache
@@ -1450,18 +1514,20 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         mock_weather_df_bad_overall = self._generate_weather_data(
             num_hours_bad_overall, [True, False, False, False]
         )
-        self.obs.place.weather.get_critical_data.return_value = (
-            mock_weather_df_bad_overall
-        )
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_bad_overall
         self.obs.conditions.min_weather_goodness = 50  # 50% good hours required
         self.assertFalse(self.obs.is_weather_good())
-        self.obs.place.weather.get_critical_data.assert_called_once()
+        cast(Any, self.obs.place.weather).get_critical_data.assert_called_once()
 
     def test_is_weather_good_fetches_weather_if_needed(self):
         """Test that is_weather_good fetches weather data if it's not already available."""
         self.obs._weather_analysis = None  # Reset cache
         self.obs.place.weather = None  # Simulate no weather data initially
-        self.obs.place.get_weather.reset_mock()  # Reset mock to count calls for this specific case
+        cast(
+            Any, self.obs.place
+        ).get_weather.reset_mock()  # Reset mock to count calls for this specific case
 
         # Mock get_weather to set weather data when called
         mock_weather_fetched = MagicMock()
@@ -1470,16 +1536,18 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
             self.obs.place.weather = (
                 mock_weather_fetched  # Set the weather mock when get_weather is called
             )
-            mock_weather_fetched.get_critical_data.return_value = (
-                self._generate_weather_data(1, [True])
-            )
+            cast(
+                Any, mock_weather_fetched
+            ).get_critical_data.return_value = self._generate_weather_data(1, [True])
 
-        self.obs.place.get_weather.side_effect = mock_get_weather_side_effect
+        cast(Any, self.obs.place).get_weather.side_effect = mock_get_weather_side_effect
 
         # Call is_weather_good, it should trigger get_weather
         self.assertTrue(self.obs.is_weather_good())
-        self.obs.place.get_weather.assert_called_once()
-        mock_weather_fetched.get_critical_data.assert_called_once()  # Verify critical data was called after fetch
+        cast(Any, self.obs.place).get_weather.assert_called_once()
+        cast(
+            Any, mock_weather_fetched
+        ).get_critical_data.assert_called_once()  # Verify critical data was called after fetch
 
     def test_get_hourly_weather_analysis_aurora_condition(self):
         """Test the aurora condition in get_hourly_weather_analysis."""
@@ -1487,7 +1555,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs.conditions.min_aurora = 10
         mock_weather_df_good = self._generate_weather_data(1, [True])
         mock_weather_df_good["aurora"] = 15
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_good
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_good
 
         results_good = self.obs.get_hourly_weather_analysis()
         self.assertTrue(results_good[0]["is_good_hour"])
@@ -1496,7 +1566,9 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         self.obs._weather_analysis = None  # Reset cache
         mock_weather_df_bad = self._generate_weather_data(1, [True])
         mock_weather_df_bad["aurora"] = 5
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_bad
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_bad
 
         results_bad = self.obs.get_hourly_weather_analysis()
         self.assertFalse(results_bad[0]["is_good_hour"])
@@ -1505,8 +1577,12 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
         # Scenario 3: Aurora data is missing (should be treated as 0, bad weather)
         self.obs._weather_analysis = None  # Reset cache
         # Explicitly drop aurora to test missing column logic
-        mock_weather_df_missing = self._generate_weather_data(1, [True]).drop(columns=["aurora"])
-        self.obs.place.weather.get_critical_data.return_value = mock_weather_df_missing
+        mock_weather_df_missing = self._generate_weather_data(1, [True]).drop(
+            columns=["aurora"]
+        )
+        cast(
+            Any, self.obs.place.weather
+        ).get_critical_data.return_value = mock_weather_df_missing
 
         results_missing = self.obs.get_hourly_weather_analysis()
         self.assertFalse(results_missing[0]["is_good_hour"])
@@ -1562,19 +1638,24 @@ class TestObservationWeatherAnalysis(unittest.TestCase):
                 data[field] = val
 
                 mock_weather_df = pd.DataFrame([data])
-                self.obs.place.weather.get_critical_data.return_value = mock_weather_df
+                cast(
+                    Any, self.obs.place.weather
+                ).get_critical_data.return_value = mock_weather_df
                 self.obs._weather_analysis = None
 
                 results = self.obs.get_hourly_weather_analysis(force=True)
-                self.assertTrue(results[0]["is_good_hour"], f"Boundary value {val} for {field} should be good. Reasons: {results[0].get('reasons')}")
+                self.assertTrue(
+                    results[0]["is_good_hour"],
+                    f"Boundary value {val} for {field} should be good. Reasons: {results[0].get('reasons')}",
+                )
 
 
 class TestPathBasedAzimuthFiltering(unittest.TestCase):
     def setUp(self):
         self.observation = setup_observation()
-        self.observation.start = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")
-        self.observation.stop = pd.Timestamp("2025-02-19 02:00:00", tz="UTC")
-        self.observation.time_limit = pd.Timestamp("2025-02-19 02:00:00", tz="UTC")
+        self.observation.start = pd.Timestamp("2025-02-18 18:00:00", tz="UTC")  # type: ignore[assignment]
+        self.observation.stop = pd.Timestamp("2025-02-19 02:00:00", tz="UTC")  # type: ignore[assignment]
+        self.observation.time_limit = pd.Timestamp("2025-02-19 02:00:00", tz="UTC")  # type: ignore[assignment]
 
         messier_data = {
             "Name": ["M1", "M42", "M31"],
@@ -1673,7 +1754,7 @@ class TestPathBasedAzimuthFiltering(unittest.TestCase):
                         }
                     )
 
-        self.observation.place.get_altaz_curve = mock_get_altaz_curve
+        self.observation.place.get_altaz_curve = mock_get_altaz_curve  # type: ignore[assignment]
 
     def test_messier_azimuth_filter(self):
         # Test with a simple azimuth range

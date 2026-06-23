@@ -1,7 +1,7 @@
 import logging
 import numpy
 import pandas as pd
-from typing import Optional, Union
+from typing import Union
 
 logger = logging.getLogger(__name__)
 

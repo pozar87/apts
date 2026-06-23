@@ -60,10 +60,13 @@ class NotificationComposer:
             if plain_text_fallback is None:
                 num_planets = len(observations.get_visible_planets(language=language))
                 num_messier = len(observations.get_visible_messier(language=language))
+                num_ngc = len(observations.get_visible_ngc(language=language))
                 plain_text_fallback = gettext_(
-                    "Tonight you can see {num_planets} planets and {num_messier} Messier objects. "
+                    "Tonight you can see {num_planets} planets, {num_messier} Messier objects, and {num_ngc} NGC/IC objects. "
                     "Enable HTML to see the full content."
-                ).format(num_planets=num_planets, num_messier=num_messier)
+                ).format(
+                    num_planets=num_planets, num_messier=num_messier, num_ngc=num_ngc
+                )
             text_part = MIMEText(plain_text_fallback, "plain", "utf-8")
             msg_root.attach(text_part)
 
@@ -97,6 +100,7 @@ class NotificationComposer:
             attach_observation_plot(observations.plot_weather, "weather")
             attach_observation_plot(observations.plot_planets, "planets")
             attach_observation_plot(observations.plot_messier, "messier")
+            attach_observation_plot(observations.plot_ngc, "ngc")
 
             # Attach the multipart/related part to the multipart/alternative part
             msg_root.attach(msg_related)

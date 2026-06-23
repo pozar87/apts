@@ -1,11 +1,13 @@
+from typing import TYPE_CHECKING, Union
+
 import numpy
 import pandas as pd
-from typing import TYPE_CHECKING, Any, Union, cast
 from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import get_language
 from apts.utils import planetary
+
 from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
@@ -22,19 +24,21 @@ def calculate_parallactic_angle(
     Optimization: supports vectorized NumPy arrays for declination and azimuth.
     """
     dec_deg = (
-        declination.degrees if hasattr(declination, "degrees") else numpy.asarray(declination)
+        declination.degrees  # type: ignore[union-attr]
+        if hasattr(declination, "degrees")
+        else numpy.asarray(declination)
     )
     # Mask for objects too close to poles to avoid division by zero/instability
-    mask = numpy.abs(dec_deg) <= 89.99
+    mask = numpy.abs(dec_deg) <= 89.99  # type: ignore[call-overload]
 
     lat_rad = numpy.deg2rad(latitude_deg)
     dec_rad = (
-        declination.radians
+        declination.radians  # type: ignore[union-attr]
         if hasattr(declination, "radians")
         else numpy.deg2rad(numpy.asarray(declination))
     )
     az_rad = (
-        azimuth.radians
+        azimuth.radians  # type: ignore[union-attr]
         if hasattr(azimuth, "radians")
         else numpy.deg2rad(numpy.asarray(azimuth))
     )
@@ -43,12 +47,12 @@ def calculate_parallactic_angle(
 
     # Calculate only for non-polar objects
     if numpy.any(mask):
-        sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)
+        sin_q = numpy.sin(az_rad) * numpy.cos(lat_rad) / numpy.cos(dec_rad)  # type: ignore[call-overload]
         sin_q = numpy.clip(sin_q, -1.0, 1.0)
-        q_rad = numpy.where(mask, numpy.arcsin(sin_q), 0.0)
+        q_rad = numpy.where(mask, numpy.arcsin(sin_q), 0.0)  # type: ignore[call-overload]
 
-    res = numpy.rad2deg(q_rad)
-    return float(res) if numpy.isscalar(res) else res
+    res = numpy.rad2deg(q_rad)  # type: ignore[call-overload]
+    return float(res) if numpy.isscalar(res) else res  # type: ignore[arg-type]
 
 
 def calculate_ellipse_angle(
@@ -66,7 +70,7 @@ def calculate_ellipse_angle(
 
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         p_angle_deg = (
-            parallactic_angle.degrees
+            parallactic_angle.degrees  # type: ignore[union-attr]
             if hasattr(parallactic_angle, "degrees")
             else numpy.asarray(parallactic_angle)
         )
@@ -80,7 +84,7 @@ def calculate_ellipse_angle(
         angle = 180 - angle
 
     res = angle % 360
-    return float(res) if numpy.isscalar(res) else res
+    return float(res) if numpy.isscalar(res) else res  # type: ignore[arg-type]
 
 
 def get_object_angular_size_deg(observation: "Observation", object_name: str) -> float:
