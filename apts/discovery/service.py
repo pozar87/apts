@@ -1,14 +1,16 @@
 import logging
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from skyfield.api import Star
 
 from ..constants import FilterStrategy, ObjectTableLabels
-from ..scoring import SuitabilityScorer
 from ..objects.utils import vectorized_geometric_imaging_duration
 from ..optics.utils import OpticsUtils
+from ..scoring import SuitabilityScorer
 
 logger = logging.getLogger(__name__)
+
 
 class DiscoveryService:
     """
@@ -37,7 +39,9 @@ class DiscoveryService:
         twilight_times = DiscoveryService._get_twilight_window(place, date)
 
         # 3. Vectorized Bulk Pre-calculations
-        DiscoveryService._populate_bulk_data(place, equipment_path, combined_df, date, twilight_times)
+        DiscoveryService._populate_bulk_data(
+            place, equipment_path, combined_df, date, twilight_times
+        )
 
         # 4. Vectorized Scoring
         scores_df = scorer.calculate_scores_bulk(combined_df)
@@ -47,7 +51,7 @@ class DiscoveryService:
         return DiscoveryService._format_discovery_results(combined_df, scores_df, limit)
 
     @staticmethod
-    def _get_combined_targets(place, catalogs, date):
+    def _get_combined_targets(place, catalogs, date) -> pd.DataFrame:
         """Collects and combines Messier and Solar objects, excluding the Sun."""
         from ..objects.messier import Messier
         from ..objects.solar_objects import SolarObjects
@@ -68,11 +72,16 @@ class DiscoveryService:
     def _get_twilight_window(place, date):
         """Calculates astronomical twilight start and end times for the given date."""
         from ..constants.twilight import Twilight
+
         t_search = date if date is not None else place.date
-        twilight_start = place.sunset_time(start_search_from=t_search, twilight=Twilight.ASTRONOMICAL)
+        twilight_start = place.sunset_time(
+            start_search_from=t_search, twilight=Twilight.ASTRONOMICAL
+        )
         if not twilight_start:
             return None
-        twilight_end = place.sunrise_time(start_search_from=twilight_start, twilight=Twilight.ASTRONOMICAL)
+        twilight_end = place.sunrise_time(
+            start_search_from=twilight_start, twilight=Twilight.ASTRONOMICAL
+        )
         return (twilight_start, twilight_end) if twilight_end else None
 
     @staticmethod
@@ -127,19 +136,24 @@ class DiscoveryService:
             equipment_path.output.sensor_height.to("mm").magnitude,
         )
         focal_length = (
-            (equipment_path.telescope.focal_length * equipment_path.effective_barlow()).to("mm").magnitude
+            (equipment_path.telescope.focal_length * equipment_path.effective_barlow())
+            .to("mm")
+            .magnitude
         )
         df["fov_ratio"] = OpticsUtils.calculate_fov_ratio(
-            (df[ObjectTableLabels.SIZE_MAJOR].values, df[ObjectTableLabels.SIZE_MINOR].values),
+            (
+                df[ObjectTableLabels.SIZE_MAJOR].values,
+                df[ObjectTableLabels.SIZE_MINOR].values,
+            ),
             sensor_size,
-            focal_length
+            focal_length,
         )
 
     @staticmethod
     def _format_discovery_results(df, scores_df, limit):
         """Applies name fallbacks and formats the top N results into a list of dictionaries."""
         name_fallback = df["Name"].fillna("-").replace({"-": "", "nan": ""})
-        is_missing_name = (name_fallback == "")
+        is_missing_name = name_fallback == ""
         if is_missing_name.any():
             fallback_values = df["Messier"].fillna(df["NGC"]).fillna("Unknown")
             df.loc[is_missing_name, "Name"] = fallback_values[is_missing_name]

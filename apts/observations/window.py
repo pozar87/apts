@@ -47,8 +47,10 @@ class ObservationWindow:
                 if isinstance(target_date, datetime):
                     self.effective_date = self.place.ts.utc(target_date)
                 else:
+                    # target_date is a Skyfield Time, convert to datetime date first
+                    target_dt = target_date.utc_datetime()
                     self.effective_date = self.place.ts.utc(
-                        datetime.combine(target_date, datetime.min.time()).replace(
+                        datetime.combine(target_dt.date(), datetime.min.time()).replace(
                             tzinfo=self.place.local_timezone
                         )
                     )
@@ -56,7 +58,11 @@ class ObservationWindow:
                 self.effective_date = self.place.date
 
         if self.observation_local_time is None:
-            self.observation_local_time = self.effective_date.astimezone(
+            # effective_date is a Skyfield Time, convert to datetime
+            effective_dt = self.effective_date.utc_datetime().replace(
+                tzinfo=datetime.timezone.utc
+            )
+            self.observation_local_time = effective_dt.astimezone(
                 self.place.local_timezone
             )
 
@@ -175,7 +181,10 @@ class ObservationWindow:
             self.observation_local_time = self.start
         else:
             self.effective_date = self.place.date
-            self.observation_local_time = self.effective_date.astimezone(
+            effective_dt = self.effective_date.utc_datetime().replace(
+                tzinfo=datetime.timezone.utc
+            )
+            self.observation_local_time = effective_dt.astimezone(
                 self.place.local_timezone
             )
 

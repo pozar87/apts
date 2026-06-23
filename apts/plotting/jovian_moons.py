@@ -189,7 +189,11 @@ def generate_plot_jovian_moons(
     ax.set_xlabel(gettext_("Relative RA (arcsec)"), color=style["TEXT_COLOR"])
     ax.set_ylabel(gettext_("Relative Dec (arcsec)"), color=style["TEXT_COLOR"])
 
-    t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)
+    # t can be either a datetime (from observation.effective_date) or a Skyfield Time
+    if hasattr(t, "utc_datetime"):
+        t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)
+    else:
+        t_dt = t.astimezone(observation.place.local_timezone)
     ax.set_title(
         gettext_("Jupiter and Galilean Moons ({date})").format(
             date=t_dt.strftime("%Y-%m-%d %H:%M %Z")

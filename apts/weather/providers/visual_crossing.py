@@ -35,7 +35,7 @@ class VisualCrossing(WeatherProvider):
 
         # Visual Crossing returns humidity as 0-100, we want 0-1
         if "humidity" in df.columns:
-            df["humidity"] = pd.to_numeric(df["humidity"], errors="coerce") / 100
+            df["humidity"] = pd.to_numeric(df["humidity"], errors="coerce") / 100  # type: ignore[operator]
 
         # Visual Crossing returns precipprob and cloudcover as 0-100, which is what we want.
         # No need to multiply by 100 as in some other providers.
@@ -124,7 +124,9 @@ class VisualCrossing(WeatherProvider):
                 "ozone": "ozone",
             }
             # Only rename columns that exist
-            existing_rename_map = {k: v for k, v in rename_map.items() if k in df.columns}
+            existing_rename_map = {
+                k: v for k, v in rename_map.items() if k in df.columns
+            }
             df.rename(columns=existing_rename_map, inplace=True)
 
             df = self._process_precip_type(df)

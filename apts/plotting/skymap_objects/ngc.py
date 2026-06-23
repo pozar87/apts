@@ -110,24 +110,32 @@ def _ensure_ngc_coordinates(visible_ngc: pd.DataFrame) -> pd.DataFrame:
                 for col in range(3):
                     if col not in ras_split.columns:
                         ras_split[col] = 0
-                h_ra = pd.to_numeric(ras_split[0], errors="coerce")
-                m_ra = pd.to_numeric(ras_split[1], errors="coerce").fillna(0)
-                s_ra = pd.to_numeric(ras_split[2], errors="coerce").fillna(0)
+                h_ra = pd.to_numeric(ras_split[0], errors="coerce")  # type: ignore[union-attr]
+                m_ra = pd.to_numeric(ras_split[1], errors="coerce").fillna(0)  # type: ignore[union-attr]
+                s_ra = pd.to_numeric(ras_split[2], errors="coerce").fillna(0)  # type: ignore[union-attr]
                 visible_ngc["ra_hours"] = h_ra + m_ra / 60.0 + s_ra / 3600.0
 
             if "Dec_parsed" in visible_ngc.columns:
                 visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
             elif "Dec" in visible_ngc.columns:
                 # Optimization: use vectorized parsing instead of .apply()
-                decs_signs = visible_ngc["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
-                decs_split = visible_ngc["Dec"].str.lstrip("+-").str.split(":", expand=True)
+                decs_signs = (
+                    visible_ngc["Dec"]
+                    .str.startswith("-", na=False)
+                    .map({True: -1, False: 1})
+                )
+                decs_split = (
+                    visible_ngc["Dec"].str.lstrip("+-").str.split(":", expand=True)
+                )
                 for col in range(3):
                     if col not in decs_split.columns:
                         decs_split[col] = 0
-                h_dec = pd.to_numeric(decs_split[0], errors="coerce")
-                m_dec = pd.to_numeric(decs_split[1], errors="coerce").fillna(0)
-                s_dec = pd.to_numeric(decs_split[2], errors="coerce").fillna(0)
-                visible_ngc["dec_degrees"] = decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0)
+                h_dec = pd.to_numeric(decs_split[0], errors="coerce")  # type: ignore[union-attr]
+                m_dec = pd.to_numeric(decs_split[1], errors="coerce").fillna(0)  # type: ignore[union-attr]
+                s_dec = pd.to_numeric(decs_split[2], errors="coerce").fillna(0)  # type: ignore[union-attr]
+                visible_ngc["dec_degrees"] = decs_signs * (
+                    h_dec + m_dec / 60.0 + s_dec / 3600.0
+                )
     return visible_ngc
 
 
@@ -294,7 +302,7 @@ def _draw_ngc_cartesian(
             dec_deg=float(active_decs[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=float(angles[i]),
+            angle=float(numpy.atleast_1d(angles)[i]),
             face_color=str(face_colors[i]),
             edge_color="green",
             is_polar=False,

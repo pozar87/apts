@@ -372,7 +372,7 @@ def _draw_target(
             xy=(x_coord, y_coord),
             width=ellipse_width,
             height=height_deg,
-            angle=angle,
+            angle=float(angle),
             edgecolor="yellow",
             facecolor=face_color,
             linewidth=2,
