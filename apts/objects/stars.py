@@ -7,6 +7,8 @@ from ..constants import ObjectTableLabels
 
 
 class Stars(Objects):
+    is_star_catalog = True
+
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Stars, self).__init__(place, calculation_date=calculation_date)
         self.objects = catalogs.BRIGHT_STARS.copy()  # type: ignore

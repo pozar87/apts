@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 class Objects(ABC):
+    # Flag to indicate if this catalog consists primarily of fixed stars.
+    # Enables massive performance optimizations in visibility gating by bypassing
+    # individual Skyfield object instantiations.
+    is_star_catalog = False
+
     @abstractmethod
     def get_skyfield_object(self, obj) -> object:
         pass
@@ -210,19 +215,30 @@ class Objects(ABC):
         else:
             visible_mask = np.zeros(len(candidate_objects), dtype=bool)
 
-            # Fast property extraction instead of iterrows()
-            if "skyfield_object" in candidate_objects.columns:
-                skyfield_objs = cast(
-                    pd.Series, candidate_objects["skyfield_object"]
-                ).to_numpy()
+            # Optimization: Identify stars vs moving bodies (others).
+            # For star-only catalogs (NGC, Messier), we can bypass expensive row-wise
+            # Skyfield object instantiation and property access by using a class flag.
+            if getattr(self, "is_star_catalog", False) and "ra_hours" in candidate_objects.columns:
+                is_star = np.ones(len(candidate_objects), dtype=bool)
+                skyfield_objs = None
             else:
-                skyfield_objs = np.array(
-                    [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
-                )
-            is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
+                # Traditional path for mixed or moving-body catalogs.
+                # Fast property extraction instead of iterrows()
+                if "skyfield_object" in candidate_objects.columns:
+                    skyfield_objs = cast(
+                        pd.Series, candidate_objects["skyfield_object"]
+                    ).to_numpy()
+                else:
+                    skyfield_objs = np.array(
+                        [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
+                    )
+                is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
 
             stars_indices = np.where(is_star)[0]
-            other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
+            if skyfield_objs is not None:
+                other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
+            else:
+                other_indices = np.array([], dtype=int)
 
             if len(stars_indices) > 0:
                 self._get_visible_stars(
@@ -299,7 +315,10 @@ class Objects(ABC):
             decs = df["dec_degrees"].to_numpy()
             # Check for skyfield_object to determine valid stars, or assume valid
             # if we have coordinates but no objects yet (lazy loading case).
-            if "skyfield_object" in df.columns:
+            if getattr(self, "is_star_catalog", False):
+                # Optimization: In star catalogs, validity is tied to presence of coordinates.
+                valid_mask = pd.notna(ras) & pd.notna(decs)
+            elif "skyfield_object" in df.columns:
                 sky_objs = df["skyfield_object"].to_numpy()
                 valid_mask = np.array([isinstance(obj, Star) for obj in sky_objs])
             else:

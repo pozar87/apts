@@ -9,6 +9,8 @@ from ..constants import ObjectTableLabels
 
 
 class NGC(Objects):
+    is_star_catalog = True
+
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
         self.objects = catalogs.NGC.copy()  # type: ignore
