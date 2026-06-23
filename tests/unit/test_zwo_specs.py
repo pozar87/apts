@@ -66,7 +66,7 @@ class TestZwoUpdates(unittest.TestCase):
 
     def test_asi224_specs(self):
         cam = ZwoCamera.ZWO_ASI_224MC()
-        self.assertEqual(cam.mass.to("gram").magnitude, 100)
+        self.assertEqual(cam.mass.to("gram").magnitude, 120)
         self.assertEqual(cam.read_noise, 0.8)
         self.assertEqual(cam.quantum_efficiency, 80)
         self.assertEqual(cam.full_well, 19200)
