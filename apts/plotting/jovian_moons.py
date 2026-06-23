@@ -49,12 +49,13 @@ def generate_plot_jovian_moons(
     style = get_plot_style(effective_dark_mode)
     ts = get_timescale()
 
-    if plot_date:
+    if plot_date is not None:
         if plot_date.tzinfo is None:
             import datetime
+
             plot_date = plot_date.replace(tzinfo=datetime.timezone.utc)
         t = ts.utc(plot_date)
-    elif observation.effective_date:
+    elif observation.effective_date is not None:
         t = observation.effective_date
     else:
         t = ts.now()
@@ -117,7 +118,9 @@ def generate_plot_jovian_moons(
     for i, (moon_id, moon_name) in enumerate(ctx.moon_map.items()):
         if moon_id not in ctx.moon_objs:
             continue
-        m_obs = observation.place.observer.at(t).observe(ctx.moon_objs[moon_id]).apparent()
+        m_obs = (
+            observation.place.observer.at(t).observe(ctx.moon_objs[moon_id]).apparent()
+        )
         m_ra, m_dec, m_dist = m_obs.radec()
 
         dx = (m_ra.hours - j_ra.hours) * 15 * 3600 * cos_j_dec
