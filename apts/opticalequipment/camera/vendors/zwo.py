@@ -753,7 +753,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 19200,
             "height": 976,
-            "mass": 100,
+            "mass": 120,  # Verified via official ZWO documentation (0.12kg - https://astronomy-imaging-camera.com/product/asi224mc/)
             "name": "ASI224MC",
             "optical_length": 12.5,
             "pixel_size_um": 3.75,
@@ -2154,7 +2154,7 @@ class ZwoCamera(Camera):
     def ZWO_ASI_224MC(cls):
         """
         Factory method for ZWO ASI224MC camera.
-        Sensor: Sony IMX224 (1/3")
+        Sensor: Sony IMX224 (1/3"), Mass: 120g
         """
         return cls.from_database(cls._DATABASE["ZWO_ASI_224MC"])
 
