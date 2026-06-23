@@ -14,6 +14,7 @@ class TestNotify(unittest.TestCase):
         # Add mock methods for plotting
         self.mock_observation.plot_weather = MagicMock()
         self.mock_observation.plot_messier = MagicMock()
+        self.mock_observation.plot_ngc = MagicMock()
 
         # Setup the notify object
         self.notify = Notify("test@example.com")
@@ -24,7 +25,9 @@ class TestNotify(unittest.TestCase):
     @patch.object(
         Notify, "_send_email"
     )  # Mock _send_email to capture the Message object
-    @patch("apts.notify.composer.NotificationComposer.attach_image")  # Spy on attach_image
+    @patch(
+        "apts.notify.composer.NotificationComposer.attach_image"
+    )  # Spy on attach_image
     def test_send_with_default_template(
         self,
         mock_attach_image_spy,
@@ -40,9 +43,11 @@ class TestNotify(unittest.TestCase):
         mock_weather_plot = MagicMock(name="WeatherPlot")
         mock_planets_plot = MagicMock(name="WeatherPlot")
         mock_messier_plot = MagicMock(name="MessierPlot")
+        mock_ngc_plot = MagicMock(name="NGCPlot")
         self.mock_observation.plot_weather.return_value = mock_weather_plot
         self.mock_observation.plot_planets.return_value = mock_planets_plot
         self.mock_observation.plot_messier.return_value = mock_messier_plot
+        self.mock_observation.plot_ngc.return_value = mock_ngc_plot
 
         for plot_format in ["webp", "png"]:
             mock_get_plot_format.return_value = plot_format
@@ -85,10 +90,15 @@ class TestNotify(unittest.TestCase):
                         mock_messier_plot,
                         filename=f"messier_plot.{plot_format}",
                     ),
+                    call(
+                        related_part,
+                        mock_ngc_plot,
+                        filename=f"ngc_plot.{plot_format}",
+                    ),
                 ],
                 any_order=False,
             )
-            self.assertEqual(mock_attach_image_spy.call_count, 3)
+            self.assertEqual(mock_attach_image_spy.call_count, 4)
 
     @patch("apts.notify.client.smtplib.SMTP")
     @patch("apts.notify.composer.NotificationComposer.attach_image")
@@ -155,7 +165,9 @@ class TestNotify(unittest.TestCase):
     @patch("apts.notify.composer.get_plot_format")
     @patch("apts.notify.client.smtplib.SMTP")
     @patch.object(Notify, "_send_email")  # Mock _send_email as it's called by send()
-    @patch("apts.notify.composer.NotificationComposer.attach_image")  # Spy on attach_image
+    @patch(
+        "apts.notify.composer.NotificationComposer.attach_image"
+    )  # Spy on attach_image
     def test_send_no_plots_if_plotting_fails(
         self,
         mock_attach_image_spy,
@@ -173,8 +185,10 @@ class TestNotify(unittest.TestCase):
         self.mock_observation.plot_weather.return_value = None
         mock_messier_plot = MagicMock(name="MessierPlotOnly")
         mock_planets_plot = MagicMock(name="PlanetPlotOnly")
+        mock_ngc_plot = MagicMock(name="NGCPlotOnly")
         self.mock_observation.plot_messier.return_value = mock_messier_plot
         self.mock_observation.plot_planets.return_value = mock_planets_plot
+        self.mock_observation.plot_ngc.return_value = mock_ngc_plot
 
         mock_get_plot_format.return_value = "png"
         self.notify.send(self.mock_observation)
@@ -191,23 +205,27 @@ class TestNotify(unittest.TestCase):
             [
                 call(related_part, mock_planets_plot, filename="planets_plot.png"),
                 call(related_part, mock_messier_plot, filename="messier_plot.png"),
+                call(related_part, mock_ngc_plot, filename="ngc_plot.png"),
             ],
             any_order=True,
         )
-        self.assertEqual(mock_attach_image_spy.call_count, 2)
+        self.assertEqual(mock_attach_image_spy.call_count, 3)
 
         # Reset mocks
         mock_send_email_internal.reset_mock()
         mock_attach_image_spy.reset_mock()
         self.mock_observation.plot_weather = MagicMock()
         self.mock_observation.plot_messier = MagicMock()
+        self.mock_observation.plot_ngc = MagicMock()
 
         # Scenario 2: Messier plot fails
         mock_weather_plot_only = MagicMock(name="WeatherPlotOnly")
         mock_planets_plot_only = MagicMock(name="PlanetsPlotOnly")
+        mock_ngc_plot_only = MagicMock(name="NGCPlotOnly")
         self.mock_observation.plot_weather.return_value = mock_weather_plot_only
         self.mock_observation.plot_planets.return_value = mock_planets_plot_only
         self.mock_observation.plot_messier.return_value = None
+        self.mock_observation.plot_ngc.return_value = mock_ngc_plot_only
 
         mock_get_plot_format.return_value = "webp"
         self.notify.send(self.mock_observation)
@@ -228,10 +246,11 @@ class TestNotify(unittest.TestCase):
                 call(
                     related_part_2, mock_planets_plot_only, filename="planets_plot.webp"
                 ),
+                call(related_part_2, mock_ngc_plot_only, filename="ngc_plot.webp"),
             ],
             any_order=True,
         )
-        self.assertEqual(mock_attach_image_spy.call_count, 2)
+        self.assertEqual(mock_attach_image_spy.call_count, 3)
 
         # Reset mocks
         mock_send_email_internal.reset_mock()
@@ -241,6 +260,7 @@ class TestNotify(unittest.TestCase):
         self.mock_observation.plot_weather.return_value = None
         self.mock_observation.plot_messier.return_value = None
         self.mock_observation.plot_planets.return_value = None
+        self.mock_observation.plot_ngc.return_value = None
 
         self.notify.send(self.mock_observation)
         mock_send_email_internal.assert_called_once()
@@ -257,15 +277,16 @@ class TestNotify(unittest.TestCase):
                 return "Dobra pogoda w {name}"
             elif (
                 arg
-                == "Tonight you can see {num_planets} planets and {num_messier} Messier objects. Enable HTML to see the full content."
+                == "Tonight you can see {num_planets} planets, {num_messier} Messier objects, and {num_ngc} NGC/IC objects. Enable HTML to see the full content."
             ):
-                return "Dziś w nocy możesz zobaczyć {num_planets} planet i {num_messier} obiektów Messiera. Włącz HTML, aby zobaczyć pełną treść."
+                return "Dziś w nocy możesz zobaczyć {num_planets} planet, {num_messier} obiektów Messiera i {num_ngc} obiektów NGC/IC. Włącz HTML, aby zobaczyć pełną treść."
             return arg
 
         mock_gettext.side_effect = side_effect
 
         self.mock_observation.get_visible_planets.return_value = [1, 2, 3]
         self.mock_observation.get_visible_messier.return_value = [1, 2, 3, 4, 5]
+        self.mock_observation.get_visible_ngc.return_value = [1, 2]
 
         # Call send with Polish language
         self.notify.send(self.mock_observation, language="pl")
@@ -275,7 +296,7 @@ class TestNotify(unittest.TestCase):
         sent_message_object = mock_send_email.call_args[0][0]
         self.assertEqual(sent_message_object["Subject"], "Dobra pogoda w Test Location")
         self.assertIn(
-            "Dziś w nocy możesz zobaczyć 3 planet i 5 obiektów Messiera.",
+            "Dziś w nocy możesz zobaczyć 3 planet, 5 obiektów Messiera i 2 obiektów NGC/IC.",
             sent_message_object.get_payload(0).get_payload(decode=True).decode("utf-8"),
         )
 
