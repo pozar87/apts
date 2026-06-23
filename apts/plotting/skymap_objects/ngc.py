@@ -302,7 +302,9 @@ def _draw_ngc_cartesian(
             dec_deg=float(active_decs[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=float(numpy.atleast_1d(angles)[i]),
+            angle=float(angles[i])
+            if isinstance(angles, numpy.ndarray)
+            else float(angles),
             face_color=str(face_colors[i]),
             edge_color="green",
             is_polar=False,

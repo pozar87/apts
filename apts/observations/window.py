@@ -47,10 +47,13 @@ class ObservationWindow:
                 if isinstance(target_date, datetime):
                     self.effective_date = self.place.ts.utc(target_date)
                 else:
-                    # target_date is a Skyfield Time, convert to datetime date first
-                    target_dt = target_date.utc_datetime()  # type: ignore[union-attr]
+                    # target_date could be a Skyfield Time (has utc_datetime) or a date/other type
+                    if hasattr(target_date, "utc_datetime"):
+                        target_dt = target_date.utc_datetime().date()  # type: ignore[union-attr]
+                    else:
+                        target_dt = target_date
                     self.effective_date = self.place.ts.utc(
-                        datetime.combine(target_dt.date(), datetime.min.time()).replace(  # type: ignore[union-attr]
+                        datetime.combine(target_dt, datetime.min.time()).replace(  # type: ignore[arg-type]
                             tzinfo=self.place.local_timezone
                         )
                     )
@@ -58,11 +61,14 @@ class ObservationWindow:
                 self.effective_date = self.place.date
 
         if self.observation_local_time is None and self.effective_date is not None:
-            # effective_date is a Skyfield Time, convert to datetime
-            effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr, attr-defined]
-                tzinfo=timezone.utc
-            )
-            self.observation_local_time = effective_dt.astimezone(
+            # effective_date could be a Skyfield Time or other date-like object
+            if hasattr(self.effective_date, "utc_datetime"):
+                effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr]
+                    tzinfo=timezone.utc
+                )
+            else:
+                effective_dt = self.effective_date
+            self.observation_local_time = effective_dt.astimezone(  # type: ignore[union-attr]
                 self.place.local_timezone
             )
 
@@ -181,10 +187,13 @@ class ObservationWindow:
             self.observation_local_time = self.start
         else:
             self.effective_date = self.place.date
-            effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr, attr-defined, reportOptionalMemberAccess]
-                tzinfo=timezone.utc
-            )
-            self.observation_local_time = effective_dt.astimezone(
+            if hasattr(self.effective_date, "utc_datetime"):
+                effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr, reportOptionalMemberAccess]
+                    tzinfo=timezone.utc
+                )
+            else:
+                effective_dt = self.effective_date
+            self.observation_local_time = effective_dt.astimezone(  # type: ignore[union-attr]
                 self.place.local_timezone
             )
 

@@ -222,7 +222,9 @@ def _plot_messier_on_skymap(
             dec_deg=float(dec_deg[i]),
             width_deg=float(widths_deg[i]),
             height_deg=float(heights_deg[i]),
-            angle=float(numpy.atleast_1d(angles)[i]),
+            angle=float(angles[i])
+            if isinstance(angles, numpy.ndarray)
+            else float(angles),
             face_color=str(face_colors[i]),
             edge_color=edge_colors[i],
             is_polar=is_polar,
