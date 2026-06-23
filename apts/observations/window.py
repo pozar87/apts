@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Union
 
 from skyfield.api import Time
@@ -48,19 +48,19 @@ class ObservationWindow:
                     self.effective_date = self.place.ts.utc(target_date)
                 else:
                     # target_date is a Skyfield Time, convert to datetime date first
-                    target_dt = target_date.utc_datetime()
+                    target_dt = target_date.utc_datetime()  # type: ignore[union-attr]
                     self.effective_date = self.place.ts.utc(
-                        datetime.combine(target_dt.date(), datetime.min.time()).replace(
+                        datetime.combine(target_dt.date(), datetime.min.time()).replace(  # type: ignore[union-attr]
                             tzinfo=self.place.local_timezone
                         )
                     )
             else:
                 self.effective_date = self.place.date
 
-        if self.observation_local_time is None:
+        if self.observation_local_time is None and self.effective_date is not None:
             # effective_date is a Skyfield Time, convert to datetime
-            effective_dt = self.effective_date.utc_datetime().replace(
-                tzinfo=datetime.timezone.utc
+            effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr, attr-defined]
+                tzinfo=timezone.utc
             )
             self.observation_local_time = effective_dt.astimezone(
                 self.place.local_timezone
@@ -181,8 +181,8 @@ class ObservationWindow:
             self.observation_local_time = self.start
         else:
             self.effective_date = self.place.date
-            effective_dt = self.effective_date.utc_datetime().replace(
-                tzinfo=datetime.timezone.utc
+            effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr, attr-defined, reportOptionalMemberAccess]
+                tzinfo=timezone.utc
             )
             self.observation_local_time = effective_dt.astimezone(
                 self.place.local_timezone

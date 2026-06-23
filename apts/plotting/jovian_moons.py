@@ -190,8 +190,10 @@ def generate_plot_jovian_moons(
     ax.set_ylabel(gettext_("Relative Dec (arcsec)"), color=style["TEXT_COLOR"])
 
     # t can be either a datetime (from observation.effective_date) or a Skyfield Time
-    if hasattr(t, "utc_datetime"):
-        t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)
+    from skyfield.api import Time as SkyfieldTime
+
+    if isinstance(t, SkyfieldTime):
+        t_dt = t.utc_datetime().astimezone(observation.place.local_timezone)  # type: ignore[union-attr]
     else:
         t_dt = t.astimezone(observation.place.local_timezone)
     ax.set_title(

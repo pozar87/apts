@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -66,7 +67,8 @@ class DiscoveryService:
         combined_df = pd.concat(
             [messier_obj.objects, solar_obj.objects], ignore_index=True
         )
-        return combined_df[combined_df["Name"] != "sun"].copy()
+        result = combined_df[combined_df["Name"] != "sun"].copy()
+        return cast(pd.DataFrame, result)
 
     @staticmethod
     def _get_twilight_window(place, date):

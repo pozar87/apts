@@ -113,7 +113,7 @@ def _ensure_ngc_coordinates(visible_ngc: pd.DataFrame) -> pd.DataFrame:
                 h_ra = pd.to_numeric(ras_split[0], errors="coerce")  # type: ignore[union-attr]
                 m_ra = pd.to_numeric(ras_split[1], errors="coerce").fillna(0)  # type: ignore[union-attr]
                 s_ra = pd.to_numeric(ras_split[2], errors="coerce").fillna(0)  # type: ignore[union-attr]
-                visible_ngc["ra_hours"] = h_ra + m_ra / 60.0 + s_ra / 3600.0
+                visible_ngc["ra_hours"] = h_ra + m_ra / 60.0 + s_ra / 3600.0  # type: ignore[operator]
 
             if "Dec_parsed" in visible_ngc.columns:
                 visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
@@ -134,7 +134,7 @@ def _ensure_ngc_coordinates(visible_ngc: pd.DataFrame) -> pd.DataFrame:
                 m_dec = pd.to_numeric(decs_split[1], errors="coerce").fillna(0)  # type: ignore[union-attr]
                 s_dec = pd.to_numeric(decs_split[2], errors="coerce").fillna(0)  # type: ignore[union-attr]
                 visible_ngc["dec_degrees"] = decs_signs * (
-                    h_dec + m_dec / 60.0 + s_dec / 3600.0
+                    h_dec + m_dec / 60.0 + s_dec / 3600.0  # type: ignore[operator]
                 )
     return visible_ngc
 
