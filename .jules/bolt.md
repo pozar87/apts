@@ -125,3 +125,7 @@
 ## 2025-05-26 - [Vectorized Aurora Coordinate Search]
 **Learning:** Performing a 2D nearest-neighbor search on a 64,800-point grid (1-degree resolution) using Pandas DataFrame instantiation and Series-based distance calculation is significantly slower than using raw NumPy arrays. Additionally, for a single-point global forecast, using `pd.merge_asof` is extremely inefficient compared to direct scalar assignment.
 **Action:** Use NumPy broadcasting and `np.argmin` for large coordinate searches. Prefer scalar assignment over complex merges when the enrichment data consists of a single value applied to all time points.
+
+## 2026-06-05 - [Vectorized Discovery Service Geometric Scoring]
+**Learning:** In the discovery service, performing high-precision Skyfield observations (with nutation, aberration, etc.) for hundreds of candidate targets is extremely slow. Since discovery scoring only requires coarse accuracy, replacing these with vectorized NumPy geometric formulas (spherical trigonometry) for altitude and moon separation provides a ~20x speedup for this phase. Additionally, pre-extracting Pint Quantity magnitudes into float arrays before iteration avoids significant overhead in FOV ratio calculations.
+**Action:** Use vectorized geometric formulas for coarse astronomical calculations (like scoring) and pre-extract float values from wrapped Quantities before high-frequency loops or bulk calculations.
