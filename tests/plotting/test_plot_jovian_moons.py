@@ -24,15 +24,15 @@ def mock_observation():
     return observation
 
 def test_generate_plot_jovian_moons_flipping(mock_observation):
-    with patch("apts.plotting.jovian_moons.pyplot.subplots") as mock_subplots:
+    with patch("apts.plotting.jovian_moons.plots.pyplot.subplots") as mock_subplots:
         mock_fig = MagicMock()
         mock_ax = MagicMock()
         mock_subplots.return_value = (mock_fig, mock_ax)
 
         # Mock other dependencies to avoid errors
-        with patch("apts.plotting.jovian_moons.get_jovian_ephemeris"), \
-             patch("apts.plotting.jovian_moons.JovianSearchContext") as mock_ctx_cls, \
-             patch("apts.plotting.jovian_moons.JovianMoonState"):
+        with patch("apts.plotting.jovian_moons.calculations.get_jovian_ephemeris"), \
+             patch("apts.plotting.jovian_moons.calculations.JovianSearchContext") as mock_ctx_cls, \
+             patch("apts.plotting.jovian_moons.calculations.JovianMoonState"):
 
             mock_ctx = mock_ctx_cls.return_value
             mock_ctx.moon_map = {}
