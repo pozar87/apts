@@ -1175,11 +1175,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 254,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 58,
+            "central_obstruction_mm": 64,  # Verified via Sky-Watcher USA (https://www.skywatcherusa.com/products/sky-watcher-classic-250p)
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 1200,
-            "mass": 12500,
+            "mass": 12700,  # Verified via Sky-Watcher USA (28 lbs OTA weight)
             "name": "Traditional Dob 10\"",
             "optical_length": 0,
             "reversible": False,
