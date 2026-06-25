@@ -244,7 +244,7 @@ def profile_function(func: Callable, *args, **kwargs) -> tuple:
 def benchmark_astronomical_operations():
     """Benchmark common astronomical operations in APTS."""
     from apts.place import Place
-    from apts.objects.solar_objects import SolarObjects
+    from apts.objects import SolarObjects
     from apts.objects.messier import Messier
     from apts.catalogs import Catalogs
 

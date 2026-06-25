@@ -4,7 +4,7 @@ import pstats
 import io
 from datetime import datetime, timezone
 from apts.place import Place
-from apts.objects.solar_objects import SolarObjects
+from apts.objects import SolarObjects
 from apts.conditions import Conditions
 
 def profile_planets():

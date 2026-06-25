@@ -55,7 +55,7 @@ class DiscoveryService:
     def _get_combined_targets(place, catalogs, date) -> pd.DataFrame:
         """Collects and combines Messier and Solar objects, excluding the Sun."""
         from ..objects.messier import Messier
-        from ..objects.solar_objects import SolarObjects
+        from ..objects import SolarObjects
 
         # Optimization: Pass date to constructors to avoid redundant compute() calls.
         messier_obj = Messier(place, catalogs, calculation_date=date)

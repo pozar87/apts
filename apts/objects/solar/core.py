@@ -1,30 +1,16 @@
 import functools
-from decimal import Decimal
 from types import SimpleNamespace
 from typing import cast
 
-import ephem
 import numpy as np
 import pandas as pd
 
-from ..cache import get_mpcorb_data
-from ..constants import DSOType, ObjectTableLabels
-from ..utils import MINOR_PLANET_NAMES, planetary
-from .base import Objects
-from .utils import vectorized_geometric_compute
-
-
-def _to_float(value):
-    """
-    Safely converts a value to a float, handling Decimal, NA, and other types.
-    """
-    if pd.isna(value):
-        return np.nan
-    if isinstance(value, Decimal):
-        return float(value)
-    if hasattr(value, "magnitude"):  # Handle pint.Quantity objects
-        return float(value.magnitude)
-    return float(value)
+from ...cache import get_mpcorb_data
+from ...constants import DSOType, ObjectTableLabels
+from ...utils import MINOR_PLANET_NAMES, planetary
+from ..base import Objects
+from ..utils import vectorized_geometric_compute
+from .calculations import compute_ephem_and_skyfield_data
 
 
 class SolarObjects(Objects):
@@ -114,148 +100,18 @@ class SolarObjects(Objects):
             t = self.place.date
         return observer_to_use, t
 
-    def _get_ephem_observer(self, observer_to_use, t):
-        """Configures and returns an ephem.Observer."""
-        ephem_observer = ephem.Observer()
-        ephem_observer.lat = str(observer_to_use.lat_decimal)
-        ephem_observer.lon = str(observer_to_use.lon_decimal)
-        ephem_observer.elevation = observer_to_use.elevation
-        ephem_observer.date = t.utc_datetime()
-        return ephem_observer
-
-    def _compute_minor_planet_ephem(self, object_name, ephem_observer):
-        """Computes ephem data for a minor planet."""
-        try:
-            minor_planet_details = self.minor_planets.loc[object_name]
-            dp = ephem.EllipticalBody()
-            dp._inc = np.deg2rad(minor_planet_details["inclination_degrees"])
-            dp._Om = np.deg2rad(
-                minor_planet_details["longitude_of_ascending_node_degrees"]
-            )
-            dp._om = np.deg2rad(minor_planet_details["argument_of_perihelion_degrees"])
-            dp._a = minor_planet_details["semimajor_axis_au"]
-            dp._e = minor_planet_details["eccentricity"]
-            dp._M = np.deg2rad(minor_planet_details["mean_anomaly_degrees"])
-            if pd.notna(minor_planet_details["magnitude_H"]):
-                dp._H = minor_planet_details["magnitude_H"]
-            if pd.notna(minor_planet_details["magnitude_G"]):
-                dp._G = minor_planet_details["magnitude_G"]
-
-            packed_epoch = minor_planet_details["epoch_packed"]
-            _MPC_CENTURY = {"I": 18, "J": 19, "K": 20}
-            _MPC_MONTH = {
-                "1": 1,
-                "2": 2,
-                "3": 3,
-                "4": 4,
-                "5": 5,
-                "6": 6,
-                "7": 7,
-                "8": 8,
-                "9": 9,
-                "A": 10,
-                "B": 11,
-                "C": 12,
-            }
-            _MPC_DAY = {str(d): d for d in range(1, 10)}
-            _MPC_DAY.update({chr(ord("A") + i): i + 10 for i in range(22)})
-
-            year = _MPC_CENTURY[packed_epoch[0]] * 100 + int(packed_epoch[1:3])
-            month = _MPC_MONTH[packed_epoch[3]]
-            day = _MPC_DAY[packed_epoch[4]]
-            dp._epoch_M = ephem.Date(f"{year}/{month}/{day}")
-
-            dp.compute(ephem_observer)
-            return dp.mag, None, None
-        except Exception:
-            return np.nan, None, None
-
-    def _compute_ephem_and_skyfield_data(self, computed_df, observer_to_use, t):
-        """Computes Ephem and Skyfield data for each object in computed_df."""
-        ephem_object_map = {
-            "mercury": getattr(ephem, "Mercury"),
-            "venus": getattr(ephem, "Venus"),
-            "mars barycenter": getattr(ephem, "Mars"),
-            "jupiter barycenter": getattr(ephem, "Jupiter"),
-            "saturn barycenter": getattr(ephem, "Saturn"),
-            "uranus barycenter": getattr(ephem, "Uranus"),
-            "neptune barycenter": getattr(ephem, "Neptune"),
-            "moon": getattr(ephem, "Moon"),
-            "sun": getattr(ephem, "Sun"),
-        }
-        ephem_observer = self._get_ephem_observer(observer_to_use, t)
-        mags, sizes, phases = [], [], []
-        ras, decs, dists, elongs, sky_objs = [], [], [], [], []
-        current_alts, current_azs = [], []
-
-        obs_at_t = observer_to_use.observer.at(t)
-        sun_pos = obs_at_t.observe(observer_to_use.sun).apparent()
-
-        # Optimization: use itertuples() for faster row access than iterrows()
-        for row in computed_df.itertuples():
-            object_name = cast(str, row.Name)
-            # Ephem
-            if object_name in MINOR_PLANET_NAMES.values():
-                mag, size, phase = self._compute_minor_planet_ephem(
-                    object_name, ephem_observer
-                )
-            else:
-                ephem_obj_constructor = ephem_object_map.get(object_name)
-                if ephem_obj_constructor:
-                    ephem_obj = ephem_obj_constructor()
-                    ephem_obj.compute(ephem_observer)
-                    mag, size, phase = ephem_obj.mag, ephem_obj.size, ephem_obj.phase
-                else:
-                    mag, size, phase = np.nan, np.nan, np.nan
-            mags.append(mag)
-            sizes.append(size)
-            phases.append(phase)
-            # Skyfield
-            # Convert row (NamedTuple) to dict for get_skyfield_object which expects Series/dict
-            row_dict = row._asdict()
-            sky_obj = self.get_skyfield_object(row_dict)
-            sky_objs.append(sky_obj)
-            if sky_obj:
-                pos = obs_at_t.observe(sky_obj).apparent()
-                ra, dec, dist = pos.radec()
-                alt, az, _ = pos.altaz()
-                ras.append(ra.hours)
-                decs.append(dec.degrees)
-                dists.append(dist.au)
-                elongs.append(pos.separation_from(sun_pos).degrees)
-                current_alts.append(alt.degrees)
-                current_azs.append(az.degrees)
-            else:
-                ras.append(np.nan)
-                decs.append(np.nan)
-                dists.append(np.nan)
-                elongs.append(np.nan)
-                current_alts.append(np.nan)
-                current_azs.append(np.nan)
-
-        computed_df[ObjectTableLabels.MAGNITUDE] = mags
-        computed_df["Magnitude_float"] = [m if pd.notna(m) else 99 for m in mags]
-        computed_df[ObjectTableLabels.SIZE] = sizes
-        sizes_arcmin = [s / 60.0 if s is not None else 0 for s in sizes]
-        computed_df[ObjectTableLabels.SIZE_MAJOR] = sizes_arcmin
-        computed_df[ObjectTableLabels.SIZE_MINOR] = sizes_arcmin
-        computed_df[ObjectTableLabels.PHASE] = phases
-        computed_df["skyfield_object"] = sky_objs
-        computed_df["ra_hours"] = ras
-        computed_df["dec_degrees"] = decs
-        computed_df[ObjectTableLabels.RA] = ras
-        computed_df[ObjectTableLabels.DEC] = decs
-        computed_df[ObjectTableLabels.DISTANCE] = dists
-        computed_df[ObjectTableLabels.ELONGATION] = elongs
-        computed_df[ObjectTableLabels.CURRENT_ALT] = current_alts
-        computed_df[ObjectTableLabels.CURRENT_AZ] = current_azs
-
     def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
         observer_to_use, t = self._prepare_observer(calculation_date)
         target_df = df_to_compute if df_to_compute is not None else self.objects
         computed_df = target_df.copy()
 
-        self._compute_ephem_and_skyfield_data(computed_df, observer_to_use, t)
+        compute_ephem_and_skyfield_data(
+            computed_df,
+            observer_to_use,
+            t,
+            self.minor_planets,
+            self.get_skyfield_object,
+        )
         computed_df.loc[:, ObjectTableLabels.DSO_TYPE] = DSOType.OTHER.value
 
         if not skip_transits:
