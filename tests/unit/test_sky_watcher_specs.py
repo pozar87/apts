@@ -135,7 +135,7 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         self.assertEqual(scope.get_vendor(), "Sky-Watcher SkyMax 180 Pro")
         self.assertEqual(scope.aperture.to('mm').magnitude, 180)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 2700)
-        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 52)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 41)
         self.assertEqual(scope.mass.to('gram').magnitude, 7800)
 
     def test_star_discovery_150p_specs(self):
