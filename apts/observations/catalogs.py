@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..conditions import Conditions
     from ..objects.messier import Messier
     from ..objects.ngc import NGC
-    from ..objects.solar_objects import SolarObjects
+    from ..objects import SolarObjects
     from ..objects.stars import Stars
     from ..place import Place
 
@@ -48,7 +48,7 @@ class CatalogMixIn:
     @property
     def local_planets(self) -> "SolarObjects":
         if self._local_planets is None:
-            from ..objects.solar_objects import SolarObjects
+            from ..objects import SolarObjects
 
             self._local_planets = SolarObjects(
                 self.place, calculation_date=self.effective_date, lazy=True

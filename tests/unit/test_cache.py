@@ -9,7 +9,7 @@ from apts import catalogs
 from apts.cache import download_all_data, get_hipparcos_data, get_mpcorb_data
 from apts.equipment import Equipment
 from apts.objects.messier import Messier
-from apts.objects.solar_objects import SolarObjects
+from apts.objects import SolarObjects
 from apts.observations import Observation
 from apts.opticalequipment import Eyepiece, Telescope
 from apts.place import Place

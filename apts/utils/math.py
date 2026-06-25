@@ -1,6 +1,21 @@
+from decimal import Decimal
+import pandas as pd
 from skyfield.api import load
 import numpy as np
 from scipy.optimize import brentq
+
+
+def _to_float(value):
+    """
+    Safely converts a value to a float, handling Decimal, NA, and other types.
+    """
+    if pd.isna(value):
+        return np.nan
+    if isinstance(value, Decimal):
+        return float(value)
+    if hasattr(value, "magnitude"):  # Handle pint.Quantity objects
+        return float(value.magnitude)
+    return float(value)
 
 
 def find_extrema(f, t0, t1, num_points=1000):
