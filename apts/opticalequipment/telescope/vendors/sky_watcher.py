@@ -679,7 +679,7 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 180,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 52,
+            "central_obstruction_mm": 41,  # Verified via Sky-Watcher USA and Astronomics (41mm secondary mirror)
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 2700,
@@ -855,7 +855,7 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 180,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 52,
+            "central_obstruction_mm": 41,  # Verified via Sky-Watcher USA and Astronomics (41mm secondary mirror)
             "cside_gender": "Male",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "focal_length_mm": 2700,
