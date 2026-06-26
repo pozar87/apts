@@ -200,7 +200,8 @@ def _get_ngc_dimensions(visible_ngc_plot: pd.DataFrame, mask: numpy.ndarray):
             and vals.isna().any()
         ):
             vals = vals.fillna(visible_ngc_plot.loc[mask, default_col])
-        vals = vals.fillna(1.0)
+        with pd.option_context("future.no_silent_downcasting", True):
+            vals = vals.fillna(1.0)
         return numpy.array([getattr(x, "magnitude", x) for x in vals], dtype=float)
 
     widths_deg = get_dim(ObjectTableLabels.SIZE_MAJOR) / 60.0
