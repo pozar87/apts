@@ -1,11 +1,12 @@
 from types import SimpleNamespace
 
+import numpy as np
 import pandas as pd
 
-from .base import Objects
 from ..catalogs import Catalogs
 from ..catalogs.ngc import normalize_name as internal_normalize_name
 from ..constants import ObjectTableLabels
+from .base import Objects
 
 
 class NGC(Objects):
@@ -69,6 +70,7 @@ class NGC(Objects):
 
         # 4. Defer restoration of skyfield_objects and Pint units to visible subset
         from skyfield.api import Star
+
         from ..units import get_unit_registry
 
         ureg = get_unit_registry()
@@ -78,9 +80,10 @@ class NGC(Objects):
         # source of truth for existing restorations.
         # Optimization: Use list comprehension over .values to minimize Pandas overhead.
         indices_needing_restoration = [
-            idx for idx in visible.index
-            if pd.isnull(self.objects.at[idx, "skyfield_object"]) or
-            not hasattr(self.objects.at[idx, "Magnitude"], "magnitude")
+            idx
+            for idx in visible.index
+            if pd.isnull(self.objects.at[idx, "skyfield_object"])
+            or not hasattr(self.objects.at[idx, "Magnitude"], "magnitude")
         ]
 
         if indices_needing_restoration:
@@ -96,21 +99,41 @@ class NGC(Objects):
 
             # Vectorized Pint Magnitude restoration
             mags_q = list(
-                self.objects.loc[indices_needing_restoration, "Magnitude_float"].values * ureg.mag
+                self.objects.loc[indices_needing_restoration, "Magnitude_float"].values
+                * ureg.mag
             )
             self.objects.loc[indices_needing_restoration, "Magnitude"] = mags_q
 
             # Vectorized Pint Size restoration
-            sizes_major_q = list(
-                self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR].values
-                * ureg.arcminute
-            )
-            sizes_minor_q = list(
-                self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MINOR].values
-                * ureg.arcminute
-            )
-            self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
-            self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
+            # Extract plain floats first to handle both raw floats and already-restored Quantities
+            sizes_major_raw = self.objects.loc[
+                indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR
+            ].values
+            if hasattr(sizes_major_raw, "dtype") and sizes_major_raw.dtype == object:
+                # Object array likely contains Quantities; extract magnitudes
+                sizes_major_floats = np.array(
+                    [getattr(v, "magnitude", v) for v in sizes_major_raw], dtype=float
+                )
+            else:
+                sizes_major_floats = np.atleast_1d(sizes_major_raw)
+            sizes_major_q = list(sizes_major_floats * ureg.arcminute)
+
+            sizes_minor_raw = self.objects.loc[
+                indices_needing_restoration, ObjectTableLabels.SIZE_MINOR
+            ].values
+            if hasattr(sizes_minor_raw, "dtype") and sizes_minor_raw.dtype == object:
+                sizes_minor_floats = np.array(
+                    [getattr(v, "magnitude", v) for v in sizes_minor_raw], dtype=float
+                )
+            else:
+                sizes_minor_floats = np.atleast_1d(sizes_minor_raw)
+            sizes_minor_q = list(sizes_minor_floats * ureg.arcminute)
+            self.objects.loc[
+                indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR
+            ] = sizes_major_q
+            self.objects.loc[
+                indices_needing_restoration, ObjectTableLabels.SIZE_MINOR
+            ] = sizes_minor_q
 
             # Refresh the 'visible' slice with restored objects for returning to the caller.
             # We must re-copy from the master catalog to ensure consistency.
@@ -163,19 +186,30 @@ class NGC(Objects):
         # Case 1: DataFrame passed for vectorized Star creation
         if isinstance(obj, pd.DataFrame):
             from skyfield.api import Star
+
             return Star(
                 ra_hours=obj["ra_hours"].to_numpy(),
                 dec_degrees=obj["dec_degrees"].to_numpy(),
             )
 
         # Case 2: Individual object (Series, dict, or namedtuple)
-        sky_obj = getattr(obj, "skyfield_object", obj.get("skyfield_object") if isinstance(obj, dict) else None)
+        sky_obj = getattr(
+            obj,
+            "skyfield_object",
+            obj.get("skyfield_object") if isinstance(obj, dict) else None,
+        )
         if sky_obj is not None and pd.notna(sky_obj):
             return sky_obj
 
         # Reconstruct if missing (lazy loading or unpickled)
-        ra = getattr(obj, "ra_hours", obj.get("ra_hours") if isinstance(obj, dict) else None)
-        dec = getattr(obj, "dec_degrees", obj.get("dec_degrees") if isinstance(obj, dict) else None)
+        ra = getattr(
+            obj, "ra_hours", obj.get("ra_hours") if isinstance(obj, dict) else None
+        )
+        dec = getattr(
+            obj,
+            "dec_degrees",
+            obj.get("dec_degrees") if isinstance(obj, dict) else None,
+        )
 
         if ra is not None and dec is not None:
             return self.fixed_body(ra, dec)

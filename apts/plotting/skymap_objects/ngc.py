@@ -291,6 +291,9 @@ def _draw_ngc_cartesian(
     )
     # Optimization: use vectorized brightness color calculation
     face_colors = api.get_brightness_color(magnitudes)
+    # Broadcast scalar face_colors to array if needed
+    if isinstance(face_colors, str):
+        face_colors = numpy.full(len(active_names), face_colors)
 
     for i in range(len(active_names)):
         _plot_celestial_object(

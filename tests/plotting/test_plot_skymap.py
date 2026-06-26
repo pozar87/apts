@@ -134,6 +134,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
         )
         mock_ts = MagicMock(spec=Timescale)
         from skyfield.api import load
+
         ts = load.timescale()
         mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
@@ -189,6 +190,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
 
         mock_ts = MagicMock(spec=Timescale)
         from skyfield.api import load
+
         ts = load.timescale()
         mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
@@ -779,7 +781,9 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -881,7 +885,9 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=Angle(degrees=parallactic_angle_val),
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
     ):
         mock_pyplot.subplots.return_value = (mock_fig, mock_ax)
 
@@ -920,6 +926,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
 
     mock_observation = MagicMock()
     mock_observation.place.lat_decimal = 34.0
+    mock_observation.place.lat = 34.0  # degrees, used by calculate_parallactic_angle
     mock_ax = MagicMock()
     mock_fig = MagicMock()
 
@@ -997,6 +1004,10 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
         patch("apts.plotting.skymap.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
+            return_value=Angle(degrees=parallactic_angle_val),
+        ),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=Angle(degrees=parallactic_angle_val),
         ),
         patch("apts.plotting.skymap_objects.get_brightness_color", return_value="0.5"),
