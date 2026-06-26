@@ -3,7 +3,7 @@ from typing import cast
 
 from apts.constants.twilight import Twilight
 
-from .conditions import PlaceConditionsMixIn
+from .conditions.base import PlaceConditionsMixIn
 
 class PlaceImagingMixIn(PlaceConditionsMixIn):
     def get_imaging_window(

@@ -3,7 +3,7 @@ from typing import Optional
 
 from apts.constants.twilight import Twilight
 
-from .conditions import PlaceConditionsMixIn
+from .conditions.base import PlaceConditionsMixIn
 from .utils import (
     get_twilight_time_utc,
     next_rising_time_utc,
