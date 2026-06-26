@@ -1,17 +1,17 @@
 import matplotlib
-matplotlib.use("Agg")
-import pytest
-import pandas as pd
-from unittest.mock import MagicMock, patch
-from datetime import datetime
-import pytz
-import numpy as np
 
-from apts.plotting.jovian_moons import generate_plot_jovian_moons, plot_jovian_moons
+matplotlib.use("Agg")
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
+import pytest
+from skyfield.api import load
+
+from apts.equipment import Equipment
 from apts.observations import Observation
 from apts.place import Place
-from apts.equipment import Equipment
-from skyfield.api import load
+from apts.plotting.jovian_moons import generate_plot_jovian_moons, plot_jovian_moons
+
 
 @pytest.fixture
 def mock_observation():
@@ -23,6 +23,7 @@ def mock_observation():
     observation.effective_date = ts.utc(2025, 2, 18)
     return observation
 
+
 def test_generate_plot_jovian_moons_flipping(mock_observation):
     with patch("apts.plotting.jovian_moons.plots.pyplot.subplots") as mock_subplots:
         mock_fig = MagicMock()
@@ -30,81 +31,102 @@ def test_generate_plot_jovian_moons_flipping(mock_observation):
         mock_subplots.return_value = (mock_fig, mock_ax)
 
         # Mock other dependencies to avoid errors
-        with patch("apts.plotting.jovian_moons.calculations.get_jovian_ephemeris"), \
-             patch("apts.plotting.jovian_moons.calculations.JovianSearchContext") as mock_ctx_cls, \
-             patch("apts.plotting.jovian_moons.calculations.JovianMoonState"):
-
+        with (
+            patch("apts.plotting.jovian_moons.calculations.get_jovian_ephemeris"),
+            patch(
+                "apts.plotting.jovian_moons.calculations.JovianSearchContext"
+            ) as mock_ctx_cls,
+            patch("apts.plotting.jovian_moons.calculations.JovianMoonState"),
+        ):
             mock_ctx = mock_ctx_cls.return_value
             mock_ctx.moon_map = {}
             mock_ctx.jupiter = MagicMock()
 
             # Mock the observer.at(t).observe(jupiter) chain
             mock_j_obs = MagicMock()
-            mock_j_obs.radec.return_value = (MagicMock(radians=0), MagicMock(degrees=0), MagicMock(km=700000000))
+            mock_j_obs.radec.return_value = (
+                MagicMock(radians=0),
+                MagicMock(degrees=0),
+                MagicMock(km=700000000),
+            )
 
             # Since observer is an object, we need to mock its methods
             mock_observer = MagicMock()
             mock_observation.place.observer = mock_observer
-            mock_observer.at.return_value.observe.return_value.apparent.return_value = mock_j_obs
+            mock_observer.at.return_value.observe.return_value.apparent.return_value = (
+                mock_j_obs
+            )
 
             # 1. Test no flipping
-            generate_plot_jovian_moons(mock_observation, flipped_horizontally=False, flipped_vertically=False)
+            generate_plot_jovian_moons(
+                mock_observation, flipped_horizontally=False, flipped_vertically=False
+            )
             mock_ax.invert_xaxis.assert_not_called()
             mock_ax.invert_yaxis.assert_not_called()
 
             mock_ax.reset_mock()
 
             # 2. Test horizontal flipping
-            generate_plot_jovian_moons(mock_observation, flipped_horizontally=True, flipped_vertically=False)
+            generate_plot_jovian_moons(
+                mock_observation, flipped_horizontally=True, flipped_vertically=False
+            )
             mock_ax.invert_xaxis.assert_called_once()
             mock_ax.invert_yaxis.assert_not_called()
 
             mock_ax.reset_mock()
 
             # 3. Test vertical flipping
-            generate_plot_jovian_moons(mock_observation, flipped_horizontally=False, flipped_vertically=True)
+            generate_plot_jovian_moons(
+                mock_observation, flipped_horizontally=False, flipped_vertically=True
+            )
             mock_ax.invert_xaxis.assert_not_called()
             mock_ax.invert_yaxis.assert_called_once()
 
             mock_ax.reset_mock()
 
             # 4. Test both flips
-            generate_plot_jovian_moons(mock_observation, flipped_horizontally=True, flipped_vertically=True)
+            generate_plot_jovian_moons(
+                mock_observation, flipped_horizontally=True, flipped_vertically=True
+            )
             mock_ax.invert_xaxis.assert_called_once()
             mock_ax.invert_yaxis.assert_called_once()
 
+
 def test_plot_jovian_moons_equipment_detection(mock_observation):
     # Mock equipment data
-    equipment_data = pd.DataFrame([
-        {"ID": 1, "Flipped Horizontally": True, "Flipped Vertically": False},
-        {"ID": 2, "Flipped Horizontally": False, "Flipped Vertically": True}
-    ])
+    equipment_data = pd.DataFrame(
+        [
+            {"ID": 1, "Flipped Horizontally": True, "Flipped Vertically": False},
+            {"ID": 2, "Flipped Horizontally": False, "Flipped Vertically": True},
+        ]
+    )
 
-    with patch.object(mock_observation.equipment, "data", return_value=equipment_data), \
-         patch("apts.plotting.jovian_moons.generate_plot_jovian_moons") as mock_generate:
-
+    with (
+        patch.object(mock_observation.equipment, "data", return_value=equipment_data),
+        patch("apts.plotting.jovian_moons.generate_plot_jovian_moons") as mock_generate,
+    ):
         # 1. Detect ID 1
         plot_jovian_moons(mock_observation, equipment_id=1)
         args, kwargs = mock_generate.call_args
-        assert bool(kwargs["flipped_horizontally"]) == True
-        assert bool(kwargs["flipped_vertically"]) == False
+        assert kwargs["flipped_horizontally"]
+        assert not kwargs["flipped_vertically"]
 
         # 2. Detect ID 2
         plot_jovian_moons(mock_observation, equipment_id=2)
         args, kwargs = mock_generate.call_args
-        assert bool(kwargs["flipped_horizontally"]) == False
-        assert bool(kwargs["flipped_vertically"]) == True
+        assert not kwargs["flipped_horizontally"]
+        assert kwargs["flipped_vertically"]
 
         # 3. Explicit override should take precedence (flip_horizontally=False)
         plot_jovian_moons(mock_observation, equipment_id=1, flip_horizontally=False)
         args, kwargs = mock_generate.call_args
-        assert bool(kwargs["flipped_horizontally"]) == False
+        assert not kwargs["flipped_horizontally"]
         # Flipped Vertically should still be taken from equipment if not overridden,
         # but here it is False in equipment ID 1 anyway.
-        assert bool(kwargs["flipped_vertically"]) == False
+        assert not kwargs["flipped_vertically"]
 
         # 4. Explicit override should take precedence (flip_vertically=True)
         plot_jovian_moons(mock_observation, equipment_id=1, flip_vertically=True)
         args, kwargs = mock_generate.call_args
-        assert bool(kwargs["flipped_horizontally"]) == True
-        assert bool(kwargs["flipped_vertically"]) == True
+        assert kwargs["flipped_horizontally"]
+        assert kwargs["flipped_vertically"]

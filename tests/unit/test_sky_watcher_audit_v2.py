@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 
 def test_esprit_150ed_specs():

@@ -3,7 +3,6 @@ from typing import cast
 
 import numpy as np
 import pandas as pd
-from skyfield.api import Star
 
 from ..constants import FilterStrategy, ObjectTableLabels
 from ..objects.utils import vectorized_geometric_imaging_duration
