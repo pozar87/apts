@@ -66,7 +66,7 @@ class NGC(Objects):
             visible = visible[visible["M"].isna()]
 
         if visible.empty:
-            return visible
+            return visible  # type: ignore[return-value]
 
         # 4. Defer restoration of skyfield_objects and Pint units to visible subset
         from skyfield.api import Star
@@ -139,7 +139,7 @@ class NGC(Objects):
             # We must re-copy from the master catalog to ensure consistency.
             visible.update(self.objects.loc[indices_needing_restoration])
 
-        return visible
+        return visible  # type: ignore[return-value]
 
     def compute(self, calculation_date=None, df_to_compute=None):
         if calculation_date is not None:
