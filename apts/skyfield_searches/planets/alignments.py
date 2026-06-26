@@ -12,11 +12,11 @@ from ...utils import planetary
 
 # Thresholds for different numbers of planets (number: arc_degrees)
 _PLANET_ALIGNMENT_THRESHOLDS = {
-    3: 10,
-    4: 25,
-    5: 45,
-    6: 90,
-    7: 150,
+    3: 15,
+    4: 30,
+    5: 60,
+    6: 160,
+    7: 180,
 }
 
 
@@ -324,7 +324,7 @@ def find_planet_alignments(observer, start_date, end_date):
     )
     sun_app.center = sun_topo_ast.center
     sun_alts = sun_app.altaz()[0].degrees
-    is_dark = sun_alts < -6  # type: ignore[operator]
+    is_dark = sun_alts < 0  # type: ignore[operator]
 
     # Calculate stats for every hour
     step_results = _calculate_step_results(times, longitudes, altitudes, is_dark)

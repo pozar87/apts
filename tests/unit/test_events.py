@@ -335,6 +335,69 @@ class EventsTest(unittest.TestCase):
         self.assertIn("Uranus", visible_planets)
         self.assertIn("Neptune", visible_planets)
 
+    def test_planet_alignment_june_2024(self):
+        # Alignment of June 3, 2024
+        start_date = datetime(2024, 6, 1, tzinfo=utc)
+        end_date = datetime(2024, 6, 5, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_ALIGNMENTS],
+        )
+        events_df = events_calculator.get_events()
+        alignment_events = events_df[events_df["type"] == "Planet Alignment"]
+
+        # June 3 alignment
+        june_3_alignment = alignment_events[
+            cast(Any, alignment_events["date"]).dt.day == 3
+        ]
+        self.assertEqual(len(june_3_alignment), 1)
+        self.assertIn("7 planets", cast(Any, june_3_alignment).iloc[0]["event"])
+        self.assertIn("6 visible", cast(Any, june_3_alignment).iloc[0]["event"])
+
+    def test_planet_alignment_august_2024(self):
+        # Alignment of August 28, 2024
+        start_date = datetime(2024, 8, 25, tzinfo=utc)
+        end_date = datetime(2024, 8, 30, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_ALIGNMENTS],
+        )
+        events_df = events_calculator.get_events()
+        alignment_events = events_df[events_df["type"] == "Planet Alignment"]
+
+        # August 28 alignment
+        aug_28_alignment = alignment_events[
+            cast(Any, alignment_events["date"]).dt.day == 28
+        ]
+        self.assertEqual(len(aug_28_alignment), 1)
+        self.assertIn("6 planets", cast(Any, aug_28_alignment).iloc[0]["event"])
+        self.assertIn("6 visible", cast(Any, aug_28_alignment).iloc[0]["event"])
+
+    def test_planet_alignment_feb_2025(self):
+        # Alignment of February 28, 2025
+        start_date = datetime(2025, 2, 25, tzinfo=utc)
+        end_date = datetime(2025, 3, 2, tzinfo=utc)
+        events_calculator = AstronomicalEvents(
+            self.place,
+            start_date,
+            end_date,
+            events_to_calculate=[EventType.PLANET_ALIGNMENTS],
+        )
+        events_df = events_calculator.get_events()
+        alignment_events = events_df[events_df["type"] == "Planet Alignment"]
+
+        # Feb 28 alignment
+        feb_28_alignment = alignment_events[
+            cast(Any, alignment_events["date"]).dt.day == 28
+        ]
+        self.assertEqual(len(feb_28_alignment), 1)
+        self.assertIn("7 planets", cast(Any, feb_28_alignment).iloc[0]["event"])
+        self.assertIn("7 visible", cast(Any, feb_28_alignment).iloc[0]["event"])
+
     @patch("apts.events.coordinator.settings.get_event_settings")
     def test_calculate_culminations(self, mock_get_event_settings):
         # Warsaw, June 21, 2023. Sun should culminate around 10:45 UTC (12:45 local)
