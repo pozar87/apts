@@ -439,11 +439,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 130,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 34.5,
+            "central_obstruction_mm": 40,  # Verified via Sky-Watcher Global (Secondary Mirror Diameter 40mm) - http://skywatcher.com/product/p130neq2/
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 650,
-            "mass": 3660,
+            "mass": 3000,  # Verified via APM Telescopes (Tube Weight 3kg) - https://www.apm-telescopes.net/en/skywatcher-explorer-130p-eq-2-newtonian-reflector
             "name": "Explorer 130P",
             "optical_length": 0,
             "reversible": False,

@@ -7,8 +7,10 @@ class TestExplorer130P(unittest.TestCase):
         self.assertEqual(scope.get_vendor(), "Sky-Watcher Explorer 130P")
         self.assertEqual(scope.aperture.to('mm').magnitude, 130)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 650)
-        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 34.5)
-        self.assertEqual(scope.mass.to('gram').magnitude, 3660)
+        # Updated to 40mm
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 40)
+        # Updated to 3000g
+        self.assertEqual(scope.mass.to('gram').magnitude, 3000)
         self.assertEqual(scope.focal_ratio().magnitude, 650/130)
 
 if __name__ == '__main__':
