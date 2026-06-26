@@ -12,10 +12,10 @@ from ...utils import planetary
 
 # Thresholds for different numbers of planets (number: arc_degrees)
 _PLANET_ALIGNMENT_THRESHOLDS = {
-    3: 10,
-    4: 25,
-    5: 45,
-    6: 90,
+    3: 15,
+    4: 30,
+    5: 60,
+    6: 160,
     7: 150,
 }
 
@@ -186,7 +186,8 @@ def _calculate_step_results(times, longitudes, altitudes, is_dark):
 def _aggregate_to_daily_results(times, step_results):
     """
     Aggregates hourly results to find the best representative alignment for each day.
-    Best means: max k, then max num_visible, then min arc.
+    Best means: max num_visible, then max k, then min arc.
+    Visibility is prioritized to ensure we report events when they are best seen.
     """
     by_day = defaultdict(list)
     for i, res in enumerate(step_results):
@@ -198,7 +199,7 @@ def _aggregate_to_daily_results(times, step_results):
     for day in sorted_days:
         day_steps = by_day[day]
         best_step = max(
-            day_steps, key=lambda x: (x[1]["k"], x[1]["num_visible"], -x[1]["arc"])
+            day_steps, key=lambda x: (x[1]["num_visible"], x[1]["k"], -x[1]["arc"])
         )
         daily_results.append(best_step)
     return daily_results
@@ -211,25 +212,31 @@ def _format_alignment_events(daily_results, planets):
     events = []
     i = 0
     while i < len(daily_results):
-        if daily_results[i][1]["k"] >= 3:
+        # We consider a day "aligned" if it has k>=3 AND is observationally
+        # significant (num_visible >= 3).
+        res = daily_results[i][1]
+        if res["k"] >= 3 and res["num_visible"] >= 3:
             # Start of an alignment period
             start_i = i
-            while i < len(daily_results) and daily_results[i][1]["k"] >= 3:
+            while i < len(daily_results):
+                r = daily_results[i][1]
+                if not (r["k"] >= 3 and r["num_visible"] >= 3):
+                    break
                 i += 1
             end_i = i
 
             # Find the best representative day in the window
             window = daily_results[start_i:end_i]
             best_day_tuple = max(
-                window, key=lambda x: (x[1]["k"], x[1]["num_visible"], -x[1]["arc"])
+                window, key=lambda x: (x[1]["num_visible"], x[1]["k"], -x[1]["arc"])
             )
 
-            t_best, res = best_day_tuple
-            k = res["k"]
-            arc = res["arc"]
-            indices = res["indices"]
-            num_visible = res["num_visible"]
-            visible_indices = res["visible_indices"]
+            t_best, res_best = best_day_tuple
+            k = res_best["k"]
+            arc = res_best["arc"]
+            indices = res_best["indices"]
+            num_visible = res_best["num_visible"]
+            visible_indices = res_best["visible_indices"]
 
             aligned_planets = [
                 planetary.get_simple_name(planets[idx]) for idx in indices
@@ -238,9 +245,7 @@ def _format_alignment_events(daily_results, planets):
                 planetary.get_simple_name(planets[idx]) for idx in visible_indices
             ]
 
-            event_label = f"Alignment of {k} planets"
-            if num_visible >= 3:
-                event_label += f" ({num_visible} visible)"
+            event_label = f"Alignment of {k} planets ({num_visible} visible)"
 
             events.append(
                 {
@@ -324,7 +329,9 @@ def find_planet_alignments(observer, start_date, end_date):
     )
     sun_app.center = sun_topo_ast.center
     sun_alts = sun_app.altaz()[0].degrees
-    is_dark = sun_alts < -6  # type: ignore[operator]
+    # Planets are visible in twilight. We use -2 degrees as a compromise
+    # between sunset (0) and civil twilight (-6) to capture parades.
+    is_dark = sun_alts < -2  # type: ignore[operator]
 
     # Calculate stats for every hour
     step_results = _calculate_step_results(times, longitudes, altitudes, is_dark)
