@@ -34,53 +34,18 @@ class NGC(Objects):
         exclude_messier=True,
         **kwargs,
     ) -> pd.DataFrame:
-        # Override get_visible to lazily restore skyfield objects BEFORE
-        # calculation and units AFTER calculation.
+        # Override get_visible to lazily restore skyfield objects and Pint units
+        # ONLY for the final set of visible objects.
         # This is a major performance win for NGC as it avoids creating
-        # 14k Pint/Skyfield objects during catalog load.
+        # thousands of Pint/Skyfield objects for candidates that are below the horizon.
 
-        from skyfield.api import Star
-
-        # 1. Determine magnitude threshold (handling Pint Quantities)
-        max_magnitude_q = (
-            limiting_magnitude
-            if limiting_magnitude is not None
-            else (
-                star_magnitude_limit
-                if star_magnitude_limit is not None
-                else conditions.max_object_magnitude
-            )
-        )
-        # Convert threshold to float for fast comparison with Magnitude_float
-        max_mag = (
-            max_magnitude_q.magnitude
-            if hasattr(max_magnitude_q, "magnitude")
-            else max_magnitude_q
-        )
-
-        candidate_mask = self.objects["Magnitude_float"] < max_mag
-
-        if exclude_messier and "M" in self.objects.columns:
-            candidate_mask &= self.objects["M"].isna()
-
-        # 2. Restore skyfield_objects for candidates only
+        # 1. Ensure skyfield_object column exists in master catalog
         if "skyfield_object" not in self.objects.columns:
             self.objects["skyfield_object"] = None
 
-        missing_sky_mask = candidate_mask & self.objects["skyfield_object"].isnull()
-        if bool(missing_sky_mask.any()):
-            missing_indices = self.objects.index[missing_sky_mask]
-            self.objects.loc[missing_indices, "skyfield_object"] = [
-                Star(ra_hours=ra, dec_degrees=dec)
-                if pd.notna(ra) and pd.notna(dec)
-                else None
-                for ra, dec in zip(
-                    self.objects.loc[missing_indices, "ra_hours"],
-                    self.objects.loc[missing_indices, "dec_degrees"],
-                )
-            ]
-
-        # 3. Call super().get_visible to perform visibility calculations
+        # 2. Call super().get_visible to perform vectorized visibility calculations
+        # NGC uses is_star_catalog=True and ra_hours/dec_degrees columns,
+        # so super().get_visible() does NOT need skyfield_objects yet.
         visible = super().get_visible(
             conditions,
             start,
@@ -92,46 +57,64 @@ class NGC(Objects):
             **kwargs,
         )
 
-        # 4. Restore Pint units for visible objects only and update master catalog
-        if not visible.empty:
-            from ..units import get_unit_registry
+        if visible.empty:
+            return visible
 
-            ureg = get_unit_registry()
+        # 3. Apply exclude_messier filter to visible objects
+        if exclude_messier and "M" in visible.columns:
+            visible = visible[visible["M"].isna()]
 
-            # Identify which visible objects still need Quantity restoration in master catalog
-            # We use Magnitude_float comparison as Magnitude column might contain floats
-            # Optimization: list comprehension over .values is faster than .apply()
-            restoration_mask = pd.Series(
-                [not hasattr(x, "magnitude") for x in visible["Magnitude"].values],
-                index=visible.index,
+        if visible.empty:
+            return visible
+
+        # 4. Defer restoration of skyfield_objects and Pint units to visible subset
+        from skyfield.api import Star
+        from ..units import get_unit_registry
+
+        ureg = get_unit_registry()
+
+        # Identify which visible objects still need restoration (missing Skyfield object
+        # or Pint Quantity magnitude). We use the master catalog (self.objects) as the
+        # source of truth for existing restorations.
+        # Optimization: Use list comprehension over .values to minimize Pandas overhead.
+        indices_needing_restoration = [
+            idx for idx in visible.index
+            if pd.isnull(self.objects.at[idx, "skyfield_object"]) or
+            not hasattr(self.objects.at[idx, "Magnitude"], "magnitude")
+        ]
+
+        if indices_needing_restoration:
+            # Vectorized Skyfield Star restoration
+            # Since NGC catalog has fixed RA/Dec, we can use them directly
+            ras = self.objects.loc[indices_needing_restoration, "ra_hours"].values
+            decs = self.objects.loc[indices_needing_restoration, "dec_degrees"].values
+            sky_objs = [
+                Star(ra_hours=r, dec_degrees=d) if pd.notna(r) and pd.notna(d) else None
+                for r, d in zip(ras, decs)
+            ]
+            self.objects.loc[indices_needing_restoration, "skyfield_object"] = sky_objs
+
+            # Vectorized Pint Magnitude restoration
+            mags_q = list(
+                self.objects.loc[indices_needing_restoration, "Magnitude_float"].values * ureg.mag
             )
-            if restoration_mask.any():
-                indices_to_restore = visible.index[restoration_mask]
+            self.objects.loc[indices_needing_restoration, "Magnitude"] = mags_q
 
-                # Magnitude restoration
-                mags_q = list(
-                    self.objects.loc[indices_to_restore, "Magnitude_float"].values
-                    * ureg.mag
-                )
-                self.objects.loc[indices_to_restore, "Magnitude"] = mags_q
+            # Vectorized Pint Size restoration
+            sizes_major_q = list(
+                self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR].values
+                * ureg.arcminute
+            )
+            sizes_minor_q = list(
+                self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MINOR].values
+                * ureg.arcminute
+            )
+            self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
+            self.objects.loc[indices_needing_restoration, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
 
-                # Size restoration
-                # Optimization: vectorized Quantity creation is ~7x faster for large lists
-                sizes_major_q = list(
-                    self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR].values
-                    * ureg.arcminute
-                )
-                sizes_minor_q = list(
-                    self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR].values
-                    * ureg.arcminute
-                )
-                self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
-                self.objects.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
-
-                # Refresh the 'visible' slice with restored objects
-                visible.loc[indices_to_restore, "Magnitude"] = mags_q
-                visible.loc[indices_to_restore, ObjectTableLabels.SIZE_MAJOR] = sizes_major_q
-                visible.loc[indices_to_restore, ObjectTableLabels.SIZE_MINOR] = sizes_minor_q
+            # Refresh the 'visible' slice with restored objects for returning to the caller.
+            # We must re-copy from the master catalog to ensure consistency.
+            visible.update(self.objects.loc[indices_needing_restoration])
 
         return visible
 
