@@ -6,7 +6,7 @@ import pandas as pd
 from skyfield import almanac
 from skyfield.api import Time
 
-from .conditions import PlaceConditionsMixIn
+from .conditions.base import PlaceConditionsMixIn
 
 class PlacePathsMixIn(PlaceConditionsMixIn):
     def get_altaz_curve(
