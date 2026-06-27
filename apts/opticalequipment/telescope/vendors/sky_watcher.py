@@ -1220,14 +1220,14 @@ class Sky_watcherTelescope(Telescope):
             "type": "newtonian_reflector",
         },
         "Sky_Watcher_Traditional_Dob_8": {
-            "aperture_mm": 203,  # Verified via Sky-Watcher USA (8" = 203.2mm)
+            "aperture_mm": 203.2,  # Verified via Sky-Watcher USA (8" = 203.2mm) - https://www.skywatcherusa.com/products/sky-watcher-classic-200p
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 47,
+            "central_obstruction_mm": 48,  # Verified via Sky-Watcher Global/USA (Secondary Mirror Diameter 48mm)
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 1200,
-            "mass": 11000,
+            "mass": 9072,  # Verified via Sky-Watcher USA (20 lbs OTA weight)
             "name": "Traditional Dob 8\"",
             "optical_length": 0,
             "reversible": False,
