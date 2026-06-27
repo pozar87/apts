@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 
 def test_sky_watcher_quattro_300p_specs():

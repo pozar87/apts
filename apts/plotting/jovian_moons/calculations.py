@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 
 from skyfield.api import Time
 

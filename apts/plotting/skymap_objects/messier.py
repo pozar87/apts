@@ -149,6 +149,9 @@ def _get_messier_visual_properties(plot_df: pd.DataFrame):
     )
     # Optimization: use vectorized brightness color calculation
     face_colors = api.get_brightness_color(magnitudes)
+    # Ensure face_colors is broadcast to the correct length (handles mock returns too)
+    if isinstance(face_colors, str):
+        face_colors = numpy.full(len(plot_df), face_colors)
 
     # Names for annotation
     names = plot_df[ObjectTableLabels.MESSIER].to_numpy()

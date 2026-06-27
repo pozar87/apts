@@ -1,9 +1,8 @@
 import pytest
 import pytz
-import json
 import pandas as pd
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from apts.weather.providers import VisualCrossing
 
 @pytest.fixture
