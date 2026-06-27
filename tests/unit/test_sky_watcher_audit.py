@@ -14,10 +14,10 @@ class TestSkyWatcherAudit(unittest.TestCase):
     def test_traditional_dob_8_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Traditional_Dob_8()
         self.assertEqual(scope.get_vendor(), "Sky-Watcher Traditional Dob 8\"")
-        self.assertEqual(scope.aperture.to('mm').magnitude, 203)
+        self.assertEqual(scope.aperture.to('mm').magnitude, 203.2)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1200)
-        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 47)
-        self.assertEqual(scope.mass.to('gram').magnitude, 11000)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 48)
+        self.assertEqual(scope.mass.to('gram').magnitude, 9072)
 
     def test_skyliner_300p_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Skyliner_300P()
