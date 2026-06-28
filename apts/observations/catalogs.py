@@ -28,6 +28,7 @@ class CatalogMixIn:
         start: Optional["datetime"]
         time_limit: Optional["datetime"]
         limiting_magnitude: Optional[float]
+        sun_observation: bool
         _local_messier: Optional["Messier"]
         _local_planets: Optional["SolarObjects"]
         _local_ngc: Optional["NGC"]
@@ -82,6 +83,9 @@ class CatalogMixIn:
     def get_visible_messier(
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
+        if self.sun_observation:
+            return pd.DataFrame(columns=self.local_messier.objects.columns)
+
         with language_context(language):
             from ..i18n import bulk_gettext
 
@@ -106,6 +110,9 @@ class CatalogMixIn:
     def get_visible_ngc(
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
+        if self.sun_observation:
+            return pd.DataFrame(columns=self.local_ngc.objects.columns)
+
         with language_context(language):
             from ..i18n import bulk_gettext
 
@@ -140,6 +147,12 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+
+            if self.sun_observation and not visible.empty:
+                # In sun observation mode, only the Sun is visible.
+                # All other objects (planets, moon, stars) are overwhelmed by brightness.
+                visible = visible[visible["TechnicalName"] == "sun"].copy()
+
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
                 visible["Name"] = cast(pd.Series, bulk_gettext(visible["Name"])).astype(
