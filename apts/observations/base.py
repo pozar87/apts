@@ -7,7 +7,7 @@ from skyfield.api import Time
 from ..conditions import Conditions
 from .catalogs import CatalogMixIn
 from .events import EventsMixIn
-from .html import HtmlExportMixIn
+from .report import HtmlExportMixIn
 from .plotting import PlottingMixIn
 from .weather import WeatherAnalysisMixIn
 from .window import ObservationWindow

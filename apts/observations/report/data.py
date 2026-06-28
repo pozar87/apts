@@ -1,8 +1,5 @@
 import html
 import logging
-import re
-from importlib import resources
-from string import Template
 from typing import TYPE_CHECKING, List, Optional
 
 import numpy as np
@@ -10,20 +7,14 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from ..place import Place
-    from ..equipment.base import Equipment
+    from ...place import Place
+    from ...equipment.base import Equipment
 
-from ..i18n import language_context
-from ..utils import Utils
+from ...utils import Utils
 
 logger = logging.getLogger(__name__)
 
-
-class HtmlExportMixIn:
-    NOTIFICATION_TEMPLATE = resources.files("apts").joinpath(
-        "templates/notification.html.template"
-    )
-
+class ReportDataMixIn:
     if TYPE_CHECKING:
         start: Optional["datetime"]
         stop: Optional["datetime"]
@@ -34,51 +25,6 @@ class HtmlExportMixIn:
         def get_visible_planets(self, language: Optional[str] = None) -> pd.DataFrame: ...
         def get_visible_messier(self, language: Optional[str] = None) -> pd.DataFrame: ...
         def get_visible_ngc(self, language: Optional[str] = None) -> pd.DataFrame: ...
-
-    def to_html(
-        self,
-        custom_template=None,
-        css=None,
-        language: Optional[str] = None,
-    ):
-        with language_context(language):
-            template_content = self._load_template(custom_template)
-            if css:
-                template_content = self._inject_css(template_content, css)
-
-            template = Template(template_content)
-            data = self._prepare_html_data(language)
-            return str(template.substitute(data))
-
-    def _load_template(self, custom_template) -> str:
-        if custom_template:
-            # Security: restrict to allowed template extensions and prevent path traversal.
-            str_template = str(custom_template)
-            if ".." in str_template:
-                raise ValueError("Path traversal detected in custom template path.")
-
-            if not str_template.lower().endswith((".template", ".html", ".htm")):
-                raise ValueError(
-                    "Only .template, .html, or .htm files are allowed as custom templates."
-                )
-            with open(custom_template, "r", encoding="utf-8") as f:
-                return f.read()
-        else:
-            return self.NOTIFICATION_TEMPLATE.read_text(encoding="utf-8")
-
-    def _inject_css(self, template_content: str, css: str) -> str:
-        # Sanitize CSS to prevent breaking out of <style> block.
-        sanitized_css = re.sub(r"</style\s*/?>", "", str(css), flags=re.IGNORECASE)
-        # Escape '$' to '$$' to prevent string.Template from interpreting it as a variable.
-        sanitized_css = sanitized_css.replace("$", "$$")
-        style_end_pos = template_content.find("</style>")
-        if style_end_pos != -1:
-            return (
-                template_content[:style_end_pos]
-                + sanitized_css
-                + template_content[style_end_pos:]
-            )
-        return template_content
 
     def _prepare_html_data(self, language: Optional[str] = None) -> dict:
         hourly_weather = self.get_hourly_weather_analysis(language=language)
