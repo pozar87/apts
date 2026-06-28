@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -28,6 +29,7 @@ class CatalogMixIn:
         start: Optional["datetime"]
         time_limit: Optional["datetime"]
         limiting_magnitude: Optional[float]
+        sun_observation: bool
         _local_messier: Optional["Messier"]
         _local_planets: Optional["SolarObjects"]
         _local_ngc: Optional["NGC"]
@@ -82,6 +84,9 @@ class CatalogMixIn:
     def get_visible_messier(
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
+        if self.sun_observation:
+            return pd.DataFrame(columns=self.local_messier.objects.columns)
+
         with language_context(language):
             from ..i18n import bulk_gettext
 
@@ -106,6 +111,9 @@ class CatalogMixIn:
     def get_visible_ngc(
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
+        if self.sun_observation:
+            return pd.DataFrame(columns=self.local_ngc.objects.columns)
+
         with language_context(language):
             from ..i18n import bulk_gettext
 
@@ -140,6 +148,22 @@ class CatalogMixIn:
                 limiting_magnitude=self.limiting_magnitude,
                 **args,
             )
+
+            if self.sun_observation and not visible.empty:
+                # In sun observation mode, only very bright objects are visible.
+                # Usually Sun, Moon, and potentially Venus/Jupiter if they are bright enough.
+                # We use a threshold of 0 magnitude for daytime planet visibility.
+                from ..constants import ObjectTableLabels
+
+                def _get_mag(x):
+                    return getattr(x, "magnitude", x)
+
+                mags = np.array([_get_mag(val) for val in visible[ObjectTableLabels.MAGNITUDE].values])
+                tech_names = visible["TechnicalName"].values
+                # Keep Sun, Moon, or anything with magnitude < 0
+                mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)
+                visible = visible[mask].copy()
+
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
                 visible["Name"] = cast(pd.Series, bulk_gettext(visible["Name"])).astype(
