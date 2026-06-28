@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional, Union, cast
 
+import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -149,9 +150,19 @@ class CatalogMixIn:
             )
 
             if self.sun_observation and not visible.empty:
-                # In sun observation mode, only the Sun is visible.
-                # All other objects (planets, moon, stars) are overwhelmed by brightness.
-                visible = visible[visible["TechnicalName"] == "sun"].copy()
+                # In sun observation mode, only very bright objects are visible.
+                # Usually Sun, Moon, and potentially Venus/Jupiter if they are bright enough.
+                # We use a threshold of 0 magnitude for daytime planet visibility.
+                from ..constants import ObjectTableLabels
+
+                def _get_mag(x):
+                    return getattr(x, "magnitude", x)
+
+                mags = np.array([_get_mag(val) for val in visible[ObjectTableLabels.MAGNITUDE].values])
+                tech_names = visible["TechnicalName"].values
+                # Keep Sun, Moon, or anything with magnitude < 0
+                mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)
+                visible = visible[mask].copy()
 
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
