@@ -17,13 +17,15 @@ class TestZwoUpdates(unittest.TestCase):
         self.assertEqual(cam.pixel_size().to("micrometer").magnitude, 2.9)
         self.assertEqual(cam.full_well, 11200)
         self.assertEqual(cam.read_noise, 0.5)
-        self.assertEqual(cam.quantum_efficiency, 91)
+        # Audited to 89% peak QE
+        self.assertEqual(cam.quantum_efficiency, 89)
 
         # Test MM version
         cam_mm = ZwoCamera.ZWO_ASI_462MM()
         self.assertEqual(
             cam_mm.sensor_width.to("mm").magnitude, 5.57
         )  # Verified for IMX462
+        # Use existing QE for now or update if verified for MM too (usually same for IMX462)
         self.assertEqual(cam_mm.quantum_efficiency, 91)
 
     def test_asi585_specs(self):
