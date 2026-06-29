@@ -535,11 +535,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 130,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 34.5,
+            "central_obstruction_mm": 40,  # Verified via Sky-Watcher USA (Secondary Diameter 40mm) - https://www.skywatcherusa.com/products/heritage-130-tabletop-dobsonian
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 650,
-            "mass": 3250,
+            "mass": 2948,  # Verified via Sky-Watcher USA (6.5 lbs OTA weight)
             "name": "Heritage 130P",
             "optical_length": 0,
             "reversible": False,
@@ -551,11 +551,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 130,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 34.5,
+            "central_obstruction_mm": 40,  # Verified via Sky-Watcher USA (Secondary Diameter 40mm) - https://www.skywatcherusa.com/products/heritage-130-tabletop-dobsonian
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 650,
-            "mass": 3250,
+            "mass": 2948,  # Verified via Sky-Watcher USA (6.5 lbs OTA weight)
             "name": "Heritage 130P FlexTube",
             "optical_length": 0,
             "reversible": False,
@@ -567,11 +567,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 150,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 47,
+            "central_obstruction_mm": 48,  # Verified via Sky-Watcher USA (Secondary Diameter 48mm) - https://www.skywatcherusa.com/products/heritage-150-tabletop-dobsonian
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 750,
-            "mass": 3700,
+            "mass": 3629,  # Verified via Sky-Watcher USA (8 lbs OTA weight)
             "name": "Heritage 150P",
             "optical_length": 0,
             "reversible": False,
@@ -583,11 +583,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 150,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 47,
+            "central_obstruction_mm": 48,  # Verified via Sky-Watcher USA (Secondary Diameter 48mm) - https://www.skywatcherusa.com/products/heritage-150-tabletop-dobsonian
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 750,
-            "mass": 3700,
+            "mass": 3629,  # Verified via Sky-Watcher USA (8 lbs OTA weight)
             "name": "Heritage 150P FlexTube",
             "optical_length": 0,
             "reversible": False,
@@ -615,11 +615,11 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 130,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 34.5,
+            "central_obstruction_mm": 40,  # Verified via Sky-Watcher USA (Secondary Diameter 40mm) - https://www.skywatcherusa.com/products/heritage-130-tabletop-dobsonian
             "cside_gender": "Female",
             "cside_thread": "1.25\"",
             "focal_length_mm": 650,
-            "mass": 3250,
+            "mass": 2948,  # Verified via Sky-Watcher USA (6.5 lbs OTA weight)
             "name": "Heritage P130 FlexTube",
             "optical_length": 0,
             "reversible": False,

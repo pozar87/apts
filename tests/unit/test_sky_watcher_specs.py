@@ -198,7 +198,7 @@ class TestSkyWatcherSpecs(unittest.TestCase):
 
     def test_heritage_150p_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Heritage_150P()
-        self.assertEqual(scope.mass.to('gram').magnitude, 3700)
+        self.assertEqual(scope.mass.to('gram').magnitude, 3629)
 
     def test_star_adventurer_gti_80ed_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Star_Adventurer_GTi_80ED()
