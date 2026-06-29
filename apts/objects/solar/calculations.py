@@ -6,6 +6,21 @@ from ...constants import ObjectTableLabels
 from ...utils import MINOR_PLANET_NAMES
 from .mpc import compute_minor_planet_ephem
 
+# Optimization: Move maps to module level to avoid redundant creation
+EPHEM_OBJECT_MAP = {
+    "mercury": getattr(ephem, "Mercury"),
+    "venus": getattr(ephem, "Venus"),
+    "mars barycenter": getattr(ephem, "Mars"),
+    "jupiter barycenter": getattr(ephem, "Jupiter"),
+    "saturn barycenter": getattr(ephem, "Saturn"),
+    "uranus barycenter": getattr(ephem, "Uranus"),
+    "neptune barycenter": getattr(ephem, "Neptune"),
+    "moon": getattr(ephem, "Moon"),
+    "sun": getattr(ephem, "Sun"),
+}
+
+MINOR_PLANET_NAMES_SET = set(MINOR_PLANET_NAMES.values())
+
 
 def get_ephem_observer(observer_to_use, t):
     """Configures and returns an ephem.Observer."""
@@ -21,17 +36,6 @@ def compute_ephem_and_skyfield_data(
     computed_df, observer_to_use, t, minor_planets, get_skyfield_object_func
 ):
     """Computes Ephem and Skyfield data for each object in computed_df."""
-    ephem_object_map = {
-        "mercury": getattr(ephem, "Mercury"),
-        "venus": getattr(ephem, "Venus"),
-        "mars barycenter": getattr(ephem, "Mars"),
-        "jupiter barycenter": getattr(ephem, "Jupiter"),
-        "saturn barycenter": getattr(ephem, "Saturn"),
-        "uranus barycenter": getattr(ephem, "Uranus"),
-        "neptune barycenter": getattr(ephem, "Neptune"),
-        "moon": getattr(ephem, "Moon"),
-        "sun": getattr(ephem, "Sun"),
-    }
     ephem_observer = get_ephem_observer(observer_to_use, t)
     mags, sizes, phases = [], [], []
     ras, decs, dists, elongs, sky_objs = [], [], [], [], []
@@ -44,12 +48,12 @@ def compute_ephem_and_skyfield_data(
     for row in computed_df.itertuples():
         object_name = cast(str, row.Name)
         # Ephem
-        if object_name in MINOR_PLANET_NAMES.values():
+        if object_name in MINOR_PLANET_NAMES_SET:
             mag, size, phase = compute_minor_planet_ephem(
                 object_name, minor_planets, ephem_observer
             )
         else:
-            ephem_obj_constructor = ephem_object_map.get(object_name)
+            ephem_obj_constructor = EPHEM_OBJECT_MAP.get(object_name)
             if ephem_obj_constructor:
                 ephem_obj = ephem_obj_constructor()
                 ephem_obj.compute(ephem_observer)
@@ -60,9 +64,8 @@ def compute_ephem_and_skyfield_data(
         sizes.append(size)
         phases.append(phase)
         # Skyfield
-        # Convert row (NamedTuple) to dict for get_skyfield_object which expects Series/dict
-        row_dict = row._asdict()
-        sky_obj = get_skyfield_object_func(row_dict)
+        # Optimization: pass row (NamedTuple) directly to avoid expensive ._asdict() conversion.
+        sky_obj = get_skyfield_object_func(row)
         sky_objs.append(sky_obj)
         if sky_obj:
             pos = obs_at_t.observe(sky_obj).apparent()
@@ -82,12 +85,19 @@ def compute_ephem_and_skyfield_data(
             current_alts.append(np.nan)
             current_azs.append(np.nan)
 
+    # Optimization: Use NumPy for faster array processing than list comprehensions.
+    # to_numeric returns a Series (if input is list-like), we convert it to numpy
+    mags_arr = np.array(pd.to_numeric(mags, errors="coerce"))
+    sizes_arr = np.array(pd.to_numeric(sizes, errors="coerce"))
+
     computed_df[ObjectTableLabels.MAGNITUDE] = mags
-    computed_df["Magnitude_float"] = [m if pd.notna(m) else 99 for m in mags]
+    computed_df["Magnitude_float"] = np.where(np.isnan(mags_arr), 99.0, mags_arr)
     computed_df[ObjectTableLabels.SIZE] = sizes
-    sizes_arcmin = [s / 60.0 if s is not None else 0 for s in sizes]
+
+    sizes_arcmin = np.nan_to_num(sizes_arr) / 60.0
     computed_df[ObjectTableLabels.SIZE_MAJOR] = sizes_arcmin
     computed_df[ObjectTableLabels.SIZE_MINOR] = sizes_arcmin
+
     computed_df[ObjectTableLabels.PHASE] = phases
     computed_df["skyfield_object"] = sky_objs
     computed_df["ra_hours"] = ras
