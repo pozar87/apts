@@ -55,12 +55,8 @@ class PlanetsCatalogMixIn:
                 # In sun observation mode, only very bright objects are visible.
                 # Usually Sun, Moon, and potentially Venus/Jupiter if they are bright enough.
                 # We use a threshold of 0 magnitude for daytime planet visibility.
-                from ...constants import ObjectTableLabels
-
-                def _get_mag(x):
-                    return getattr(x, "magnitude", x)
-
-                mags = np.array([_get_mag(val) for val in visible[ObjectTableLabels.MAGNITUDE].values])
+                # Optimization: use pre-calculated Magnitude_float for faster filtering.
+                mags = visible["Magnitude_float"].values
                 tech_names = visible["TechnicalName"].values
                 # Keep Sun, Moon, or anything with magnitude < 0
                 mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)

@@ -95,9 +95,11 @@ class PlacePathsMixIn(PlaceConditionsMixIn):
             valid_mask = df["UTC_datetime"].notna()
         else:
             # Fallback for mocks
-            df["UTC_datetime"] = df["Time"].apply(
-                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-            )
+            # Optimization: list comprehension over .values is faster than .apply() for fallback path.
+            df["UTC_datetime"] = [
+                t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+                for t in df["Time"].values
+            ]
             df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
             valid_mask = df["UTC_datetime"].notna()
 
@@ -134,9 +136,11 @@ class PlacePathsMixIn(PlaceConditionsMixIn):
 
         if "UTC_datetime" not in df.columns:
             # Fallback for mocks
-            df["UTC_datetime"] = df["Time"].apply(
-                lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
-            )
+            # Optimization: list comprehension over .values is faster than .apply() for fallback path.
+            df["UTC_datetime"] = [
+                t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+                for t in df["Time"].values
+            ]
             df["UTC_datetime"] = pd.to_datetime(df["UTC_datetime"])
 
         df["Time"] = df["UTC_datetime"].dt.time

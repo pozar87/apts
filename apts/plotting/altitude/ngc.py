@@ -69,16 +69,25 @@ def generate_plot_ngc(
         ).clip(lower=10) # Ensure markers are visible
 
         # Determine colors
-        # Type is already translated in get_visible_ngc
+        # Optimization: use unique-value mapping for colors to avoid redundant O(N) overhead.
+        # Type is already translated in get_visible_ngc.
+        from ...i18n import bulk_gettext
+
         types = (
             ngc_df["Type"].fillna("Other")
             if "Type" in ngc_df.columns
             else pd.Series("Other", index=ngc_df.index)
         )
-        ngc_df["color"] = [
-            get_messier_color(t, effective_dark_mode)
-            for t in types
-        ]
+
+        # Ensure types are translated for correct color matching
+        translated_types = cast(pd.Series, bulk_gettext(types))
+        unique_types = translated_types.unique()
+        color_map = {
+            t: get_messier_color(t, effective_dark_mode) for t in unique_types
+        }
+        ngc_df["color"] = translated_types.map(color_map)
+        # Update Type column for legend/display
+        ngc_df["Type"] = translated_types
 
         # Filter out objects without a valid transit time in the window
         plot_df = ngc_df[ngc_df[ObjectTableLabels.TRANSIT].notna()].copy()
