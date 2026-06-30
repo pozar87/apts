@@ -1016,21 +1016,29 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
-            "width": 1936,
+            "width": 1936,  # Verified via official ZWO manual (IMX291 sensor) - https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
         },
         "ZWO_ASI_290MC_Mini": {
             "bf_role": "end",
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
+            "full_well_e": 14600,
+            "height": 1096,
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
             "mass": 60,
             "name": "ASI290MC Mini",
             "optical_length": 8.5,
+            "pixel_size_um": 2.9,
+            "quantum_efficiency_pct": 80,
+            "read_noise_e": 1.0,
             "reversible": False,
+            "sensor_height_mm": 3.2,
+            "sensor_width_mm": 5.6,
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
+            "width": 1936,  # Verified via official ZWO manual (IMX291 sensor) - https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
         },
         "ZWO_ASI_290MM": {
             "bf_role": "end",
@@ -1051,7 +1059,7 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
-            "width": 1936,
+            "width": 1936,  # Verified via official ZWO manual (Resolution 1936x1096) - https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
         },
         "ZWO_ASI_290MM_Mini": {
             "bf_role": "end",
@@ -1059,7 +1067,7 @@ class ZwoCamera(Camera):
             "cside_gender": "",
             "cside_thread": "",
             "full_well_e": 14600,
-            "height": 1080,
+            "height": 1096,
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
             "mass": 60,
             "name": "ASI290MM Mini",
@@ -1073,7 +1081,7 @@ class ZwoCamera(Camera):
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
-            "width": 1920,
+            "width": 1936,  # Verified via official ZWO manual (Resolution 1936x1096) - https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
         },
         "ZWO_ASI_294MC": {
             "bf_role": "end",
