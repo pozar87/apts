@@ -69,21 +69,21 @@ def _resolve_ngc(
             mask |= ngc_objs["NGC_norm"] == norm_name
         elif ObjectTableLabels.NGC in ngc_objs.columns:
             mask |= (
-                ngc_objs[ObjectTableLabels.NGC].apply(NGC.normalize_name) == norm_name
+                NGC.normalize_name(ngc_objs[ObjectTableLabels.NGC]) == norm_name
             )
 
         if "Name_norm" in ngc_objs.columns:
             mask |= ngc_objs["Name_norm"] == norm_name
         elif ObjectTableLabels.NAME in ngc_objs.columns:
             mask |= (
-                ngc_objs[ObjectTableLabels.NAME].apply(NGC.normalize_name) == norm_name
+                NGC.normalize_name(ngc_objs[ObjectTableLabels.NAME]) == norm_name
             )
 
         if "IC_norm" in ngc_objs.columns:
             mask |= ngc_objs["IC_norm"] == norm_name
         elif ObjectTableLabels.IC in ngc_objs.columns:
             mask |= (
-                ngc_objs[ObjectTableLabels.IC].apply(NGC.normalize_name) == norm_name
+                NGC.normalize_name(ngc_objs[ObjectTableLabels.IC]) == norm_name
             )
 
         result_df = ngc_objs[mask]
