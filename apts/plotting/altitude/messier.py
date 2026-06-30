@@ -67,17 +67,24 @@ def generate_plot_messier(
             * messier_df[ObjectTableLabels.SIZE_MINOR]
         )
 
-        # Determine colors (Type is often already translated in get_visible_messier)
+        # Determine colors
+        # Optimization: use unique-value mapping for colors to avoid redundant O(N) overhead.
+        from ...i18n import bulk_gettext
+
         types = (
             messier_df["Type"].fillna("Other")
             if "Type" in messier_df.columns
             else pd.Series("Other", index=messier_df.index)
         )
-        messier_df["TranslatedType"] = [gettext_(t) for t in types]
-        messier_df["color"] = [
-            get_messier_color(t, effective_dark_mode)
-            for t in messier_df["TranslatedType"]
-        ]
+
+        # Ensure types are translated for correct color matching and display
+        translated_types = cast(pd.Series, bulk_gettext(types))
+        unique_types = translated_types.unique()
+        color_map = {
+            t: get_messier_color(t, effective_dark_mode) for t in unique_types
+        }
+        messier_df["color"] = translated_types.map(color_map)
+        messier_df["TranslatedType"] = translated_types
 
         # Filter out objects without a valid transit time in the window
         plot_df = messier_df[messier_df[ObjectTableLabels.TRANSIT].notna()].copy()

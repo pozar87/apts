@@ -150,7 +150,9 @@ def _plot_single_planet_curve(
 ):
     # planet is a NamedTuple from itertuples()
     name = getattr(planet, ObjectTableLabels.NAME)
-    # Convert NamedTuple to dict for get_skyfield_object which expects Series/dict
+    # Convert NamedTuple to dict for get_skyfield_object.
+    # Note: Although get_skyfield_object handles NamedTuples, we use _asdict()
+    # to maintain strict compatibility with its original expectations.
     planet_dict = planet._asdict()
     skyfield_object = observation.local_planets.get_skyfield_object(planet_dict)
 
@@ -173,8 +175,10 @@ def _plot_single_planet_curve(
     if "UTC_datetime" in curve_df.columns:
         time_series = curve_df["UTC_datetime"]
     else:
-        time_series = curve_df["Time"].apply(
-            lambda t: t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+        # Optimization: list comprehension over .values is faster than .apply() for fallback path.
+        time_series = pd.Series(
+            [t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT for t in curve_df["Time"].values],
+            index=curve_df.index
         )
     valid_times = pd.notna(time_series)
 

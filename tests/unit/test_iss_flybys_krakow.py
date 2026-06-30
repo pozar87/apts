@@ -33,10 +33,9 @@ class TestISSFlybysKrakow(unittest.TestCase):
             magnitude_threshold=5.0,
         )
 
-        # We expect 3 visible flybys (updated based on current TLE):
-        # 1. 22:52 UTC on 29th (Alt ~21)
-        # 2. 00:28 UTC on 30th (Alt ~79)
-        # 3. 02:05 UTC on 30th (Alt ~65)
+        # We expect 2 visible flybys (updated based on current TLE for April 2026):
+        # 1. 00:15 UTC on 30th (Alt ~68)
+        # 2. 01:52 UTC on 30th (Alt ~64)
 
         culmination_hours = [f["culmination_time"].hour for f in flybys]
         culmination_minutes = [f["culmination_time"].minute for f in flybys]
@@ -50,7 +49,7 @@ class TestISSFlybysKrakow(unittest.TestCase):
             )
 
         self.assertEqual(
-            len(flybys), 3, f"Expected 3 visible flybys, found {len(flybys)}: {flybys}"
+            len(flybys), 2, f"Expected 2 visible flybys, found {len(flybys)}: {flybys}"
         )
 
         # Verify specific flybys with a 5-minute tolerance to account for TLE drift
@@ -66,12 +65,10 @@ class TestISSFlybysKrakow(unittest.TestCase):
                 f"Could not find {label} flyby near {target_time}. Closest found were: {[f['culmination_time'] for f in flybys]}",
             )
 
-        # Flyby 1 (~22:52 UTC on 29th)
-        assert_flyby_near(datetime(2026, 4, 29, 22, 52, tzinfo=timezone.utc), "22:52")
-        # Flyby 2 (~00:28 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 0, 28, tzinfo=timezone.utc), "00:28")
-        # Flyby 3 (~02:05 UTC on 30th)
-        assert_flyby_near(datetime(2026, 4, 30, 2, 5, tzinfo=timezone.utc), "02:05")
+        # Flyby 1 (~00:15 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 0, 15, tzinfo=timezone.utc), "00:15")
+        # Flyby 2 (~01:52 UTC on 30th)
+        assert_flyby_near(datetime(2026, 4, 30, 1, 52, tzinfo=timezone.utc), "01:52")
 
 
 if __name__ == "__main__":
