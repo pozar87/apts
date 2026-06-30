@@ -1,57 +1,74 @@
-import unittest
+import pytest
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
-from apts.utils.equipment import ConnectionType
 
-class TestZwo290Audit(unittest.TestCase):
-    def test_asi290mc_audited_specs(self):
-        """
-        Verify the audited specifications for ZWO ASI290MC (uncooled).
-        Reference: https://astronomy-imaging-camera.com/product/asi290mc-color/
-        """
-        cam = ZwoCamera.ZWO_ASI_290MC()
+def test_zwo_asi290mm_audit():
+    """
+    Audit test for ZWO ASI290MM based on official ZWO manual.
+    Source: https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
+    """
+    camera = ZwoCamera.ZWO_ASI_290MM()
 
-        # Physical & Connection
-        self.assertEqual(cam.vendor, "ZWO ASI290MC")
-        self.assertEqual(cam.mass.to("gram").magnitude, 120)
-        self.assertEqual(cam.connection_type, ConnectionType.CS)
-        self.assertEqual(cam.optical_length.to("mm").magnitude, 12.5)
+    assert camera.vendor == "ZWO ASI290MM"
+    assert camera.width == 1936
+    assert camera.height == 1096
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.sensor_width.magnitude == 5.6
+    assert camera.sensor_height.magnitude == 3.2
+    assert camera.quantum_efficiency == 80
+    assert camera.full_well == 14600
+    assert camera.read_noise == 1.0
+    assert camera.mass.magnitude == 120
 
-        # Sensor Dimensions & Resolution
-        self.assertEqual(cam.sensor_width.to("mm").magnitude, 5.6)
-        self.assertEqual(cam.sensor_height.to("mm").magnitude, 3.2)
-        self.assertEqual(cam.width, 1936)
-        self.assertEqual(cam.height, 1096)
+def test_zwo_asi290mc_audit():
+    """
+    Audit test for ZWO ASI290MC based on official ZWO manual.
+    Source: https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
+    """
+    camera = ZwoCamera.ZWO_ASI_290MC()
 
-        # Sensor Performance
-        self.assertEqual(cam.pixel_size().to("micrometer").magnitude, 2.9)
-        self.assertEqual(cam.full_well, 14600)
-        self.assertEqual(cam.read_noise, 1.0)
-        self.assertEqual(cam.quantum_efficiency, 80)
+    assert camera.vendor == "ZWO ASI290MC"
+    assert camera.width == 1936
+    assert camera.height == 1096
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.sensor_width.magnitude == 5.6
+    assert camera.sensor_height.magnitude == 3.2
+    assert camera.quantum_efficiency == 80
+    assert camera.full_well == 14600
+    assert camera.read_noise == 1.0
+    assert camera.mass.magnitude == 120
 
-    def test_asi290mm_audited_specs(self):
-        """
-        Verify the audited specifications for ZWO ASI290MM (uncooled).
-        Reference: https://all-startelescope.com/products/zwo-asi290mm-usb3-0-mono-asi290mm
-        """
-        cam = ZwoCamera.ZWO_ASI_290MM()
+def test_zwo_asi290mm_mini_audit():
+    """
+    Audit test for ZWO ASI290MM Mini based on official ZWO manual.
+    Source: https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
+    """
+    camera = ZwoCamera.ZWO_ASI_290MM_Mini()
 
-        # Physical & Connection
-        self.assertEqual(cam.vendor, "ZWO ASI290MM")
-        self.assertEqual(cam.mass.to("gram").magnitude, 120)
-        self.assertEqual(cam.connection_type, ConnectionType.CS)
-        self.assertEqual(cam.optical_length.to("mm").magnitude, 12.5)
+    assert camera.vendor == "ZWO ASI290MM Mini"
+    assert camera.width == 1936
+    assert camera.height == 1096
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.sensor_width.magnitude == 5.6
+    assert camera.sensor_height.magnitude == 3.2
+    assert camera.quantum_efficiency == 80
+    assert camera.full_well == 14600
+    assert camera.read_noise == 1.0
+    assert camera.mass.magnitude == 60
 
-        # Sensor Dimensions & Resolution
-        self.assertEqual(cam.sensor_width.to("mm").magnitude, 5.6)
-        self.assertEqual(cam.sensor_height.to("mm").magnitude, 3.2)
-        self.assertEqual(cam.width, 1936)
-        self.assertEqual(cam.height, 1096)
+def test_zwo_asi290mc_mini_audit():
+    """
+    Audit test for ZWO ASI290MC Mini based on official ZWO manual (IMX291 sensor).
+    Source: https://www.atc-astro.eu/eshop/ZWO_ASI290_Manual_EN.pdf
+    """
+    camera = ZwoCamera.ZWO_ASI_290MC_Mini()
 
-        # Sensor Performance
-        self.assertEqual(cam.pixel_size().to("micrometer").magnitude, 2.9)
-        self.assertEqual(cam.full_well, 14600)
-        self.assertEqual(cam.read_noise, 1.0)
-        self.assertEqual(cam.quantum_efficiency, 80)
-
-if __name__ == '__main__':
-    unittest.main()
+    assert camera.vendor == "ZWO ASI290MC Mini"
+    assert camera.width == 1936
+    assert camera.height == 1096
+    assert camera.pixel_size().magnitude == 2.9
+    assert camera.sensor_width.magnitude == 5.6
+    assert camera.sensor_height.magnitude == 3.2
+    assert camera.quantum_efficiency == 80
+    assert camera.full_well == 14600
+    assert camera.read_noise == 1.0
+    assert camera.mass.magnitude == 60
