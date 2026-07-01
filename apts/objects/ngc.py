@@ -239,7 +239,7 @@ class NGC(Objects):
             mask |= self.objects["NGC_norm"] == norm_name
         elif ObjectTableLabels.NGC in self.objects.columns:
             mask |= (
-                self.objects[ObjectTableLabels.NGC].apply(self.normalize_name)
+                self.normalize_name(self.objects[ObjectTableLabels.NGC])
                 == norm_name
             )
 
@@ -247,7 +247,7 @@ class NGC(Objects):
             mask |= self.objects["Name_norm"] == norm_name
         elif ObjectTableLabels.NAME in self.objects.columns:
             mask |= (
-                self.objects[ObjectTableLabels.NAME].apply(self.normalize_name)
+                self.normalize_name(self.objects[ObjectTableLabels.NAME])
                 == norm_name
             )
 
@@ -255,7 +255,7 @@ class NGC(Objects):
             mask |= self.objects["IC_norm"] == norm_name
         elif ObjectTableLabels.IC in self.objects.columns:
             mask |= (
-                self.objects[ObjectTableLabels.IC].apply(self.normalize_name)
+                self.normalize_name(self.objects[ObjectTableLabels.IC])
                 == norm_name
             )
 
