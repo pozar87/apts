@@ -1,8 +1,10 @@
 import numpy as np
 from skyfield.api import Star
+
 from ...cache import get_timescale
 from ...utils import planetary
-from .base import find_conjunctions_with_stars
+from .stars import find_conjunctions_with_stars
+
 
 def find_planet_star_conjunctions(
     observer,
@@ -77,6 +79,7 @@ def find_planet_star_conjunctions(
             )
 
     return events
+
 
 def find_planet_messier_conjunctions(
     observer, start_date, end_date, precomputed_positions=None
