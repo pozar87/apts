@@ -110,7 +110,7 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         scope = Sky_watcherTelescope.Sky_Watcher_SkyMax_127()
         self.assertEqual(scope.get_vendor(), "Sky-Watcher SkyMax 127")
         self.assertEqual(scope.aperture.to('mm').magnitude, 127)
-        self.assertEqual(scope.focal_length.to('mm').magnitude, 1500)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 1540)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 39)
         self.assertEqual(scope.mass.to('gram').magnitude, 3400)
 
@@ -118,7 +118,7 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         scope = Sky_watcherTelescope.Sky_Watcher_SkyMax_127_AZ_GTi()
         self.assertEqual(scope.get_vendor(), "Sky-Watcher SkyMax 127 AZ-GTi")
         self.assertEqual(scope.aperture.to('mm').magnitude, 127)
-        self.assertEqual(scope.focal_length.to('mm').magnitude, 1500)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 1540)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 39)
         self.assertEqual(scope.mass.to('gram').magnitude, 3400)
 
