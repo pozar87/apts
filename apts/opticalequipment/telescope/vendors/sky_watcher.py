@@ -649,8 +649,8 @@ class Sky_watcherTelescope(Telescope):
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 39,
             "cside_gender": "Female",
-            "cside_thread": "1.25\"",
-            "focal_length_mm": 1500,
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA (Included 2" diagonal) - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
+            "focal_length_mm": 1540,  # Verified via Sky-Watcher USA - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
             "mass": 3400,
             "name": "Mak-127",
             "optical_length": 0,
@@ -809,8 +809,8 @@ class Sky_watcherTelescope(Telescope):
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 39,
             "cside_gender": "Female",
-            "cside_thread": "1.25\"",
-            "focal_length_mm": 1500,
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA (Included 2" diagonal) - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
+            "focal_length_mm": 1540,  # Verified via Sky-Watcher USA - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
             "mass": 3400,
             "name": "SkyMax 127",
             "optical_length": 0,
@@ -825,8 +825,8 @@ class Sky_watcherTelescope(Telescope):
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 39,
             "cside_gender": "Female",
-            "cside_thread": "2\"",
-            "focal_length_mm": 1500,
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA (Included 2" diagonal) - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
+            "focal_length_mm": 1540,  # Verified via Sky-Watcher USA - https://www.skywatcherusa.com/products/sky-watcher-skymax-127
             "mass": 3400,
             "name": "SkyMax 127 AZ-GTi",
             "optical_length": 0,
