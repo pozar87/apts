@@ -1,20 +1,19 @@
-from .base import (
-    find_conjunctions,
-    find_conjunctions_with_star,
-    find_conjunctions_with_stars,
-    find_conjunctions_between_moving_bodies,
-    find_all_pairs_conjunctions,
-)
-from .planets import (
-    find_planet_solar_conjunctions,
-    find_mercury_inferior_conjunctions,
-    find_planet_planet_occultations,
-)
+from .base import find_conjunctions
 from .lunar import find_lunar_planetary_occultations
 from .objects import (
-    find_planet_star_conjunctions,
     find_planet_messier_conjunctions,
+    find_planet_star_conjunctions,
 )
+from .pairs import (
+    find_all_pairs_conjunctions,
+    find_conjunctions_between_moving_bodies,
+)
+from .planets import (
+    find_mercury_inferior_conjunctions,
+    find_planet_planet_occultations,
+    find_planet_solar_conjunctions,
+)
+from .stars import find_conjunctions_with_star, find_conjunctions_with_stars
 
 __all__ = [
     "find_conjunctions",
