@@ -793,7 +793,7 @@ class Sky_watcherTelescope(Telescope):
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 31,
             "cside_gender": "Female",
-            "cside_thread": "2\"",
+            "cside_thread": "1.25\"",  # Verified via Sky-Watcher USA documentation (1.25" visual back) - https://www.skywatcherusa.com/products/sky-watcher-skymax-102
             "focal_length_mm": 1300,
             "mass": 2200,
             "name": "SkyMax 102 AZ-GTi",
