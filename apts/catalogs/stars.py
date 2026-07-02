@@ -1,6 +1,7 @@
 import logging
 from importlib import resources
 
+import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
@@ -33,6 +34,15 @@ def _load_bright_stars_with_units():
     bright_stars_df["ra_hours"] = bright_stars_df["RA"].values
     bright_stars_df["dec_degrees"] = bright_stars_df["Dec"].values
     bright_stars_df["Magnitude_float"] = bright_stars_df["Magnitude"].values
+
+    # Pre-calculate trigonometric values for fixed stars to avoid redundant
+    # transcendental function calls in hot paths (visibility, scoring).
+    ra_rad = np.deg2rad(bright_stars_df["ra_hours"].values * 15.0)
+    dec_rad = np.deg2rad(bright_stars_df["dec_degrees"].values)
+    bright_stars_df["sin_ra"] = np.sin(ra_rad)
+    bright_stars_df["cos_ra"] = np.cos(ra_rad)
+    bright_stars_df["sin_dec"] = np.sin(dec_rad)
+    bright_stars_df["cos_dec"] = np.cos(dec_rad)
 
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is much faster than Series.apply()

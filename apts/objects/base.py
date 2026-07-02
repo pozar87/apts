@@ -352,4 +352,6 @@ class Objects(ABC):
             decs,
             valid_mask,
             len(df),
+            sin_dec=df["sin_dec"].to_numpy() if "sin_dec" in df.columns else None,
+            cos_dec=df["cos_dec"].to_numpy() if "cos_dec" in df.columns else None,
         )

@@ -129,6 +129,12 @@ class SolarObjects(Objects):
                 computed_df["dec_degrees"].to_numpy(),
                 valid_mask,
                 len(computed_df),
+                sin_dec=computed_df["sin_dec"].to_numpy()
+                if "sin_dec" in computed_df.columns
+                else None,
+                cos_dec=computed_df["cos_dec"].to_numpy()
+                if "cos_dec" in computed_df.columns
+                else None,
             )
             computed_df[ObjectTableLabels.TRANSIT] = transits
             computed_df[ObjectTableLabels.ALTITUDE] = alts

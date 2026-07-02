@@ -35,6 +35,8 @@ def vectorized_geometric_compute(
     decs,
     valid_mask,
     df_len,
+    sin_dec=None,
+    cos_dec=None,
 ):
     """
     Generic vectorized transit, altitude, rising, and setting calculation.
@@ -97,13 +99,21 @@ def vectorized_geometric_compute(
 
     # Vectorized Rise/Set (Geometric) calculation
     lat_rad = np.deg2rad(lat_deg)
-    decs_rad = np.deg2rad(decs)
     # Standard altitude for rising/setting of stars is -34 arcminutes to account for refraction
     h0_rad = np.deg2rad(-34.0 / 60.0)
+
+    # Optimization: use pre-calculated trig values if available to bypass expensive
+    # transcendental function calls for thousands of objects.
+    if sin_dec is not None and cos_dec is not None:
+        s_dec = sin_dec
+        c_dec = cos_dec
+    else:
+        decs_rad = np.deg2rad(decs)
+        s_dec = np.sin(decs_rad)
+        c_dec = np.cos(decs_rad)
+
     # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
-    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-        np.cos(lat_rad) * np.cos(decs_rad)
-    )
+    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * s_dec) / (np.cos(lat_rad) * c_dec)
 
     # Hour angle in solar hours
     H_hours = np.full(df_len, np.nan)
@@ -141,7 +151,16 @@ def vectorized_geometric_compute(
 
 
 def vectorized_geometric_imaging_duration(
-    lat_deg, ras, decs, valid_mask, transits, dark_start, dark_end, min_altitude=30.0
+    lat_deg,
+    ras,
+    decs,
+    valid_mask,
+    transits,
+    dark_start,
+    dark_end,
+    min_altitude=30.0,
+    sin_dec=None,
+    cos_dec=None,
 ):
     """
     Fast calculation of imaging window duration (minutes above threshold during darkness)
@@ -152,15 +171,22 @@ def vectorized_geometric_imaging_duration(
     """
     sidereal_to_solar = 0.99726957
     lat_rad = np.deg2rad(lat_deg)
-    decs_rad = np.deg2rad(decs)
     # Target altitude in radians
     h0_rad = np.deg2rad(min_altitude)
 
+    # Optimization: use pre-calculated trig values if available to bypass expensive
+    # transcendental function calls for thousands of objects.
+    if sin_dec is not None and cos_dec is not None:
+        s_dec = sin_dec
+        c_dec = cos_dec
+    else:
+        decs_rad = np.deg2rad(decs)
+        s_dec = np.sin(decs_rad)
+        c_dec = np.cos(decs_rad)
+
     # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
     # We ignore refraction for this higher-altitude threshold (30 deg) as it is negligible (~0.03 deg)
-    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-        np.cos(lat_rad) * np.cos(decs_rad)
-    )
+    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * s_dec) / (np.cos(lat_rad) * c_dec)
 
     # Hour angle in solar hours
     H_hours = np.full(len(ras), np.nan)
