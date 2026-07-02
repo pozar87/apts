@@ -9,6 +9,7 @@ import pandas as pd
 from ..constants.constellations import constellation_map
 from ..constants.objecttablelabels import ObjectTableLabels
 from ..constants.strategies import DSOType
+from ..utils.coordinates import parse_ra_to_hours, parse_dec_to_degrees
 
 logger = logging.getLogger(__name__)
 
@@ -107,27 +108,8 @@ def _load_ngc_with_units():
 
     # Vectorized RA and Dec parsing (Optimization: replaces slow row-wise apply)
     # This provides a ~40% speedup for NGC loading by avoiding ~14k row-wise function calls.
-    ras_split = ngc_df["RA"].str.split(":", expand=True)
-    # Ensure 3 columns exist to avoid KeyErrors on partial data
-    for col in range(3):
-        if col not in ras_split.columns:
-            ras_split[col] = 0
-    h_ra = cast(pd.Series, pd.to_numeric(ras_split[0], errors="coerce"))
-    m_ra = cast(pd.Series, pd.to_numeric(ras_split[1], errors="coerce")).fillna(0)
-    s_ra = cast(pd.Series, pd.to_numeric(ras_split[2], errors="coerce")).fillna(0)
-    ra_hours = cast(pd.Series, h_ra + m_ra / 60.0 + s_ra / 3600.0)
-
-    decs_signs = cast(
-        pd.Series, ngc_df["Dec"].str.startswith("-", na=False).map({True: -1, False: 1})
-    )
-    decs_split = ngc_df["Dec"].str.lstrip("+-").str.split(":", expand=True)
-    for col in range(3):
-        if col not in decs_split.columns:
-            decs_split[col] = 0
-    h_dec = cast(pd.Series, pd.to_numeric(decs_split[0], errors="coerce"))
-    m_dec = cast(pd.Series, pd.to_numeric(decs_split[1], errors="coerce")).fillna(0)
-    s_dec = cast(pd.Series, pd.to_numeric(decs_split[2], errors="coerce")).fillna(0)
-    dec_degrees = cast(pd.Series, decs_signs * (h_dec + m_dec / 60.0 + s_dec / 3600.0))
+    ra_hours = parse_ra_to_hours(ngc_df["RA"])
+    dec_degrees = parse_dec_to_degrees(ngc_df["Dec"])
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
