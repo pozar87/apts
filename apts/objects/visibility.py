@@ -73,8 +73,6 @@ def get_visible_stars(
         # Ensure stars_indices is an array before masking
         stars_indices = np.asarray(stars_indices)
         active_stars_indices = stars_indices[potential_mask]
-        active_ras_hours = stars_ras[potential_mask]
-        active_decs_deg = stars_decs[potential_mask]
 
         # Get LST for all check times (in hours)
         lst_hours = check_times.gmst + place.lon_decimal / 15.0
@@ -84,27 +82,37 @@ def get_visible_stars(
         sin_lat = np.sin(lat_rad)
         cos_lat = np.cos(lat_rad)
 
-        # For active stars (N_active)
-        ra_rad = np.deg2rad(active_ras_hours * 15.0)
-        dec_rad = np.deg2rad(active_decs_deg)
-        sin_ra = np.sin(ra_rad)[:, np.newaxis]
-        cos_ra = np.cos(ra_rad)[:, np.newaxis]
-        sin_dec = np.sin(dec_rad)[:, np.newaxis]
-        cos_dec = np.cos(dec_rad)[:, np.newaxis]
-        tan_dec = np.tan(dec_rad)[:, np.newaxis]
-
         # For check times (M_times)
         lst_rad = np.deg2rad(lst_hours * 15.0)
         sin_lst = np.sin(lst_rad)[np.newaxis, :]
         cos_lst = np.cos(lst_rad)[np.newaxis, :]
 
-        # Use identity: cos(H) = cos(LST-RA) = cos(LST)cos(RA) + sin(LST)sin(RA)
-        cos_h = cos_lst * cos_ra + sin_lst * sin_ra
-        # Use identity: sin(H) = sin(LST-RA) = sin(LST)cos(RA) - cos(LST)sin(RA)
-        sin_h = sin_lst * cos_ra - cos_lst * sin_ra
+        # Use pre-calculated Equatorial Direction Cosines to avoid redundant
+        # O(N) transcendental function calls in hot loops.
+        if "sin_dec" in candidate_objects.columns:
+            # High-performance path: uses pre-calculated unit vectors
+            sin_dec = candidate_objects["sin_dec"].values[active_stars_indices][:, np.newaxis]
+            cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices][:, np.newaxis]
+            cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices][:, np.newaxis]
 
-        # Geometric altitude and azimuth calculation
-        sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_h
+            # sin(alt) = sin(lat)sin(dec) + cos(lat)cos(dec)cos(LST-RA)
+            # Expansion: cos(dec)cos(LST-RA) = cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)
+            sin_alt = sin_lat * sin_dec + cos_lat * (cos_lst * cd_cr + sin_lst * cd_sr)
+        else:
+            # Fallback for dynamic or non-pre-calculated catalogs
+            active_ras_hours = stars_ras[potential_mask]
+            active_decs_deg = stars_decs[potential_mask]
+
+            ra_rad = np.deg2rad(active_ras_hours * 15.0)
+            dec_rad = np.deg2rad(active_decs_deg)
+            sin_ra = np.sin(ra_rad)[:, np.newaxis]
+            cos_ra = np.cos(ra_rad)[:, np.newaxis]
+            sin_dec = np.sin(dec_rad)[:, np.newaxis]
+            cos_dec = np.cos(dec_rad)[:, np.newaxis]
+
+            # Use identity: cos(H) = cos(LST-RA) = cos(LST)cos(RA) + sin(LST)sin(RA)
+            cos_h = cos_lst * cos_ra + sin_lst * sin_ra
+            sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_h
 
         # Optimization: if only simple altitude check is needed, we can bypass
         # expensive arctan2, arcsin, and refraction calculations for the grid.
@@ -127,10 +135,21 @@ def get_visible_stars(
             true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
             apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
 
-            # Determine azimuth
-            x = cos_h * sin_lat - tan_dec * cos_lat
-            y = sin_h
-            az_deg = (np.rad2deg(np.arctan2(y, x)) + 180.0) % 360.0
+            # Determine azimuth components using direction cosines to avoid tan(dec)
+            if "sin_dec" in candidate_objects.columns:
+                # Optimized azimuth using direction cosines (avoiding division by zero at poles)
+                # x = cos(H)sin(lat) - tan(dec)cos(lat)
+                # x * cos(dec) = [cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)]sin(lat) - sin(dec)cos(lat)
+                # y * cos(dec) = sin(H)cos(dec) = sin(LST)cos(dec)cos(RA) - cos(LST)cos(dec)sin(RA)
+                x_cd = (cos_lst * cd_cr + sin_lst * cd_sr) * sin_lat - sin_dec * cos_lat
+                y_cd = sin_lst * cd_cr - cos_lst * cd_sr
+                az_deg = (np.rad2deg(np.arctan2(y_cd, x_cd)) + 180.0) % 360.0
+            else:
+                # Fallback azimuth
+                tan_dec = np.tan(dec_rad)[:, np.newaxis]
+                sin_h = sin_lst * cos_ra - cos_lst * sin_ra
+                x = cos_h * sin_lat - tan_dec * cos_lat
+                az_deg = (np.rad2deg(np.arctan2(sin_h, x)) + 180.0) % 360.0
 
             # Determine visibility using conditions
             visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)

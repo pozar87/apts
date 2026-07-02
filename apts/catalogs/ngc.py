@@ -4,6 +4,7 @@ import urllib.parse
 from importlib import resources
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from ..constants.constellations import constellation_map
@@ -133,6 +134,16 @@ def _load_ngc_with_units():
         pd.Series, pd.to_numeric(ngc_df["Magnitude"], errors="coerce")
     ).fillna(99)
     ngc_df["Magnitude_float"] = magnitudes.values
+
+    # Pre-calculate trigonometric direction cosines for lightning-fast coordinate
+    # transformations (Altitude/Azimuth) in visibility gating and discovery.
+    # This bypasses redundant O(N) transcendental function calls in hot loops.
+    ra_rad = np.deg2rad(ra_hours * 15.0)
+    dec_rad = np.deg2rad(dec_degrees)
+    ngc_df["sin_dec"] = np.sin(dec_rad)
+    cos_dec = np.cos(dec_rad)
+    ngc_df["cos_dec_cos_ra"] = cos_dec * np.cos(ra_rad)
+    ngc_df["cos_dec_sin_ra"] = cos_dec * np.sin(ra_rad)
 
     # Optimization: We keep 'Magnitude' and 'Size' as raw floats/strings in the catalog
     # for performance. They are converted to Pint Quantities lazily in NGC.get_visible().

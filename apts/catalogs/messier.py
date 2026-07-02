@@ -3,6 +3,7 @@ import urllib.parse
 from importlib import resources
 from typing import cast
 
+import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
@@ -54,9 +55,21 @@ def _load_messier_with_units():
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
-    messier_df["ra_hours"] = messier_df["RA"].values
-    messier_df["dec_degrees"] = messier_df["Dec"].values
+    ra_hours = messier_df["RA"].values
+    dec_degrees = messier_df["Dec"].values
+    messier_df["ra_hours"] = ra_hours
+    messier_df["dec_degrees"] = dec_degrees
     messier_df["Magnitude_float"] = messier_df["Magnitude"].values
+
+    # Pre-calculate trigonometric direction cosines for lightning-fast coordinate
+    # transformations (Altitude/Azimuth) in visibility gating and discovery.
+    # This bypasses redundant O(N) transcendental function calls in hot loops.
+    ra_rad = np.deg2rad(ra_hours * 15.0)
+    dec_rad = np.deg2rad(dec_degrees)
+    messier_df["sin_dec"] = np.sin(dec_rad)
+    cos_dec = np.cos(dec_rad)
+    messier_df["cos_dec_cos_ra"] = cos_dec * np.cos(ra_rad)
+    messier_df["cos_dec_sin_ra"] = cos_dec * np.sin(ra_rad)
 
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is much faster than Series.apply()

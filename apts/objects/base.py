@@ -352,4 +352,7 @@ class Objects(ABC):
             decs,
             valid_mask,
             len(df),
+            sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
+            cd_cr=df["cos_dec_cos_ra"].values if "cos_dec_cos_ra" in df.columns else None,
+            cd_sr=df["cos_dec_sin_ra"].values if "cos_dec_sin_ra" in df.columns else None,
         )

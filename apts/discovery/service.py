@@ -116,14 +116,28 @@ class DiscoveryService:
         # Geometric Altitude
         lst_hours = t_sf.gmst + place.lon_decimal / 15.0
         lat_rad = np.deg2rad(place.lat_decimal)
-        dec_rad = np.deg2rad(decs)
-        ra_rad = np.deg2rad(ras * 15.0)
         lst_rad = np.deg2rad(lst_hours * 15.0)
 
-        ha_rad = lst_rad - ra_rad
-        sin_alt = np.sin(lat_rad) * np.sin(dec_rad) + np.cos(lat_rad) * np.cos(
-            dec_rad
-        ) * np.cos(ha_rad)
+        sin_lat = np.sin(lat_rad)
+        cos_lat = np.cos(lat_rad)
+        sin_lst = np.sin(lst_rad)
+        cos_lst = np.cos(lst_rad)
+
+        if "sin_dec" in df.columns:
+            # High-performance path: uses pre-calculated unit vectors
+            sin_dec = df["sin_dec"].values
+            cd_cr = df["cos_dec_cos_ra"].values
+            cd_sr = df["cos_dec_sin_ra"].values
+            # expansion: cos(dec)cos(LST-RA) = cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)
+            sin_alt = sin_lat * sin_dec + cos_lat * (cos_lst * cd_cr + sin_lst * cd_sr)
+        else:
+            dec_rad = np.deg2rad(decs)
+            ra_rad = np.deg2rad(ras * 15.0)
+            ha_rad = lst_rad - ra_rad
+            sin_alt = sin_lat * np.sin(dec_rad) + cos_lat * np.cos(dec_rad) * np.cos(
+                ha_rad
+            )
+
         true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
 
         # Add first-order refraction for consistency with visibility gating
@@ -136,9 +150,21 @@ class DiscoveryService:
         m_ra_rad = np.deg2rad(moon_ra.hours * 15.0)
         m_dec_rad = np.deg2rad(moon_dec.degrees)
 
-        cos_sep = np.sin(dec_rad) * np.sin(m_dec_rad) + np.cos(dec_rad) * np.cos(
-            m_dec_rad
-        ) * np.cos(ra_rad - m_ra_rad)
+        sin_m_dec = np.sin(m_dec_rad)
+        cos_m_dec = np.cos(m_dec_rad)
+        sin_m_ra = np.sin(m_ra_rad)
+        cos_m_ra = np.cos(m_ra_rad)
+
+        if "sin_dec" in df.columns:
+            # expansion: cos(dec)cos(MoonRA-RA) = cos(MoonRA)cos(dec)cos(RA) + sin(MoonRA)cos(dec)sin(RA)
+            cos_sep = sin_dec * sin_m_dec + cos_m_dec * (
+                cos_m_ra * cd_cr + sin_m_ra * cd_sr
+            )
+        else:
+            cos_sep = np.sin(dec_rad) * sin_m_dec + np.cos(dec_rad) * cos_m_dec * np.cos(
+                ra_rad - m_ra_rad
+            )
+
         df["moon_separation"] = np.rad2deg(np.arccos(np.clip(cos_sep, -1.0, 1.0)))
 
         # 2. Imaging Window (Fully Vectorized)
@@ -162,6 +188,7 @@ class DiscoveryService:
                 transits_utc_naive,
                 twilight_times[0],
                 twilight_times[1],
+                sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
             )
             df["window_minutes"] = durations
 
