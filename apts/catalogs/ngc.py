@@ -4,6 +4,7 @@ import urllib.parse
 from importlib import resources
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from ..constants.constellations import constellation_map
@@ -118,6 +119,15 @@ def _load_ngc_with_units():
     # These are restored lazily only for visible objects in NGC.get_visible().
     ngc_df["ra_hours"] = ra_hours.values
     ngc_df["dec_degrees"] = dec_degrees.values
+
+    # Pre-calculate trigonometric values for fixed stars to avoid redundant
+    # transcendental function calls in hot paths (visibility, scoring).
+    ra_rad = np.deg2rad(ra_hours.values * 15.0)
+    dec_rad = np.deg2rad(dec_degrees.values)
+    ngc_df["sin_ra"] = np.sin(ra_rad)
+    ngc_df["cos_ra"] = np.cos(ra_rad)
+    ngc_df["sin_dec"] = np.sin(dec_rad)
+    ngc_df["cos_dec"] = np.cos(dec_rad)
 
     # Optimization: Pre-calculate normalized names to avoid slow apply() during search
     # and skymap resolution.

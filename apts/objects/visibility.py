@@ -85,13 +85,35 @@ def get_visible_stars(
         cos_lat = np.cos(lat_rad)
 
         # For active stars (N_active)
-        ra_rad = np.deg2rad(active_ras_hours * 15.0)
-        dec_rad = np.deg2rad(active_decs_deg)
-        sin_ra = np.sin(ra_rad)[:, np.newaxis]
-        cos_ra = np.cos(ra_rad)[:, np.newaxis]
-        sin_dec = np.sin(dec_rad)[:, np.newaxis]
-        cos_dec = np.cos(dec_rad)[:, np.newaxis]
-        tan_dec = np.tan(dec_rad)[:, np.newaxis]
+        # Optimization: use pre-calculated trig values if available to bypass expensive
+        # transcendental function calls for thousands of objects.
+        if (
+            "sin_ra" in candidate_objects.columns
+            and "cos_ra" in candidate_objects.columns
+            and "sin_dec" in candidate_objects.columns
+            and "cos_dec" in candidate_objects.columns
+        ):
+            sin_ra = cast(pd.Series, candidate_objects["sin_ra"]).to_numpy()[
+                potential_mask
+            ][:, np.newaxis]
+            cos_ra = cast(pd.Series, candidate_objects["cos_ra"]).to_numpy()[
+                potential_mask
+            ][:, np.newaxis]
+            sin_dec = cast(pd.Series, candidate_objects["sin_dec"]).to_numpy()[
+                potential_mask
+            ][:, np.newaxis]
+            cos_dec = cast(pd.Series, candidate_objects["cos_dec"]).to_numpy()[
+                potential_mask
+            ][:, np.newaxis]
+            tan_dec = sin_dec / cos_dec
+        else:
+            ra_rad = np.deg2rad(active_ras_hours * 15.0)
+            dec_rad = np.deg2rad(active_decs_deg)
+            sin_ra = np.sin(ra_rad)[:, np.newaxis]
+            cos_ra = np.cos(ra_rad)[:, np.newaxis]
+            sin_dec = np.sin(dec_rad)[:, np.newaxis]
+            cos_dec = np.cos(dec_rad)[:, np.newaxis]
+            tan_dec = np.tan(dec_rad)[:, np.newaxis]
 
         # For check times (M_times)
         lst_rad = np.deg2rad(lst_hours * 15.0)
