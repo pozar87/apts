@@ -4,6 +4,7 @@ import numpy
 from matplotlib.patches import Ellipse
 
 from apts.constants.plot import CoordinateSystem
+from apts.utils.coordinates import parse_ra_to_hours, parse_dec_to_degrees
 
 
 def _plot_celestial_object(
@@ -72,29 +73,8 @@ def _plot_celestial_object(
 
 
 def _parse_ra(ra_str):
-    if isinstance(ra_str, str):
-        parts = ra_str.split(":")
-        if len(parts) > 0:
-            try:
-                h = float(parts[0])
-                m = float(parts[1]) if len(parts) > 1 else 0
-                s = float(parts[2]) if len(parts) > 2 else 0
-                return h + m / 60 + s / 3600
-            except ValueError:
-                return None
-    return None
+    return parse_ra_to_hours(ra_str)
 
 
 def _parse_dec(dec_str):
-    if isinstance(dec_str, str):
-        sign = -1 if dec_str.startswith("-") else 1
-        parts = dec_str.lstrip("+-").split(":")
-        if len(parts) > 0:
-            try:
-                d = float(parts[0])
-                m = float(parts[1]) if len(parts) > 1 else 0
-                s = float(parts[2]) if len(parts) > 2 else 0
-                return sign * (d + m / 60 + s / 3600)
-            except ValueError:
-                return None
-    return None
+    return parse_dec_to_degrees(dec_str)
