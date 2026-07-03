@@ -76,7 +76,7 @@ class CacheTest(unittest.TestCase):
         self.assertIsNotNone(unpickled_o.local_planets)
 
     @pytest.mark.clear_mpcorb
-    @patch("apts.cache.get_minor_planet_settings")
+    @patch("apts.cache.catalogs.get_minor_planet_settings")
     def test_get_mpcorb_data_filtered(self, mock_get_settings):
         # Mock the settings to return a specific list of planets
         mock_get_settings.return_value = ["00001", "00002"]  # Ceres and Pallas
@@ -89,10 +89,10 @@ class CacheTest(unittest.TestCase):
         self.assertIn("(1) Ceres", df.index)
         self.assertIn("(2) Pallas", df.index)
 
-    @patch("apts.cache.get_ephemeris")
-    @patch("apts.cache.get_hipparcos_data")
-    @patch("apts.cache.get_mpcorb_data")
-    @patch("apts.cache.get_jovian_ephemeris")
+    @patch("apts.cache.base.get_ephemeris")
+    @patch("apts.cache.base.get_hipparcos_data")
+    @patch("apts.cache.base.get_mpcorb_data")
+    @patch("apts.cache.base.get_jovian_ephemeris")
     def test_download_all_data(
         self,
         mock_get_jovian_ephemeris,
@@ -106,7 +106,7 @@ class CacheTest(unittest.TestCase):
         mock_get_mpcorb_data.assert_called_once()
         mock_get_jovian_ephemeris.assert_called_once()
 
-    @patch("apts.cache.Loader")
+    @patch("apts.cache.catalogs.Loader")
     def test_get_hipparcos_data_failure(self, mock_loader_class):
         # Mock loader.open to raise an exception
         mock_loader_instance = mock_loader_class.return_value
@@ -133,8 +133,8 @@ class CacheTest(unittest.TestCase):
         # Clear cache after test to avoid leaking mocks
         get_hipparcos_data.cache_clear()
 
-    @patch("apts.cache.load")
-    @patch("apts.cache.get_ephemeris")
+    @patch("apts.cache.skyfield.load")
+    @patch("apts.cache.skyfield.get_ephemeris")
     def test_get_jovian_ephemeris(self, mock_get_ephemeris, mock_load):
         from apts.cache import get_jovian_ephemeris
 
@@ -165,7 +165,7 @@ class CacheTest(unittest.TestCase):
         get_jovian_ephemeris.cache_clear()
 
     @pytest.mark.clear_mpcorb
-    @patch("apts.cache.get_minor_planet_settings")
+    @patch("apts.cache.catalogs.get_minor_planet_settings")
     def test_get_mpcorb_data_empty(self, mock_get_settings):
         # Mock settings to return a planet that doesn't exist in our small test data
         mock_get_settings.return_value = ["NONEXISTENT"]
