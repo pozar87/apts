@@ -35,6 +35,9 @@ def vectorized_geometric_compute(
     decs,
     valid_mask,
     df_len,
+    sin_dec=None,
+    cd_cr=None,
+    cd_sr=None,
 ):
     """
     Generic vectorized transit, altitude, rising, and setting calculation.
@@ -97,13 +100,25 @@ def vectorized_geometric_compute(
 
     # Vectorized Rise/Set (Geometric) calculation
     lat_rad = np.deg2rad(lat_deg)
-    decs_rad = np.deg2rad(decs)
     # Standard altitude for rising/setting of stars is -34 arcminutes to account for refraction
     h0_rad = np.deg2rad(-34.0 / 60.0)
+
     # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
-    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-        np.cos(lat_rad) * np.cos(decs_rad)
-    )
+    if sin_dec is not None:
+        # Optimized path using pre-calculated sin_dec and cos_dec
+        # We need cos_dec separately. Since cd_cr = cos_dec * cos_ra, and
+        # cd_sr = cos_dec * sin_ra, sqrt(cd_cr^2 + cd_sr^2) = cos_dec.
+        # However, extracting it via sqrt is more expensive than np.cos(np.deg2rad(decs)).
+        # We use the latter since decs is already available as a numpy array.
+        cos_dec = np.cos(np.deg2rad(decs))
+        cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * sin_dec) / (
+            np.cos(lat_rad) * cos_dec
+        )
+    else:
+        decs_rad = np.deg2rad(decs)
+        cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
+            np.cos(lat_rad) * np.cos(decs_rad)
+        )
 
     # Hour angle in solar hours
     H_hours = np.full(df_len, np.nan)
@@ -141,7 +156,15 @@ def vectorized_geometric_compute(
 
 
 def vectorized_geometric_imaging_duration(
-    lat_deg, ras, decs, valid_mask, transits, dark_start, dark_end, min_altitude=30.0
+    lat_deg,
+    ras,
+    decs,
+    valid_mask,
+    transits,
+    dark_start,
+    dark_end,
+    min_altitude=30.0,
+    sin_dec=None,
 ):
     """
     Fast calculation of imaging window duration (minutes above threshold during darkness)
@@ -152,15 +175,21 @@ def vectorized_geometric_imaging_duration(
     """
     sidereal_to_solar = 0.99726957
     lat_rad = np.deg2rad(lat_deg)
-    decs_rad = np.deg2rad(decs)
     # Target altitude in radians
     h0_rad = np.deg2rad(min_altitude)
 
     # cos(H) = (sin(h0) - sin(lat)sin(dec)) / (cos(lat)cos(dec))
     # We ignore refraction for this higher-altitude threshold (30 deg) as it is negligible (~0.03 deg)
-    cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
-        np.cos(lat_rad) * np.cos(decs_rad)
-    )
+    if sin_dec is not None:
+        cos_dec = np.cos(np.deg2rad(decs))
+        cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * sin_dec) / (
+            np.cos(lat_rad) * cos_dec
+        )
+    else:
+        decs_rad = np.deg2rad(decs)
+        cos_H = (np.sin(h0_rad) - np.sin(lat_rad) * np.sin(decs_rad)) / (
+            np.cos(lat_rad) * np.cos(decs_rad)
+        )
 
     # Hour angle in solar hours
     H_hours = np.full(len(ras), np.nan)

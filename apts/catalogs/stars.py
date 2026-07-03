@@ -1,6 +1,7 @@
 import logging
 from importlib import resources
 
+import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
@@ -30,9 +31,21 @@ def _load_bright_stars_with_units():
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
-    bright_stars_df["ra_hours"] = bright_stars_df["RA"].values
-    bright_stars_df["dec_degrees"] = bright_stars_df["Dec"].values
+    ra_hours = bright_stars_df["RA"].values
+    dec_degrees = bright_stars_df["Dec"].values
+    bright_stars_df["ra_hours"] = ra_hours
+    bright_stars_df["dec_degrees"] = dec_degrees
     bright_stars_df["Magnitude_float"] = bright_stars_df["Magnitude"].values
+
+    # Pre-calculate trigonometric direction cosines for lightning-fast coordinate
+    # transformations (Altitude/Azimuth) in visibility gating and discovery.
+    # This bypasses redundant O(N) transcendental function calls in hot loops.
+    ra_rad = np.deg2rad(ra_hours * 15.0)
+    dec_rad = np.deg2rad(dec_degrees)
+    bright_stars_df["sin_dec"] = np.sin(dec_rad)
+    cos_dec = np.cos(dec_rad)
+    bright_stars_df["cos_dec_cos_ra"] = cos_dec * np.cos(ra_rad)
+    bright_stars_df["cos_dec_sin_ra"] = cos_dec * np.sin(ra_rad)
 
     # Convert columns to quantities with units (vectorized)
     # Optimization: list(values * unit) is much faster than Series.apply()
