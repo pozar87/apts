@@ -1,69 +1,19 @@
-import copy
 import functools
-import io
 import logging
 import os
 import re
 import zlib
+import io
 from typing import Any, cast, TYPE_CHECKING
-
-# Expose heavy classes for unit tests that patch them at module level
 from skyfield.api import Loader, load
 
 if TYPE_CHECKING:
     import pandas as pd
 
-from . import data_loader
-from .config import get_jovian_ephemeris_url, get_minor_planet_settings
+from .. import data_loader
+from ..config import get_minor_planet_settings
 
 logger = logging.getLogger(__name__)
-
-STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
-
-
-@functools.lru_cache(maxsize=None)
-def get_timescale():
-    """
-    Returns a cached timescale object.
-    """
-    return load.timescale()
-
-
-@functools.lru_cache(maxsize=None)
-def get_ephemeris():
-    """
-    Returns an ephemeris object, loading from a URL or local file.
-    This ensures that the file is downloaded if not present.
-    """
-    path_or_url = data_loader.get_ephemeris_path()
-    return load(path_or_url)
-
-
-@functools.lru_cache(maxsize=None)
-def get_jovian_ephemeris():
-    """
-    Returns a merged ephemeris containing both planetary and Jovian satellite data.
-    """
-    eph = get_ephemeris()
-    # High-precision Galilean satellite orbits from SPICE kernel.
-    # We default to jup310.bsp (1.1GB), but it can be overridden in config
-    # to a smaller alternative (e.g. from skyfield-data).
-    jovian_path = get_jovian_ephemeris_url()
-    try:
-        eph_jovian = cast(Any, load(jovian_path))
-        # Create a new SpiceKernel object or merge segments.
-        # In Skyfield, kernels can be merged by extending the .segments list.
-        # We perform a shallow copy of the main ephemeris to avoid polluting it globally
-
-        # For Jovian satellites, we prioritize the Jovian kernel
-        # We perform a shallow copy of the Jovian ephemeris and add planetary segments
-        merged_eph = cast(Any, copy.copy(eph_jovian))
-        merged_eph.segments = list(eph_jovian.segments) + list(cast(Any, eph).segments)
-        return merged_eph
-    except Exception as e:
-        logging.getLogger(__name__).error(f"Failed to load Jovian ephemeris: {e}")
-        return eph
-
 
 @functools.lru_cache(maxsize=None)
 def get_hipparcos_data() -> "pd.DataFrame":
@@ -203,67 +153,3 @@ def get_mpcorb_data() -> "pd.DataFrame":
         df = df.set_index("designation")
 
     return df
-
-
-@functools.lru_cache(maxsize=None)
-def get_nasa_comets_data(start_date, end_date) -> "pd.DataFrame":
-    """
-    Returns a cached comets catalog as a pandas DataFrame.
-    Data is from NASA NeoWs API.
-    """
-    import pandas as pd
-    from .config import get_api_key
-    from .nasa_api import NasaAPI
-
-    api_key = get_api_key("nasa")
-    nasa_api = NasaAPI(api_key)
-    comets = nasa_api.get_comets(start_date, end_date)
-    records = []
-    for date in comets.get("near_earth_objects", {}):
-        for comet in comets["near_earth_objects"][date]:
-            if "comet" in comet.get("name", "").lower():
-                records.append(comet)
-    return pd.DataFrame(records)
-
-
-def download_all_data():
-    """
-    Downloads all the necessary data files.
-    """
-    get_ephemeris()
-    get_hipparcos_data()
-    get_mpcorb_data()
-    get_jovian_ephemeris()
-    get_timescale()
-    load.tle_file(STATIONS_URL)
-
-
-_SCORE_CACHE = {}
-
-
-def get_cached_score(scorer_id, object_id, timestamp):
-    """
-    Retrieves a cached score result.
-    """
-    return _SCORE_CACHE.get((scorer_id, object_id, timestamp))
-
-
-def set_cached_score(scorer_id, object_id, timestamp, result):
-    """
-    Caches a score result.
-    """
-    _SCORE_CACHE[(scorer_id, object_id, timestamp)] = result
-
-
-def clear_cache():
-    """
-    Clears all the caches.
-    """
-    get_timescale.cache_clear()
-    get_ephemeris.cache_clear()
-    get_hipparcos_data.cache_clear()
-    get_mpcorb_data.cache_clear()
-    get_jovian_ephemeris.cache_clear()
-    get_nasa_comets_data.cache_clear()
-    global _SCORE_CACHE
-    _SCORE_CACHE = {}
