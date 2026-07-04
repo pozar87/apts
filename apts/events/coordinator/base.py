@@ -207,6 +207,9 @@ class AstronomicalEvents:
     def calculate_jovian_mutual_events(self):
         return planetary_calc.calculate_jovian_mutual_events(self.observer, self.start_date, self.end_date)
 
+    def calculate_celestial_configurations(self):
+        return planetary_calc.calculate_celestial_configurations(self.observer, self.start_date, self.end_date)
+
     # endregion
 
     def _get_rarity(self, event_type: str, data: dict) -> int:
@@ -266,6 +269,7 @@ class AstronomicalEvents:
             "planetary_dichotomy": lambda: self.calculate_planetary_dichotomy(precomputed),
             "seasons": self.calculate_seasons,
             "culminations": self.calculate_culminations,
+            "celestial_configurations": self.calculate_celestial_configurations,
         }
 
         for event_key, func in event_dispatch.items():

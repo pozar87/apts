@@ -42,6 +42,7 @@ from .visibility import (
     find_object_culminations,
 )
 from .saturn import find_saturn_ring_crossings
+from .configurations import find_groupings, find_linear_alignments
 from .satellites import (
     calculate_satellite_magnitude,
     _find_satellite_flybys,
@@ -105,6 +106,8 @@ __all__ = [
     "find_object_culminations",
     "find_greatest_elongations",
     "find_seasons",
+    "find_groupings",
+    "find_linear_alignments",
     "find_planet_solar_conjunctions",
     "find_planet_planet_occultations",
     "find_jupiter_grs_transits",
@@ -121,6 +124,7 @@ __all__ = [
     "planets",
     "satellites",
     "saturn",
+    "configurations",
     "solar",
     "utils",
     "visibility",
