@@ -23,10 +23,15 @@ class TestZwoUpdates(unittest.TestCase):
         # Test MM version
         cam_mm = ZwoCamera.ZWO_ASI_462MM()
         self.assertEqual(
-            cam_mm.sensor_width.to("mm").magnitude, 5.57
+            cam_mm.sensor_width.to("mm").magnitude, 5.6
         )  # Verified for IMX462
         # Use existing QE for now or update if verified for MM too (usually same for IMX462)
         self.assertEqual(cam_mm.quantum_efficiency, 91)
+        self.assertEqual(cam_mm.width, 1936)
+        self.assertEqual(cam_mm.height, 1096)
+        self.assertEqual(cam_mm.mass.to("gram").magnitude, 120)
+        self.assertEqual(cam_mm.optical_length.to("mm").magnitude, 12.5)
+        self.assertEqual(cam_mm.connection_type, ConnectionType.CS)
 
     def test_asi585_specs(self):
         # Test legacy factory method (now consolidated)
