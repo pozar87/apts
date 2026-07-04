@@ -1,7 +1,6 @@
 
 import unittest
 from datetime import datetime, timezone
-import pandas as pd
 from apts.events import AstronomicalEvents
 from apts.place import Place
 from apts.constants.event_types import EventType
