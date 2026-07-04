@@ -68,6 +68,7 @@ class TestAstronomicalEvents(unittest.TestCase):
             "venus_great_brilliancy": True,
             "supermoons": True,
             "planetary_dichotomy": True,
+            "celestial_configurations": True,
         }
 
         # Instantiate AstronomicalEvents AFTER patching
@@ -78,7 +79,7 @@ class TestAstronomicalEvents(unittest.TestCase):
         mock_executor_instance = events_instance.executor
 
         # Create a list of mock futures for all calculation methods
-        num_events = 40
+        num_events = 41
         mock_futures = [MagicMock() for _ in range(num_events)]
         for future in mock_futures:
             future.result.return_value = []

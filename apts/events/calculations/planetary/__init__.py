@@ -21,6 +21,7 @@ from .alignments import (
     calculate_planet_alignments,
     calculate_planet_planet_occultations,
 )
+from .configurations import calculate_celestial_configurations
 from .jovian import (
     calculate_jovian_moon_events,
     calculate_saturn_ring_crossings,
