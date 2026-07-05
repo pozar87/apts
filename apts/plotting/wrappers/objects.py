@@ -33,7 +33,7 @@ def plot_planets(
     )
 
 def plot_skymap(observation: "Observation", **args):
-    from ..skymap import plot_skymap as base_plot_skymap
+    from ..skymaps import plot_skymap as base_plot_skymap
 
     return base_plot_skymap(observation, **args)
 
