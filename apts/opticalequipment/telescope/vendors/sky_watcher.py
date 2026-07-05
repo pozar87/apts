@@ -251,7 +251,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Male",
             "cside_thread": "M48",
             "focal_length_mm": 840,
-            "mass": 9610,
+            "mass": 10300,  # Verified via Sky-Watcher Global (10.3 kg Tube Weight) - http://skywatcher.com/product/esprit-120-ed-apo-triplet/
             "name": "Esprit 120ED",
             "optical_length": 0,
             "reversible": False,
