@@ -91,7 +91,7 @@ def mock_observation():
 def test_plot_skymap_renders_messier_objects(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch.object(Observation, "local_messier", MagicMock()) as mock_local_messier,
     ):
         # Mock the figure and axes objects
@@ -156,7 +156,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
 def test_plot_ngc_object_with_no_size(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymaps.skymap_zoom.get_brightness_color"
         ) as mock_get_brightness_color,
@@ -411,7 +411,7 @@ def test_plot_moon_on_skymap_renders_moon():
 
 def test_plot_planet_with_no_size_polar(mock_observation):
     # Mock the necessary methods and data to avoid actual plotting
-    with patch("apts.plotting.skymap.pyplot") as mock_pyplot:
+    with patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot:
         # Mock the figure and axes objects
         mock_fig = MagicMock()
         mock_ax = MagicMock()
@@ -682,7 +682,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     The angle should be based on PosAng only.
     """
     from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
+    from apts.plotting.skymaps.base import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_observation.place.lat_decimal = 34.0
@@ -745,7 +745,7 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
     )
 
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -798,7 +798,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     on a zoomed HORIZONTAL skymap.
     """
     from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
+    from apts.plotting.skymaps.base import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_observation.place.lat_decimal = 34.0
@@ -860,7 +860,7 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
     )
 
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -915,7 +915,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     on a zoomed HORIZONTAL skymap.
     """
     from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
+    from apts.plotting.skymaps.base import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_observation.place.lat_decimal = 34.0
@@ -995,7 +995,7 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
     )
 
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -1049,7 +1049,7 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     on a zoomed EQUATORIAL skymap.
     """
     from apts.constants.plot import CoordinateSystem
-    from apts.plotting.skymap import _generate_plot_skymap
+    from apts.plotting.skymaps.base import _generate_plot_skymap
 
     mock_observation = MagicMock()
     mock_observation.place.lat_decimal = 34.0
@@ -1126,7 +1126,7 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
     )
 
     with (
-        patch("apts.plotting.skymap.pyplot") as mock_pyplot,
+        patch("apts.plotting.skymaps.base.pyplot") as mock_pyplot,
         patch(
             "apts.plotting.skymaps.skymap_zoom.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
