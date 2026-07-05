@@ -1,6 +1,5 @@
 import logging
 import re
-import urllib.parse
 from importlib import resources
 from typing import cast
 
@@ -157,9 +156,10 @@ def _load_ngc_with_units():
     )
 
     # Add external links (fully vectorized)
-    quoted_names = pd.Series(
-        [urllib.parse.quote(str(x)) for x in ngc_df["Name"]], index=ngc_df.index
-    )
+    # Optimization: Replacing slow urllib.parse.quote list comprehension with vectorized
+    # .str.replace(). This provides a significant speedup for ~14k items.
+    # Safe because NGC/IC names only contain alphanumeric characters, spaces, and hyphens.
+    quoted_names = ngc_df["Name"].str.replace(" ", "%20", regex=False)
     ngc_df[ObjectTableLabels.SIMBAD] = (
         "https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" + quoted_names
     )
