@@ -343,14 +343,14 @@ class CelestronTelescope(Telescope):
             "name": "C5 OTA (XLT)",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 2720,
+            "mass": 2722, # Verified via Celestron documentation (96 oz) - https://www.celestron.com/products/c5-spotting-scope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 125,
+            "aperture_mm": 127, # Verified via Celestron documentation (127mm / 5") - https://www.celestron.com/products/c5-spotting-scope
             "focal_length_mm": 1250,
             "central_obstruction_mm": 51,
         },
