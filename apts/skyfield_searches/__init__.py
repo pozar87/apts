@@ -56,6 +56,7 @@ from ..utils import planetary
 
 # Import submodules to allow access via apts.skyfield_searches.submodule
 from . import (
+    configurations,
     conjunctions,
     jovian,
     lunar,
