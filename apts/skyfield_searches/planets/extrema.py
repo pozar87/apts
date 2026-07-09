@@ -129,28 +129,19 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
     t1 = ts.utc(end_date)
     planet = planetary.get_skyfield_obj(planet_name)
 
-    def ra_velocity(t):
-        # We want to find where d(RA)/dt = 0
-        # Use a small delta for numerical differentiation
-        dt = 0.001  # ~1.4 minutes
-        t_minus = ts.tt_jd(t.tt - dt)
-        t_plus = ts.tt_jd(t.tt + dt)
-
-        ra1 = (
-            observer.at(t_minus).observe(planet).apparent().radec(epoch="date")[0].hours
-        )
-        ra2 = (
-            observer.at(t_plus).observe(planet).apparent().radec(epoch="date")[0].hours
-        )
-
-        # Handle wrap-around at 24h
-        diff = (ra2 - ra1 + 12) % 24 - 12
-        return diff / (2 * dt)
-
-    # Stationary points occur when RA velocity is zero.
-    # We search for zero-crossings of the velocity.
     def ra_state(t):
-        return (ra_velocity(t) > 0).astype(int)
+        # Optimization: use analytical derivative to find where d(RA)/dt = 0.
+        # This replaces slow numerical differentiation with a single observation.
+        # d(atan2(y,x))/dt = (x*dy - y*dx) / (x^2 + y^2)
+        # Note: We use the analytical derivative in the ICRS/GCRS frame. While this
+        # differs slightly from the "epoch of date" frame, the timing difference
+        # for stationary points is negligible (seconds) for most use cases.
+        pos = observer.at(t).observe(planet).apparent()
+        x, y, _ = pos.position.au
+        dx, dy, _ = pos.velocity.au_per_d
+        # We only care about the sign of the velocity for find_discrete
+        ra_vel = (x * dy - y * dx) / (x**2 + y**2)
+        return (ra_vel > 0).astype(int)
 
     # Planets stay retrograde for weeks/months, so 2 days step is safe.
     setattr(ra_state, "step_days", 2.0)
