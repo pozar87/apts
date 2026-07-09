@@ -1,5 +1,6 @@
 from typing import Any, cast
-from .base import TelescopeType, TubeMaterial, Telescope
+from .enums import TelescopeType, TubeMaterial
+from .base import Telescope
 import pkgutil
 import importlib
 import os

@@ -1,28 +1,13 @@
-from enum import Enum
 from typing import Any, Optional, cast
 
 import numpy
 
-from ...constants import GraphConstants, astronomy
+from .enums import TelescopeType, TubeMaterial
+from ...constants import GraphConstants
+from ...optics.calculations import telescope as telescope_calc
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ..base import OpticalEquipment
-
-
-class TelescopeType(Enum):
-    REFRACTOR = "refractor"
-    NEWTONIAN_REFLECTOR = "newtonian_reflector"
-    SCHMIDT_CASSEGRAIN = "schmidt_cassegrain"
-    MAKSUTOV_CASSEGRAIN = "maksutov_cassegrain"
-    CATADIOPTRIC = "catadioptric"
-
-
-class TubeMaterial(Enum):
-    ALUMINUM = 2.31e-05
-    CARBON_FIBER = 5e-07
-    STEEL = 1.2e-05
-    BRASS = 1.9e-05
-    GLASS_FIBER = 8e-06
 
 
 class Telescope(OpticalEquipment):
@@ -191,10 +176,8 @@ class Telescope(OpticalEquipment):
         https://en.wikipedia.org/wiki/Dawes%27_limit
         :return: limit in arcsecond
         """
-        return (
-            round((11.6 / self.aperture.to("cm")).magnitude, 3)
-            * get_unit_registry().arcsecond
-        )
+        aperture_mm = self.aperture.to("mm").magnitude
+        return telescope_calc.calculate_dawes_limit(aperture_mm) * get_unit_registry().arcsecond
 
     def rayleigh_limit(self, wavelength_nm: float | int = 550):
         """
@@ -205,11 +188,8 @@ class Telescope(OpticalEquipment):
         :param wavelength_nm: wavelength in nanometers (default 550nm for green light)
         :return: limit in arcsecond
         """
-        wavelength_m = wavelength_nm * 1e-9
-        aperture_m = self.aperture.to("m").magnitude
-        limit_rad = 1.22 * wavelength_m / aperture_m
-        limit_arcsec = limit_rad * astronomy.RAD_TO_ARCSEC
-        return round(limit_arcsec, 3) * get_unit_registry().arcsecond
+        aperture_mm = self.aperture.to("mm").magnitude
+        return telescope_calc.calculate_rayleigh_limit(aperture_mm, wavelength_nm) * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
         """
@@ -217,7 +197,9 @@ class Telescope(OpticalEquipment):
         Uses effective aperture diameter for better accuracy when central obstruction is present.
         :return: range in magnitude
         """
-        return 7.7 + 5 * numpy.log10(self.effective_aperture().to("cm").magnitude)
+        aperture_mm = self.aperture.to("mm").magnitude
+        central_obstruction_mm = self.central_obstruction.to("mm").magnitude
+        return telescope_calc.calculate_limiting_magnitude(aperture_mm, central_obstruction_mm)
 
     def light_grasp_ratio(self, other_aperture):
         """
@@ -236,7 +218,8 @@ class Telescope(OpticalEquipment):
         Above this limit, the image usually becomes blurry and loses contrast due to diffraction.
         Source: Sidgwick, J. B. (1971), "Amateur Astronomer's Handbook".
         """
-        return float(self.aperture.magnitude * 2.0)
+        aperture_mm = self.aperture.to("mm").magnitude
+        return telescope_calc.calculate_highest_useful_magnification(aperture_mm)
 
     def lowest_useful_magnification(self, pupil_diameter_mm: float = 7.0) -> float:
         """
@@ -246,7 +229,8 @@ class Telescope(OpticalEquipment):
         in an exit pupil larger than the eye, wasting gathered light.
         Source: Sidgwick, J. B. (1971), "Amateur Astronomer's Handbook".
         """
-        return float(self.aperture.magnitude / pupil_diameter_mm)
+        aperture_mm = self.aperture.to("mm").magnitude
+        return telescope_calc.calculate_lowest_useful_magnification(aperture_mm, pupil_diameter_mm)
 
     def min_useful_zoom(self):
         """
