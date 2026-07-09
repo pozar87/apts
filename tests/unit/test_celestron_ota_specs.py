@@ -29,7 +29,7 @@ class TestCelestronOTASpecs(unittest.TestCase):
     def test_nexstar_5se_specs(self):
         scope = CelestronTelescope.Celestron_NexStar_5SE()
         self.assertEqual(scope.get_vendor(), "Celestron NexStar 5SE")
-        self.assertEqual(scope.aperture.to('mm').magnitude, 125)
+        self.assertEqual(scope.aperture.to('mm').magnitude, 127)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1250)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 51)
         self.assertEqual(scope.mass.to('gram').magnitude, 2722)
