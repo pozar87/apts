@@ -17,7 +17,7 @@ def test_skywatcher_esprit_specs():
     esprit120 = Sky_watcherTelescope.Sky_Watcher_Esprit_120ED()
     assert esprit120.aperture.magnitude == 120
     assert esprit120.focal_length.magnitude == 840
-    assert esprit120.mass.to('g').magnitude == 9610
+    assert esprit120.mass.to('g').magnitude == 10300
 
     # Esprit 150ED
     esprit150 = Sky_watcherTelescope.Sky_Watcher_Esprit_150ED()
