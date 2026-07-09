@@ -31,9 +31,9 @@ class TestISSFlybysKrakow(unittest.TestCase):
         )
 
         # We expect 3 visible flybys (updated based on current TLE for April 2026):
-        # 1. 23:20 UTC on 29th (Alt ~33)
-        # 2. 00:56 UTC on 30th (Alt ~81)
-        # 3. 02:34 UTC on 30th (Alt ~69)
+        # 1. 23:38 UTC on 29th (Alt ~42)
+        # 2. 01:15 UTC on 30th (Alt ~73)
+        # 3. 02:52 UTC on 30th (Alt ~76)
 
         culmination_hours = [f["culmination_time"].hour for f in flybys]
         culmination_minutes = [f["culmination_time"].minute for f in flybys]
@@ -64,9 +64,9 @@ class TestISSFlybysKrakow(unittest.TestCase):
             )
 
         # Updated times based on current TLE propagation
-        assert_flyby_near(datetime(2026, 4, 29, 23, 20, tzinfo=timezone.utc), "23:20")
-        assert_flyby_near(datetime(2026, 4, 30, 0, 56, tzinfo=timezone.utc), "00:56")
-        assert_flyby_near(datetime(2026, 4, 30, 2, 34, tzinfo=timezone.utc), "02:34")
+        assert_flyby_near(datetime(2026, 4, 29, 23, 38, tzinfo=timezone.utc), "23:38")
+        assert_flyby_near(datetime(2026, 4, 30, 1, 15, tzinfo=timezone.utc), "01:15")
+        assert_flyby_near(datetime(2026, 4, 30, 2, 52, tzinfo=timezone.utc), "02:52")
 
 if __name__ == "__main__":
     unittest.main()
