@@ -38,17 +38,18 @@ class SvbonyTelescope(Telescope):
             "brand": "SVBony",
             "name": "SV503 80ED",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 3000,
+            "optical_length": 90, # Verified via Svbony (Back Focus Length)
+            "mass": 3500, # Verified via Svbony (Tube weight with rings)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",
+            "cside_gender": "Female",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 80,
             "focal_length_mm": 560,
             "central_obstruction_mm": 0,
+            # Source: https://svbony.fr/en/products/svbony-sv503-telescope-refracteur-80mm-ed-f7-doublet
         },
         "SVBony_SV503_102ED": {
             "brand": "SVBony",
@@ -147,22 +148,6 @@ class SvbonyTelescope(Telescope):
             "focal_length_mm": 663,
             "central_obstruction_mm": 0,
         },
-        "SVBony_SV503_80": {
-            "brand": "SVBony",
-            "name": "SV503 80ED",
-            "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 3000,
-            "tside_thread": "",
-            "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
-            "reversible": False,
-            "bf_role": "",
-            "aperture_mm": 80,
-            "focal_length_mm": 560,
-            "central_obstruction_mm": 0,
-        },
     }
 
     @classmethod
@@ -200,7 +185,3 @@ class SvbonyTelescope(Telescope):
     @classmethod
     def SVBony_SV48P_102(cls):
         return cls.from_database(cls._DATABASE['SVBony_SV48P_102'])
-
-    @classmethod
-    def SVBony_SV503_80(cls):
-        return cls.from_database(cls._DATABASE['SVBony_SV503_80'])
