@@ -4,15 +4,22 @@ from skyfield.searchlib import find_minima
 
 from ...cache import get_timescale
 
-def _get_max_separation_at_time(t, observer, bodies):
+def _get_max_separation_at_time(t, observer, bodies, use_apparent=False):
     """
     Helper to calculate the maximum angular separation between any pair of bodies at time t.
     Supports vectorized Time objects.
     """
     # Get positions of all bodies
     # If t is a Time object with multiple times, observer.at(t) returns multiple positions
+    # Optimization: We use .observe() (astrometric position) by default instead of .apparent()
+    # during the iterative minimization loop to avoid redundant coordinate
+    # transformations (aberration, deflection). This is ~2x faster and
+    # provides near-identical results for the minimization step.
     obs = observer.at(t)
-    positions = [obs.observe(b[1]).apparent() for b in bodies]
+    if use_apparent:
+        positions = [obs.observe(b[1]).apparent() for b in bodies]
+    else:
+        positions = [obs.observe(b[1]) for b in bodies]
 
     # Calculate max pairwise separation
     if hasattr(t, 'shape') and t.shape:
@@ -58,12 +65,13 @@ def find_groupings(observer, bodies, start_date, end_date, threshold_degrees=5.0
 
     events = []
     for t, val in zip(times, values):
-        if val < threshold_degrees * 2: # heuristic for group diameter
-            # Refine if needed, but let's keep it simple for now
+        if val < threshold_degrees * 2:  # heuristic for group diameter
+            # Re-calculate with apparent positions for final result
+            val_app = _get_max_separation_at_time(t, observer, bodies, use_apparent=True)
             events.append({
                 "date": t.utc_datetime(),
                 "objects": [b[0] for b in bodies],
-                "max_separation_degrees": float(val),
-                "type": "Celestial Grouping"
+                "max_separation_degrees": float(val_app),
+                "type": "Celestial Grouping",
             })
     return events
