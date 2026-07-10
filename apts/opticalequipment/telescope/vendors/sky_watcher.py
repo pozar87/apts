@@ -724,14 +724,14 @@ class Sky_watcherTelescope(Telescope):
             "type": "newtonian_reflector",
         },
         "Sky_Watcher_Quattro_200P": {
-            "aperture_mm": 205,
+            "aperture_mm": 205,  # Verified via Sky-Watcher USA (205mm / 8.07") - https://www.skywatcherusa.com/products/sky-watcher-quattro-200p-imaging-newtonian-8-205-mm
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 70,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
+            "central_obstruction_mm": 70,  # Verified via Sky-Watcher Global (Secondary Mirror Diameter 70mm)
+            "cside_gender": "Female",
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA (2-inch dual-speed Crayford focuser)
             "focal_length_mm": 800,
-            "mass": 9500,
+            "mass": 9500,  # Verified via Sky-Watcher Global (9.5 kg Tube Weight)
             "name": "Quattro 200P",
             "optical_length": 0,
             "reversible": False,
