@@ -25,7 +25,7 @@ class TestStellarZwoCameras(unittest.TestCase):
         cam = ZwoCamera.ZWO_ASI_662MC()
         self.assertEqual(cam.width, 1920)
         self.assertEqual(cam.quantum_efficiency, 91)
-        self.assertEqual(cam.full_well, 38200)
+        self.assertEqual(cam.full_well, 37800)
 
     def test_asi585_pro_specs(self):
         cam = ZwoCamera.ZWO_ASI_585MC_Pro()

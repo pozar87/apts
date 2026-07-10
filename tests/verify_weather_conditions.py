@@ -43,14 +43,13 @@ class TestWeatherConditionsVerification(unittest.TestCase):
         if conditions is None:
             conditions = Conditions()
 
-        with patch('apts.observations.Observation._normalize_dates', side_effect=lambda x, y: (x, y)):
-            # Pass target_date to avoid legacy behavior that might use place.date in tricky ways
-            obs = Observation(self.place, self.equipment, conditions, target_date=datetime(2024, 1, 1))
-            # Re-ensure they are exactly what we want, though constructor should have set them
-            obs.start = self.start
-            obs.stop = self.stop
-            obs.time_limit = self.stop
-            return obs
+        # Pass target_date to avoid legacy behavior that might use place.date in tricky ways
+        obs = Observation(self.place, self.equipment, conditions, target_date=datetime(2024, 1, 1))
+        # Re-ensure they are exactly what we want, though constructor should have set them
+        obs.start = self.start
+        obs.stop = self.stop
+        obs.time_limit = self.stop
+        return obs
 
     def _get_mock_weather_data(self, **kwargs):
         # Default good weather
@@ -74,7 +73,7 @@ class TestWeatherConditionsVerification(unittest.TestCase):
                 data[key] = value
         return pd.DataFrame(data)
 
-    @patch('apts.observations.weather.get_moon_illumination', return_value=0)
+    @patch('apts.observations.weather.base.get_moon_illumination', return_value=0)
     def test_all_conditions_checked(self, mock_moon_illum):
         # We want to verify that if ANY condition is violated, the hour is marked as "not good"
         # and a reason is provided.
@@ -129,7 +128,7 @@ class TestWeatherConditionsVerification(unittest.TestCase):
                     reasons = analysis[2]['reasons']
                     self.assertTrue(any(reason_part in r for r in reasons), f"Reason for {cond_attr} not found in {reasons}")
 
-    @patch('apts.observations.weather.get_moon_illumination', return_value=80)
+    @patch('apts.observations.weather.base.get_moon_illumination', return_value=80)
     def test_moon_condition(self, mock_moon_illum):
         # Moon is 80% illuminated
         conditions = Conditions(max_moon_illumination=50)
