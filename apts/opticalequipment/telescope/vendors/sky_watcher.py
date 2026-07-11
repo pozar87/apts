@@ -679,7 +679,7 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 180,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 41,  # Verified via Sky-Watcher USA and Astronomics (41mm secondary mirror)
+            "central_obstruction_mm": 44,  # Verified via OVL/Sky-Watcher UK technical data (44mm secondary mirror) - https://www.firstlightoptics.com/telescopes-in-stock/skywatcher-skymax-180-pro.html
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 2700,
@@ -855,7 +855,7 @@ class Sky_watcherTelescope(Telescope):
             "aperture_mm": 180,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 41,  # Verified via Sky-Watcher USA and Astronomics (41mm secondary mirror)
+            "central_obstruction_mm": 44,  # Verified via OVL/Sky-Watcher UK technical data (44mm secondary mirror) - https://www.firstlightoptics.com/telescopes-in-stock/skywatcher-skymax-180-pro.html
             "cside_gender": "Male",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "focal_length_mm": 2700,
