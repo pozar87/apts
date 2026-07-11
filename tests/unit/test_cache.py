@@ -89,6 +89,7 @@ class CacheTest(unittest.TestCase):
         self.assertIn("(1) Ceres", df.index)
         self.assertIn("(2) Pallas", df.index)
 
+    @patch("apts.cache.base.load")
     @patch("apts.cache.base.get_ephemeris")
     @patch("apts.cache.base.get_hipparcos_data")
     @patch("apts.cache.base.get_mpcorb_data")
@@ -99,12 +100,14 @@ class CacheTest(unittest.TestCase):
         mock_get_mpcorb_data,
         mock_get_hipparcos_data,
         mock_get_ephemeris,
+        mock_load,
     ):
         download_all_data()
         mock_get_ephemeris.assert_called_once()
         mock_get_hipparcos_data.assert_called_once()
         mock_get_mpcorb_data.assert_called_once()
         mock_get_jovian_ephemeris.assert_called_once()
+        mock_load.tle_file.assert_called_once_with("https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle")
 
     @patch("apts.cache.catalogs.Loader")
     def test_get_hipparcos_data_failure(self, mock_loader_class):

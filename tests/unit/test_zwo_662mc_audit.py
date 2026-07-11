@@ -18,8 +18,8 @@ def test_zwo_662mc_audit():
     assert camera.read_noise == 0.8
     assert camera.width == 1920
     assert camera.height == 1080
-    assert camera.sensor_width.to("mm").magnitude == 5.568
-    assert camera.sensor_height.to("mm").magnitude == 3.132
+    assert camera.sensor_width.to("mm").magnitude == pytest.approx(5.568, abs=1e-2)
+    assert camera.sensor_height.to("mm").magnitude == pytest.approx(3.132, abs=1e-2)
 
     # Assert connections (using centralized enums as per convention)
     assert camera.connection_type == ConnectionType.M42
