@@ -5,9 +5,14 @@ import numpy as np
 import pandas as pd
 
 from ..constants import FilterStrategy, ObjectTableLabels
-from ..objects.utils import vectorized_geometric_imaging_duration
 from ..optics.utils import OpticsUtils
 from ..scoring import SuitabilityScorer
+from ..utils.astronomy import (
+    calculate_refraction,
+    vectorized_geometric_altaz,
+    vectorized_angular_separation,
+    vectorized_geometric_imaging_duration,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -99,98 +104,14 @@ class DiscoveryService:
     @staticmethod
     def _populate_bulk_data(place, equipment_path, df, t_sf, twilight_times):
         """Performs bulk astronomical calculations (Altitude, Moon, Window, FOV)."""
-        from ..objects.utils import calculate_refraction
-
-        observer_at_t = place.observer.at(t_sf)
-        moon_pos = observer_at_t.observe(place.moon).apparent()
-
-        # Pre-calculated float coordinates (from catalog load)
-        ras = df["ra_hours"].values.astype(float)
-        decs = df["dec_degrees"].values.astype(float)
-
         # 1. Altitude and Moon Separation (Lightning Fast Geometric Vectorization)
         # Optimization: Replacing Skyfield's high-precision .apparent() coordinate
         # transformations with vectorized NumPy geometric formulas provides a ~20x speedup
         # for this phase of discovery. The accuracy loss is negligible for scoring.
-
-        # Geometric Altitude
-        lst_hours = t_sf.gmst + place.lon_decimal / 15.0
-        lat_rad = np.deg2rad(place.lat_decimal)
-        lst_rad = np.deg2rad(lst_hours * 15.0)
-
-        sin_lat = np.sin(lat_rad)
-        cos_lat = np.cos(lat_rad)
-        sin_lst = np.sin(lst_rad)
-        cos_lst = np.cos(lst_rad)
-
-        if "sin_dec" in df.columns:
-            # High-performance path: uses pre-calculated unit vectors
-            sin_dec = df["sin_dec"].values
-            cd_cr = df["cos_dec_cos_ra"].values
-            cd_sr = df["cos_dec_sin_ra"].values
-            # expansion: cos(dec)cos(LST-RA) = cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)
-            sin_alt = sin_lat * sin_dec + cos_lat * (cos_lst * cd_cr + sin_lst * cd_sr)
-        else:
-            dec_rad = np.deg2rad(decs)
-            ra_rad = np.deg2rad(ras * 15.0)
-            ha_rad = lst_rad - ra_rad
-            sin_alt = sin_lat * np.sin(dec_rad) + cos_lat * np.cos(dec_rad) * np.cos(
-                ha_rad
-            )
-
-        true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
-
-        # Add first-order refraction for consistency with visibility gating
-        df[ObjectTableLabels.ALTITUDE] = true_alt_deg + calculate_refraction(
-            true_alt_deg
-        )
-
-        # Moon Separation
-        moon_ra, moon_dec, _ = moon_pos.radec()
-        m_ra_rad = np.deg2rad(moon_ra.hours * 15.0)
-        m_dec_rad = np.deg2rad(moon_dec.degrees)
-
-        sin_m_dec = np.sin(m_dec_rad)
-        cos_m_dec = np.cos(m_dec_rad)
-        sin_m_ra = np.sin(m_ra_rad)
-        cos_m_ra = np.cos(m_ra_rad)
-
-        if "sin_dec" in df.columns:
-            # expansion: cos(dec)cos(MoonRA-RA) = cos(MoonRA)cos(dec)cos(RA) + sin(MoonRA)cos(dec)sin(RA)
-            cos_sep = sin_dec * sin_m_dec + cos_m_dec * (
-                cos_m_ra * cd_cr + sin_m_ra * cd_sr
-            )
-        else:
-            cos_sep = np.sin(dec_rad) * sin_m_dec + np.cos(dec_rad) * cos_m_dec * np.cos(
-                ra_rad - m_ra_rad
-            )
-
-        df["moon_separation"] = np.rad2deg(np.arccos(np.clip(cos_sep, -1.0, 1.0)))
+        DiscoveryService._populate_altitude_and_moon_data(place, df, t_sf)
 
         # 2. Imaging Window (Fully Vectorized)
-        df["window_minutes"] = 0.0
-        if twilight_times:
-            # Optimization: All objects (stars and planets) use the fast vectorized geometric formula.
-            # For planets, motion during a single night is negligible for discovery scoring.
-            transits = pd.to_datetime(df[ObjectTableLabels.TRANSIT])
-
-            # Ensure transits are UTC naive for vectorized_geometric_imaging_duration
-            if transits.dt.tz is not None:
-                transits_utc_naive = transits.dt.tz_convert("UTC").dt.tz_localize(None)
-            else:
-                transits_utc_naive = transits
-
-            durations = vectorized_geometric_imaging_duration(
-                place.lat_decimal,
-                ras,
-                decs,
-                np.ones(len(df), dtype=bool),
-                transits_utc_naive,
-                twilight_times[0],
-                twilight_times[1],
-                sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
-            )
-            df["window_minutes"] = durations
+        DiscoveryService._populate_imaging_window_data(place, df, twilight_times)
 
         # 3. FOV Fit
         # Optimization: Pre-extract sizes as float arrays and bypass Quantity handling
@@ -218,6 +139,74 @@ class DiscoveryService:
             sensor_size,
             focal_length,
         )
+
+    @staticmethod
+    def _populate_altitude_and_moon_data(place, df, t_sf):
+        """Calculates Altitude and Moon Separation in bulk using geometric formulas."""
+        observer_at_t = place.observer.at(t_sf)
+        moon_pos = observer_at_t.observe(place.moon).apparent()
+
+        # Pre-calculated float coordinates (from catalog load)
+        ras = df["ra_hours"].values.astype(float)
+        decs = df["dec_degrees"].values.astype(float)
+
+        # Geometric Altitude
+        true_alt_deg, _ = vectorized_geometric_altaz(
+            place.lat_decimal,
+            place.lon_decimal,
+            ras,
+            decs,
+            t_sf.gmst,
+            sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
+            cd_cr=df["cos_dec_cos_ra"].values if "cos_dec_cos_ra" in df.columns else None,
+            cd_sr=df["cos_dec_sin_ra"].values if "cos_dec_sin_ra" in df.columns else None,
+        )
+
+        # Add first-order refraction for consistency with visibility gating
+        df[ObjectTableLabels.ALTITUDE] = true_alt_deg + calculate_refraction(
+            true_alt_deg
+        )
+
+        # Moon Separation
+        moon_ra, moon_dec, _ = moon_pos.radec()
+        df["moon_separation"] = vectorized_angular_separation(
+            ras,
+            decs,
+            moon_ra.hours,
+            moon_dec.degrees,
+            sin_dec1=df["sin_dec"].values if "sin_dec" in df.columns else None,
+            cd_cr1=df["cos_dec_cos_ra"].values if "cos_dec_cos_ra" in df.columns else None,
+            cd_sr1=df["cos_dec_sin_ra"].values if "cos_dec_sin_ra" in df.columns else None,
+        )
+
+    @staticmethod
+    def _populate_imaging_window_data(place, df, twilight_times):
+        """Calculates imaging window duration in bulk."""
+        df["window_minutes"] = 0.0
+        if twilight_times:
+            ras = df["ra_hours"].values.astype(float)
+            decs = df["dec_degrees"].values.astype(float)
+            # Optimization: All objects (stars and planets) use the fast vectorized geometric formula.
+            # For planets, motion during a single night is negligible for discovery scoring.
+            transits = pd.to_datetime(df[ObjectTableLabels.TRANSIT])
+
+            # Ensure transits are UTC naive for vectorized_geometric_imaging_duration
+            if transits.dt.tz is not None:
+                transits_utc_naive = transits.dt.tz_convert("UTC").dt.tz_localize(None)
+            else:
+                transits_utc_naive = transits
+
+            durations = vectorized_geometric_imaging_duration(
+                place.lat_decimal,
+                ras,
+                decs,
+                np.ones(len(df), dtype=bool),
+                transits_utc_naive,
+                twilight_times[0],
+                twilight_times[1],
+                sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
+            )
+            df["window_minutes"] = durations
 
     @staticmethod
     def _format_discovery_results(df, scores_df, limit):
