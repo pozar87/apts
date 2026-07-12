@@ -855,7 +855,7 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 127 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 2950,
+            "mass": 2948, # Verified via official Celestron documentation (6.5 lbs) - https://www.celestron.com/products/omni-xlt-127-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -864,7 +864,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 127,
             "focal_length_mm": 1250,
-            "central_obstruction_mm": 40,
+            "central_obstruction_mm": 51, # Verified via official Celestron documentation (51mm / 2.0") - https://www.celestron.com/products/omni-xlt-127-telescope
         },
         "Celestron_Omni_XLT_150": {
             "brand": "Celestron",
