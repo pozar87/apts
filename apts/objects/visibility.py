@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import Any, cast
-from .utils import calculate_refraction
+from ..utils.astronomy import calculate_refraction, vectorized_geometric_altaz
 from ..skyfield_searches.utils import fast_altaz
 
 def get_visible_mocked(objects_instance, candidate_objects, conditions, start, stop) -> list:
@@ -74,82 +74,52 @@ def get_visible_stars(
         stars_indices = np.asarray(stars_indices)
         active_stars_indices = stars_indices[potential_mask]
 
-        # Get LST for all check times (in hours)
-        lst_hours = check_times.gmst + place.lon_decimal / 15.0
-
-        # Pre-calculate trigonometric values for O(N+M) optimization
-        lat_rad = np.deg2rad(place.lat_decimal)
-        sin_lat = np.sin(lat_rad)
-        cos_lat = np.cos(lat_rad)
-
-        # For check times (M_times)
-        lst_rad = np.deg2rad(lst_hours * 15.0)
-        sin_lst = np.sin(lst_rad)[np.newaxis, :]
-        cos_lst = np.cos(lst_rad)[np.newaxis, :]
-
-        # Use pre-calculated Equatorial Direction Cosines to avoid redundant
-        # O(N) transcendental function calls in hot loops.
+        # Use pre-calculated Equatorial Direction Cosines if available
+        sin_dec = None
+        cd_cr = None
+        cd_sr = None
         if "sin_dec" in candidate_objects.columns:
-            # High-performance path: uses pre-calculated unit vectors
-            sin_dec = candidate_objects["sin_dec"].values[active_stars_indices][:, np.newaxis]
-            cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices][:, np.newaxis]
-            cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices][:, np.newaxis]
-
-            # sin(alt) = sin(lat)sin(dec) + cos(lat)cos(dec)cos(LST-RA)
-            # Expansion: cos(dec)cos(LST-RA) = cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)
-            sin_alt = sin_lat * sin_dec + cos_lat * (cos_lst * cd_cr + sin_lst * cd_sr)
-        else:
-            # Fallback for dynamic or non-pre-calculated catalogs
-            active_ras_hours = stars_ras[potential_mask]
-            active_decs_deg = stars_decs[potential_mask]
-
-            ra_rad = np.deg2rad(active_ras_hours * 15.0)
-            dec_rad = np.deg2rad(active_decs_deg)
-            sin_ra = np.sin(ra_rad)[:, np.newaxis]
-            cos_ra = np.cos(ra_rad)[:, np.newaxis]
-            sin_dec = np.sin(dec_rad)[:, np.newaxis]
-            cos_dec = np.cos(dec_rad)[:, np.newaxis]
-
-            # Use identity: cos(H) = cos(LST-RA) = cos(LST)cos(RA) + sin(LST)sin(RA)
-            cos_h = cos_lst * cos_ra + sin_lst * sin_ra
-            sin_alt = sin_lat * sin_dec + cos_lat * cos_dec * cos_h
+            sin_dec = candidate_objects["sin_dec"].values[active_stars_indices]
+            cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices]
+            cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices]
 
         # Optimization: if only simple altitude check is needed, we can bypass
-        # expensive arctan2, arcsin, and refraction calculations for the grid.
+        # expensive arctan2 and azimuth calculations for the grid.
         if not conditions.horizon_content and not conditions.horizon_file and \
            conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
-            # For simple altitude, we can compare sin_alt directly.
-            # We need to account for refraction in the threshold itself.
-            min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
-            # Threshold sin_alt: objects are visible if apparent_alt >= min_alt.
-            # apparent_alt = true_alt + refraction(true_alt).
-            # We find the true_alt that corresponds to apparent_alt = min_alt.
-            # Since refraction is small and monotonic, we can approximate:
-            # true_alt_threshold = min_alt - refraction(min_alt)
-            true_alt_threshold = min_alt - calculate_refraction(min_alt)
-            sin_alt_threshold = np.sin(np.deg2rad(true_alt_threshold))
 
-            visible_at_times = sin_alt >= sin_alt_threshold
+            # For simple altitude, we compute only altitude component
+            # vectorized_geometric_altaz can be used, or we can just do the altitude part here
+            # to be even faster. But for maintainability, let's use the utility.
+            true_alt_deg, _ = vectorized_geometric_altaz(
+                place.lat_decimal,
+                place.lon_decimal,
+                stars_ras[potential_mask],
+                stars_decs[potential_mask],
+                check_times.gmst,
+                sin_dec=sin_dec,
+                cd_cr=cd_cr,
+                cd_sr=cd_sr,
+            )
+
+            # Account for refraction in the threshold itself (optimization)
+            min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
+            true_alt_threshold = min_alt - calculate_refraction(min_alt)
+
+            visible_at_times = true_alt_deg >= true_alt_threshold
         else:
             # Full calculation needed for complex horizon or azimuth constraints
-            true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+            true_alt_deg, az_deg = vectorized_geometric_altaz(
+                place.lat_decimal,
+                place.lon_decimal,
+                stars_ras[potential_mask],
+                stars_decs[potential_mask],
+                check_times.gmst,
+                sin_dec=sin_dec,
+                cd_cr=cd_cr,
+                cd_sr=cd_sr,
+            )
             apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
-
-            # Determine azimuth components using direction cosines to avoid tan(dec)
-            if "sin_dec" in candidate_objects.columns:
-                # Optimized azimuth using direction cosines (avoiding division by zero at poles)
-                # x = cos(H)sin(lat) - tan(dec)cos(lat)
-                # x * cos(dec) = [cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)]sin(lat) - sin(dec)cos(lat)
-                # y * cos(dec) = sin(H)cos(dec) = sin(LST)cos(dec)cos(RA) - cos(LST)cos(dec)sin(RA)
-                x_cd = (cos_lst * cd_cr + sin_lst * cd_sr) * sin_lat - sin_dec * cos_lat
-                y_cd = sin_lst * cd_cr - cos_lst * cd_sr
-                az_deg = (np.rad2deg(np.arctan2(y_cd, x_cd)) + 180.0) % 360.0
-            else:
-                # Fallback azimuth
-                tan_dec = np.tan(dec_rad)[:, np.newaxis]
-                sin_h = sin_lst * cos_ra - cos_lst * sin_ra
-                x = cos_h * sin_lat - tan_dec * cos_lat
-                az_deg = (np.rad2deg(np.arctan2(sin_h, x)) + 180.0) % 360.0
 
             # Determine visibility using conditions
             visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
