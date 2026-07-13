@@ -158,7 +158,7 @@ class CelestronTelescope(Telescope):
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 127, # Verified via Celestron.com (5" aperture = 127mm) - https://www.celestron.com/products/c5-spotting-scope
+            "aperture_mm": 125, # Verified via Celestron.com (125mm / 4.92") - https://www.celestron.com/products/astro-fi-5-schmidt-cassegrain-telescope
             "focal_length_mm": 1250,
             "central_obstruction_mm": 51,
         },
@@ -366,7 +366,7 @@ class CelestronTelescope(Telescope):
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 127, # Verified via Celestron.com (5" aperture = 127mm) - https://www.celestron.com/products/c5-spotting-scope
+            "aperture_mm": 125, # Verified via Celestron.com (125mm / 4.92") - https://www.celestron.com/products/nexstar-5se-computerized-telescope
             "focal_length_mm": 1250,
             "central_obstruction_mm": 51,
         },
@@ -750,7 +750,7 @@ class CelestronTelescope(Telescope):
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 127, # Verified via Celestron.com (5" aperture = 127mm) - https://www.celestron.com/products/c5-spotting-scope
+            "aperture_mm": 125, # Verified via Celestron.com (125mm / 4.92") - https://www.celestron.com/products/nexstar-5se-computerized-telescope
             "focal_length_mm": 1250,
             "central_obstruction_mm": 51,
         },
