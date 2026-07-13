@@ -38,7 +38,9 @@ def vectorized_geometric_altaz(
     sin_dec: Optional[np.ndarray] = None,
     cd_cr: Optional[np.ndarray] = None,
     cd_sr: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    return_azimuth: bool = True,
+    return_alt_degrees: bool = True,
+) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     """
     Lightning fast geometric altitude and azimuth calculation using vectorized NumPy operations.
     Supports broadcasting for both single-time and multi-time calculations.
@@ -82,18 +84,29 @@ def vectorized_geometric_altaz(
             cd_cr = np.cos(dec_rad) * np.cos(ra_rad)
             cd_sr = np.cos(dec_rad) * np.sin(ra_rad)
 
-    # sin(alt) = sin(lat)sin(dec) + cos(lat)cos(dec)cos(LST-RA)
+    # Optimization: cache the intermediate products used by both altitude and azimuth
+    # cd_ch = cos(dec) * cos(hour_angle) = cos(dec) * cos(LST - RA)
     # Expansion: cos(dec)cos(LST-RA) = cos(LST)cos(dec)cos(RA) + sin(LST)cos(dec)sin(RA)
-    sin_alt = sin_lat * sin_dec + cos_lat * (cos_lst * cd_cr + sin_lst * cd_sr)
-    true_alt_deg = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+    cd_ch = cos_lst * cd_cr + sin_lst * cd_sr
 
-    # Azimuth calculation using direction cosines
-    # x_cd = cos(H)sin(lat) - tan(dec)cos(lat) * cos(dec) = cos(H)sin(lat)cos(dec) - sin(dec)cos(lat)
-    x_cd = (cos_lst * cd_cr + sin_lst * cd_sr) * sin_lat - sin_dec * cos_lat
-    y_cd = sin_lst * cd_cr - cos_lst * cd_sr
-    az_deg = (np.rad2deg(np.arctan2(y_cd, x_cd)) + 180.0) % 360.0
+    # sin(alt) = sin(lat)sin(dec) + cos(lat)cos(dec)cos(LST-RA)
+    sin_alt = sin_lat * sin_dec + cos_lat * cd_ch
 
-    return true_alt_deg, az_deg
+    if return_alt_degrees:
+        res_alt = np.rad2deg(np.arcsin(np.clip(sin_alt, -1.0, 1.0)))
+    else:
+        # Return raw sin(alt) if degrees are not requested
+        res_alt = sin_alt
+
+    az_deg = None
+    if return_azimuth:
+        # Azimuth calculation using direction cosines
+        # x_cd = cos(H)sin(lat)cos(dec) - sin(dec)cos(lat)
+        x_cd = cd_ch * sin_lat - sin_dec * cos_lat
+        y_cd = sin_lst * cd_cr - cos_lst * cd_sr
+        az_deg = (np.rad2deg(np.arctan2(y_cd, x_cd)) + 180.0) % 360.0
+
+    return res_alt, az_deg
 
 
 def vectorized_angular_separation(
