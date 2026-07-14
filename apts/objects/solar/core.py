@@ -1,5 +1,4 @@
 import functools
-from types import SimpleNamespace
 from typing import cast
 
 import numpy as np
@@ -9,7 +8,6 @@ from ...cache import get_mpcorb_data
 from ...constants import DSOType, ObjectTableLabels
 from ...utils import MINOR_PLANET_NAMES, planetary
 from ..base import Objects
-from ..utils import vectorized_geometric_compute
 from .calculations import compute_ephem_and_skyfield_data
 
 
@@ -79,30 +77,6 @@ class SolarObjects(Objects):
 
         return sky_obj if sky_obj is not None and pd.notna(sky_obj) else None
 
-    def _prepare_observer(self, calculation_date):
-        """Prepares the observer and time for computation."""
-        if calculation_date is not None:
-            t = (
-                calculation_date
-                if isinstance(calculation_date, type(self.ts.now()))
-                else self.ts.utc(calculation_date)
-            )
-            # Avoid creating a whole new Place object, which is slow.
-            # We only need basic properties for computation.
-            observer_to_use = SimpleNamespace(
-                date=t,
-                local_timezone=self.place.local_timezone,
-                lat_decimal=self.place.lat_decimal,
-                lon_decimal=self.place.lon_decimal,
-                elevation=self.place.elevation,
-                observer=self.place.observer,
-                sun=self.place.sun,
-            )
-        else:
-            observer_to_use = self.place
-            t = self.place.date
-        return observer_to_use, t
-
     def compute(self, calculation_date=None, df_to_compute=None, skip_transits=False):
         observer_to_use, t = self._prepare_observer(calculation_date)
         target_df = df_to_compute if df_to_compute is not None else self.objects
@@ -118,22 +92,9 @@ class SolarObjects(Objects):
         computed_df.loc[:, ObjectTableLabels.DSO_TYPE] = DSOType.OTHER.value
 
         if not skip_transits:
-            valid_mask = np.ones(len(computed_df), dtype=bool)
-            transits, alts, rises, sets = vectorized_geometric_compute(
-                self.ts,
-                observer_to_use.lat_decimal,
-                observer_to_use.lon_decimal,
-                observer_to_use.local_timezone,
-                observer_to_use.date,
-                computed_df["ra_hours"].to_numpy(),
-                computed_df["dec_degrees"].to_numpy(),
-                valid_mask,
-                len(computed_df),
-            )
-            computed_df[ObjectTableLabels.TRANSIT] = transits
-            computed_df[ObjectTableLabels.ALTITUDE] = alts
-            computed_df[ObjectTableLabels.RISING] = rises
-            computed_df[ObjectTableLabels.SETTING] = sets
+            # Call the base class compute for transit, altitude, rise/set.
+            # We pass computed_df which now has ra_hours/dec_degrees and skyfield_objects.
+            computed_df = super().compute(calculation_date, computed_df)
 
         # Ensure all columns exist in self.objects
         for col in computed_df.columns:
