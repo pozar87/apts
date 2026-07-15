@@ -155,8 +155,6 @@ class PhotometryMixIn:
     ) -> Optional[float]:
         """
         Calculates the number of sub-exposures needed to reach a target SNR.
-        Formula derived from SNR equation: N = SNR^2 * (S + B + R) / S^2
-        Where S is signal, B is sky noise squared, R is read noise squared (all per sub).
         """
         obj_flux = self.object_flux(
             magnitude, altitude=altitude, extinction_k=extinction_k
@@ -171,16 +169,14 @@ class PhotometryMixIn:
         ):
             return None
 
-        # Signal and noise per single sub
-        s = obj_flux * exposure_time
-        b = sky_flux_val * exposure_time * n_pix
-        r = (self.output.read_noise**2) * n_pix
-
-        if s <= 0:
-            return numpy.inf
-
-        n_required = (target_snr**2) * (s + b + r) / (s**2)
-        return float(numpy.ceil(n_required))
+        return optics_utils.calculate_required_subs(
+            target_snr,
+            obj_flux,
+            sky_flux_val,
+            self.output.read_noise,
+            exposure_time,
+            n_pix,
+        )
 
     def required_integration_time(
         self,
@@ -214,12 +210,6 @@ class PhotometryMixIn:
         """
         Calculates the exposure time at which the sky noise (shot noise from the sky background)
         becomes dominant over the sensor's read noise by a given 'swamp factor'.
-
-        A common rule of thumb is a swamp factor of 10.0, meaning sky noise power is 10x
-        the read noise power (sky noise is ~3.16x read noise), resulting in a
-        signal-to-noise ratio loss of only ~5% compared to an infinite exposure.
-
-        Formula: t = (swamp_factor * read_noise^2) / sky_flux
         """
         from ...opticalequipment.camera import Camera
         from ...opticalequipment.smart_telescope import SmartTelescope
@@ -231,10 +221,10 @@ class PhotometryMixIn:
             or self.output.read_noise is None
         ):
             return None
-        # Time where SkyNoise^2 = swamp_factor * ReadNoise^2
-        # SkyNoise^2 = Flux * Time
-        # Time = swamp_factor * ReadNoise^2 / Flux
-        time = (swamp_factor * self.output.read_noise**2) / flux
+
+        time = optics_utils.calculate_optimum_sub_exposure(
+            flux, self.output.read_noise, swamp_factor
+        )
         return time * get_unit_registry().second
 
     def camera_limiting_magnitude(
@@ -289,14 +279,9 @@ class PhotometryMixIn:
             return self.telescope.limiting_magnitude()
 
         aperture_cm = self.telescope.aperture.to("cm").magnitude
-        # Base limiting magnitude for 1 second at SQM 21
-        base = 7.7 + 5 * numpy.log10(aperture_cm)
-        # Add integration time factor: 1.25 * log10(T)
-        time_factor = 1.25 * numpy.log10(integration_time)
-        # SQM factor: (SQM - 21)
-        sqm_factor = sqm - 21.0
-
-        return base + time_factor + sqm_factor
+        return optics_utils.calculate_limiting_magnitude_simple(
+            aperture_cm, sqm, integration_time
+        )
 
     def dynamic_range(self) -> Optional[float]:
         """
@@ -366,21 +351,13 @@ class PhotometryMixIn:
         if f is None or f <= 0 or exposure_time <= 0:
             return None
 
-        # target_flux = full_well / (t * f)
-        target_flux = self.output.full_well / (exposure_time * f)
-
-        # flux = 0.005 * 10^(0.4 * (21.83 - m_eff)) * Area * QE * Transmission
-        # We can find m_eff using binary search or analytical inversion.
-        # Since we have object_flux(m), we know object_flux(0)
         flux_at_zero = self.object_flux(0.0, altitude=None, extinction_k=0.0)
         if flux_at_zero is None:
             return None
 
-        # target_flux = flux_at_zero * 10^(-0.4 * m_eff)
-        # 10^(-0.4 * m_eff) = target_flux / flux_at_zero
-        # -0.4 * m_eff = log10(target_flux / flux_at_zero)
-        # m_eff = -2.5 * log10(target_flux / flux_at_zero)
-        m_eff = -2.5 * math.log10(target_flux / flux_at_zero)
+        m_eff = optics_utils.calculate_saturation_magnitude_analytical(
+            self.output.full_well, flux_at_zero, exposure_time, f
+        )
 
         if altitude is not None:
             # m_eff = m + k * X
