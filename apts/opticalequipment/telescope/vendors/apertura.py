@@ -31,9 +31,9 @@ class AperturaTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203,
+            "aperture_mm": 203.2, # Verified via High Point Scientific (8" / 203.2mm aperture)
             "focal_length_mm": 1200,
-            "central_obstruction_mm": 47,
+            "central_obstruction_mm": 50, # Verified via GSO OEM specs (50mm secondary minor axis)
         },
         "Apertura_AD10_Dobsonian": {
             "brand": "Apertura",
