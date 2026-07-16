@@ -178,13 +178,13 @@ class TestSkyWatcherSpecs(unittest.TestCase):
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 136)
         self.assertEqual(scope.mass.to('gram').magnitude, 65000)
 
-    def test_starquest_80mc_specs(self):
-        scope = Sky_watcherTelescope.Sky_Watcher_Starquest_80MC()
-        self.assertEqual(scope.get_vendor(), "Sky-Watcher Starquest 80MC")
-        self.assertEqual(scope.aperture.to('mm').magnitude, 80)
-        self.assertEqual(scope.focal_length.to('mm').magnitude, 1000)
-        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 26)
-        self.assertEqual(scope.mass.to('gram').magnitude, 1200)
+    def test_starquest_90mc_specs(self):
+        scope = Sky_watcherTelescope.Sky_Watcher_Starquest_90MC()
+        self.assertEqual(scope.get_vendor(), "Sky-Watcher Starquest-90MC")
+        self.assertEqual(scope.aperture.to('mm').magnitude, 90)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 1250)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 29)
+        self.assertEqual(scope.mass.to('gram').magnitude, 1370)
 
     def test_250pds_newtonian_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_250PDS_Newtonian()
