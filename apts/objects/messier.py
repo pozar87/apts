@@ -1,5 +1,4 @@
 import functools
-from types import SimpleNamespace
 from .base import Objects
 from ..catalogs import Catalogs
 from ..constants import ObjectTableLabels
@@ -18,44 +17,6 @@ class Messier(Objects):
         self.calculation_date = (
             calculation_date  # Store calculation_date for lazy computation
         )
-
-    def compute(self, calculation_date=None, df_to_compute=None):
-        if calculation_date is not None:
-            # It's a Skyfield Time object. If it's an array, use the first element.
-            if hasattr(calculation_date, "shape") and calculation_date.shape:
-                t = calculation_date[0]
-            elif isinstance(calculation_date, type(self.ts.now())):
-                t = calculation_date
-            else:
-                t = self.ts.utc(calculation_date)
-
-            # Avoid creating a whole new Place object, which is slow.
-            observer_to_use = SimpleNamespace(
-                date=t,
-                local_timezone=self.place.local_timezone,
-                lat_decimal=self.place.lat_decimal,
-                lon_decimal=self.place.lon_decimal,
-                elevation=self.place.elevation,
-                observer=self.place.observer,
-            )
-        else:
-            observer_to_use = self.place
-
-        # If no specific DataFrame is provided, use the class's default.
-        target_df = df_to_compute if df_to_compute is not None else self.objects
-        computed_df = target_df.copy()
-
-        # Fast transit and altitude calculation for stars
-        transits, alts, rises, sets = self._vectorized_geometric_compute(
-            computed_df, observer_to_use
-        )
-        computed_df[ObjectTableLabels.TRANSIT] = transits
-        computed_df[ObjectTableLabels.ALTITUDE] = alts
-        computed_df[ObjectTableLabels.RISING] = rises
-        computed_df[ObjectTableLabels.SETTING] = sets
-
-        self.objects.update(computed_df)
-        return computed_df
 
     @functools.lru_cache(maxsize=128)
     def get_skyfield_object_cached(self, obj_id):
