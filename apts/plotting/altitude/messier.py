@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 from matplotlib import pyplot
 from apts.config import get_dark_mode
+from apts.utils.plot import PlotUtils  # noqa: F401
 from apts.i18n import gettext_
 from .base_catalog import generate_catalog_altitude_plot
 from ...constants import ObjectTableLabels
