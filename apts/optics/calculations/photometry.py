@@ -126,3 +126,103 @@ def calculate_snr(
             )
 
     return snr_linear
+
+
+def calculate_required_subs(
+    target_snr: float,
+    obj_flux: float,
+    sky_flux: float,
+    read_noise: float,
+    exposure_time: float,
+    n_pix: int = 4,
+) -> float:
+    """
+    Calculates the number of sub-exposures needed to reach a target SNR.
+
+    :param target_snr: Target Signal-to-Noise Ratio.
+    :param obj_flux: Total integrated object flux in e-/s.
+    :param sky_flux: Sky background flux in e-/s/pixel.
+    :param read_noise: Sensor read noise in e- RMS.
+    :param exposure_time: Exposure time per sub-exposure in seconds.
+    :param n_pix: Number of pixels over which the object signal is integrated.
+    :return: Number of required sub-exposures (rounded up).
+    """
+    # Signal and noise per single sub
+    s = obj_flux * exposure_time
+    b = sky_flux * exposure_time * n_pix
+    r = (read_noise**2) * n_pix
+
+    if s <= 0:
+        return float(np.inf)
+
+    n_required = (target_snr**2) * (s + b + r) / (s**2)
+    return float(np.ceil(n_required))
+
+
+def calculate_optimum_sub_exposure(
+    sky_flux: float, read_noise: float, swamp_factor: float = 10.0
+) -> float:
+    """
+    Calculates the exposure time at which the sky noise becomes dominant over
+    the sensor's read noise by a given 'swamp factor'.
+
+    :param sky_flux: Sky background flux in e-/s/pixel.
+    :param read_noise: Sensor read noise in e- RMS.
+    :param swamp_factor: Ratio of sky noise power to read noise power (default 10.0).
+    :return: Optimum sub-exposure time in seconds.
+    """
+    if sky_flux <= 0:
+        return float(np.inf)
+
+    # Time where SkyNoise^2 = swamp_factor * ReadNoise^2
+    # SkyNoise^2 = Flux * Time
+    # Time = swamp_factor * ReadNoise^2 / Flux
+    return (swamp_factor * read_noise**2) / sky_flux
+
+
+def calculate_limiting_magnitude_simple(
+    aperture_cm: float, sqm: float, integration_time: float
+) -> float:
+    """
+    Calculates a simplified limiting magnitude for a setup.
+
+    :param aperture_cm: Telescope aperture in centimeters.
+    :param sqm: Sky Quality Meter reading in mag/arcsec^2.
+    :param integration_time: Total integration time in seconds.
+    :return: Limiting magnitude.
+    """
+    # Base limiting magnitude for 1 second at SQM 21
+    base = 7.7 + 5 * np.log10(aperture_cm)
+    # Add integration time factor: 1.25 * log10(T)
+    time_factor = 1.25 * np.log10(integration_time)
+    # SQM factor: (SQM - 21)
+    sqm_factor = sqm - 21.0
+
+    return float(base + time_factor + sqm_factor)
+
+
+def calculate_saturation_magnitude_analytical(
+    full_well: float,
+    flux_at_zero_mag: float,
+    exposure_time: float,
+    psf_peak_fraction: float,
+) -> float:
+    """
+    Analytically calculates the magnitude that saturates the sensor.
+
+    :param full_well: Sensor full-well capacity in electrons.
+    :param flux_at_zero_mag: Object flux for a 0th magnitude star in e-/s.
+    :param exposure_time: Exposure time in seconds.
+    :param psf_peak_fraction: Fraction of light in the central pixel (PSF model).
+    :return: Magnitude at saturation.
+    """
+    if psf_peak_fraction <= 0 or exposure_time <= 0 or flux_at_zero_mag <= 0:
+        return float(np.nan)
+
+    # target_flux = full_well / (t * f)
+    target_flux = full_well / (exposure_time * psf_peak_fraction)
+
+    # target_flux = flux_at_zero * 10^(-0.4 * m_eff)
+    # m_eff = -2.5 * log10(target_flux / flux_at_zero)
+    m_eff = -2.5 * np.log10(target_flux / flux_at_zero_mag)
+    return float(m_eff)

@@ -1155,16 +1155,16 @@ class Sky_watcherTelescope(Telescope):
             "tside_thread": "",
             "type": "newtonian_reflector",
         },
-        "Sky_Watcher_Starquest_80MC": {
-            "aperture_mm": 80,
+        "Sky_Watcher_Starquest_90MC": {
+            "aperture_mm": 90,
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 26,
+            "central_obstruction_mm": 29,  # Verified via Sky-Watcher Global (Secondary Mirror Diameter 29mm)
             "cside_gender": "Female",
-            "cside_thread": "2\"",
-            "focal_length_mm": 1000,
-            "mass": 1200,
-            "name": "Starquest 80MC",
+            "cside_thread": "1.25\"",  # Verified via First Light Optics (1.25" visual back) - https://www.firstlightoptics.com/telescopes-in-stock/sky-watcher-starquest-90mc-90mm-maksutov-cassegrain.html
+            "focal_length_mm": 1250,  # Verified via Sky-Watcher Global
+            "mass": 1370,  # Verified via Sky-Watcher Global (1.37 kg OTA Weight)
+            "name": "Starquest-90MC",
             "optical_length": 0,
             "reversible": False,
             "tside_gender": "",
@@ -1466,8 +1466,8 @@ class Sky_watcherTelescope(Telescope):
         return cls.from_database(cls._DATABASE["Sky_Watcher_Star_Adventurer_GTi_80ED"])
 
     @classmethod
-    def Sky_Watcher_Starquest_80MC(cls):
-        return cls.from_database(cls._DATABASE["Sky_Watcher_Starquest_80MC"])
+    def Sky_Watcher_Starquest_90MC(cls):
+        return cls.from_database(cls._DATABASE["Sky_Watcher_Starquest_90MC"])
 
     @classmethod
     def Sky_Watcher_Heritage_P130_FlexTube(cls):
