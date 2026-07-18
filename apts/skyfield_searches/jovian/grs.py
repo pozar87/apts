@@ -43,11 +43,13 @@ def find_jupiter_grs_transits(
         return []
 
     # Vectorized visibility check
-    j_obs = observer.at(times).observe(jupiter).apparent()
+    # Optimization: Hoist observer.at(times) to avoid repeated coordinate setup.
+    obs_at_times = observer.at(times)
+    j_obs = obs_at_times.observe(jupiter).apparent()
     alt, _, _ = j_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
     # Optimization: Use fast_altaz for Sun visibility check.
-    sun_alt = fast_altaz(observer.at(times), sun)[0].degrees
-    s_obs = observer.at(times).observe(sun)
+    sun_alt = fast_altaz(obs_at_times, sun)[0].degrees
+    s_obs = obs_at_times.observe(sun)
     elongation = j_obs.separation_from(s_obs).degrees
 
     visible_mask = (alt.degrees > 0) & (sun_alt <= -6) & (elongation > 10)  # type: ignore[operator]

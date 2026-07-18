@@ -87,10 +87,10 @@ def _load_messier_with_units():
     # Drop redundant columns
     messier_df.drop(columns=["Width", "Height"], inplace=True)
 
-    # Add external links (fully vectorized)
+    # Add external links (fully vectorized string operations)
     # Optimization: Replacing slow urllib.parse.quote list comprehension with vectorized
-    # .str.replace(). This provides a significant speedup.
-    # Safe because Messier names only contain alphanumeric characters and spaces.
+    # .str.replace(). This provides a significant speedup for catalog loading.
+    # Safe because Messier names (M1, M2, etc.) only contain alphanumeric characters.
     quoted_messier = messier_df["Messier"].str.replace(" ", "%20", regex=False)
     messier_df[ObjectTableLabels.SIMBAD] = (
         "https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" + quoted_messier

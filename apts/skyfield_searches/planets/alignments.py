@@ -296,13 +296,17 @@ def find_planet_alignments(observer, start_date, end_date):
     longitudes = []
     altitudes = []
 
+    # Optimization: Hoist observer.at(times) out of the loop to avoid redundant
+    # coordinate transformations for each planet and the sun.
+    obs_at_times = observer.at(times)
+
     # Optimization: Consolidate observations.
     # We use a single topocentric observation for both ecliptic longitude and altitude.
     # While alignments are traditionally geocentric, the topocentric difference is
     # negligible for discovery thresholds (arcseconds vs degrees).
     for _, obj in planet_objs:
         # Topocentric observation
-        obj_topo_ast = observer.at(times).observe(obj)
+        obj_topo_ast = obs_at_times.observe(obj)
 
         # 1. Ecliptic longitudes (topocentric)
         lons = obj_topo_ast.ecliptic_latlon()[1].degrees
@@ -323,7 +327,7 @@ def find_planet_alignments(observer, start_date, end_date):
     altitudes = np.array(altitudes)  # (n_planets, n_times)
 
     # Optimization: Use manual Apparent for Sun visibility check as well
-    sun_topo_ast = observer.at(times).observe(sun)
+    sun_topo_ast = obs_at_times.observe(sun)
     sun_app = Apparent(
         sun_topo_ast.position.au, sun_topo_ast.velocity.au_per_d, sun_topo_ast.t
     )

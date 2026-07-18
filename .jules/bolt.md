@@ -133,3 +133,7 @@
 ## 2025-05-24 - [Vectorized External Link Generation]
 **Learning:** Replacing row-wise `urllib.parse.quote` list comprehensions with vectorized Pandas `.str.replace(" ", "%20", regex=False)` for simple alphanumeric columns in large DataFrames avoids significant Python loop overhead. For the ~14k row NGC catalog, this provided a ~2.1x speedup in total catalog access time.
 **Action:** Always replace row-wise URL quoting with vectorized string operations when the dataset's character set is constrained and known.
+
+## 2026-07-13 - [Observer at Times Hoisting]
+**Learning:** Skyfield's topocentric observer alignment and setup via `observer.at(times)` can be a hidden bottleneck when repeatedly called inside a loop for different bodies. For instance, in multi-body configuration, alignment, or transit searches, hoisting `observer.at(times)` out of the loop and reusing the same `Time` / `Observer` reference avoids redundant coordinate transformations and time epoch calculations.
+**Action:** Always hoist `observer.at(times)` calls out of search/observation loops involving multiple target objects.
