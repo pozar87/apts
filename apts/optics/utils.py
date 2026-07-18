@@ -1,15 +1,10 @@
-import functools
-import operator
 from typing import TYPE_CHECKING, Any, Sequence, Union, cast
-
-import numpy as np
 
 if TYPE_CHECKING:
     from pint import Quantity
     from ..opticalequipment.base import OpticalEquipment, OutputOpticalEquipment
     from ..opticalequipment.smart_telescope import SmartTelescope
 
-from ..units import get_unit_registry
 from . import calculations as optics_utils
 from ..opticalequipment.binoculars import Binoculars
 from ..opticalequipment.naked_eye import NakedEye
@@ -63,9 +58,10 @@ class OpticsUtils:
 
     @staticmethod
     def barlows_multiplications(barlows_list: Sequence[Any]) -> float:
-        barlows = [barlow.magnification for barlow in barlows_list]
-        # Multiply all barlows
-        return float(functools.reduce(operator.mul, barlows, 1))
+        """
+        Calculates total Barlow lens multiplication factor.
+        """
+        return optics_utils.barlows_multiplications(barlows_list)
 
     @staticmethod
     def compute_zoom(
@@ -73,14 +69,10 @@ class OpticsUtils:
         barlows: Sequence[Any],
         output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
     ) -> "Quantity":
-        from ..opticalequipment.smart_telescope import SmartTelescope
-
-        if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
-            return telescope.magnification * get_unit_registry().dimensionless
-
-        # Original logic
-        magnification = OpticsUtils.barlows_multiplications(barlows)
-        return telescope.focal_length * magnification / output._zoom_divider()
+        """
+        Calculates zoom (magnification) of an optical configuration.
+        """
+        return optics_utils.calculate_zoom(telescope, barlows, output)
 
     @staticmethod
     def calculate_airmass(altitude_degrees: float) -> float:
@@ -98,16 +90,10 @@ class OpticsUtils:
         barlows: Sequence[Any],
         output: Union["OutputOpticalEquipment", Binoculars, NakedEye, "SmartTelescope"],
     ) -> "Quantity":
-        from ..opticalequipment.smart_telescope import SmartTelescope
-
-        if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
-            return telescope.fov()
-
-        # Original logic
-        magnification = OpticsUtils.barlows_multiplications(barlows)
-        zoom = OpticsUtils.compute_zoom(telescope, barlows, output)
-        # TODO: this is not best way to do it
-        return output.field_of_view(telescope, zoom, magnification)
+        """
+        Calculates field of view of an optical configuration.
+        """
+        return optics_utils.calculate_field_of_view(telescope, barlows, output)
 
     @staticmethod
     def calculate_fov_ratio(object_size, sensor_size, focal_length):
@@ -117,62 +103,4 @@ class OpticsUtils:
         sensor_size: tuple (width, height) in mm
         focal_length: focal length in mm
         """
-
-        def _get_magnitude(data):
-            if hasattr(data, "to"):
-                # It's a Quantity (scalar or array-wrapped)
-                return data.to("arcminute").magnitude
-            if isinstance(data, (np.ndarray, list, tuple)):
-                # If we have a list of Quantities, np.array() might try to be too smart
-                # and fail if they are heterogeneous or have different units.
-                # Let's handle it by checking if it's a list/tuple and converting elements
-                if isinstance(data, (list, tuple)):
-                    # Check if any element is a Quantity
-                    if any(hasattr(v, "to") for v in data):
-                        return np.array(
-                            [
-                                (
-                                    v.to("arcminute").magnitude
-                                    if hasattr(v, "to")
-                                    else float(v or 0)
-                                )
-                                for v in data
-                            ],
-                            dtype=float,
-                        )
-
-                data_array = np.array(data)
-                # Check if it contains Quantities (object dtype)
-                if data_array.dtype == object and len(data_array) > 0:
-                    # Check first element to see if it's a Quantity
-                    if hasattr(data_array[0], "to"):
-                        return np.array(
-                            [
-                                (
-                                    v.to("arcminute").magnitude
-                                    if hasattr(v, "to")
-                                    else float(v or 0)
-                                )
-                                for v in data_array
-                            ],
-                            dtype=float,
-                        )
-                return data_array.astype(float)
-            return float(data or 0)
-
-        # Handle potential pint.Quantity objects in object_size
-        obj_major_arcmin = _get_magnitude(object_size[0])
-        obj_minor_arcmin = _get_magnitude(object_size[1])
-
-        obj_major_deg = obj_major_arcmin / 60.0
-        obj_minor_deg = obj_minor_arcmin / 60.0
-
-        # FOV in degrees = 2 * arctan(sensor_size / (2 * focal_length))
-        fov_w_deg = np.degrees(2 * np.arctan(sensor_size[0] / (2 * focal_length)))
-        fov_h_deg = np.degrees(2 * np.arctan(sensor_size[1] / (2 * focal_length)))
-
-        ratio_w = obj_major_deg / fov_w_deg
-        ratio_h = obj_minor_deg / fov_h_deg
-
-        # Use the maximum ratio to ensure it's not "clipped"
-        return np.maximum(ratio_w, ratio_h) * 100.0
+        return optics_utils.calculate_fov_ratio(object_size, sensor_size, focal_length)
