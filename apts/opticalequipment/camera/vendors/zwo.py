@@ -774,7 +774,7 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 100000,
             "height": 4042,
-            "mass": 1000,
+            "mass": 730,  # Verified via ZWO (0.73kg) - https://www.zwoastro.com/product/asi2400mc-pro/
             "name": "ASI2400MC Pro",
             "optical_length": 17.5,
             "pixel_size_um": 5.94,
@@ -784,7 +784,7 @@ class ZwoCamera(Camera):
             "sensor_height_mm": 24.0,
             "sensor_width_mm": 36.0,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M54",  # Verified via ZWO (M54x0.75 female) - https://www.zwoastro.com/product/asi2400mc-pro/
             "type": "type_camera",
             "width": 6072,
         },
