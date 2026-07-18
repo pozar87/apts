@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from ...units import get_unit_registry
 from ..utils import OpticsUtils
+from .. import calculations as optics_utils
 
 
 class GeometricMixIn:
@@ -25,7 +26,7 @@ class GeometricMixIn:
     def effective_barlow(self) -> float:
         if "effective_barlow" not in self._cache:
             self._cache["effective_barlow"] = float(
-                OpticsUtils.barlows_multiplications(self.barlows)
+                optics_utils.barlows_multiplications(self.barlows)
             )
         return self._cache["effective_barlow"]
 
