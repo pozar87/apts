@@ -34,6 +34,7 @@ class ConnectionType(Enum):
     PENTAX_K = "Pentax K"
     CS = "CS"
     SC = "SC (Schmidt-Cassegrain)"
+    NX4 = "1.375\"-24"
     ZWO_6_BOLT = "ZWO 6-bolt"
     ZWO_4_BOLT = "ZWO 4-bolt"
     QHY_4_BOLT = "QHY 4-bolt"

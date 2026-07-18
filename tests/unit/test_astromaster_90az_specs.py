@@ -8,7 +8,7 @@ class TestAstroMaster90AZ(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 90)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1000)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
-        self.assertEqual(scope.mass.to('gram').magnitude, 2268)
+        self.assertEqual(scope.mass.to('gram').magnitude, 1996)
         self.assertEqual(scope.focal_ratio().magnitude, 1000/90)
 
 if __name__ == '__main__':

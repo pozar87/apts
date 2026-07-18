@@ -1,5 +1,6 @@
 import unittest
 from apts.opticalequipment.telescope.vendors.celestron import CelestronTelescope
+from apts.utils import ConnectionType
 
 class TestCelestronOTASpecs(unittest.TestCase):
     def test_c11_ota_specs(self):
@@ -25,6 +26,7 @@ class TestCelestronOTASpecs(unittest.TestCase):
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1325)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 35)
         self.assertEqual(scope.mass.to('gram').magnitude, 2722)
+        self.assertEqual(scope.connection_type, ConnectionType.NX4)
 
     def test_nexstar_5se_specs(self):
         scope = CelestronTelescope.Celestron_NexStar_5SE()

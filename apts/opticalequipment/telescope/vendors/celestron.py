@@ -135,7 +135,7 @@ class CelestronTelescope(Telescope):
             "name": "AstroMaster 90AZ",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 2268,
+            "mass": 1996, # Verified via Celestron.com (4.4 lbs OTA weight) - https://www.celestron.com/products/astromaster-90az-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
@@ -730,7 +730,7 @@ class CelestronTelescope(Telescope):
             "mass": 2722,
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "1.375\"-24", # Verified via standard Meade ETX / NexStar 4SE smaller rear thread specification
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
