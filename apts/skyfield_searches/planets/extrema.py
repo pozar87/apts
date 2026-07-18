@@ -163,30 +163,73 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
 
 
 def find_highest_altitude(observer, planet, start_date, end_date):
+    """
+    Finds when a planet reaches its highest altitude (culmination)
+    over the given date range. Vectorized using an analytical LST = RA approach.
+    """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
 
-    def altitude(t):
-        # Account for atmospheric refraction for high-precision altitude
-        return (
-            observer.at(t)
-            .observe(planet)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
+    # Extract observer coordinates
+    lon_hours = 0.0
+    lat_deg = 0.0
+    for vf in observer.vector_functions:
+        if hasattr(vf, "latitude"):
+            lat_deg = vf.latitude.degrees
+            lon_hours = vf.longitude.hours
+            break
 
-    setattr(altitude, "step_days", 0.1)
-    times, altitudes = find_maxima(t0, t1, altitude)
+    num_days = int(t1 - t0) + 1
+    if num_days < 2:
+        # Fallback for short intervals: dense evaluation
+        times = ts.linspace(t0, t1, 288)
+        obs = observer.at(times).observe(planet).apparent()
+        alts = obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+        idx = np.argmax(alts)
+        return times[idx].utc_datetime(), alts[idx]
 
-    if len(times) == 0:
+    # Generate daily reference times across the range
+    day_offsets = np.arange(-1, num_days + 1)
+    t0_dt = t0.utc_datetime()
+    t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
+
+    # Iteration 1: estimate culmination times
+    # Using .observe() is significantly faster than .apparent() and is enough for coarse RA estimation
+    obs_ref = observer.at(t_refs).observe(planet)
+    ra_hours = obs_ref.radec(epoch="date")[0].hours
+
+    target_gast = (ra_hours - lon_hours) % 24
+    diff_gast = (target_gast - t_refs.gast) % 24
+    diff_gast[diff_gast > 12] -= 24
+
+    t_culm_tt = t_refs.tt + (diff_gast / 1.002737909) / 24.0
+    t_culm = ts.tt_jd(t_culm_tt)
+
+    # Iteration 2: refine estimated culmination times
+    obs_ref2 = observer.at(t_culm).observe(planet)
+    ra_hours2 = obs_ref2.radec(epoch="date")[0].hours
+
+    target_gast2 = (ra_hours2 - lon_hours) % 24
+    diff_gast2 = (target_gast2 - t_culm.gast) % 24
+    diff_gast2[diff_gast2 > 12] -= 24
+
+    t_final_tt = t_culm.tt + (diff_gast2 / 1.002737909) / 24.0
+    t_final = ts.tt_jd(t_final_tt)
+
+    # Filter within window
+    mask = (t_final_tt >= t0.tt) & (t_final_tt <= t1.tt)
+    t_final = t_final[mask]
+
+    if len(t_final) == 0:
         return None, 0
 
-    # find the index of the highest altitude
-    max_altitude_index = np.argmax(altitudes)
+    # Calculate precise altitudes (apparent with refraction) at culmination times
+    obs_final = observer.at(t_final).observe(planet).apparent()
+    alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
 
-    return times[max_altitude_index].utc_datetime(), altitudes[max_altitude_index]
+    max_idx = np.argmax(alts_final_deg)
+    return t_final[max_idx].utc_datetime(), alts_final_deg[max_idx]
 
 
 def find_greatest_elongations(observer, start_date, end_date):
