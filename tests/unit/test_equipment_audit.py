@@ -15,8 +15,8 @@ def test_pushfit_defaults():
     assert get_default_gender(ConnectionType.F_2, is_input=True) == Gender.MALE
 
 def test_celestron_pushfit_genders():
-    # AstroFi 130 has 2" output
-    scope = CelestronTelescope.Celestron_AstroFi_130()
+    # NexStar 130SLT has 2" output
+    scope = CelestronTelescope.Celestron_NexStar_130SLT()
     assert (ConnectionType.F_2, Gender.FEMALE) in scope._outputs
 
     # AstroMaster 70AZ has 1.25" output
