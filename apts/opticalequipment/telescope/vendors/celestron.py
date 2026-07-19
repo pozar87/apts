@@ -71,23 +71,23 @@ class CelestronTelescope(Telescope):
             "name": "AstroFi 130",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3628,
+            "mass": 3628, # Verified via Celestron.com (8 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "1.25\"", # Verified via Celestron manual (uses 1.25" visual back/eyepiece) - https://www.celestron.com/products/astro-fi-130mm-newtonian-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
             "aperture_mm": 130,
             "focal_length_mm": 650,
-            "central_obstruction_mm": 38,
+            "central_obstruction_mm": 38, # Verified via Celestron.com (38mm / 1.5" secondary mirror obstruction)
         },
         "Celestron_AstroMaster_114EQ": {
             "brand": "Celestron",
             "name": "AstroMaster 114EQ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 2676,
+            "mass": 2676, # Verified via Celestron.com (5.9 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
@@ -96,14 +96,14 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 114,
             "focal_length_mm": 1000,
-            "central_obstruction_mm": 44,
+            "central_obstruction_mm": 44, # Verified via Celestron.com (44mm / 1.73" secondary mirror obstruction) - https://www.celestron.com/products/astromaster-114eq-telescope
         },
         "Celestron_AstroMaster_130EQ": {
             "brand": "Celestron",
             "name": "AstroMaster 130EQ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3500,
+            "mass": 3500, # Verified via Celestron.com (7.7 lbs / 3.5 kg OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
@@ -112,7 +112,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 130,
             "focal_length_mm": 650,
-            "central_obstruction_mm": 44,
+            "central_obstruction_mm": 44, # Verified via Celestron.com (44mm / 1.73" secondary mirror obstruction) - https://www.celestron.com/products/astromaster-130eq-telescope
         },
         "Celestron_AstroMaster_70AZ": {
             "brand": "Celestron",
@@ -903,7 +903,7 @@ class CelestronTelescope(Telescope):
             "name": "PowerSeeker 127EQ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3230,
+            "mass": 3230, # Verified via Celestron.com (7.1 lbs / 3.23 kg OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
@@ -912,7 +912,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 127,
             "focal_length_mm": 1000,
-            "central_obstruction_mm": 41,
+            "central_obstruction_mm": 41, # Verified via Celestron.com (41mm / 1.6" secondary mirror obstruction) - https://www.celestron.com/products/powerseeker-127eq-telescope
         },
         "Celestron_RASA_11": {
             "brand": "Celestron",
