@@ -137,3 +137,7 @@
 ## 2026-07-13 - [Observer at Times Hoisting]
 **Learning:** Skyfield's topocentric observer alignment and setup via `observer.at(times)` can be a hidden bottleneck when repeatedly called inside a loop for different bodies. For instance, in multi-body configuration, alignment, or transit searches, hoisting `observer.at(times)` out of the loop and reusing the same `Time` / `Observer` reference avoids redundant coordinate transformations and time epoch calculations.
 **Action:** Always hoist `observer.at(times)` calls out of search/observation loops involving multiple target objects.
+
+## 2026-07-20 - [Vectorized Highest Altitude Analytical Solver]
+**Learning:** Finding the maximum altitude of a celestial body over a long period using numerical step solvers (such as Skyfield's `find_maxima` on a dense 0.1-day grid) is extremely slow because it requires computing apparent refraction-corrected positions thousands of times. Since a planet's maximum daily altitude always occurs at its culmination, we can instead find the exact culmination times for each day in a fully vectorized operation (using the LST = RA analytical condition), and then evaluate the precise altitudes only at those culmination moments.
+**Action:** Replace grid-based numerical peak solvers with vectorized analytical daily culmination solvers when finding maximum altitude over a period.
