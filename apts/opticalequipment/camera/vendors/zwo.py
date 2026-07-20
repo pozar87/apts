@@ -120,13 +120,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
+            "full_well_e": 13000, # Verified via Aptina AR0130CS
+            "height": 960,
             "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MC",
             "optical_length": 12.5,
+            "pixel_size_um": 3.75, # Verified via Aptina AR0130CS
+            "quantum_efficiency_pct": 75, # Verified via official ZWO manual (75% peak QE)
+            "read_noise_e": 4.0,
             "reversible": False,
+            "sensor_height_mm": 3.6, # 1/3" sensor
+            "sensor_width_mm": 4.8, # 1/3" sensor
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
+            "width": 1280,
         },
         "ZWO_ASI_120MC_S": {
             "bf_role": "end",
@@ -139,7 +147,7 @@ class ZwoCamera(Camera):
             "name": "ASI120MC-S",
             "optical_length": 12.5,
             "pixel_size_um": 3.75,
-            "quantum_efficiency_pct": 80,
+            "quantum_efficiency_pct": 75, # Verified via official ZWO manual (75% peak QE)
             "read_noise_e": 4.0,
             "reversible": False,
             "sensor_height_mm": 3.6,
@@ -197,13 +205,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
+            "full_well_e": 13000, # Verified via Aptina AR0130CS
+            "height": 960,
             "mass": 100,  # Verified via official ZWO manual (0.1kg)
             "name": "ASI120MM-S (for ASIAir)",
             "optical_length": 12.5,
+            "pixel_size_um": 3.75, # Verified via Aptina AR0130CS
+            "quantum_efficiency_pct": 80, # Verified via standard monochrome ASI120MM
+            "read_noise_e": 4.0,
             "reversible": False,
+            "sensor_height_mm": 3.6,
+            "sensor_width_mm": 4.8,
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
+            "width": 1280,
         },
         "ZWO_ASI_128MC_Pro": {
             "bf_role": "end",
@@ -737,14 +753,22 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
+            "full_well_e": 8780, # Verified via SC2210 sensor (ASI220MM Mini)
+            "height": 1080,
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
             "mass": 60,
             "name": "ASI220MM Mini (for ASIAir)",
             "optical_length": 8.5,
+            "pixel_size_um": 4.0, # Verified via SC2210 sensor
+            "quantum_efficiency_pct": 92, # Verified via SC2210 sensor
+            "read_noise_e": 0.6,
             "reversible": False,
+            "sensor_height_mm": 4.32,
+            "sensor_width_mm": 7.68,
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
+            "width": 1920,
         },
         "ZWO_ASI_224MC": {
             "bf_role": "end",
