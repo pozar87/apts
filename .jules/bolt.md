@@ -141,3 +141,7 @@
 ## 2026-07-20 - [Vectorized Highest Altitude Analytical Solver]
 **Learning:** Finding the maximum altitude of a celestial body over a long period using numerical step solvers (such as Skyfield's `find_maxima` on a dense 0.1-day grid) is extremely slow because it requires computing apparent refraction-corrected positions thousands of times. Since a planet's maximum daily altitude always occurs at its culmination, we can instead find the exact culmination times for each day in a fully vectorized operation (using the LST = RA analytical condition), and then evaluate the precise altitudes only at those culmination moments.
 **Action:** Replace grid-based numerical peak solvers with vectorized analytical daily culmination solvers when finding maximum altitude over a period.
+
+## 2026-07-21 - [Meteor Shower Radiant Altitude Vectorization]
+**Learning:** Checking topocentric altitudes for hundreds of unique candidate objects (like drifted meteor shower radiants) at their respective times using standard row-wise `Star.apparent().altaz()` inside a loop creates significant overhead. Replacing this with a pairwise geometric AltAz calculation in NumPy, followed by `calculate_refraction`, achieves a massive speedup (~500x for coordinate conversion alone) with sub-degree accuracy differences.
+**Action:** Prefer pairwise geometric AltAz calculations with refraction for visibility checks of multiple unique targets at multiple unique times over iterative rigorous Skyfield observations.
