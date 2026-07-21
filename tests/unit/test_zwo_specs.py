@@ -91,17 +91,65 @@ class TestZwoUpdates(unittest.TestCase):
         # Test the classic USB2.0 models (Mono and Color)
         cam_mm = ZwoCamera.ZWO_ASI_120MM()
         self.assertEqual(cam_mm.mass.to('gram').magnitude, 100)
+        self.assertEqual(cam_mm.width, 1280)
+        self.assertEqual(cam_mm.height, 960)
+        self.assertEqual(cam_mm.pixel_size().to('micrometer').magnitude, 3.75)
+        self.assertEqual(cam_mm.full_well, 13000)
+        self.assertEqual(cam_mm.quantum_efficiency, 80)
+        self.assertEqual(cam_mm.read_noise, 4.0)
+        self.assertEqual(cam_mm.sensor_width.to('mm').magnitude, 4.8)
+        self.assertEqual(cam_mm.sensor_height.to('mm').magnitude, 3.6)
 
         cam_mc = ZwoCamera.ZWO_ASI_120MC()
         self.assertEqual(cam_mc.mass.to('gram').magnitude, 100)
+        self.assertEqual(cam_mc.width, 1280)
+        self.assertEqual(cam_mc.height, 960)
+        self.assertEqual(cam_mc.pixel_size().to('micrometer').magnitude, 3.75)
+        self.assertEqual(cam_mc.full_well, 13000)
+        self.assertEqual(cam_mc.quantum_efficiency, 75)
+        self.assertEqual(cam_mc.read_noise, 4.0)
+        self.assertEqual(cam_mc.sensor_width.to('mm').magnitude, 4.8)
+        self.assertEqual(cam_mc.sensor_height.to('mm').magnitude, 3.6)
 
-        # Test the USB3.0 'S' model
+        # Test the USB3.0 'S' model (Color)
         cam_mcs = ZwoCamera.ZWO_ASI_120MC_S()
         self.assertEqual(cam_mcs.mass.to('gram').magnitude, 100)
+        self.assertEqual(cam_mcs.width, 1280)
+        self.assertEqual(cam_mcs.height, 960)
+        self.assertEqual(cam_mcs.pixel_size().to('micrometer').magnitude, 3.75)
+        self.assertEqual(cam_mcs.full_well, 13000)
+        self.assertEqual(cam_mcs.quantum_efficiency, 75)
+        self.assertEqual(cam_mcs.read_noise, 4.0)
+        self.assertEqual(cam_mcs.sensor_width.to('mm').magnitude, 4.8)
+        self.assertEqual(cam_mcs.sensor_height.to('mm').magnitude, 3.6)
 
-        # Test the special ASIAir variant
+        # Test the special ASIAir variant (Mono)
         cam_air = ZwoCamera.ZWO_ASI_120MM_S_for_ASIAir()
         self.assertEqual(cam_air.mass.to('gram').magnitude, 100)
+        self.assertEqual(cam_air.width, 1280)
+        self.assertEqual(cam_air.height, 960)
+        self.assertEqual(cam_air.pixel_size().to('micrometer').magnitude, 3.75)
+        self.assertEqual(cam_air.full_well, 13000)
+        self.assertEqual(cam_air.quantum_efficiency, 80)
+        self.assertEqual(cam_air.read_noise, 4.0)
+        self.assertEqual(cam_air.sensor_width.to('mm').magnitude, 4.8)
+        self.assertEqual(cam_air.sensor_height.to('mm').magnitude, 3.6)
+
+    def test_asi220_specs(self):
+        # Test standard and ASIAir variants for ASI220MM Mini
+        cam_std = ZwoCamera.ZWO_ASI_220MM_Mini()
+        cam_air = ZwoCamera.ZWO_ASI_220MM_Mini_for_ASIAir()
+
+        for cam in [cam_std, cam_air]:
+            self.assertEqual(cam.mass.to('gram').magnitude, 60)
+            self.assertEqual(cam.width, 1920)
+            self.assertEqual(cam.height, 1080)
+            self.assertEqual(cam.pixel_size().to('micrometer').magnitude, 4.0)
+            self.assertEqual(cam.full_well, 8780)
+            self.assertEqual(cam.quantum_efficiency, 92)
+            self.assertEqual(cam.read_noise, 0.6)
+            self.assertEqual(cam.sensor_width.to('mm').magnitude, 7.68)
+            self.assertEqual(cam.sensor_height.to('mm').magnitude, 4.32)
 
 if __name__ == '__main__':
     unittest.main()
