@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any, cast
 
+from skyfield.api import Star
 from skyfield.positionlib import Apparent
 from skyfield.searchlib import find_minima
 
@@ -32,13 +33,23 @@ def _refine_conjunction(observer, obj1, obj2, rough_t):
     t0 = ts.from_datetime(rough_t.utc_datetime() - timedelta(minutes=30))
     t1 = ts.from_datetime(rough_t.utc_datetime() + timedelta(minutes=30))
 
+    # Optimization: If obj1 or obj2 is a Star, its position in the inertial
+    # frame (GCRS/BCRS) is effectively constant over the +/- 30-minute interval.
+    # Pre-observing it once outside the loop avoids redundant coordinate
+    # computations in the iterative minimization step, providing a significant speedup.
+    is_obj1_star = isinstance(obj1, Star)
+    is_obj2_star = isinstance(obj2, Star)
+
+    if is_obj1_star:
+        p1_fixed = observer.at(rough_t).observe(obj1)
+    if is_obj2_star:
+        p2_fixed = observer.at(rough_t).observe(obj2)
+
     def separation_func(t):
-        # Optimization: We use .observe() (astrometric position) instead of .apparent()
-        # during the iterative minimization loop to avoid redundant coordinate
-        # transformations (aberration, deflection). This is ~2x faster and
-        # provides near-identical results for the minimization step.
-        p1 = observer.at(t).observe(obj1)
-        p2 = observer.at(t).observe(obj2)
+        # Use the pre-computed fixed observation if the body is a Star,
+        # otherwise compute its position dynamically.
+        p1 = p1_fixed if is_obj1_star else observer.at(t).observe(obj1)
+        p2 = p2_fixed if is_obj2_star else observer.at(t).observe(obj2)
         return p1.separation_from(p2).degrees
 
     setattr(separation_func, "step_days", 0.005)  # 7.2 minutes step for minimization
