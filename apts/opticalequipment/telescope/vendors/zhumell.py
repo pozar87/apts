@@ -15,9 +15,9 @@ class ZhumellTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 152,
+            "aperture_mm": 152.4,  # Verified via GSO OEM / High Point Scientific (6" = 152.4mm)
             "focal_length_mm": 1200,
-            "central_obstruction_mm": 42,
+            "central_obstruction_mm": 31,  # Verified via GSO OEM mirror set specs (31mm secondary minor axis)
         },
         "Zhumell_Z8_Dobsonian": {
             "brand": "Zhumell",
@@ -31,9 +31,9 @@ class ZhumellTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203,
+            "aperture_mm": 203.2,  # Verified via GSO OEM / High Point Scientific (8" = 203.2mm)
             "focal_length_mm": 1200,
-            "central_obstruction_mm": 47,
+            "central_obstruction_mm": 50,  # Verified via GSO OEM mirror set specs (50mm secondary minor axis)
         },
         "Zhumell_Z10_Dobsonian": {
             "brand": "Zhumell",
@@ -47,9 +47,9 @@ class ZhumellTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 254,
+            "aperture_mm": 254,  # Verified via GSO OEM (10" = 254mm)
             "focal_length_mm": 1250,
-            "central_obstruction_mm": 63,
+            "central_obstruction_mm": 63,  # Verified via GSO OEM mirror set specs (63mm / 2.48" secondary minor axis)
         },
         "Zhumell_Z12_Dobsonian": {
             "brand": "Zhumell",
@@ -63,9 +63,9 @@ class ZhumellTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 305,
+            "aperture_mm": 304.8,  # Verified via GSO OEM (12" = 304.8mm)
             "focal_length_mm": 1520,
-            "central_obstruction_mm": 70,
+            "central_obstruction_mm": 70,  # Verified via GSO OEM mirror set specs (70mm / 2.76" secondary minor axis)
         },
         "Zhumell_Z16_Dobsonian": {
             "brand": "Zhumell",
@@ -79,9 +79,9 @@ class ZhumellTelescope(Telescope):
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 406,
+            "aperture_mm": 406.4,  # Verified via GSO OEM (16" = 406.4mm)
             "focal_length_mm": 1800,
-            "central_obstruction_mm": 88,
+            "central_obstruction_mm": 88,  # Verified via GSO OEM mirror set specs (88mm secondary minor axis)
         },
     }
 
