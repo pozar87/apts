@@ -167,7 +167,7 @@ class CelestronTelescope(Telescope):
             "name": "Astro-Fi 6 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
+            "mass": 2177, # Verified via Celestron.com (4.8 lbs / 2.17 kg OTA weight) - https://www.celestron.com/products/astro-fi-6-schmidt-cassegrain-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -176,7 +176,7 @@ class CelestronTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 150,
             "focal_length_mm": 1500,
-            "central_obstruction_mm": 56,
+            "central_obstruction_mm": 55.88, # Verified via Celestron.com (2.2" secondary obstruction) - https://www.celestron.com/products/astro-fi-6-schmidt-cassegrain-telescope
         },
         "Celestron_C11_A_XLT_OTA": {
             "brand": "Celestron",
