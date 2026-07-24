@@ -125,15 +125,16 @@ def find_conjunctions_with_stars(
     # of individual observations with a single vectorized operation.
     dot_products = u_stars.T @ u_body
 
-    # Angular separation in degrees: acos(dot_product)
-    # Using clip to avoid NaNs due to floating point precision
-    separations = np.degrees(np.arccos(np.clip(dot_products, -1.0, 1.0)))
-
-    # Identify local minima where separation is below threshold (vectorized)
-    is_minima = (separations[:, 1:-1] < separations[:, :-2]) & (
-        separations[:, 1:-1] < separations[:, 2:]
+    # Optimization: Perform local minima check and threshold gating directly on dot products.
+    # This avoids calculating np.arccos, np.clip, and np.degrees on the entire (N, M) matrix.
+    # Since arccos(x) is strictly decreasing on [-1, 1]:
+    # 1. arccos(x) < T  <=>  x > cos(T)
+    # 2. arccos(x) < arccos(y)  <=>  x > y
+    cos_threshold = np.cos(np.radians(threshold_degrees))
+    is_minima = (dot_products[:, 1:-1] > dot_products[:, :-2]) & (
+        dot_products[:, 1:-1] > dot_products[:, 2:]
     )
-    is_below_threshold = separations[:, 1:-1] < threshold_degrees
+    is_below_threshold = dot_products[:, 1:-1] > cos_threshold
 
     # Find star and time indices for all conjunction candidates
     star_idxs, time_idxs_minus_1 = np.where(is_minima & is_below_threshold)
