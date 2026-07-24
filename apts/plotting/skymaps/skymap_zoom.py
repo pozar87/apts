@@ -294,6 +294,123 @@ def _plot_catalogs(
         )
 
 
+def _parse_target_geometry(
+    target_object: Any,
+    target_object_data: Any,
+    observer: Any,
+) -> tuple[float, float, float, Optional[Any], Optional[float]]:
+    """
+    Parses size dimensions, position angle, declination, and magnitude from target data.
+    Returns: (width_deg, height_deg, pos_angle, dec, magnitude)
+    """
+    width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
+    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
+    width_deg = width_arcmin / 60.0
+
+    height_arcmin = target_object_data.get(
+        ObjectTableLabels.SIZE_MINOR, width_arcmin
+    )
+    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
+    height_deg = height_arcmin / 60.0
+
+    pos_angle = target_object_data.get("PosAng", 0.0)
+    if pd.isna(pos_angle):
+        pos_angle = 0.0
+    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
+    pos_angle = float(pos_angle)
+
+    dec = None
+    if hasattr(target_object, "dec"):
+        dec = getattr(target_object, "dec", None)
+    else:
+        try:
+            _, dec, _ = observer.observe(target_object).apparent().radec()
+        except Exception:
+            dec = None
+
+    magnitude = target_object_data.get("Magnitude")
+    if pd.isna(magnitude) or magnitude is None:
+        magnitude = target_object_data.get("Mag")
+    if pd.isna(magnitude) or magnitude is None:
+        magnitude = target_object_data.get("magnitude")
+
+    return width_deg, height_deg, pos_angle, dec, magnitude
+
+
+def _calculate_target_ellipse_angle(
+    pos_angle: float,
+    dec: Optional[Any],
+    target_az: Any,
+    place_lat: Any,
+    coordinate_system: CoordinateSystem,
+    flipped_horizontally: bool,
+    flipped_vertically: bool,
+) -> float:
+    """Calculates the target's rotated ellipse angle based on position, coordinate system, and flips."""
+    if dec is not None:
+        parallactic_angle = calculate_parallactic_angle(
+            place_lat, dec, target_az
+        )
+        angle = calculate_ellipse_angle(
+            pos_angle,
+            parallactic_angle,
+            coordinate_system,
+            flipped_horizontally,
+            flipped_vertically,
+        )
+    else:
+        angle = pos_angle
+    return float(angle)
+
+
+def _get_target_plot_coordinates(
+    target_alt: Any,
+    target_az: Any,
+    target_ra: Any,
+    target_dec: Any,
+    coordinate_system: CoordinateSystem,
+) -> tuple[float, float]:
+    """Returns the plotting (x, y) coordinates for the target based on coordinate system."""
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
+        return float(target_az.degrees), float(target_alt.degrees)
+    else:
+        return float(target_ra.hours), float(target_dec.degrees)
+
+
+def _draw_catalog_target_ellipse(
+    ax: axes.Axes,
+    x_coord: float,
+    y_coord: float,
+    width_deg: float,
+    height_deg: float,
+    target_dec: Any,
+    angle: float,
+    magnitude: Optional[float],
+    coordinate_system: CoordinateSystem,
+):
+    """Draws a detailed ellipse patch representing a catalog deep-sky target."""
+    face_color = get_brightness_color(magnitude)
+
+    ellipse_width = (
+        width_deg
+        if coordinate_system == CoordinateSystem.HORIZONTAL
+        else width_deg / (15 * numpy.cos(numpy.deg2rad(target_dec.degrees)))
+    )
+
+    ellipse = Ellipse(
+        xy=(x_coord, y_coord),
+        width=ellipse_width,
+        height=height_deg,
+        angle=angle,
+        edgecolor="yellow",
+        facecolor=face_color,
+        linewidth=2,
+        linestyle="--",
+        alpha=0.6,
+    )
+    ax.add_patch(ellipse)
+
+
 def _draw_target(
     observation: "Observation",
     ax: axes.Axes,
@@ -311,75 +428,35 @@ def _draw_target(
     flipped_vertically: bool,
 ):
     if target_object_data is not None:
-        width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
-        width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-        width_deg = width_arcmin / 60.0
-
-        height_arcmin = target_object_data.get(
-            ObjectTableLabels.SIZE_MINOR, width_arcmin
-        )
-        height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-        height_deg = height_arcmin / 60.0
-
-        pos_angle = target_object_data.get("PosAng", 0.0)
-        if pd.isna(pos_angle):
-            pos_angle = 0.0
-        pos_angle = getattr(pos_angle, "magnitude", pos_angle)
-        pos_angle = float(pos_angle)
-
-        dec = None
-        if hasattr(target_object, "dec"):
-            dec = getattr(target_object, "dec", None)
-        else:
-            try:
-                _, dec, _ = observer.observe(target_object).apparent().radec()
-            except Exception:
-                dec = None
-
-        if dec is not None:
-            parallactic_angle = calculate_parallactic_angle(
-                observation.place.lat, dec, target_az
-            )
-            angle = calculate_ellipse_angle(
-                pos_angle,
-                parallactic_angle,
-                coordinate_system,
-                flipped_horizontally,
-                flipped_vertically,
-            )
-        else:
-            angle = pos_angle
-
-        magnitude = target_object_data.get("Magnitude")
-        if pd.isna(magnitude) or magnitude is None:
-            magnitude = target_object_data.get("Mag")
-        if pd.isna(magnitude) or magnitude is None:
-            magnitude = target_object_data.get("magnitude")
-        face_color = get_brightness_color(magnitude)
-
-        x_coord, y_coord = (
-            (target_az.degrees, target_alt.degrees)
-            if coordinate_system == CoordinateSystem.HORIZONTAL
-            else (target_ra.hours, target_dec.degrees)
-        )
-        ellipse_width = (
-            width_deg
-            if coordinate_system == CoordinateSystem.HORIZONTAL
-            else width_deg / (15 * numpy.cos(numpy.deg2rad(target_dec.degrees)))
+        width_deg, height_deg, pos_angle, dec, magnitude = _parse_target_geometry(
+            target_object, target_object_data, observer
         )
 
-        ellipse = Ellipse(
-            xy=(x_coord, y_coord),
-            width=ellipse_width,
-            height=height_deg,
-            angle=float(angle),
-            edgecolor="yellow",
-            facecolor=face_color,
-            linewidth=2,
-            linestyle="--",
-            alpha=0.6,
+        angle = _calculate_target_ellipse_angle(
+            pos_angle,
+            dec,
+            target_az,
+            observation.place.lat,
+            coordinate_system,
+            flipped_horizontally,
+            flipped_vertically,
         )
-        ax.add_patch(ellipse)
+
+        x_coord, y_coord = _get_target_plot_coordinates(
+            target_alt, target_az, target_ra, target_dec, coordinate_system
+        )
+
+        _draw_catalog_target_ellipse(
+            ax,
+            x_coord,
+            y_coord,
+            width_deg,
+            height_deg,
+            target_dec,
+            angle,
+            magnitude,
+            coordinate_system,
+        )
     elif observation.local_planets.find_by_name(target_name) is not None:
         _plot_solar_system_object_on_skymap(
             observation,
@@ -392,10 +469,8 @@ def _draw_target(
             coordinate_system=coordinate_system,
         )
     else:
-        x_coord, y_coord = (
-            (target_az.degrees, target_alt.degrees)
-            if coordinate_system == CoordinateSystem.HORIZONTAL
-            else (target_ra.hours, target_dec.degrees)
+        x_coord, y_coord = _get_target_plot_coordinates(
+            target_alt, target_az, target_ra, target_dec, coordinate_system
         )
         ax.scatter(
             x_coord,
