@@ -1,47 +1,43 @@
 import unittest
-from apts.opticalequipment.telescope.vendors.apertura import AperturaTelescope
+from apts.opticalequipment.telescope.vendors.zhumell import ZhumellTelescope
 
 
-class TestAperturaAudit(unittest.TestCase):
-    def test_apertura_ad6_specs(self):
-        scope = AperturaTelescope.Apertura_AD6_Dobsonian()
-        self.assertEqual(scope.get_vendor(), "Apertura AD6 Dobsonian")
+class TestZhumellAudit(unittest.TestCase):
+    def test_zhumell_z6_specs(self):
+        scope = ZhumellTelescope.Zhumell_Z6_Dobsonian()
+        self.assertEqual(scope.get_vendor(), "Zhumell Z6 Dobsonian")
         self.assertEqual(scope.aperture.to('mm').magnitude, 152.4)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1200)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 31.0)
         self.assertEqual(scope.mass.to('gram').magnitude, 8255)
 
-    def test_apertura_ad8_specs(self):
-        scope = AperturaTelescope.Apertura_AD8_Dobsonian()
-        self.assertEqual(scope.get_vendor(), "Apertura AD8 Dobsonian")
+    def test_zhumell_z8_specs(self):
+        scope = ZhumellTelescope.Zhumell_Z8_Dobsonian()
+        self.assertEqual(scope.get_vendor(), "Zhumell Z8 Dobsonian")
         self.assertEqual(scope.aperture.to('mm').magnitude, 203.2)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1200)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 50.0)
-        # Weight 24.5 lbs (OTA) + 27.7 lbs (Base) = 52.2 lbs.
-        # But our database stores OTA mass or total mass?
-        # Looking at Apertura file: mass: 11113.
-        # 11113 grams is approx 24.5 lbs. So it's OTA mass.
         self.assertEqual(scope.mass.to('gram').magnitude, 11113)
 
-    def test_apertura_ad10_specs(self):
-        scope = AperturaTelescope.Apertura_AD10_Dobsonian()
-        self.assertEqual(scope.get_vendor(), "Apertura AD10 Dobsonian")
+    def test_zhumell_z10_specs(self):
+        scope = ZhumellTelescope.Zhumell_Z10_Dobsonian()
+        self.assertEqual(scope.get_vendor(), "Zhumell Z10 Dobsonian")
         self.assertEqual(scope.aperture.to('mm').magnitude, 254)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1250)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 63.0)
         self.assertEqual(scope.mass.to('gram').magnitude, 15785)
 
-    def test_apertura_ad12_specs(self):
-        scope = AperturaTelescope.Apertura_AD12_Dobsonian()
-        self.assertEqual(scope.get_vendor(), "Apertura AD12 Dobsonian")
+    def test_zhumell_z12_specs(self):
+        scope = ZhumellTelescope.Zhumell_Z12_Dobsonian()
+        self.assertEqual(scope.get_vendor(), "Zhumell Z12 Dobsonian")
         self.assertEqual(scope.aperture.to('mm').magnitude, 304.8)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1520)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 70.0)
         self.assertEqual(scope.mass.to('gram').magnitude, 21682)
 
-    def test_apertura_ad16_specs(self):
-        scope = AperturaTelescope.Apertura_AD16_Dobsonian()
-        self.assertEqual(scope.get_vendor(), "Apertura AD16 Dobsonian")
+    def test_zhumell_z16_specs(self):
+        scope = ZhumellTelescope.Zhumell_Z16_Dobsonian()
+        self.assertEqual(scope.get_vendor(), "Zhumell Z16 Dobsonian")
         self.assertEqual(scope.aperture.to('mm').magnitude, 406.4)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 1800)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 88.0)

@@ -1,150 +1,352 @@
+import types
+import unittest.mock
+from typing import Any, cast, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Any, cast
+from skyfield.api import Star
+
+from ..constants import ObjectTableLabels
 from ..utils.astronomy import calculate_refraction, vectorized_geometric_altaz
 from ..skyfield_searches.utils import fast_altaz
 
-def get_visible_mocked(objects_instance, candidate_objects, conditions, start, stop) -> list:
-    """
-    Calculates visibility for objects when the place.get_altaz_curve is mocked.
-    """
-    visible_objects_indices = []
-    # Optimization: itertuples() is significantly faster than iterrows()
-    for row in candidate_objects.itertuples():
-        index = row.Index
-        skyfield_object = objects_instance.get_skyfield_object(row)
-        if skyfield_object is None:
-            continue
-        altaz_df = objects_instance.place.get_altaz_curve(skyfield_object, start, stop)
-        # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
-        altitude_values = [
-            x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Altitude"].values
-        ]
-        azimuth_values = [
-            x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Azimuth"].values
-        ]
-        visible_condition = conditions.is_visible(
-            np.array(azimuth_values), np.array(altitude_values)
-        )
-        if cast(Any, visible_condition.any()):
-            visible_objects_indices.append(index)
-    return visible_objects_indices
 
-def get_visible_stars(
-    place,
-    candidate_objects,
-    skyfield_objs,
-    stars_indices,
-    check_times,
-    conditions,
-    visible_mask,
-):
-    """
-    Check Stars using vectorized geometric formulas across all check_times.
-    """
-    # Extract RA/Dec for all stars
-    if (
-        "ra_hours" in candidate_objects.columns
-        and "dec_degrees" in candidate_objects.columns
-    ):
-        stars_ras = cast(pd.Series, candidate_objects["ra_hours"]).to_numpy()[
-            stars_indices
-        ]
-        stars_decs = cast(pd.Series, candidate_objects["dec_degrees"]).to_numpy()[
-            stars_indices
-        ]
-    else:
-        stars_ras = np.array(
-            [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
-        )
-        stars_decs = np.array(
-            [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
-        )
-
-    # Preliminary filter: max altitude check
-    max_alt_deg = 90.0 - np.abs(place.lat_decimal - stars_decs)
-    # Add refraction at max altitude for better filtering
-    max_alt_deg += calculate_refraction(max_alt_deg)
-
-    # Only process stars that can potentially reach the minimum altitude
-    potential_mask = max_alt_deg > conditions.horizon.get_min_altitude()
-
-    if np.any(potential_mask):
-        # Ensure stars_indices is an array before masking
-        stars_indices = np.asarray(stars_indices)
-        active_stars_indices = stars_indices[potential_mask]
-
-        # Use pre-calculated Equatorial Direction Cosines if available
-        sin_dec = None
-        cd_cr = None
-        cd_sr = None
-        if "sin_dec" in candidate_objects.columns:
-            sin_dec = candidate_objects["sin_dec"].values[active_stars_indices]
-            cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices]
-            cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices]
-
-        # Optimization: if only simple altitude check is needed, we can bypass
-        # expensive arctan2 and azimuth calculations for the grid.
-        if not conditions.horizon_content and not conditions.horizon_file and \
-           conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
-
-            # Optimization: By comparing sin(alt) directly with sin(threshold), we can
-            # bypass expensive arcsin calls on the N x M grid.
-            # This provides a ~2x speedup compared to calculating altitude degrees alone.
-            sin_alt, _ = vectorized_geometric_altaz(
-                place.lat_decimal,
-                place.lon_decimal,
-                stars_ras[potential_mask],
-                stars_decs[potential_mask],
-                check_times.gmst,
-                sin_dec=sin_dec,
-                cd_cr=cd_cr,
-                cd_sr=cd_sr,
-                return_azimuth=False,
-                return_alt_degrees=False,
+class VisibilityMixIn:
+    def _filter_by_magnitude(
+        self, conditions, star_magnitude_limit, limiting_magnitude
+    ) -> pd.DataFrame:
+        """
+        Filters objects based on magnitude limits.
+        """
+        max_magnitude_q = (
+            limiting_magnitude
+            if limiting_magnitude is not None
+            else (
+                star_magnitude_limit
+                if star_magnitude_limit is not None
+                else conditions.max_object_magnitude
             )
+        )
 
-            # Account for refraction in the threshold itself (optimization)
-            min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
-            true_alt_threshold = min_alt - calculate_refraction(min_alt)
-            sin_threshold = np.sin(np.deg2rad(true_alt_threshold))
+        # Ensure max_magnitude is a float for comparison with magnitude_values
+        max_mag_float = (
+            max_magnitude_q.magnitude
+            if hasattr(max_magnitude_q, "magnitude")
+            else max_magnitude_q
+        )
 
-            visible_at_times = sin_alt >= sin_threshold
+        # Optimization: use pre-calculated float magnitudes if available
+        if "Magnitude_float" in self.objects.columns:
+            magnitude_values = self.objects["Magnitude_float"]
         else:
-            # Full calculation needed for complex horizon or azimuth constraints
-            true_alt_deg, az_deg = vectorized_geometric_altaz(
-                place.lat_decimal,
-                place.lon_decimal,
-                stars_ras[potential_mask],
-                stars_decs[potential_mask],
-                check_times.gmst,
-                sin_dec=sin_dec,
-                cd_cr=cd_cr,
-                cd_sr=cd_sr,
+            # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
+            magnitude_values = np.array(
+                [
+                    x.magnitude if hasattr(x, "magnitude") else x
+                    for x in self.objects["Magnitude"].values
+                ]
             )
-            apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
+        return cast(pd.DataFrame, self.objects[magnitude_values < max_mag_float].copy())
 
-            # Determine visibility using conditions
-            visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
+    def _get_visible_mocked(self, candidate_objects, conditions, start, stop) -> list:
+        """
+        Calculates visibility for objects when the place.get_altaz_curve is mocked.
+        """
+        visible_objects_indices = []
+        # Optimization: itertuples() is significantly faster than iterrows()
+        for row in candidate_objects.itertuples():
+            index = row.Index
+            skyfield_object = self.get_skyfield_object(row)
+            if skyfield_object is None:
+                continue
+            altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
+            # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
+            altitude_values = [
+                x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Altitude"].values
+            ]
+            azimuth_values = [
+                x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Azimuth"].values
+            ]
+            visible_condition = conditions.is_visible(
+                np.array(azimuth_values), np.array(altitude_values)
+            )
+            if cast(Any, visible_condition.any()):
+                visible_objects_indices.append(index)
+        return visible_objects_indices
 
-        # Combine and check if visible at ANY time point
-        visible_mask[active_stars_indices] = np.any(visible_at_times, axis=1)
+    def _get_visible_stars(
+        self,
+        candidate_objects,
+        skyfield_objs,
+        stars_indices,
+        check_times,
+        conditions,
+        visible_mask,
+    ):
+        """
+        Check Stars using vectorized geometric formulas across all check_times.
+        """
+        # Extract RA/Dec for all stars
+        if (
+            "ra_hours" in candidate_objects.columns
+            and "dec_degrees" in candidate_objects.columns
+        ):
+            stars_ras = cast(pd.Series, candidate_objects["ra_hours"]).to_numpy()[
+                stars_indices
+            ]
+            stars_decs = cast(pd.Series, candidate_objects["dec_degrees"]).to_numpy()[
+                stars_indices
+            ]
+        else:
+            stars_ras = np.array(
+                [cast(Any, skyfield_objs)[i].ra.hours for i in stars_indices]
+            )
+            stars_decs = np.array(
+                [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
+            )
 
-def get_visible_other(
-    skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
-):
-    """
-    Check Other objects (like planets) using Skyfield.
-    """
-    for i in other_indices:
-        skyfield_obj = skyfield_objs[i]
-        # Optimization: Use fast_altaz to bypass expensive Standard Apparent calculations.
-        # This provides a ~2.5x speedup for visibility gating with negligible accuracy loss.
-        alt, az, _ = fast_altaz(obs_at_check_times, skyfield_obj)
-        alt_deg = alt.degrees
-        az_deg = az.degrees
+        # Preliminary filter: max altitude check
+        max_alt_deg = 90.0 - np.abs(self.place.lat_decimal - stars_decs)
+        # Add refraction at max altitude for better filtering
+        max_alt_deg += calculate_refraction(max_alt_deg)
 
-        visible_at_times = conditions.is_visible(az_deg, alt_deg)
+        # Only process stars that can potentially reach the minimum altitude
+        potential_mask = max_alt_deg > conditions.horizon.get_min_altitude()
 
-        if cast(Any, visible_at_times.any()):
-            visible_mask[i] = True
+        if np.any(potential_mask):
+            # Ensure stars_indices is an array before masking
+            stars_indices = np.asarray(stars_indices)
+            active_stars_indices = stars_indices[potential_mask]
+
+            # Use pre-calculated Equatorial Direction Cosines if available
+            sin_dec = None
+            cd_cr = None
+            cd_sr = None
+            if "sin_dec" in candidate_objects.columns:
+                sin_dec = candidate_objects["sin_dec"].values[active_stars_indices]
+                cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices]
+                cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices]
+
+            # Optimization: if only simple altitude check is needed, we can bypass
+            # expensive arctan2 and azimuth calculations for the grid.
+            if not conditions.horizon_content and not conditions.horizon_file and \
+               conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
+
+                # Optimization: By comparing sin(alt) directly with sin(threshold), we can
+                # bypass expensive arcsin calls on the N x M grid.
+                # This provides a ~2x speedup compared to calculating altitude degrees alone.
+                sin_alt, _ = vectorized_geometric_altaz(
+                    self.place.lat_decimal,
+                    self.place.lon_decimal,
+                    stars_ras[potential_mask],
+                    stars_decs[potential_mask],
+                    check_times.gmst,
+                    sin_dec=sin_dec,
+                    cd_cr=cd_cr,
+                    cd_sr=cd_sr,
+                    return_azimuth=False,
+                    return_alt_degrees=False,
+                )
+
+                # Account for refraction in the threshold itself (optimization)
+                min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
+                true_alt_threshold = min_alt - calculate_refraction(min_alt)
+                sin_threshold = np.sin(np.deg2rad(true_alt_threshold))
+
+                visible_at_times = sin_alt >= sin_threshold
+            else:
+                # Full calculation needed for complex horizon or azimuth constraints
+                true_alt_deg, az_deg = vectorized_geometric_altaz(
+                    self.place.lat_decimal,
+                    self.place.lon_decimal,
+                    stars_ras[potential_mask],
+                    stars_decs[potential_mask],
+                    check_times.gmst,
+                    sin_dec=sin_dec,
+                    cd_cr=cd_cr,
+                    cd_sr=cd_sr,
+                )
+                apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
+
+                # Determine visibility using conditions
+                visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
+
+            # Combine and check if visible at ANY time point
+            visible_mask[active_stars_indices] = np.any(visible_at_times, axis=1)
+
+    def _get_visible_other(
+        self, skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
+    ):
+        """
+        Check Other objects (like planets) using Skyfield.
+        """
+        for i in other_indices:
+            skyfield_obj = skyfield_objs[i]
+            # Optimization: Use fast_altaz to bypass expensive Standard Apparent calculations.
+            # This provides a ~2.5x speedup for visibility gating with negligible accuracy loss.
+            alt, az, _ = fast_altaz(obs_at_check_times, skyfield_obj)
+            alt_deg = alt.degrees
+            az_deg = az.degrees
+
+            visible_at_times = conditions.is_visible(az_deg, alt_deg)
+
+            if cast(Any, visible_at_times.any()):
+                visible_mask[i] = True
+
+    def _ensure_computed_fields(self, visible_candidate_objects, sort_by):
+        """
+        Ensures that transit, rise, set, and altitude fields are computed for visible objects.
+        """
+        if (
+            sort_by
+            in [
+                ObjectTableLabels.TRANSIT,
+                ObjectTableLabels.RISING,
+                ObjectTableLabels.SETTING,
+            ]
+            or True
+        ):
+            needed_cols = [
+                ObjectTableLabels.TRANSIT,
+                ObjectTableLabels.RISING,
+                ObjectTableLabels.SETTING,
+                ObjectTableLabels.ALTITUDE,
+            ]
+            missing_any = False
+            for col in needed_cols:
+                if col not in visible_candidate_objects.columns or cast(
+                    Any, visible_candidate_objects[col].isnull().any()
+                ):
+                    missing_any = True
+                    break
+
+            if missing_any:
+                if not visible_candidate_objects.empty:
+                    self.compute(
+                        calculation_date=self.calculation_date,
+                        df_to_compute=visible_candidate_objects,
+                    )
+                    # Update visible_candidate_objects with the new computed values
+                    for col in self.objects.columns:
+                        if col not in visible_candidate_objects.columns:
+                            visible_candidate_objects[col] = None
+                    visible_candidate_objects.update(
+                        self.objects.loc[visible_candidate_objects.index]
+                    )
+
+    def _prepare_visibility_check_times(self, start, stop):
+        """Prepares the time grid for visibility checking."""
+        ts = self.ts
+        t_start = ts.utc(start)
+        t_stop = ts.utc(stop)
+        # Use 100 points to match previous behavior and ensure precision
+        return ts.linspace(t_start, t_stop, 100)
+
+    def _perform_visibility_check(self, candidate_objects, check_times, conditions):
+        """Core visibility check logic."""
+        visible_mask = np.zeros(len(candidate_objects), dtype=bool)
+
+        # Optimization: Identify stars vs moving bodies (others).
+        # For star-only catalogs (NGC, Messier), we can bypass expensive row-wise
+        # Skyfield object instantiation and property access by using a class flag.
+        if getattr(self, "is_star_catalog", False) and "ra_hours" in candidate_objects.columns:
+            is_star = np.ones(len(candidate_objects), dtype=bool)
+            skyfield_objs = None
+        else:
+            # Traditional path for mixed or moving-body catalogs.
+            # Fast property extraction instead of iterrows()
+            if "skyfield_object" in candidate_objects.columns:
+                skyfield_objs = cast(
+                    pd.Series, candidate_objects["skyfield_object"]
+                ).to_numpy()
+            else:
+                skyfield_objs = np.array(
+                    [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
+                )
+            is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
+
+        stars_indices = np.where(is_star)[0]
+        if skyfield_objs is not None:
+            other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
+        else:
+            other_indices = np.array([], dtype=int)
+
+        if len(stars_indices) > 0:
+            self._get_visible_stars(
+                candidate_objects,
+                skyfield_objs,
+                stars_indices,
+                check_times,
+                conditions,
+                visible_mask,
+            )
+
+        observer = self.place.observer
+        # Optimization: move observer.at(check_times) out of the loop
+        # to reuse calculated observer positions for all objects.
+        obs_at_check_times = observer.at(check_times)
+
+        # Check Other objects (like planets)
+        self._get_visible_other(
+            skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
+        )
+
+        return visible_mask
+
+    def get_visible(
+        self,
+        conditions,
+        start,
+        stop,
+        hours_margin=0,
+        sort_by=ObjectTableLabels.TRANSIT,
+        star_magnitude_limit=None,
+        limiting_magnitude=None,
+    ) -> pd.DataFrame:
+        if not start or not stop:
+            return pd.DataFrame(columns=self.objects.columns)
+
+        candidate_objects = self._filter_by_magnitude(
+            conditions, star_magnitude_limit, limiting_magnitude
+        )
+
+        if candidate_objects.empty:
+            return pd.DataFrame(columns=self.objects.columns)
+
+        # Vectorized visibility check
+        check_times = self._prepare_visibility_check_times(start, stop)
+
+        # Check if get_altaz_curve is mocked or overridden (common in tests)
+        # Original method is a bound method, mocked/overridden is often a function or a Mock object
+        is_mocked = isinstance(
+            self.place.get_altaz_curve, unittest.mock.Mock
+        ) or isinstance(self.place.get_altaz_curve, types.FunctionType)
+
+        if is_mocked:
+            visible_objects_indices = self._get_visible_mocked(
+                candidate_objects, conditions, start, stop
+            )
+            visible_candidate_objects = cast(
+                pd.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
+            )
+        else:
+            visible_mask = self._perform_visibility_check(
+                candidate_objects, check_times, conditions
+            )
+            visible_candidate_objects: pd.DataFrame = cast(
+                pd.DataFrame, candidate_objects.loc[visible_mask].copy()
+            )
+
+        if visible_candidate_objects.empty:
+            return pd.DataFrame(columns=self.objects.columns)
+
+        # Compute transit/rise/set ONLY for visible objects if needed for sorting or plotting
+        self._ensure_computed_fields(visible_candidate_objects, sort_by)
+
+        visible = visible_candidate_objects
+
+        # Sort objects by given order, handling potential NaNs
+        if sort_by in visible.columns and not bool(visible[sort_by].isnull().all()):
+            visible = visible.sort_values(by=sort_by, ascending=True)
+
+        return visible

@@ -13,7 +13,16 @@ class July2026EventsTest(unittest.TestCase):
         self.end_date = datetime(2026, 7, 31, tzinfo=timezone.utc)
 
     def test_july_2026_notable_events(self):
-        ae = AstronomicalEvents(self.place, self.start_date, self.end_date)
+        ae = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+            events_to_calculate=[
+                EventType.CONJUNCTIONS,
+                EventType.CELESTIAL_CONFIGURATIONS,
+                EventType.PLANET_STAR_CONJUNCTIONS,
+            ]
+        )
         ae.event_settings[EventType.CONJUNCTIONS.value] = True
         ae.event_settings[EventType.CELESTIAL_CONFIGURATIONS.value] = True
         ae.event_settings[EventType.PLANET_STAR_CONJUNCTIONS.value] = True

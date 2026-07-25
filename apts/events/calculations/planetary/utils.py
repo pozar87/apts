@@ -7,6 +7,9 @@ class BodyResolver:
     """
     Utility to resolve celestial bodies from catalogs or planetary data.
     """
+    # Class-level cache to store resolved celestial bodies and avoid redundant filtering/instantiations
+    _cache = {}
+
     def __init__(self):
         self._catalogs = None
         # Common planetary bodies
@@ -27,8 +30,15 @@ class BodyResolver:
         """
         Resolves a body by name and type.
         """
+        # Ensure name is hashable for cache key safety (e.g. convert lists to tuples)
+        cache_key = (tuple(name) if isinstance(name, list) else name, body_type)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
         if body_type == "planet":
-            return self._planets.get(name)
+            result = self._planets.get(name)
+            self._cache[cache_key] = result
+            return result
 
         if body_type == "star":
             # Handle multiple names or single name
@@ -36,13 +46,24 @@ class BodyResolver:
             for n in names:
                 row = self.catalogs.BRIGHT_STARS[self.catalogs.BRIGHT_STARS['Name'] == n]
                 if not row.empty:
-                    return (n, Star(ra_hours=row['ra_hours'].values[0], dec_degrees=row['dec_degrees'].values[0]))
+                    # Optimization: Reuse the pre-calculated skyfield_object column
+                    # instead of re-instantiating the Star class.
+                    sky_obj = row['skyfield_object'].values[0]
+                    result = (n, sky_obj)
+                    self._cache[cache_key] = result
+                    return result
 
         if body_type == "messier":
             row = self.catalogs.MESSIER[self.catalogs.MESSIER['Messier'] == name]
             if not row.empty:
-                return (name, Star(ra_hours=row['ra_hours'].values[0], dec_degrees=row['dec_degrees'].values[0]))
+                # Optimization: Reuse the pre-calculated skyfield_object column
+                # instead of re-instantiating the Star class.
+                sky_obj = row['skyfield_object'].values[0]
+                result = (name, sky_obj)
+                self._cache[cache_key] = result
+                return result
 
+        self._cache[cache_key] = None
         return None
 
     def resolve_multi(self, body_definitions):

@@ -107,14 +107,16 @@ def find_conjunctions_between_moving_bodies(
     # Result dots shape: (M, T)
     dots = np.einsum("it,mit->mt", u1, u2_all)
 
-    # Angular separations: (M, T)
-    separations_all = np.degrees(np.arccos(np.clip(dots, -1.0, 1.0)))
-
-    # Identify local minima where separation is below threshold (vectorized)
-    is_minima = (separations_all[:, 1:-1] < separations_all[:, :-2]) & (
-        separations_all[:, 1:-1] < separations_all[:, 2:]
+    # Optimization: Perform local minima check and threshold gating directly on dot products.
+    # This avoids calculating np.arccos, np.clip, and np.degrees on the entire (M, T) matrix.
+    # Since arccos(x) is strictly decreasing on [-1, 1]:
+    # 1. arccos(x) < T  <=>  x > cos(T)
+    # 2. arccos(x) < arccos(y)  <=>  x > y
+    cos_threshold = np.cos(np.radians(threshold_degrees))
+    is_minima = (dots[:, 1:-1] > dots[:, :-2]) & (
+        dots[:, 1:-1] > dots[:, 2:]
     )
-    is_below_threshold = separations_all[:, 1:-1] < threshold_degrees
+    is_below_threshold = dots[:, 1:-1] > cos_threshold
 
     body_idxs, time_idxs_minus_1 = np.where(is_minima & is_below_threshold)
     time_idxs = time_idxs_minus_1 + 1
@@ -180,20 +182,24 @@ def find_all_pairs_conjunctions(
     # We use einsum to get the dot product for each pair (i, j) at each time t.
     dots = np.einsum("ijt,kjt->ikt", u_all, u_all)
 
-    # Convert to degrees: (N, N, T)
-    separations_all = np.degrees(np.arccos(np.clip(dots, -1.0, 1.0)))
+    # Optimization: Perform local minima check and threshold gating directly on dot products.
+    # This avoids calculating np.arccos, np.clip, and np.degrees on the entire (N, N, T) matrix.
+    # Since arccos(x) is strictly decreasing on [-1, 1]:
+    # 1. arccos(x) < T  <=>  x > cos(T)
+    # 2. arccos(x) < arccos(y)  <=>  x > y
+    cos_threshold = np.cos(np.radians(threshold_degrees))
 
     events = []
     num_bodies = len(names)
     for i in range(num_bodies):
         for j in range(i + 1, num_bodies):
-            separations = separations_all[i, j, :]
+            pair_dots = dots[i, j, :]
 
             # Identify local minima where separation is below threshold
-            is_minima = (separations[1:-1] < separations[:-2]) & (
-                separations[1:-1] < separations[2:]
+            is_minima = (pair_dots[1:-1] > pair_dots[:-2]) & (
+                pair_dots[1:-1] > pair_dots[2:]
             )
-            is_below_threshold = separations[1:-1] < threshold_degrees
+            is_below_threshold = pair_dots[1:-1] > cos_threshold
 
             minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 

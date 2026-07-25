@@ -86,16 +86,21 @@ def calculate_moon_messier_conjunctions(observer, start_date, end_date, messier_
         messier_catalog["Messier"].isin(messier_objects_to_check)
     ]
 
-    star_data = list(zip(messier_df["Messier"], messier_df["skyfield_object"]))
+    messier_vector = Star(
+        ra_hours=messier_df["ra_hours"].to_numpy(),
+        dec_degrees=messier_df["dec_degrees"].to_numpy(),
+    )
+    messier_names = messier_df["Messier"].to_numpy()
 
     conjunctions = skyfield_searches.find_conjunctions_with_stars(
         observer,
         "moon",
-        star_data,
+        messier_vector,
         start_date,
         end_date,
         threshold_degrees=4.0,
         precomputed_positions=precomputed_positions,
+        star_names=messier_names,
     )
 
     events = []
@@ -126,9 +131,6 @@ def calculate_moon_star_conjunctions(ts, observer, start_date, end_date, bright_
     # The Moon stays within ~5.1 degrees of the ecliptic.
     t_ref = ts.utc(start_date)
 
-    star_objs_all = bright_stars["skyfield_object"].tolist()
-    star_names_all = bright_stars["Name"].tolist()
-
     # Observe all stars at once using a vectorized Star object
     # Optimization: use pre-calculated float columns instead of list comprehension over Star objects
     stars_vector = Star(
@@ -140,16 +142,23 @@ def calculate_moon_star_conjunctions(ts, observer, start_date, end_date, bright_
 
     # Filter using vectorized mask
     mask = np.abs(lats.degrees) < 10.0
-    star_data = [(star_names_all[i], star_objs_all[i]) for i in np.where(mask)[0]]
+    filtered_stars_df = bright_stars[mask]
+
+    star_vector_filtered = Star(
+        ra_hours=filtered_stars_df["ra_hours"].to_numpy(),
+        dec_degrees=filtered_stars_df["dec_degrees"].to_numpy(),
+    )
+    star_names_filtered = filtered_stars_df["Name"].to_numpy()
 
     conjunctions = skyfield_searches.find_conjunctions_with_stars(
         observer,
         "moon",
-        star_data,
+        star_vector_filtered,
         start_date,
         end_date,
         threshold_degrees=5.0,
         precomputed_positions=precomputed_positions,
+        star_names=star_names_filtered,
     )
 
     events = []

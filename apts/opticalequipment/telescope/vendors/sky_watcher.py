@@ -232,10 +232,10 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
+            "cside_gender": "Female", # Verified via Sky-Watcher USA (focuser drawtube has female threads)
+            "cside_thread": "M74", # Verified via Sky-Watcher USA (Drawtube thread size is M74x1) - https://www.skywatcherusa.com/products/esprit-100edx
             "focal_length_mm": 550,
-            "mass": 6300,
+            "mass": 6300, # Verified via Sky-Watcher Global (6.3 kg tube weight) - http://skywatcher.com/product/esprit-100-ed-apo-triplet/
             "name": "Esprit 100ED",
             "optical_length": 0,
             "reversible": False,
