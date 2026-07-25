@@ -1,6 +1,4 @@
 import logging
-import types
-import unittest.mock
 from abc import ABC, abstractmethod
 from typing import Any, cast
 from types import SimpleNamespace
@@ -9,7 +7,8 @@ import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
-from . import almanac, visibility
+from .visibility import VisibilityMixIn
+from .almanac import AlmanacMixIn
 from ..cache import get_timescale
 from ..constants import ObjectTableLabels
 from .utils import vectorized_geometric_compute
@@ -17,7 +16,7 @@ from .utils import vectorized_geometric_compute
 logger = logging.getLogger(__name__)
 
 
-class Objects(ABC):
+class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
     # Flag to indicate if this catalog consists primarily of fixed stars.
     # Enables massive performance optimizations in visibility gating by bypassing
     # individual Skyfield object instantiations.
@@ -110,258 +109,10 @@ class Objects(ABC):
             t = self.place.date
         return observer_to_use, t
 
-    def _filter_by_magnitude(
-        self, conditions, star_magnitude_limit, limiting_magnitude
-    ) -> pd.DataFrame:
-        """
-        Filters objects based on magnitude limits.
-        """
-        max_magnitude_q = (
-            limiting_magnitude
-            if limiting_magnitude is not None
-            else (
-                star_magnitude_limit
-                if star_magnitude_limit is not None
-                else conditions.max_object_magnitude
-            )
-        )
-
-        # Ensure max_magnitude is a float for comparison with magnitude_values
-        max_mag_float = (
-            max_magnitude_q.magnitude
-            if hasattr(max_magnitude_q, "magnitude")
-            else max_magnitude_q
-        )
-
-        # Optimization: use pre-calculated float magnitudes if available
-        if "Magnitude_float" in self.objects.columns:
-            magnitude_values = self.objects["Magnitude_float"]
-        else:
-            # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
-            magnitude_values = np.array(
-                [
-                    x.magnitude if hasattr(x, "magnitude") else x
-                    for x in self.objects["Magnitude"].values
-                ]
-            )
-        return cast(pd.DataFrame, self.objects[magnitude_values < max_mag_float].copy())
-
-    def _get_visible_mocked(self, candidate_objects, conditions, start, stop) -> list:
-        """
-        Calculates visibility for objects when the place.get_altaz_curve is mocked.
-        """
-        return visibility.get_visible_mocked(self, candidate_objects, conditions, start, stop)
-
-    def _get_visible_stars(
-        self,
-        candidate_objects,
-        skyfield_objs,
-        stars_indices,
-        check_times,
-        conditions,
-        visible_mask,
-    ):
-        """
-        Check Stars using vectorized geometric formulas across all check_times.
-        """
-        return visibility.get_visible_stars(
-            self.place,
-            candidate_objects,
-            skyfield_objs,
-            stars_indices,
-            check_times,
-            conditions,
-            visible_mask,
-        )
-
-    def _get_visible_other(
-        self, skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
-    ):
-        """
-        Check Other objects (like planets) using Skyfield.
-        """
-        return visibility.get_visible_other(
-            skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
-        )
-
-    def _ensure_computed_fields(self, visible_candidate_objects, sort_by):
-        """
-        Ensures that transit, rise, set, and altitude fields are computed for visible objects.
-        """
-        if (
-            sort_by
-            in [
-                ObjectTableLabels.TRANSIT,
-                ObjectTableLabels.RISING,
-                ObjectTableLabels.SETTING,
-            ]
-            or True
-        ):
-            needed_cols = [
-                ObjectTableLabels.TRANSIT,
-                ObjectTableLabels.RISING,
-                ObjectTableLabels.SETTING,
-                ObjectTableLabels.ALTITUDE,
-            ]
-            missing_any = False
-            for col in needed_cols:
-                if col not in visible_candidate_objects.columns or cast(
-                    Any, visible_candidate_objects[col].isnull().any()
-                ):
-                    missing_any = True
-                    break
-
-            if missing_any:
-                if not visible_candidate_objects.empty:
-                    self.compute(
-                        calculation_date=self.calculation_date,
-                        df_to_compute=visible_candidate_objects,
-                    )
-                    # Update visible_candidate_objects with the new computed values
-                    for col in self.objects.columns:
-                        if col not in visible_candidate_objects.columns:
-                            visible_candidate_objects[col] = None
-                    visible_candidate_objects.update(
-                        self.objects.loc[visible_candidate_objects.index]
-                    )
-
-    def _prepare_visibility_check_times(self, start, stop):
-        """Prepares the time grid for visibility checking."""
-        ts = self.ts
-        t_start = ts.utc(start)
-        t_stop = ts.utc(stop)
-        # Use 100 points to match previous behavior and ensure precision
-        return ts.linspace(t_start, t_stop, 100)
-
-    def _perform_visibility_check(self, candidate_objects, check_times, conditions):
-        """Core visibility check logic."""
-        visible_mask = np.zeros(len(candidate_objects), dtype=bool)
-
-        # Optimization: Identify stars vs moving bodies (others).
-        # For star-only catalogs (NGC, Messier), we can bypass expensive row-wise
-        # Skyfield object instantiation and property access by using a class flag.
-        if getattr(self, "is_star_catalog", False) and "ra_hours" in candidate_objects.columns:
-            is_star = np.ones(len(candidate_objects), dtype=bool)
-            skyfield_objs = None
-        else:
-            # Traditional path for mixed or moving-body catalogs.
-            # Fast property extraction instead of iterrows()
-            if "skyfield_object" in candidate_objects.columns:
-                skyfield_objs = cast(
-                    pd.Series, candidate_objects["skyfield_object"]
-                ).to_numpy()
-            else:
-                skyfield_objs = np.array(
-                    [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
-                )
-            is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
-
-        stars_indices = np.where(is_star)[0]
-        if skyfield_objs is not None:
-            other_indices = np.where(~is_star & pd.notnull(skyfield_objs))[0]
-        else:
-            other_indices = np.array([], dtype=int)
-
-        if len(stars_indices) > 0:
-            self._get_visible_stars(
-                candidate_objects,
-                skyfield_objs,
-                stars_indices,
-                check_times,
-                conditions,
-                visible_mask,
-            )
-
-        observer = self.place.observer
-        # Optimization: move observer.at(check_times) out of the loop
-        # to reuse calculated observer positions for all objects.
-        obs_at_check_times = observer.at(check_times)
-
-        # Check Other objects (like planets)
-        self._get_visible_other(
-            skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
-        )
-
-        return visible_mask
-
-    def get_visible(
-        self,
-        conditions,
-        start,
-        stop,
-        hours_margin=0,
-        sort_by=ObjectTableLabels.TRANSIT,
-        star_magnitude_limit=None,
-        limiting_magnitude=None,
-    ) -> pd.DataFrame:
-        if not start or not stop:
-            return pd.DataFrame(columns=self.objects.columns)
-
-        candidate_objects = self._filter_by_magnitude(
-            conditions, star_magnitude_limit, limiting_magnitude
-        )
-
-        if candidate_objects.empty:
-            return pd.DataFrame(columns=self.objects.columns)
-
-        # Vectorized visibility check
-        check_times = self._prepare_visibility_check_times(start, stop)
-
-        # Check if get_altaz_curve is mocked or overridden (common in tests)
-        # Original method is a bound method, mocked/overridden is often a function or a Mock object
-        is_mocked = isinstance(
-            self.place.get_altaz_curve, unittest.mock.Mock
-        ) or isinstance(self.place.get_altaz_curve, types.FunctionType)
-
-        if is_mocked:
-            visible_objects_indices = self._get_visible_mocked(
-                candidate_objects, conditions, start, stop
-            )
-            visible_candidate_objects = cast(
-                pd.DataFrame, candidate_objects.loc[visible_objects_indices].copy()
-            )
-        else:
-            visible_mask = self._perform_visibility_check(
-                candidate_objects, check_times, conditions
-            )
-            visible_candidate_objects: pd.DataFrame = cast(
-                pd.DataFrame, candidate_objects.loc[visible_mask].copy()
-            )
-
-        if visible_candidate_objects.empty:
-            return pd.DataFrame(columns=self.objects.columns)
-
-        # Compute transit/rise/set ONLY for visible objects if needed for sorting or plotting
-        self._ensure_computed_fields(visible_candidate_objects, sort_by)
-
-        visible = visible_candidate_objects
-
-        # Sort objects by given order, handling potential NaNs
-        if sort_by in visible.columns and not bool(visible[sort_by].isnull().all()):
-            visible = visible.sort_values(by=sort_by, ascending=True)
-
-        return visible
-
     @staticmethod
     def fixed_body(RA, Dec):
         # Create body at given coordinates
         return Star(ra_hours=RA, dec_degrees=Dec)
-
-    def _compute_tranzit(self, skyfield_object, observer):
-        """
-        Calculates the upper meridian transit of a celestial object.
-        """
-        return almanac.compute_tranzit(self, skyfield_object, observer)
-
-    def _compute_rising_and_setting(self, skyfield_object, observer, transit_time):
-        """
-        Calculates rising and setting times for a celestial object.
-        """
-        return almanac.compute_rising_and_setting(self, skyfield_object, observer, transit_time)
-
-    def _altitude_at_transit(self, skyfield_object, transit, observer):
-        # Calculate objects altitude at transit time
-        return almanac.altitude_at_transit(self, skyfield_object, transit, observer)
 
     def _vectorized_geometric_compute(self, df, observer):
         """
