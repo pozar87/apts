@@ -1,4 +1,5 @@
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
+from apts.utils import ConnectionType, Gender
 
 def test_skywatcher_esprit_specs():
     # Esprit 80ED
@@ -12,6 +13,8 @@ def test_skywatcher_esprit_specs():
     assert esprit100.aperture.magnitude == 100
     assert esprit100.focal_length.magnitude == 550
     assert esprit100.mass.to('g').magnitude == 6300
+    assert esprit100.connection_type == ConnectionType.M74
+    assert esprit100.connection_gender == Gender.FEMALE
 
     # Esprit 120ED
     esprit120 = Sky_watcherTelescope.Sky_Watcher_Esprit_120ED()
