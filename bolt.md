@@ -79,3 +79,7 @@ The most significant bottleneck among successfully running events was optimized 
 ## 2026-06-29 - [Stationary Object Observation in Minimization Loops]
 **Learning:** During iterative minimization (like `_refine_conjunction`), observing stationary objects (e.g., `Star` instances) repeatedly inside the loop is a major source of redundant computations. Because stars/Messier objects are effectively stationary in the inertial GCRS/BCRS frames, their unit vectors are constant (stable to 19 decimal places over 30 minutes).
 **Action:** Detect if any of the target objects are instances of `Star`. Pre-calculate their observations once outside the minimization loop and reuse them inside the loop, resulting in a ~20% end-to-end reduction in execution time for conjunction search events.
+
+## 2026-06-30 - [Trigonometric Bypassing in Separation and Conjunction Searches]
+**Learning:** Calculating transcendental functions like `arccos` (along with `clip` and `degrees`) over large multi-dimensional NumPy arrays is extremely CPU-intensive. Since `arccos(x)` is strictly decreasing on `[-1, 1]`, local minimum checks and threshold gating can be performed directly on raw cosine dot products: `arccos(x) < arccos(y) <=> x > y` and `arccos(x) < T <=> x > cos(T)`.
+**Action:** Shift all candidate-gating checks directly to the dot products. Recompute the expensive angular separations only on final candidates, resulting in a ~12x speedup on the core vectorized calculations.
