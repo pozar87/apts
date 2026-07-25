@@ -9,6 +9,13 @@ from apts.opticalequipment.telescope.base import Telescope
 from apts.utils import get_default_gender, map_conn, map_gender
 
 
+# Known exceptions where actual hardware port gender deviates from the standard convention:
+# e.g., refractors with native female drawtube threads (like Esprit 100ED M74x1)
+EXCLUDED_KEYS = {
+    "Sky_Watcher_Esprit_100ED",
+}
+
+
 def audit():
     vmods = []
     for r, _, fs in os.walk("apts/opticalequipment"):
@@ -33,6 +40,8 @@ def audit():
                     if not hasattr(obj, "_DATABASE"):
                         continue
                     for key, entry in obj._DATABASE.items():
+                        if key in EXCLUDED_KEYS:
+                            continue
                         is_t = issubclass(obj, Telescope)
                         is_e = issubclass(obj, Eyepiece)
                         is_c = issubclass(obj, Camera)
