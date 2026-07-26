@@ -15,9 +15,7 @@ from apts.plotting.skymap_objects import (
     _plot_solar_system_object_on_skymap,
     _plot_stars_on_skymap,
 )
-from .utils import setup_polar_ax
-
-from ...constants import ObjectTableLabels
+from .utils import setup_polar_ax, parse_target_geometry
 
 if TYPE_CHECKING:
     from ...observations import Observation
@@ -338,16 +336,9 @@ def _plot_polar_skymap_target(
         numpy.any(target_alt.degrees > 0)
     ):
         if target_object_data is not None:
-            width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
-            width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-            width_deg = width_arcmin / 60.0
-
-            height_arcmin = target_object_data.get(
-                ObjectTableLabels.SIZE_MINOR, width_arcmin
+            width_deg, height_deg, _, _, _ = parse_target_geometry(
+                target_object, target_object_data, observer
             )
-            height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-            height_deg = height_arcmin / 60.0
-
             size = (width_deg + height_deg) / 2 * 100
             polar_ax.scatter(
                 target_az.radians,
@@ -378,16 +369,9 @@ def _plot_polar_skymap_target(
     elif coordinate_system == CoordinateSystem.EQUATORIAL:
         target_radius = 90 + target_dec.degrees if is_sh else 90 - target_dec.degrees
         if target_object_data is not None:
-            width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
-            width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
-            width_deg = width_arcmin / 60.0
-
-            height_arcmin = target_object_data.get(
-                ObjectTableLabels.SIZE_MINOR, width_arcmin
+            width_deg, height_deg, _, _, _ = parse_target_geometry(
+                target_object, target_object_data, observer
             )
-            height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
-            height_deg = height_arcmin / 60.0
-
             size = (width_deg + height_deg) / 2 * 100
             polar_ax.scatter(
                 target_ra.radians,

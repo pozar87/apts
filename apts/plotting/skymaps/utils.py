@@ -1,10 +1,14 @@
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import numpy
+import pandas as pd
 from matplotlib import axes
 
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
+from apts.plotting.utils import calculate_ellipse_angle, calculate_parallactic_angle
+
+from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
     from ...observations import Observation
@@ -118,3 +122,88 @@ def setup_zoom_ax(
     ax.spines["top"].set_color(style["AXIS_COLOR"])
     ax.spines["right"].set_color(style["AXIS_COLOR"])
     ax.grid(True, color=style["GRID_COLOR"], linestyle="--", linewidth=0.5)
+
+
+def parse_target_geometry(
+    target_object: Any,
+    target_object_data: Any,
+    observer: Any,
+) -> tuple[float, float, float, Optional[Any], Optional[float]]:
+    """
+    Parses size dimensions, position angle, declination, and magnitude from target data.
+    Returns: (width_deg, height_deg, pos_angle, dec, magnitude)
+    """
+    width_arcmin = target_object_data.get(ObjectTableLabels.SIZE_MAJOR, 0)
+    width_arcmin = getattr(width_arcmin, "magnitude", width_arcmin)
+    width_deg = width_arcmin / 60.0
+
+    height_arcmin = target_object_data.get(
+        ObjectTableLabels.SIZE_MINOR, width_arcmin
+    )
+    height_arcmin = getattr(height_arcmin, "magnitude", height_arcmin)
+    height_deg = height_arcmin / 60.0
+
+    pos_angle = target_object_data.get("PosAng", 0.0)
+    if pd.isna(pos_angle):
+        pos_angle = 0.0
+    pos_angle = getattr(pos_angle, "magnitude", pos_angle)
+    pos_angle = float(pos_angle)
+
+    dec = None
+    if hasattr(target_object, "dec"):
+        dec = getattr(target_object, "dec", None)
+    else:
+        try:
+            _, dec, _ = observer.observe(target_object).apparent().radec()
+        except Exception:
+            dec = None
+
+    magnitude = target_object_data.get("Magnitude")
+    if pd.isna(magnitude) or magnitude is None:
+        magnitude = target_object_data.get("Mag")
+    if pd.isna(magnitude) or magnitude is None:
+        magnitude = target_object_data.get("magnitude")
+
+    return width_deg, height_deg, pos_angle, dec, magnitude
+
+
+def calculate_target_ellipse_angle(
+    pos_angle: float,
+    dec: Optional[Any],
+    target_az: Any,
+    place_lat: Any,
+    coordinate_system: CoordinateSystem,
+    flipped_horizontally: bool,
+    flipped_vertically: bool,
+    calculate_parallactic_angle_func=calculate_parallactic_angle,
+    calculate_ellipse_angle_func=calculate_ellipse_angle,
+) -> float:
+    """Calculates the target's rotated ellipse angle based on position, coordinate system, and flips."""
+    if dec is not None:
+        parallactic_angle = calculate_parallactic_angle_func(
+            place_lat, dec, target_az
+        )
+        angle = calculate_ellipse_angle_func(
+            pos_angle,
+            parallactic_angle,
+            coordinate_system,
+            flipped_horizontally,
+            flipped_vertically,
+        )
+    else:
+        angle = pos_angle
+    return float(angle)
+
+
+def get_target_plot_coordinates(
+    target_alt: Any,
+    target_az: Any,
+    target_ra: Any,
+    target_dec: Any,
+    coordinate_system: CoordinateSystem,
+) -> tuple[float, float]:
+    """Returns the plotting (x, y) coordinates for the target based on coordinate system."""
+    if coordinate_system == CoordinateSystem.HORIZONTAL:
+        return float(target_az.degrees), float(target_alt.degrees)
+    else:
+        return float(target_ra.hours), float(target_dec.degrees)
