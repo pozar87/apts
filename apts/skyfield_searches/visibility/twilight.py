@@ -5,6 +5,7 @@ from skyfield import almanac
 from skyfield.api import Topos, Time
 from ...cache import get_timescale, get_ephemeris
 from ...constants.twilight import Twilight
+from ..utils import fast_altaz
 
 def get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
     ts = get_timescale()
@@ -60,13 +61,10 @@ def find_golden_blue_hours(observer, start_date, end_date):
     def sun_state(t):
         # We want to detect transitions at -6, -4, 6
         # Account for atmospheric refraction at standard conditions
-        alt = (
-            observer.at(t)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
+        # Optimization: Use fast_altaz to bypass expensive Standard Apparent calculations
+        alt = fast_altaz(
+            observer.at(t), sun, temperature_C=10.0, pressure_mbar=1013.25
+        )[0].degrees
         return (
             (alt >= -6).astype(int) + (alt >= -4).astype(int) + (alt >= 6).astype(int)
         )
