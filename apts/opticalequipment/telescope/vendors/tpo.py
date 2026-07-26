@@ -70,15 +70,18 @@ class TpoTelescope(Telescope):
         "TPO_TPO_6_f_4_Newton": {
             "brand": "TPO",
             "name": "TPO 6\" f/4 Newton",
-            "type": "type_telescope",
+            "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 4800,
+            "mass": 4354, # Verified via OPT (9.6 lbs tube weight) - https://optcorp.com/products/tpo-6-f-4-newtonian-reflecting-ota-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via OPT (2\" focuser drawtube)
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
+            "aperture_mm": 154, # Verified via OPT (154mm / 6\" aperture)
+            "focal_length_mm": 610, # Verified via OPT (610mm focal length)
+            "central_obstruction_mm": 63, # Verified via OPT (63mm secondary mirror obstruction)
         },
         "TPO_TPO_8_f_4_Newton": {
             "brand": "TPO",
