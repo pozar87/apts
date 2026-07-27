@@ -26,6 +26,14 @@ def test_es_firstlight_newtonian_specs():
     assert scope.mass.magnitude == 3175
     assert scope.telescope_type == TelescopeType.NEWTONIAN_REFLECTOR
 
+    # FirstLight 203mm
+    scope_203 = Explore_scientificTelescope.Explore_Scientific_FirstLight_203mm_Newtonian()
+    assert scope_203.aperture.magnitude == 203.2
+    assert scope_203.focal_length.magnitude == 1000
+    assert scope_203.central_obstruction.magnitude == 63
+    assert scope_203.mass.magnitude == 9979
+    assert scope_203.telescope_type == TelescopeType.NEWTONIAN_REFLECTOR
+
 def test_es_firstlight_mak_specs():
     # FirstLight 152mm Mak
     scope = Explore_scientificTelescope.Explore_Scientific_FirstLight_152mm_Mak()
