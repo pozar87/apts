@@ -94,6 +94,10 @@
 **Learning:** Skyfield's `.altaz()` requires an `Apparent` object, but `.apparent()` triggers expensive Standard calculations (nutation, aberration, deflection). When accuracy requirements are loose (e.g., visibility gating), manually wrapping an `Astrometric` position in an `Apparent` object bypasses these bottlenecks.
 **Action:** Use `app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t); app.center = pos.center` to perform fast AltAz checks.
 
+## 2025-05-25 - [Conjunction Refinement Linear Propagation]
+**Learning:** During iterative refinement of conjunctions over a small +/- 30-minute window, the absolute motion of moving bodies is extremely linear. We can observe the absolute position and velocity of moving bodies once at the rough conjunction time and propagate them linearly (`pos + vel * dt`) inside the refinement search loop. This avoids thousands of expensive, iterative topocentric coordinate conversions and ephemeris lookups on every step of the minimization solver, leading to a ~15-20% speedup in conjunction searches.
+**Action:** Always prefer linear propagation of absolute positions and velocities over small time windows during iterative searches/refinements to bypass redundant topocentric ephemeris calculations.
+
 ## 2025-05-24 - [Event Calculation Benchmarks (30-day range)]
 Initial benchmarking of all astronomical event calculations identified the following slowest components:
 

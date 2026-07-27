@@ -1,8 +1,9 @@
 from datetime import timedelta
 from typing import Any, cast
+import numpy as np
 
 from skyfield.api import Star
-from skyfield.positionlib import Apparent
+from skyfield.positionlib import Apparent, ICRF
 from skyfield.searchlib import find_minima
 
 from ..cache import get_ephemeris, get_timescale
@@ -40,16 +41,56 @@ def _refine_conjunction(observer, obj1, obj2, rough_t):
     is_obj1_star = isinstance(obj1, Star)
     is_obj2_star = isinstance(obj2, Star)
 
+    # Pre-observe/propagate absolute positions and velocities at the rough time
+    # to avoid expensive iterative topocentric coordinate conversions and ephemeris
+    # lookups on every step of the minimization solver.
+    obs_at_rough = observer.at(rough_t)
+    obs_pos_rough = obs_at_rough.position.au
+    obs_vel_rough = obs_at_rough.velocity.au_per_d if obs_at_rough.velocity is not None else np.zeros(3)
+
     if is_obj1_star:
-        p1_fixed = observer.at(rough_t).observe(obj1)
+        p1_fixed = obs_at_rough.observe(obj1)
+    else:
+        obs1_rough = obs_at_rough.observe(obj1)
+        body1_pos_abs = obs1_rough.position.au + obs_pos_rough
+        body1_vel_abs = (obs1_rough.velocity.au_per_d + obs_vel_rough) if obs1_rough.velocity is not None else np.zeros(3)
+
     if is_obj2_star:
-        p2_fixed = observer.at(rough_t).observe(obj2)
+        p2_fixed = obs_at_rough.observe(obj2)
+    else:
+        obs2_rough = obs_at_rough.observe(obj2)
+        body2_pos_abs = obs2_rough.position.au + obs_pos_rough
+        body2_vel_abs = (obs2_rough.velocity.au_per_d + obs_vel_rough) if obs2_rough.velocity is not None else np.zeros(3)
 
     def separation_func(t):
-        # Use the pre-computed fixed observation if the body is a Star,
-        # otherwise compute its position dynamically.
-        p1 = p1_fixed if is_obj1_star else observer.at(t).observe(obj1)
-        p2 = p2_fixed if is_obj2_star else observer.at(t).observe(obj2)
+        # We need the observer position at t to compute the topocentric vector
+        obs_at_t = observer.at(t)
+        obs_pos_t = obs_at_t.position.au
+
+        # Calculate time difference in days (t.tt is TT Julian date in days)
+        dt = t.tt - rough_t.tt
+
+        # Handle vectorized vs scalar Time inputs appropriately using np.newaxis
+        is_array = hasattr(dt, "shape") and len(dt.shape) > 0
+
+        if is_obj1_star:
+            p1 = p1_fixed
+        else:
+            if is_array:
+                p1_pos_rel = body1_pos_abs[:, None] + body1_vel_abs[:, None] * dt - obs_pos_t
+            else:
+                p1_pos_rel = body1_pos_abs + body1_vel_abs * dt - obs_pos_t
+            p1 = ICRF(p1_pos_rel, t=t)
+
+        if is_obj2_star:
+            p2 = p2_fixed
+        else:
+            if is_array:
+                p2_pos_rel = body2_pos_abs[:, None] + body2_vel_abs[:, None] * dt - obs_pos_t
+            else:
+                p2_pos_rel = body2_pos_abs + body2_vel_abs * dt - obs_pos_t
+            p2 = ICRF(p2_pos_rel, t=t)
+
         return p1.separation_from(p2).degrees
 
     setattr(separation_func, "step_days", 0.005)  # 7.2 minutes step for minimization
