@@ -216,15 +216,15 @@ class Explore_scientificTelescope(Telescope):
             "name": "FirstLight 203mm Newtonian",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 9500,
+            "mass": 9979, # Verified via official Explore Scientific specs (22 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "2\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203,
-            "focal_length_mm": 800,
+            "aperture_mm": 203.2, # Verified via official specs (8 inches unrounded)
+            "focal_length_mm": 1000, # Verified via official Explore Scientific specs (FL-N2031000 has 1000mm FL) - https://explorescientific.com/products/explore-scientific-firstlight-203mm-newtonian
             "central_obstruction_mm": 63,
         },
         "Explore_Scientific_FirstLight_100mm_Mak": {
