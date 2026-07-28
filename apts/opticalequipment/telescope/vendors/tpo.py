@@ -86,28 +86,34 @@ class TpoTelescope(Telescope):
         "TPO_TPO_8_f_4_Newton": {
             "brand": "TPO",
             "name": "TPO 8\" f/4 Newton",
-            "type": "type_telescope",
+            "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 7800,
+            "mass": 8709, # Verified via OPT (19.2 lbs tube weight) - https://optcorp.com/products/tpo-8-f-4-newtonian-reflecting-ota-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via OPT (2\" focuser connection)
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
+            "aperture_mm": 200, # Verified via OPT (200mm aperture)
+            "focal_length_mm": 800, # Verified via OPT (800mm focal length)
+            "central_obstruction_mm": 70, # Verified via OPT (70mm secondary mirror obstruction)
         },
         "TPO_TPO_10_f_4_Newton": {
             "brand": "TPO",
             "name": "TPO 10\" f/4 Newton",
-            "type": "type_telescope",
+            "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 12000,
+            "mass": 13290, # Verified via OPT (29.3 lbs tube weight) - https://optcorp.com/products/tpo-10-f-4-newtonian-reflecting-ota-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via OPT (3.3\" focuser steps down to 2\" compression ring)
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
+            "aperture_mm": 254, # Verified via OPT (254mm / 10\" aperture)
+            "focal_length_mm": 1016, # Verified via OPT (1016mm focal length)
+            "central_obstruction_mm": 70, # Verified via OPT (70mm secondary mirror obstruction)
         },
         "TPO_TPO_80mm_ED_APO": {
             "brand": "TPO",
