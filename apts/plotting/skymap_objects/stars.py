@@ -199,6 +199,38 @@ def _add_star_scatter_and_labels(
             )
 
 
+def _get_star_plot_coordinates(
+    is_polar: bool,
+    coordinate_system: CoordinateSystem,
+    alt: Any,
+    az: Any,
+    ra: Any,
+    dec: Any,
+    full_mask: numpy.ndarray,
+    lat_decimal: Any = 0.0,
+) -> tuple[numpy.ndarray, numpy.ndarray]:
+    """Calculates plotting coordinates (x_plot, y_plot) for stars based on projection."""
+    if not is_polar:
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            x_plot, y_plot = az.degrees[full_mask], alt.degrees[full_mask]
+        else:  # EQUATORIAL
+            x_plot, y_plot = ra.hours[full_mask], dec.degrees[full_mask]
+    else:  # is_polar
+        if coordinate_system == CoordinateSystem.HORIZONTAL:
+            x_plot, y_plot = az.radians[full_mask], 90 - alt.degrees[full_mask]
+        else:
+            is_sh = False
+            try:
+                is_sh = lat_decimal < 0
+            except TypeError:
+                pass
+            x_plot = ra.radians[full_mask]
+            y_plot = (
+                90 + dec.degrees[full_mask] if is_sh else 90 - dec.degrees[full_mask]
+            )
+    return x_plot, y_plot
+
+
 def _plot_bright_stars_on_skymap(
     observation: "Observation",
     ax,
@@ -246,42 +278,27 @@ def _plot_bright_stars_on_skymap(
     df_plot = cast(pd.DataFrame, bright_stars_df[full_mask])
     star_color = style.get("EMPHASIS_COLOR", "yellow")
 
-    if not is_polar:
-        if coordinate_system == CoordinateSystem.HORIZONTAL:
-            x_plot, y_plot = az.degrees[full_mask], alt.degrees[full_mask]
-        else:  # EQUATORIAL
-            x_plot, y_plot = ra.hours[full_mask], dec.degrees[full_mask]
+    x_plot, y_plot = _get_star_plot_coordinates(
+        is_polar=is_polar,
+        coordinate_system=cast(CoordinateSystem, coordinate_system),
+        alt=alt,
+        az=az,
+        ra=ra,
+        dec=dec,
+        full_mask=full_mask,
+        lat_decimal=observation.place.lat_decimal,
+    )
 
-        _add_star_scatter_and_labels(
-            ax,
-            df_plot["Name"].to_numpy(),
-            x_plot,
-            y_plot,
-            sizes=40,
-            color=star_color,
-            marker="*",
-            plot_labels=plot_labels,
-        )
-    else:  # is_polar
-        if coordinate_system == CoordinateSystem.HORIZONTAL:
-            x_plot, y_plot = az.radians[full_mask], 90 - alt.degrees[full_mask]
-        else:
-            is_sh = observation.place.lat_decimal < 0
-            x_plot = ra.radians[full_mask]
-            y_plot = (
-                90 + dec.degrees[full_mask] if is_sh else 90 - dec.degrees[full_mask]
-            )
-
-        _add_star_scatter_and_labels(
-            ax,
-            df_plot["Name"].to_numpy(),
-            x_plot,
-            y_plot,
-            sizes=40,
-            color=star_color,
-            marker="*",
-            plot_labels=plot_labels,
-        )
+    _add_star_scatter_and_labels(
+        ax,
+        df_plot["Name"].to_numpy(),
+        x_plot,
+        y_plot,
+        sizes=40,
+        color=star_color,
+        marker="*",
+        plot_labels=plot_labels,
+    )
 
 
 def _plot_stars_on_skymap(
@@ -345,12 +362,18 @@ def _plot_stars_on_skymap(
 
     mag_plot = bright_stars[full_mask]["magnitude"]
 
-    if not is_polar:
-        if coordinate_system == CoordinateSystem.HORIZONTAL:
-            x_plot, y_plot = az.degrees[full_mask], alt.degrees[full_mask]
-        else:  # EQUATORIAL
-            x_plot, y_plot = ra.hours[full_mask], dec.degrees[full_mask]
+    x_plot, y_plot = _get_star_plot_coordinates(
+        is_polar=is_polar,
+        coordinate_system=coordinate_system,
+        alt=alt,
+        az=az,
+        ra=ra,
+        dec=dec,
+        full_mask=full_mask,
+        lat_decimal=observation.place.lat_decimal,
+    )
 
+    if not is_polar:
         sizes = (limit + 1 - numpy.array(mag_plot)) * 3
         _add_star_scatter_and_labels(
             ax,
@@ -364,15 +387,6 @@ def _plot_stars_on_skymap(
         )
     else:  # is_polar
         sizes = (limit + 1 - numpy.array(mag_plot)) * 5
-        if coordinate_system == CoordinateSystem.HORIZONTAL:
-            x_plot, y_plot = az.radians[full_mask], 90 - alt.degrees[full_mask]
-        else:
-            is_sh = observation.place.lat_decimal < 0
-            x_plot = ra.radians[full_mask]
-            y_plot = (
-                90 + dec.degrees[full_mask] if is_sh else 90 - dec.degrees[full_mask]
-            )
-
         _add_star_scatter_and_labels(
             ax,
             numpy.array([]),
