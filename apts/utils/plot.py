@@ -96,23 +96,27 @@ class PlotUtils:
                 dmin = mdates.num2date(xmin, tz=local_timezone)
                 dmax = mdates.num2date(xmax, tz=local_timezone)
 
-                # Start from the first midnight after dmin
-                current_midnight = dmin.replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
-                if current_midnight < dmin:
-                    current_midnight += timedelta(days=1)
-
-                while current_midnight <= dmax:
-                    ax.axvline(
-                        current_midnight,
-                        color=style["AXIS_COLOR"],
-                        linestyle="-",
-                        alpha=0.5,
-                        linewidth=1.5,
-                        label="_nolegend_",
+                # Skip drawing daily midnights if the range is too large (e.g., default
+                # empty plot fallback which covers 10 years, or very long ranges where
+                # daily lines would clutter and severely degrade plot rendering performance).
+                if (dmax - dmin).days <= 14:
+                    # Start from the first midnight after dmin
+                    current_midnight = dmin.replace(
+                        hour=0, minute=0, second=0, microsecond=0
                     )
-                    current_midnight += timedelta(days=1)
+                    if current_midnight < dmin:
+                        current_midnight += timedelta(days=1)
+
+                    while current_midnight <= dmax:
+                        ax.axvline(
+                            current_midnight,
+                            color=style["AXIS_COLOR"],
+                            linestyle="-",
+                            alpha=0.5,
+                            linewidth=1.5,
+                            label="_nolegend_",
+                        )
+                        current_midnight += timedelta(days=1)
             except Exception:
                 # Fallback if limits are not set or not unpackable (e.g. in unit tests)
                 pass
