@@ -72,8 +72,7 @@ class ResolutionMixIn:
             return None
         # wavelength in nm
         fr = (self.telescope.focal_ratio() * self.effective_barlow()).magnitude
-        # CFZ = 2.44 * (wavelength/1000) * fr^2
-        cfz = 2.44 * (wavelength / 1000.0) * (fr**2)
+        cfz = optics_utils.calculate_critical_focus_zone(fr, wavelength)
         return cfz * get_unit_registry().micrometer
 
     def dawes_limit(self) -> Optional["Quantity"]:
@@ -146,9 +145,9 @@ class ResolutionMixIn:
             return None
 
         p_um = p_size_q.to("micrometer").magnitude
-        lambda_um = wavelength_nm / 1000.0
-
-        return (p_um * sampling_factor) / (1.22 * lambda_um)
+        return optics_utils.calculate_nyquist_focal_ratio(
+            p_um, wavelength_nm, sampling_factor
+        )
 
     def psf_peak_fraction(self, seeing: float) -> Optional[float]:
         """
@@ -158,6 +157,4 @@ class ResolutionMixIn:
         if scale is None or seeing <= 0:
             return None
 
-        arg = (scale.magnitude * math.sqrt(math.log(2))) / seeing
-        fraction = math.erf(arg) ** 2
-        return float(fraction)
+        return optics_utils.calculate_psf_peak_fraction(scale.magnitude, seeing)
