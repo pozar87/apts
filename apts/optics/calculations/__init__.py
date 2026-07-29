@@ -5,7 +5,12 @@ from .atmospheric import (
 )
 from .photometry import calculate_sky_flux, calculate_object_flux, calculate_snr
 from .exposure import calculate_npf_rule, calculate_field_rotation_rate
-from .resolution import calculate_airy_disk_diameter
+from .resolution import (
+    calculate_airy_disk_diameter,
+    calculate_critical_focus_zone,
+    calculate_nyquist_focal_ratio,
+    calculate_psf_peak_fraction,
+)
 from .eyepiece import calculate_exit_pupil, calculate_brightness
 from .geometric import (
     barlows_multiplications,
@@ -24,6 +29,9 @@ __all__ = [
     "calculate_npf_rule",
     "calculate_field_rotation_rate",
     "calculate_airy_disk_diameter",
+    "calculate_critical_focus_zone",
+    "calculate_nyquist_focal_ratio",
+    "calculate_psf_peak_fraction",
     "calculate_exit_pupil",
     "calculate_brightness",
     "barlows_multiplications",
