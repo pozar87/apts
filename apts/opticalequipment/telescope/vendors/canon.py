@@ -16,11 +16,13 @@ class CanonTelescope(Telescope):
             "bf_role": "",
         },
         "Canon_EF_135mm_f_2L": {
+            "aperture_mm": 67.5, # Verified via Canon Europe spec sheet (135mm f/2 => 135/2 = 67.5mm) - https://www.canon-europe.com/lenses/ef-135mm-f-2l-usm-lens/specification.html
             "brand": "Canon",
+            "focal_length_mm": 135, # Verified via Canon Europe spec sheet
             "name": "EF 135mm f/2L",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 750,
+            "mass": 750, # Verified via Canon Europe spec sheet
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
@@ -302,11 +304,13 @@ class CanonTelescope(Telescope):
             "bf_role": "",
         },
         "Canon_EF_135mm_f_2L_USM": {
+            "aperture_mm": 67.5, # Verified via Canon Europe spec sheet (135mm f/2 => 135/2 = 67.5mm) - https://www.canon-europe.com/lenses/ef-135mm-f-2l-usm-lens/specification.html
             "brand": "Canon",
+            "focal_length_mm": 135, # Verified via Canon Europe spec sheet
             "name": "EF 135mm f/2L USM",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 750,
+            "mass": 750, # Verified via Canon Europe spec sheet
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
