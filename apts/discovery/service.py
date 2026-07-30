@@ -7,12 +7,10 @@ import pandas as pd
 from ..constants import FilterStrategy, ObjectTableLabels
 from ..optics.utils import OpticsUtils
 from ..scoring import SuitabilityScorer
-from ..utils.astronomy import (
-    calculate_refraction,
-    vectorized_geometric_altaz,
-    vectorized_angular_separation,
-    vectorized_geometric_imaging_duration,
-)
+from ..utils.astronomy.refraction import calculate_refraction
+from ..utils.astronomy.altaz import vectorized_geometric_altaz
+from ..utils.astronomy.separation import vectorized_angular_separation
+from ..utils.astronomy.calculations import vectorized_geometric_imaging_duration
 
 logger = logging.getLogger(__name__)
 

@@ -194,7 +194,7 @@ def find_meteor_showers(observer, start_date, end_date):
 
         # Import topocentric coordinate extractor and atmospheric refraction
         from .visibility.culmination import _get_observer_coords
-        from ..utils.astronomy import calculate_refraction
+        from ..utils.astronomy.refraction import calculate_refraction
 
         lat_deg, lon_hours = _get_observer_coords(observer)
         lon_decimal = lon_hours * 15.0

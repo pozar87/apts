@@ -7,7 +7,8 @@ import pandas as pd
 from skyfield.api import Star
 
 from ..constants import ObjectTableLabels
-from ..utils.astronomy import calculate_refraction, vectorized_geometric_altaz
+from ..utils.astronomy.refraction import calculate_refraction
+from ..utils.astronomy.altaz import vectorized_geometric_altaz
 from ..skyfield_searches.utils import fast_altaz
 
 
