@@ -47,19 +47,19 @@ class PirateWeather(WeatherProvider):
                 "ozone",
             ]
             if "hourly" in json_data and "data" in json_data["hourly"]:
-                raw_data = [
-                    [
-                        (item[column] if column in item.keys() else "none")
-                        for column in columns
-                    ]
-                    for item in json_data["hourly"]["data"]
-                ]
+                # Optimization: Load the list of dictionaries directly into a DataFrame for extreme speed.
+                # This bypasses the slow, double-nested Python loop over item.keys().
+                df_raw = pd.DataFrame(json_data["hourly"]["data"])
+                # Ensure all requested columns exist in the DataFrame.
+                for col in columns:
+                    if col not in df_raw.columns:
+                        df_raw[col] = "none"
+                result = df_raw[columns].fillna("none")
             else:
                 logger.error(
                     f"Missing 'hourly.data' in weather data. Full response: {json_data}"
                 )
                 return self._empty_df()
-            result = pd.DataFrame(raw_data, columns=pd.Index(columns))
             # Convert units
             result["precipProbability"] *= 100
             result["cloudCover"] *= 100
