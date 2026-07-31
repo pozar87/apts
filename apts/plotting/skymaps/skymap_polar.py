@@ -7,15 +7,7 @@ from skyfield.units import Angle
 
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
-from apts.plotting.skymap_objects import (
-    _plot_bright_stars_on_skymap,
-    _plot_messier_on_skymap,
-    _plot_ngc_on_skymap,
-    _plot_planets_on_skymap,
-    _plot_solar_system_object_on_skymap,
-    _plot_stars_on_skymap,
-)
-from .utils import setup_polar_ax, parse_target_geometry
+from .utils import setup_polar_ax, parse_target_geometry, plot_skymap_catalogs
 
 if TYPE_CHECKING:
     from ...observations import Observation
@@ -206,116 +198,6 @@ def _plot_polar_visibility_overlay(
         _plot_polar_equatorial_overlay(observation, ax, good_condition_color, observer, is_sh)
 
 
-def _plot_polar_skymap_objects(
-    observation: "Observation",
-    ax: axes.Axes,
-    observer: Any,
-    style: dict,
-    target_name: str,
-    target_object: Any,
-    star_magnitude_limit: Optional[float],
-    plot_stars: bool,
-    plot_messier: bool,
-    plot_ngc: bool,
-    plot_planets: bool,
-    plot_sun: bool,
-    plot_moon: bool,
-    flipped_horizontally: bool,
-    flipped_vertically: bool,
-    coordinate_system: CoordinateSystem,
-    effective_dark_mode: bool,
-):
-    """Plots various celestial objects (stars, Messier, NGC, planets, Sun, Moon) on the skymap."""
-    if plot_stars:
-        _plot_stars_on_skymap(
-            observation,
-            ax,
-            observer,
-            star_magnitude_limit,
-            is_polar=True,
-            style=style,
-            zoom_deg=None,
-            target_object=target_object,
-            target_name=target_name,
-            coordinate_system=coordinate_system,
-        )
-        _plot_bright_stars_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            style=style,
-            zoom_deg=None,
-            coordinate_system=coordinate_system,
-            target_name=target_name,
-        )
-    if plot_messier:
-        _plot_messier_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            target_name=target_name,
-            flipped_horizontally=flipped_horizontally,
-            flipped_vertically=flipped_vertically,
-            coordinate_system=coordinate_system,
-        )
-    if plot_ngc:
-        _plot_ngc_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            target_name=target_name,
-            star_magnitude_limit=star_magnitude_limit,
-            zoom_deg=None,
-            target_object=target_object,
-            flipped_horizontally=flipped_horizontally,
-            flipped_vertically=flipped_vertically,
-            coordinate_system=coordinate_system,
-        )
-    if plot_planets:
-        _plot_planets_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            effective_dark_mode=effective_dark_mode,
-            style=style,
-            target_name=target_name,
-            coordinate_system=coordinate_system,
-        )
-    if plot_sun and target_name != "Sun":
-        _plot_solar_system_object_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            style=style,
-            object_name="Sun",
-            coordinate_system=coordinate_system,
-        )
-    if plot_moon and target_name != "Moon":
-        _plot_solar_system_object_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            style=style,
-            object_name="Moon",
-            coordinate_system=coordinate_system,
-        )
-    if observation.local_planets.find_by_name(target_name) is not None:
-        _plot_solar_system_object_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=True,
-            style=style,
-            object_name=target_name,
-            is_target=True,
-            coordinate_system=coordinate_system,
-        )
 
 
 def _plot_polar_skymap_target(
@@ -441,24 +323,26 @@ def _generate_polar_skymap(
         good_condition_color,
     )
 
-    _plot_polar_skymap_objects(
+    plot_skymap_catalogs(
         observation,
         ax,
         observer,
         style,
         target_name,
         target_object,
-        star_magnitude_limit,
-        plot_stars,
-        plot_messier,
-        plot_ngc,
-        plot_planets,
-        plot_sun,
-        plot_moon,
-        flipped_horizontally,
-        flipped_vertically,
-        coordinate_system,
-        effective_dark_mode,
+        is_polar=True,
+        coordinate_system=coordinate_system,
+        zoom_deg=None,
+        star_magnitude_limit=star_magnitude_limit,
+        effective_dark_mode=effective_dark_mode,
+        flipped_horizontally=flipped_horizontally,
+        flipped_vertically=flipped_vertically,
+        plot_stars=plot_stars,
+        plot_messier=plot_messier,
+        plot_ngc=plot_ngc,
+        plot_planets=plot_planets,
+        plot_sun=plot_sun,
+        plot_moon=plot_moon,
     )
 
     _plot_polar_skymap_target(
