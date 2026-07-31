@@ -7,12 +7,7 @@ from matplotlib.patches import Ellipse
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
 from apts.plotting.skymap_objects import (
-    _plot_bright_stars_on_skymap,
-    _plot_messier_on_skymap,
-    _plot_ngc_on_skymap,
-    _plot_planets_on_skymap,
     _plot_solar_system_object_on_skymap,
-    _plot_stars_on_skymap,
 )
 from apts.plotting.utils import (
     get_brightness_color,
@@ -20,12 +15,12 @@ from apts.plotting.utils import (
     calculate_ellipse_angle,
 )
 
-from ...constants import ObjectTableLabels
 from .utils import (
     setup_zoom_ax,
     parse_target_geometry,
     calculate_target_ellipse_angle,
     get_target_plot_coordinates,
+    plot_skymap_catalogs,
 )
 
 if TYPE_CHECKING:
@@ -82,25 +77,26 @@ def _generate_zoom_skymap(
     if coordinate_system == CoordinateSystem.HORIZONTAL:
         _plot_horizon(ax, observation, target_alt, target_az, zoom_deg, style)
 
-    _plot_catalogs(
+    plot_skymap_catalogs(
         observation,
         ax,
         observer,
         style,
         target_name,
         target_object,
-        coordinate_system,
-        zoom_deg,
-        star_magnitude_limit,
-        effective_dark_mode,
-        flipped_horizontally,
-        flipped_vertically,
-        plot_stars,
-        plot_messier,
-        plot_ngc,
-        plot_planets,
-        plot_sun,
-        plot_moon,
+        is_polar=False,
+        coordinate_system=coordinate_system,
+        zoom_deg=zoom_deg,
+        star_magnitude_limit=star_magnitude_limit,
+        effective_dark_mode=effective_dark_mode,
+        flipped_horizontally=flipped_horizontally,
+        flipped_vertically=flipped_vertically,
+        plot_stars=plot_stars,
+        plot_messier=plot_messier,
+        plot_ngc=plot_ngc,
+        plot_planets=plot_planets,
+        plot_sun=plot_sun,
+        plot_moon=plot_moon,
     )
 
     _draw_target(
@@ -197,105 +193,6 @@ def _plot_horizon(
         )
 
 
-def _plot_catalogs(
-    observation: "Observation",
-    ax: axes.Axes,
-    observer: Any,
-    style: dict,
-    target_name: str,
-    target_object: Any,
-    coordinate_system: CoordinateSystem,
-    zoom_deg: float,
-    star_magnitude_limit: Optional[float],
-    effective_dark_mode: bool,
-    flipped_horizontally: bool,
-    flipped_vertically: bool,
-    plot_stars: bool,
-    plot_messier: bool,
-    plot_ngc: bool,
-    plot_planets: bool,
-    plot_sun: bool,
-    plot_moon: bool,
-):
-    if plot_stars:
-        _plot_stars_on_skymap(
-            observation,
-            ax,
-            observer,
-            star_magnitude_limit,
-            is_polar=False,
-            style=style,
-            zoom_deg=zoom_deg,
-            target_object=target_object,
-            target_name=target_name,
-            coordinate_system=coordinate_system,
-        )
-        _plot_bright_stars_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            style=style,
-            zoom_deg=zoom_deg,
-            coordinate_system=coordinate_system,
-            target_name=target_name,
-        )
-    if plot_messier:
-        _plot_messier_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            target_name=target_name,
-            flipped_horizontally=flipped_horizontally,
-            flipped_vertically=flipped_vertically,
-            coordinate_system=coordinate_system,
-        )
-    if plot_ngc:
-        _plot_ngc_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            target_name=target_name,
-            star_magnitude_limit=star_magnitude_limit,
-            zoom_deg=zoom_deg,
-            target_object=target_object,
-            flipped_horizontally=flipped_horizontally,
-            flipped_vertically=flipped_vertically,
-            coordinate_system=coordinate_system,
-        )
-    if plot_planets:
-        _plot_planets_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            effective_dark_mode=effective_dark_mode,
-            style=style,
-            target_name=target_name,
-            coordinate_system=coordinate_system,
-        )
-    if plot_sun and target_name != "Sun":
-        _plot_solar_system_object_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            style=style,
-            object_name="Sun",
-            coordinate_system=coordinate_system,
-        )
-    if plot_moon and target_name != "Moon":
-        _plot_solar_system_object_on_skymap(
-            observation,
-            ax,
-            observer,
-            is_polar=False,
-            style=style,
-            object_name="Moon",
-            coordinate_system=coordinate_system,
-        )
 
 
 def _draw_catalog_target_ellipse(

@@ -7,6 +7,14 @@ from matplotlib import axes
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
 from apts.plotting.utils import calculate_ellipse_angle, calculate_parallactic_angle
+from apts.plotting.skymap_objects import (
+    _plot_bright_stars_on_skymap,
+    _plot_messier_on_skymap,
+    _plot_ngc_on_skymap,
+    _plot_planets_on_skymap,
+    _plot_solar_system_object_on_skymap,
+    _plot_stars_on_skymap,
+)
 
 from ...constants import ObjectTableLabels
 
@@ -207,3 +215,117 @@ def get_target_plot_coordinates(
         return float(target_az.degrees), float(target_alt.degrees)
     else:
         return float(target_ra.hours), float(target_dec.degrees)
+
+
+def plot_skymap_catalogs(
+    observation: "Observation",
+    ax: axes.Axes,
+    observer: Any,
+    style: dict,
+    target_name: str,
+    target_object: Any,
+    is_polar: bool,
+    coordinate_system: CoordinateSystem,
+    zoom_deg: Optional[float],
+    star_magnitude_limit: Optional[float],
+    effective_dark_mode: bool,
+    flipped_horizontally: bool,
+    flipped_vertically: bool,
+    plot_stars: bool,
+    plot_messier: bool,
+    plot_ngc: bool,
+    plot_planets: bool,
+    plot_sun: bool,
+    plot_moon: bool,
+):
+    """Unified function to plot catalog objects (stars, Messier, NGC, planets, Sun, Moon) on a polar or zoom skymap."""
+    if plot_stars:
+        _plot_stars_on_skymap(
+            observation,
+            ax,
+            observer,
+            star_magnitude_limit,
+            is_polar=is_polar,
+            style=style,
+            zoom_deg=zoom_deg,
+            target_object=target_object,
+            target_name=target_name,
+            coordinate_system=coordinate_system,
+        )
+        _plot_bright_stars_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            style=style,
+            zoom_deg=zoom_deg,
+            coordinate_system=coordinate_system,
+            target_name=target_name,
+        )
+    if plot_messier:
+        _plot_messier_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            target_name=target_name,
+            flipped_horizontally=flipped_horizontally,
+            flipped_vertically=flipped_vertically,
+            coordinate_system=coordinate_system,
+        )
+    if plot_ngc:
+        _plot_ngc_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            target_name=target_name,
+            star_magnitude_limit=star_magnitude_limit,
+            zoom_deg=zoom_deg,
+            target_object=target_object,
+            flipped_horizontally=flipped_horizontally,
+            flipped_vertically=flipped_vertically,
+            coordinate_system=coordinate_system,
+        )
+    if plot_planets:
+        _plot_planets_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            effective_dark_mode=effective_dark_mode,
+            style=style,
+            target_name=target_name,
+            coordinate_system=coordinate_system,
+        )
+    if plot_sun and target_name != "Sun":
+        _plot_solar_system_object_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            style=style,
+            object_name="Sun",
+            coordinate_system=coordinate_system,
+        )
+    if plot_moon and target_name != "Moon":
+        _plot_solar_system_object_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=is_polar,
+            style=style,
+            object_name="Moon",
+            coordinate_system=coordinate_system,
+        )
+    if is_polar and observation.local_planets.find_by_name(target_name) is not None:
+        _plot_solar_system_object_on_skymap(
+            observation,
+            ax,
+            observer,
+            is_polar=True,
+            style=style,
+            object_name=target_name,
+            is_target=True,
+            coordinate_system=coordinate_system,
+        )
