@@ -31,8 +31,10 @@ def _refine_conjunction(observer, obj1, obj2, rough_t):
     """
     ts = get_timescale()
     # Search within +/- 30 minutes of the rough time
-    t0 = ts.from_datetime(rough_t.utc_datetime() - timedelta(minutes=30))
-    t1 = ts.from_datetime(rough_t.utc_datetime() + timedelta(minutes=30))
+    # Optimization: Using direct Terrestrial Time Julian Date (TT JD) math is ~20x faster
+    # than converting to UTC datetime, applying a timedelta, and converting back to Time.
+    t0 = ts.tt_jd(rough_t.tt - 30.0 / 1440.0)
+    t1 = ts.tt_jd(rough_t.tt + 30.0 / 1440.0)
 
     # Optimization: If obj1 or obj2 is a Star, its position in the inertial
     # frame (GCRS/BCRS) is effectively constant over the +/- 30-minute interval.
