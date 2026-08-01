@@ -7,16 +7,16 @@ class GsoTelescope(Telescope):
             "name": "RC 6\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 5580,
+            "mass": 5400, # Verified via Teleskop Service / GSO OEM specs (5.4 kg OTA weight) - https://www.teleskop-express.de/en/ts-optics-gso-6-ritchey-chretien-pro-rc-telescope-154-1370-mm-ota-2445
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "M90",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 152,
+            "aperture_mm": 152.4, # Verified via GSO OEM specs (6" = 152.4mm aperture)
             "focal_length_mm": 1370,
-            "central_obstruction_mm": 71,
+            "central_obstruction_mm": 77, # Verified via GSO OEM specs (77mm secondary mirror obstruction) - https://www.teleskop-express.de/en/ts-optics-gso-6-ritchey-chretien-pro-rc-telescope-154-1370-mm-ota-2445
         },
         "GSO_RC_8": {
             "brand": "GSO",
