@@ -2,6 +2,7 @@ import math
 from typing import Optional, Any, Union, cast, TYPE_CHECKING
 import numpy
 from ...units import get_unit_registry
+from ..calculations import planetary as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity
@@ -30,13 +31,12 @@ class PlanetaryMixIn:
         )
         p_scale = self.pixel_scale()
 
-        if p_scale is None or p_scale.magnitude == 0:
+        if p_scale is None:
             return None
 
-        res = angular_diameter / p_scale.magnitude
-        if numpy.isscalar(res):
-            return float(cast(Any, res))
-        return cast(numpy.ndarray, res)
+        return optics_utils.calculate_planetary_size_in_pixels(
+            angular_diameter, p_scale.magnitude
+        )
 
     def saturn_ring_size_in_pixels(
         self, time: Any
@@ -50,18 +50,12 @@ class PlanetaryMixIn:
         details = planetary.get_saturn_ring_details(time)
         p_scale = self.pixel_scale()
 
-        if p_scale is None or p_scale.magnitude == 0:
+        if p_scale is None:
             return None
 
-        major = details["major_axis_arcsec"] / p_scale.magnitude
-        minor = details["minor_axis_arcsec"] / p_scale.magnitude
-
-        def _maybe_cast(val):
-            if numpy.isscalar(val):
-                return float(cast(Any, val))
-            return cast(numpy.ndarray, val)
-
-        return _maybe_cast(major), _maybe_cast(minor)
+        return optics_utils.calculate_saturn_ring_size_in_pixels(
+            details["major_axis_arcsec"], details["minor_axis_arcsec"], p_scale.magnitude
+        )
 
     def planetary_phase_angle(
         self, planet_name: str, time: Any
@@ -197,18 +191,15 @@ class PlanetaryMixIn:
             # Fallback for planets without pole models (e.g., Mercury, Venus)
             cos_de = 1.0
 
-        if r_eq <= 0 or period <= 0:
+        t_max = optics_utils.calculate_max_planetary_rotation_duration(
+            pixel_scale_magnitude=scale,
+            r_eq=r_eq,
+            period=period,
+            cos_de=cos_de,
+            tolerance_pixels=tolerance_pixels,
+        )
+
+        if t_max is None:
             return None
-
-        # Angular velocity of a point at the center of the disk as seen from Earth (arcsec/s)
-        # v_arcsec = (2 * pi * r_eq_arcsec * cos(De)) / T
-        omega = (2.0 * math.pi * r_eq * cos_de) / period
-
-        if omega <= 1e-12:
-            return (
-                3600 * get_unit_registry().second
-            )  # Cap at 1 hour for very slow rotators
-
-        t_max = (tolerance_pixels * scale) / omega
 
         return t_max * get_unit_registry().second
