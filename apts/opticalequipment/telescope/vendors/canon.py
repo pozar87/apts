@@ -3,17 +3,20 @@ from ..base import Telescope
 class CanonTelescope(Telescope):
     _DATABASE = {
         "Canon_EF_200mm_f_2_8L_II": {
+            "aperture_mm": 71.42857, # Verified via Canon Europe spec sheet (200mm f/2.8 => 200 / 2.8 = 71.42857mm) - https://www.canon-europe.com/lenses/ef-200mm-f-2-8l-ii-usm-lens/specification.html
             "brand": "Canon",
+            "focal_length_mm": 200, # Verified via Canon Europe spec sheet
             "name": "EF 200mm f/2.8L II",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 795,
+            "mass": 765, # Verified via Canon Europe spec sheet
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
+            "central_obstruction_mm": 0,
         },
         "Canon_EF_135mm_f_2L": {
             "aperture_mm": 67.5, # Verified via Canon Europe spec sheet (135mm f/2 => 135/2 = 67.5mm) - https://www.canon-europe.com/lenses/ef-135mm-f-2l-usm-lens/specification.html
@@ -226,17 +229,20 @@ class CanonTelescope(Telescope):
             "bf_role": "",
         },
         "Canon_EF_200mm_f_2_8L_II_USM": {
+            "aperture_mm": 71.42857, # Verified via Canon Europe spec sheet (200mm f/2.8 => 200 / 2.8 = 71.42857mm) - https://www.canon-europe.com/lenses/ef-200mm-f-2-8l-ii-usm-lens/specification.html
             "brand": "Canon",
+            "focal_length_mm": 200, # Verified via Canon Europe spec sheet
             "name": "EF 200mm f/2.8L II USM",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 795,
+            "mass": 765, # Verified via Canon Europe spec sheet
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
+            "central_obstruction_mm": 0,
         },
         "Canon_EF_50mm_f_1_4_USM": {
             "brand": "Canon",
