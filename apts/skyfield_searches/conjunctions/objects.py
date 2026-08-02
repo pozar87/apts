@@ -98,12 +98,25 @@ def find_planet_messier_conjunctions(
         "neptune barycenter",
     ]
 
-    # Optimized path: avoid iterative Star object conversion and coordinate extraction.
-    # We use pre-calculated float coordinates to create a single vectorized Star object.
-    messier_names = catalogs.MESSIER["Messier"].to_numpy()
-    messier_vector = Star(
-        ra_hours=catalogs.MESSIER["ra_hours"].to_numpy(),
-        dec_degrees=catalogs.MESSIER["dec_degrees"].to_numpy(),
+    # Pre-filter Messier objects close to the ecliptic (within 10 degrees)
+    # Planets stay within ~7 degrees of the ecliptic (e.g. Mercury), and threshold is 3.0 degrees.
+    # Any object with absolute ecliptic latitude >= 10.0 degrees can never be in conjunction.
+    ts = get_timescale()
+    t_ref = ts.utc(start_date)
+
+    v_ra_hours = catalogs.MESSIER["ra_hours"].to_numpy()
+    v_dec_degrees = catalogs.MESSIER["dec_degrees"].to_numpy()
+    messier_names_all = catalogs.MESSIER["Messier"].to_numpy()
+
+    messier_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
+    spos_at_t_ref = observer.at(t_ref).observe(messier_vector_all)
+    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
+
+    mask = np.abs(lats.degrees) < 10.0
+
+    messier_names_filtered = messier_names_all[mask]
+    messier_vector_filtered = Star(
+        ra_hours=v_ra_hours[mask], dec_degrees=v_dec_degrees[mask]
     )
 
     events = []
@@ -113,12 +126,12 @@ def find_planet_messier_conjunctions(
         conjunctions = find_conjunctions_with_stars(
             observer,
             p_name,
-            star_data=messier_vector,
+            star_data=messier_vector_filtered,
             start_date=start_date,
             end_date=end_date,
             threshold_degrees=3.0,
             precomputed_positions=precomputed_positions,
-            star_names=messier_names,
+            star_names=messier_names_filtered,
         )
         for conj in conjunctions:
             events.append(
