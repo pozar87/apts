@@ -6,7 +6,7 @@ from apts.light_pollution import LightPollution
 class TestLightPollution(unittest.TestCase):
     def setUp(self):
         # We patch Image.open in the setUp to avoid loading the actual image in every test
-        self.patcher = patch("apts.light_pollution.Image.open")
+        self.patcher = patch("apts.light_pollution.core.Image.open")
         self.mock_image_open = self.patcher.start()
         self.mock_image = MagicMock()
         self.mock_image.size = (14400, 5600)  # Set expected dimensions
@@ -15,7 +15,7 @@ class TestLightPollution(unittest.TestCase):
         self.mock_image_open.return_value = self.mock_image
 
         # Patch API calls and settings to avoid network access during tests
-        self.patch_settings = patch("apts.light_pollution.get_light_pollution_settings")
+        self.patch_settings = patch("apts.light_pollution.core.get_light_pollution_settings")
         self.mock_get_settings = self.patch_settings.start()
         self.mock_get_settings.return_value = {"use_online_api": False}
 
@@ -75,21 +75,21 @@ class TestLightPollution(unittest.TestCase):
         result = self.lp.get_light_pollution()
         self.assertEqual(result, -1)
 
-    @patch("apts.light_pollution.LightPollution._get_from_api")
+    @patch("apts.light_pollution.core.LightPollution._get_from_api")
     def test_get_light_pollution_api(self, mock_get_from_api):
         # Test getting light pollution from API
         mock_get_from_api.return_value = {"bortleClass": 4.5}
         result = self.lp.get_light_pollution()
         self.assertEqual(result, 4.5)
 
-    @patch("apts.light_pollution.LightPollution._get_from_api")
+    @patch("apts.light_pollution.core.LightPollution._get_from_api")
     def test_get_base_sqm_api(self, mock_get_from_api):
         # Test getting SQM from API
         mock_get_from_api.return_value = {"sqm": 20.5}
         result = self.lp.get_base_sqm()
         self.assertEqual(result, 20.5)
 
-    @patch("apts.light_pollution.LightPollution._get_from_api")
+    @patch("apts.light_pollution.core.LightPollution._get_from_api")
     def test_get_base_sqm_fallback(self, mock_get_from_api):
         # Test fallback to Bortle if SQM is missing from API
         mock_get_from_api.return_value = {"bortleClass": 1}
