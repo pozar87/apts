@@ -5,11 +5,11 @@ from apts.units import get_unit_registry
 class TestGsoSpecs(unittest.TestCase):
     def test_gso_rc_6(self):
         telescope = GsoTelescope.GSO_RC_6()
-        self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 152)
+        self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 152.4)
         self.assertEqual(telescope.focal_length.to(get_unit_registry().mm).magnitude, 1370)
-        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 5580)
-        self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 71)
-        self.assertAlmostEqual(telescope.focal_ratio().magnitude, 9.01, places=2)
+        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 5400)
+        self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 77)
+        self.assertAlmostEqual(telescope.focal_ratio().magnitude, 8.99, places=2)
 
     def test_gso_newton_8_f_4(self):
         telescope = GsoTelescope.GSO_Newton_8_f_4()
