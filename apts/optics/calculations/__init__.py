@@ -18,6 +18,11 @@ from .geometric import (
     calculate_field_of_view,
     calculate_fov_ratio,
 )
+from .planetary import (
+    calculate_planetary_size_in_pixels,
+    calculate_saturn_ring_size_in_pixels,
+    calculate_max_planetary_rotation_duration,
+)
 
 __all__ = [
     "calculate_airmass",
@@ -38,4 +43,7 @@ __all__ = [
     "calculate_zoom",
     "calculate_field_of_view",
     "calculate_fov_ratio",
+    "calculate_planetary_size_in_pixels",
+    "calculate_saturn_ring_size_in_pixels",
+    "calculate_max_planetary_rotation_duration",
 ]
