@@ -70,16 +70,10 @@ class ExposureMixIn:
             return None
 
         scale = scale_q.magnitude  # arcsec/pixel
-        if scale == 0:
-            return 0.0
-
-        # Sidereal rotation rate in arcseconds per second
-        sidereal_rate = 15.041067
-
-        cos_dec = math.cos(math.radians(declination))
-        trailing_arcsec = sidereal_rate * exposure_time * cos_dec
-
-        return float(trailing_arcsec / scale)
+        res = optics_utils.calculate_estimated_star_trailing(
+            exposure_time, declination, scale
+        )
+        return float(res)
 
     def field_rotation_rate(
         self, latitude_deg: float, azimuth_deg: float, altitude_deg: float
@@ -120,19 +114,17 @@ class ExposureMixIn:
             return None
         rot_rate = rot_rate_q.to("arcsecond/second").magnitude
 
-        if rot_rate < 1e-10:
-            return 3600 * get_unit_registry().second
-
-        # Pixel scale in arcsec/pixel
+        # Distance from center to corner in pixels
         p_scale = self.pixel_scale()
         if p_scale is None:
             return None
 
-        # Distance from center to corner in pixels
-        # r = sqrt((width/2)^2 + (height/2)^2)
-        r = 0.5 * numpy.sqrt(self.output.width**2 + self.output.height**2)
-
-        t = (tolerance_pixels * astronomy.RAD_TO_ARCSEC) / (r * rot_rate)
+        t = optics_utils.calculate_max_exposure_alt_az(
+            rot_rate,
+            float(self.output.width),
+            float(self.output.height),
+            tolerance_pixels,
+        )
 
         return t * get_unit_registry().second
 
@@ -149,21 +141,13 @@ class ExposureMixIn:
         if f_actual == 0:
             return 0 * get_unit_registry().second
 
+        sensor_width = None
+        sensor_height = None
         if hasattr(self.output, "sensor_width") and hasattr(
             self.output, "sensor_height"
         ):
-            # crop_factor = 43.27 / diagonal
-            # diagonal of 35mm sensor (36x24) is ~43.27mm
-            diagonal = numpy.sqrt(
-                self.output.sensor_width.to("mm").magnitude ** 2
-                + self.output.sensor_height.to("mm").magnitude ** 2
-            )
-            if diagonal == 0:
-                return (500 / f_actual) * get_unit_registry().second
-            crop_factor = 43.27 / diagonal
-            t = 500 / (f_actual * crop_factor)
-        else:
-            # Fallback for non-camera or visual setup (though less relevant)
-            t = 500 / f_actual
+            sensor_width = self.output.sensor_width.to("mm").magnitude
+            sensor_height = self.output.sensor_height.to("mm").magnitude
 
+        t = optics_utils.calculate_rule_of_500(f_actual, sensor_width, sensor_height)
         return t * get_unit_registry().second

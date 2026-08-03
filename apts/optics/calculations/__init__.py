@@ -4,7 +4,13 @@ from .atmospheric import (
     calculate_atmospheric_dispersion,
 )
 from .photometry import calculate_sky_flux, calculate_object_flux, calculate_snr
-from .exposure import calculate_npf_rule, calculate_field_rotation_rate
+from .exposure import (
+    calculate_npf_rule,
+    calculate_field_rotation_rate,
+    calculate_estimated_star_trailing,
+    calculate_max_exposure_alt_az,
+    calculate_rule_of_500,
+)
 from .resolution import (
     calculate_airy_disk_diameter,
     calculate_critical_focus_zone,
@@ -33,6 +39,9 @@ __all__ = [
     "calculate_snr",
     "calculate_npf_rule",
     "calculate_field_rotation_rate",
+    "calculate_estimated_star_trailing",
+    "calculate_max_exposure_alt_az",
+    "calculate_rule_of_500",
     "calculate_airy_disk_diameter",
     "calculate_critical_focus_zone",
     "calculate_nyquist_focal_ratio",
