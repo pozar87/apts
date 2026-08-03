@@ -112,17 +112,20 @@ class CanonTelescope(Telescope):
             "bf_role": "",
         },
         "Canon_EF_400mm_f_5_6L": {
+            "aperture_mm": 71.42857, # Verified via Canon USA spec sheet (400mm f/5.6 => 400 / 5.6 = 71.42857mm) - https://www.usa.canon.com/support/p/ef-400mm-f-5-6l-usm
             "brand": "Canon",
+            "focal_length_mm": 400, # Verified via Canon USA spec sheet
             "name": "EF 400mm f/5.6L",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 1250,
+            "mass": 1250, # Verified via Canon USA spec sheet (1250g)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
+            "central_obstruction_mm": 0, # Verified via Canon USA spec sheet
         },
         "Canon_EF_300mm_f_4L_IS": {
             "brand": "Canon",
@@ -403,17 +406,20 @@ class CanonTelescope(Telescope):
             "bf_role": "",
         },
         "Canon_EF_400mm_f_5_6L_USM": {
+            "aperture_mm": 71.42857, # Verified via Canon USA spec sheet (400mm f/5.6 => 400 / 5.6 = 71.42857mm) - https://www.usa.canon.com/support/p/ef-400mm-f-5-6l-usm
             "brand": "Canon",
+            "focal_length_mm": 400, # Verified via Canon USA spec sheet
             "name": "EF 400mm f/5.6L USM",
             "type": "type_camera_lens",
             "optical_length": 0,
-            "mass": 1250,
+            "mass": 1250, # Verified via Canon USA spec sheet (1250g)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "EOS",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
+            "central_obstruction_mm": 0, # Verified via Canon USA spec sheet
         },
         "Canon_EF_500mm_f_4L_IS_II_USM": {
             "brand": "Canon",
