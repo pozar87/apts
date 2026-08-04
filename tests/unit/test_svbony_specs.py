@@ -6,6 +6,10 @@ def test_sv503_70ed_specs():
     assert telescope.focal_length.magnitude == 420
     assert telescope.mass.magnitude == 2220
     assert telescope.central_obstruction.magnitude == 0
+    assert telescope.optical_length.magnitude == 90
+    assert telescope.backfocus.magnitude == 90
+    assert telescope.connection_type.value == "2"
+    assert telescope.connection_gender.value == "F"
 
 def test_sv503_70ed_quad_specs():
     telescope = SvbonyTelescope.SVBony_SV503_70ED_Quad()

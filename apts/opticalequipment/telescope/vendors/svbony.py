@@ -6,17 +6,18 @@ class SvbonyTelescope(Telescope):
             "brand": "SVBony",
             "name": "SV503 70ED",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 2220,
+            "optical_length": 90, # Verified via Svbony (Back Focus Length)
+            "mass": 2220, # Verified via Svbony (Tube weight with rings)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via Svbony (2" dual-speed rack and pinion focuser)
+            "cside_gender": "Female",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 70,
             "focal_length_mm": 420,
             "central_obstruction_mm": 0,
+            # Source: https://telescopescanada.ca/products/svbony-sv503-telescope-ed-70mm-f6-doublet-refractor-for-astronomy-sv503
         },
         "SVBony_SV503_70ED_Quad": {
             "brand": "SVBony",
