@@ -8,7 +8,7 @@ from apts.constants.plot import CoordinateSystem
 from apts.utils.coordinates import parse_ra_to_hours, parse_dec_to_degrees
 
 from ...constants import ObjectTableLabels
-from .utils import _plot_celestial_object
+from .utils import _plot_celestial_object, _filter_by_proximity
 
 if TYPE_CHECKING:
     from apts.observations import Observation
@@ -40,58 +40,7 @@ def _filter_ngc_by_zoom(
         visible_ngc = _ensure_ngc_coordinates(visible_ngc)
 
         if zoom_deg is not None and target_object is not None:
-            if hasattr(target_object, "ra"):
-                ra_center_hours = target_object.ra.hours
-                dec_center_degrees = target_object.dec.degrees
-            else:
-                # It's a planet or other solar system body
-                ra_p, dec_p, _ = observer.observe(target_object).radec()
-                ra_center_hours = ra_p.hours
-                dec_center_degrees = dec_p.degrees
-
-            deg_margin = zoom_deg * 2
-            ra_margin_hours = deg_margin / 15.0
-            ra_min = ra_center_hours - ra_margin_hours
-            ra_max = ra_center_hours + ra_margin_hours
-            dec_min = dec_center_degrees - deg_margin
-            dec_max = dec_center_degrees + deg_margin
-
-            ngc_in_box = visible_ngc[
-                (visible_ngc["ra_hours"] >= ra_min)
-                & (visible_ngc["ra_hours"] <= ra_max)
-                & (visible_ngc["dec_degrees"] >= dec_min)
-                & (visible_ngc["dec_degrees"] <= dec_max)
-            ]
-
-            if not ngc_in_box.empty:
-                # Use target_object's position directly
-                observed_center = observer.observe(target_object)
-
-                # Vectorized Skyfield observation for separation calculation
-                ngc_in_box_copy = ngc_in_box.copy()
-                ngc_in_box_copy["epoch_year"] = 2000.0
-                all_ngc_stars = Star.from_dataframe(ngc_in_box_copy)
-                observed_all_ngc = observer.observe(all_ngc_stars)
-
-                vec_center_np = observed_center.position.au
-                vec_all_ngc_np = observed_all_ngc.position.au
-
-                dot_product = numpy.dot(vec_center_np, vec_all_ngc_np)
-
-                len_center = numpy.linalg.norm(vec_center_np)
-                len_all_ngc = numpy.linalg.norm(vec_all_ngc_np, axis=0)
-
-                cosine_angle = dot_product / (len_center * len_all_ngc)
-                cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
-
-                separation_radians = numpy.arccos(cosine_angle)
-                separation = numpy.degrees(separation_radians)
-                nearby_mask = numpy.atleast_1d(separation < zoom_deg)
-                # Use integer indexing to avoid KeyError with boolean arrays on some pandas versions
-                # or when indexing with MagicMocks in tests.
-                visible_ngc = ngc_in_box.iloc[numpy.where(nearby_mask)[0]].copy()
-            else:
-                visible_ngc = ngc_in_box
+            visible_ngc = _filter_by_proximity(visible_ngc, observer, target_object, zoom_deg)
     return cast(pd.DataFrame, visible_ngc)
 
 

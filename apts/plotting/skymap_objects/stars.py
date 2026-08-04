@@ -5,6 +5,7 @@ import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
+from .utils import _filter_by_proximity
 
 if TYPE_CHECKING:
     from apts.observations import Observation
@@ -60,62 +61,7 @@ def _filter_stars_by_proximity(
     zoom_deg: float,
 ) -> pd.DataFrame:
     """Filters stars to those within zoom_deg of the target_object."""
-    if stars.empty:
-        return stars
-
-    # Optimization: pre-filter stars to a bounding box before expensive separation calculation
-    if hasattr(target_object, "ra"):
-        ra_center_hours = target_object.ra.hours
-        dec_center_degrees = target_object.dec.degrees
-    else:
-        # It's a planet or other solar system body
-        ra, dec, _ = observer.observe(target_object).radec()
-        ra_center_hours = ra.hours
-        dec_center_degrees = dec.degrees
-
-    # Create a generous bounding box around the target
-    deg_margin = zoom_deg * 2
-    ra_margin_hours = deg_margin / 15.0
-
-    ra_min = ra_center_hours - ra_margin_hours
-    ra_max = ra_center_hours + ra_margin_hours
-    dec_min = dec_center_degrees - deg_margin
-    dec_max = dec_center_degrees + deg_margin
-
-    # Simple bounding box filter
-    stars_in_box = stars[
-        (stars["ra_hours"] >= ra_min)
-        & (stars["ra_hours"] <= ra_max)
-        & (stars["dec_degrees"] >= dec_min)
-        & (stars["dec_degrees"] <= dec_max)
-    ]
-
-    if stars_in_box.empty:
-        return cast(pd.DataFrame, stars_in_box)
-
-    # Precise separation calculation
-    if hasattr(target_object, "ra"):
-        center = Star(ra=target_object.ra, dec=target_object.dec)
-    else:
-        ra, dec, _ = observer.observe(target_object).radec()
-        center = Star(ra_hours=ra.hours, dec_degrees=dec.degrees)
-    observed_center = observer.observe(center)
-
-    all_stars_vectors = Star.from_dataframe(stars_in_box)
-    observed_all_stars = observer.observe(all_stars_vectors)
-
-    vec_center_np = observed_center.position.au
-    vec_all_stars_np = observed_all_stars.position.au
-
-    dot_product = numpy.dot(vec_center_np, vec_all_stars_np)
-    len_center = numpy.linalg.norm(vec_center_np, axis=0)
-    len_all_stars = numpy.linalg.norm(vec_all_stars_np, axis=0)
-
-    cosine_angle = dot_product / (len_center * len_all_stars)
-    cosine_angle = numpy.clip(cosine_angle, -1.0, 1.0)
-
-    separation = numpy.degrees(numpy.arccos(cosine_angle))
-    return cast(pd.DataFrame, stars_in_box[separation < zoom_deg])
+    return _filter_by_proximity(stars, observer, target_object, zoom_deg)
 
 
 def _apply_zoom_and_horizon_filter(
