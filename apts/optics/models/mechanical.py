@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from pint import Quantity
 
 from ...units import get_unit_registry
+from ..calculations import mechanical as optics_utils
 
 
 class MechanicalMixIn:
@@ -113,36 +114,46 @@ class MechanicalMixIn:
         if required_bf is None:
             return None
 
-        # 2. Calculate actual distance from that component's output to the sensor
-        actual_distance = 0 * get_unit_registry().mm
+        # 2. Gather magnitudes in mm for intermediate components
+        intermediate_lengths = []
         for item in path[start_index + 1 : -1]:
             item_ol = getattr(item, "optical_length", 0 * get_unit_registry().mm)
             if item_ol is not None:
-                actual_distance += item_ol
+                if hasattr(item_ol, "to"):
+                    intermediate_lengths.append(item_ol.to("mm").magnitude)
+                else:
+                    intermediate_lengths.append(float(item_ol))
+            else:
+                intermediate_lengths.append(0.0)
 
-        # 3. Add the output component's backfocus contribution
+        # 3. Output component backfocus magnitude
+        output_bf_val = 0.0
         if hasattr(self.output, "backfocus") and self.output.backfocus is not None:
-            actual_distance += self.output.backfocus
+            if hasattr(self.output.backfocus, "to"):
+                output_bf_val = self.output.backfocus.to("mm").magnitude
+            else:
+                output_bf_val = float(self.output.backfocus)
 
-        return required_bf - actual_distance
+        if hasattr(required_bf, "to"):
+            required_bf_mm = required_bf.to("mm").magnitude
+        else:
+            required_bf_mm = float(required_bf)
+
+        gap_mm = optics_utils.calculate_backfocus_gap(
+            required_bf_mm, intermediate_lengths, output_bf_val
+        )
+        return gap_mm * get_unit_registry().mm
 
     def get_image_orientation(self):
         from ...opticalequipment.telescope import Telescope
 
-        if not isinstance(self.telescope, Telescope):
-            return (False, False)
-
-        flipped_horizontally = True
-        flipped_vertically = True
-
-        for diagonal in self.diagonals:
-            if diagonal.is_erecting:
-                flipped_horizontally = not flipped_horizontally
-                flipped_vertically = not flipped_vertically
-            else:
-                flipped_vertically = not flipped_vertically
-
-        return (flipped_horizontally, flipped_vertically)
+        has_telescope = isinstance(self.telescope, Telescope)
+        diagonal_is_erecting_list = [
+            bool(getattr(diagonal, "is_erecting", False)) for diagonal in self.diagonals
+        ]
+        return optics_utils.calculate_image_orientation(
+            has_telescope, diagonal_is_erecting_list
+        )
 
     def thermal_drift(self, delta_t: float) -> Optional["Quantity"]:
         if (
@@ -150,8 +161,7 @@ class MechanicalMixIn:
             or self.telescope.tube_material is None
         ):
             return None
-        # delta_t in Celsius
-        length = self.telescope.focal_length.to("mm").magnitude
+        length_mm = self.telescope.focal_length.to("mm").magnitude
         alpha = self.telescope.tube_material.value  # m/(m*K)
-        drift = length * alpha * delta_t
+        drift = optics_utils.calculate_thermal_drift(length_mm, alpha, delta_t)
         return drift * get_unit_registry().mm
