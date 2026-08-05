@@ -44,3 +44,25 @@ def test_takahashi_toa_130nfb_audit():
     assert telescope.mass.magnitude == 12300
     assert telescope.backfocus.magnitude == 274.5
     assert telescope.optical_length.magnitude == 274.5
+
+def test_takahashi_mewlon_180c_audit():
+    """
+    Test the audited specifications for the Takahashi Mewlon-180C.
+    """
+    telescope = TakahashiTelescope.Takahashi_Mewlon_180C()
+    assert telescope.aperture.magnitude == 180
+    assert telescope.focal_length.magnitude == 2160
+    assert telescope.mass.magnitude == 6200
+    assert telescope.backfocus.magnitude == 67.2
+    assert telescope.optical_length.magnitude == 67.2
+
+def test_takahashi_mewlon_210_audit():
+    """
+    Test the audited specifications for the Takahashi Mewlon-210.
+    """
+    telescope = TakahashiTelescope.Takahashi_Mewlon_210()
+    assert telescope.aperture.magnitude == 210
+    assert telescope.focal_length.magnitude == 2415
+    assert telescope.mass.magnitude == 8100
+    assert telescope.backfocus.magnitude == 67.2
+    assert telescope.optical_length.magnitude == 67.2
