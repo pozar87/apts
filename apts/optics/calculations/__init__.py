@@ -29,6 +29,11 @@ from .planetary import (
     calculate_saturn_ring_size_in_pixels,
     calculate_max_planetary_rotation_duration,
 )
+from .mechanical import (
+    calculate_backfocus_gap,
+    calculate_image_orientation,
+    calculate_thermal_drift,
+)
 
 __all__ = [
     "calculate_airmass",
@@ -55,4 +60,7 @@ __all__ = [
     "calculate_planetary_size_in_pixels",
     "calculate_saturn_ring_size_in_pixels",
     "calculate_max_planetary_rotation_duration",
+    "calculate_backfocus_gap",
+    "calculate_image_orientation",
+    "calculate_thermal_drift",
 ]
