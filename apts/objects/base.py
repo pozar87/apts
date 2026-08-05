@@ -44,14 +44,31 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
         transits, alts, rises, sets = self._vectorized_geometric_compute(
             computed_df, observer_to_use
         )
-        computed_df[ObjectTableLabels.TRANSIT] = transits
+        # Optimization: Explicitly wrapping the lists as pd.Series with dtype=object and the correct index.
+        # This prevents Pandas from triggering expensive row-wise datetime parsing and timezone conversions.
+        computed_df[ObjectTableLabels.TRANSIT] = pd.Series(
+            transits, index=computed_df.index, dtype=object
+        )
         computed_df[ObjectTableLabels.ALTITUDE] = alts
-        computed_df[ObjectTableLabels.RISING] = rises
-        computed_df[ObjectTableLabels.SETTING] = sets
+        computed_df[ObjectTableLabels.RISING] = pd.Series(
+            rises, index=computed_df.index, dtype=object
+        )
+        computed_df[ObjectTableLabels.SETTING] = pd.Series(
+            sets, index=computed_df.index, dtype=object
+        )
 
         # Always update the master objects DataFrame to keep data in sync.
         # This handles both full catalog computations and subset-specific updates.
-        self.objects.update(computed_df)
+        if df_to_compute is self.objects:
+            # Optimization: Direct column assignment when computing on the full catalog.
+            # This completely avoids the massive overhead of self.objects.update() which
+            # triggers slow timezone-aware datetime inference and alignment across 14k rows.
+            self.objects[ObjectTableLabels.TRANSIT] = computed_df[ObjectTableLabels.TRANSIT]
+            self.objects[ObjectTableLabels.ALTITUDE] = computed_df[ObjectTableLabels.ALTITUDE]
+            self.objects[ObjectTableLabels.RISING] = computed_df[ObjectTableLabels.RISING]
+            self.objects[ObjectTableLabels.SETTING] = computed_df[ObjectTableLabels.SETTING]
+        else:
+            self.objects.update(computed_df)
 
         return computed_df
 
