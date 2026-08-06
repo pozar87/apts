@@ -7,6 +7,9 @@ from apts.optics.calculations.geometric import (
     calculate_zoom,
     calculate_field_of_view,
     calculate_fov_ratio,
+    calculate_is_magnification_useful,
+    calculate_brightness,
+    calculate_exit_pupil,
 )
 from apts.units import get_unit_registry
 
@@ -99,3 +102,87 @@ def test_calculate_field_of_view_telescope():
 def test_calculate_fov_ratio_scalar():
     ratio = calculate_fov_ratio((60, 30), (22.2, 14.8), 750)
     assert ratio == pytest.approx(58.96, rel=1e-3)
+
+
+def test_calculate_is_magnification_useful():
+    from apts.opticalequipment.telescope import Telescope
+
+    class MyTelescope(Telescope):
+        def __init__(self):
+            pass
+        def lowest_useful_magnification(self):
+            return 30.0
+        def highest_useful_magnification(self):
+            return 300.0
+
+    telescope = MyTelescope()
+    output_visual = MagicMock()
+    output_visual.is_visual_output.return_value = True
+
+    output_camera = MagicMock()
+    output_camera.is_visual_output.return_value = False
+
+    # Standard camera output (non-visual) -> True
+    assert calculate_is_magnification_useful(telescope, output_camera, 10 * ureg.dimensionless) is True
+
+    # Visual output in range -> True
+    assert calculate_is_magnification_useful(telescope, output_visual, 100 * ureg.dimensionless) is True
+
+    # Visual output below lowest -> False
+    assert calculate_is_magnification_useful(telescope, output_visual, 20 * ureg.dimensionless) is False
+
+    # Visual output above highest -> False
+    assert calculate_is_magnification_useful(telescope, output_visual, 350 * ureg.dimensionless) is False
+
+    # Non-telescope -> True
+    assert calculate_is_magnification_useful(MagicMock(), output_visual, 100 * ureg.dimensionless) is True
+
+
+def test_calculate_brightness():
+    from apts.opticalequipment.naked_eye import NakedEye
+
+    class MyNakedEye(NakedEye):
+        def __init__(self):
+            pass
+        def brightness(self):
+            return 75.0
+
+    eye = MyNakedEye()
+    f1 = MagicMock()
+    f1.transmission = 0.8
+    f2 = MagicMock()
+    f2.transmission = 0.9
+
+    # NakedEye with filters
+    res = calculate_brightness(eye, None, None, [f1, f2])
+    assert res.magnitude == pytest.approx(75.0 * 0.8 * 0.9)
+    assert res.units == ureg.dimensionless
+
+    # Standard telescope
+    telescope = MagicMock()
+    output = MagicMock()
+    output.brightness.return_value = 50.0 * ureg.dimensionless
+
+    res_tel = calculate_brightness(telescope, output, 100 * ureg.dimensionless, [f1])
+    assert res_tel.magnitude == pytest.approx(50.0 * 0.8)
+
+
+def test_calculate_exit_pupil():
+    from apts.opticalequipment.naked_eye import NakedEye
+
+    class MyNakedEye(NakedEye):
+        def __init__(self):
+            pass
+        def exit_pupil(self):
+            return 7.0 * ureg.mm
+
+    eye = MyNakedEye()
+    assert calculate_exit_pupil(eye, None) == 7.0 * ureg.mm
+
+    # Telescope exit pupil zoom != 0
+    telescope = MagicMock()
+    telescope.aperture = 200 * ureg.mm
+    assert calculate_exit_pupil(telescope, 50 * ureg.dimensionless) == 4.0 * ureg.mm
+
+    # Telescope exit pupil zoom == 0
+    assert calculate_exit_pupil(telescope, 0 * ureg.dimensionless) == 0 * ureg.mm

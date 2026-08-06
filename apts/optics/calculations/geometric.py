@@ -121,3 +121,84 @@ def calculate_fov_ratio(object_size: Any, sensor_size: Any, focal_length: Any) -
 
     # Use the maximum ratio to ensure it's not "clipped"
     return np.maximum(ratio_w, ratio_h) * 100.0
+
+
+def calculate_is_magnification_useful(
+    telescope: Any,
+    output: Any,
+    zoom: Any,
+) -> bool:
+    """
+    Checks if the current magnification is within the theoretical useful range
+    of the telescope. For non-visual outputs (cameras), it returns True.
+    """
+    from ...opticalequipment.telescope import Telescope
+
+    if (
+        not isinstance(telescope, Telescope)
+        or not output.is_visual_output()
+    ):
+        return True
+
+    zoom_mag = zoom.magnitude if hasattr(zoom, "magnitude") else float(zoom)
+    return (
+        telescope.lowest_useful_magnification()
+        <= zoom_mag
+        <= telescope.highest_useful_magnification()
+    )
+
+
+def calculate_brightness(
+    telescope: Any,
+    output: Any,
+    zoom: Any,
+    filters: Sequence[Any],
+) -> Any:
+    """
+    Calculates brightness of an optical configuration.
+    """
+    from ...units import get_unit_registry
+    from ...opticalequipment.binoculars import Binoculars
+    from ...opticalequipment.naked_eye import NakedEye
+    from ...opticalequipment.smart_telescope import SmartTelescope
+
+    if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
+        # telescope.brightness() returns a float like 75.0 (for 75%)
+        # To be consistent so that .magnitude can be called later:
+        brightness = telescope.brightness() * get_unit_registry().dimensionless
+    else:
+        # This already returns a pint Quantity from OutputOpticalEquipment's method
+        brightness = output.brightness(telescope, zoom)
+
+    # Account for filters transmission
+    for f in filters:
+        brightness *= f.transmission
+
+    return brightness
+
+
+def calculate_exit_pupil(
+    telescope: Any,
+    zoom: Any,
+) -> Any:
+    """
+    Calculates exit pupil of an optical configuration.
+    """
+    from ...units import get_unit_registry
+    from ...opticalequipment.binoculars import Binoculars
+    from ...opticalequipment.naked_eye import NakedEye
+    from ...opticalequipment.smart_telescope import SmartTelescope
+
+    if isinstance(telescope, (Binoculars, NakedEye, SmartTelescope)):
+        return telescope.exit_pupil()  # This returns a Quantity
+
+    # Original logic for telescopes:
+    if hasattr(telescope, "aperture"):
+        if hasattr(zoom, "magnitude"):
+            if zoom.magnitude == 0:
+                return 0 * get_unit_registry().mm
+        elif float(zoom) == 0:
+            return 0 * get_unit_registry().mm
+        return telescope.aperture / zoom
+
+    return 0 * get_unit_registry().mm
