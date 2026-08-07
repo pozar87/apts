@@ -22,14 +22,14 @@ class VixenTelescope(Telescope):
             "brand": "Vixen",
             "name": "VSD100 F3.8",
             "type": "type_refractor",
-            "optical_length": 0,
+            "optical_length": 92.1,  # Verified via Vixen Japan document (92.1mm back focus from native M84 thread)
             "mass": 4500,
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "M84",
-            "cside_gender": "Male",
+            "cside_gender": "Female",  # Verified via Vixen Japan (focuser drawtube has female threads)
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 100,
             "focal_length_mm": 380,
             "central_obstruction_mm": 0,
