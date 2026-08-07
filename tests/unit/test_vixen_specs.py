@@ -1,4 +1,5 @@
 from apts.opticalequipment.telescope.vendors.vixen import VixenTelescope
+from apts.utils import ConnectionType, Gender
 
 def test_vixen_vc200l_specs():
     telescope = VixenTelescope.Vixen_VC200L()
@@ -62,3 +63,8 @@ def test_vixen_vsd100_specs():
     assert telescope.focal_length.magnitude == 380
     assert telescope.central_obstruction.magnitude == 0
     assert telescope.mass.magnitude == 4500
+    # Audited parameters
+    assert telescope.backfocus.magnitude == 92.1
+    assert telescope.optical_length.magnitude == 92.1
+    assert telescope.connection_type == ConnectionType.M84
+    assert telescope.connection_gender == Gender.FEMALE
