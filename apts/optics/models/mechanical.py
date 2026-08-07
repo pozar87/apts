@@ -82,16 +82,11 @@ class MechanicalMixIn:
         self._cache["total_mass"] = total
         return total
 
-    def backfocus_gap(self) -> Optional["Quantity"]:
+    def _get_flattened_path(self) -> list[Any]:
         """
-        Calculate the backfocus gap.
+        Builds and returns a flattened list of optical components in the path.
         """
-        # 1. Find the component that defines the required backfocus
-        required_bf = None
-        start_index = -1
-
-        # Flatten path for searching
-        path = (
+        return (
             [self.telescope]
             + self.barlows
             + self.diagonals
@@ -100,6 +95,13 @@ class MechanicalMixIn:
             + [self.output]
         )
 
+    def _find_backfocus_reference(self, path: list[Any]) -> tuple[Optional[Any], int]:
+        """
+        Scans the path to find the component defining the required backfocus reference
+        and its start index in the path.
+        """
+        required_bf = None
+        start_index = -1
         for i, item in enumerate(path):
             if (
                 hasattr(item, "required_backfocus")
@@ -110,11 +112,12 @@ class MechanicalMixIn:
             elif i == 0 and hasattr(item, "backfocus") and item.backfocus is not None:
                 required_bf = item.backfocus
                 start_index = i
+        return required_bf, start_index
 
-        if required_bf is None:
-            return None
-
-        # 2. Gather magnitudes in mm for intermediate components
+    def _gather_intermediate_lengths(self, path: list[Any], start_index: int) -> list[float]:
+        """
+        Collects optical lengths (in mm) for intermediate components following the reference.
+        """
         intermediate_lengths = []
         for item in path[start_index + 1 : -1]:
             item_ol = getattr(item, "optical_length", 0 * get_unit_registry().mm)
@@ -125,14 +128,32 @@ class MechanicalMixIn:
                     intermediate_lengths.append(float(item_ol))
             else:
                 intermediate_lengths.append(0.0)
+        return intermediate_lengths
 
-        # 3. Output component backfocus magnitude
+    def _get_output_backfocus_value(self) -> float:
+        """
+        Converts and returns the output component's backfocus value in mm.
+        """
         output_bf_val = 0.0
         if hasattr(self.output, "backfocus") and self.output.backfocus is not None:
             if hasattr(self.output.backfocus, "to"):
                 output_bf_val = self.output.backfocus.to("mm").magnitude
             else:
                 output_bf_val = float(self.output.backfocus)
+        return output_bf_val
+
+    def backfocus_gap(self) -> Optional["Quantity"]:
+        """
+        Calculate the backfocus gap.
+        """
+        path = self._get_flattened_path()
+        required_bf, start_index = self._find_backfocus_reference(path)
+
+        if required_bf is None:
+            return None
+
+        intermediate_lengths = self._gather_intermediate_lengths(path, start_index)
+        output_bf_val = self._get_output_backfocus_value()
 
         if hasattr(required_bf, "to"):
             required_bf_mm = required_bf.to("mm").magnitude
