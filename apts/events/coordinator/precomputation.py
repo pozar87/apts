@@ -63,7 +63,25 @@ class PrecomputationEngine:
         # Optimization: Hoist observer.at(times) out of the loop
         obs_at_times = self.observer.at(times)
 
-        bodies_to_precompute = list(planetary.CONJUNCTION_PLANETS.keys()) + ["moon"]
+        # Dynamically build the set of bodies to precompute based on active event settings
+        # to avoid wasting resources on calculating unused body positions.
+        bodies_to_precompute = set()
+
+        if event_settings.get("conjunctions"):
+            bodies_to_precompute.add("moon")
+            bodies_to_precompute.update(planetary.CONJUNCTION_PLANETS.keys())
+
+        if event_settings.get("moon_messier_conjunctions") or event_settings.get("moon_star_conjunctions"):
+            bodies_to_precompute.add("moon")
+
+        if event_settings.get("planet_messier_conjunctions") or event_settings.get("planet_star_conjunctions"):
+            bodies_to_precompute.update(planetary.CONJUNCTION_PLANETS.keys())
+
+        if event_settings.get("planetary_dichotomy"):
+            bodies_to_precompute.update(["mercury", "venus"])
+
+        if not bodies_to_precompute:
+            return precomputed
 
         def _observe(name):
             obj = planetary.get_skyfield_obj(name)
