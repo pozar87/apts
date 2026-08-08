@@ -4,7 +4,9 @@ from apts.optics.calculations.photometry import (
     calculate_required_subs,
     calculate_optimum_sub_exposure,
     calculate_limiting_magnitude_simple,
-    calculate_saturation_magnitude_analytical
+    calculate_saturation_magnitude_analytical,
+    calculate_camera_limiting_magnitude,
+    calculate_saturation_time
 )
 
 def test_calculate_required_subs():
@@ -67,3 +69,37 @@ def test_calculate_saturation_magnitude_analytical():
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 1000000, 0, 1))
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 1000000, 1, 0))
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 0, 1, 1))
+
+
+def test_calculate_camera_limiting_magnitude():
+    # Setup a mock/dummy snr function:
+    # Let's say SNR is: 5.0 when magnitude is 15.0,
+    # SNR > 5.0 when mag < 15.0, and SNR < 5.0 when mag > 15.0.
+    # Specifically, snr = 5.0 * (2.0 ** (15.0 - mag))
+    def mock_snr(mag):
+        return 5.0 * (2.0 ** (15.0 - mag))
+
+    limit_mag = calculate_camera_limiting_magnitude(mock_snr, target_snr=5.0)
+    assert limit_mag is not None
+    # Since snr = 5.0 at mag = 15.0, binary search should converge to 15.0.
+    assert pytest.approx(limit_mag, abs=0.02) == 15.0
+
+    # Test when SNR function returns None (e.g. invalid inputs)
+    def none_snr(mag):
+        return None
+    assert calculate_camera_limiting_magnitude(none_snr) is None
+
+
+def test_calculate_saturation_time():
+    # full_well = 10000, obj_flux = 100, psf_peak_fraction = 0.5
+    # expected t = 10000 / (100 * 0.5) = 10000 / 50 = 200
+    t = calculate_saturation_time(
+        full_well=10000.0,
+        obj_flux=100.0,
+        psf_peak_fraction=0.5
+    )
+    assert t == 200.0
+
+    # Invalid obj_flux <= 0 or psf_peak_fraction <= 0
+    assert calculate_saturation_time(10000.0, 0.0, 0.5) is None
+    assert calculate_saturation_time(10000.0, 100.0, -0.1) is None
