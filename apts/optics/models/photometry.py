@@ -242,14 +242,11 @@ class PhotometryMixIn:
         Uses binary search to find the magnitude where SNR equals target_snr.
         Search range: 0.0 to 30.0 magnitude. Convergence: 0.01 magnitude.
         """
-        low = 0.0
-        high = 30.0
         n_subs = int(numpy.ceil(total_integration_time / sub_exposure_time))
 
-        for _ in range(12):  # 2^12 = 4096, plenty for 0.01 prec in 30 range
-            mid = (low + high) / 2
-            current_snr = self.snr(
-                mid,
+        def snr_calculator(mag: float) -> Optional[float]:
+            return self.snr(
+                mag,
                 sqm,
                 sub_exposure_time,
                 n_subs=n_subs,
@@ -257,14 +254,11 @@ class PhotometryMixIn:
                 altitude=altitude,
                 extinction_k=extinction_k,
             )
-            if current_snr is None:
-                return None
-            if current_snr > target_snr:
-                low = mid
-            else:
-                high = mid
 
-        return round(float(low), 2)
+        return optics_utils.calculate_camera_limiting_magnitude(
+            snr_calculator,
+            target_snr=target_snr,
+        )
 
     def limiting_magnitude(self, sqm: float, integration_time: float) -> float:
         from ...opticalequipment.camera import Camera
@@ -319,12 +313,14 @@ class PhotometryMixIn:
         )
         f = self.psf_peak_fraction(seeing)
 
-        if obj_flux is None or f is None or obj_flux <= 0 or f <= 0:
+        if obj_flux is None or f is None:
             return None
 
-        # S_peak = flux * t * f
-        # t = full_well / (flux * f)
-        t = self.output.full_well / (obj_flux * f)
+        t = optics_utils.calculate_saturation_time(
+            self.output.full_well, obj_flux, f
+        )
+        if t is None:
+            return None
         return t * get_unit_registry().second
 
     def saturation_magnitude(

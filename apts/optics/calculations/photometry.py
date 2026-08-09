@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from typing import Union, cast
+from typing import Union, cast, Optional, Callable
 
 
 def calculate_sky_flux(
@@ -226,3 +226,53 @@ def calculate_saturation_magnitude_analytical(
     # m_eff = -2.5 * log10(target_flux / flux_at_zero)
     m_eff = -2.5 * np.log10(target_flux / flux_at_zero_mag)
     return float(m_eff)
+
+
+def calculate_camera_limiting_magnitude(
+    snr_calculator_callable: Callable[[float], Optional[float]],
+    target_snr: float = 5.0,
+) -> Optional[float]:
+    """
+    Calculates the limiting magnitude for a camera based on reaching a target SNR.
+    Uses binary search to find the magnitude where SNR equals target_snr.
+    Search range: 0.0 to 30.0 magnitude. Convergence: 0.01 magnitude.
+
+    :param snr_calculator_callable: A callable (typically a lambda or function)
+                                    that takes magnitude (float) and returns
+                                    the SNR (float or None).
+    :param target_snr: Target Signal-to-Noise Ratio (default 5.0).
+    :return: Limiting magnitude as float, or None if calculation fails.
+    """
+    low = 0.0
+    high = 30.0
+
+    for _ in range(12):  # 2^12 = 4096, plenty for 0.01 prec in 30 range
+        mid = (low + high) / 2
+        current_snr = snr_calculator_callable(mid)
+        if current_snr is None:
+            return None
+        if current_snr > target_snr:
+            low = mid
+        else:
+            high = mid
+
+    return round(float(low), 2)
+
+
+def calculate_saturation_time(
+    full_well: float,
+    obj_flux: float,
+    psf_peak_fraction: float,
+) -> Optional[float]:
+    """
+    Calculates the maximum exposure time before the central pixel of a point source saturates.
+    Based on the full-well capacity of the sensor and the Gaussian PSF model.
+
+    :param full_well: Sensor full-well capacity in electrons.
+    :param obj_flux: Total integrated object flux in e-/s.
+    :param psf_peak_fraction: Fraction of light in the central pixel (PSF model).
+    :return: Maximum exposure time in seconds, or None if calculation is invalid.
+    """
+    if obj_flux <= 0 or psf_peak_fraction <= 0:
+        return None
+    return full_well / (obj_flux * psf_peak_fraction)

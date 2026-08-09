@@ -3,7 +3,17 @@ from .atmospheric import (
     calculate_atmospheric_extinction,
     calculate_atmospheric_dispersion,
 )
-from .photometry import calculate_sky_flux, calculate_object_flux, calculate_snr
+from .photometry import (
+    calculate_sky_flux,
+    calculate_object_flux,
+    calculate_snr,
+    calculate_required_subs,
+    calculate_optimum_sub_exposure,
+    calculate_limiting_magnitude_simple,
+    calculate_saturation_magnitude_analytical,
+    calculate_camera_limiting_magnitude,
+    calculate_saturation_time,
+)
 from .exposure import (
     calculate_npf_rule,
     calculate_field_rotation_rate,
@@ -42,6 +52,12 @@ __all__ = [
     "calculate_sky_flux",
     "calculate_object_flux",
     "calculate_snr",
+    "calculate_required_subs",
+    "calculate_optimum_sub_exposure",
+    "calculate_limiting_magnitude_simple",
+    "calculate_saturation_magnitude_analytical",
+    "calculate_camera_limiting_magnitude",
+    "calculate_saturation_time",
     "calculate_npf_rule",
     "calculate_field_rotation_rate",
     "calculate_estimated_star_trailing",
