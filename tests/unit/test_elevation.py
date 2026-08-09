@@ -5,6 +5,10 @@ from apts.place import Place
 
 class TestElevation(unittest.TestCase):
 
+    def setUp(self):
+        # Clear the cache for get_elevation to ensure a clean state for each test
+        get_elevation.cache_clear()
+
     @patch("apts.place.elevation.get_session")
     def test_get_elevation_success(self, mock_get_session):
         # Mock the response from the API
