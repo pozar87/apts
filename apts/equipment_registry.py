@@ -1,27 +1,7 @@
 import inspect
 from typing import Dict, List, Any, Optional
 from .opticalequipment import (
-    Telescope,
-    Camera,
-    Eyepiece,
-    Barlow,
-    Diagonal,
-    Filter,
-    Reducer,
-    Flattener,
-    Corrector,
-    FilterWheel,
-    FilterHolder,
-    OAG,
-    Rotator,
-    Focuser,
-    Adapter,
-    Spacer,
-    AntiTilt,
-    FlipMirror,
-    GuideScope,
-    Binoculars,
-    SmartTelescope,
+    EQUIPMENT_CLASSES,
 )
 from .equipment_database import EquipmentDatabase
 
@@ -32,29 +12,7 @@ class EquipmentRegistry:
     Combines high-fidelity hardcoded presets with the full reference database.
     """
 
-    EQUIPMENT_CLASSES = [
-        Telescope,
-        Camera,
-        Eyepiece,
-        Barlow,
-        Diagonal,
-        Filter,
-        Reducer,
-        Flattener,
-        Corrector,
-        FilterWheel,
-        FilterHolder,
-        OAG,
-        Rotator,
-        Focuser,
-        Adapter,
-        Spacer,
-        AntiTilt,
-        FlipMirror,
-        GuideScope,
-        Binoculars,
-        SmartTelescope,
-    ]
+    EQUIPMENT_CLASSES = EQUIPMENT_CLASSES
 
     # Curated list of popular equipment names to feature in the UI
     FEATURED_NAMES = [
