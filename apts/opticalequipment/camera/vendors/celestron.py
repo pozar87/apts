@@ -27,8 +27,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "NexImage Burst",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 100,
+            "optical_length": 10.6, # Verified via official Celestron documentation: 10.6mm (0.41") without nosepiece
+            "mass": 57, # Verified via official Celestron documentation: 2.0 oz (57 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -48,8 +48,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "NexImage 5",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 90,
+            "optical_length": 10.6, # Verified via official Celestron documentation: 10.6mm (0.41") without nosepiece
+            "mass": 57, # Verified via official Celestron documentation: 2.0 oz (57 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -57,7 +57,7 @@ class CelestronCamera(Camera):
             "reversible": False,
             "bf_role": "end",
             "sensor_width_mm": 5.7,
-            "sensor_height_mm": 4.3,
+            "sensor_height_mm": 4.28, # Verified via official Celestron documentation: 5.7mm x 4.28mm
             "width": 2592,
             "height": 1944,
             "pixel_size_um": 2.2,
@@ -69,8 +69,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "Skyris 132M",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 150,
+            "optical_length": 17.5, # Verified via official Celestron documentation: 17.5mm (0.68") with C-mount / without nosepiece
+            "mass": 102, # Verified via official Celestron documentation: 3.6 oz (102 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -90,8 +90,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "Skyris 236M",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 160,
+            "optical_length": 17.5, # Verified via official Celestron documentation: 17.5mm (0.68") with C-mount / without nosepiece
+            "mass": 102, # Verified via official Celestron documentation: 3.6 oz (102 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -111,8 +111,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "Skyris 618M",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 200,
+            "optical_length": 17.5, # Verified via official Celestron documentation: 17.5mm (0.68") with C-mount / without nosepiece
+            "mass": 102, # Verified via official Celestron / TIS documentation: 3.6 oz (102 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -132,8 +132,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "Skyris 445M",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 180,
+            "optical_length": 17.5, # Verified via official Celestron documentation: 17.5mm (0.68") with C-mount / without nosepiece
+            "mass": 102, # Verified via official Celestron / TIS documentation: 3.6 oz (102 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
@@ -153,16 +153,16 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "Skyris 274M",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 170,
+            "optical_length": 17.5, # Verified via official Celestron documentation: 17.5mm (0.68") with C-mount / without nosepiece
+            "mass": 102, # Verified via official Celestron / TIS documentation: 3.6 oz (102 g)
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
             "cside_gender": "",
             "reversible": False,
             "bf_role": "end",
-            "sensor_width_mm": 7.0,
-            "sensor_height_mm": 5.3,
+            "sensor_width_mm": 8.5, # Verified via official Celestron documentation: Sony ICX274 sensor size is 8.50mm x 6.80mm
+            "sensor_height_mm": 6.8, # Verified via official Celestron documentation: Sony ICX274 sensor size is 8.50mm x 6.80mm
             "width": 1600,
             "height": 1200,
             "pixel_size_um": 4.4,
