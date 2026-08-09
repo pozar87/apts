@@ -6,8 +6,8 @@ class CelestronCamera(Camera):
             "brand": "Celestron",
             "name": "NexImage 10",
             "type": "type_camera",
-            "optical_length": 12.5,
-            "mass": 120,
+            "optical_length": 10.6, # Verified via official Celestron documentation (10.6mm native back focus without nosepiece) - https://www.celestron.com/products/neximage-10-solar-system-color-imager
+            "mass": 57, # Verified via official Celestron documentation (2.0 oz / 57g) - https://www.celestron.com/products/neximage-10-solar-system-color-imager
             "tside_thread": "CS",
             "tside_gender": "Female",
             "cside_thread": "",
