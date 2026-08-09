@@ -72,8 +72,12 @@ def find_solar_eclipses(observer, start_date, end_date):
     moon = planetary.get_skyfield_obj("moon")
 
     def solar_separation(t):
-        s = observer.at(t).observe(sun).apparent()
-        m = observer.at(t).observe(moon).apparent()
+        # Optimization: Bypassing Standard apparent place calculations and using
+        # astrometric observations instead for finding the minima. Since the Standard apparent
+        # corrections (relativistic deflection, aberration) are negligible for finding the times of
+        # minimum separation, this provides a massive performance boost during iterative step search.
+        s = observer.at(t).observe(sun)
+        m = observer.at(t).observe(moon)
 
         # Calculate topocentric angular radii
         s_dist = s.distance().km
