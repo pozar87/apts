@@ -133,10 +133,12 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
         # Optimization: use analytical derivative to find where d(RA)/dt = 0.
         # This replaces slow numerical differentiation with a single observation.
         # d(atan2(y,x))/dt = (x*dy - y*dx) / (x^2 + y^2)
-        # Note: We use the analytical derivative in the ICRS/GCRS frame. While this
+        # Note: We use the analytical derivative in the GCRS frame. While this
         # differs slightly from the "epoch of date" frame, the timing difference
         # for stationary points is negligible (seconds) for most use cases.
-        pos = observer.at(t).observe(planet).apparent()
+        # Optimization: Bypassing expensive .apparent() place calculations
+        # (which apply nutation, aberration, gravitational deflection) for search loops.
+        pos = observer.at(t).observe(planet)
         x, y, _ = pos.position.au
         dx, dy, _ = pos.velocity.au_per_d
         # We only care about the sign of the velocity for find_discrete
