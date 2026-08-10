@@ -1,9 +1,11 @@
 import logging
+from functools import lru_cache
 from ..utils.network import get_session
 
 logger = logging.getLogger(__name__)
 
 
+@lru_cache(maxsize=1024)
 def get_elevation(lat: float, lon: float) -> float | None:
     """
     Fetches elevation for a given latitude and longitude using the Open-Meteo Elevation API.
