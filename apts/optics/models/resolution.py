@@ -44,22 +44,19 @@ class ResolutionMixIn:
         Calculates the sampling status based on the resolution limit and the pixel scale.
         """
         scale = self.pixel_scale()
-        if scale is None or scale.magnitude == 0:
+        if scale is None:
             return None
 
-        # Effective resolution limit is the larger of seeing and diffraction limit
-        r_limit = seeing
         diffraction_limit = self.rayleigh_limit()
-        if diffraction_limit is not None:
-            r_limit = max(seeing, diffraction_limit.to("arcsecond").magnitude)
+        ray_limit_val = (
+            diffraction_limit.to("arcsecond").magnitude
+            if diffraction_limit is not None
+            else None
+        )
 
-        ratio = r_limit / scale.magnitude
-        if ratio < 1.0:
-            return "Under-sampled"
-        elif ratio <= 3.0:
-            return "Well-sampled"
-        else:
-            return "Over-sampled"
+        return optics_utils.calculate_sampling(
+            seeing, ray_limit_val, scale.magnitude
+        )
 
     def sampling_status(self, seeing: float = 2.0) -> Optional[str]:
         """
@@ -121,12 +118,12 @@ class ResolutionMixIn:
         if not isinstance(self.output, (Camera, SmartTelescope)):
             return None
 
-        # Pixel size in microns
         p_size_q = self.output.pixel_size()
         if p_size_q is None:
             return None
-        p_size = p_size_q.to("micrometer").magnitude
-        return k * p_size
+
+        p_um = p_size_q.to("micrometer").magnitude
+        return optics_utils.calculate_ideal_planetary_focal_ratio(p_um, k)
 
     def nyquist_focal_ratio(
         self, wavelength_nm: float = 550, sampling_factor: float = 3.0

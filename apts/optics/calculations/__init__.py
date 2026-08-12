@@ -27,6 +27,8 @@ from .resolution import (
     calculate_critical_focus_zone,
     calculate_nyquist_focal_ratio,
     calculate_psf_peak_fraction,
+    calculate_sampling,
+    calculate_ideal_planetary_focal_ratio,
 )
 from .eyepiece import calculate_exit_pupil, calculate_brightness
 from .geometric import (
@@ -69,6 +71,8 @@ __all__ = [
     "calculate_critical_focus_zone",
     "calculate_nyquist_focal_ratio",
     "calculate_psf_peak_fraction",
+    "calculate_sampling",
+    "calculate_ideal_planetary_focal_ratio",
     "calculate_exit_pupil",
     "calculate_brightness",
     "barlows_multiplications",

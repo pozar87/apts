@@ -4,6 +4,8 @@ from apts.optics.calculations.resolution import (
     calculate_critical_focus_zone,
     calculate_nyquist_focal_ratio,
     calculate_psf_peak_fraction,
+    calculate_sampling,
+    calculate_ideal_planetary_focal_ratio,
 )
 
 
@@ -46,3 +48,28 @@ def test_calculate_psf_peak_fraction():
     expected = math.erf(arg) ** 2
     fraction = calculate_psf_peak_fraction(pixel_scale_arcsec=pixel_scale, seeing_arcsec=seeing)
     assert pytest.approx(fraction, abs=1e-5) == expected
+
+
+def test_calculate_sampling():
+    # If pixel_scale_arcsec is 0, returns None
+    assert calculate_sampling(2.0, 1.0, 0.0) is None
+
+    # Under-sampled (ratio < 1.0)
+    # limit = max(2.0, 1.0) = 2.0. Scale = 3.0. Ratio = 2.0 / 3.0 = 0.666
+    assert calculate_sampling(seeing_arcsec=2.0, rayleigh_limit_arcsec=1.0, pixel_scale_arcsec=3.0) == "Under-sampled"
+
+    # Well-sampled (1.0 <= ratio <= 3.0)
+    # limit = max(2.0, 1.0) = 2.0. Scale = 1.0. Ratio = 2.0 / 1.0 = 2.0
+    assert calculate_sampling(seeing_arcsec=2.0, rayleigh_limit_arcsec=1.0, pixel_scale_arcsec=1.0) == "Well-sampled"
+
+    # Over-sampled (ratio > 3.0)
+    # limit = max(2.0, 1.0) = 2.0. Scale = 0.5. Ratio = 2.0 / 0.5 = 4.0
+    assert calculate_sampling(seeing_arcsec=2.0, rayleigh_limit_arcsec=1.0, pixel_scale_arcsec=0.5) == "Over-sampled"
+
+    # Handle rayleigh_limit_arcsec as None
+    assert calculate_sampling(seeing_arcsec=2.0, rayleigh_limit_arcsec=None, pixel_scale_arcsec=1.0) == "Well-sampled"
+
+
+def test_calculate_ideal_planetary_focal_ratio():
+    assert pytest.approx(calculate_ideal_planetary_focal_ratio(pixel_pitch_um=3.76, k=5.0), abs=1e-5) == 18.8
+    assert pytest.approx(calculate_ideal_planetary_focal_ratio(pixel_pitch_um=2.4, k=4.0), abs=1e-5) == 9.6

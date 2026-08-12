@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 
 def calculate_airy_disk_diameter(
@@ -49,3 +50,37 @@ def calculate_psf_peak_fraction(
     arg = (pixel_scale_arcsec * math.sqrt(math.log(2))) / seeing_arcsec
     fraction = math.erf(arg) ** 2
     return float(fraction)
+
+
+def calculate_sampling(
+    seeing_arcsec: float,
+    rayleigh_limit_arcsec: Optional[float],
+    pixel_scale_arcsec: float,
+) -> Optional[str]:
+    """
+    Calculates the sampling status based on the resolution limit and the pixel scale.
+    """
+    if pixel_scale_arcsec == 0:
+        return None
+
+    # Effective resolution limit is the larger of seeing and diffraction limit
+    r_limit = seeing_arcsec
+    if rayleigh_limit_arcsec is not None:
+        r_limit = max(seeing_arcsec, rayleigh_limit_arcsec)
+
+    ratio = r_limit / pixel_scale_arcsec
+    if ratio < 1.0:
+        return "Under-sampled"
+    elif ratio <= 3.0:
+        return "Well-sampled"
+    else:
+        return "Over-sampled"
+
+
+def calculate_ideal_planetary_focal_ratio(
+    pixel_pitch_um: float, k: float = 5.0
+) -> float:
+    """
+    Calculates the ideal focal ratio for planetary imaging based on the pixel size.
+    """
+    return k * pixel_pitch_um
