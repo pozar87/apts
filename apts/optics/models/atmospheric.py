@@ -5,7 +5,6 @@ if TYPE_CHECKING:
     from pint import Quantity
 
 from ..calculations import atmospheric as optics_utils
-from ..utils import OpticsUtils
 
 
 class AtmosphericMixIn:
@@ -16,7 +15,7 @@ class AtmosphericMixIn:
         """
         Calculates the relative airmass for a given altitude in degrees.
         """
-        return float(OpticsUtils.calculate_airmass(altitude_degrees))
+        return float(optics_utils.calculate_airmass(altitude_degrees))
 
     def atmospheric_extinction(
         self, magnitude: float, altitude_degrees: float, extinction_k: float = 0.2
@@ -60,8 +59,13 @@ class AtmosphericMixIn:
             altitude_degrees, lambda1_nm, lambda2_nm
         )
         scale = self.pixel_scale()
-        if scale is None or scale.magnitude == 0:
+        if scale is None:
             return None
-        return float(
-            dispersion.to("arcsecond").magnitude / scale.to("arcsecond").magnitude
+
+        res = optics_utils.calculate_atmospheric_dispersion_in_pixels(
+            dispersion.to("arcsecond").magnitude,
+            scale.to("arcsecond").magnitude
         )
+        if res is None:
+            return None
+        return float(res)

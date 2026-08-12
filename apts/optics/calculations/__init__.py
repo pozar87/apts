@@ -2,6 +2,7 @@ from .atmospheric import (
     calculate_airmass,
     calculate_atmospheric_extinction,
     calculate_atmospheric_dispersion,
+    calculate_atmospheric_dispersion_in_pixels,
 )
 from .photometry import (
     calculate_sky_flux,
@@ -49,6 +50,7 @@ __all__ = [
     "calculate_airmass",
     "calculate_atmospheric_extinction",
     "calculate_atmospheric_dispersion",
+    "calculate_atmospheric_dispersion_in_pixels",
     "calculate_sky_flux",
     "calculate_object_flux",
     "calculate_snr",

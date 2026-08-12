@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Union, cast
+from typing import Optional, Union, cast
 
 
 def calculate_airmass(
@@ -66,3 +66,25 @@ def calculate_atmospheric_dispersion(
         )
 
     return dispersion_arcsec
+
+
+def calculate_atmospheric_dispersion_in_pixels(
+    dispersion_arcsec: Union[float, np.ndarray],
+    pixel_scale_arcsec: Optional[Union[float, np.ndarray]],
+) -> Optional[Union[float, np.ndarray]]:
+    """
+    Calculates the atmospheric dispersion in pixels for the given dispersion and pixel scale.
+    """
+    if pixel_scale_arcsec is None:
+        return None
+
+    if np.isscalar(pixel_scale_arcsec):
+        if cast(float, pixel_scale_arcsec) == 0:
+            return None
+        return float(dispersion_arcsec / pixel_scale_arcsec)
+    else:
+        scale_arr = np.asarray(pixel_scale_arcsec)
+        if np.all(scale_arr == 0):
+            return None
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.where(scale_arr == 0, 0, dispersion_arcsec / scale_arr)
