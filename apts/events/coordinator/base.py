@@ -184,7 +184,7 @@ class AstronomicalEvents:
         return planetary_calc.calculate_planet_star_conjunctions(self.observer, self.start_date, self.end_date, precomputed_positions)
 
     def calculate_planet_stationary_points(self):
-        return planetary_calc.calculate_planet_stationary_points(self.observer, self.start_date, self.end_date)
+        return planetary_calc.calculate_planet_stationary_points(self.observer, self.start_date, self.end_date, self.executor)
 
     def calculate_planet_solar_conjunctions(self):
         return planetary_calc.calculate_planet_solar_conjunctions(self.observer, self.start_date, self.end_date)

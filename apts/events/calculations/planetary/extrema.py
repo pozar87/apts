@@ -80,9 +80,8 @@ def calculate_planetary_dichotomy(observer, start_date, end_date, precomputed_po
     logger.debug(f"--- calculate_planetary_dichotomy: {time.time() - start_time}s")
     return events
 
-def calculate_planet_stationary_points(observer, start_date, end_date):
+def calculate_planet_stationary_points(observer, start_date, end_date, executor=None):
     start_time = time.time()
-    events = []
     planets = [
         "mercury",
         "venus",
@@ -93,17 +92,41 @@ def calculate_planet_stationary_points(observer, start_date, end_date):
         "neptune barycenter",
         "pluto barycenter",
     ]
+
+    # Phase 1: Search for stationary points (either concurrently or sequentially)
+    results = {}
+    if executor is not None:
+        futures = {
+            executor.submit(
+                skyfield_searches.find_stationary_points,
+                observer,
+                p,
+                start_date,
+                end_date,
+            ): p
+            for p in planets
+        }
+        for future in as_completed(futures):
+            p = futures[future]
+            results[p] = future.result()
+    else:
+        for p in planets:
+            results[p] = skyfield_searches.find_stationary_points(
+                observer,
+                p,
+                start_date,
+                end_date,
+            )
+
+    # Phase 2: Post-process and enrich the found events
+    events = []
     for p in planets:
-        found_events = skyfield_searches.find_stationary_points(
-            observer,
-            p,
-            start_date,
-            end_date,
-        )
+        found_events = results.get(p, [])
         for event in found_events:
             event["rarity"] = get_rarity("Planet Stationary Point", event)
             event["duration"] = get_duration("Planet Stationary Point", event)
         events.extend(found_events)
+
     logger.debug(
         f"--- calculate_planet_stationary_points: {time.time() - start_time}s"
     )
