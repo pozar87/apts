@@ -39,7 +39,7 @@ class GsoTelescope(Telescope):
             "name": "RC 10\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 15000,
+            "mass": 15700, # Verified via GSRC10M Metal Tube specs (15.7 kg) - https://www.astromanie.ch/en/ritchey-chretien/248-ts-10-f8-ritchey-chretien-astrograph-tube-metal.html
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "M117",
@@ -48,14 +48,14 @@ class GsoTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 254,
             "focal_length_mm": 2000,
-            "central_obstruction_mm": 110,
+            "central_obstruction_mm": 112, # Verified via Teleskop-Express GSRC10M specifications (112mm secondary obstruction)
         },
         "GSO_RC_12": {
             "brand": "GSO",
             "name": "RC 12\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 21000,
+            "mass": 20500, # Verified via GSRC12M Metal Tube specs (20.5 kg) - https://www.teleskop-express.de/en/telescopes-4/rc-ritchey-chretien-telescopes-75/ts-optics-gso-12-f-8-ritchey-chretien-pro-rc-telescope-304-2432-mm-ota-4713
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "M117",
@@ -64,7 +64,7 @@ class GsoTelescope(Telescope):
             "bf_role": "",
             "aperture_mm": 304,
             "focal_length_mm": 2432,
-            "central_obstruction_mm": 130,
+            "central_obstruction_mm": 150, # Verified via Teleskop-Express GSRC12M specifications (150mm secondary obstruction)
         },
         "GSO_Newton_6_f_5": {
             "brand": "GSO",

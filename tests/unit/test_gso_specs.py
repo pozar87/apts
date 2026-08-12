@@ -27,5 +27,29 @@ class TestGsoSpecs(unittest.TestCase):
         self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 64)
         self.assertAlmostEqual(telescope.focal_ratio().magnitude, 4.92, places=2)
 
+    def test_gso_rc_8(self):
+        telescope = GsoTelescope.GSO_RC_8()
+        self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 203)
+        self.assertEqual(telescope.focal_length.to(get_unit_registry().mm).magnitude, 1624)
+        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 7500)
+        self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 85)
+        self.assertAlmostEqual(telescope.focal_ratio().magnitude, 8.0, places=2)
+
+    def test_gso_rc_10(self):
+        telescope = GsoTelescope.GSO_RC_10()
+        self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 254)
+        self.assertEqual(telescope.focal_length.to(get_unit_registry().mm).magnitude, 2000)
+        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 15700)
+        self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 112)
+        self.assertAlmostEqual(telescope.focal_ratio().magnitude, 7.87, places=2)
+
+    def test_gso_rc_12(self):
+        telescope = GsoTelescope.GSO_RC_12()
+        self.assertEqual(telescope.aperture.to(get_unit_registry().mm).magnitude, 304)
+        self.assertEqual(telescope.focal_length.to(get_unit_registry().mm).magnitude, 2432)
+        self.assertEqual(telescope.mass.to(get_unit_registry().gram).magnitude, 20500)
+        self.assertEqual(telescope.central_obstruction.to(get_unit_registry().mm).magnitude, 150)
+        self.assertAlmostEqual(telescope.focal_ratio().magnitude, 8.0, places=2)
+
 if __name__ == "__main__":
     unittest.main()
