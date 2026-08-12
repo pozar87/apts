@@ -76,8 +76,12 @@ def find_solar_eclipses(observer, start_date, end_date):
         # astrometric observations instead for finding the minima. Since the Standard apparent
         # corrections (relativistic deflection, aberration) are negligible for finding the times of
         # minimum separation, this provides a massive performance boost during iterative step search.
-        s = observer.at(t).observe(sun)
-        m = observer.at(t).observe(moon)
+        #
+        # Performance Optimization: Reuse the observer's state by calling observer.at(t) once
+        # instead of twice, avoiding redundant time epoch and coordinate setup.
+        obs_at_t = observer.at(t)
+        s = obs_at_t.observe(sun)
+        m = obs_at_t.observe(moon)
 
         # Calculate topocentric angular radii
         s_dist = s.distance().km
@@ -107,9 +111,13 @@ def find_solar_eclipses(observer, start_date, end_date):
 
     events = []
     for t_nm in new_moons:
-        # Narrow search window around geocentric New Moon to account for parallax
-        tn0 = ts.tt_jd(t_nm.tt - 0.5)
-        tn1 = ts.tt_jd(t_nm.tt + 0.5)
+        # Narrow search window around geocentric New Moon to account for parallax.
+        # Performance Optimization: Reducing the search window from +/- 12 hours (0.5 days)
+        # to +/- 6 hours (0.25 days). This is physically and mathematically guaranteed to contain
+        # the topocentric minimum separation (maximum parallax shift for Moon is < 2 hours).
+        # This halves the number of step-search iterations in find_minima.
+        tn0 = ts.tt_jd(t_nm.tt - 0.25)
+        tn1 = ts.tt_jd(t_nm.tt + 0.25)
 
         # Ensure the narrow search window does not exceed our padded range
         if tn0.tt < t_start_padded.tt:
