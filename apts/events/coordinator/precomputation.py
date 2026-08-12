@@ -32,6 +32,37 @@ class PrecomputationEngine:
         self.start_date = start_date
         self.end_date = end_date
 
+    def _get_step_seconds(self, event_settings: Dict[str, bool]) -> int:
+        """
+        Determines step seconds resolution based on whether moon-related events are active.
+        """
+        if any(event_settings.get(e) for e in self.MOON_EVENTS):
+            # 864s matches typical ~1.2h step in find_conjunctions but is more precise.
+            # We use 864s (0.01 days) to maintain compatibility with existing tests.
+            return 864
+        # Hourly resolution for planets
+        return 3600
+
+    def _get_bodies_to_precompute(self, event_settings: Dict[str, bool]) -> set:
+        """
+        Dynamically builds the set of celestial bodies to precompute based on active settings.
+        """
+        bodies = set()
+        if event_settings.get("conjunctions"):
+            bodies.add("moon")
+            bodies.update(planetary.CONJUNCTION_PLANETS.keys())
+
+        if event_settings.get("moon_messier_conjunctions") or event_settings.get("moon_star_conjunctions"):
+            bodies.add("moon")
+
+        if event_settings.get("planet_messier_conjunctions") or event_settings.get("planet_star_conjunctions"):
+            bodies.update(planetary.CONJUNCTION_PLANETS.keys())
+
+        if event_settings.get("planetary_dichotomy"):
+            bodies.update(["mercury", "venus"])
+
+        return bodies
+
     def precompute_positions(self, event_settings: Dict[str, bool], executor) -> Dict[str, Any]:
         """
         Pre-compute positions for moving bodies often used in multiple searches
@@ -41,15 +72,7 @@ class PrecomputationEngine:
         if not any(event_settings.get(e) for e in self.CONJUNCTION_EVENTS):
             return precomputed
 
-        # Increase resolution if Moon-related conjunctions are requested
-        if any(event_settings.get(e) for e in self.MOON_EVENTS):
-            # 864s matches typical ~1.2h step in find_conjunctions but is more precise.
-            # We use 864s (0.01 days) to maintain compatibility with existing tests.
-            step_seconds = 864
-        else:
-            # Hourly resolution for planets
-            step_seconds = 3600
-
+        step_seconds = self._get_step_seconds(event_settings)
         duration_seconds = (self.end_date - self.start_date).total_seconds()
         num_steps = int(duration_seconds / step_seconds)
 
@@ -63,23 +86,7 @@ class PrecomputationEngine:
         # Optimization: Hoist observer.at(times) out of the loop
         obs_at_times = self.observer.at(times)
 
-        # Dynamically build the set of bodies to precompute based on active event settings
-        # to avoid wasting resources on calculating unused body positions.
-        bodies_to_precompute = set()
-
-        if event_settings.get("conjunctions"):
-            bodies_to_precompute.add("moon")
-            bodies_to_precompute.update(planetary.CONJUNCTION_PLANETS.keys())
-
-        if event_settings.get("moon_messier_conjunctions") or event_settings.get("moon_star_conjunctions"):
-            bodies_to_precompute.add("moon")
-
-        if event_settings.get("planet_messier_conjunctions") or event_settings.get("planet_star_conjunctions"):
-            bodies_to_precompute.update(planetary.CONJUNCTION_PLANETS.keys())
-
-        if event_settings.get("planetary_dichotomy"):
-            bodies_to_precompute.update(["mercury", "venus"])
-
+        bodies_to_precompute = self._get_bodies_to_precompute(event_settings)
         if not bodies_to_precompute:
             return precomputed
 
