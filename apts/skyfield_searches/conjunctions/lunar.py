@@ -4,6 +4,8 @@ from ...constants import astronomy
 from ...utils import planetary
 from ..utils import _refine_conjunction
 
+from ..utils import fast_altaz
+
 def find_lunar_planetary_occultations(observer, start_date, end_date):
     """
     Finds occultations of planets by the Moon for a specific observer.
@@ -40,18 +42,13 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     coarse_idx = np.arange(0, num_steps, 10)
     coarse_times = times[coarse_idx]
 
-    # Observe Moon (coarse)
-    mpos_coarse = observer.at(coarse_times).observe(moon).apparent()
-    m_alt_coarse, _, m_dist_coarse = mpos_coarse.altaz()
+    # Observe Moon (coarse) using fast_altaz and astrometric distance
+    mpos_coarse = observer.at(coarse_times).observe(moon)
+    m_alt_coarse, _, m_dist_coarse = fast_altaz(observer.at(coarse_times), moon, temperature_C=10.0, pressure_mbar=1013.25)
     moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
 
-    # Sun altitude (coarse)
-    sun_alts_coarse = (
-        observer.at(coarse_times)
-        .observe(sun)
-        .apparent()
-        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-    )
+    # Sun altitude (coarse) using fast_altaz
+    sun_alts_coarse, _, _ = fast_altaz(observer.at(coarse_times), sun, temperature_C=10.0, pressure_mbar=1013.25)
 
     events = []
 
@@ -60,8 +57,8 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     for p_idx, planet in enumerate(planet_objs):
         simple_name = simple_names[p_idx]
 
-        # Observe Planet (coarse)
-        ppos_coarse = observer.at(coarse_times).observe(planet).apparent()
+        # Observe Planet (coarse) using astrometric observe
+        ppos_coarse = observer.at(coarse_times).observe(planet)
         sep_coarse = mpos_coarse.separation_from(ppos_coarse).degrees
 
         # Potential: sep < rad + margin, Moon > 0, Sun <= -6
