@@ -239,7 +239,7 @@ class William_opticsTelescope(Telescope):
             "reversible": False,
             "bf_role": "",
             "aperture_mm": 68,
-            "focal_length_mm": 258.4,
+            "focal_length_mm": 260, # Verified via official William Optics documentation (260mm focal length) - https://williamoptics.com/products/pleiades-68
             "central_obstruction_mm": 0,
         },
         "William_Optics_Pleiades_111": {

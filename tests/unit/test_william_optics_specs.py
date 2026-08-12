@@ -17,7 +17,7 @@ def test_william_optics_redcat51_specs():
 def test_william_optics_pleiades68_specs():
     telescope = William_opticsTelescope.William_Optics_Pleiades_68()
     assert telescope.aperture.magnitude == 68
-    assert telescope.focal_length.magnitude == 258.4
+    assert telescope.focal_length.magnitude == 260
     assert telescope.mass.magnitude == 2980
     assert telescope.central_obstruction.magnitude == 0
 
