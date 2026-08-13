@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 import numpy as np
 
 
@@ -84,3 +84,23 @@ def calculate_brightness(exit_pupil: Any) -> Any:
         return np.nan * ureg.dimensionless
 
     return (ratio**2) * 100 * ureg.dimensionless
+
+
+def calculate_eyepiece_field_of_view(
+    field_stop_mm: Optional[float],
+    apparent_fov_deg: float,
+    focal_length_eff_mm: float,
+    zoom_magnitude: float,
+) -> float:
+    """
+    Calculates the true field of view (TFoV) of an eyepiece in degrees.
+    If field stop diameter is available, it uses the accurate formula:
+    TFoV = 2 * atan(field_stop / (2 * focal_length_eff))
+    Otherwise, it falls back to the Apparent Field of View (AFoV) formula:
+    TFoV = AFoV / magnification
+    """
+    if field_stop_mm is not None and focal_length_eff_mm > 0:
+        return float(2.0 * np.degrees(np.arctan(field_stop_mm / (2.0 * focal_length_eff_mm))))
+    if zoom_magnitude > 0:
+        return float(apparent_fov_deg / zoom_magnitude)
+    return 0.0

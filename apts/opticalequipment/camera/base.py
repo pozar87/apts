@@ -126,13 +126,19 @@ class Camera(OutputOpticalEquipment):
         return self._inputs[0][1] if self._inputs else None
 
     def pixel_size(self) -> Any:
+        from ...optics.calculations import calculate_pixel_size
         ureg = get_unit_registry()
-        if self._pixel_size is not None:
-            return self._pixel_size.to(ureg.micrometer)
-        size_mm = numpy.sqrt(self.sensor_width**2 + self.sensor_height**2) / numpy.sqrt(
-            self.width**2 + self.height**2
+        pixel_size_um = self._pixel_size.to("micrometer").magnitude if self._pixel_size is not None else None
+        sensor_width_mm = self.sensor_width.to("mm").magnitude
+        sensor_height_mm = self.sensor_height.to("mm").magnitude
+        size_um = calculate_pixel_size(
+            pixel_size_um=pixel_size_um,
+            sensor_width_mm=sensor_width_mm,
+            sensor_height_mm=sensor_height_mm,
+            width=self.width,
+            height=self.height,
         )
-        return size_mm.to(ureg.micrometer)
+        return size_um * ureg.micrometer
 
     def dynamic_range(self) -> float | None:
         """
@@ -140,9 +146,8 @@ class Camera(OutputOpticalEquipment):
         Formula: DR = log2(Full Well Capacity / Read Noise)
         Source: https://en.wikipedia.org/wiki/Dynamic_range#Digital_photography
         """
-        if self.full_well is None or self.read_noise is None or self.read_noise <= 0:
-            return None
-        return float(numpy.log2(self.full_well / self.read_noise))
+        from ...optics.calculations import calculate_dynamic_range
+        return calculate_dynamic_range(self.full_well, self.read_noise)
 
     def _zoom_divider(self):
         return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
@@ -151,34 +156,34 @@ class Camera(OutputOpticalEquipment):
         """
         Calculates horizontal field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
-        d = self.sensor_width.to("mm").magnitude
-        if f == 0:
-            return 0 * get_unit_registry().deg
-        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+        from ...optics.calculations import calculate_camera_field_of_view
+        f_eff_mm = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d_mm = self.sensor_width.to("mm").magnitude
+        fov_deg = calculate_camera_field_of_view(d_mm, f_eff_mm)
+        return fov_deg * get_unit_registry().deg
 
     def field_of_view_height(self, telescope, zoom, barlow_magnification):
         """
         Calculates vertical field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
-        d = self.sensor_height.to("mm").magnitude
-        if f == 0:
-            return 0 * get_unit_registry().deg
-        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+        from ...optics.calculations import calculate_camera_field_of_view
+        f_eff_mm = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d_mm = self.sensor_height.to("mm").magnitude
+        fov_deg = calculate_camera_field_of_view(d_mm, f_eff_mm)
+        return fov_deg * get_unit_registry().deg
 
     def field_of_view_diagonal(self, telescope, zoom, barlow_magnification):
         """
         Calculates diagonal field of view in degrees using the accurate arctan formula.
         """
-        f = (telescope.focal_length * barlow_magnification).to("mm").magnitude
-        d = numpy.sqrt(
+        from ...optics.calculations import calculate_camera_field_of_view
+        f_eff_mm = (telescope.focal_length * barlow_magnification).to("mm").magnitude
+        d_mm = numpy.sqrt(
             self.sensor_width.to("mm").magnitude ** 2
             + self.sensor_height.to("mm").magnitude ** 2
         )
-        if f == 0:
-            return 0 * get_unit_registry().deg
-        return 2 * numpy.degrees(numpy.arctan(d / (2 * f))) * get_unit_registry().deg
+        fov_deg = calculate_camera_field_of_view(d_mm, f_eff_mm)
+        return fov_deg * get_unit_registry().deg
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
         return self.field_of_view_height(telescope, zoom, barlow_magnification)
