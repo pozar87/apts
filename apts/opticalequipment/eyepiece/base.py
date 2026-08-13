@@ -3,6 +3,7 @@ from ..base import OutputOpticalEquipment
 from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
+from ...optics.calculations import calculate_eyepiece_field_of_view
 
 class Eyepiece(OutputOpticalEquipment):
     path_layer = 5
@@ -81,14 +82,18 @@ class Eyepiece(OutputOpticalEquipment):
         Otherwise, it falls back to the Apparent Field of View (AFoV) formula:
         TFoV = AFoV / magnification
         """
-        if self.field_stop is not None:
-            import numpy
-            f_eff = (telescope.focal_length * barlow_magnification).to('mm').magnitude
-            fs = self.field_stop.to('mm').magnitude
-            if f_eff > 0:
-                return 2 * numpy.degrees(numpy.arctan(fs / (2 * f_eff))) * get_unit_registry().deg
+        field_stop_mm = self.field_stop.to('mm').magnitude if self.field_stop is not None else None
+        apparent_fov_deg = self._field_of_view.to('deg').magnitude
+        f_eff_mm = (telescope.focal_length * barlow_magnification).to('mm').magnitude
+        zoom_magnitude = getattr(zoom, "magnitude", float(zoom))
 
-        return self._field_of_view / zoom
+        fov_deg = calculate_eyepiece_field_of_view(
+            field_stop_mm=field_stop_mm,
+            apparent_fov_deg=apparent_fov_deg,
+            focal_length_eff_mm=f_eff_mm,
+            zoom_magnitude=zoom_magnitude,
+        )
+        return fov_deg * get_unit_registry().deg
 
     def output_type(self):
         return OpticalType.VISUAL

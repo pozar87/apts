@@ -30,7 +30,16 @@ from .resolution import (
     calculate_sampling,
     calculate_ideal_planetary_focal_ratio,
 )
-from .eyepiece import calculate_exit_pupil, calculate_brightness
+from .eyepiece import (
+    calculate_exit_pupil,
+    calculate_brightness,
+    calculate_eyepiece_field_of_view,
+)
+from .camera import (
+    calculate_pixel_size,
+    calculate_dynamic_range,
+    calculate_camera_field_of_view,
+)
 from .geometric import (
     barlows_multiplications,
     calculate_zoom,
@@ -75,6 +84,10 @@ __all__ = [
     "calculate_ideal_planetary_focal_ratio",
     "calculate_exit_pupil",
     "calculate_brightness",
+    "calculate_eyepiece_field_of_view",
+    "calculate_pixel_size",
+    "calculate_dynamic_range",
+    "calculate_camera_field_of_view",
     "barlows_multiplications",
     "calculate_zoom",
     "calculate_field_of_view",
