@@ -21,20 +21,21 @@ def normalize_name(n):
     Normalize NGC/IC names to a standard format (e.g., 'NGC 224' -> 'NGC0224').
     """
     if isinstance(n, pd.Series):
-        # Optimization: vectorized normalization for large series.
-        # This provides a massive speedup (~15x) compared to .apply(normalize_name).
-        res = n.str.replace(" ", "", regex=False).str.upper()
-        # Use a more flexible regex to handle suffixes (e.g., NGC 55A -> NGC055A)
-        # and ensure consistency with the scalar implementation.
-        extracted = res.str.extract(r"^(NGC|IC)(.+)$", expand=True)
-        prefix = extracted[0]
-        remainder = extracted[1]
-        mask = prefix.notna() & remainder.notna()
-        if mask.any():
-            # Pad the remainder with zeros to 4 digits
-            padded_remainder = remainder[mask].str.zfill(4)
-            res.loc[mask] = prefix[mask] + padded_remainder
-        return res
+        # Optimization: Direct list iteration over values is faster than Pandas
+        # multi-step string operations (.str.replace, .str.extract regex).
+        vals = n.values
+        res = [None] * len(vals)
+        for i, val in enumerate(vals):
+            if val is None or pd.isna(val):
+                continue
+            v = str(val).replace(" ", "").upper()
+            if v.startswith("NGC") and len(v) > 3:
+                res[i] = "NGC" + v[3:].zfill(4)
+            elif v.startswith("IC") and len(v) > 2:
+                res[i] = "IC" + v[2:].zfill(4)
+            else:
+                res[i] = v
+        return pd.Series(res, index=n.index, dtype="string")
 
     if not isinstance(n, str) or pd.isna(n):
         return n
