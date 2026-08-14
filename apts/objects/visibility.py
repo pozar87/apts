@@ -7,9 +7,11 @@ import pandas as pd
 from skyfield.api import Star
 
 from ..constants import ObjectTableLabels
-from ..utils.astronomy.refraction import calculate_refraction
-from ..utils.astronomy.altaz import vectorized_geometric_altaz
 from ..skyfield_searches.utils import fast_altaz
+from .calculations import (
+    filter_objects_by_magnitude,
+    calculate_visible_stars_mask,
+)
 
 
 class VisibilityMixIn:
@@ -17,37 +19,11 @@ class VisibilityMixIn:
         self, conditions, star_magnitude_limit, limiting_magnitude
     ) -> pd.DataFrame:
         """
-        Filters objects based on magnitude limits.
+        Filters objects based on magnitude limits. Delegates to pure helper.
         """
-        max_magnitude_q = (
-            limiting_magnitude
-            if limiting_magnitude is not None
-            else (
-                star_magnitude_limit
-                if star_magnitude_limit is not None
-                else conditions.max_object_magnitude
-            )
+        return filter_objects_by_magnitude(
+            self.objects, conditions, star_magnitude_limit, limiting_magnitude
         )
-
-        # Ensure max_magnitude is a float for comparison with magnitude_values
-        max_mag_float = (
-            max_magnitude_q.magnitude
-            if hasattr(max_magnitude_q, "magnitude")
-            else max_magnitude_q
-        )
-
-        # Optimization: use pre-calculated float magnitudes if available
-        if "Magnitude_float" in self.objects.columns:
-            magnitude_values = self.objects["Magnitude_float"]
-        else:
-            # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
-            magnitude_values = np.array(
-                [
-                    x.magnitude if hasattr(x, "magnitude") else x
-                    for x in self.objects["Magnitude"].values
-                ]
-            )
-        return cast(pd.DataFrame, self.objects[magnitude_values < max_mag_float].copy())
 
     def _get_visible_mocked(self, candidate_objects, conditions, start, stop) -> list:
         """
@@ -86,6 +62,7 @@ class VisibilityMixIn:
     ):
         """
         Check Stars using vectorized geometric formulas across all check_times.
+        Delegates to the pure calculate_visible_stars_mask function.
         """
         # Extract RA/Dec for all stars
         if (
@@ -106,74 +83,31 @@ class VisibilityMixIn:
                 [cast(Any, skyfield_objs)[i].dec.degrees for i in stars_indices]
             )
 
-        # Preliminary filter: max altitude check
-        max_alt_deg = 90.0 - np.abs(self.place.lat_decimal - stars_decs)
-        # Add refraction at max altitude for better filtering
-        max_alt_deg += calculate_refraction(max_alt_deg)
+        # Prepare direction cosine arrays if present in the candidate dataframe
+        sin_dec = None
+        cos_dec_cos_ra = None
+        cos_dec_sin_ra = None
+        if "sin_dec" in candidate_objects.columns:
+            # Note: active_stars_indices indexing is done inside the pure function
+            # So we pass the entire column or a slice matching stars_indices.
+            sin_dec = candidate_objects["sin_dec"].values
+            cos_dec_cos_ra = candidate_objects["cos_dec_cos_ra"].values
+            cos_dec_sin_ra = candidate_objects["cos_dec_sin_ra"].values
 
-        # Only process stars that can potentially reach the minimum altitude
-        potential_mask = max_alt_deg > conditions.horizon.get_min_altitude()
+        # Delegate pure geometry checks to the extracted pure function
+        visible_stars_potential_mask = calculate_visible_stars_mask(
+            self.place.lat_decimal,
+            self.place.lon_decimal,
+            stars_ras,
+            stars_decs,
+            check_times.gmst,
+            conditions,
+            sin_dec=sin_dec[stars_indices] if sin_dec is not None else None,
+            cos_dec_cos_ra=cos_dec_cos_ra[stars_indices] if cos_dec_cos_ra is not None else None,
+            cos_dec_sin_ra=cos_dec_sin_ra[stars_indices] if cos_dec_sin_ra is not None else None,
+        )
 
-        if np.any(potential_mask):
-            # Ensure stars_indices is an array before masking
-            stars_indices = np.asarray(stars_indices)
-            active_stars_indices = stars_indices[potential_mask]
-
-            # Use pre-calculated Equatorial Direction Cosines if available
-            sin_dec = None
-            cd_cr = None
-            cd_sr = None
-            if "sin_dec" in candidate_objects.columns:
-                sin_dec = candidate_objects["sin_dec"].values[active_stars_indices]
-                cd_cr = candidate_objects["cos_dec_cos_ra"].values[active_stars_indices]
-                cd_sr = candidate_objects["cos_dec_sin_ra"].values[active_stars_indices]
-
-            # Optimization: if only simple altitude check is needed, we can bypass
-            # expensive arctan2 and azimuth calculations for the grid.
-            if not conditions.horizon_content and not conditions.horizon_file and \
-               conditions.min_object_azimuth == 0 and conditions.max_object_azimuth == 360:
-
-                # Optimization: By comparing sin(alt) directly with sin(threshold), we can
-                # bypass expensive arcsin calls on the N x M grid.
-                # This provides a ~2x speedup compared to calculating altitude degrees alone.
-                sin_alt, _ = vectorized_geometric_altaz(
-                    self.place.lat_decimal,
-                    self.place.lon_decimal,
-                    stars_ras[potential_mask],
-                    stars_decs[potential_mask],
-                    check_times.gmst,
-                    sin_dec=sin_dec,
-                    cd_cr=cd_cr,
-                    cd_sr=cd_sr,
-                    return_azimuth=False,
-                    return_alt_degrees=False,
-                )
-
-                # Account for refraction in the threshold itself (optimization)
-                min_alt = getattr(conditions.min_object_altitude, "magnitude", conditions.min_object_altitude)
-                true_alt_threshold = min_alt - calculate_refraction(min_alt)
-                sin_threshold = np.sin(np.deg2rad(true_alt_threshold))
-
-                visible_at_times = sin_alt >= sin_threshold
-            else:
-                # Full calculation needed for complex horizon or azimuth constraints
-                true_alt_deg, az_deg = vectorized_geometric_altaz(
-                    self.place.lat_decimal,
-                    self.place.lon_decimal,
-                    stars_ras[potential_mask],
-                    stars_decs[potential_mask],
-                    check_times.gmst,
-                    sin_dec=sin_dec,
-                    cd_cr=cd_cr,
-                    cd_sr=cd_sr,
-                )
-                apparent_alt_deg = true_alt_deg + calculate_refraction(true_alt_deg)
-
-                # Determine visibility using conditions
-                visible_at_times = conditions.is_visible(az_deg, apparent_alt_deg)
-
-            # Combine and check if visible at ANY time point
-            visible_mask[active_stars_indices] = np.any(visible_at_times, axis=1)
+        visible_mask[stars_indices] = visible_stars_potential_mask
 
     def _get_visible_other(
         self, skyfield_objs, other_indices, obs_at_check_times, conditions, visible_mask
