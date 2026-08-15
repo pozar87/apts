@@ -11,7 +11,8 @@ class TestPlayerOneV2(unittest.TestCase):
         self.assertEqual(camera.pixel_size().to('micrometer').magnitude, 3.76)
         self.assertEqual(camera.mass.to('gram').magnitude, 510)
         self.assertEqual(camera.full_well, 71700)
-        self.assertEqual(camera.quantum_efficiency, 81)
+        self.assertEqual(camera.quantum_efficiency, 80)
+        self.assertEqual(camera._inputs[0][0].name, "M54")
 
     def test_pixel_scale_precision(self):
         # Using a WO RedCat 51 (250mm) and Poseidon (3.76um)

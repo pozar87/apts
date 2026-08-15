@@ -14,10 +14,11 @@ def test_poseidon_c_pro_specs():
     assert camera.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(3.76)
     assert camera.full_well == 71700
     assert camera.read_noise == 1.0
-    assert camera.quantum_efficiency == 81
+    assert camera.quantum_efficiency == 80
     assert camera.mass.to(ureg.gram).magnitude == pytest.approx(650)
     assert camera.backfocus is not None
     assert camera.backfocus.to(ureg.mm).magnitude == pytest.approx(17.5)
+    assert camera._inputs[0][0].name == "M54"
 
 def test_poseidon_m_pro_specs():
     camera = Player_oneCamera.Player_One_Poseidon_M_Pro()
@@ -27,6 +28,7 @@ def test_poseidon_m_pro_specs():
     assert camera.quantum_efficiency == 91
     assert camera.pixel_size().to(ureg.micrometer).magnitude == pytest.approx(3.76)
     assert camera.mass.to(ureg.gram).magnitude == pytest.approx(650)
+    assert camera._inputs[0][0].name == "M54"
 
 def test_artemis_c_pro_specs():
     camera = Player_oneCamera.Player_One_Artemis_C_Pro()
