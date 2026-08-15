@@ -96,6 +96,53 @@ class TestLightPollution(unittest.TestCase):
         result = self.lp.get_base_sqm()
         self.assertEqual(result, 21.88)
 
+    @patch("apts.utils.network.get_session")
+    def test_get_from_api_success(self, mock_get_session):
+        self.mock_get_settings.return_value = {"use_online_api": True}
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"payload": {"metrics": {"bortleClass": 4, "sqm": 20.1}}}
+        mock_session = MagicMock()
+        mock_session.get.return_value.__enter__.return_value = mock_resp
+        mock_get_session.return_value = mock_session
+
+        lp = LightPollution(lat=52.2297, lon=21.0122)
+        data = lp._get_from_api()
+        self.assertEqual(data, {"bortleClass": 4, "sqm": 20.1})
+
+    @patch("apts.light_pollution.core.logger")
+    @patch("apts.utils.network.get_session")
+    def test_get_from_api_404_not_found(self, mock_get_session, mock_logger):
+        self.mock_get_settings.return_value = {"use_online_api": True}
+        mock_resp = MagicMock()
+        mock_resp.ok = False
+        mock_resp.status_code = 404
+        mock_session = MagicMock()
+        mock_session.get.return_value.__enter__.return_value = mock_resp
+        mock_get_session.return_value = mock_session
+
+        lp = LightPollution(lat=80.0, lon=0.0)
+        data = lp._get_from_api()
+        self.assertIsNone(data)
+        mock_logger.info.assert_called_once()
+        mock_logger.warning.assert_not_called()
+
+    @patch("apts.light_pollution.core.logger")
+    @patch("apts.utils.network.get_session")
+    def test_get_from_api_500_server_error(self, mock_get_session, mock_logger):
+        self.mock_get_settings.return_value = {"use_online_api": True}
+        mock_resp = MagicMock()
+        mock_resp.ok = False
+        mock_resp.status_code = 500
+        mock_session = MagicMock()
+        mock_session.get.return_value.__enter__.return_value = mock_resp
+        mock_get_session.return_value = mock_session
+
+        lp = LightPollution(lat=52.2297, lon=21.0122)
+        data = lp._get_from_api()
+        self.assertIsNone(data)
+        mock_logger.warning.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
