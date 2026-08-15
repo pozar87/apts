@@ -147,6 +147,14 @@ class PlotUtils:
 
     @staticmethod
     def plot_to_bytes(plot):
+        # Pass through already-encoded image data (e.g. plot images served from
+        # the Django plot cache) instead of re-encoding via matplotlib. The email
+        # notification path reuses cached plot images; without this, cached bytes
+        # (which have no savefig) would be rejected.
+        if isinstance(plot, bytes):
+            return plot
+        if hasattr(plot, "getvalue") or hasattr(plot, "read"):
+            return plot
         plot_bytes = io.BytesIO()
         plot.savefig(plot_bytes, format=get_plot_format())
         plt.close(plot)
