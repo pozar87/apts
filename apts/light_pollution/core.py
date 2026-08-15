@@ -63,6 +63,10 @@ class LightPollution:
                     data = resp.json()
                     self._api_data = data.get("payload", {}).get("metrics", {})
                     return self._api_data
+                elif resp.status_code == 404:
+                    logger.info(
+                        f"Light pollution data for coordinates ({self.lat}, {self.lon}) not found in API (404). Falling back to local dataset."
+                    )
                 else:
                     logger.warning(
                         f"Failed to fetch light pollution data from API: {resp.status_code}"
