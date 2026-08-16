@@ -123,7 +123,7 @@ class Sky_watcherTelescope(Telescope):
             "cside_gender": "Female",
             "cside_thread": "2\"",
             "focal_length_mm": 400,
-            "mass": 2500,
+            "mass": 2500,  # Verified via Sky-Watcher Global (2.5 kg OTA Weight, f/6.45) - https://skywatcher.com/product/evolux-62ed/
             "name": "Evolux 62ED",
             "optical_length": 0,
             "reversible": False,
