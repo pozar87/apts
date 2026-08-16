@@ -22,8 +22,10 @@ def find_conjunctions(
 
     def separation(t):
         # Use topocentric apparent positions to account for aberration and light deflection
-        p1_obs = observer.at(t).observe(p1).apparent()
-        p2_obs = observer.at(t).observe(p2).apparent()
+        # Optimization: Hoist observer.at(t) to avoid evaluating observer state twice per step
+        obs_at_t = observer.at(t)
+        p1_obs = obs_at_t.observe(p1).apparent()
+        p2_obs = obs_at_t.observe(p2).apparent()
         return p1_obs.separation_from(p2_obs).degrees
 
     # Dynamically adjust step size based on moving bodies
