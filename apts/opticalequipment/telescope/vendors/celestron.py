@@ -727,16 +727,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 4SE",
             "type": "maksutov_cassegrain",
             "optical_length": 0,
-            "mass": 2722,
+            "mass": 2722, # Verified via Celestron.com (6 lbs / 2.7 kg OTA weight) - https://www.celestron.com/products/nexstar-4se-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.375\"-24", # Verified via standard Meade ETX / NexStar 4SE smaller rear thread specification
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 102,
-            "focal_length_mm": 1325,
-            "central_obstruction_mm": 35,
+            "aperture_mm": 102, # Verified via Celestron.com (102mm / 4.02") - https://www.celestron.com/products/nexstar-4se-computerized-telescope
+            "focal_length_mm": 1325, # Verified via Celestron.com (1325mm) - https://www.celestron.com/products/nexstar-4se-computerized-telescope
+            "central_obstruction_mm": 35, # Verified via Celestron.com (35mm / 0.38" secondary mirror obstruction) - https://www.celestron.com/products/nexstar-4se-computerized-telescope
         },
         "Celestron_NexStar_5SE": {
             "brand": "Celestron",
