@@ -256,8 +256,10 @@ def find_greatest_elongations(observer, start_date, end_date):
         def elongation(t):
             # Elongation is the angle between the Sun and the planet as seen from Earth
             # We use Earth center (barycentric) for standard elongation values
-            s = earth.at(t).observe(sun)
-            p = earth.at(t).observe(planet)
+            # Optimization: Hoist earth.at(t) to avoid evaluating Earth state twice per step
+            obs_earth = earth.at(t)
+            s = obs_earth.observe(sun)
+            p = obs_earth.observe(planet)
             return s.separation_from(p).degrees
 
         setattr(elongation, "step_days", 2.0)  # Elongations change slowly

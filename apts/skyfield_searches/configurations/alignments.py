@@ -11,7 +11,9 @@ def _calculate_collinearity_error(t, observer, bodies, max_span_degrees):
     """
     # Get unit vectors for all 3 bodies
     # We use astrometric positions for speed in search
-    pos = [observer.at(t).observe(b[1]).position.au for b in bodies]
+    # Optimization: Hoist observer.at(t) to avoid redundant topocentric observer evaluations per body
+    obs_at_t = observer.at(t)
+    pos = [obs_at_t.observe(b[1]).position.au for b in bodies]
 
     def to_unit_vector(p):
         if p.ndim > 1:
@@ -85,7 +87,9 @@ def find_linear_alignments(observer, bodies, start_date, end_date, tolerance_deg
     for t, val in zip(times, values):
         if val < tolerance_degrees:
             # Re-calculate with apparent positions for final result
-            pos_app = [observer.at(t).observe(b[1]).apparent() for b in bodies]
+            # Optimization: Hoist observer.at(t) to avoid redundant observer evaluations
+            obs_at_t = observer.at(t)
+            pos_app = [obs_at_t.observe(b[1]).apparent() for b in bodies]
             # Verify span
             span = pos_app[0].separation_from(pos_app[2]).degrees
             if span <= max_span_degrees:

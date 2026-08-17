@@ -9,6 +9,7 @@ from skyfield.searchlib import find_minima
 from ...cache import get_ephemeris, get_timescale
 from ...constants import astronomy
 from ...utils import planetary
+from ..utils import fast_altaz
 
 # Thresholds for different numbers of planets (number: arc_degrees)
 _PLANET_ALIGNMENT_THRESHOLDS = {
@@ -30,10 +31,12 @@ def find_oppositions(observer, planet_name, start_date, end_date):
 
     def ecliptic_longitude_difference(t):
         # Use apparent topocentric positions for maximum observational accuracy
+        # Optimization: Hoist observer.at(t) to avoid evaluating observer state twice per step
+        obs_at_t = observer.at(t)
         planet_lon = (
-            observer.at(t).observe(planet).apparent().ecliptic_latlon()[1].degrees
+            obs_at_t.observe(planet).apparent().ecliptic_latlon()[1].degrees
         )
-        sun_lon = observer.at(t).observe(sun).apparent().ecliptic_latlon()[1].degrees
+        sun_lon = obs_at_t.observe(sun).apparent().ecliptic_latlon()[1].degrees
         diff = sun_lon - planet_lon
         return (diff + 180) % 360 - 180
 
@@ -99,16 +102,12 @@ def find_mars_closest_approach(start_date, end_date, observer=None):
         }
 
         if observer is not None:
-            v_obs = observer.at(t).observe(mars).apparent()
+            # Optimization: Hoist observer.at(t) and use fast_altaz for Sun visibility check
+            obs_at_t = observer.at(t)
+            v_obs = obs_at_t.observe(mars).apparent()
             alt, _, _ = v_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
-            sun_alt = (
-                observer.at(t)
-                .observe(sun)
-                .apparent()
-                .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                .degrees
-            )
+            sun_alt = fast_altaz(obs_at_t, sun)[0].degrees
 
             event.update(
                 {
