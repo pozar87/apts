@@ -118,17 +118,17 @@ class Explore_scientificTelescope(Telescope):
         "Explore_Scientific_AR102_Air_Spaced_Doublet": {
             "brand": "Explore Scientific",
             "name": "AR102 Air-Spaced Doublet",
-            "type": "type_refractor",
+            "type": "refractor",
             "optical_length": 0,
-            "mass": 4200,
+            "mass": 4200, # Verified via Explore Scientific specs (4.2 kg / 9.3 lbs OTA weight)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via Explore Scientific documentation (2" rack-and-pinion focuser / visual back) - https://explorescientific.com/products/explore-scientific-firstlight-ar102mm-white-tube-refractor-with-twilight-i-mount-fl-ar102663tw
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 102,
-            "focal_length_mm": 663,
+            "aperture_mm": 102, # Verified via Explore Scientific documentation (102mm / 4")
+            "focal_length_mm": 663, # Verified via Explore Scientific documentation (663mm FL, f/6.5)
             "central_obstruction_mm": 0,
         },
         "Explore_Scientific_AR127_Air_Spaced": {

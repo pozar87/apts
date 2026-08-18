@@ -52,6 +52,16 @@ def test_es_truss_dob_specs():
     assert scope.mass.magnitude == 18800
     assert scope.telescope_type == TelescopeType.NEWTONIAN_REFLECTOR
 
+def test_es_ar102_audit():
+    # AR102 Air-Spaced Doublet
+    scope = Explore_scientificTelescope.Explore_Scientific_AR102_Air_Spaced_Doublet()
+    assert scope.aperture.magnitude == 102
+    assert scope.focal_length.magnitude == 663
+    assert abs(scope.focal_ratio().magnitude - 6.5) < 0.01
+    assert scope.central_obstruction.magnitude == 0
+    assert scope.mass.magnitude == 4200
+    assert scope.telescope_type == TelescopeType.REFRACTOR
+
 def test_es_specialty_specs():
     # Comet Hunter 152 Mak-Newt
     scope = Explore_scientificTelescope.Explore_Scientific_Comet_Hunter_152_Mak_Newt()
