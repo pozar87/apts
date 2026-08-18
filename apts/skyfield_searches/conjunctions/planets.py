@@ -1,10 +1,12 @@
 import numpy as np
 from skyfield.searchlib import find_minima
+
 from ...cache import get_timescale
 from ...constants import astronomy
 from ...utils import planetary
 from ..utils import _refine_conjunction
 from .base import find_conjunctions
+
 
 def find_mercury_inferior_conjunctions(
     observer, start_date, end_date, threshold_degrees=1.0
@@ -20,8 +22,10 @@ def find_mercury_inferior_conjunctions(
     inferior_events = []
     for event in conjunctions:
         t = ts.from_datetime(event["date"])
-        mercury_obs = observer.at(t).observe(mercury)
-        sun_obs = observer.at(t).observe(sun)
+        # Optimization: Hoist observer.at(t) to avoid evaluating observer state twice per step
+        obs_at_t = observer.at(t)
+        mercury_obs = obs_at_t.observe(mercury)
+        sun_obs = obs_at_t.observe(sun)
 
         mercury_dist = mercury_obs.distance().au
         sun_dist = sun_obs.distance().au
@@ -70,9 +74,10 @@ def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_deg
             p_obj = planetary.get_skyfield_obj(p_name)
             sun_obj = planetary.get_skyfield_obj("sun")
 
-            # Get distances to determine conjunction type
-            p_dist = observer.at(t).observe(p_obj).distance().au
-            sun_dist = observer.at(t).observe(sun_obj).distance().au
+            # Optimization: Hoist observer.at(t) to avoid evaluating observer state twice per step
+            obs_at_t = observer.at(t)
+            p_dist = obs_at_t.observe(p_obj).distance().au
+            sun_dist = obs_at_t.observe(sun_obj).distance().au
 
             if p_name in ["mercury", "venus"]:
                 if p_dist < sun_dist:
@@ -135,11 +140,18 @@ def find_planet_planet_occultations(observer, start_date, end_date):
             p1_obj = planetary.get_skyfield_obj(p1_name)
             p2_obj = planetary.get_skyfield_obj(p2_name)
 
-            def separation(t):
-                # Use topocentric apparent positions
-                # Optimization: for coarse search, we could use .observe()
-                p1_obs = observer.at(t).observe(p1_obj).apparent()
-                p2_obs = observer.at(t).observe(p2_obj).apparent()
+            def separation(
+                t,
+                p1_obj=p1_obj,
+                p2_obj=p2_obj,
+                p1_name=p1_name,
+                p2_name=p2_name,
+            ):
+                # Optimization: Hoist observer.at(t) to evaluate observer state once per time step
+                # and use astrometric .observe() during search phase to bypass expensive .apparent() calculations
+                obs_at_t = observer.at(t)
+                p1_obs = obs_at_t.observe(p1_obj)
+                p2_obs = obs_at_t.observe(p2_obj)
                 sep = p1_obs.separation_from(p2_obs).degrees
 
                 # Calculate angular radii
@@ -157,15 +169,17 @@ def find_planet_planet_occultations(observer, start_date, end_date):
                 return sep - (r1 + r2)
 
             # Step of 0.5 days is safe for these slow events
-            setattr(separation, "step_days", 0.5)
+            separation.step_days = 0.5
             times, _ = find_minima(t0, t1, separation)
 
             for t in times:
                 # Refine
                 refined_t, refined_sep = _refine_conjunction(observer, p1_obj, p2_obj, t)
 
-                p1_obs = observer.at(refined_t).observe(p1_obj).apparent()
-                p2_obs = observer.at(refined_t).observe(p2_obj).apparent()
+                # Optimization: Hoist observer.at(refined_t)
+                obs_at_refined_t = observer.at(refined_t)
+                p1_obs = obs_at_refined_t.observe(p1_obj).apparent()
+                p2_obs = obs_at_refined_t.observe(p2_obj).apparent()
 
                 r1 = np.degrees(
                     np.arcsin(
