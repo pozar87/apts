@@ -228,6 +228,38 @@ def calculate_saturation_magnitude_analytical(
     return float(m_eff)
 
 
+def calculate_saturation_magnitude(
+    full_well: float,
+    flux_at_zero_mag: float,
+    exposure_time: float,
+    psf_peak_fraction: float,
+    airmass_val: Optional[float] = None,
+    extinction_k: float = 0.2,
+) -> Optional[float]:
+    """
+    Calculates the magnitude of a point source that would just saturate the sensor
+    at the given exposure time, considering PSF peak fraction and optional atmospheric extinction.
+
+    :param full_well: Sensor full-well capacity in electrons.
+    :param flux_at_zero_mag: Object flux for a 0th magnitude star in e-/s.
+    :param exposure_time: Exposure time in seconds.
+    :param psf_peak_fraction: Fraction of light in the central pixel (PSF model).
+    :param airmass_val: Optional airmass value at a given altitude.
+    :param extinction_k: Atmospheric extinction coefficient (default 0.2).
+    :return: Magnitude at saturation, or None if invalid inputs.
+    """
+    m_eff = calculate_saturation_magnitude_analytical(
+        full_well, flux_at_zero_mag, exposure_time, psf_peak_fraction
+    )
+    if np.isnan(m_eff):
+        return None
+
+    if airmass_val is not None:
+        return float(m_eff - extinction_k * airmass_val)
+
+    return float(m_eff)
+
+
 def calculate_camera_limiting_magnitude(
     snr_calculator_callable: Callable[[float], Optional[float]],
     target_snr: float = 5.0,

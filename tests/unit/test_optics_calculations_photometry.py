@@ -5,6 +5,7 @@ from apts.optics.calculations.photometry import (
     calculate_optimum_sub_exposure,
     calculate_limiting_magnitude_simple,
     calculate_saturation_magnitude_analytical,
+    calculate_saturation_magnitude,
     calculate_camera_limiting_magnitude,
     calculate_saturation_time
 )
@@ -69,6 +70,33 @@ def test_calculate_saturation_magnitude_analytical():
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 1000000, 0, 1))
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 1000000, 1, 0))
     assert np.isnan(calculate_saturation_magnitude_analytical(10000, 0, 1, 1))
+
+
+def test_calculate_saturation_magnitude():
+    # Base analytical saturation magnitude = 5.0
+    m_no_airmass = calculate_saturation_magnitude(
+        full_well=10000.0,
+        flux_at_zero_mag=1000000.0,
+        exposure_time=1.0,
+        psf_peak_fraction=1.0,
+        airmass_val=None,
+    )
+    assert pytest.approx(m_no_airmass) == 5.0
+
+    # With airmass = 2.0 and extinction_k = 0.2
+    # m = 5.0 - 0.2 * 2.0 = 4.6
+    m_with_airmass = calculate_saturation_magnitude(
+        full_well=10000.0,
+        flux_at_zero_mag=1000000.0,
+        exposure_time=1.0,
+        psf_peak_fraction=1.0,
+        airmass_val=2.0,
+        extinction_k=0.2,
+    )
+    assert pytest.approx(m_with_airmass) == 4.6
+
+    # Invalid inputs -> None
+    assert calculate_saturation_magnitude(10000, 1000000, 0, 1) is None
 
 
 def test_calculate_camera_limiting_magnitude():
