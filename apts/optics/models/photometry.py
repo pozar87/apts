@@ -1,4 +1,3 @@
-import math
 from typing import Optional, TYPE_CHECKING
 import numpy
 from ...units import get_unit_registry
@@ -351,14 +350,13 @@ class PhotometryMixIn:
         if flux_at_zero is None:
             return None
 
-        m_eff = optics_utils.calculate_saturation_magnitude_analytical(
-            self.output.full_well, flux_at_zero, exposure_time, f
+        airmass_val = self.airmass(altitude) if altitude is not None else None
+
+        return optics_utils.calculate_saturation_magnitude(
+            full_well=self.output.full_well,
+            flux_at_zero_mag=flux_at_zero,
+            exposure_time=exposure_time,
+            psf_peak_fraction=f,
+            airmass_val=airmass_val,
+            extinction_k=extinction_k,
         )
-
-        if altitude is not None:
-            # m_eff = m + k * X
-            # m = m_eff - k * X
-            airmass_val = self.airmass(altitude)
-            return float(m_eff - extinction_k * airmass_val)
-
-        return float(m_eff)

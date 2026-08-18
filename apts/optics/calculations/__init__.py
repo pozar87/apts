@@ -12,6 +12,7 @@ from .photometry import (
     calculate_optimum_sub_exposure,
     calculate_limiting_magnitude_simple,
     calculate_saturation_magnitude_analytical,
+    calculate_saturation_magnitude,
     calculate_camera_limiting_magnitude,
     calculate_saturation_time,
 )
@@ -69,6 +70,7 @@ __all__ = [
     "calculate_optimum_sub_exposure",
     "calculate_limiting_magnitude_simple",
     "calculate_saturation_magnitude_analytical",
+    "calculate_saturation_magnitude",
     "calculate_camera_limiting_magnitude",
     "calculate_saturation_time",
     "calculate_npf_rule",
