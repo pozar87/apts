@@ -38,11 +38,17 @@ def calculate_solar_eclipses(observer, start_date, end_date):
 
 def calculate_golden_blue_hours(observer, start_date, end_date, event_settings):
     start_time = time.time()
+    show_golden = event_settings.get("golden_hour")
+    show_blue = event_settings.get("blue_hour")
+
+    # Optimization: If neither Golden Hour nor Blue Hour calculation is requested,
+    # return immediately to bypass expensive Skyfield discrete transition search (~1.1s).
+    if not show_golden and not show_blue:
+        return []
+
     events = skyfield_searches.find_golden_blue_hours(
         observer, start_date, end_date
     )
-    show_golden = event_settings.get("golden_hour")
-    show_blue = event_settings.get("blue_hour")
 
     filtered_events = [
         e

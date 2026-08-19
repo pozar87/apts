@@ -160,6 +160,20 @@ class TestAstronomicalEvents(unittest.TestCase):
         self.assertEqual(mock_as_completed.call_count, 1)
         self.assertEqual(mock_precompute_as_completed.call_count, 1)
 
+    @patch("apts.events.calculations.sky.skyfield_searches.find_golden_blue_hours")
+    def test_calculate_golden_blue_hours_short_circuit(self, mock_find):
+        events_instance = AstronomicalEvents(
+            self.place,
+            self.start_date,
+            self.end_date,
+        )
+        # When neither golden_hour nor blue_hour is enabled
+        settings = {"golden_hour": False, "blue_hour": False}
+        res = events_instance.calculate_golden_blue_hours()
+        # Ensure it returns [] immediately and does not call find_golden_blue_hours
+        self.assertEqual(res, [])
+        mock_find.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
