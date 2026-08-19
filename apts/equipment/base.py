@@ -10,8 +10,7 @@ from ..opticalequipment import (
     OpticalEquipment,
 )
 from ..optics import OpticalPath
-from ..utils import ConnectionType
-from ..utils import find_all_paths
+from ..utils import ConnectionType, find_all_paths
 from .plotting import EquipmentPlottingMixIn
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,8 @@ class Equipment(EquipmentPlottingMixIn):
             equipment_list: list[OpticalEquipment] = [
                 self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
                 for node_id in optical_path
-                if self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT] is not None
+                if self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
+                is not None
             ]
 
             # Use frozenset for early uniqueness check
@@ -100,14 +100,18 @@ class Equipment(EquipmentPlottingMixIn):
         logger.debug("Connecting nodes")
 
         for out_node_id, out_node_data in self.connection_garph.nodes(data=True):
-            if out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT:
+            if (
+                out_node_data is not None
+                and out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT
+            ):
                 # Get output type and gender
                 connection_type = out_node_data[NodeLabels.CONNECTION_TYPE]
                 connection_gender = out_node_data.get(NodeLabels.CONNECTION_GENDER)
 
                 for in_node_id, in_node_data in self.connection_garph.nodes(data=True):
                     if (
-                        in_node_data.get(NodeLabels.TYPE) == OpticalType.INPUT
+                        in_node_data is not None
+                        and in_node_data.get(NodeLabels.TYPE) == OpticalType.INPUT
                         and in_node_data.get(NodeLabels.CONNECTION_TYPE)
                         == connection_type
                     ):
