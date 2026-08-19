@@ -166,7 +166,7 @@ def _plot_single_planet_curve(
     )
 
     specific_planet_color = get_planet_color(
-        planetary.get_simple_name(str(getattr(planet, "TechnicalName"))),
+        planetary.get_simple_name(str(getattr(planet, "TechnicalName", getattr(planet, ObjectTableLabels.NAME)))),
         effective_dark_mode,
         default_planet_color,  # type: ignore
     )

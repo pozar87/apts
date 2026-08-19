@@ -40,3 +40,20 @@ class ObjectTableLabels:
 
     CURRENT_ALT = "current_alt"
     CURRENT_AZ = "current_az"
+
+
+TECHNICAL_COLUMNS = [
+    "skyfield_object",
+    "ra_hours",
+    "dec_degrees",
+    "Magnitude_float",
+    "sin_dec",
+    "cos_dec_cos_ra",
+    "cos_dec_sin_ra",
+    "NGC_norm",
+    "IC_norm",
+    "Name_norm",
+    "TechnicalName",
+    "current_alt",
+    "current_az",
+]

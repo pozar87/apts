@@ -26,6 +26,23 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
     def get_skyfield_object(self, obj) -> object:
         pass
 
+    def drop_technical_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Removes internal technical calculation and caching columns from a DataFrame
+        before returning or presenting it to the user.
+        """
+        from .utils import filter_technical_columns
+        return filter_technical_columns(df)
+
+    def data(self, clean: bool = True) -> pd.DataFrame:
+        """
+        Returns the catalog DataFrame. If clean is True (default),
+        internal technical calculation columns are omitted.
+        """
+        if clean:
+            return self.drop_technical_columns(self.objects)
+        return self.objects
+
     def compute(self, calculation_date=None, df_to_compute=None) -> pd.DataFrame:
         """
         Default compute implementation using vectorized geometric formulas.

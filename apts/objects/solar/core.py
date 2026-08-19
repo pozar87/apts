@@ -8,6 +8,7 @@ from ...cache import get_mpcorb_data
 from ...constants import DSOType, ObjectTableLabels
 from ...utils import MINOR_PLANET_NAMES, planetary
 from ..base import Objects
+from ..utils import filter_technical_columns
 from .calculations import compute_ephem_and_skyfield_data
 
 
@@ -113,6 +114,7 @@ class SolarObjects(Objects):
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
+        clean=True,
     ):
         # Always ensure some basic computation is done if needed for magnitude filtering
         # Actually self.objects starts with only names. Magnitude is needed for filtering.
@@ -122,7 +124,7 @@ class SolarObjects(Objects):
         ):
             self.compute(self.calculation_date, skip_transits=False)
 
-        # First, call the parent's get_visible method
+        # First, call the parent's get_visible method with clean=False
         visible = super().get_visible(
             conditions,
             start,
@@ -131,6 +133,7 @@ class SolarObjects(Objects):
             sort_by,
             star_magnitude_limit,
             limiting_magnitude,
+            clean=False,
         )
 
         if not visible.empty:
@@ -143,6 +146,9 @@ class SolarObjects(Objects):
                 pd.Series,
                 visible["TechnicalName"].map(name_map),  # pyright: ignore[reportArgumentType]
             ).astype("string")
+
+        if clean:
+            visible = filter_technical_columns(visible)
 
         return visible
 
