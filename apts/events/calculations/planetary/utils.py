@@ -1,5 +1,4 @@
 
-from skyfield.api import Star
 from ....catalogs import Catalogs
 from ....utils import planetary
 

@@ -1,7 +1,5 @@
-import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import MagicMock
 from apts.objects.calculations.visibility import (
     filter_objects_by_magnitude,
     calculate_visible_stars_mask,
@@ -82,7 +80,7 @@ def test_calculate_visible_stars_mask_fast_path():
         check_times_gmst,
         conditions,
     )
-    assert mask[0] == True
+    assert mask[0]
 
 
 def test_calculate_visible_stars_mask_complex_path():

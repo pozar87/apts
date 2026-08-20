@@ -18,6 +18,17 @@ from .base import (
     get_reverse_translated_planet_names,
 )
 
+from .calculations import (
+    calculate_sub_observer_latitude,
+    calculate_apparent_polar_radius,
+    calculate_angular_diameter,
+    calculate_illuminated_fraction,
+    calculate_illuminated_disk_area,
+    calculate_surface_brightness,
+    calculate_sun_magnitude,
+    calculate_moon_magnitude_krisciunas,
+)
+
 from .physical import (
     get_planet_radius_km,
     get_planet_rotation_period,
@@ -77,6 +88,14 @@ __all__ = [
     "get_technical_name",
     "get_skyfield_obj",
     "get_reverse_translated_planet_names",
+    "calculate_sub_observer_latitude",
+    "calculate_apparent_polar_radius",
+    "calculate_angular_diameter",
+    "calculate_illuminated_fraction",
+    "calculate_illuminated_disk_area",
+    "calculate_surface_brightness",
+    "calculate_sun_magnitude",
+    "calculate_moon_magnitude_krisciunas",
     "get_planet_radius_km",
     "get_planet_rotation_period",
     "get_planet_distance_km",

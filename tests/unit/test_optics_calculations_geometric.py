@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from unittest.mock import MagicMock
 
 from apts.optics.calculations.geometric import (
@@ -37,8 +36,6 @@ def test_calculate_zoom_binoculars_etc():
 
     # Using isinstance check with a dynamically subclassed mock or registering classes
     from apts.opticalequipment.binoculars import Binoculars
-    from apts.opticalequipment.naked_eye import NakedEye
-    from apts.opticalequipment.smart_telescope import SmartTelescope
 
     # Create mock of Binoculars class
     class MyBinoculars(Binoculars):

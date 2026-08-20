@@ -1,6 +1,6 @@
 import functools
 import operator
-from typing import Sequence, Any, Union
+from typing import Sequence, Any
 import numpy as np
 
 

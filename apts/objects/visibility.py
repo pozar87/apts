@@ -1,6 +1,6 @@
 import types
 import unittest.mock
-from typing import Any, cast, Optional
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd

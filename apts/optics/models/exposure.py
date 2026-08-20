@@ -1,8 +1,5 @@
-import math
 from typing import Optional, TYPE_CHECKING, Any
-import numpy
 from ...units import get_unit_registry
-from ...constants import astronomy
 from ..calculations import exposure as optics_utils
 
 if TYPE_CHECKING:

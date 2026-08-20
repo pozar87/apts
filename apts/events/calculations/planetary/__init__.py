@@ -45,6 +45,7 @@ __all__ = [
     "calculate_mars_closest_approach",
     "calculate_planet_alignments",
     "calculate_planet_planet_occultations",
+    "calculate_celestial_configurations",
     "calculate_jovian_moon_events",
     "calculate_saturn_ring_crossings",
     "calculate_jupiter_grs_transits",

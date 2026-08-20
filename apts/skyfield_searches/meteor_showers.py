@@ -1,5 +1,4 @@
 from typing import Any, cast
-from skyfield.api import Star
 from ..cache import get_ephemeris, get_timescale
 from ..utils import planetary
 from .utils import find_solar_longitude_time
