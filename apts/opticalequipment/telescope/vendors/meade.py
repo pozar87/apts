@@ -8,16 +8,16 @@ class MeadeTelescope(Telescope):
             "name": "LX85 ACF 6\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 4490,
+            "mass": 5030,  # Verified via official Meade / Levenhuk documentation (5.03 kg OTA weight) - https://eu.levenhuk.com/catalogue/telescopes/meade-lx85-6-acf-ota/
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 152.4,
-            "focal_length_mm": 1524,
-            "central_obstruction_mm": 56,
+            "aperture_mm": 152.4,  # Verified via official Meade spec sheet (6" = 152.4mm)
+            "focal_length_mm": 1524,  # Verified via official Meade spec sheet (1524mm f/10)
+            "central_obstruction_mm": 56,  # Verified via official Meade spec sheet (56mm secondary obstruction)
         },
         "Meade_LX85_ACF_8": {
             "brand": "Meade",
