@@ -40,6 +40,7 @@ class PlanetsCatalogMixIn:
     def get_visible_planets(
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
+        clean = args.pop("clean", True)
         with language_context(language):
             from ...i18n import bulk_gettext
 
@@ -48,6 +49,7 @@ class PlanetsCatalogMixIn:
                 self.start,
                 self.time_limit,
                 limiting_magnitude=self.limiting_magnitude,
+                clean=False,
                 **args,
             )
 
@@ -56,15 +58,20 @@ class PlanetsCatalogMixIn:
                 # Usually Sun, Moon, and potentially Venus/Jupiter if they are bright enough.
                 # We use a threshold of 0 magnitude for daytime planet visibility.
                 # Optimization: use pre-calculated Magnitude_float for faster filtering.
-                mags = visible["Magnitude_float"].values
-                tech_names = visible["TechnicalName"].values
-                # Keep Sun, Moon, or anything with magnitude < 0
-                mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)
-                visible = visible[mask].copy()
+                mags = visible["Magnitude_float"].values if "Magnitude_float" in visible.columns else np.array([])
+                tech_names = visible["TechnicalName"].values if "TechnicalName" in visible.columns else np.array([])
+                if len(mags) > 0 and len(tech_names) > 0:
+                    # Keep Sun, Moon, or anything with magnitude < 0
+                    mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)
+                    visible = visible[mask].copy()
 
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:
                 visible["Name"] = cast(pd.Series, bulk_gettext(visible["Name"])).astype(
                     "string"
                 )
+
+            if clean:
+                visible = self.local_planets.drop_technical_columns(visible)
+
             return visible

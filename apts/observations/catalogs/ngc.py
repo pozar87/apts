@@ -41,7 +41,9 @@ class NgcCatalogMixIn:
         self, language: Optional[str] = None, **args
     ) -> pd.DataFrame:
         if self.sun_observation:
-            return pd.DataFrame(columns=self.local_ngc.objects.columns)
+            return self.local_ngc.drop_technical_columns(
+                pd.DataFrame(columns=self.local_ngc.objects.columns)
+            )
 
         with language_context(language):
             from ...i18n import bulk_gettext

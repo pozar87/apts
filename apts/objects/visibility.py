@@ -12,6 +12,7 @@ from .calculations import (
     filter_objects_by_magnitude,
     calculate_visible_stars_mask,
 )
+from .utils import filter_technical_columns
 
 
 class VisibilityMixIn:
@@ -237,16 +238,19 @@ class VisibilityMixIn:
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
+        clean=True,
     ) -> pd.DataFrame:
         if not start or not stop:
-            return pd.DataFrame(columns=self.objects.columns)
+            df = pd.DataFrame(columns=self.objects.columns)
+            return filter_technical_columns(df) if clean else df
 
         candidate_objects = self._filter_by_magnitude(
             conditions, star_magnitude_limit, limiting_magnitude
         )
 
         if candidate_objects.empty:
-            return pd.DataFrame(columns=self.objects.columns)
+            df = pd.DataFrame(columns=self.objects.columns)
+            return filter_technical_columns(df) if clean else df
 
         # Vectorized visibility check
         check_times = self._prepare_visibility_check_times(start, stop)
@@ -273,7 +277,8 @@ class VisibilityMixIn:
             )
 
         if visible_candidate_objects.empty:
-            return pd.DataFrame(columns=self.objects.columns)
+            df = pd.DataFrame(columns=self.objects.columns)
+            return filter_technical_columns(df) if clean else df
 
         # Compute transit/rise/set ONLY for visible objects if needed for sorting or plotting
         self._ensure_computed_fields(visible_candidate_objects, sort_by)
@@ -283,5 +288,8 @@ class VisibilityMixIn:
         # Sort objects by given order, handling potential NaNs
         if sort_by in visible.columns and not bool(visible[sort_by].isnull().all()):
             visible = visible.sort_values(by=sort_by, ascending=True)
+
+        if clean:
+            visible = filter_technical_columns(visible)
 
         return visible

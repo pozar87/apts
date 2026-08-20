@@ -5,6 +5,7 @@ from ..catalogs import Catalogs
 from ..catalogs.ngc import normalize_name as internal_normalize_name
 from ..constants import ObjectTableLabels
 from .base import Objects
+from .utils import filter_technical_columns
 
 
 class NGC(Objects):
@@ -31,6 +32,7 @@ class NGC(Objects):
         star_magnitude_limit=None,
         limiting_magnitude=None,
         exclude_messier=True,
+        clean=True,
         **kwargs,
     ) -> pd.DataFrame:
         # Override get_visible to lazily restore skyfield objects and Pint units
@@ -42,7 +44,7 @@ class NGC(Objects):
         if "skyfield_object" not in self.objects.columns:
             self.objects["skyfield_object"] = None
 
-        # 2. Call super().get_visible to perform vectorized visibility calculations
+        # 2. Call super().get_visible with clean=False to perform vectorized visibility calculations
         # NGC uses is_star_catalog=True and ra_hours/dec_degrees columns,
         # so super().get_visible() does NOT need skyfield_objects yet.
         visible = super().get_visible(
@@ -53,18 +55,19 @@ class NGC(Objects):
             sort_by=sort_by,
             star_magnitude_limit=star_magnitude_limit,
             limiting_magnitude=limiting_magnitude,
+            clean=False,
             **kwargs,
         )
 
         if visible.empty:
-            return visible
+            return filter_technical_columns(visible) if clean else visible
 
         # 3. Apply exclude_messier filter to visible objects
         if exclude_messier and "M" in visible.columns:
             visible = visible[visible["M"].isna()]
 
         if visible.empty:
-            return visible  # type: ignore[return-value]
+            return filter_technical_columns(visible) if clean else visible  # type: ignore[return-value]
 
         # 4. Defer restoration of skyfield_objects and Pint units to visible subset
         from skyfield.api import Star
@@ -136,6 +139,9 @@ class NGC(Objects):
             # Refresh the 'visible' slice with restored objects for returning to the caller.
             # We must re-copy from the master catalog to ensure consistency.
             visible.update(self.objects.loc[indices_needing_restoration])
+
+        if clean:
+            visible = filter_technical_columns(visible)
 
         return visible  # type: ignore[return-value]
 
