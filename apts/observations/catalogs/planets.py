@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Optional, Union, cast
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:

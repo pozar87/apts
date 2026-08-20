@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.sky_watcher import Sky_watcherTelescope
 from apts.utils import ConnectionType, Gender
 

@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
 from apts.utils import ConnectionType, Gender
 

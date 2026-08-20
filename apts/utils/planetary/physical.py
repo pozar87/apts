@@ -5,6 +5,16 @@ from skyfield import magnitudelib
 from apts.cache import get_ephemeris, get_timescale
 from .constants import PLANET_RADII_KM, PLANET_POLAR_RADII_KM, PLANET_ROTATION_PERIODS_S
 from .base import get_simple_name, get_skyfield_obj
+from .calculations import (
+    calculate_sub_observer_latitude,
+    calculate_apparent_polar_radius,
+    calculate_angular_diameter,
+    calculate_illuminated_fraction,
+    calculate_illuminated_disk_area,
+    calculate_surface_brightness,
+    calculate_sun_magnitude,
+    calculate_moon_magnitude_krisciunas,
+)
 
 
 def get_planet_radius_km(planet_name: str) -> float:
@@ -119,17 +129,9 @@ def get_sub_observer_latitude(planet_name: str, time: Any) -> Union[float, np.nd
     alpha0_rad = np.radians(alpha0_deg)
     delta0_rad = np.radians(delta0_deg)
 
-    # Formula for sub-observer latitude De:
-    # sin(De) = -sin(delta0)*sin(delta) - cos(delta0)*cos(delta)*cos(alpha0 - alpha)
-    # This represents the latitude of the sub-observer point.
-    # Reference: Explanatory Supplement to the Astronomical Almanac.
-    sin_De = -np.sin(delta0_rad) * np.sin(delta_rad) - np.cos(delta0_rad) * np.cos(
-        delta_rad
-    ) * np.cos(alpha0_rad - alpha_rad)
-    De_rad = np.arcsin(np.clip(sin_De, -1.0, 1.0))
-
-    res = np.degrees(De_rad)
-    return float(cast(Any, res)) if np.isscalar(res) else res
+    return calculate_sub_observer_latitude(
+        alpha_rad, delta_rad, alpha0_rad, delta0_rad
+    )
 
 
 def get_planet_angular_diameter(
@@ -156,22 +158,12 @@ def get_planet_angular_diameter(
         if which == "polar":
             radius = radius_pol
         elif which == "apparent_polar":
-            # Apparent polar diameter depends on tilt
-            # Formula: r_app = r_eq * sqrt(1 - e^2 * cos^2(De))
-            # where e^2 = (r_eq^2 - r_pol^2) / r_eq^2
             De = get_sub_observer_latitude(planet_name, time)
-            De_rad = np.radians(De)
-            e_sq = (radius_eq**2 - radius_pol**2) / (radius_eq**2)
-            radius = radius_eq * np.sqrt(1 - e_sq * np.cos(De_rad) ** 2)
+            radius = calculate_apparent_polar_radius(radius_eq, radius_pol, De)
         else:
             raise ValueError(f"Invalid 'which' parameter: {which}")
 
-    # Angular diameter in radians
-    alpha_rad = 2 * np.arcsin(radius / distance)
-
-    # Convert to arcseconds
-    res = np.degrees(alpha_rad) * 3600.0
-    return float(cast(Any, res)) if np.isscalar(res) else res
+    return calculate_angular_diameter(radius, distance)
 
 
 def get_planet_fraction_illuminated(
@@ -193,7 +185,7 @@ def get_planet_fraction_illuminated(
     # Phase angle: angle Sun-Planet-Earth
     i_rad = astrometric.phase_angle(sun).radians
 
-    return (1 + np.cos(i_rad)) / 2
+    return calculate_illuminated_fraction(i_rad)
 
 
 def get_planet_phase(planet_name: str, time: Any) -> float | np.ndarray:
@@ -245,22 +237,13 @@ def get_planet_magnitude(
         astrometric = cast(Any, earth).at(time).observe(planet_obj)
 
     if name_norm == "sun":
-        # Sun magnitude: M = -26.74 at 1 AU
         dist_au = astrometric.distance().au
-        return -26.74 + 5 * np.log10(dist_au)
+        return calculate_sun_magnitude(dist_au)
 
     if name_norm == "moon":
-        # Moon magnitude using Krisciunas & Schaefer (1991)
-        # alpha is the phase angle Sun-Moon-Earth in degrees
         alpha = astrometric.phase_angle(sun).degrees
-        # V(R, alpha) = -12.73 + 0.026 * |alpha| + 4e-9 * alpha^4
-        v_base = -12.73 + 0.026 * np.abs(alpha) + 4.0e-9 * (alpha**4)
-
-        # Distance correction: delta is distance in km
         dist_km = astrometric.distance().km
-        # correction = 5 * log10(dist / 384400)
-        v_dist = 5 * np.log10(dist_km / 384400.0)
-        return v_base + v_dist
+        return calculate_moon_magnitude_krisciunas(alpha, dist_km)
 
     # Major planets and others supported by skyfield
     # Skyfield's magnitudelib.planetary_magnitude(astrometric) handles
@@ -294,9 +277,6 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
     else:
         planet_obj = get_skyfield_obj(planet_name)
 
-    # Optimization: Consolidate redundant Skyfield observations into a single call.
-    # Apparent positions are expensive; reusing the result for magnitude, diameter,
-    # and illuminated fraction provides a significant speedup.
     astrometric = cast(Any, earth).at(time).observe(planet_obj)
 
     v = get_planet_magnitude(planet_name, time, astrometric=astrometric)
@@ -304,31 +284,12 @@ def get_planet_surface_brightness(planet_name: str, time: Any) -> float | np.nda
     # Angular diameter calculation using precomputed astrometric object
     radius_eq = get_planet_radius_km(planet_name)
     distance_km = astrometric.distance().km
-    alpha_rad = 2 * np.arcsin(radius_eq / distance_km)
-    d = np.degrees(alpha_rad) * 3600.0
+    d = calculate_angular_diameter(radius_eq, distance_km)
 
     if name_norm == "sun":
         k = 1.0
     else:
         k = get_planet_fraction_illuminated(planet_name, time, astrometric=astrometric)
 
-    # Area of illuminated portion of the disk in arcsec^2
-    # Area = pi * (radius)^2 * k
-    area = np.pi * (d / 2.0) ** 2 * k
-
-    # Handle cases where area might be zero or negative to avoid log10 errors
-    if np.isscalar(area):
-        if cast(Any, area) <= 0:
-            return float("inf")
-        # Ensure we return a Python float for consistency
-        res_scalar = v + 2.5 * np.log10(area)
-        return float(cast(Any, res_scalar))
-    else:
-        # For arrays, use np.where to handle zeros and return inf.
-        # We use np.log10's 'where' and 'out' parameters to avoid RuntimeWarnings
-        # when area contains zeros or negative values.
-        res = np.full_like(area, np.inf, dtype=float)
-        valid = area > 0
-        np.log10(area, where=valid, out=res)
-        res = np.where(valid, v + 2.5 * res, np.inf)
-        return cast(np.ndarray, res)
+    area = calculate_illuminated_disk_area(d, k)
+    return calculate_surface_brightness(v, area)

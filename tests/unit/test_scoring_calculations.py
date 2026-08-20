@@ -1,6 +1,5 @@
 import unittest
 import pandas as pd
-import numpy as np
 
 from apts.scoring.calculations import (
     calculate_altitude_score,

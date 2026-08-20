@@ -1,7 +1,6 @@
 import functools
 from typing import cast
 
-import numpy as np
 import pandas as pd
 
 from ...cache import get_mpcorb_data

@@ -175,10 +175,8 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
     # Extract observer coordinates
     lon_hours = 0.0
-    lat_deg = 0.0
     for vf in observer.vector_functions:
         if hasattr(vf, "latitude"):
-            lat_deg = vf.latitude.degrees
             lon_hours = vf.longitude.hours
             break
 

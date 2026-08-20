@@ -1,4 +1,3 @@
-import pytest
 from apts.opticalequipment.telescope.vendors.takahashi import TakahashiTelescope
 
 def test_takahashi_fsq_85edp_audit():
