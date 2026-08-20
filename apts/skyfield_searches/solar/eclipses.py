@@ -3,7 +3,8 @@ from typing import Any, cast
 import numpy as np
 from skyfield import almanac, eclipselib
 from skyfield.searchlib import find_minima
-from ...cache import get_timescale, get_ephemeris
+
+from ...cache import get_ephemeris, get_timescale
 from ...constants import astronomy
 from ...utils import planetary
 
@@ -31,7 +32,9 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
             moon = eph["moon"]
             sun = eph["sun"]
 
-            m_obs = observer.at(ti).observe(moon).apparent()
+            # Performance Optimization: Hoist observer.at(ti) to avoid evaluating observer state twice
+            obs_at_ti = observer.at(ti)
+            m_obs = obs_at_ti.observe(moon).apparent()
             # Oracle: use refracted position and account for Moon's semi-diameter.
             m_alt_refracted, _, m_dist = m_obs.altaz(
                 temperature_C=10.0, pressure_mbar=1013.25
@@ -39,8 +42,7 @@ def find_lunar_eclipses(start_date, end_date, observer=None):
             rm = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
 
             s_alt = (
-                observer.at(ti)
-                .observe(sun)
+                obs_at_ti.observe(sun)
                 .apparent()
                 .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                 .degrees
@@ -107,7 +109,7 @@ def find_solar_eclipses(observer, start_date, end_date):
     )
     new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
 
-    setattr(solar_separation, "step_days", 0.005)
+    solar_separation.step_days = 0.005
 
     events = []
     for t_nm in new_moons:
@@ -143,7 +145,9 @@ def find_solar_eclipses(observer, start_date, end_date):
                 # Oracle: use refracted position and account for Sun's semi-diameter.
                 # An eclipse is visible if any part of the solar disk is above the horizon.
                 # Horizon is approx -0.8333 degrees (34' refraction + 16' semi-diameter).
-                sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+                sun_alt = s_pos.altaz(temperature_C=10.0, pressure_mbar=1013.25)[
+                    0
+                ].degrees
                 if sun_alt <= -0.8333:
                     continue
 
@@ -207,7 +211,10 @@ def _calculate_solar_obscuration(rs, rm, d):
             part1 = r1sq * np.arccos((dsq + r1sq - r2sq) / (2 * d_sep * r1))
             part2 = r2sq * np.arccos((dsq + r2sq - r1sq) / (2 * d_sep * r2))
             part3 = 0.5 * np.sqrt(
-                (-d_sep + r1 + r2) * (d_sep + r1 - r2) * (d_sep - r1 + r2) * (d_sep + r1 + r2)
+                (-d_sep + r1 + r2)
+                * (d_sep + r1 - r2)
+                * (d_sep - r1 + r2)
+                * (d_sep + r1 + r2)
             )
             return part1 + part2 - part3
 

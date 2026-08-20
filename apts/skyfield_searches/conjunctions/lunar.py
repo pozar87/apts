@@ -1,10 +1,10 @@
 import numpy as np
+
 from ...cache import get_timescale
 from ...constants import astronomy
 from ...utils import planetary
-from ..utils import _refine_conjunction
+from ..utils import _refine_conjunction, fast_altaz
 
-from ..utils import fast_altaz
 
 def find_lunar_planetary_occultations(observer, start_date, end_date):
     """
@@ -44,11 +44,15 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
 
     # Observe Moon (coarse) using fast_altaz and astrometric distance
     mpos_coarse = observer.at(coarse_times).observe(moon)
-    m_alt_coarse, _, m_dist_coarse = fast_altaz(observer.at(coarse_times), moon, temperature_C=10.0, pressure_mbar=1013.25)
+    m_alt_coarse, _, m_dist_coarse = fast_altaz(
+        observer.at(coarse_times), moon, temperature_C=10.0, pressure_mbar=1013.25
+    )
     moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
 
     # Sun altitude (coarse) using fast_altaz
-    sun_alts_coarse, _, _ = fast_altaz(observer.at(coarse_times), sun, temperature_C=10.0, pressure_mbar=1013.25)
+    sun_alts_coarse, _, _ = fast_altaz(
+        observer.at(coarse_times), sun, temperature_C=10.0, pressure_mbar=1013.25
+    )
 
     events = []
 
@@ -73,7 +77,8 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
 
         # Group potential coarse indices into contiguous windows
         potential_groups = np.split(
-            np.where(potential_mask)[0], np.where(np.diff(np.where(potential_mask)[0]) > 1)[0] + 1
+            np.where(potential_mask)[0],
+            np.where(np.diff(np.where(potential_mask)[0]) > 1)[0] + 1,
         )
 
         for group in potential_groups:
@@ -83,23 +88,24 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
             w_start_t = times[w_start_idx]
             w_end_t = times[w_end_idx]
 
-            def is_occulted(t):
-                m = observer.at(t).observe(moon).apparent()
-                p = observer.at(t).observe(planet).apparent()
+            def is_occulted(t, planet=planet):
+                # Performance Optimization: Hoist observer.at(t) to evaluate topocentric state once per time step
+                obs_at_t = observer.at(t)
+                m = obs_at_t.observe(moon).apparent()
+                p = obs_at_t.observe(planet).apparent()
                 sep = m.separation_from(p).degrees
                 rad = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m.distance().km))
                 alt, _, _ = m.altaz(temperature_C=10.0, pressure_mbar=1013.25)
                 sun_alt = (
-                    observer.at(t)
-                    .observe(sun)
+                    obs_at_t.observe(sun)
                     .apparent()
                     .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
                     .degrees
                 )
                 return (sep < rad) & (alt.degrees > 0) & (sun_alt <= -6)
 
-            setattr(is_occulted, "step_days", 0.005)
-            t_occ, y_occ = almanac.find_discrete(w_start_t, w_end_t, is_occulted)
+            is_occulted.step_days = 0.005
+            t_occ, _ = almanac.find_discrete(w_start_t, w_end_t, is_occulted)
 
             t_list = list(t_occ)
             # If we started inside an occultation, add the window start
