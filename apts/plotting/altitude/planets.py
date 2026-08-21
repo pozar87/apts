@@ -16,6 +16,7 @@ from apts.i18n import gettext_
 from apts.plotting.utils import mark_good_conditions, mark_observation
 from apts.utils import planetary
 from apts.utils.plot import PlotUtils
+
 from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
@@ -36,6 +37,11 @@ def generate_plot_planets(
     plot_colors = get_plot_colors(effective_dark_mode)
 
     ax = args.pop("ax", None)
+    # Consumed for API compatibility: magnitude filtering is already applied
+    # inside get_visible_planets() via the observation's limiting_magnitude.
+    # Without popping it, it would be forwarded to pyplot.subplots() below
+    # and crash when no ax is provided.
+    args.pop("star_magnitude_limit", None)
     fig = None
     if ax:
         fig = ax.figure
@@ -45,7 +51,10 @@ def generate_plot_planets(
     fig.patch.set_facecolor(style["FIGURE_FACE_COLOR"])
     ax.set_facecolor(style["AXES_FACE_COLOR"])
 
-    planets_df = observation.get_visible_planets().copy()
+    # TechnicalName (and other technical columns) is stripped from the
+    # user-facing DataFrame (clean=True), but it is required here to resolve
+    # Skyfield objects and planet colors regardless of the UI language.
+    planets_df = observation.get_visible_planets(clean=False).copy()
 
     # Extended range for plotting context (+/- 30 mins)
     plot_start = (
@@ -166,7 +175,13 @@ def _plot_single_planet_curve(
     )
 
     specific_planet_color = get_planet_color(
-        planetary.get_simple_name(str(getattr(planet, "TechnicalName", getattr(planet, ObjectTableLabels.NAME)))),
+        planetary.get_simple_name(
+            str(
+                getattr(
+                    planet, "TechnicalName", getattr(planet, ObjectTableLabels.NAME)
+                )
+            )
+        ),
         effective_dark_mode,
         default_planet_color,  # type: ignore
     )
@@ -177,8 +192,11 @@ def _plot_single_planet_curve(
     else:
         # Optimization: list comprehension over .values is faster than .apply() for fallback path.
         time_series = pd.Series(
-            [t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT for t in curve_df["Time"].values],
-            index=curve_df.index
+            [
+                t.utc_datetime() if hasattr(t, "utc_datetime") else pd.NaT
+                for t in curve_df["Time"].values
+            ],
+            index=curve_df.index,
         )
     valid_times = pd.notna(time_series)
 

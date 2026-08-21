@@ -25,7 +25,9 @@ def plot_visible_planets_svg(
     style = get_plot_style(effective_dark_mode)
     default_fill_color = style["AXES_FACE_COLOR"]
 
-    visible_planets = observation.get_visible_planets(**args)
+    # Keep technical columns (TechnicalName) - needed for canonical planet
+    # identification and colors, and unaffected by UI language translation.
+    visible_planets = observation.get_visible_planets(clean=False, **args)
     dwg = svg.Drawing(style={"background-color": style["BACKGROUND_COLOR"]})
     if not visible_planets.empty:
         max_size = visible_planets[["Size"]].max().iloc[0]

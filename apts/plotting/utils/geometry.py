@@ -113,7 +113,9 @@ def get_object_angular_size_deg(observation: "Observation", object_name: str) ->
             return float(size_arcsec) / 3600.0
 
     # Fallback to English-named visible planets
-    visible_planets = observation.get_visible_planets(language="en")
+    # Keep technical columns (TechnicalName) for canonical name matching
+    # (the translated Name column is not a reliable identifier here).
+    visible_planets = observation.get_visible_planets(language="en", clean=False)
     object_data = visible_planets[
         (visible_planets["TechnicalName"] == object_name)
         | (visible_planets["Name"] == object_name)

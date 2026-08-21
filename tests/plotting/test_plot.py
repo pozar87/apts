@@ -128,6 +128,7 @@ def test_plot_skymap_renders_messier_objects(mock_observation):
         )
         mock_ts = MagicMock(spec=Timescale)
         from skyfield.api import load
+
         ts = load.timescale()
         mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
@@ -187,6 +188,7 @@ def test_plot_ngc_object_with_no_size(mock_observation):
 
         mock_ts = MagicMock(spec=Timescale)
         from skyfield.api import load
+
         ts = load.timescale()
         mock_time = ts.utc(2025, 2, 18)
         mock_ts.tdb.return_value = mock_time
@@ -513,10 +515,8 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
         print(f"Mock dec_degrees_array type: {type(dec_degrees_array)}")
 
         # Add debug output to track the mock objects
-        print(
-        )
-        print(
-        )
+        print()
+        print()
 
         # Test the actual property access and indexing
 
@@ -530,7 +530,6 @@ def test_plot_stars_on_skymap_equatorial_with_zoom():
             zoom_deg=2.0,
             coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
         )
-
 
         # Check if scatter was called at all
         print(f"mock_ax.scatter called: {mock_ax.scatter.called}")
@@ -756,7 +755,9 @@ def test_plot_messier_ellipse_angle_on_equatorial_zoom():
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -871,7 +872,9 @@ def test_plot_target_messier_ellipse_angle_on_horizontal_zoom():
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -1006,7 +1009,9 @@ def test_plot_non_target_messier_ellipse_angle_on_horizontal_zoom():
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -1137,7 +1142,9 @@ def test_plot_non_target_messier_ellipse_angle_on_equatorial_zoom():
                 pa, p_angle, cs, fh, fv
             ),
         ),
-        patch("apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"),
+        patch(
+            "apts.plotting.skymaps.skymap_zoom.get_brightness_color", return_value="0.5"
+        ),
         patch(
             "apts.plotting.skymap_objects.calculate_parallactic_angle",
             return_value=parallactic_angle_val,
@@ -1430,7 +1437,6 @@ def test_plot_stars_ra_wrapping_equatorial():
             coordinate_system=cast(Any, CoordinateSystem.EQUATORIAL),
         )
 
-
         # Verify that scatter was called with stars in the wrapped zoom window
         scatter_calls = mock_ax.scatter.call_args_list
 
@@ -1569,3 +1575,62 @@ def test_plot_stars_ra_wrapping_equatorial():
         assert len(ax.collections) == 3
 
         plt.close(fig)
+
+
+def test_plot_planets_requests_technical_columns():
+    """
+    Regression test: get_visible_planets() strips technical columns (clean=True)
+    and its Name column may be translated (e.g. "Księżyc" in Polish). The altitude
+    planets plot must request clean=False so the canonical TechnicalName remains
+    available for Skyfield object resolution - otherwise plotting crashes with
+    "'NoneType' object has no attribute '_observe_from_bcrs'" for non-English UIs.
+    """
+    from datetime import datetime
+    from unittest.mock import MagicMock
+
+    import numpy as np
+    import pandas as pd
+    import pytz
+    from matplotlib import pyplot as plt
+
+    from apts.observations import Observation
+    from apts.plotting.altitude import (
+        generate_plot_planets as _generate_plot_planets,
+    )
+
+    mock_observation = MagicMock(spec=Observation)
+    mock_observation.place = MagicMock()
+    mock_observation.place.local_timezone = pytz.utc
+    mock_observation.start = datetime(2023, 1, 1, 22, 0, tzinfo=pytz.utc)
+    mock_observation.stop = datetime(2023, 1, 2, 6, 0, tzinfo=pytz.utc)
+    mock_observation.time_limit = mock_observation.stop
+    mock_observation.conditions = MagicMock()
+    mock_observation.conditions.min_object_altitude = 10
+    mock_observation.conditions.is_visible.return_value = np.array([])
+
+    # Simulate the user-facing (clean=True) DataFrame: no TechnicalName, and a
+    # translated Name column.
+    mock_visible_planets = pd.DataFrame(
+        {
+            "Name": ["Księżyc", "Uran"],
+            "Rising": [pd.NaT, pd.NaT],
+            "Setting": [pd.NaT, pd.NaT],
+        }
+    )
+    mock_observation.get_visible_planets.return_value = mock_visible_planets
+    mock_observation.place.get_altaz_curve.return_value = pd.DataFrame(
+        {"Time": [], "Altitude": [], "Azimuth": [], "Time_dt": []}
+    )
+    mock_observation.local_planets.get_skyfield_object.return_value = MagicMock()
+
+    fig, ax = plt.subplots()
+    try:
+        _generate_plot_planets(observation=mock_observation, ax=ax)
+    except Exception as e:
+        plt.close(fig)
+        pytest.fail(f"_generate_plot_planets raised an unexpected exception: {e}")
+    plt.close(fig)
+
+    # The plot must request the uncleaned DataFrame so the canonical
+    # TechnicalName is available for Skyfield object resolution.
+    mock_observation.get_visible_planets.assert_called_with(clean=False)
