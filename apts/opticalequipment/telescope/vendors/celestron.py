@@ -695,15 +695,15 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 127SLT",
             "type": "maksutov_cassegrain",
             "optical_length": 0,
-            "mass": 3950,
+            "mass": 3950, # Verified via Celestron.com (8.7 lbs / 3.95 kg OTA weight) - https://www.celestron.com/products/nexstar-127slt-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 127,
-            "focal_length_mm": 1500,
+            "aperture_mm": 127, # Verified via Celestron.com (127mm / 5") - https://www.celestron.com/products/nexstar-127slt-computerized-telescope
+            "focal_length_mm": 1500, # Verified via Celestron.com (1500mm / f/12) - https://www.celestron.com/products/nexstar-127slt-computerized-telescope
             "central_obstruction_mm": 40,
         },
         "Celestron_NexStar_130SLT": {
