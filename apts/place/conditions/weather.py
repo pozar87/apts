@@ -4,16 +4,20 @@ from typing import TYPE_CHECKING, Any, Optional, Tuple, cast
 import numpy as np
 
 if TYPE_CHECKING:
-    from ..weather import Weather
+    from ...weather import Weather
 
-from ...weather import Weather
 from ...cache import get_timescale
+from ...weather import Weather
 
 
 class WeatherMixIn:
     if TYPE_CHECKING:
-        lat_decimal: float
-        lon_decimal: float
+
+        @property
+        def lat_decimal(self) -> float: ...
+        @property
+        def lon_decimal(self) -> float: ...
+
         local_timezone: Any
         weather: Optional[Weather]
         observer: Any

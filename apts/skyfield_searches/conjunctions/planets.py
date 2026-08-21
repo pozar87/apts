@@ -47,7 +47,10 @@ def find_mercury_inferior_conjunctions(
 
     return inferior_events
 
-def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_degrees=2.0):
+
+def find_planet_solar_conjunctions(
+    observer, start_date, end_date, threshold_degrees=2.0
+):
     """
     Finds conjunctions between planets and the Sun.
     Distinguishes between inferior and superior conjunctions for inner planets.
@@ -84,7 +87,10 @@ def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_deg
                     kind = "Inferior Conjunction"
                     # Oracle: check for transit during inferior conjunction
                     p_rad = np.degrees(
-                        np.arctan2(planetary.get_planet_radius_km(p_name) / astronomy.AU_KM, p_dist)
+                        np.arctan2(
+                            planetary.get_planet_radius_km(p_name) / astronomy.AU_KM,
+                            p_dist,
+                        )
                     )
                     s_rad = np.degrees(
                         np.arctan2(astronomy.SUN_RADIUS_KM / astronomy.AU_KM, sun_dist)
@@ -114,6 +120,7 @@ def find_planet_solar_conjunctions(observer, start_date, end_date, threshold_deg
             conjunctions.append(conj)
 
     return conjunctions
+
 
 def find_planet_planet_occultations(observer, start_date, end_date):
     """
@@ -169,12 +176,14 @@ def find_planet_planet_occultations(observer, start_date, end_date):
                 return sep - (r1 + r2)
 
             # Step of 0.5 days is safe for these slow events
-            separation.step_days = 0.5
+            setattr(separation, "step_days", 0.5)
             times, _ = find_minima(t0, t1, separation)
 
             for t in times:
                 # Refine
-                refined_t, refined_sep = _refine_conjunction(observer, p1_obj, p2_obj, t)
+                refined_t, refined_sep = _refine_conjunction(
+                    observer, p1_obj, p2_obj, t
+                )
 
                 # Optimization: Hoist observer.at(refined_t)
                 obs_at_refined_t = observer.at(refined_t)

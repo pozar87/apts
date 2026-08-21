@@ -104,7 +104,7 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
                 )
                 return (sep < rad) & (alt.degrees > 0) & (sun_alt <= -6)
 
-            is_occulted.step_days = 0.005
+            setattr(is_occulted, "step_days", 0.005)
             t_occ, _ = almanac.find_discrete(w_start_t, w_end_t, is_occulted)
 
             t_list = list(t_occ)

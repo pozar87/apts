@@ -4,7 +4,8 @@ import numpy as np
 
 if TYPE_CHECKING:
     from skyfield.api import Time
-    from ..weather import Weather
+
+    from ...weather import Weather
 
 from ..utils import get_scalar_datetime
 
