@@ -29,6 +29,19 @@ def _make_catalog_df(column_name, entries, extra_names=None):
     return df
 
 
+def _lazy_proxy(value):
+    """Return an object mimicking a Django gettext_lazy translation proxy.
+
+    Django lazy proxies have the type name '__proxy__', are not instances of
+    str, but behave like strings (len, str conversion, string methods).
+    """
+    return type(
+        "__proxy__",
+        (),
+        {"__str__": lambda self: value, "__len__": lambda self: len(value)},
+    )()
+
+
 class MockCatalog:
     """Mock catalog object that mimics local_messier / local_ngc / local_stars."""
 
@@ -44,9 +57,9 @@ class MockCatalog:
         from apts.objects.ngc import NGC
 
         norm_name = NGC.normalize_name(name)
-        mask = (self.objects[self._column_name].apply(NGC.normalize_name) == norm_name) | (
-            self.objects["Name"].apply(NGC.normalize_name) == norm_name
-        )
+        mask = (
+            self.objects[self._column_name].apply(NGC.normalize_name) == norm_name
+        ) | (self.objects["Name"].apply(NGC.normalize_name) == norm_name)
         if "IC" in self.objects.columns:
             mask |= self.objects["IC"].apply(NGC.normalize_name) == norm_name
         res = self.objects[mask]
@@ -216,6 +229,48 @@ class TestResolveTargetPandasCompatibility(unittest.TestCase):
         obj, data = resolve_target(obs, "M1")
         self.assertIsNotNone(data)
         self.assertEqual(data["Messier"], "M1")
+
+    def test_normalize_name_coerces_lazy_proxy(self):
+        """NGC.normalize_name treats Django lazy proxies as plain strings.
+
+        Regression: Django gettext_lazy proxies have the type name '__proxy__'
+        and are not instances of str. normalize_name previously returned them
+        unchanged, making pandas StringArray comparisons fail with
+        'Lengths of operands do not match' (a 6-char name looks like a
+        6-element list-like to pandas).
+        """
+        from apts.objects.ngc import NGC
+
+        self.assertEqual(NGC.normalize_name(_lazy_proxy("IC0003")), "IC0003")
+        self.assertEqual(NGC.normalize_name(_lazy_proxy("NGC 224")), "NGC0224")
+
+    def test_ngc_ic_designation_resolved_with_lazy_proxy(self):
+        """IC-designated objects resolve when the target name is a lazy proxy.
+
+        Regression: the catalog skymap view resolves IC objects (whose 'NGC'
+        column is empty) via the translated 'Name' column, which contains
+        Django gettext_lazy proxies. resolve_target must not crash on them
+        (real-world case: /plot/skymap/catalog/NGC/<pk>/IC0003/).
+        """
+        ngc = pd.DataFrame(
+            {
+                "NGC": pd.array([None, "NGC 7000"], dtype="string"),
+                "Name": pd.array(["IC0003", "North America Nebula"], dtype="string"),
+                "IC": pd.array(["IC0003", None], dtype="string"),
+            }
+        )
+        obs = self._make_observation(ngc_df=ngc)
+        obj, data = resolve_target(obs, _lazy_proxy("IC0003"))
+        self.assertIsNotNone(obj)
+        self.assertEqual(data["Name"], "IC0003")
+
+    def test_lazy_proxy_miss_does_not_raise(self):
+        """A lazy proxy for an unknown object falls through without raising."""
+        df = _make_catalog_df("NGC", ["NGC 1", "NGC 7000"])
+        obs = self._make_observation(ngc_df=df)
+        obj, data = resolve_target(obs, _lazy_proxy("NGC 999"))
+        self.assertIsNone(obj)
+        self.assertIsNone(data)
 
 
 if __name__ == "__main__":
