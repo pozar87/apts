@@ -1,14 +1,15 @@
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Optional, cast
 
 import numpy
 import pandas as pd
-from types import SimpleNamespace
 from matplotlib.patches import Ellipse
 
 from apts.constants.graphconstants import get_planet_color
 from apts.constants.plot import CoordinateSystem
 from apts.i18n import gettext_
 from apts.utils import planetary
+
 from ...constants import ObjectTableLabels
 
 if TYPE_CHECKING:
@@ -33,7 +34,10 @@ def _plot_planets_on_skymap(
         visible_planets = observation.local_planets.objects.copy()
         visible_planets["TechnicalName"] = visible_planets[ObjectTableLabels.NAME]
     else:
-        visible_planets = observation.get_visible_planets()
+        # Keep technical columns (TechnicalName, current_alt, current_az) -
+        # needed for canonical planet identification, colors and pre-computed
+        # coordinates regardless of the UI language.
+        visible_planets = observation.get_visible_planets(clean=False)
     if not visible_planets.empty:
         target_technical_name = (
             planetary.get_technical_name(target_name) if target_name else None
@@ -214,7 +218,9 @@ def _get_solar_system_object_visual_size(
             # Find the planet data to get its magnitude
             technical_name = planetary.get_technical_name(object_name)
             planets_df = observation.local_planets.objects
-            object_data = planets_df[planets_df[ObjectTableLabels.NAME] == technical_name]
+            object_data = planets_df[
+                planets_df[ObjectTableLabels.NAME] == technical_name
+            ]
             if not object_data.empty:
                 magnitude = object_data.iloc[0].get(ObjectTableLabels.MAGNITUDE)
                 if hasattr(magnitude, "magnitude"):
