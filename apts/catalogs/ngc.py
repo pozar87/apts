@@ -9,7 +9,7 @@ import pandas as pd
 from ..constants.constellations import constellation_map
 from ..constants.objecttablelabels import ObjectTableLabels
 from ..constants.strategies import DSOType
-from ..utils.coordinates import parse_ra_to_hours, parse_dec_to_degrees
+from ..utils.coordinates import parse_dec_to_degrees, parse_ra_to_hours
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,12 @@ def normalize_name(n):
             else:
                 res[i] = v
         return pd.Series(res, index=n.index, dtype="string")
+
+    # Django lazy translation proxies (gettext_lazy) have the type name
+    # '__proxy__' and are not instances of str, but behave like strings.
+    # Coerce them to plain strings so NGC/IC name comparisons work.
+    if type(n).__name__ == "__proxy__":
+        n = str(n)
 
     if not isinstance(n, str) or pd.isna(n):
         return n
@@ -172,6 +178,7 @@ def _load_ngc_with_units():
     )
 
     return ngc_df
+
 
 def get_ngc() -> pd.DataFrame:
     global _ngc_df
