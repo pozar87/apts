@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from .messier import MessierCatalogMixIn
 from .ngc import NgcCatalogMixIn
@@ -7,11 +7,13 @@ from .stars import StarsCatalogMixIn
 
 if TYPE_CHECKING:
     from datetime import datetime
+
     from skyfield.api import Time
+
     from ...conditions import Conditions
+    from ...objects import SolarObjects
     from ...objects.messier import Messier
     from ...objects.ngc import NGC
-    from ...objects import SolarObjects
     from ...objects.stars import Stars
     from ...place import Place
 
@@ -24,7 +26,7 @@ class CatalogMixIn(
 ):
     if TYPE_CHECKING:
         place: "Place"
-        effective_date: Optional[Union["datetime", "Time"]]
+        effective_date: Optional["Time"]
         conditions: "Conditions"
         start: Optional["datetime"]
         time_limit: Optional["datetime"]

@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import pandas as pd
 
@@ -29,7 +29,7 @@ class WeatherAnalysisMixIn:
         stop: Optional[datetime]
         place: Place
         conditions: Conditions
-        effective_date: Optional[Union[datetime, "Time"]]
+        effective_date: Optional["Time"]
         time_limit: Optional[datetime]
         _weather_analysis: Optional[list[dict]]
 

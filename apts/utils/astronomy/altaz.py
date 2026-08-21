@@ -1,4 +1,5 @@
-from typing import Tuple, Union, Optional, cast
+from typing import Optional, Tuple, Union
+
 import numpy as np
 
 
@@ -21,6 +22,9 @@ def vectorized_geometric_altaz(
     ras: RA in decimal hours
     decs: Dec in decimal degrees
     check_times_gmst: GMST in decimal hours (scalar or 1D array)
+
+    The precomputed direction-cosine columns (sin_dec, cd_cr, cd_sr) must be
+    passed all together; if any is missing, they are recomputed from ra/dec.
     """
     # LST calculation
     lst_hours = check_times_gmst + lon_decimal / 15.0
@@ -36,10 +40,10 @@ def vectorized_geometric_altaz(
         # Shapes: Objects (N, 1), Times (1, M)
         sin_lst = np.sin(lst_rad)[np.newaxis, :]
         cos_lst = np.cos(lst_rad)[np.newaxis, :]
-        if sin_dec is not None:
+        if sin_dec is not None and cd_cr is not None and cd_sr is not None:
             sin_dec = sin_dec[:, np.newaxis]
-            cd_cr = cast(np.ndarray, cd_cr)[:, np.newaxis]
-            cd_sr = cast(np.ndarray, cd_sr)[:, np.newaxis]
+            cd_cr = cd_cr[:, np.newaxis]
+            cd_sr = cd_sr[:, np.newaxis]
         else:
             ra_rad = np.deg2rad(ras * 15.0)[:, np.newaxis]
             dec_rad = np.deg2rad(decs)[:, np.newaxis]
@@ -50,7 +54,7 @@ def vectorized_geometric_altaz(
         # Scalar time case
         sin_lst = np.sin(lst_rad)
         cos_lst = np.cos(lst_rad)
-        if sin_dec is None:
+        if sin_dec is None or cd_cr is None or cd_sr is None:
             ra_rad = np.deg2rad(ras * 15.0)
             dec_rad = np.deg2rad(decs)
             sin_dec = np.sin(dec_rad)

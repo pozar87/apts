@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class PlanetsCatalogMixIn:
     if TYPE_CHECKING:
         place: "Place"
-        effective_date: Optional[Union["datetime", "Time"]]
+        effective_date: Optional["Time"]
         conditions: "Conditions"
         start: Optional["datetime"]
         time_limit: Optional["datetime"]
