@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional, Any, Dict
+from typing import TYPE_CHECKING, Optional, Any, Dict, cast
 
 from matplotlib import figure, pyplot
 from matplotlib.patches import Circle, Ellipse
@@ -24,7 +24,7 @@ def _get_effective_time(observation: "Observation", plot_date: Optional[datetime
             plot_date = plot_date.replace(tzinfo=timezone.utc)
         return ts.utc(plot_date)
     elif observation.effective_date is not None:
-        return observation.effective_date
+        return cast("Time", observation.effective_date)
     else:
         return ts.now()
 
@@ -119,7 +119,7 @@ def generate_plot_jovian_moons(
     _apply_flips(ax, style, flipped_horizontally, flipped_vertically)
 
     from skyfield.api import Time as SkyfieldTime
-    t_dt = t.utc_datetime().astimezone(observation.place.local_timezone) if isinstance(t, SkyfieldTime) else t.astimezone(observation.place.local_timezone)
+    t_dt = cast(datetime, t.utc_datetime()).astimezone(observation.place.local_timezone) if isinstance(t, SkyfieldTime) else t.astimezone(observation.place.local_timezone)
 
     ax.set_title(
         gettext_("Jupiter and Galilean Moons ({date})").format(

@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 _messier_df = None
 
+
 def _load_messier_with_units():
     # Load Messier catalogue data
     messier_df = pd.read_csv(str(resources.files("apts").joinpath("data/messier.csv")))
@@ -54,8 +55,8 @@ def _load_messier_with_units():
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
-    ra_hours = messier_df["RA"].values
-    dec_degrees = messier_df["Dec"].values
+    ra_hours = cast(np.ndarray, messier_df["RA"].values)
+    dec_degrees = cast(np.ndarray, messier_df["Dec"].values)
     messier_df["ra_hours"] = ra_hours
     messier_df["dec_degrees"] = dec_degrees
     messier_df["Magnitude_float"] = messier_df["Magnitude"].values
@@ -103,6 +104,7 @@ def _load_messier_with_units():
     )
 
     return messier_df
+
 
 def get_messier() -> pd.DataFrame:
     global _messier_df

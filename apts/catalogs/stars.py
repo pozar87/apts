@@ -1,5 +1,6 @@
 import logging
 from importlib import resources
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ from ..units import get_unit_registry
 logger = logging.getLogger(__name__)
 
 _bright_stars_df = None
+
 
 def _load_bright_stars_with_units():
     # Load bright stars catalogue data
@@ -31,8 +33,8 @@ def _load_bright_stars_with_units():
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
-    ra_hours = bright_stars_df["RA"].values
-    dec_degrees = bright_stars_df["Dec"].values
+    ra_hours = cast(np.ndarray, bright_stars_df["RA"].values)
+    dec_degrees = cast(np.ndarray, bright_stars_df["Dec"].values)
     bright_stars_df["ra_hours"] = ra_hours
     bright_stars_df["dec_degrees"] = dec_degrees
     bright_stars_df["Magnitude_float"] = bright_stars_df["Magnitude"].values
@@ -55,6 +57,7 @@ def _load_bright_stars_with_units():
     bright_stars_df["Magnitude"] = list(bright_stars_df["Magnitude"].values * ureg.mag)
 
     return bright_stars_df
+
 
 def get_bright_stars() -> pd.DataFrame:
     global _bright_stars_df

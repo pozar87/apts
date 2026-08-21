@@ -1,5 +1,6 @@
 import math
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union, cast
+
 import numpy
 
 
@@ -16,7 +17,7 @@ def calculate_planetary_size_in_pixels(
 
     res = angular_diameter / pixel_scale_magnitude
     if numpy.isscalar(res):
-        return float(res)
+        return float(cast(Any, res))
     return numpy.asarray(res)
 
 
@@ -37,7 +38,7 @@ def calculate_saturn_ring_size_in_pixels(
 
     def _maybe_cast(val):
         if numpy.isscalar(val):
-            return float(val)
+            return float(cast(Any, val))
         return numpy.asarray(val)
 
     return _maybe_cast(major), _maybe_cast(minor)

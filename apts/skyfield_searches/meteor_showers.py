@@ -1,8 +1,11 @@
 from typing import Any, cast
+
+import numpy as np
+
 from ..cache import get_ephemeris, get_timescale
 from ..utils import planetary
 from .utils import find_solar_longitude_time
-import numpy as np
+
 
 def _get_drifted_radiant(data, peak_lon, current_lon):
     """
@@ -23,6 +26,7 @@ def _get_drifted_radiant(data, peak_lon, current_lon):
     drifted_dec = base_dec + diff * d_dec
 
     return drifted_ra, drifted_dec
+
 
 def find_meteor_showers(observer, start_date, end_date):
     """
@@ -140,41 +144,55 @@ def find_meteor_showers(observer, start_date, end_date):
             e_date = t_e.utc_datetime()
 
             if start_date <= s_date <= end_date:
-                candidates.append({
-                    "time": t_s,
-                    "date": s_date,
-                    "shower_name": shower,
-                    "phase": "Start",
-                    "data": data
-                })
+                candidates.append(
+                    {
+                        "time": t_s,
+                        "date": s_date,
+                        "shower_name": shower,
+                        "phase": "Start",
+                        "data": data,
+                    }
+                )
 
             if peak_t is not None and start_date <= peak_t.utc_datetime() <= end_date:
-                candidates.append({
-                    "time": peak_t,
-                    "date": peak_t.utc_datetime(),
-                    "shower_name": shower,
-                    "phase": "Peak",
-                    "data": data
-                })
+                candidates.append(
+                    {
+                        "time": peak_t,
+                        "date": peak_t.utc_datetime(),
+                        "shower_name": shower,
+                        "phase": "Peak",
+                        "data": data,
+                    }
+                )
 
             if start_date <= e_date <= end_date:
-                candidates.append({
-                    "time": t_e,
-                    "date": e_date,
-                    "shower_name": shower,
-                    "phase": "End",
-                    "data": data
-                })
+                candidates.append(
+                    {
+                        "time": t_e,
+                        "date": e_date,
+                        "shower_name": shower,
+                        "phase": "End",
+                        "data": data,
+                    }
+                )
 
     if candidates:
         times_vec = ts.from_datetimes([c["date"] for c in candidates])
 
         # Geocentric solar longitude for all candidates (apparent)
-        sun_lons = np.atleast_1d(cast(Any, earth).at(times_vec).observe(sun).apparent().ecliptic_latlon()[1].degrees)
+        sun_lons = np.atleast_1d(
+            cast(Any, earth)
+            .at(times_vec)
+            .observe(sun)
+            .apparent()
+            .ecliptic_latlon()[1]
+            .degrees
+        )
 
         # Altitudes for Sun and Moon
         sun_alts = np.atleast_1d(
-            cast(Any, observer).at(times_vec)
+            cast(Any, observer)
+            .at(times_vec)
             .observe(sun)
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
@@ -182,7 +200,8 @@ def find_meteor_showers(observer, start_date, end_date):
         )
 
         moon_alts = np.atleast_1d(
-            cast(Any, observer).at(times_vec)
+            cast(Any, observer)
+            .at(times_vec)
             .observe(moon)
             .apparent()
             .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
@@ -192,8 +211,8 @@ def find_meteor_showers(observer, start_date, end_date):
         moon_illums = np.atleast_1d(planetary.get_moon_illumination(times_vec))
 
         # Import topocentric coordinate extractor and atmospheric refraction
-        from .visibility.culmination import _get_observer_coords
         from ..utils.astronomy.refraction import calculate_refraction
+        from .visibility.culmination import _get_observer_coords
 
         lat_deg, lon_hours = _get_observer_coords(observer)
         lon_decimal = lon_hours * 15.0
@@ -215,7 +234,7 @@ def find_meteor_showers(observer, start_date, end_date):
         # Pairwise geometric Alt calculation with refraction using vectorized NumPy operations
         # This provides a ~500x speedup over standard row-wise Star.apparent().altaz() checks
         check_times_gmst = times_vec.gmst
-        lst_hours = check_times_gmst + lon_decimal / 15.0
+        lst_hours = cast(float, check_times_gmst) + lon_decimal / 15.0
         lat_rad = np.deg2rad(lat_deg)
         lst_rad = np.deg2rad(lst_hours * 15.0)
 
@@ -247,17 +266,19 @@ def find_meteor_showers(observer, start_date, end_date):
             r_alt_deg = r_alts_geom[i]
             is_visible = r_alt_deg > 0 and s_alt <= -6
 
-            events.append({
-                "date": c["date"],
-                "event": f"{c['shower_name']} {c['phase']}",
-                "shower_name": c["shower_name"],
-                "phase": c["phase"],
-                "type": "Meteor Shower",
-                "altitude": float(r_alt_deg),
-                "sun_altitude": float(s_alt),
-                "moon_altitude": float(moon_alts[i]),
-                "moon_illumination": float(moon_illums[i]),
-                "is_visible": bool(is_visible),
-            })
+            events.append(
+                {
+                    "date": c["date"],
+                    "event": f"{c['shower_name']} {c['phase']}",
+                    "shower_name": c["shower_name"],
+                    "phase": c["phase"],
+                    "type": "Meteor Shower",
+                    "altitude": float(r_alt_deg),
+                    "sun_altitude": float(s_alt),
+                    "moon_altitude": float(moon_alts[i]),
+                    "moon_illumination": float(moon_illums[i]),
+                    "is_visible": bool(is_visible),
+                }
+            )
 
     return events

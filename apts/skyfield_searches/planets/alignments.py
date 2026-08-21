@@ -33,9 +33,7 @@ def find_oppositions(observer, planet_name, start_date, end_date):
         # Use apparent topocentric positions for maximum observational accuracy
         # Optimization: Hoist observer.at(t) to avoid evaluating observer state twice per step
         obs_at_t = observer.at(t)
-        planet_lon = (
-            obs_at_t.observe(planet).apparent().ecliptic_latlon()[1].degrees
-        )
+        planet_lon = obs_at_t.observe(planet).apparent().ecliptic_latlon()[1].degrees
         sun_lon = obs_at_t.observe(sun).apparent().ecliptic_latlon()[1].degrees
         diff = sun_lon - planet_lon
         return (diff + 180) % 360 - 180
@@ -112,8 +110,8 @@ def find_mars_closest_approach(start_date, end_date, observer=None):
             event.update(
                 {
                     "altitude": float(alt.degrees),
-                    "sun_altitude": float(sun_alt),
-                    "is_visible": bool(alt.degrees > 0 and sun_alt <= -6),
+                    "sun_altitude": float(cast(float, sun_alt)),
+                    "is_visible": bool(alt.degrees > 0 and cast(float, sun_alt) <= -6),
                 }
             )
 

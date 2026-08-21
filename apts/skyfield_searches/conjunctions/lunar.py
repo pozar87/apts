@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 
 from ...cache import get_timescale
@@ -47,7 +49,9 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     m_alt_coarse, _, m_dist_coarse = fast_altaz(
         observer.at(coarse_times), moon, temperature_C=10.0, pressure_mbar=1013.25
     )
-    moon_rad_coarse = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km))
+    moon_rad_coarse = np.degrees(
+        np.arcsin(astronomy.MOON_RADIUS_KM / cast(float, m_dist_coarse.km))
+    )
 
     # Sun altitude (coarse) using fast_altaz
     sun_alts_coarse, _, _ = fast_altaz(
@@ -68,8 +72,8 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
         # Potential: sep < rad + margin, Moon > 0, Sun <= -6
         potential_mask = (
             (sep_coarse < moon_rad_coarse + 0.2)
-            & (m_alt_coarse.degrees > -1)
-            & (sun_alts_coarse.degrees <= -5)
+            & (cast(float, m_alt_coarse.degrees) > -1)
+            & (cast(float, sun_alts_coarse.degrees) <= -5)
         )
 
         if not np.any(potential_mask):

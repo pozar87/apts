@@ -1,17 +1,17 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, cast
 from types import SimpleNamespace
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
-from .visibility import VisibilityMixIn
-from .almanac import AlmanacMixIn
 from ..cache import get_timescale
 from ..constants import ObjectTableLabels
+from .almanac import AlmanacMixIn
 from .utils import vectorized_geometric_compute
+from .visibility import VisibilityMixIn
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
         before returning or presenting it to the user.
         """
         from .utils import filter_technical_columns
+
         return filter_technical_columns(df)
 
     def data(self, clean: bool = True) -> pd.DataFrame:
@@ -80,10 +81,18 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
             # Optimization: Direct column assignment when computing on the full catalog.
             # This completely avoids the massive overhead of self.objects.update() which
             # triggers slow timezone-aware datetime inference and alignment across 14k rows.
-            self.objects[ObjectTableLabels.TRANSIT] = computed_df[ObjectTableLabels.TRANSIT]
-            self.objects[ObjectTableLabels.ALTITUDE] = computed_df[ObjectTableLabels.ALTITUDE]
-            self.objects[ObjectTableLabels.RISING] = computed_df[ObjectTableLabels.RISING]
-            self.objects[ObjectTableLabels.SETTING] = computed_df[ObjectTableLabels.SETTING]
+            self.objects[ObjectTableLabels.TRANSIT] = computed_df[
+                ObjectTableLabels.TRANSIT
+            ]
+            self.objects[ObjectTableLabels.ALTITUDE] = computed_df[
+                ObjectTableLabels.ALTITUDE
+            ]
+            self.objects[ObjectTableLabels.RISING] = computed_df[
+                ObjectTableLabels.RISING
+            ]
+            self.objects[ObjectTableLabels.SETTING] = computed_df[
+                ObjectTableLabels.SETTING
+            ]
         else:
             self.objects.update(computed_df)
 
@@ -187,7 +196,7 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
 
             ras = np.array(
                 [
-                    getattr(obj, "ra", getattr(obj, "target_ra", None)).hours
+                    cast(Any, getattr(obj, "ra", getattr(obj, "target_ra", None))).hours
                     if obj is not None and hasattr(obj, "ra")
                     else 0
                     for obj in sky_objs
@@ -195,7 +204,9 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
             )
             decs = np.array(
                 [
-                    getattr(obj, "dec", getattr(obj, "target_dec", None)).degrees
+                    cast(
+                        Any, getattr(obj, "dec", getattr(obj, "target_dec", None))
+                    ).degrees
                     if obj is not None and hasattr(obj, "dec")
                     else 0
                     for obj in sky_objs
@@ -213,6 +224,10 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
             valid_mask,
             len(df),
             sin_dec=df["sin_dec"].values if "sin_dec" in df.columns else None,
-            cd_cr=df["cos_dec_cos_ra"].values if "cos_dec_cos_ra" in df.columns else None,
-            cd_sr=df["cos_dec_sin_ra"].values if "cos_dec_sin_ra" in df.columns else None,
+            cd_cr=df["cos_dec_cos_ra"].values
+            if "cos_dec_cos_ra" in df.columns
+            else None,
+            cd_sr=df["cos_dec_sin_ra"].values
+            if "cos_dec_sin_ra" in df.columns
+            else None,
         )

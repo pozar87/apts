@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 import numpy as np
 from skyfield.positionlib import Apparent
@@ -162,7 +163,9 @@ class JovianSearchContext:
 
         elongation = data["j_obs"].separation_from(data["s_obs"]).degrees
         data["visible"] = (
-            (j_alt.degrees > 0) & (s_alt.degrees <= -6) & (elongation > 10)
+            (cast(float, j_alt.degrees) > 0)
+            & (cast(float, s_alt.degrees) <= -6)
+            & (elongation > 10)
         )
 
     def get_moon_obs(self, t, moon_id):

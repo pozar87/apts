@@ -207,7 +207,7 @@ def _draw_catalog_target_ellipse(
     coordinate_system: CoordinateSystem,
 ):
     """Draws a detailed ellipse patch representing a catalog deep-sky target."""
-    face_color = get_brightness_color(magnitude)
+    face_color = "none" if magnitude is None else get_brightness_color(magnitude)
 
     ellipse_width = (
         width_deg

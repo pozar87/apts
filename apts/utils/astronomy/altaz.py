@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, cast
 import numpy as np
 
 
@@ -38,8 +38,8 @@ def vectorized_geometric_altaz(
         cos_lst = np.cos(lst_rad)[np.newaxis, :]
         if sin_dec is not None:
             sin_dec = sin_dec[:, np.newaxis]
-            cd_cr = cd_cr[:, np.newaxis]
-            cd_sr = cd_sr[:, np.newaxis]
+            cd_cr = cast(np.ndarray, cd_cr)[:, np.newaxis]
+            cd_sr = cast(np.ndarray, cd_sr)[:, np.newaxis]
         else:
             ra_rad = np.deg2rad(ras * 15.0)[:, np.newaxis]
             dec_rad = np.deg2rad(decs)[:, np.newaxis]

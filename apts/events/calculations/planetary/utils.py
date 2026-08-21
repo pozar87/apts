@@ -1,11 +1,16 @@
+from typing import cast
+
+import pandas as pd
 
 from ....catalogs import Catalogs
 from ....utils import planetary
+
 
 class BodyResolver:
     """
     Utility to resolve celestial bodies from catalogs or planetary data.
     """
+
     # Class-level cache to store resolved celestial bodies and avoid redundant filtering/instantiations
     _cache = {}
 
@@ -35,7 +40,7 @@ class BodyResolver:
             return self._cache[cache_key]
 
         if body_type == "planet":
-            result = self._planets.get(name)
+            result = self._planets.get(cast(str, name))
             self._cache[cache_key] = result
             return result
 
@@ -43,21 +48,23 @@ class BodyResolver:
             # Handle multiple names or single name
             names = [name] if isinstance(name, str) else name
             for n in names:
-                row = self.catalogs.BRIGHT_STARS[self.catalogs.BRIGHT_STARS['Name'] == n]
+                row = self.catalogs.BRIGHT_STARS[
+                    self.catalogs.BRIGHT_STARS["Name"] == n
+                ]
                 if not row.empty:
                     # Optimization: Reuse the pre-calculated skyfield_object column
                     # instead of re-instantiating the Star class.
-                    sky_obj = row['skyfield_object'].values[0]
+                    sky_obj = cast(pd.Series, row["skyfield_object"]).values[0]
                     result = (n, sky_obj)
                     self._cache[cache_key] = result
                     return result
 
         if body_type == "messier":
-            row = self.catalogs.MESSIER[self.catalogs.MESSIER['Messier'] == name]
+            row = self.catalogs.MESSIER[self.catalogs.MESSIER["Messier"] == name]
             if not row.empty:
                 # Optimization: Reuse the pre-calculated skyfield_object column
                 # instead of re-instantiating the Star class.
-                sky_obj = row['skyfield_object'].values[0]
+                sky_obj = cast(pd.Series, row["skyfield_object"]).values[0]
                 result = (name, sky_obj)
                 self._cache[cache_key] = result
                 return result

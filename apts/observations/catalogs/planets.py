@@ -1,12 +1,13 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Union, cast
 from datetime import datetime
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
     from skyfield.api import Time
+
     from ...conditions import Conditions
     from ...objects import SolarObjects
     from ...place import Place
@@ -58,12 +59,20 @@ class PlanetsCatalogMixIn:
                 # Usually Sun, Moon, and potentially Venus/Jupiter if they are bright enough.
                 # We use a threshold of 0 magnitude for daytime planet visibility.
                 # Optimization: use pre-calculated Magnitude_float for faster filtering.
-                mags = visible["Magnitude_float"].values if "Magnitude_float" in visible.columns else np.array([])
-                tech_names = visible["TechnicalName"].values if "TechnicalName" in visible.columns else np.array([])
+                mags = (
+                    cast(np.ndarray, visible["Magnitude_float"].values)
+                    if "Magnitude_float" in visible.columns
+                    else np.array([])
+                )
+                tech_names = (
+                    cast(np.ndarray, visible["TechnicalName"].values)
+                    if "TechnicalName" in visible.columns
+                    else np.array([])
+                )
                 if len(mags) > 0 and len(tech_names) > 0:
                     # Keep Sun, Moon, or anything with magnitude < 0
                     mask = (tech_names == "sun") | (tech_names == "moon") | (mags < 0)
-                    visible = visible[mask].copy()
+                    visible = cast(pd.DataFrame, visible[mask].copy())
 
             # Optimization: use bulk_gettext (unique value mapping) instead of .apply(gettext_)
             if "Name" in visible.columns:

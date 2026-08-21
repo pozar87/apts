@@ -1,4 +1,4 @@
-from typing import overload, Literal, Tuple, Union, Any
+from typing import overload, Literal, Tuple, Union, Any, cast
 import pandas as pd
 
 @overload
@@ -35,7 +35,7 @@ def parse_ra_to_hours(ra: Union[str, pd.Series]) -> Union[float, pd.Series, None
         # Optimization: Direct list iteration over raw values is ~2.5x faster
         # than Pandas multi-column .str.split() and pd.to_numeric() overhead.
         vals = ra.values
-        res = [None] * len(vals)
+        res = cast(list, [None] * len(vals))
         for i, val in enumerate(vals):
             if val is None or pd.isna(val):
                 continue
@@ -71,7 +71,7 @@ def parse_dec_to_degrees(dec: Union[str, pd.Series]) -> Union[float, pd.Series, 
         # Optimization: Direct list iteration over raw values avoids heavy
         # pd.Series.str string manipulation and pd.to_numeric alignment overhead.
         vals = dec.values
-        res = [None] * len(vals)
+        res = cast(list, [None] * len(vals))
         for i, val in enumerate(vals):
             if val is None or pd.isna(val):
                 continue

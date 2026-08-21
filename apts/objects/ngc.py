@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -141,7 +143,7 @@ class NGC(Objects):
             visible.update(self.objects.loc[indices_needing_restoration])
 
         if clean:
-            visible = filter_technical_columns(visible)
+            visible = filter_technical_columns(cast(pd.DataFrame, visible))
 
         return visible  # type: ignore[return-value]
 
