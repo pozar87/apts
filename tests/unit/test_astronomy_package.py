@@ -1,4 +1,5 @@
 import unittest
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ class TestAstronomyPackage(unittest.TestCase):
 
         # Vectorized input
         alts = np.array([45.0, -2.0])
-        refs = calculate_refraction(alts)
+        refs = np.atleast_1d(calculate_refraction(alts))
         self.assertGreater(refs[0], 0.0)
         self.assertEqual(refs[1], 0.0)
 
@@ -44,7 +45,7 @@ class TestAstronomyPackage(unittest.TestCase):
         self.assertIsInstance(alt, np.ndarray)
         self.assertIsInstance(az, np.ndarray)
         self.assertEqual(alt.shape, (1,))
-        self.assertEqual(az.shape, (1,))
+        self.assertEqual(cast(np.ndarray, az).shape, (1,))
 
     def test_vectorized_geometric_altaz_partial_precomputed(self):
         """A partial precomputed set (e.g. only sin_dec) must fall back to recomputation."""
@@ -64,7 +65,9 @@ class TestAstronomyPackage(unittest.TestCase):
             lat_deg, lon_decimal, ras, decs, 12.0, sin_dec=sin_dec_only
         )
         np.testing.assert_allclose(alt_partial, alt_ref)
-        np.testing.assert_allclose(az_partial, az_ref)
+        np.testing.assert_allclose(
+            cast(np.ndarray, az_partial), cast(np.ndarray, az_ref)
+        )
 
         # Multi-time: partial input must fall back to recomputation
         alt_ref, az_ref = vectorized_geometric_altaz(
@@ -79,12 +82,14 @@ class TestAstronomyPackage(unittest.TestCase):
             sin_dec=sin_dec_only,
         )
         np.testing.assert_allclose(alt_partial, alt_ref)
-        np.testing.assert_allclose(az_partial, az_ref)
+        np.testing.assert_allclose(
+            cast(np.ndarray, az_partial), cast(np.ndarray, az_ref)
+        )
 
     def test_vectorized_angular_separation(self):
         # Same coordinates should have 0 separation
         sep = vectorized_angular_separation(12.0, 45.0, 12.0, 45.0)
-        self.assertAlmostEqual(sep, 0.0, places=4)
+        self.assertAlmostEqual(cast(float, sep), 0.0, places=4)
 
         # Different coordinates
         sep_diff = vectorized_angular_separation(12.0, 45.0, 13.0, 45.0)
