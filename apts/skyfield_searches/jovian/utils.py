@@ -73,14 +73,23 @@ class JovianSearchContext:
             self._cache[key] = {"moons": {}, "moons_sun": {}}
         return self._cache[key]
 
+    def get_obs_at_t(self, t):
+        """Gets or caches topocentric observer state at time t."""
+        data = self._get_entry(t)
+        if "obs_at_t" not in data:
+            data["obs_at_t"] = self.observer.at(t)
+        return data["obs_at_t"]
+
     def get_basic_data(self, t):
         data = self._get_entry(t)
         if "z_pole" not in data:
+            # Performance Optimization: Hoist observer.at(t) to evaluate topocentric state once per time step
+            obs_at_t = self.get_obs_at_t(t)
             # Ensure positions are available
             if "j_obs" not in data:
-                data["j_obs"] = self.observer.at(t).observe(self.jupiter)
+                data["j_obs"] = obs_at_t.observe(self.jupiter)
             if "s_obs" not in data:
-                data["s_obs"] = self.observer.at(t).observe(self.sun)
+                data["s_obs"] = obs_at_t.observe(self.sun)
 
             j_obs = data["j_obs"]
             t_emitted = self.ts.tt_jd(t.tt - j_obs.light_time)
@@ -139,7 +148,8 @@ class JovianSearchContext:
 
     def _compute_full_visibility(self, t, data):
         """High-precision visibility calculation."""
-        obs_at_t = self.observer.at(t)
+        # Performance Optimization: Hoist observer.at(t) to evaluate topocentric state once per time step
+        obs_at_t = self.get_obs_at_t(t)
         # Optimization: Use fast_altaz to bypass expensive Standard Apparent frame transformations
         # for Jupiter and Sun altitude calculations (~4x speedup on this path).
         j_alt, _, _ = fast_altaz(obs_at_t, self.jupiter)
@@ -151,14 +161,16 @@ class JovianSearchContext:
             data["s_obs"] = obs_at_t.observe(self.sun)
 
         elongation = data["j_obs"].separation_from(data["s_obs"]).degrees
-        data["visible"] = (j_alt.degrees > 0) & (s_alt.degrees <= -6) & (elongation > 10)
+        data["visible"] = (
+            (j_alt.degrees > 0) & (s_alt.degrees <= -6) & (elongation > 10)
+        )
 
     def get_moon_obs(self, t, moon_id):
         data = self.get_basic_data(t)
         if moon_id not in data["moons"]:
-            data["moons"][moon_id] = self.observer.at(t).observe(
-                self.moon_objs[moon_id]
-            )
+            # Performance Optimization: Hoist observer.at(t) to evaluate topocentric state once per time step
+            obs_at_t = self.get_obs_at_t(t)
+            data["moons"][moon_id] = obs_at_t.observe(self.moon_objs[moon_id])
         return data["moons"][moon_id]
 
     def get_moon_sun_obs(self, t, moon_id):
