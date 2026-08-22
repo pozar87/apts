@@ -1,4 +1,4 @@
-from typing import Optional
+
 from apts.constants.twilight import Twilight
 
 
@@ -30,7 +30,7 @@ class DefaultConditions:
     # Max acceptable hour of return
     MAX_RETURN = "02:00:00"
     # Start time for observation
-    START_TIME: Optional[str] = None
+    START_TIME: str | None = None
     # Minimal object (i.e. Messier) altitude (https://en.wikipedia.org/wiki/Horizontal_coordinate_system)
     MIN_OBJECT_ALTITUDE = 15  # [°], range [0,90]
     # Minimal and maximal object azimuth
@@ -45,6 +45,6 @@ class DefaultConditions:
     # Minimal aurora
     MIN_AURORA = 0  # [%], range [0,100]
     # Path to horizon file (.hrz)
-    HORIZON_FILE: Optional[str] = None
+    HORIZON_FILE: str | None = None
     # Content of horizon file
-    HORIZON_CONTENT: Optional[str] = None
+    HORIZON_CONTENT: str | None = None

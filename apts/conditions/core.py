@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional, Union
 
 from apts.constants.twilight import Twilight
+
+from .calculations import check_visibility
 from .defaults import DefaultConditions
 
 
@@ -23,8 +24,8 @@ class Conditions:
         max_fog: float = DefaultConditions.MAX_FOG,
         min_sqm: float = DefaultConditions.MIN_SQM,
         max_seeing: float = DefaultConditions.MAX_SEEING,
-        max_return: Optional[str] = DefaultConditions.MAX_RETURN,
-        start_time: Optional[Union[str, datetime]] = DefaultConditions.START_TIME,
+        max_return: str | None = DefaultConditions.MAX_RETURN,
+        start_time: str | datetime | None = DefaultConditions.START_TIME,
         min_object_altitude: float = DefaultConditions.MIN_OBJECT_ALTITUDE,
         max_object_magnitude: float = DefaultConditions.MAX_OBJECT_MAGNITUDE,
         min_object_azimuth: float = DefaultConditions.MIN_OBJECT_AZIMUTH,
@@ -32,8 +33,8 @@ class Conditions:
         max_moon_illumination: float = DefaultConditions.MAX_MOON_ILLUMINATION,
         twilight: Twilight = DefaultConditions.TWILIGHT,
         min_aurora: float = DefaultConditions.MIN_AURORA,
-        horizon_file: Optional[str] = DefaultConditions.HORIZON_FILE,
-        horizon_content: Optional[str] = DefaultConditions.HORIZON_CONTENT,
+        horizon_file: str | None = DefaultConditions.HORIZON_FILE,
+        horizon_content: str | None = DefaultConditions.HORIZON_CONTENT,
     ):
         self.max_clouds = max_clouds
         self.max_precipitation_probability = max_precipitation_probability
@@ -73,19 +74,12 @@ class Conditions:
         If a horizon file is provided, it is used for the check.
         Otherwise, simple min_object_altitude and min/max_object_azimuth are used.
         """
-        if self.horizon_content or self.horizon_file:
-            return self.horizon.is_visible(azimuth, altitude)
-
-        # Fallback to simple min/max
-        min_alt = getattr(self.min_object_altitude, "magnitude", self.min_object_altitude)
-        min_az = getattr(self.min_object_azimuth, "magnitude", self.min_object_azimuth)
-        max_az = getattr(self.max_object_azimuth, "magnitude", self.max_object_azimuth)
-
-        alt_ok = altitude > min_alt
-
-        if min_az > max_az:
-            az_ok = (azimuth >= min_az) | (azimuth <= max_az)
-        else:
-            az_ok = (azimuth >= min_az) & (azimuth <= max_az)
-
-        return alt_ok & az_ok
+        horizon_obj = self.horizon if (self.horizon_content or self.horizon_file) else None
+        return check_visibility(
+            azimuth,
+            altitude,
+            self.min_object_altitude,
+            self.min_object_azimuth,
+            self.max_object_azimuth,
+            horizon=horizon_obj,
+        )
