@@ -1,16 +1,22 @@
 import datetime
-import pytz
 from typing import Any, cast
+
+import numpy as np
+import pytz
 from skyfield import almanac
-from skyfield.api import Topos, Time
-from ...cache import get_timescale, get_ephemeris
+from skyfield.api import Time, Topos
+
+from ...cache import get_ephemeris, get_timescale
 from ...constants.twilight import Twilight
 from ..utils import fast_altaz
+
 
 def get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
     ts = get_timescale()
     eph = get_ephemeris()
-    location = Topos(latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation))
+    location = Topos(
+        latitude_degrees=lat, longitude_degrees=lon, elevation_m=float(elevation)
+    )
 
     if isinstance(start_date, Time):
         t0 = start_date
@@ -51,6 +57,7 @@ def get_twilight_time_utc(lat, lon, elevation, start_date, twilight, event):
 
     return None
 
+
 def find_golden_blue_hours(observer, start_date, end_date):
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -62,9 +69,12 @@ def find_golden_blue_hours(observer, start_date, end_date):
         # We want to detect transitions at -6, -4, 6
         # Account for atmospheric refraction at standard conditions
         # Optimization: Use fast_altaz to bypass expensive Standard Apparent calculations
-        alt = fast_altaz(
-            observer.at(t), sun, temperature_C=10.0, pressure_mbar=1013.25
-        )[0].degrees
+        alt = cast(
+            np.ndarray,
+            fast_altaz(observer.at(t), sun, temperature_C=10.0, pressure_mbar=1013.25)[
+                0
+            ].degrees,
+        )
         return (
             (alt >= -6).astype(int) + (alt >= -4).astype(int) + (alt >= 6).astype(int)
         )

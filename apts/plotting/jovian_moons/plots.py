@@ -1,23 +1,28 @@
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from matplotlib import figure, pyplot
 from matplotlib.patches import Circle, Ellipse
 
+from apts.cache import get_timescale
 from apts.config import get_dark_mode
 from apts.constants.graphconstants import get_planet_color, get_plot_style
 from apts.i18n import gettext_
-from apts.cache import get_timescale
-from .calculations import calculate_jovian_state, JovianSystemState
+
+from .calculations import JovianSystemState, calculate_jovian_state
 
 if TYPE_CHECKING:
-    from ...observations import Observation
     from skyfield.api import Time
+
+    from ...observations import Observation
 
 logger = logging.getLogger(__name__)
 
-def _get_effective_time(observation: "Observation", plot_date: Optional[datetime]) -> "Time":
+
+def _get_effective_time(
+    observation: "Observation", plot_date: Optional[datetime]
+) -> "Time":
     ts = get_timescale()
     if plot_date is not None:
         if plot_date.tzinfo is None:
@@ -27,6 +32,7 @@ def _get_effective_time(observation: "Observation", plot_date: Optional[datetime
         return observation.effective_date
     else:
         return ts.now()
+
 
 def _setup_axes(ax: Any, style: Dict[str, str], zoom_arcmin: float):
     # Set limits (in arcseconds)
@@ -42,6 +48,7 @@ def _setup_axes(ax: Any, style: Dict[str, str], zoom_arcmin: float):
     for spine in ax.spines.values():
         spine.set_color(style["AXES_EDGE_COLOR"])
 
+
 def _draw_jupiter(ax: Any, state: JovianSystemState, effective_dark_mode: bool):
     j_color = get_planet_color("Jupiter", effective_dark_mode, "orange")
     jupiter_disk = Ellipse(
@@ -53,11 +60,14 @@ def _draw_jupiter(ax: Any, state: JovianSystemState, effective_dark_mode: bool):
     )
     ax.add_patch(jupiter_disk)
 
+
 def _draw_moons(ax: Any, state: JovianSystemState, style: Dict[str, str]):
     for moon_id, m_pos in state.moons.items():
         if not m_pos.is_behind:
             moon_color = "white" if not m_pos.is_transit else "gray"
-            moon_disk = Circle((m_pos.dx, m_pos.dy), m_pos.radius_arcsec, color=moon_color)
+            moon_disk = Circle(
+                (m_pos.dx, m_pos.dy), m_pos.radius_arcsec, color=moon_color
+            )
             ax.add_patch(moon_disk)
             ax.text(
                 m_pos.dx,
@@ -68,6 +78,7 @@ def _draw_moons(ax: Any, state: JovianSystemState, style: Dict[str, str]):
                 va="bottom",
                 fontsize=10,
             )
+
 
 def _apply_flips(ax: Any, style: Dict[str, str], flipped_h: bool, flipped_v: bool):
     if flipped_h:
@@ -91,6 +102,7 @@ def _apply_flips(ax: Any, style: Dict[str, str], flipped_h: bool, flipped_v: boo
             color=style["TEXT_COLOR"],
         )
 
+
 def generate_plot_jovian_moons(
     observation: "Observation",
     plot_date: Optional[datetime] = None,
@@ -103,7 +115,9 @@ def generate_plot_jovian_moons(
     """
     Generates a zoomed-in visualization of Jupiter and its Galilean moons.
     """
-    effective_dark_mode = dark_mode_override if dark_mode_override is not None else get_dark_mode()
+    effective_dark_mode = (
+        dark_mode_override if dark_mode_override is not None else get_dark_mode()
+    )
     style = get_plot_style(effective_dark_mode)
     t = _get_effective_time(observation, plot_date)
     state = calculate_jovian_state(observation, t)
@@ -119,7 +133,12 @@ def generate_plot_jovian_moons(
     _apply_flips(ax, style, flipped_horizontally, flipped_vertically)
 
     from skyfield.api import Time as SkyfieldTime
-    t_dt = t.utc_datetime().astimezone(observation.place.local_timezone) if isinstance(t, SkyfieldTime) else t.astimezone(observation.place.local_timezone)
+
+    t_dt = (
+        cast(datetime, t.utc_datetime()).astimezone(observation.place.local_timezone)
+        if isinstance(t, SkyfieldTime)
+        else t.astimezone(observation.place.local_timezone)
+    )
 
     ax.set_title(
         gettext_("Jupiter and Galilean Moons ({date})").format(

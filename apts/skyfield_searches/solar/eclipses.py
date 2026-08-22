@@ -109,7 +109,7 @@ def find_solar_eclipses(observer, start_date, end_date):
     )
     new_moons = [t for t, y in zip(t_phases, y_phases) if y == 0]
 
-    solar_separation.step_days = 0.005
+    setattr(solar_separation, "step_days", 0.005)
 
     events = []
     for t_nm in new_moons:

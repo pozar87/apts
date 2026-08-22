@@ -5,10 +5,10 @@ import pandas as pd
 from skyfield.api import Star
 
 from apts.constants.plot import CoordinateSystem
-from apts.utils.coordinates import parse_ra_to_hours, parse_dec_to_degrees
+from apts.utils.coordinates import parse_dec_to_degrees, parse_ra_to_hours
 
 from ...constants import ObjectTableLabels
-from .utils import _plot_celestial_object, _filter_by_proximity
+from .utils import _filter_by_proximity, _plot_celestial_object
 
 if TYPE_CHECKING:
     from apts.observations import Observation
@@ -40,7 +40,9 @@ def _filter_ngc_by_zoom(
         visible_ngc = _ensure_ngc_coordinates(visible_ngc)
 
         if zoom_deg is not None and target_object is not None:
-            visible_ngc = _filter_by_proximity(visible_ngc, observer, target_object, zoom_deg)
+            visible_ngc = _filter_by_proximity(
+                visible_ngc, observer, target_object, zoom_deg
+            )
     return cast(pd.DataFrame, visible_ngc)
 
 
@@ -55,12 +57,16 @@ def _ensure_ngc_coordinates(visible_ngc: pd.DataFrame) -> pd.DataFrame:
             if "RA_parsed" in visible_ngc.columns:
                 visible_ngc["ra_hours"] = visible_ngc["RA_parsed"]
             elif "RA" in visible_ngc.columns:
-                visible_ngc["ra_hours"] = parse_ra_to_hours(visible_ngc["RA"])
+                visible_ngc["ra_hours"] = parse_ra_to_hours(
+                    cast(pd.Series, visible_ngc["RA"])
+                )
 
             if "Dec_parsed" in visible_ngc.columns:
                 visible_ngc["dec_degrees"] = visible_ngc["Dec_parsed"]
             elif "Dec" in visible_ngc.columns:
-                visible_ngc["dec_degrees"] = parse_dec_to_degrees(visible_ngc["Dec"])
+                visible_ngc["dec_degrees"] = parse_dec_to_degrees(
+                    cast(pd.Series, visible_ngc["Dec"])
+                )
     return visible_ngc
 
 

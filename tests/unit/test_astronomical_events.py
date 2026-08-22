@@ -1,10 +1,11 @@
 import unittest
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock
-from apts.utils import planetary
+from unittest.mock import MagicMock, patch
+
+from apts.constants.event_types import EventType
 from apts.events import AstronomicalEvents
 from apts.place import Place
-from apts.constants.event_types import EventType
+from apts.utils import planetary
 
 
 class TestAstronomicalEvents(unittest.TestCase):
@@ -118,7 +119,9 @@ class TestAstronomicalEvents(unittest.TestCase):
 
     @patch("apts.events.coordinator.base.as_completed")
     @patch("apts.events.coordinator.precomputation.as_completed")
-    def test_get_events_with_enum_selection(self, mock_precompute_as_completed, mock_as_completed):
+    def test_get_events_with_enum_selection(
+        self, mock_precompute_as_completed, mock_as_completed
+    ):
         # Instantiate AstronomicalEvents with a selection of events
         events_instance = AstronomicalEvents(
             self.place,
@@ -147,7 +150,9 @@ class TestAstronomicalEvents(unittest.TestCase):
         for future in mock_futures:
             future.result.return_value = []
 
-        mock_executor_instance.submit.side_effect = precompute_mock_futures + mock_futures
+        mock_executor_instance.submit.side_effect = (
+            precompute_mock_futures + mock_futures
+        )
 
         # as_completed should return precompute futures first, then main event futures
         mock_as_completed.side_effect = [iter(mock_futures)]
@@ -156,7 +161,9 @@ class TestAstronomicalEvents(unittest.TestCase):
         events_instance.get_events()
 
         # Check that submit was called only for the selected events + precompute
-        self.assertEqual(mock_executor_instance.submit.call_count, num_events + num_precompute)
+        self.assertEqual(
+            mock_executor_instance.submit.call_count, num_events + num_precompute
+        )
         self.assertEqual(mock_as_completed.call_count, 1)
         self.assertEqual(mock_precompute_as_completed.call_count, 1)
 
@@ -168,7 +175,6 @@ class TestAstronomicalEvents(unittest.TestCase):
             self.end_date,
         )
         # When neither golden_hour nor blue_hour is enabled
-        settings = {"golden_hour": False, "blue_hour": False}
         res = events_instance.calculate_golden_blue_hours()
         # Ensure it returns [] immediately and does not call find_golden_blue_hours
         self.assertEqual(res, [])

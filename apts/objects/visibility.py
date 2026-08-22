@@ -1,21 +1,35 @@
 import types
 import unittest.mock
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import pandas as pd
 from skyfield.api import Star
 
+if TYPE_CHECKING:
+    from skyfield.api import Timescale
+
 from ..constants import ObjectTableLabels
 from ..skyfield_searches.utils import fast_altaz
 from .calculations import (
-    filter_objects_by_magnitude,
     calculate_visible_stars_mask,
+    filter_objects_by_magnitude,
 )
 from .utils import filter_technical_columns
 
 
 class VisibilityMixIn:
+    if TYPE_CHECKING:
+        objects: pd.DataFrame
+        place: Any
+        ts: Timescale
+        calculation_date: Any
+
+        def get_skyfield_object(self, obj) -> object: ...
+        def compute(
+            self, calculation_date=None, df_to_compute=None
+        ) -> pd.DataFrame: ...
+
     def _filter_by_magnitude(
         self, conditions, star_magnitude_limit, limiting_magnitude
     ) -> pd.DataFrame:
@@ -40,10 +54,12 @@ class VisibilityMixIn:
             altaz_df = self.place.get_altaz_curve(skyfield_object, start, stop)
             # Optimization: list comprehension over .values is faster than .apply() for extracting magnitudes.
             altitude_values = [
-                x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Altitude"].values
+                x.magnitude if hasattr(x, "magnitude") else x
+                for x in altaz_df["Altitude"].values
             ]
             azimuth_values = [
-                x.magnitude if hasattr(x, "magnitude") else x for x in altaz_df["Azimuth"].values
+                x.magnitude if hasattr(x, "magnitude") else x
+                for x in altaz_df["Azimuth"].values
             ]
             visible_condition = conditions.is_visible(
                 np.array(azimuth_values), np.array(altitude_values)
@@ -104,8 +120,12 @@ class VisibilityMixIn:
             check_times.gmst,
             conditions,
             sin_dec=sin_dec[stars_indices] if sin_dec is not None else None,
-            cos_dec_cos_ra=cos_dec_cos_ra[stars_indices] if cos_dec_cos_ra is not None else None,
-            cos_dec_sin_ra=cos_dec_sin_ra[stars_indices] if cos_dec_sin_ra is not None else None,
+            cos_dec_cos_ra=cos_dec_cos_ra[stars_indices]
+            if cos_dec_cos_ra is not None
+            else None,
+            cos_dec_sin_ra=cos_dec_sin_ra[stars_indices]
+            if cos_dec_sin_ra is not None
+            else None,
         )
 
         visible_mask[stars_indices] = visible_stars_potential_mask
@@ -185,7 +205,10 @@ class VisibilityMixIn:
         # Optimization: Identify stars vs moving bodies (others).
         # For star-only catalogs (NGC, Messier), we can bypass expensive row-wise
         # Skyfield object instantiation and property access by using a class flag.
-        if getattr(self, "is_star_catalog", False) and "ra_hours" in candidate_objects.columns:
+        if (
+            getattr(self, "is_star_catalog", False)
+            and "ra_hours" in candidate_objects.columns
+        ):
             is_star = np.ones(len(candidate_objects), dtype=bool)
             skyfield_objs = None
         else:
@@ -197,7 +220,10 @@ class VisibilityMixIn:
                 ).to_numpy()
             else:
                 skyfield_objs = np.array(
-                    [self.get_skyfield_object(row) for row in candidate_objects.itertuples()]
+                    [
+                        self.get_skyfield_object(row)
+                        for row in candidate_objects.itertuples()
+                    ]
                 )
             is_star = np.array([isinstance(obj, Star) for obj in skyfield_objs])
 

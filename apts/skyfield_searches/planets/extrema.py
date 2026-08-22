@@ -191,7 +191,7 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
     # Generate daily reference times across the range
     day_offsets = np.arange(-1, num_days + 1)
-    t0_dt = t0.utc_datetime()
+    t0_dt = cast(Any, t0.utc_datetime())
     t_refs = ts.utc(t0_dt.year, t0_dt.month, t0_dt.day + day_offsets, 12)
 
     # Iteration 1: estimate culmination times
@@ -226,7 +226,9 @@ def find_highest_altitude(observer, planet, start_date, end_date):
 
     # Calculate precise altitudes (apparent with refraction) at culmination times
     obs_final = observer.at(t_final).observe(planet).apparent()
-    alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+    alts_final_deg = obs_final.altaz(temperature_C=10.0, pressure_mbar=1013.25)[
+        0
+    ].degrees
 
     max_idx = np.argmax(alts_final_deg)
     return t_final[max_idx].utc_datetime(), alts_final_deg[max_idx]

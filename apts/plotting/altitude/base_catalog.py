@@ -95,7 +95,7 @@ def _prepare_catalog_data(
             zip(unique_rows["TranslatedType"], unique_rows["color"])
         )
 
-    return plot_df, plotted_types
+    return cast(pd.DataFrame, plot_df), plotted_types
 
 
 def _plot_objects_and_annotations(
@@ -150,10 +150,13 @@ def _finalize_axes_style(
     """Formats the limits, grids, markings, legend, and title."""
     if observation.start is not None and observation.time_limit is not None:
         ax.set_xlim(
-            [
-                observation.start - timedelta(minutes=15),
-                observation.time_limit + timedelta(minutes=15),
-            ]
+            cast(
+                Tuple[float, float],
+                [
+                    observation.start - timedelta(minutes=15),
+                    observation.time_limit + timedelta(minutes=15),
+                ],
+            )
         )
     ax.set_ylim(0, 90)
     mark_observation(observation, ax, effective_dark_mode, style)

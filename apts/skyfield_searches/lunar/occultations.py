@@ -84,7 +84,11 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     active_indices = np.unique(
         np.concatenate(
             [
-                np.clip(coarse_idx[np.any(potential_mask, axis=0)] + offset, 0, num_steps - 1)
+                np.clip(
+                    coarse_idx[np.any(potential_mask, axis=0)] + offset,
+                    0,
+                    num_steps - 1,
+                )
                 for offset in range(-15, 16)
             ]
         )
@@ -99,7 +103,9 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     # Hoist environment observations using fast_altaz
     m_alt, _, m_dist = fast_altaz(obs_at_fine_times, moon)
-    moon_rad_fine = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m_dist.km))
+    moon_rad_fine = np.degrees(
+        np.arcsin(astronomy.MOON_RADIUS_KM / cast(float, m_dist.km))
+    )
 
     sun_alt, _, _ = fast_altaz(obs_at_fine_times, sun)
 
@@ -108,7 +114,9 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
 
     # Unit vectors for Moon at active times
     m_pos_topo = obs_at_fine_times.observe(moon)
-    u_moon_fine = m_pos_topo.position.au / np.linalg.norm(m_pos_topo.position.au, axis=0)
+    u_moon_fine = m_pos_topo.position.au / np.linalg.norm(
+        m_pos_topo.position.au, axis=0
+    )
 
     # Reusing u_stars (which contains unit vectors for all ecliptic stars) for candidates
     u_stars_fine = u_stars[:, star_candidate_idxs]
@@ -120,8 +128,8 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     # Occultation check grid: (N, T)
     occ_mask = (
         (separations_fine < moon_rad_fine)
-        & (m_alt.degrees > 0)
-        & (sun_alt.degrees <= -6)
+        & (cast(float, m_alt.degrees) > 0)
+        & (cast(float, sun_alt.degrees) <= -6)
     )
 
     events = []

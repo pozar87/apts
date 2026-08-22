@@ -1,14 +1,14 @@
 import logging
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
 from skyfield.api import Time
 
 from ..conditions import Conditions
 from .catalogs import CatalogMixIn
 from .events import EventsMixIn
-from .report import HtmlExportMixIn
 from .plotting import PlottingMixIn
+from .report import HtmlExportMixIn
 from .weather import WeatherAnalysisMixIn
 from .window import ObservationWindow
 
@@ -22,7 +22,7 @@ class Observation(
     HtmlExportMixIn,
     EventsMixIn,
 ):
-    effective_date: Optional[Union[datetime, Time]]
+    effective_date: Optional[Time]
 
     def __init__(
         self,

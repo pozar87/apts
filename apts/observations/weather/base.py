@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, cast
 
 import pandas as pd
 
@@ -29,7 +29,7 @@ class WeatherAnalysisMixIn:
         stop: Optional[datetime]
         place: Place
         conditions: Conditions
-        effective_date: Optional[Union[datetime, "Time"]]
+        effective_date: Optional["Time"]
         time_limit: Optional[datetime]
         _weather_analysis: Optional[list[dict]]
 
@@ -105,9 +105,9 @@ class WeatherAnalysisMixIn:
         """Calculates or retrieves moon altitudes for weather data points."""
         if (
             "moon_altitude" in hourly_data.columns
-            and not hourly_data["moon_altitude"].isna().all()
+            and not cast(pd.Series, hourly_data["moon_altitude"]).isna().all()
         ):
-            return hourly_data["moon_altitude"]
+            return cast(pd.Series, hourly_data["moon_altitude"])
 
         alts = calculate_moon_altitudes(self.place, hourly_data["time"].tolist())
         alts.index = hourly_data.index

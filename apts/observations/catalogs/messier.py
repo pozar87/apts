@@ -1,11 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Union, cast
 from datetime import datetime
+from typing import TYPE_CHECKING, Optional, cast
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from skyfield.api import Time
+
     from ...conditions import Conditions
     from ...objects.messier import Messier
     from ...place import Place
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 class MessierCatalogMixIn:
     if TYPE_CHECKING:
         place: "Place"
-        effective_date: Optional[Union["datetime", "Time"]]
+        effective_date: Optional["Time"]
         conditions: "Conditions"
         start: Optional["datetime"]
         time_limit: Optional["datetime"]
@@ -30,6 +31,7 @@ class MessierCatalogMixIn:
     def local_messier(self) -> "Messier":
         if self._local_messier is None:
             from apts import catalogs
+
             from ...objects.messier import Messier
 
             self._local_messier = Messier(

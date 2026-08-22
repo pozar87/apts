@@ -1,6 +1,8 @@
 import math
-from typing import Optional, Any, Union, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
+
 import numpy
+
 from ...units import get_unit_registry
 from ..calculations import planetary as optics_utils
 
@@ -10,6 +12,7 @@ if TYPE_CHECKING:
 
 class PlanetaryMixIn:
     if TYPE_CHECKING:
+
         def pixel_scale(self) -> Optional["Quantity"]: ...
 
     def planetary_size_in_pixels(
@@ -54,7 +57,9 @@ class PlanetaryMixIn:
             return None
 
         return optics_utils.calculate_saturn_ring_size_in_pixels(
-            details["major_axis_arcsec"], details["minor_axis_arcsec"], p_scale.magnitude
+            details["major_axis_arcsec"],
+            details["minor_axis_arcsec"],
+            p_scale.magnitude,
         )
 
     def planetary_phase_angle(
@@ -193,7 +198,7 @@ class PlanetaryMixIn:
 
         t_max = optics_utils.calculate_max_planetary_rotation_duration(
             pixel_scale_magnitude=scale,
-            r_eq=r_eq,
+            r_eq=cast(float, r_eq),
             period=period,
             cos_de=cos_de,
             tolerance_pixels=tolerance_pixels,

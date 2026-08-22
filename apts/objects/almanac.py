@@ -1,13 +1,23 @@
+from datetime import timedelta
+from typing import TYPE_CHECKING, Any
+
 import pandas as pd
 import pytz
-from datetime import timedelta
 from skyfield import almanac
 from skyfield.api import Star
 from skyfield.searchlib import find_discrete
+
+if TYPE_CHECKING:
+    from skyfield.api import Timescale
+
 from .utils import calculate_refraction
 
 
 class AlmanacMixIn:
+    if TYPE_CHECKING:
+        ts: Timescale
+        place: Any
+
     def _compute_tranzit(self, skyfield_object, observer):
         """
         Calculates the upper meridian transit of a celestial object.

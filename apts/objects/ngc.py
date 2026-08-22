@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -31,8 +33,8 @@ class NGC(Objects):
         sort_by=ObjectTableLabels.TRANSIT,
         star_magnitude_limit=None,
         limiting_magnitude=None,
-        exclude_messier=True,
         clean=True,
+        exclude_messier=True,
         **kwargs,
     ) -> pd.DataFrame:
         # Override get_visible to lazily restore skyfield objects and Pint units
@@ -141,7 +143,7 @@ class NGC(Objects):
             visible.update(self.objects.loc[indices_needing_restoration])
 
         if clean:
-            visible = filter_technical_columns(visible)
+            visible = filter_technical_columns(cast(pd.DataFrame, visible))
 
         return visible  # type: ignore[return-value]
 
@@ -203,25 +205,20 @@ class NGC(Objects):
             mask |= self.objects["NGC_norm"] == norm_name
         elif ObjectTableLabels.NGC in self.objects.columns:
             mask |= (
-                self.normalize_name(self.objects[ObjectTableLabels.NGC])
-                == norm_name
+                self.normalize_name(self.objects[ObjectTableLabels.NGC]) == norm_name
             )
 
         if "Name_norm" in self.objects.columns:
             mask |= self.objects["Name_norm"] == norm_name
         elif ObjectTableLabels.NAME in self.objects.columns:
             mask |= (
-                self.normalize_name(self.objects[ObjectTableLabels.NAME])
-                == norm_name
+                self.normalize_name(self.objects[ObjectTableLabels.NAME]) == norm_name
             )
 
         if "IC_norm" in self.objects.columns:
             mask |= self.objects["IC_norm"] == norm_name
         elif ObjectTableLabels.IC in self.objects.columns:
-            mask |= (
-                self.normalize_name(self.objects[ObjectTableLabels.IC])
-                == norm_name
-            )
+            mask |= self.normalize_name(self.objects[ObjectTableLabels.IC]) == norm_name
 
         result = self.objects[mask]
         if not result.empty:

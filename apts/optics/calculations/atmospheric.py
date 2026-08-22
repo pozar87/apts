@@ -1,9 +1,10 @@
+from typing import Any, Optional, Union, cast
+
 import numpy as np
-from typing import Optional, Union, cast
 
 
 def calculate_airmass(
-    altitude_degrees: Union[float, np.ndarray]
+    altitude_degrees: Union[float, np.ndarray],
 ) -> Union[float, np.ndarray]:
     """
     Calculates the relative airmass using the Kasten-Young (1989) formula.
@@ -46,9 +47,7 @@ def calculate_atmospheric_dispersion(
     def get_n_minus_1(l_nm):
         l_um = l_nm / 1000.0
         l_inv_sq = 1.0 / (l_um**2)
-        n_minus_1_e6 = (
-            64.328 + 29498.1 / (146.0 - l_inv_sq) + 255.4 / (41.0 - l_inv_sq)
-        )
+        n_minus_1_e6 = 64.328 + 29498.1 / (146.0 - l_inv_sq) + 255.4 / (41.0 - l_inv_sq)
         return n_minus_1_e6 * 1e-6
 
     n1_m_1 = get_n_minus_1(lambda1_nm)
@@ -81,7 +80,7 @@ def calculate_atmospheric_dispersion_in_pixels(
     if np.isscalar(pixel_scale_arcsec):
         if cast(float, pixel_scale_arcsec) == 0:
             return None
-        return float(dispersion_arcsec / pixel_scale_arcsec)
+        return float(dispersion_arcsec / cast(Any, pixel_scale_arcsec))
     else:
         scale_arr = np.asarray(pixel_scale_arcsec)
         if np.all(scale_arr == 0):

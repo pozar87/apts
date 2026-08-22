@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime, time, timedelta
+from datetime import datetime, time
 from unittest.mock import MagicMock
 
 from apts.constants.twilight import Twilight

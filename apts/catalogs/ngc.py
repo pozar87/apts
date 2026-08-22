@@ -1,7 +1,7 @@
 import logging
 import re
 from importlib import resources
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ def normalize_name(n):
         # Optimization: Direct list iteration over values is faster than Pandas
         # multi-step string operations (.str.replace, .str.extract regex).
         vals = n.values
-        res = [None] * len(vals)
+        res = cast(list, [None] * len(vals))
         for i, val in enumerate(vals):
             if val is None or pd.isna(val):
                 continue
@@ -90,7 +90,7 @@ def _load_ngc_with_units():
         "SNR": DSOType.SNR,
     }
     ngc_df[ObjectTableLabels.DSO_TYPE] = (
-        ngc_df["Type"].map(ngc_type_map).fillna(cast(DSOType, DSOType.OTHER))
+        ngc_df["Type"].map(cast(Any, ngc_type_map)).fillna(cast(DSOType, DSOType.OTHER))
     )
 
     # Standardize dimensions
@@ -115,8 +115,8 @@ def _load_ngc_with_units():
 
     # Vectorized RA and Dec parsing (Optimization: replaces slow row-wise apply)
     # This provides a ~40% speedup for NGC loading by avoiding ~14k row-wise function calls.
-    ra_hours = parse_ra_to_hours(ngc_df["RA"])
-    dec_degrees = parse_dec_to_degrees(ngc_df["Dec"])
+    ra_hours = cast(pd.Series, parse_ra_to_hours(cast(pd.Series, ngc_df["RA"])))
+    dec_degrees = cast(pd.Series, parse_dec_to_degrees(cast(pd.Series, ngc_df["Dec"])))
 
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.

@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
 import pandas as pd
-import pytest
 
 from apts.catalogs import Catalogs
 from apts.conditions import Conditions
 from apts.constants.objecttablelabels import TECHNICAL_COLUMNS
 from apts.equipment.base import Equipment
-from apts.objects import Messier, NGC, SolarObjects, Stars
+from apts.objects import Messier, SolarObjects
 from apts.objects.utils import filter_technical_columns
 from apts.observations import Observation
 from apts.opticalequipment.camera.vendors.zwo import ZwoCamera
