@@ -149,24 +149,49 @@ def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     ts = get_timescale()
     target_epoch = epoch if epoch is not None else ts.utc(2000)
 
-    def solar_longitude_at(t):
-        # Solar longitude (λ⊙) is the ecliptic longitude of the Sun as seen from Earth.
-        # It must be calculated for a geocentric observer (earth.at(t)) observing the Sun.
-        # We use apparent position to include aberration and nutation, which is
-        # the standard for λ⊙ used in meteor shower prediction (apparent geocentric).
-        _, lon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon(target_epoch)
+    # Optimization: Bypassing expensive .apparent() place calculations (nutation,
+    # aberration, light deflection) during the coarse step-search phase.
+    def solar_longitude_at_astrometric(t):
+        _, lon, _ = earth.at(t).observe(sun).ecliptic_latlon(target_epoch)
         return lon.degrees
 
-    # We want to find where solar_longitude_at(t) == target_longitude
-    # Since longitude wraps at 360, we use a difference function
-    def longitude_difference(t):
-        diff = solar_longitude_at(t) - target_longitude
-        return (diff + 180) % 360 - 180
-
     def abs_diff(t):
-        return abs(longitude_difference(t))
+        diff = solar_longitude_at_astrometric(t) - target_longitude
+        return abs((diff + 180) % 360 - 180)
 
-    setattr(abs_diff, "step_days", 1.0)
+    abs_diff.step_days = 1.0
     times, _ = find_minima(t0, t1, abs_diff)
 
-    return times[0] if len(times) > 0 else None
+    if not times:
+        return None
+
+    rough_t = times[0]
+
+    # Perform secant root-finding using high-precision .apparent() observations
+    # starting at rough_t to achieve sub-arcsecond accuracy (< 1e-6 degrees)
+    # with minimal high-precision evaluations.
+    def apparent_error(t):
+        _, lon, _ = earth.at(t).observe(sun).apparent().ecliptic_latlon(target_epoch)
+        return (lon.degrees - target_longitude + 180) % 360 - 180
+
+    t_a = rough_t
+    y_a = apparent_error(t_a)
+    if abs(y_a) < 1e-6:
+        return t_a
+
+    t_b = ts.tt_jd(t_a.tt - 0.001)
+    y_b = apparent_error(t_b)
+
+    for _ in range(2):
+        if abs(y_a - y_b) < 1e-12:
+            break
+        dt = y_a * (t_a.tt - t_b.tt) / (y_a - y_b)
+        t_next = ts.tt_jd(t_a.tt - dt)
+        y_next = apparent_error(t_next)
+
+        t_b, y_b = t_a, y_a
+        t_a, y_a = t_next, y_next
+        if abs(y_a) < 1e-6:
+            break
+
+    return t_a
