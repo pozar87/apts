@@ -71,14 +71,14 @@ class TakahashiTelescope(Telescope):
             "brand": "Takahashi",
             "name": "FC-100DZ",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 3900,
+            "optical_length": 223, # Verified via Takahashi Europe (223mm metal back distance) - https://takahashi-europe.com/catalog/refractors/doublets/fc-100dz
+            "mass": 3900, # Verified via Takahashi Europe (3.9 kg tube weight) - https://takahashi-europe.com/catalog/refractors/doublets/fc-100dz
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "M54",
             "cside_gender": "Male",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 100,
             "focal_length_mm": 800,
             "central_obstruction_mm": 0,
