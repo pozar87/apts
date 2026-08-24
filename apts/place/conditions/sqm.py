@@ -168,4 +168,8 @@ class SqmMixIn:
             b_total *= 1 - 0.5 * (cloud_cover / 100.0)
 
         sqms = cast(np.ndarray, -2.5 * np.log10(np.maximum(b_total, 1e-10)))
-        return np.clip(sqms, 10.0, 22.0)
+        sqms = np.clip(sqms, 10.0, 22.0)
+        # Sky brightness is meaningless while the sun is up; the 10.0 floor
+        # previously leaked as a fake "no data" value in daytime forecast
+        # rows. Blank those out so consumers can treat null as "n/a".
+        return np.where(np.asarray(sun_alts) > 0, np.nan, sqms)
