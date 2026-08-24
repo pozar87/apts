@@ -1845,11 +1845,11 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 6030,
+            "full_well_e": 6030,  # Verified via ZWO official product specs (6.03ke) - https://www.zwoastro.com/product/asi715mc/
             "height": 2192,
-            "mass": 126,
+            "mass": 126,  # Verified via ZWO (126g) - https://www.zwoastro.com/product/asi715mc/
             "name": "ASI715MC",
-            "optical_length": 6.5,
+            "optical_length": 12.5,  # Verified via ZWO (12.5mm backfocus distance / CS thread) - https://www.zwoastro.com/product/asi715mc/
             "pixel_size_um": 1.45,
             "quantum_efficiency_pct": 80,
             "read_noise_e": 0.72,
@@ -1857,7 +1857,7 @@ class ZwoCamera(Camera):
             "sensor_height_mm": 3.18,
             "sensor_width_mm": 5.6,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Verified via ZWO (CS-mount native thread with 12.5mm backfocus) - https://www.zwoastro.com/product/asi715mc/
             "type": "type_camera",
             "width": 3864,
         },
