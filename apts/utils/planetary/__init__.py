@@ -27,6 +27,11 @@ from .calculations import (
     calculate_surface_brightness,
     calculate_sun_magnitude,
     calculate_moon_magnitude_krisciunas,
+    calculate_moon_orientation_elements,
+    calculate_moon_illumination_and_waxing,
+    calculate_moon_phase_name,
+    calculate_moon_position_angle_bright_limb,
+    calculate_moon_selenographic_coords,
 )
 
 from .physical import (
@@ -96,6 +101,11 @@ __all__ = [
     "calculate_surface_brightness",
     "calculate_sun_magnitude",
     "calculate_moon_magnitude_krisciunas",
+    "calculate_moon_orientation_elements",
+    "calculate_moon_illumination_and_waxing",
+    "calculate_moon_phase_name",
+    "calculate_moon_position_angle_bright_limb",
+    "calculate_moon_selenographic_coords",
     "get_planet_radius_km",
     "get_planet_rotation_period",
     "get_planet_distance_km",

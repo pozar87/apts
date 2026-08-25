@@ -10,6 +10,11 @@ from apts.utils.planetary.calculations import (
     calculate_surface_brightness,
     calculate_sun_magnitude,
     calculate_moon_magnitude_krisciunas,
+    calculate_moon_orientation_elements,
+    calculate_moon_illumination_and_waxing,
+    calculate_moon_phase_name,
+    calculate_moon_position_angle_bright_limb,
+    calculate_moon_selenographic_coords,
 )
 
 
@@ -100,6 +105,62 @@ class TestPlanetaryCalculations(unittest.TestCase):
         # At phase = 0 deg and mean distance 384400 km
         m0 = calculate_moon_magnitude_krisciunas(0.0, 384400.0)
         self.assertAlmostEqual(m0, -12.73, places=5)
+
+    def test_calculate_moon_orientation_elements(self):
+        # J2000 epoch TT
+        alpha0, delta0, W = calculate_moon_orientation_elements(2451545.0)
+        self.assertIsInstance(alpha0, (float, np.number))
+        self.assertIsInstance(delta0, (float, np.number))
+        self.assertIsInstance(W, (float, np.number))
+
+    def test_calculate_moon_illumination_and_waxing(self):
+        # Phase angle 0 deg -> 0% illumination, not waxing (0 < 0 < 180 False)
+        ill_0, waxing_0 = calculate_moon_illumination_and_waxing(0.0)
+        self.assertAlmostEqual(ill_0, 0.0, places=5)
+        self.assertFalse(waxing_0)
+
+        # Phase angle 90 deg -> 50% illumination, waxing
+        ill_90, waxing_90 = calculate_moon_illumination_and_waxing(90.0)
+        self.assertAlmostEqual(ill_90, 50.0, places=5)
+        self.assertTrue(waxing_90)
+
+        # Phase angle 180 deg -> 100% illumination, not waxing
+        ill_180, waxing_180 = calculate_moon_illumination_and_waxing(180.0)
+        self.assertAlmostEqual(ill_180, 100.0, places=5)
+        self.assertFalse(waxing_180)
+
+        # Array input
+        phases = np.array([45.0, 225.0])
+        ill_arr, waxing_arr = calculate_moon_illumination_and_waxing(phases)
+        self.assertIsInstance(ill_arr, np.ndarray)
+        self.assertTrue(waxing_arr[0])
+        self.assertFalse(waxing_arr[1])
+
+    def test_calculate_moon_phase_name(self):
+        self.assertEqual(calculate_moon_phase_name(0.0), "New Moon")
+        self.assertEqual(calculate_moon_phase_name(45.0), "Waxing Crescent")
+        self.assertEqual(calculate_moon_phase_name(90.0), "First Quarter")
+        self.assertEqual(calculate_moon_phase_name(135.0), "Waxing Gibbous")
+        self.assertEqual(calculate_moon_phase_name(180.0), "Full Moon")
+        self.assertEqual(calculate_moon_phase_name(225.0), "Waning Gibbous")
+        self.assertEqual(calculate_moon_phase_name(270.0), "Last Quarter")
+        self.assertEqual(calculate_moon_phase_name(315.0), "Waning Crescent")
+
+    def test_calculate_moon_position_angle_bright_limb(self):
+        # Sun and Moon at same RA/Dec -> PA = 0
+        pa = calculate_moon_position_angle_bright_limb(0.0, 0.0, 0.0, 0.0)
+        self.assertIsInstance(pa, float)
+
+    def test_calculate_moon_selenographic_coords(self):
+        # Arbitrary unit vector along x-axis in AU
+        v_target = np.array([1.0, 0.0, 0.0])
+        alpha0 = 0.0
+        delta0 = np.pi / 2
+        W = 0.0
+
+        lon, lat = calculate_moon_selenographic_coords(v_target, alpha0, delta0, W)
+        self.assertIsInstance(lon, float)
+        self.assertIsInstance(lat, float)
 
 
 if __name__ == "__main__":
