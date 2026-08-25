@@ -403,6 +403,23 @@ class AskarTelescope(Telescope):
             "focal_length_mm": 784,
             "central_obstruction_mm": 0,
         },
+        "Askar_50P": {
+            "brand": "Askar",
+            "name": "50P",
+            "type": "type_refractor",
+            "optical_length": 0,
+            "mass": 1400,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "",
+            "aperture_mm": 50,
+            "focal_length_mm": 190,
+            "central_obstruction_mm": 0,
+            # Source: https://www.sharpstar-optics.com/Products_1/50P.html
+        },
     }
 
     @classmethod
@@ -504,3 +521,7 @@ class AskarTelescope(Telescope):
     @classmethod
     def Askar_140APO_Reduced(cls):
         return cls.from_database(cls._DATABASE['Askar_140APO_Reduced'])
+
+    @classmethod
+    def Askar_50P(cls):
+        return cls.from_database(cls._DATABASE['Askar_50P'])

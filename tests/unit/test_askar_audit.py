@@ -12,5 +12,15 @@ class TestAskarAudit(unittest.TestCase):
         self.assertEqual(scope.connection_type, ConnectionType.M48)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
 
+    def test_50p_specs(self):
+        # Official specs: 50mm aperture, 190mm focal length, 1400g mass, M48 camera thread
+        scope = AskarTelescope.Askar_50P()
+        self.assertEqual(scope.aperture.to('mm').magnitude, 50)
+        self.assertEqual(scope.focal_length.to('mm').magnitude, 190)
+        self.assertEqual(scope.mass.to('gram').magnitude, 1400)
+        self.assertEqual(scope.connection_type, ConnectionType.M48)
+        self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
+        self.assertEqual(scope.get_vendor(), "Askar 50P")
+
 if __name__ == '__main__':
     unittest.main()
