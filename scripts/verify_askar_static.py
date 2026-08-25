@@ -60,6 +60,13 @@ class TestAskarSpecsStatic(unittest.TestCase):
         self.assertEqual(specs['focal_length_mm'], 1421)
         self.assertEqual(specs['mass'], 14900)
 
+    def test_50p(self):
+        specs = self.db['Askar_50P']
+        self.assertEqual(specs['aperture_mm'], 50)
+        self.assertEqual(specs['focal_length_mm'], 190)
+        self.assertEqual(specs['mass'], 1400)
+        self.assertEqual(specs['cside_thread'], 'M48')
+
     def test_all_have_co(self):
         for key, specs in self.db.items():
             self.assertIn('central_obstruction_mm', specs, f"{key} is missing central_obstruction_mm")
