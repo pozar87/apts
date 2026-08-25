@@ -711,16 +711,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 130SLT",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3990,
+            "mass": 3990, # Verified via Celestron.com (8.8 lbs / 3.99 kg OTA weight) - https://www.celestron.com/products/nexstar-130slt-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "2\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 130,
-            "focal_length_mm": 650,
-            "central_obstruction_mm": 38,
+            "aperture_mm": 130, # Verified via Celestron.com (130mm / 5.12") - https://www.celestron.com/products/nexstar-130slt-computerized-telescope
+            "focal_length_mm": 650, # Verified via Celestron.com (650mm / f/5) - https://www.celestron.com/products/nexstar-130slt-computerized-telescope
+            "central_obstruction_mm": 38, # Verified via Celestron.com (38mm / 1.5" secondary mirror obstruction) - https://www.celestron.com/products/nexstar-130slt-computerized-telescope
         },
         "Celestron_NexStar_4SE": {
             "brand": "Celestron",
