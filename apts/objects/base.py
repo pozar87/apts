@@ -77,24 +77,26 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
 
         # Always update the master objects DataFrame to keep data in sync.
         # This handles both full catalog computations and subset-specific updates.
-        if df_to_compute is self.objects:
+        computed_cols = [
+            ObjectTableLabels.TRANSIT,
+            ObjectTableLabels.ALTITUDE,
+            ObjectTableLabels.RISING,
+            ObjectTableLabels.SETTING,
+        ]
+        if df_to_compute is self.objects or df_to_compute is None:
             # Optimization: Direct column assignment when computing on the full catalog.
             # This completely avoids the massive overhead of self.objects.update() which
             # triggers slow timezone-aware datetime inference and alignment across 14k rows.
-            self.objects[ObjectTableLabels.TRANSIT] = computed_df[
-                ObjectTableLabels.TRANSIT
-            ]
-            self.objects[ObjectTableLabels.ALTITUDE] = computed_df[
-                ObjectTableLabels.ALTITUDE
-            ]
-            self.objects[ObjectTableLabels.RISING] = computed_df[
-                ObjectTableLabels.RISING
-            ]
-            self.objects[ObjectTableLabels.SETTING] = computed_df[
-                ObjectTableLabels.SETTING
-            ]
+            for col in computed_cols:
+                self.objects[col] = computed_df[col]
         else:
-            self.objects.update(computed_df)
+            # Optimization: Direct .loc column assignment for subset updates is ~6x faster
+            # than self.objects.update(computed_df).
+            idx = computed_df.index
+            for col in computed_cols:
+                if col in self.objects.columns and self.objects[col].dtype != object:
+                    self.objects[col] = self.objects[col].astype(object)
+                self.objects.loc[idx, col] = computed_df[col]
 
         return computed_df
 
