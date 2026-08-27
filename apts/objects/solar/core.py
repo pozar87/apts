@@ -96,6 +96,16 @@ class SolarObjects(Objects):
             # We pass computed_df which now has ra_hours/dec_degrees and skyfield_objects.
             computed_df = super().compute(calculation_date, computed_df)
 
+        # Ensure all columns exist in self.objects
+        for col in computed_df.columns:
+            if col not in self.objects.columns:
+                self.objects[col] = None
+
+        if df_to_compute is None or df_to_compute is self.objects:
+            for col in computed_df.columns:
+                self.objects[col] = computed_df[col]
+        else:
+            self.objects.loc[computed_df.index, computed_df.columns] = computed_df
         # Optimization: Direct column and .loc assignment avoids expensive DataFrame.update()
         if target_df is self.objects:
             self.objects = computed_df

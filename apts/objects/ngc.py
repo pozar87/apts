@@ -142,7 +142,7 @@ class NGC(Objects):
             # Optimization: Direct .loc column assignment is significantly faster than visible.update().
             restored_cols = [
                 "skyfield_object",
-                "Magnitude",
+                ObjectTableLabels.MAGNITUDE,
                 ObjectTableLabels.SIZE_MAJOR,
                 ObjectTableLabels.SIZE_MINOR,
             ]
