@@ -83,33 +83,20 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
             ObjectTableLabels.RISING,
             ObjectTableLabels.SETTING,
         ]
-        if df_to_compute is self.objects:
+        if df_to_compute is self.objects or df_to_compute is None:
             # Optimization: Direct column assignment when computing on the full catalog.
             # This completely avoids the massive overhead of self.objects.update() which
             # triggers slow timezone-aware datetime inference and alignment across 14k rows.
-            self.objects[ObjectTableLabels.TRANSIT] = computed_df[
-                ObjectTableLabels.TRANSIT
-            ]
-            self.objects[ObjectTableLabels.ALTITUDE] = computed_df[
-                ObjectTableLabels.ALTITUDE
-            ]
-            self.objects[ObjectTableLabels.RISING] = computed_df[
-                ObjectTableLabels.RISING
-            ]
-            self.objects[ObjectTableLabels.SETTING] = computed_df[
-                ObjectTableLabels.SETTING
-            ]
-        else:
-            # Optimization: Direct .loc column assignment for computed fields only.
-            # Bypasses self.objects.update() which triggers slow alignment and pandas
-            # FutureWarning when updating string-dtype catalog columns (e.g., Constellation).
             for col in computed_cols:
-                vals = computed_df[col]
-                if col in self.objects.columns and pd.api.types.is_datetime64_any_dtype(
-                    self.objects[col]
-                ):
-                    vals = pd.to_datetime(vals, utc=True)
-                self.objects.loc[computed_df.index, col] = vals
+                self.objects[col] = computed_df[col]
+        else:
+            # Optimization: Direct .loc column assignment for subset updates is ~6x faster
+            # than self.objects.update(computed_df).
+            idx = computed_df.index
+            for col in computed_cols:
+                if col in self.objects.columns and self.objects[col].dtype != object:
+                    self.objects[col] = self.objects[col].astype(object)
+                self.objects.loc[idx, col] = computed_df[col]
 
         return computed_df
 

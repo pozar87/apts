@@ -178,16 +178,15 @@ class VisibilityMixIn:
 
             if missing_any:
                 if not visible_candidate_objects.empty:
-                    computed = self.compute(
+                    computed_df = self.compute(
                         calculation_date=self.calculation_date,
                         df_to_compute=visible_candidate_objects,
                     )
-                    # Optimization: Directly update only computed columns on visible_candidate_objects
-                    # Bypasses .update() which triggers slow alignment and pandas FutureWarning
-                    # on string-dtype catalog columns.
+                    # Optimization: Directly assign computed transit, rise, set, and altitude
+                    # columns from returned computed_df. Bypasses redundant self.objects.loc[]
+                    # lookups and expensive DataFrame.update() alignment checks.
                     for col in needed_cols:
-                        if col in computed.columns:
-                            visible_candidate_objects[col] = computed[col]
+                        visible_candidate_objects[col] = computed_df[col]
 
     def _prepare_visibility_check_times(self, start, stop):
         """Prepares the time grid for visibility checking."""

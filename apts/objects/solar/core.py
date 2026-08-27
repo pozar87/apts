@@ -106,6 +106,14 @@ class SolarObjects(Objects):
                 self.objects[col] = computed_df[col]
         else:
             self.objects.loc[computed_df.index, computed_df.columns] = computed_df
+        # Optimization: Direct column and .loc assignment avoids expensive DataFrame.update()
+        if target_df is self.objects:
+            self.objects = computed_df
+        else:
+            for col in computed_df.columns:
+                if col not in self.objects.columns:
+                    self.objects[col] = None
+                self.objects.loc[computed_df.index, col] = computed_df[col]
         return computed_df
 
     def get_visible(

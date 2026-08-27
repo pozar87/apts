@@ -257,3 +257,7 @@ The most significant bottleneck among successfully running events was optimized 
 ## 2026-08-17 - [Fixed Object Culmination Astrometric Bypass]
 **Learning:** For fixed astronomical objects (like Messier/NGC catalog objects), estimating culmination/transit times depends on finding when Local Sidereal Time (LST) matches Right Ascension (RA). Calling Skyfield's `.apparent()` triggers expensive nutation (`iau2000a`) and aberration calculations. Replacing `.apparent()` with astrometric `.observe()` when observing fixed objects for culmination estimation yields a ~10-25ms speedup per catalog search with sub-second time accuracy.
 **Action:** Use astrometric `.observe()` instead of `.apparent()` when querying fixed object coordinates for culmination or transit time estimations.
+
+## 2026-08-18 - [Pandas DataFrame Update Elimination in Catalog Visibility]
+**Learning:** In Pandas DataFrames, calling `df.update(other_df)` triggers heavy index alignment checks, non-NA checks, and auto-datatype coercion. When calculating visible celestial objects across large catalogs (such as 14,000+ NGC objects), replacing `df.update()` with direct column assignment (`df[col] = ...`) or direct `.loc` indexer assignments (`df.loc[idx, col] = ...`) bypasses these alignment loops and provides a massive speedup (~5.5x speedup for NGC catalog searches, 192.5ms down to 34.7ms).
+**Action:** Never use `DataFrame.update()` in performance-critical or high-frequency loops. Use direct column assignments or `.loc[idx, col] = ...` loops over target columns instead.
