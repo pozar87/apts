@@ -9,8 +9,7 @@ from ..opticalequipment import (
     NakedEye,
     OpticalEquipment,
 )
-from ..optics import OpticalPath
-from ..utils import ConnectionType, find_all_paths
+from .calculations import can_connect_nodes, find_unique_optical_paths
 from .plotting import EquipmentPlottingMixIn
 
 logger = logging.getLogger(__name__)
@@ -37,36 +36,9 @@ class Equipment(EquipmentPlottingMixIn):
         """
         # Connect all outputs with inputs
         self._connect()
-
-        if not isinstance(output_ids, list):
-            output_ids = [output_ids]
-
-        # Find input and output nodes
-        results = []
-        # Store frozenset of equipment to avoid redundant path creation
-        seen_equipment_sets = set()
-
-        logger.debug(f"Space {GraphConstants.SPACE_ID}, Outputs {output_ids}")
-        for optical_path in find_all_paths(
+        return find_unique_optical_paths(
             self.connection_garph, GraphConstants.SPACE_ID, output_ids
-        ):
-            logger.debug(f"Optical Path: {optical_path}")
-            # Get equipment objects in the path
-            equipment_list: list[OpticalEquipment] = [
-                self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
-                for node_id in optical_path
-                if self.connection_garph.nodes[node_id][NodeLabels.EQUIPMENT]
-                is not None
-            ]
-
-            # Use frozenset for early uniqueness check
-            equipment_set = frozenset(equipment_list)
-            if equipment_set not in seen_equipment_sets:
-                seen_equipment_sets.add(equipment_set)
-                # Only create OpticalPath if it's unique
-                op = OpticalPath.from_path(equipment_list)
-                results.append(op)
-        return results
+        )
 
     def get_zooms(self, node_id) -> list[float]:
         """
@@ -100,45 +72,10 @@ class Equipment(EquipmentPlottingMixIn):
         logger.debug("Connecting nodes")
 
         for out_node_id, out_node_data in self.connection_garph.nodes(data=True):
-            if (
-                out_node_data is not None
-                and out_node_data.get(NodeLabels.TYPE) == OpticalType.OUTPUT
-            ):
-                # Get output type and gender
-                connection_type = out_node_data[NodeLabels.CONNECTION_TYPE]
-                connection_gender = out_node_data.get(NodeLabels.CONNECTION_GENDER)
+            for in_node_id, in_node_data in self.connection_garph.nodes(data=True):
+                if can_connect_nodes(out_node_data, in_node_data):
+                    self.add_edge(out_node_id, in_node_id)
 
-                for in_node_id, in_node_data in self.connection_garph.nodes(data=True):
-                    if (
-                        in_node_data is not None
-                        and in_node_data.get(NodeLabels.TYPE) == OpticalType.INPUT
-                        and in_node_data.get(NodeLabels.CONNECTION_TYPE)
-                        == connection_type
-                    ):
-                        # Match genders - only different genders can connect
-                        in_gender = in_node_data.get(NodeLabels.CONNECTION_GENDER)
-
-                        # If both genders are specified, they must be different
-                        if connection_gender is not None and in_gender is not None:
-                            if connection_gender == in_gender:
-                                continue
-                        # If either gender is missing and it's NOT a push-fit (1.25" or 2"),
-                        # we cannot assume they connect.
-                        elif connection_type not in [
-                            ConnectionType.F_1_25,
-                            ConnectionType.F_2,
-                        ]:
-                            continue
-
-                        # Connect all outputs with all inputs, excluding connecting part to itself
-                        out_id = OpticalEquipment.get_parent_id(
-                            out_node_data[NodeLabels.NAME]
-                        )
-                        in_id = OpticalEquipment.get_parent_id(
-                            in_node_data[NodeLabels.NAME]
-                        )
-                        if out_id != in_id:
-                            self.add_edge(out_node_id, in_node_id)
         logger.debug(self.connection_garph)
         self._connected = True
 
