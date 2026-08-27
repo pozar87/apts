@@ -139,8 +139,17 @@ class NGC(Objects):
             ] = sizes_minor_q
 
             # Refresh the 'visible' slice with restored objects for returning to the caller.
-            # We must re-copy from the master catalog to ensure consistency.
-            visible.update(self.objects.loc[indices_needing_restoration])
+            # Optimization: Direct .loc column assignment is significantly faster than visible.update().
+            restored_cols = [
+                "skyfield_object",
+                "Magnitude",
+                ObjectTableLabels.SIZE_MAJOR,
+                ObjectTableLabels.SIZE_MINOR,
+            ]
+            for col in restored_cols:
+                visible.loc[indices_needing_restoration, col] = self.objects.loc[
+                    indices_needing_restoration, col
+                ]
 
         if clean:
             visible = filter_technical_columns(cast(pd.DataFrame, visible))
