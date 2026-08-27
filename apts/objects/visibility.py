@@ -178,17 +178,16 @@ class VisibilityMixIn:
 
             if missing_any:
                 if not visible_candidate_objects.empty:
-                    self.compute(
+                    computed = self.compute(
                         calculation_date=self.calculation_date,
                         df_to_compute=visible_candidate_objects,
                     )
-                    # Update visible_candidate_objects with the new computed values
-                    for col in self.objects.columns:
-                        if col not in visible_candidate_objects.columns:
-                            visible_candidate_objects[col] = None
-                    visible_candidate_objects.update(
-                        self.objects.loc[visible_candidate_objects.index]
-                    )
+                    # Optimization: Directly update only computed columns on visible_candidate_objects
+                    # Bypasses .update() which triggers slow alignment and pandas FutureWarning
+                    # on string-dtype catalog columns.
+                    for col in needed_cols:
+                        if col in computed.columns:
+                            visible_candidate_objects[col] = computed[col]
 
     def _prepare_visibility_check_times(self, start, stop):
         """Prepares the time grid for visibility checking."""

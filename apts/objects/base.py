@@ -77,6 +77,12 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
 
         # Always update the master objects DataFrame to keep data in sync.
         # This handles both full catalog computations and subset-specific updates.
+        computed_cols = [
+            ObjectTableLabels.TRANSIT,
+            ObjectTableLabels.ALTITUDE,
+            ObjectTableLabels.RISING,
+            ObjectTableLabels.SETTING,
+        ]
         if df_to_compute is self.objects:
             # Optimization: Direct column assignment when computing on the full catalog.
             # This completely avoids the massive overhead of self.objects.update() which
@@ -94,7 +100,16 @@ class Objects(VisibilityMixIn, AlmanacMixIn, ABC):
                 ObjectTableLabels.SETTING
             ]
         else:
-            self.objects.update(computed_df)
+            # Optimization: Direct .loc column assignment for computed fields only.
+            # Bypasses self.objects.update() which triggers slow alignment and pandas
+            # FutureWarning when updating string-dtype catalog columns (e.g., Constellation).
+            for col in computed_cols:
+                vals = computed_df[col]
+                if col in self.objects.columns and pd.api.types.is_datetime64_any_dtype(
+                    self.objects[col]
+                ):
+                    vals = pd.to_datetime(vals, utc=True)
+                self.objects.loc[computed_df.index, col] = vals
 
         return computed_df
 

@@ -101,7 +101,11 @@ class SolarObjects(Objects):
             if col not in self.objects.columns:
                 self.objects[col] = None
 
-        self.objects.update(computed_df)
+        if df_to_compute is None or df_to_compute is self.objects:
+            for col in computed_df.columns:
+                self.objects[col] = computed_df[col]
+        else:
+            self.objects.loc[computed_df.index, computed_df.columns] = computed_df
         return computed_df
 
     def get_visible(
