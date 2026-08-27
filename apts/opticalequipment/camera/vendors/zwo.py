@@ -1450,19 +1450,19 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 50000,
+            "full_well_e": 50000,  # Verified via ZWO (50ke full well capacity) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
             "height": 3008,
-            "mass": 470,
+            "mass": 470,  # Verified via ZWO (0.47kg / 470g) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
             "name": "ASI533MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.0,
+            "optical_length": 17.5,  # Verified via ZWO (17.5mm backfocus distance with 11mm ring) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
+            "pixel_size_um": 3.76,  # Verified via ZWO (3.76µm pixel size) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
+            "quantum_efficiency_pct": 80,  # Verified via ZWO (80% peak QE) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
+            "read_noise_e": 1.0,  # Verified via ZWO (1.0e- read noise) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
             "reversible": False,
-            "sensor_height_mm": 11.31,
-            "sensor_width_mm": 11.31,
+            "sensor_height_mm": 11.31,  # Verified via ZWO (11.31mm x 11.31mm Sony IMX533 sensor) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
+            "sensor_width_mm": 11.31,  # Verified via ZWO (11.31mm x 11.31mm Sony IMX533 sensor) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO (M42x0.75 female thread) - https://astronomy-imaging-camera.com/product/asi533mc-pro-color/
             "type": "type_camera",
             "width": 3008,
         },
