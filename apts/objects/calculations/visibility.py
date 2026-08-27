@@ -63,11 +63,17 @@ def calculate_visible_stars_mask(
 
     # Preliminary filter: max altitude check
     max_alt_deg = 90.0 - np.abs(lat_decimal - stars_decs)
-    # Add refraction at max altitude for better filtering
-    max_alt_deg += calculate_refraction(max_alt_deg)
+    min_alt = conditions.horizon.get_min_altitude()
+
+    # Optimization: Refraction is monotonically decreasing with altitude for alt > -1.0.
+    # Evaluating calculate_refraction on the full N-element max_alt_deg array (e.g., 14,000 objects)
+    # before pruning is expensive. Pre-computing a conservative scalar upper-bound refraction offset
+    # at min_alt - 1.0 deg provides an exact lower bound for max altitude checks with zero false negatives
+    # and avoids array-wide refraction calculations.
+    ref_bound = float(calculate_refraction(max(-0.99, min_alt - 1.0)))
 
     # Only process stars that can potentially reach the minimum altitude
-    potential_mask = max_alt_deg > conditions.horizon.get_min_altitude()
+    potential_mask = max_alt_deg > (min_alt - ref_bound)
 
     visible_stars_mask = np.zeros(len(stars_ras), dtype=bool)
 
