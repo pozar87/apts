@@ -71,15 +71,15 @@ class William_opticsTelescope(Telescope):
             "name": "RedCat 51",
             "type": "type_refractor",
             "optical_length": 0,
-            "mass": 1450,
+            "mass": 1800, # Verified via official William Optics documentation (1.8 kg total package weight) - https://williamoptics.com/products/redcat-51-iii
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48", # Verified male M48 camera connection
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 51,
-            "focal_length_mm": 250,
+            "aperture_mm": 51, # Verified via official William Optics documentation (51mm / f/4.9 Petzval Apo) - https://williamoptics.com/products/redcat-51-iii
+            "focal_length_mm": 250, # Verified 250mm focal length
             "central_obstruction_mm": 0,
         },
         "William_Optics_SpaceCat_51": {
