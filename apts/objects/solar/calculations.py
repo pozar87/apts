@@ -34,6 +34,38 @@ def get_ephem_observer(observer_to_use, t):
     return ephem_observer
 
 
+def _compute_ephem_body_data(object_name, minor_planets, ephem_observer):
+    """Computes Ephem magnitude, size, and phase for a single celestial body."""
+    if object_name in MINOR_PLANET_NAMES_SET:
+        return compute_minor_planet_ephem(object_name, minor_planets, ephem_observer)
+    ephem_obj_constructor = EPHEM_OBJECT_MAP.get(object_name)
+    if ephem_obj_constructor:
+        ephem_obj = ephem_obj_constructor()
+        ephem_obj.compute(ephem_observer)
+        return ephem_obj.mag, ephem_obj.size, ephem_obj.phase
+    return np.nan, np.nan, np.nan
+
+
+def _compute_skyfield_body_data(row, get_skyfield_object_func, obs_at_t, sun_pos):
+    """Computes Skyfield position and coordinates for a single celestial body row."""
+    sky_obj = get_skyfield_object_func(row)
+    if not sky_obj:
+        return None, (np.nan, np.nan, np.nan, np.nan, np.nan, np.nan)
+
+    ast = obs_at_t.observe(sky_obj)
+    # Optimization: Use manual Apparent wrapping to bypass expensive
+    # nutation, aberration, and light deflection calculations (Standard Apparent).
+    # This provides a massive speedup (~100x for the apparent() call) with
+    # negligible accuracy loss (~arcseconds), ideal for visualization.
+    pos = Apparent(ast.position.au, ast.velocity.au_per_d, ast.t)
+    pos.center = ast.center
+
+    ra, dec, dist = pos.radec()
+    alt, az, _ = pos.altaz()
+    elong = pos.separation_from(sun_pos).degrees
+    return sky_obj, (ra.hours, dec.degrees, dist.au, elong, alt.degrees, az.degrees)
+
+
 def compute_ephem_and_skyfield_data(
     computed_df, observer_to_use, t, minor_planets, get_skyfield_object_func
 ):
@@ -53,50 +85,23 @@ def compute_ephem_and_skyfield_data(
     # Optimization: use itertuples() for faster row access than iterrows()
     for row in computed_df.itertuples():
         object_name = cast(str, row.Name)
-        # Ephem
-        if object_name in MINOR_PLANET_NAMES_SET:
-            mag, size, phase = compute_minor_planet_ephem(
-                object_name, minor_planets, ephem_observer
-            )
-        else:
-            ephem_obj_constructor = EPHEM_OBJECT_MAP.get(object_name)
-            if ephem_obj_constructor:
-                ephem_obj = ephem_obj_constructor()
-                ephem_obj.compute(ephem_observer)
-                mag, size, phase = ephem_obj.mag, ephem_obj.size, ephem_obj.phase
-            else:
-                mag, size, phase = np.nan, np.nan, np.nan
+        mag, size, phase = _compute_ephem_body_data(
+            object_name, minor_planets, ephem_observer
+        )
         mags.append(mag)
         sizes.append(size)
         phases.append(phase)
-        # Skyfield
-        # Optimization: pass row (NamedTuple) directly to avoid expensive ._asdict() conversion.
-        sky_obj = get_skyfield_object_func(row)
-        sky_objs.append(sky_obj)
-        if sky_obj:
-            ast = obs_at_t.observe(sky_obj)
-            # Optimization: Use manual Apparent wrapping to bypass expensive
-            # nutation, aberration, and light deflection calculations (Standard Apparent).
-            # This provides a massive speedup (~100x for the apparent() call) with
-            # negligible accuracy loss (~arcseconds), ideal for visualization.
-            pos = Apparent(ast.position.au, ast.velocity.au_per_d, ast.t)
-            pos.center = ast.center
 
-            ra, dec, dist = pos.radec()
-            alt, az, _ = pos.altaz()
-            ras.append(ra.hours)
-            decs.append(dec.degrees)
-            dists.append(dist.au)
-            elongs.append(pos.separation_from(sun_pos).degrees)
-            current_alts.append(alt.degrees)
-            current_azs.append(az.degrees)
-        else:
-            ras.append(np.nan)
-            decs.append(np.nan)
-            dists.append(np.nan)
-            elongs.append(np.nan)
-            current_alts.append(np.nan)
-            current_azs.append(np.nan)
+        sky_obj, (ra, dec, dist, elong, alt, az) = _compute_skyfield_body_data(
+            row, get_skyfield_object_func, obs_at_t, sun_pos
+        )
+        sky_objs.append(sky_obj)
+        ras.append(ra)
+        decs.append(dec)
+        dists.append(dist)
+        elongs.append(elong)
+        current_alts.append(alt)
+        current_azs.append(az)
 
     # Optimization: Use NumPy for faster array processing than list comprehensions.
     # to_numeric returns a Series (if input is list-like), we convert it to numpy
