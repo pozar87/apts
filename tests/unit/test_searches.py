@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 from skyfield.api import load, Topos, utc
 from apts import searches
-from apts.catalogs import Catalogs
+from apts.catalogs.stars import get_bright_stars_raw
 
 
 class SearchesTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class SearchesTest(unittest.TestCase):
         # on a very short time scale and a single bright star.
         short_start = datetime(2023, 1, 1, tzinfo=utc)
         short_end = datetime(2023, 1, 2, tzinfo=utc)
-        sirius = Catalogs().BRIGHT_STARS[Catalogs().BRIGHT_STARS["Name"] == "Sirius"]
+        sirius = get_bright_stars_raw()[get_bright_stars_raw()["Name"] == "Sirius"]
         events = searches.find_lunar_occultations(
             self.observer, self.eph, sirius, short_start, short_end
         )

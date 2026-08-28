@@ -107,6 +107,26 @@ def _load_messier_with_units():
 
 
 def get_messier() -> pd.DataFrame:
+    """
+    Returns the Messier catalog without internal technical columns.
+
+    Derived/calculation-only columns (ra_hours, sin_dec, skyfield_object, ...)
+    are stripped before the catalog is handed to callers. Code that needs them
+    (visibility gating, skymap resolution, conjunctions) must use
+    get_messier_raw().
+    """
+    from ..objects.utils import filter_technical_columns
+
+    return filter_technical_columns(get_messier_raw())
+
+
+def get_messier_raw() -> pd.DataFrame:
+    """
+    Returns the raw Messier catalog including internal technical columns.
+
+    Intended for internal calculations that rely on the precomputed
+    ra_hours/dec_degrees/sin_dec/skyfield_object columns for performance.
+    """
     global _messier_df
     if _messier_df is None:
         logger.info("Loading Messier catalog...")

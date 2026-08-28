@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from ..catalogs import Catalogs
+from ..catalogs.ngc import get_ngc_raw
 from ..catalogs.ngc import normalize_name as internal_normalize_name
 from ..constants import ObjectTableLabels
 from .base import Objects
@@ -15,7 +16,9 @@ class NGC(Objects):
 
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(NGC, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.NGC.copy()  # type: ignore
+        # Use the raw catalog: Catalogs.NGC exposes the cleaned view without
+        # the technical columns (ra_hours, *_norm, sin_dec, ...) needed here.
+        self.objects = get_ngc_raw().copy()  # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.RISING] = None
         self.objects[ObjectTableLabels.SETTING] = None

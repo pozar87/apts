@@ -2,6 +2,7 @@ import pandas as pd
 from typing import cast
 from apts.catalogs import Catalogs
 from apts.constants import ObjectTableLabels
+from apts.constants.objecttablelabels import TECHNICAL_COLUMNS
 
 
 def test_messier_catalog():
@@ -84,3 +85,36 @@ def test_ngc_catalog():
     assert ic1["SIMBAD"] == "https://simbad.u-strasbg.fr/simbad/sim-basic?Ident=IC0001"
     assert ic1["ALADIN"] == "https://aladin.cds.unistra.fr/AladinLite/?target=IC0001"
     assert ic1["Astrobin"] == "https://www.astrobin.com/search/?q=IC0001"
+
+
+def test_catalogs_do_not_expose_technical_columns():
+    c = Catalogs()
+    for catalog in [c.NGC, c.MESSIER, c.BRIGHT_STARS]:
+        for col in TECHNICAL_COLUMNS:
+            assert col not in catalog.columns
+
+
+def test_raw_catalogs_keep_technical_columns():
+    from apts.catalogs.ngc import get_ngc, get_ngc_raw
+    from apts.catalogs.messier import get_messier, get_messier_raw
+    from apts.catalogs.stars import get_bright_stars, get_bright_stars_raw
+
+    for clean, raw in [
+        (get_ngc(), get_ngc_raw()),
+        (get_messier(), get_messier_raw()),
+        (get_bright_stars(), get_bright_stars_raw()),
+    ]:
+        for col in TECHNICAL_COLUMNS:
+            assert col not in clean.columns
+        for col in ("ra_hours", "dec_degrees", "Magnitude_float",
+                    "sin_dec", "cos_dec_cos_ra", "cos_dec_sin_ra"):
+            assert col in raw.columns
+
+    # NGC additionally pre-computes normalized identifiers; Messier/Stars
+    # additionally pre-compute Skyfield objects.
+    assert all(
+        col in get_ngc_raw().columns for col in ("NGC_norm", "IC_norm", "Name_norm")
+    )
+    assert "skyfield_object" in get_messier_raw().columns
+    assert "skyfield_object" in get_bright_stars_raw().columns
+

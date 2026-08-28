@@ -2,6 +2,8 @@ import numpy as np
 from skyfield.api import Star
 
 from ...cache import get_timescale
+from ...catalogs.messier import get_messier_raw
+from ...catalogs.stars import get_bright_stars_raw
 from ...utils import planetary
 from .stars import find_conjunctions_with_stars
 
@@ -17,9 +19,6 @@ def find_planet_star_conjunctions(
     Finds conjunctions between major planets and bright stars.
     Vectorized over stars for each planet for high performance.
     """
-    from ...catalogs import Catalogs
-
-    catalogs = Catalogs()
     planets = [
         "mercury",
         "venus",
@@ -36,9 +35,11 @@ def find_planet_star_conjunctions(
     t_ref = ts.utc(start_date)
 
     # Optimized filtering: avoid iterative ra/dec extraction
-    v_ra_hours = catalogs.BRIGHT_STARS["ra_hours"].to_numpy()
-    v_dec_degrees = catalogs.BRIGHT_STARS["dec_degrees"].to_numpy()
-    star_names_all = catalogs.BRIGHT_STARS["Name"].to_numpy()
+    # Use the raw catalog (Catalogs.BRIGHT_STARS strips the technical columns)
+    bright_stars = get_bright_stars_raw()
+    v_ra_hours = bright_stars["ra_hours"].to_numpy()
+    v_dec_degrees = bright_stars["dec_degrees"].to_numpy()
+    star_names_all = bright_stars["Name"].to_numpy()
 
     stars_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
     spos_at_t_ref = observer.at(t_ref).observe(stars_vector_all)
@@ -85,9 +86,6 @@ def find_planet_messier_conjunctions(
     observer, start_date, end_date, precomputed_positions=None
 ):
     """Finds conjunctions between major planets and Messier objects."""
-    from ...catalogs import Catalogs
-
-    catalogs = Catalogs()
     planets = [
         "mercury",
         "venus",
@@ -104,9 +102,11 @@ def find_planet_messier_conjunctions(
     ts = get_timescale()
     t_ref = ts.utc(start_date)
 
-    v_ra_hours = catalogs.MESSIER["ra_hours"].to_numpy()
-    v_dec_degrees = catalogs.MESSIER["dec_degrees"].to_numpy()
-    messier_names_all = catalogs.MESSIER["Messier"].to_numpy()
+    # Use the raw catalog (Catalogs.MESSIER strips the technical columns)
+    messier = get_messier_raw()
+    v_ra_hours = messier["ra_hours"].to_numpy()
+    v_dec_degrees = messier["dec_degrees"].to_numpy()
+    messier_names_all = messier["Messier"].to_numpy()
 
     messier_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
     spos_at_t_ref = observer.at(t_ref).observe(messier_vector_all)

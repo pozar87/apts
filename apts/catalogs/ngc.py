@@ -181,6 +181,25 @@ def _load_ngc_with_units():
 
 
 def get_ngc() -> pd.DataFrame:
+    """
+    Returns the NGC catalog without internal technical columns.
+
+    Derived/calculation-only columns (ra_hours, sin_dec, *_norm, ...) are
+    stripped before the catalog is handed to callers. Code that needs them
+    (visibility gating, skymap resolution, discovery) must use get_ngc_raw().
+    """
+    from ..objects.utils import filter_technical_columns
+
+    return filter_technical_columns(get_ngc_raw())
+
+
+def get_ngc_raw() -> pd.DataFrame:
+    """
+    Returns the raw NGC catalog including internal technical columns.
+
+    Intended for internal calculations that rely on the precomputed
+    ra_hours/dec_degrees/sin_dec/*_norm columns for performance.
+    """
     global _ngc_df
     if _ngc_df is None:
         logger.info("Loading NGC catalog...")

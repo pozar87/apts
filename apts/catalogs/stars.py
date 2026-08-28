@@ -60,6 +60,26 @@ def _load_bright_stars_with_units():
 
 
 def get_bright_stars() -> pd.DataFrame:
+    """
+    Returns the Bright Stars catalog without internal technical columns.
+
+    Derived/calculation-only columns (ra_hours, sin_dec, skyfield_object, ...)
+    are stripped before the catalog is handed to callers. Code that needs them
+    (visibility gating, skymap resolution, conjunctions) must use
+    get_bright_stars_raw().
+    """
+    from ..objects.utils import filter_technical_columns
+
+    return filter_technical_columns(get_bright_stars_raw())
+
+
+def get_bright_stars_raw() -> pd.DataFrame:
+    """
+    Returns the raw Bright Stars catalog including internal technical columns.
+
+    Intended for internal calculations that rely on the precomputed
+    ra_hours/dec_degrees/sin_dec/skyfield_object columns for performance.
+    """
     global _bright_stars_df
     if _bright_stars_df is None:
         logger.info("Loading Bright Stars catalog...")
