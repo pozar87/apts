@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 import pandas as pd
 
 from apts.catalogs import Catalogs
@@ -33,6 +34,17 @@ def test_filter_technical_columns_helper():
             "Magnitude": [3.4, -2.1],
         }
     )
+
+    expected_technical_columns = [
+        "NGC_norm",
+        "IC_norm",
+        "Name_norm",
+        "sin_dec",
+        "cos_dec_cos_ra",
+        "cos_dec_sin_ra",
+    ]
+    for col in expected_technical_columns:
+        assert col in TECHNICAL_COLUMNS
 
     cleaned = filter_technical_columns(dummy_df)
     assert "Name" in cleaned.columns
