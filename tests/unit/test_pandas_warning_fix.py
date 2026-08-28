@@ -82,3 +82,4 @@ def test_ngc_get_visible_no_future_warning(place_and_catalogs):
         w for w in captured_warnings if issubclass(w.category, FutureWarning)
     ]
     assert len(future_warnings) == 0, f"Unexpected FutureWarnings: {future_warnings}"
+    assert not visible.empty
