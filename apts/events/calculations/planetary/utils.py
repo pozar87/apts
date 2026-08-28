@@ -3,6 +3,8 @@ from typing import cast
 import pandas as pd
 
 from ....catalogs import Catalogs
+from ....catalogs.messier import get_messier_raw
+from ....catalogs.stars import get_bright_stars_raw
 from ....utils import planetary
 
 
@@ -30,6 +32,16 @@ class BodyResolver:
             self._catalogs = Catalogs()
         return self._catalogs
 
+    @property
+    def bright_stars_raw(self):
+        """Raw Bright Stars frame (the public Catalogs view strips technical columns)."""
+        return get_bright_stars_raw()
+
+    @property
+    def messier_raw(self):
+        """Raw Messier frame (the public Catalogs view strips technical columns)."""
+        return get_messier_raw()
+
     def resolve(self, name, body_type="planet"):
         """
         Resolves a body by name and type.
@@ -48,9 +60,7 @@ class BodyResolver:
             # Handle multiple names or single name
             names = [name] if isinstance(name, str) else name
             for n in names:
-                row = self.catalogs.BRIGHT_STARS[
-                    self.catalogs.BRIGHT_STARS["Name"] == n
-                ]
+                row = self.bright_stars_raw[self.bright_stars_raw["Name"] == n]
                 if not row.empty:
                     # Optimization: Reuse the pre-calculated skyfield_object column
                     # instead of re-instantiating the Star class.
@@ -60,7 +70,7 @@ class BodyResolver:
                     return result
 
         if body_type == "messier":
-            row = self.catalogs.MESSIER[self.catalogs.MESSIER["Messier"] == name]
+            row = self.messier_raw[self.messier_raw["Messier"] == name]
             if not row.empty:
                 # Optimization: Reuse the pre-calculated skyfield_object column
                 # instead of re-instantiating the Star class.

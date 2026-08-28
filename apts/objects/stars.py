@@ -1,5 +1,6 @@
 from .base import Objects
 from ..catalogs import Catalogs
+from ..catalogs.stars import get_bright_stars_raw
 from ..constants import ObjectTableLabels
 
 
@@ -8,7 +9,8 @@ class Stars(Objects):
 
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Stars, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.BRIGHT_STARS.copy()  # type: ignore
+        # Use the raw catalog: Catalogs.BRIGHT_STARS strips technical columns.
+        self.objects = get_bright_stars_raw().copy()  # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.ALTITUDE] = None
         self.calculation_date = (

@@ -9,6 +9,8 @@ from skyfield.api import Topos
 
 from ...cache import get_ephemeris, get_timescale
 from ...catalogs import Catalogs
+from ...catalogs.messier import get_messier_raw
+from ...catalogs.stars import get_bright_stars_raw
 from ...constants.event_types import EventType
 from ..rarity import get_rarity
 from ..duration import get_duration
@@ -124,7 +126,7 @@ class AstronomicalEvents:
         return planetary_calc.calculate_highest_altitudes(self.observer, self.start_date, self.end_date, self.executor)
 
     def calculate_lunar_occultations(self):
-        return lunar.calculate_lunar_occultations(self.observer, self.start_date, self.end_date, self.catalogs.BRIGHT_STARS)
+        return lunar.calculate_lunar_occultations(self.observer, self.start_date, self.end_date, get_bright_stars_raw())
 
     def calculate_lunar_planetary_occultations(self):
         return lunar.calculate_lunar_planetary_occultations(self.observer, self.start_date, self.end_date)
@@ -139,10 +141,10 @@ class AstronomicalEvents:
         return planetary_calc.calculate_mercury_inferior_conjunctions(self.observer, self.start_date, self.end_date)
 
     def calculate_moon_messier_conjunctions(self, precomputed_positions=None):
-        return lunar.calculate_moon_messier_conjunctions(self.observer, self.start_date, self.end_date, self.catalogs.MESSIER, precomputed_positions)
+        return lunar.calculate_moon_messier_conjunctions(self.observer, self.start_date, self.end_date, get_messier_raw(), precomputed_positions)
 
     def calculate_moon_star_conjunctions(self, precomputed_positions=None):
-        return lunar.calculate_moon_star_conjunctions(self.ts, self.observer, self.start_date, self.end_date, self.catalogs.BRIGHT_STARS, precomputed_positions)
+        return lunar.calculate_moon_star_conjunctions(self.ts, self.observer, self.start_date, self.end_date, get_bright_stars_raw(), precomputed_positions)
 
     def calculate_nasa_comets(self):
         return sky.calculate_nasa_comets(self.start_date, self.end_date)
@@ -157,7 +159,7 @@ class AstronomicalEvents:
         return sky.calculate_culminations(self.observer, self.start_date, self.end_date)
 
     def calculate_messier_culminations(self):
-        return sky.calculate_messier_culminations(self.observer, self.start_date, self.end_date, self.catalogs.MESSIER)
+        return sky.calculate_messier_culminations(self.observer, self.start_date, self.end_date, get_messier_raw())
 
     def calculate_jovian_moon_events(self):
         return planetary_calc.calculate_jovian_moon_events(self.observer, self.start_date, self.end_date)

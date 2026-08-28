@@ -1,6 +1,7 @@
 import functools
 from .base import Objects
 from ..catalogs import Catalogs
+from ..catalogs.messier import get_messier_raw
 from ..constants import ObjectTableLabels
 
 
@@ -9,7 +10,8 @@ class Messier(Objects):
 
     def __init__(self, place, catalogs: Catalogs, calculation_date=None):
         super(Messier, self).__init__(place, calculation_date=calculation_date)
-        self.objects = catalogs.MESSIER.copy()  # type: ignore
+        # Use the raw catalog: Catalogs.MESSIER strips technical columns.
+        self.objects = get_messier_raw().copy()  # type: ignore
         self.objects[ObjectTableLabels.TRANSIT] = None
         self.objects[ObjectTableLabels.RISING] = None
         self.objects[ObjectTableLabels.SETTING] = None
