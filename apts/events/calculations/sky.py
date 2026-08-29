@@ -4,8 +4,7 @@ from datetime import timezone
 from dateutil.parser import parse as parse_date
 
 from ... import skyfield_searches, cache
-from ..rarity import get_rarity
-from ..duration import get_duration
+from .evaluations import get_duration, get_rarity
 
 logger = logging.getLogger(__name__)
 utc = timezone.utc
