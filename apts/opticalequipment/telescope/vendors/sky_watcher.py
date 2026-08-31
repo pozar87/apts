@@ -328,10 +328,10 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
+            "cside_gender": "Female",  # Verified via Sky-Watcher USA / Astronomics (2" dual-speed Crayford focuser visual back) - https://www.skywatcherusa.com/products/evostar-120edx
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA (Includes 2" Crayford focuser with 2" visual back) - https://www.skywatcherusa.com/products/evostar-120edx
             "focal_length_mm": 900,
-            "mass": 5130,
+            "mass": 5130,  # Verified via Sky-Watcher USA / Astronomics (11.3 lbs / 5.13 kg OTA weight) - https://astronomics.com/products/sky-watcher-evostar-120mm-f-7-5-ed-doublet-apochromatic-refractor
             "name": "Evostar 120ED",
             "optical_length": 0,
             "reversible": False,
