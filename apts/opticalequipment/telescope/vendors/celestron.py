@@ -759,7 +759,7 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 6SE",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 3629, # Verified via Celestron.com (8 lbs OTA weight - https://www.celestron.com/products/nexstar-6se-computerized-telescope)
+            "mass": 3629,  # Verified via Celestron.com (8 lbs / 3.6 kg OTA weight, 150mm aperture, 1500mm focal length, f/10, 56mm central obstruction - https://www.celestron.com/products/nexstar-6se-computerized-telescope)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
