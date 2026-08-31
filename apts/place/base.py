@@ -13,7 +13,6 @@ from .elevation import get_elevation
 if TYPE_CHECKING:
     from ..light_pollution import LightPollution
     from ..weather import Weather
-from skyfield import almanac
 from skyfield.api import Topos
 
 from apts.cache import get_ephemeris, get_timescale
@@ -23,7 +22,11 @@ from ..utils.planetary import (
     get_moon_distance,
     get_moon_illumination,
     get_moon_phase_name,
-    get_skyfield_obj,
+)
+from .calculations import (
+    calculate_moon_phase_letter,
+    calculate_object_altitude,
+    calculate_object_azimuth,
 )
 from .imaging import PlaceImagingMixIn
 from .paths import PlacePathsMixIn
@@ -94,18 +97,7 @@ class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
         Uses high-precision refraction settings (10°C, 1013.25 mbar).
         """
         target_time = time if time is not None else self.date
-        obj = (
-            get_skyfield_obj(object_or_name)
-            if isinstance(object_or_name, str)
-            else object_or_name
-        )
-        alt, _, _ = (
-            self.observer.at(target_time)
-            .observe(obj)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        )
-        return float(alt.degrees)
+        return calculate_object_altitude(self.observer, object_or_name, target_time)
 
     def get_azimuth(self, object_or_name: Any, time: Optional[Any] = None) -> float:
         """
@@ -114,28 +106,10 @@ class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
         Uses high-precision refraction settings (10°C, 1013.25 mbar).
         """
         target_time = time if time is not None else self.date
-        obj = (
-            get_skyfield_obj(object_or_name)
-            if isinstance(object_or_name, str)
-            else object_or_name
-        )
-        _, az, _ = (
-            self.observer.at(target_time)
-            .observe(obj)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)
-        )
-        return float(az.degrees)
+        return calculate_object_azimuth(self.observer, object_or_name, target_time)
 
     def _moon_phase_letter(self) -> str:
-        phase_angle = almanac.moon_phase(self.eph, self.date)
-        if hasattr(phase_angle, "degrees"):
-            phase_angle_deg = phase_angle.degrees
-        else:
-            phase_angle_deg = float(phase_angle)  # type: ignore
-        lunation = cast(float, phase_angle_deg) / 360.0
-        letter = chr(ord("A") + int(round(lunation * 26)))
-        return letter
+        return calculate_moon_phase_letter(self.eph, self.date)
 
     def moon_illumination(self):
         return get_moon_illumination(self.date)
