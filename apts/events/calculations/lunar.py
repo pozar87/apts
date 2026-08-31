@@ -6,8 +6,7 @@ from skyfield import almanac
 from skyfield.api import Star
 
 from ... import skyfield_searches
-from ..rarity import get_rarity
-from ..duration import get_duration
+from .evaluations import get_duration, get_rarity
 
 logger = logging.getLogger(__name__)
 utc = timezone.utc
