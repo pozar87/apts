@@ -57,6 +57,17 @@ from .mechanical import (
     calculate_image_orientation,
     calculate_thermal_drift,
 )
+from .telescope import (
+    calculate_focal_ratio,
+    calculate_aperture_area,
+    calculate_effective_aperture,
+    calculate_light_grasp_ratio,
+    calculate_dawes_limit,
+    calculate_rayleigh_limit,
+    calculate_limiting_magnitude,
+    calculate_highest_useful_magnification,
+    calculate_lowest_useful_magnification,
+)
 
 __all__ = [
     "calculate_airmass",
@@ -100,4 +111,13 @@ __all__ = [
     "calculate_backfocus_gap",
     "calculate_image_orientation",
     "calculate_thermal_drift",
+    "calculate_focal_ratio",
+    "calculate_aperture_area",
+    "calculate_effective_aperture",
+    "calculate_light_grasp_ratio",
+    "calculate_dawes_limit",
+    "calculate_rayleigh_limit",
+    "calculate_limiting_magnitude",
+    "calculate_highest_useful_magnification",
+    "calculate_lowest_useful_magnification",
 ]

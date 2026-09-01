@@ -154,21 +154,30 @@ class Telescope(OpticalEquipment):
         return self._outputs[0][1] if self._outputs else None
 
     def focal_ratio(self):
-        return self.focal_length / self.aperture
+        focal_length_mm = self.focal_length.to("mm").magnitude
+        aperture_mm = self.aperture.to("mm").magnitude
+        ratio = telescope_calc.calculate_focal_ratio(focal_length_mm, aperture_mm)
+        return ratio * get_unit_registry().dimensionless
 
     def aperture_area(self):
         """
         Calculate the light gathering area of the telescope, accounting for central obstruction.
         :return: area in mm^2
         """
-        return numpy.pi * (self.aperture**2 - self.central_obstruction**2) / 4.0
+        aperture_mm = self.aperture.to("mm").magnitude
+        central_obstruction_mm = self.central_obstruction.to("mm").magnitude
+        area_mm2 = telescope_calc.calculate_aperture_area(aperture_mm, central_obstruction_mm)
+        return area_mm2 * (get_unit_registry().mm ** 2)
 
     def effective_aperture(self):
         """
         Return the diameter of a clear aperture that would have the same light-gathering area.
         :return: effective aperture in mm
         """
-        return numpy.sqrt(self.aperture**2 - self.central_obstruction**2)
+        aperture_mm = self.aperture.to("mm").magnitude
+        central_obstruction_mm = self.central_obstruction.to("mm").magnitude
+        eff_mm = telescope_calc.calculate_effective_aperture(aperture_mm, central_obstruction_mm)
+        return eff_mm * get_unit_registry().mm
 
     def dawes_limit(self):
         """
@@ -208,8 +217,16 @@ class Telescope(OpticalEquipment):
         :param other_aperture: aperture in mm
         :return: ratio between telescope and other aperture
         """
-        other_aperture *= get_unit_registry().mm
-        return self.effective_aperture() ** 2 / other_aperture**2
+        aperture_mm = self.aperture.to("mm").magnitude
+        central_obstruction_mm = self.central_obstruction.to("mm").magnitude
+        if hasattr(other_aperture, "to"):
+            other_aperture_mm = other_aperture.to("mm").magnitude
+        else:
+            other_aperture_mm = float(other_aperture)
+        ratio = telescope_calc.calculate_light_grasp_ratio(
+            aperture_mm, other_aperture_mm, central_obstruction_mm
+        )
+        return ratio * get_unit_registry().dimensionless
 
     def highest_useful_magnification(self) -> float:
         """

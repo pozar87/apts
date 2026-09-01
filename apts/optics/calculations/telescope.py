@@ -48,6 +48,57 @@ def calculate_limiting_magnitude(aperture_mm: float, central_obstruction_mm: flo
     # Formula: 7.7 + 5 * log10(aperture_cm)
     return 7.7 + 5 * np.log10(effective_aperture_mm / 10.0)
 
+def calculate_focal_ratio(focal_length_mm: float, aperture_mm: float) -> float:
+    """
+    Calculate the focal ratio (f-number) of a telescope.
+    focal_ratio = focal_length / aperture
+
+    :param focal_length_mm: focal length in mm
+    :param aperture_mm: aperture in mm
+    :return: focal ratio (dimensionless)
+    """
+    if aperture_mm <= 0:
+        return 0.0
+    return float(focal_length_mm / aperture_mm)
+
+def calculate_aperture_area(aperture_mm: float, central_obstruction_mm: float = 0.0) -> float:
+    """
+    Calculate the light gathering area of the telescope in mm^2, accounting for central obstruction.
+
+    :param aperture_mm: aperture in mm
+    :param central_obstruction_mm: central obstruction in mm
+    :return: area in mm^2
+    """
+    eff_sq = max(0.0, aperture_mm**2 - central_obstruction_mm**2)
+    return float(np.pi * eff_sq / 4.0)
+
+def calculate_effective_aperture(aperture_mm: float, central_obstruction_mm: float = 0.0) -> float:
+    """
+    Return the diameter of a clear aperture in mm that would have the same light-gathering area.
+
+    :param aperture_mm: aperture in mm
+    :param central_obstruction_mm: central obstruction in mm
+    :return: effective aperture in mm
+    """
+    eff_sq = max(0.0, aperture_mm**2 - central_obstruction_mm**2)
+    return float(np.sqrt(eff_sq))
+
+def calculate_light_grasp_ratio(
+    aperture_mm: float, other_aperture_mm: float, central_obstruction_mm: float = 0.0
+) -> float:
+    """
+    Calculate the light grasp ratio between two telescopes using effective aperture area.
+
+    :param aperture_mm: aperture of primary telescope in mm
+    :param other_aperture_mm: aperture of comparison telescope in mm
+    :param central_obstruction_mm: central obstruction of primary telescope in mm
+    :return: light grasp ratio
+    """
+    if other_aperture_mm <= 0:
+        return 0.0
+    eff_ap = calculate_effective_aperture(aperture_mm, central_obstruction_mm)
+    return float((eff_ap / other_aperture_mm) ** 2)
+
 def calculate_highest_useful_magnification(aperture_mm: float) -> float:
     """
     Calculate the theoretical highest useful magnification for the telescope.
