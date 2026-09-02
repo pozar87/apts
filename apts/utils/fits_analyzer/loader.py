@@ -31,6 +31,76 @@ def byte_unshuffle(data_bytes, item_size):
         unshuffled += data_bytes[usable:]
     return unshuffled
 
+def _parse_xisf_header(xml_bytes):
+    """
+    Parses XISF XML header and extracts image layout and encoding parameters.
+    """
+    xml_str = xml_bytes.decode("utf-8", errors="replace")
+    xml_str = re.sub(r'\s+xmlns\s*=\s*["\'][^"\']*["\']', "", xml_str)
+    root = ET.fromstring(xml_str)
+    img_el = root.find(".//Image")
+    if img_el is None:
+        raise ValueError("No Image element found in XISF header")
+
+    geom = img_el.get("geometry", "")
+    parts = geom.split(":")
+    width = int(parts[0])
+    height = int(parts[1])
+    channels = int(parts[2]) if len(parts) > 2 else 1
+
+    sample_fmt = img_el.get("sampleFormat", "Float32")
+    dtype_map = {
+        "UInt8": np.uint8,
+        "UInt16": np.uint16,
+        "UInt32": np.uint32,
+        "UInt64": np.uint64,
+        "Int8": np.int8,
+        "Int16": np.int16,
+        "Int32": np.int32,
+        "Int64": np.int64,
+        "Float32": np.float32,
+        "Float64": np.float64,
+    }
+
+    return {
+        "width": width,
+        "height": height,
+        "channels": channels,
+        "dtype": dtype_map.get(sample_fmt),
+        "pixel_storage": img_el.get("pixelStorage", "planar"),
+        "location": img_el.get("location", ""),
+        "compression": img_el.get("compression", ""),
+    }
+
+
+def _decompress_xisf_payload(raw, compression, dtype):
+    """
+    Decompresses and unshuffles XISF image payload bytes if compressed.
+    """
+    if not compression:
+        return raw
+
+    comp_parts = compression.split(":")
+    codec = comp_parts[0].lower()
+    shuffle_item_size = (
+        int(comp_parts[2])
+        if len(comp_parts) > 2
+        else np.dtype(dtype).itemsize
+    )
+    byte_shuffle = "+sh" in codec
+    base_codec = codec.replace("+sh", "")
+
+    if base_codec == "zlib":
+        decompressed = zlib.decompress(raw)
+    else:
+        raise ValueError(f"Unsupported XISF compression: {codec}")
+
+    if byte_shuffle:
+        decompressed = byte_unshuffle(decompressed, shuffle_item_size)
+
+    return decompressed
+
+
 def load_xisf(filepath):
     """
     Loads image data and header from an XISF file.
@@ -39,72 +109,33 @@ def load_xisf(filepath):
         magic = f.read(8)
         if magic != b"XISF0100":
             raise ValueError("Not a valid XISF file (bad magic)")
+
         header_len, _reserved = struct.unpack("<II", f.read(8))
         xml_bytes = f.read(header_len)
-        xml_str = xml_bytes.decode("utf-8", errors="replace")
-        xml_str = re.sub(r'\s+xmlns\s*=\s*["\'][^"\']*["\']', "", xml_str)
-        root = ET.fromstring(xml_str)
-        img_el = root.find(".//Image")
-        if img_el is None:
-            raise ValueError("No Image element found in XISF header")
-        geom = img_el.get("geometry", "")
-        parts = geom.split(":")
-        width = int(parts[0])
-        height = int(parts[1])
-        channels = int(parts[2]) if len(parts) > 2 else 1
-        sample_fmt = img_el.get("sampleFormat", "Float32")
-        dtype_map = {
-            "UInt8": np.uint8,
-            "UInt16": np.uint16,
-            "UInt32": np.uint32,
-            "UInt64": np.uint64,
-            "Int8": np.int8,
-            "Int16": np.int16,
-            "Int32": np.int32,
-            "Int64": np.int64,
-            "Float32": np.float32,
-            "Float64": np.float64,
-        }
-        dtype = dtype_map.get(sample_fmt)
-        pixel_storage = img_el.get("pixelStorage", "planar")
-        location = img_el.get("location", "")
-        compression = img_el.get("compression", "")
-        if location.startswith("attachment:"):
-            loc_parts = location.split(":")
-            offset = int(loc_parts[1])
-            size = int(loc_parts[2])
-            f.seek(offset)
-            raw = f.read(size)
-        else:
+        meta = _parse_xisf_header(xml_bytes)
+
+        location = meta["location"]
+        if not location.startswith("attachment:"):
             raise ValueError(f"Unsupported XISF location: {location}")
 
-        if compression:
-            comp_parts = compression.split(":")
-            codec = comp_parts[0].lower()
-            shuffle_item_size = (
-                int(comp_parts[2])
-                if len(comp_parts) > 2
-                else np.dtype(dtype).itemsize
-            )
-            byte_shuffle = "+sh" in codec
-            base_codec = codec.replace("+sh", "")
-            if base_codec == "zlib":
-                raw = zlib.decompress(raw)
-            else:
-                raise ValueError(f"Unsupported XISF compression: {codec}")
-            if byte_shuffle:
-                raw = byte_unshuffle(raw, shuffle_item_size)
+        loc_parts = location.split(":")
+        offset, size = int(loc_parts[1]), int(loc_parts[2])
+        f.seek(offset)
+        raw = f.read(size)
 
-        data = np.frombuffer(raw, dtype=dtype)
+        raw = _decompress_xisf_payload(raw, meta["compression"], meta["dtype"])
+        data = np.frombuffer(raw, dtype=meta["dtype"])
+
+        height, width, channels = meta["height"], meta["width"], meta["channels"]
         if channels > 1:
-            if pixel_storage == "planar":
+            if meta["pixel_storage"] == "planar":
                 data = data.reshape(channels, height, width)[0]
             else:
                 data = data.reshape(height, width, channels)[:, :, 0]
         else:
             data = data.reshape(height, width)
 
-    header = {"XISF": True, "NAXIS1": width, "NAXIS2": height}
+    header = {"XISF": True, "NAXIS1": meta["width"], "NAXIS2": meta["height"]}
     return data, header
 
 def load_data(filepath):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 from math import radians as rad
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 from dateutil import tz
 

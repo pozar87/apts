@@ -1,5 +1,3 @@
-import pytest
-from datetime import datetime, timezone
 from apts.place import Place
 from apts.place.calculations import (
     calculate_moon_phase_letter,
