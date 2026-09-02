@@ -775,16 +775,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 8SE",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 5443,
+            "mass": 5443,  # Verified via Celestron.com (12 lbs / 5.44 kg OTA weight) - https://www.celestron.com/products/nexstar-8se-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203.2,
-            "focal_length_mm": 2032,
-            "central_obstruction_mm": 64,
+            "aperture_mm": 203.2,  # Verified via Celestron.com (203.2mm / 8")
+            "focal_length_mm": 2032,  # Verified via Celestron.com (2032mm / f/10)
+            "central_obstruction_mm": 64,  # Verified via Celestron.com (64mm / 2.5" / 31% secondary obstruction) - https://www.celestron.com/products/nexstar-8se-computerized-telescope
         },
         "Celestron_NexStar_Evolution_6": {
             "brand": "Celestron",
