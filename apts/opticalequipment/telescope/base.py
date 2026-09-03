@@ -1,7 +1,5 @@
 from typing import Any, Optional, cast
 
-import numpy
-
 from .enums import TelescopeType, TubeMaterial
 from ...constants import GraphConstants
 from ...optics.calculations import telescope as telescope_calc
