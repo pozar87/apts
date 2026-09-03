@@ -21,14 +21,29 @@ def find_jupiter_grs_transits(
     jupiter = planetary.get_skyfield_obj("jupiter barycenter")
     sun = planetary.get_skyfield_obj("sun")
 
+    # Optimization: Pre-compute System II CML on a 1-hour grid over [t0, t1]
+    # to avoid thousands of repetitive PyEphem evaluations during find_minima steps.
+    hours_total = float((t1 - t0) * 24.0)
+    n_grid = max(2, int(np.ceil(hours_total)) + 1)
+    t_grid_rel = np.linspace(0, hours_total, n_grid)
+    t_grid = ts.tt_jd(t0.tt + t_grid_rel / 24.0)
+
+    cml2_grid = planetary.get_jupiter_system_ii_longitude(t_grid)
+    cml2_unwrapped = np.unwrap(np.radians(cml2_grid))
+
     def cml_difference(t):
-        # Use vectorized longitude calculations for better performance
         grs_lon = (
             grs_longitude
             if grs_longitude is not None
             else planetary.get_jupiter_grs_longitude(t)
         )
-        sys_ii_lon = planetary.get_jupiter_system_ii_longitude(t)
+        if hasattr(t, "tt"):
+            rel_hours = (t.tt - t0.tt) * 24.0
+            sys_ii_lon = (
+                np.degrees(np.interp(rel_hours, t_grid_rel, cml2_unwrapped)) % 360
+            )
+        else:
+            sys_ii_lon = planetary.get_jupiter_system_ii_longitude(t)
         return (sys_ii_lon - grs_lon + 180) % 360 - 180
 
     def abs_diff(t):
@@ -36,7 +51,7 @@ def find_jupiter_grs_transits(
 
     # Jupiter rotates every ~9.9 hours (~0.41 days).
     # A step of 0.1 days (~2.4 hours) is safe to find every transit.
-    setattr(abs_diff, "step_days", 0.1)
+    abs_diff.step_days = 0.1
     times, _ = find_minima(t0, t1, abs_diff)
 
     if not len(times):

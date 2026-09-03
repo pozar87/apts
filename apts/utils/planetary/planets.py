@@ -1,10 +1,13 @@
+import operator
+from datetime import timedelta
+from typing import Any, cast
+
 import ephem
 import numpy as np
-from datetime import timedelta
-from typing import Any, cast, Union
 
 from apts.cache import get_ephemeris, get_timescale
 from apts.constants import astronomy
+
 from .base import get_skyfield_obj
 
 
@@ -67,7 +70,7 @@ def _get_planet_cml_iau_model(
 
 def get_saturn_pole(
     time: Any,
-) -> tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """
     Returns Saturn's North Pole coordinates (RA, Dec) in degrees for the given time.
     Uses the IAU 2015 model.
@@ -160,21 +163,27 @@ def _get_jupiter_cml_internal(time: Any, attr: str) -> float | np.ndarray:
 
     # Account for light-travel time by subtracting it from the observation time
     # This evaluates the rotation state of Jupiter at the moment the light left it.
+    rad2deg = 180.0 / np.pi
+    getter = operator.attrgetter(attr)
+
     if hasattr(time, "shape") and time.shape:
-        # Optimization: Use bulk utc_datetime() conversion and reuse a single
-        # ephem.Jupiter instance for a ~15x performance boost on large arrays.
+        # Optimization: Use float Dublin Julian Dates (ephem.Date) and direct
+        # attribute extraction to avoid datetime parsing and ufunc dispatch overhead.
         times_dt = time.utc_datetime()
+        djd_base = np.fromiter(
+            (float(ephem.Date(dt)) for dt in times_dt), dtype=float, count=len(times_dt)
+        )
+        djd_target = djd_base - lt_days
         res = np.empty(len(time))
-        for i, t_dt in enumerate(times_dt):
-            t_light = t_dt - timedelta(days=lt_days[i])
-            _JUPITER_EPHEM.compute(t_light)
-            res[i] = float(np.degrees(float(getattr(_JUPITER_EPHEM, attr))))
+        for i in range(len(djd_target)):
+            _JUPITER_EPHEM.compute(djd_target[i])
+            res[i] = float(getter(_JUPITER_EPHEM)) * rad2deg
         return res
     else:
         # Scalar time
         t_light = time.utc_datetime() - timedelta(days=lt_days)
         _JUPITER_EPHEM.compute(t_light)
-        return float(np.degrees(float(getattr(_JUPITER_EPHEM, attr))))
+        return float(getter(_JUPITER_EPHEM)) * rad2deg
 
 
 def get_jupiter_system_i_longitude(time: Any) -> float | np.ndarray:
