@@ -376,10 +376,10 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
+            "cside_gender": "Female",  # Verified via Sky-Watcher Global (2" dual-speed Crayford focuser visual back) - https://skywatcher.com/product/evostar-72ed/
+            "cside_thread": "2\"",  # Verified via Sky-Watcher Global (Includes 2" Crayford focuser with 2" visual back) - https://skywatcher.com/product/evostar-72ed/
             "focal_length_mm": 420,
-            "mass": 2000,  # Verified via Sky-Watcher Global (2.0 kg OTA Weight)
+            "mass": 2000,  # Verified via Sky-Watcher Global (2.0 kg tube weight with rings and dovetail) - https://skywatcher.com/product/evostar-72ed/
             "name": "Evostar 72ED",
             "optical_length": 0,
             "reversible": False,
@@ -392,10 +392,10 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
+            "cside_gender": "Female",  # Verified via Sky-Watcher Global / OVL UK (2" dual-speed Crayford focuser visual back) - https://skywatcher.com/product/evostar-72ed/
+            "cside_thread": "2\"",  # Verified via Sky-Watcher Global / OVL UK (Includes 2" Crayford focuser with 2" visual back) - https://skywatcher.com/product/evostar-72ed/
             "focal_length_mm": 420,
-            "mass": 1955,
+            "mass": 1955,  # Verified via OVL UK / Sky-Watcher (1.955 kg bare OTA weight)
             "name": "Evostar 72ED DS-Pro",
             "optical_length": 0,
             "reversible": False,
