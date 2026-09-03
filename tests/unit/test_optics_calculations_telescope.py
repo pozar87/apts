@@ -6,11 +6,6 @@ from apts.optics.calculations.telescope import (
     calculate_aperture_area,
     calculate_effective_aperture,
     calculate_light_grasp_ratio,
-    calculate_dawes_limit,
-    calculate_rayleigh_limit,
-    calculate_limiting_magnitude,
-    calculate_highest_useful_magnification,
-    calculate_lowest_useful_magnification,
 )
 from apts.opticalequipment.telescope import Telescope
 
