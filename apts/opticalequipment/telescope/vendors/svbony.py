@@ -73,17 +73,18 @@ class SvbonyTelescope(Telescope):
             "brand": "SVBony",
             "name": "SV550 80ED",
             "type": "type_refractor",
-            "optical_length": 0,
-            "mass": 2450,
+            "optical_length": 90, # Verified via SVBony (90mm backfocus length)
+            "mass": 2450, # Verified via SVBony (2450g OTA weight)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
-            "cside_gender": "Male",
+            "cside_thread": "2\"", # Verified via SVBony (2" dual-speed rack and pinion focuser visual back)
+            "cside_gender": "Female",
             "reversible": False,
-            "bf_role": "",
+            "bf_role": "start",
             "aperture_mm": 80,
             "focal_length_mm": 480,
             "central_obstruction_mm": 0,
+            # Source: https://www.svbony.com/sv550-80F6-APO-triplet-refractor-telescope/
         },
         "SVBony_SV550_122ED": {
             "brand": "SVBony",
