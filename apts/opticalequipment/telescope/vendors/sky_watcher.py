@@ -248,9 +248,9 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M48",
-            "focal_length_mm": 840,
+            "cside_gender": "Female",  # Verified via Sky-Watcher USA (focuser drawtube has female threads) - https://www.skywatcherusa.com/products/esprit-120edx
+            "cside_thread": "M74",  # Verified via Sky-Watcher USA (Drawtube thread size is M74x1) - https://www.skywatcherusa.com/products/esprit-120edx
+            "focal_length_mm": 840,  # Verified via Sky-Watcher Global (120mm aperture, 840mm focal length, f/7.0) - http://skywatcher.com/product/esprit-120-ed-apo-triplet/
             "mass": 10300,  # Verified via Sky-Watcher Global (10.3 kg Tube Weight) - http://skywatcher.com/product/esprit-120-ed-apo-triplet/
             "name": "Esprit 120ED",
             "optical_length": 0,
