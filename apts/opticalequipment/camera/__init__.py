@@ -1,4 +1,5 @@
 from .base import Camera
+from .calculations import normalize_camera_database_entry as normalize_camera_database_entry
 import pkgutil
 import importlib
 import os

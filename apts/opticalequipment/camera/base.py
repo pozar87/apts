@@ -14,44 +14,19 @@ class Camera(OutputOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
+        from .calculations import normalize_camera_database_entry
 
-        brand = entry["brand"]
-        name = entry["name"]
+        entry = normalize_camera_database_entry(entry)
+        brand = entry.get("brand", "Unknown")
+        name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        tt = map_conn(entry.get("tside_thread"))
-        tg = map_gender(entry.get("tside_gender"))
-        sw, sh = (entry.get("sensor_width_mm"), entry.get("sensor_height_mm"))
-        w, h = (entry.get("width"), entry.get("height"))
-
-        # If any of the values are missing, try heuristics
-        if sw is None or sh is None or w is None or h is None:
-            sw_h, sh_h = (23.5, 15.7)
-            w_h, h_h = (6000, 4000)
-            if "full frame" in name.lower() or "36x24" in name.lower():
-                sw_h, sh_h = (35.9, 23.9)
-                w_h, h_h = (8256, 5504)
-            elif "4/3" in name.lower() or "micro four thirds" in name.lower():
-                sw_h, sh_h = (17.3, 13.0)
-                w_h, h_h = (4656, 3520)
-
-            sw = sw if sw is not None else sw_h
-            sh = sh if sh is not None else sh_h
-            w = w if w is not None else w_h
-            h = h if h is not None else h_h
-
-        inputs = entry.get("inputs")
-        if inputs is None:
-            inputs = [(tt, tg)] if tt else []
-        else:
-            from ...utils import map_conn, map_gender
-
-            inputs = [
-                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-                for c, g in inputs
-            ]
+        sw = entry["sensor_width_mm"]
+        sh = entry["sensor_height_mm"]
+        w = entry["width"]
+        h = entry["height"]
+        inputs = entry["inputs"]
 
         return cls(
             sw,
