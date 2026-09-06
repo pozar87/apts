@@ -8,24 +8,9 @@ import pytz
 from .refraction import calculate_refraction
 
 
-def vectorized_geometric_compute(
-    ts,
-    lat_deg,
-    lon_decimal,
-    local_timezone,
-    observer_date,
-    ras,
-    decs,
-    valid_mask,
-    df_len,
-    sin_dec=None,
-    cd_cr=None,
-    cd_sr=None,
+def _compute_vectorized_transits(
+    ts, lon_decimal, local_timezone, observer_date, ras, valid_mask
 ):
-    """
-    Generic vectorized transit, altitude, rising, and setting calculation.
-    Uses vectorized numpy operations and geometric approximations for speed.
-    """
     current_dt = observer_date.utc_datetime()
     t0_dt = current_dt.replace(
         hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.UTC
@@ -66,12 +51,19 @@ def vectorized_geometric_compute(
     transits_arr[~(valid_mask & transit_times_local.notnull())] = None
     transits = transits_arr.tolist()
 
-    # Vectorized Altitude calculation
+    return transits, transit_dti
+
+
+def _compute_vectorized_altitudes(lat_deg, decs, valid_mask):
     altitudes = 90.0 - np.abs(lat_deg - decs)
     altitudes += calculate_refraction(altitudes)
-    alts = np.where(valid_mask, altitudes, 0).tolist()
+    return np.where(valid_mask, altitudes, 0).tolist()
 
-    # Vectorized Rise/Set (Geometric) calculation
+
+def _compute_vectorized_rising_setting(
+    lat_deg, decs, valid_mask, df_len, transit_dti, local_timezone, sin_dec=None
+):
+    sidereal_to_solar = 0.99726957
     lat_rad = np.deg2rad(lat_deg)
     h0_rad = np.deg2rad(-34.0 / 60.0)
 
@@ -109,6 +101,34 @@ def vectorized_geometric_compute(
     sets_arr[~setting_local.notnull()] = None
     sets = sets_arr.tolist()
 
+    return rises, sets
+
+
+def vectorized_geometric_compute(
+    ts,
+    lat_deg,
+    lon_decimal,
+    local_timezone,
+    observer_date,
+    ras,
+    decs,
+    valid_mask,
+    df_len,
+    sin_dec=None,
+    cd_cr=None,
+    cd_sr=None,
+):
+    """
+    Generic vectorized transit, altitude, rising, and setting calculation.
+    Uses vectorized numpy operations and geometric approximations for speed.
+    """
+    transits, transit_dti = _compute_vectorized_transits(
+        ts, lon_decimal, local_timezone, observer_date, ras, valid_mask
+    )
+    alts = _compute_vectorized_altitudes(lat_deg, decs, valid_mask)
+    rises, sets = _compute_vectorized_rising_setting(
+        lat_deg, decs, valid_mask, df_len, transit_dti, local_timezone, sin_dec=sin_dec
+    )
     return transits, alts, rises, sets
 
 
