@@ -48,34 +48,10 @@ class ObservationWindow:
 
         # Fallback for effective_date if it couldn't be determined (e.g. polar day/night)
         if self.effective_date is None:
-            if target_date:
-                if isinstance(target_date, datetime):
-                    self.effective_date = self.place.ts.utc(target_date)
-                else:
-                    # target_date could be a Skyfield Time (has utc_datetime) or a date/other type
-                    if hasattr(target_date, "utc_datetime"):
-                        target_dt = target_date.utc_datetime().date()  # type: ignore[union-attr]
-                    else:
-                        target_dt = target_date
-                    self.effective_date = self.place.ts.utc(
-                        datetime.combine(target_dt, datetime.min.time()).replace(  # type: ignore[arg-type]
-                            tzinfo=self.place.local_timezone
-                        )
-                    )
-            else:
-                self.effective_date = self.place.date
+            self.effective_date = self._resolve_effective_date(target_date)
 
         if self.observation_local_time is None and self.effective_date is not None:
-            # effective_date could be a Skyfield Time or other date-like object
-            if hasattr(self.effective_date, "utc_datetime"):
-                effective_dt = self.effective_date.utc_datetime().replace(  # type: ignore[union-attr]
-                    tzinfo=timezone.utc
-                )
-            else:
-                effective_dt = self.effective_date
-            self.observation_local_time = effective_dt.astimezone(  # type: ignore[union-attr]
-                self.place.local_timezone
-            )
+            self.observation_local_time = self._resolve_observation_local_time()
 
         # Normalize start and stop dates for the observation window
         if self.start is not None and self.stop is not None:
@@ -147,6 +123,30 @@ class ObservationWindow:
             self.observation_local_time = effective_dt.astimezone(  # type: ignore[union-attr]
                 self.place.local_timezone
             )
+
+    def _resolve_effective_date(self, target_date):
+        if target_date is None:
+            return self.place.date
+        if isinstance(target_date, datetime):
+            return self.place.ts.utc(target_date)
+        if hasattr(target_date, "utc_datetime"):
+            target_dt = target_date.utc_datetime().date()
+        else:
+            target_dt = target_date
+        return self.place.ts.utc(
+            datetime.combine(target_dt, datetime.min.time()).replace(
+                tzinfo=self.place.local_timezone
+            )
+        )
+
+    def _resolve_observation_local_time(self):
+        if hasattr(self.effective_date, "utc_datetime"):
+            effective_dt = self.effective_date.utc_datetime().replace(
+                tzinfo=timezone.utc
+            )
+        else:
+            effective_dt = self.effective_date
+        return effective_dt.astimezone(self.place.local_timezone)
 
     def _normalize_window(self, start, stop):
         return normalize_window(start, stop)
