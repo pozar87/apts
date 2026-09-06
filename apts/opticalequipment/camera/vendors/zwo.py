@@ -885,19 +885,19 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 50000,
+            "full_well_e": 50000,  # Verified via ZWO (50ke full well capacity) - https://www.zwoastro.com/product/asi2600mc-pro/
             "height": 4176,
-            "mass": 700,
+            "mass": 700,  # Verified via ZWO (0.7kg / 700g) - https://www.zwoastro.com/product/asi2600mc-pro/
             "name": "ASI2600MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.0,
+            "optical_length": 17.5,  # Verified via ZWO (17.5mm backfocus distance with tilt plate) - https://www.zwoastro.com/product/asi2600mc-pro/
+            "pixel_size_um": 3.76,  # Verified via ZWO (3.76µm pixel size) - https://www.zwoastro.com/product/asi2600mc-pro/
+            "quantum_efficiency_pct": 80,  # Verified via ZWO (80% peak QE) - https://www.zwoastro.com/product/asi2600mc-pro/
+            "read_noise_e": 1.0,  # Verified via ZWO (1.0e- read noise) - https://www.zwoastro.com/product/asi2600mc-pro/
             "reversible": False,
-            "sensor_height_mm": 15.7,
-            "sensor_width_mm": 23.5,
+            "sensor_height_mm": 15.7,  # Verified via ZWO (15.7mm x 23.5mm Sony IMX571 APS-C sensor) - https://www.zwoastro.com/product/asi2600mc-pro/
+            "sensor_width_mm": 23.5,  # Verified via ZWO (15.7mm x 23.5mm Sony IMX571 APS-C sensor) - https://www.zwoastro.com/product/asi2600mc-pro/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO (M42x0.75 female thread) - https://www.zwoastro.com/product/asi2600mc-pro/
             "type": "type_camera",
             "width": 6248,
         },
