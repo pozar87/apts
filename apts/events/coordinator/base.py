@@ -19,6 +19,7 @@ from ..calculations import lunar, planetary as planetary_calc, space, sky
 
 from .settings import EventSettingsManager
 from .precomputation import PrecomputationEngine
+from .dispatch import build_event_dispatch_map
 
 logger = logging.getLogger(__name__)
 
@@ -230,49 +231,8 @@ class AstronomicalEvents:
 
         precomputed = self._precompute_positions()
 
-        # Dispatch mapping for event calculations to reduce cyclomatic complexity
-        event_dispatch = {
-            "moon_phases": self.calculate_moon_phases,
-            "conjunctions": lambda: self.calculate_conjunctions(precomputed),
-            "oppositions": self.calculate_oppositions,
-            "meteor_showers": self.calculate_meteor_showers,
-            "highest_altitudes": self.calculate_highest_altitudes,
-            "lunar_occultations": self.calculate_lunar_occultations,
-            "aphelion_perihelion": self.calculate_aphelion_perihelion,
-            "moon_apogee_perigee": self.calculate_moon_apogee_perigee,
-            "mercury_inferior_conjunctions": self.calculate_mercury_inferior_conjunctions,
-            "moon_messier_conjunctions": lambda: self.calculate_moon_messier_conjunctions(precomputed),
-            "moon_star_conjunctions": lambda: self.calculate_moon_star_conjunctions(precomputed),
-            "space_launches": self.calculate_space_launches,
-            "space_events": self.calculate_space_events,
-            "iss_flybys": self.calculate_iss_flybys,
-            "tiangong_flybys": self.calculate_tiangong_flybys,
-            "solar_eclipses": self.calculate_solar_eclipses,
-            "lunar_eclipses": self.calculate_lunar_eclipses,
-            "nasa_comets": self.calculate_nasa_comets,
-            "planet_alignments": self.calculate_planet_alignments,
-            "lunar_planetary_occultations": self.calculate_lunar_planetary_occultations,
-            "messier_culminations": self.calculate_messier_culminations,
-            "jovian_moon_events": self.calculate_jovian_moon_events,
-            "saturn_ring_crossings": self.calculate_saturn_ring_crossings,
-            "jupiter_grs_transits": self.calculate_jupiter_grs_transits,
-            "planet_messier_conjunctions": lambda: self.calculate_planet_messier_conjunctions(precomputed),
-            "planet_star_conjunctions": lambda: self.calculate_planet_star_conjunctions(precomputed),
-            "planet_stationary_points": self.calculate_planet_stationary_points,
-            "planet_solar_conjunctions": self.calculate_planet_solar_conjunctions,
-            "lunar_features": self.calculate_lunar_features,
-            "moon_libration_maxima": self.calculate_moon_libration_maxima,
-            "planet_planet_occultations": self.calculate_planet_planet_occultations,
-            "venus_great_brilliancy": self.calculate_venus_greatest_brilliancy,
-            "supermoons": self.calculate_supermoons,
-            "mars_closest_approach": self.calculate_mars_closest_approach,
-            "jovian_mutual_events": self.calculate_jovian_mutual_events,
-            "greatest_elongations": self.calculate_greatest_elongations,
-            "planetary_dichotomy": lambda: self.calculate_planetary_dichotomy(precomputed),
-            "seasons": self.calculate_seasons,
-            "culminations": self.calculate_culminations,
-            "celestial_configurations": self.calculate_celestial_configurations,
-        }
+        # Dispatch mapping for event calculations built by helper
+        event_dispatch = build_event_dispatch_map(self, precomputed)
 
         for event_key, func in event_dispatch.items():
             if self.event_settings.get(event_key):
