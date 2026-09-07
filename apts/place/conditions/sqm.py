@@ -45,9 +45,11 @@ class SqmMixIn:
 
         b_total = 10 ** (-0.4 * sqm_base)
 
+        obs_at_t = self.observer.at(target_time)
+
         # Sun contribution
         sun_alt = (
-            self.observer.at(target_time)
+            obs_at_t
             .observe(self.sun)
             .apparent()
             .altaz()[0]
@@ -62,7 +64,7 @@ class SqmMixIn:
 
         # Moon contribution
         moon_alt = (
-            self.observer.at(target_time)
+            obs_at_t
             .observe(self.moon)
             .apparent()
             .altaz()[0]

@@ -1,11 +1,12 @@
 import logging
 import time
 from datetime import timezone
-import numpy as np
+
 from skyfield import almanac
 from skyfield.api import Star
 
 from ... import skyfield_searches
+from ...utils.astronomy import calculate_ecliptic_latitude_mask
 from .evaluations import get_duration, get_rarity
 
 logger = logging.getLogger(__name__)
@@ -77,9 +78,6 @@ def calculate_moon_apogee_perigee(start_date, end_date):
 
 def calculate_moon_messier_conjunctions(observer, start_date, end_date, messier_catalog, precomputed_positions=None):
     start_time = time.time()
-    from ...cache import get_timescale
-    ts = get_timescale()
-    t_ref = ts.utc(start_date)
 
     messier_objects_to_check = [
         "M1", "M2", "M3", "M4", "M5", "M8", "M9", "M10", "M11", "M12", "M14", "M15", "M16", "M17", "M18", "M19", "M20", "M21", "M22", "M23", "M24", "M25", "M26", "M27", "M28", "M30", "M35", "M41", "M42", "M43", "M44", "M45", "M46", "M47", "M48", "M49", "M50", "M53", "M54", "M55", "M58", "M59", "M60", "M61", "M62", "M64", "M65", "M66", "M67", "M68", "M71", "M72", "M73", "M74", "M75", "M77", "M78", "M79", "M80", "M83", "M84", "M85", "M86", "M87", "M88", "M89", "M90", "M91", "M93", "M95", "M96", "M98", "M99", "M100", "M104", "M105", "M107",
@@ -93,13 +91,12 @@ def calculate_moon_messier_conjunctions(observer, start_date, end_date, messier_
     v_dec_degrees = messier_df["dec_degrees"].to_numpy()
     messier_names_all = messier_df["Messier"].to_numpy()
 
-    messier_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
-    spos_at_t_ref = observer.at(t_ref).observe(messier_vector_all)
-    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
-
+    # Optimization: Fast geometric ecliptic latitude check using pre-calculated direction cosines
     # The Moon stays within ~5.15 degrees of the ecliptic, threshold is 4.0 degrees.
     # Any object with absolute ecliptic latitude >= 10.0 degrees can never be in conjunction.
-    mask = np.abs(lats.degrees) < 10.0
+    mask = calculate_ecliptic_latitude_mask(
+        v_ra_hours, v_dec_degrees, threshold_degrees=10.0, df=messier_df
+    )
 
     messier_names_filtered = messier_names_all[mask]
     messier_vector_filtered = Star(
@@ -143,19 +140,12 @@ def calculate_moon_star_conjunctions(ts, observer, start_date, end_date, bright_
 
     # Filter stars close to the ecliptic (within 10 degrees)
     # The Moon stays within ~5.1 degrees of the ecliptic.
-    t_ref = ts.utc(start_date)
-
-    # Observe all stars at once using a vectorized Star object
-    # Optimization: use pre-calculated float columns instead of list comprehension over Star objects
-    stars_vector = Star(
-        ra_hours=bright_stars["ra_hours"].to_numpy(),
-        dec_degrees=bright_stars["dec_degrees"].to_numpy(),
+    # Optimization: Fast geometric ecliptic latitude check using pre-calculated direction cosines
+    v_ra_hours = bright_stars["ra_hours"].to_numpy()
+    v_dec_degrees = bright_stars["dec_degrees"].to_numpy()
+    mask = calculate_ecliptic_latitude_mask(
+        v_ra_hours, v_dec_degrees, threshold_degrees=10.0, df=bright_stars
     )
-    spos_at_t_ref = observer.at(t_ref).observe(stars_vector)
-    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
-
-    # Filter using vectorized mask
-    mask = np.abs(lats.degrees) < 10.0
     filtered_stars_df = bright_stars[mask]
 
     star_vector_filtered = Star(

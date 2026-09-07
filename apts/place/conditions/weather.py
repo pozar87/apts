@@ -40,13 +40,15 @@ class WeatherMixIn:
         times = ts.from_datetimes(self.weather.data["time"].tolist())
 
         # Vectorized Sun/Moon altitude calculation
+        # Optimization: Hoist topocentric observer state to avoid re-evaluating observer.at(times)
+        obs_at_times = self.observer.at(times)
         sun_alts = cast(
             np.ndarray,
-            self.observer.at(times).observe(self.sun).apparent().altaz()[0].degrees,
+            obs_at_times.observe(self.sun).apparent().altaz()[0].degrees,
         )
         # Optimization: Reuse the Moon observation for both altitude and magnitude
         # to avoid redundant high-precision coordinate transformations.
-        moon_obs = self.observer.at(times).observe(self.moon).apparent()
+        moon_obs = obs_at_times.observe(self.moon).apparent()
         moon_alts = cast(
             np.ndarray,
             moon_obs.altaz()[0].degrees,

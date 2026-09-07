@@ -1,10 +1,9 @@
-import numpy as np
 from skyfield.api import Star
 
-from ...cache import get_timescale
 from ...catalogs.messier import get_messier_raw
 from ...catalogs.stars import get_bright_stars_raw
 from ...utils import planetary
+from ...utils.astronomy import calculate_ecliptic_latitude_mask
 from .stars import find_conjunctions_with_stars
 
 
@@ -29,24 +28,18 @@ def find_planet_star_conjunctions(
         "neptune barycenter",
     ]
 
-    # Filter stars close to the ecliptic (within 10 degrees)
-    # The planets stay close to the ecliptic (mostly within 7 degrees)
-    ts = get_timescale()
-    t_ref = ts.utc(start_date)
-
-    # Optimized filtering: avoid iterative ra/dec extraction
+    # Filter stars close to the ecliptic (within 7 degrees)
     # Use the raw catalog (Catalogs.BRIGHT_STARS strips the technical columns)
     bright_stars = get_bright_stars_raw()
     v_ra_hours = bright_stars["ra_hours"].to_numpy()
     v_dec_degrees = bright_stars["dec_degrees"].to_numpy()
     star_names_all = bright_stars["Name"].to_numpy()
 
-    stars_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
-    spos_at_t_ref = observer.at(t_ref).observe(stars_vector_all)
-    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
-
     # Planets stay within ~7 degrees of the ecliptic (except Pluto, which is not in this list)
-    mask = np.abs(lats.degrees) < 7.0
+    # Optimization: Fast geometric ecliptic latitude check using pre-calculated direction cosines
+    mask = calculate_ecliptic_latitude_mask(
+        v_ra_hours, v_dec_degrees, threshold_degrees=7.0, df=bright_stars
+    )
 
     # Filtered vectorized Star object
     star_data_filtered = Star(
@@ -99,20 +92,16 @@ def find_planet_messier_conjunctions(
     # Pre-filter Messier objects close to the ecliptic (within 10 degrees)
     # Planets stay within ~7 degrees of the ecliptic (e.g. Mercury), and threshold is 3.0 degrees.
     # Any object with absolute ecliptic latitude >= 10.0 degrees can never be in conjunction.
-    ts = get_timescale()
-    t_ref = ts.utc(start_date)
-
     # Use the raw catalog (Catalogs.MESSIER strips the technical columns)
     messier = get_messier_raw()
     v_ra_hours = messier["ra_hours"].to_numpy()
     v_dec_degrees = messier["dec_degrees"].to_numpy()
     messier_names_all = messier["Messier"].to_numpy()
 
-    messier_vector_all = Star(ra_hours=v_ra_hours, dec_degrees=v_dec_degrees)
-    spos_at_t_ref = observer.at(t_ref).observe(messier_vector_all)
-    lats, _, _ = spos_at_t_ref.ecliptic_latlon()
-
-    mask = np.abs(lats.degrees) < 10.0
+    # Optimization: Fast geometric ecliptic latitude check using pre-calculated direction cosines
+    mask = calculate_ecliptic_latitude_mask(
+        v_ra_hours, v_dec_degrees, threshold_degrees=10.0, df=messier
+    )
 
     messier_names_filtered = messier_names_all[mask]
     messier_vector_filtered = Star(

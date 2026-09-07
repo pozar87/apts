@@ -6,6 +6,7 @@ from skyfield.api import Star
 from ...cache import get_timescale
 from ...constants import astronomy
 from ...utils import planetary
+from ...utils.astronomy import calculate_ecliptic_latitude_mask
 from ..utils import _refine_conjunction, fast_altaz
 
 
@@ -18,17 +19,35 @@ def _filter_ecliptic_stars(bright_stars, earth, t_mid):
     v_dec_degrees_all = bright_stars["dec_degrees"].to_numpy()
     star_names_all = bright_stars["Name"].to_numpy()
 
-    stars_vector_all = Star(ra_hours=v_ra_hours_all, dec_degrees=v_dec_degrees_all)
-    spos_at_t_mid_all = earth.at(t_mid).observe(stars_vector_all)
-    lats, _, _ = spos_at_t_mid_all.ecliptic_latlon()
-
-    mask_ecliptic = np.abs(lats.degrees) < 10
+    # Optimization: Fast geometric ecliptic latitude check and ICRF unit vector construction
+    mask_ecliptic = calculate_ecliptic_latitude_mask(
+        v_ra_hours_all, v_dec_degrees_all, threshold_degrees=10.0, df=bright_stars
+    )
     v_ra_hours = v_ra_hours_all[mask_ecliptic]
     v_dec_degrees = v_dec_degrees_all[mask_ecliptic]
     star_names = star_names_all[mask_ecliptic]
 
-    stars_au = spos_at_t_mid_all.position.au[:, mask_ecliptic]
-    u_stars = stars_au / np.linalg.norm(stars_au, axis=0)
+    if (
+        "cos_dec_cos_ra" in bright_stars.columns
+        and "cos_dec_sin_ra" in bright_stars.columns
+        and "sin_dec" in bright_stars.columns
+    ):
+        u_all = np.array([
+            bright_stars["cos_dec_cos_ra"].to_numpy(),
+            bright_stars["cos_dec_sin_ra"].to_numpy(),
+            bright_stars["sin_dec"].to_numpy(),
+        ])
+    else:
+        ra_rad = v_ra_hours_all * (np.pi / 12.0)
+        dec_rad = v_dec_degrees_all * (np.pi / 180.0)
+        sin_dec = np.sin(dec_rad)
+        cos_dec = np.cos(dec_rad)
+        u_all = np.array([
+            cos_dec * np.cos(ra_rad),
+            cos_dec * np.sin(ra_rad),
+            sin_dec,
+        ])
+    u_stars = u_all[:, mask_ecliptic]
 
     return v_ra_hours, v_dec_degrees, star_names, u_stars
 
