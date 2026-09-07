@@ -3,6 +3,7 @@ import numpy as np
 from skyfield.searchlib import find_maxima, find_minima
 from ...cache import get_timescale
 from ...utils import planetary
+from ..utils import fast_altaz
 
 def find_moon_libration_maxima(observer, start_date, end_date):
     """
@@ -47,19 +48,12 @@ def find_moon_libration_maxima(observer, start_date, end_date):
 
     # Helper to calculate visibility and build event dict
     def add_lib_event(t, val, axis, extreme):
-        # Oracle: use refracted positions for visibility check
-        m_obs = observer.at(t).observe(moon_sf).apparent()
-        m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+        # Optimization: Use fast_altaz to bypass expensive Standard Apparent frame transformations
+        obs_at_t = observer.at(t)
+        m_alt = fast_altaz(obs_at_t, moon_sf, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+        s_alt = fast_altaz(obs_at_t, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
 
-        s_alt = (
-            observer.at(t)
-            .observe(sun)
-            .apparent()
-            .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-            .degrees
-        )
-
-        is_visible = (m_alt.degrees > 0 and s_alt <= -6) or observer_elevation == -9999
+        is_visible = (m_alt > 0 and s_alt <= -6) or observer_elevation == -9999
 
         side = {
             ("longitude", "max"): "East",
@@ -77,7 +71,7 @@ def find_moon_libration_maxima(observer, start_date, end_date):
                 "libration_value": float(val),
                 "axis": axis,
                 "side": side,
-                "altitude": float(m_alt.degrees),
+                "altitude": float(m_alt),
                 "is_visible": bool(is_visible),
             }
         )
