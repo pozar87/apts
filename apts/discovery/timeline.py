@@ -1,6 +1,9 @@
 import datetime
+
 from skyfield import almanac
+
 from ..cache import get_ephemeris, get_timescale
+
 
 class TimelineGenerator:
     """

@@ -7,12 +7,29 @@ import pandas as pd
 from ..constants import FilterStrategy, ObjectTableLabels
 from ..optics.utils import OpticsUtils
 from ..scoring import SuitabilityScorer
-from ..utils.astronomy.refraction import calculate_refraction
 from ..utils.astronomy.altaz import vectorized_geometric_altaz
-from ..utils.astronomy.separation import vectorized_angular_separation
 from ..utils.astronomy.calculations import vectorized_geometric_imaging_duration
+from ..utils.astronomy.refraction import calculate_refraction
+from ..utils.astronomy.separation import vectorized_angular_separation
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_arcmin_floats(arr) -> np.ndarray:
+    """Helper to convert raw catalog dimensions (Pint Quantities, floats, or NaNs) to float arcminutes."""
+    if arr is None or len(arr) == 0:
+        return np.array([], dtype=float)
+    res = np.empty(len(arr), dtype=float)
+    for i, val in enumerate(arr):
+        mag = getattr(val, "magnitude", val)
+        if mag is None or pd.isna(mag):
+            res[i] = np.nan
+        else:
+            try:
+                res[i] = float(mag)
+            except (ValueError, TypeError):
+                res[i] = np.nan
+    return res
 
 
 class DiscoveryService:
@@ -28,10 +45,13 @@ class DiscoveryService:
         date=None,
         strategy=FilterStrategy.BROADBAND,
         limit=20,
+        include_ngc: bool = False,
+        ngc_magnitude_limit: float | None = 13.0,
+        min_fov_ratio: float | None = None,
     ):
         """
         Returns a ranked list of objects sorted by the Multi-Factor Score.
-        Includes Messier and Solar objects.
+        Includes Messier and Solar objects, and optionally NGC objects.
         """
         scorer = SuitabilityScorer(place, equipment_path, filter_strategy=strategy)
 
@@ -44,10 +64,20 @@ class DiscoveryService:
 
         # Ensure date is converted to datetime for place helper methods that expect it
         from ..place.utils import get_scalar_datetime
+
         t_dt = get_scalar_datetime(t_sf)
 
-        # 1. Collect combined targets (Messier + Solar)
-        combined_df = DiscoveryService._get_combined_targets(place, catalogs, t_sf)
+        # 1. Collect combined targets (Messier + optional NGC + Solar)
+        combined_df = DiscoveryService._get_combined_targets(
+            place,
+            catalogs,
+            t_sf,
+            include_ngc=include_ngc,
+            ngc_magnitude_limit=ngc_magnitude_limit,
+        )
+
+        if combined_df.empty:
+            return []
 
         # 2. Pre-calculate astronomical twilight
         twilight_times = DiscoveryService._get_twilight_window(place, t_dt)
@@ -57,29 +87,77 @@ class DiscoveryService:
             place, equipment_path, combined_df, t_sf, twilight_times
         )
 
-        # 4. Vectorized Scoring
-        scores_df = scorer.calculate_scores_bulk(combined_df)
+        # 4. Hard FOV ratio filter if min_fov_ratio is specified
+        if min_fov_ratio is not None:
+            combined_df = combined_df[combined_df["fov_ratio"] >= min_fov_ratio].copy()
+            if combined_df.empty:
+                return []
+
+        # 5. Vectorized Scoring
+        scores_df = scorer.calculate_scores_bulk(cast(pd.DataFrame, combined_df))
         combined_df["Score"] = scores_df["total_score"]
 
-        # 5. Format and return results
+        # 6. Format and return results
         return DiscoveryService._format_discovery_results(combined_df, scores_df, limit)
 
     @staticmethod
-    def _get_combined_targets(place, catalogs, date) -> pd.DataFrame:
-        """Collects and combines Messier and Solar objects, excluding the Sun."""
-        from ..objects.messier import Messier
+    def _get_combined_targets(
+        place,
+        catalogs,
+        date,
+        include_ngc: bool = False,
+        ngc_magnitude_limit: float | None = 13.0,
+    ) -> pd.DataFrame:
+        """Collects and combines Messier, Solar, and optional NGC objects, excluding the Sun."""
         from ..objects import SolarObjects
+        from ..objects.messier import Messier
 
         # Optimization: Pass date to constructors to avoid redundant compute() calls.
         messier_obj = Messier(place, catalogs, calculation_date=date)
         messier_obj.compute(calculation_date=date)
 
+        dfs = [messier_obj.objects]
+
+        if include_ngc:
+            from ..catalogs.ngc import normalize_name
+            from ..objects.ngc import NGC
+
+            ngc_obj = NGC(place, catalogs, calculation_date=date)
+            ngc_df = ngc_obj.objects.copy()
+
+            # Deduplicate NGC entries against Messier catalog
+            messier_ngc_ids = list(
+                cast(pd.Series, normalize_name(messier_obj.objects["NGC"])).dropna()
+            )
+
+            ngc_col_norm = cast(
+                pd.Series, normalize_name("NGC" + ngc_df["NGC"].fillna(""))
+            )
+            ic_col_norm = cast(
+                pd.Series, normalize_name("IC" + ngc_df["IC"].fillna(""))
+            )
+
+            is_messier_dup = (
+                ngc_df["Name_norm"].isin(messier_ngc_ids)
+                | ngc_col_norm.reindex(ngc_df.index).isin(messier_ngc_ids)
+                | ic_col_norm.reindex(ngc_df.index).isin(messier_ngc_ids)
+                | ngc_df["M"].notna()
+            )
+            ngc_df = ngc_df[~is_messier_dup]
+
+            # Magnitude pre-filter
+            if ngc_magnitude_limit is not None:
+                ngc_df = ngc_df[ngc_df["Magnitude_float"] <= ngc_magnitude_limit]
+
+            # Compute vectorized geometric coordinates for the filtered NGC subset
+            ngc_df = ngc_obj.compute(calculation_date=date, df_to_compute=ngc_df)
+            dfs.append(ngc_df)
+
         # SolarObjects.compute() is already called in its __init__ with calculation_date.
         solar_obj = SolarObjects(place, calculation_date=date)
+        dfs.append(solar_obj.objects)
 
-        combined_df = pd.concat(
-            [messier_obj.objects, solar_obj.objects], ignore_index=True
-        )
+        combined_df = pd.concat(dfs, ignore_index=True)
         result = combined_df[combined_df["Name"] != "sun"].copy()
         return cast(pd.DataFrame, result)
 
@@ -124,16 +202,25 @@ class DiscoveryService:
             .magnitude
         )
 
-        size_major = df[ObjectTableLabels.SIZE_MAJOR].values
-        size_minor = df[ObjectTableLabels.SIZE_MINOR].values
+        size_major_raw = (
+            df[ObjectTableLabels.SIZE_MAJOR].values
+            if ObjectTableLabels.SIZE_MAJOR in df.columns
+            else np.full(len(df), np.nan)
+        )
+        size_minor_raw = (
+            df[ObjectTableLabels.SIZE_MINOR].values
+            if ObjectTableLabels.SIZE_MINOR in df.columns
+            else np.full(len(df), np.nan)
+        )
 
-        # If they are Quantities, extract magnitudes once in bulk
-        if len(size_major) > 0 and hasattr(size_major[0], "magnitude"):
-            size_major = np.array([getattr(s, "magnitude", s) for s in size_major])
-            size_minor = np.array([getattr(s, "magnitude", s) for s in size_minor])
+        size_major_floats = _extract_arcmin_floats(size_major_raw)
+        size_minor_floats = _extract_arcmin_floats(size_minor_raw)
+
+        df["size_major_arcmin"] = size_major_floats
+        df["size_minor_arcmin"] = size_minor_floats
 
         df["fov_ratio"] = OpticsUtils.calculate_fov_ratio(
-            (size_major, size_minor),
+            (size_major_floats, size_minor_floats),
             sensor_size,
             focal_length,
         )
@@ -217,15 +304,9 @@ class DiscoveryService:
 
         results_df = df.sort_values("Score", ascending=False).head(limit)
 
-        # Optimization: use itertuples() and a pre-converted details map instead of iterrows()
-        # and row-wise .to_dict() for a significant speedup.
         top_scores_dict = scores_df.loc[results_df.index].to_dict("index")
         type_col = ObjectTableLabels.DSO_TYPE
 
-        # Convert type column label to a valid itertuples name if needed,
-        # but better to use itertuples(index=True, name='Pandas') and getattr or index-based access.
-        # itertuples() can mangel column names with spaces.
-        # Using to_dict('records') is safer and still very fast for small result sets.
         top_results_list = results_df.to_dict("records")
 
         scored_objects = [
@@ -234,6 +315,15 @@ class DiscoveryService:
                 "Type": row[type_col],
                 "Score": row["Score"],
                 "Details": top_scores_dict[results_df.index[i]],
+                "fov_ratio": float(row["fov_ratio"])
+                if pd.notna(row.get("fov_ratio"))
+                else 0.0,
+                "size_major_arcmin": float(row["size_major_arcmin"])
+                if pd.notna(row.get("size_major_arcmin"))
+                else float("nan"),
+                "size_minor_arcmin": float(row["size_minor_arcmin"])
+                if pd.notna(row.get("size_minor_arcmin"))
+                else float("nan"),
             }
             for i, row in enumerate(top_results_list)
         ]
