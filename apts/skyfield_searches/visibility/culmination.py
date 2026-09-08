@@ -6,6 +6,7 @@ from skyfield.searchlib import find_maxima
 
 from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
+from ...utils.astronomy.refraction import calculate_refraction
 from ..utils import fast_altaz
 
 
@@ -23,14 +24,7 @@ def _get_observer_coords(observer: Any) -> tuple[float, float]:
 
 def _apply_refraction(altitudes_deg: np.ndarray) -> np.ndarray:
     """Adds atmospheric refraction at culmination using Bennett's formula."""
-    # R in arcminutes = 1 / tan(h + 7.31 / (h + 4.4))
-    res = altitudes_deg.copy()
-    r_mask = res > -1.0
-    if np.any(r_mask):
-        alts_m = res[r_mask]
-        r_arcmin = 1.0 / np.tan(np.deg2rad(alts_m + 7.31 / (alts_m + 4.4)))
-        res[r_mask] += r_arcmin / 60.0
-    return res
+    return cast(np.ndarray, altitudes_deg + calculate_refraction(altitudes_deg))
 
 
 def find_culminations(observer, start_date, end_date, sun_alt_threshold=-6):
