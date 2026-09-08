@@ -64,10 +64,10 @@ def test_ecliptic_latitude_mask_boundary_cases():
     ra = np.array([0.0])
     dec = np.array([0.0])
     mask = calculate_ecliptic_latitude_mask(ra, dec, threshold_degrees=1.0)
-    assert mask[0] == True
+    assert mask[0]
 
     # Celestial pole (Dec = 90 -> Ecliptic Lat ~ 66.56 deg)
     ra_pole = np.array([0.0])
     dec_pole = np.array([90.0])
     mask_pole = calculate_ecliptic_latitude_mask(ra_pole, dec_pole, threshold_degrees=10.0)
-    assert mask_pole[0] == False
+    assert not mask_pole[0]
