@@ -115,7 +115,8 @@ def get_moon_libration(
     if observer is None:
         observer = eph["earth"]
 
-    astrometric = cast(Any, moon).at(time).observe(observer).apparent()
+    # Optimization: Use astrometric observe() instead of apparent() to bypass redundant nutation/aberration calculations
+    astrometric = cast(Any, moon).at(time).observe(observer)
     v_mo = astrometric.position.au
 
     alpha0, delta0, W = _get_moon_orientation_elements(time)
@@ -170,8 +171,8 @@ def get_moon_colongitude(time: Any) -> float | np.ndarray:
     sun = eph["sun"]
     moon = eph["moon"]
 
-    # Observation of Sun from Moon center (includes light-time correction)
-    astrometric = cast(Any, moon).at(time).observe(sun).apparent()
+    # Optimization: Use astrometric observe() instead of apparent() to bypass redundant nutation/aberration calculations
+    astrometric = cast(Any, moon).at(time).observe(sun)
     v_ms = astrometric.position.au
 
     alpha0, delta0, W = _get_moon_orientation_elements(time)
