@@ -4,47 +4,30 @@ from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ...optics.calculations import calculate_eyepiece_field_of_view
+from .calculations import normalize_eyepiece_database_entry
 
 class Eyepiece(OutputOpticalEquipment):
     path_layer = 5
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import extract_number
-        import re
-        entry = entry.copy()
-        name = entry.get("name", "")
-        if "focal_length_mm" not in entry and "focal_length" not in entry:
-            focal_length = extract_number(name)
-            if focal_length:
-                entry["focal_length_mm"] = focal_length
-        if "field_of_view_deg" not in entry and "field_of_view" not in entry:
-            match = re.search(r"(\d+)°", name) or re.search(r"(\d+)\s*deg", name)
-            if match:
-                entry["field_of_view_deg"] = float(match.group(1))
+        entry = normalize_eyepiece_database_entry(entry)
         return super(Eyepiece, cls).normalize_database_entry(entry)
 
     _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
         entry = cls.normalize_database_entry(entry)
         brand = entry.get('brand', 'Unknown')
         name = entry.get('name', 'Unknown')
         vendor = f'{brand} {name}'
-        tt = map_conn(entry.get('tside_thread'))
-        tg = map_gender(entry.get('tside_gender'))
         fl = entry.get('focal_length_mm', 20)
         fov = entry.get('field_of_view_deg', 70)
         fs = entry.get('field_stop_mm')
         mass = entry.get('mass', 0)
         ol = entry.get('optical_length', 0)
         inputs = entry.get('inputs')
-        if inputs is None:
-            inputs = [(tt, tg)] if tt else []
-        else:
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
 
         return cls(fl, vendor=vendor, field_of_view=fov, field_stop=fs, inputs=inputs, mass=mass, optical_length=ol)
 
