@@ -8,6 +8,8 @@ from .catalogs import Catalogs
 # Import the config object from the new config module
 from .config import config, should_auto_preload_data, should_preload_essential_only
 from .constants.event_types import EventType
+from .events import Event, EventExportData, DirectionData
+from .visualization import generate_finder_chart, plot_finder_chart
 
 if TYPE_CHECKING:
     from .equipment import Equipment
@@ -118,6 +120,11 @@ __all__ = [
     "Place",
     "Utils",
     "EventType",
+    "Event",
+    "EventExportData",
+    "DirectionData",
+    "generate_finder_chart",
+    "plot_finder_chart",
     "Notify",
     "Weather",
     "catalogs",
