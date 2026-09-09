@@ -1782,11 +1782,11 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 38500,
+            "full_well_e": 38500,  # Verified via ZWO official product specs (38.5ke) - https://www.zwoastro.com/product/asi664mc/
             "height": 1536,
-            "mass": 126,
+            "mass": 126,  # Verified via ZWO (126g) - https://www.zwoastro.com/product/asi664mc/
             "name": "ASI664MC",
-            "optical_length": 12.5,
+            "optical_length": 12.5,  # Verified via ZWO (12.5mm backfocus distance / CS thread) - https://www.zwoastro.com/product/asi664mc/
             "pixel_size_um": 2.9,
             "quantum_efficiency_pct": 91,
             "read_noise_e": 0.46,
@@ -1794,7 +1794,7 @@ class ZwoCamera(Camera):
             "sensor_height_mm": 4.45,
             "sensor_width_mm": 7.84,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Verified via ZWO (CS-mount native thread with 12.5mm backfocus) - https://www.zwoastro.com/product/asi664mc/
             "type": "type_camera",
             "width": 2704,
         },
