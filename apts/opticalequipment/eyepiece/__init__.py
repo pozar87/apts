@@ -1,4 +1,7 @@
 from .base import Eyepiece
+from .calculations import (
+    normalize_eyepiece_database_entry as normalize_eyepiece_database_entry,
+)
 import pkgutil
 import importlib
 import os
