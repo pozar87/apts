@@ -126,21 +126,19 @@ class DiscoveryService:
             ngc_df = ngc_obj.objects.copy()
 
             # Deduplicate NGC entries against Messier catalog
-            messier_ngc_ids = list(
+            # Optimization: Reusing pre-calculated NGC_norm and IC_norm columns and using a set
+            # for messier_ngc_ids avoids redundant normalize_name string parsing over 14k rows.
+            messier_ngc_ids = set(
                 cast(pd.Series, normalize_name(messier_obj.objects["NGC"])).dropna()
             )
 
-            ngc_col_norm = cast(
-                pd.Series, normalize_name("NGC" + ngc_df["NGC"].fillna(""))
-            )
-            ic_col_norm = cast(
-                pd.Series, normalize_name("IC" + ngc_df["IC"].fillna(""))
-            )
+            ngc_full_norm = "NGC" + ngc_df["NGC_norm"].fillna("")
+            ic_full_norm = "IC" + ngc_df["IC_norm"].fillna("")
 
             is_messier_dup = (
                 ngc_df["Name_norm"].isin(messier_ngc_ids)
-                | ngc_col_norm.reindex(ngc_df.index).isin(messier_ngc_ids)
-                | ic_col_norm.reindex(ngc_df.index).isin(messier_ngc_ids)
+                | ngc_full_norm.isin(messier_ngc_ids)
+                | ic_full_norm.isin(messier_ngc_ids)
                 | ngc_df["M"].notna()
             )
             ngc_df = ngc_df[~is_messier_dup]
