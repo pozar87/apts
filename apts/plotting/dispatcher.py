@@ -15,6 +15,7 @@ from .wrappers.objects import (
     plot_sun_and_moon_path,
     plot_jovian_moons,
 )
+from ..visualization.finder_chart import plot_finder_chart, generate_finder_chart
 from .wrappers.weather import (
     plot_weather,
     plot_clouds,
@@ -133,6 +134,9 @@ class Plotter:
     def jovian_moons(self, **args):
         return plot_jovian_moons(self.observation, **args)
 
+    def finder_chart(self, event, **args):
+        return plot_finder_chart(event, **args)
+
 
 __all__ = [
     "Plotter",
@@ -160,4 +164,6 @@ __all__ = [
     "plot_visible_planets_svg",
     "plot_sun_and_moon_path",
     "plot_jovian_moons",
+    "plot_finder_chart",
+    "generate_finder_chart",
 ]

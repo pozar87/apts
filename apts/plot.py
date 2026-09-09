@@ -22,6 +22,8 @@ from .plotting.dispatcher import (
     plot_visible_planets,
     plot_visible_planets_svg,
     plot_sun_and_moon_path,
+    plot_finder_chart,
+    generate_finder_chart,
 )
 
 __all__ = [
@@ -48,4 +50,6 @@ __all__ = [
     "plot_visible_planets",
     "plot_visible_planets_svg",
     "plot_sun_and_moon_path",
+    "plot_finder_chart",
+    "generate_finder_chart",
 ]
