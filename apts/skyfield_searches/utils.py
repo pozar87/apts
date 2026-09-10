@@ -8,17 +8,22 @@ from skyfield.searchlib import find_minima
 from ..cache import get_ephemeris, get_timescale
 
 
-def fast_altaz(observer_at_times, skyfield_obj, temperature_C=None, pressure_mbar=None):
+def fast_altaz(observer_or_pos, skyfield_obj=None, temperature_C=None, pressure_mbar=None):
     """
     Fast AltAz calculation that bypasses expensive nutation, aberration, and
     light deflection calculations (Standard Apparent) by manually wrapping
     an Astrometric position in an Apparent object.
 
+    Accepts either (observer_at_times, skyfield_obj) or a pre-observed position object.
+
     This provides a ~2.5x speedup with a negligible accuracy loss (~14 arcseconds)
     due to missing nutation/aberration, which is ideal for visibility gating
     and coarse searching.
     """
-    pos = observer_at_times.observe(skyfield_obj)
+    if skyfield_obj is not None:
+        pos = observer_or_pos.observe(skyfield_obj)
+    else:
+        pos = observer_or_pos
     app = Apparent(pos.position.au, pos.velocity.au_per_d, pos.t)
     app.center = pos.center
     return app.altaz(temperature_C=temperature_C, pressure_mbar=pressure_mbar)  # type: ignore[arg-type]

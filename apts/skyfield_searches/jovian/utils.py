@@ -2,7 +2,7 @@ import logging
 from typing import cast
 
 import numpy as np
-from skyfield.positionlib import Apparent
+from skyfield.positionlib import Apparent  # Re-exported for unit test mocking backwards compatibility
 
 from ..utils import fast_altaz
 
@@ -131,10 +131,7 @@ class JovianSearchContext:
                 # Coarse check: sample every 25 points to see if Jupiter is anywhere near visible.
                 # 25 points at 0.005 step is ~3 hours.
                 t_coarse = t[::25]
-                j_ast = self.observer.at(t_coarse).observe(self.jupiter)
-                j_app = Apparent(j_ast.position.au, j_ast.velocity.au_per_d, j_ast.t)
-                j_app.center = j_ast.center
-                alt_coarse, _, _ = j_app.altaz()
+                alt_coarse, _, _ = fast_altaz(self.observer.at(t_coarse), self.jupiter)
                 # If Jupiter is more than 5 degrees below horizon in all samples,
                 # we assume it's not visible for the whole block.
                 # 5 degrees is a safe margin for 3-hour decimation.
@@ -151,17 +148,21 @@ class JovianSearchContext:
         """High-precision visibility calculation."""
         # Performance Optimization: Hoist observer.at(t) to evaluate topocentric state once per time step
         obs_at_t = self.get_obs_at_t(t)
-        # Optimization: Use fast_altaz to bypass expensive Standard Apparent frame transformations
-        # for Jupiter and Sun altitude calculations (~4x speedup on this path).
-        j_alt, _, _ = fast_altaz(obs_at_t, self.jupiter)
-        s_alt, _, _ = fast_altaz(obs_at_t, self.sun)
 
         if "j_obs" not in data:
             data["j_obs"] = obs_at_t.observe(self.jupiter)
         if "s_obs" not in data:
             data["s_obs"] = obs_at_t.observe(self.sun)
 
-        elongation = data["j_obs"].separation_from(data["s_obs"]).degrees
+        j_obs = data["j_obs"]
+        s_obs = data["s_obs"]
+
+        # Optimization: Reuse pre-observed j_obs and s_obs with fast_altaz,
+        # avoiding redundant obs_at_t.observe(...) calls for Jupiter and Sun.
+        j_alt, _, _ = fast_altaz(j_obs)
+        s_alt, _, _ = fast_altaz(s_obs)
+
+        elongation = j_obs.separation_from(s_obs).degrees
         data["visible"] = (
             (cast(float, j_alt.degrees) > 0)
             & (cast(float, s_alt.degrees) <= -6)
