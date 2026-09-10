@@ -60,9 +60,9 @@ class TestEventCalculationsEvaluations(unittest.TestCase):
         self.assertEqual(calculate_event_duration("Lunar Occultation", {}), 3600)
         self.assertEqual(calculate_event_duration("Solar Eclipse", {}), 7200)
         self.assertEqual(calculate_event_duration("Lunar Eclipse", {}), 14400)
-        self.assertEqual(calculate_event_duration("Moon-Star Conjunction", {}), 172800)
-        self.assertEqual(calculate_event_duration("Opposition", {}), 259200)
-        self.assertEqual(calculate_event_duration("Moon Phase", {}), 86400)
+        self.assertEqual(calculate_event_duration("Moon-Star Conjunction", {}), 7200)
+        self.assertEqual(calculate_event_duration("Opposition", {}), 21600)
+        self.assertEqual(calculate_event_duration("Unknown Event", {}), 7200)
 
     def test_backward_compatibility_aliases(self):
         self.assertEqual(get_rarity("Comet", {}), 5)

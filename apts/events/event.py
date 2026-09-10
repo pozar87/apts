@@ -25,6 +25,34 @@ class DirectionData:
         }
 
 
+def get_sky_brightness(sun_alt_deg: float | None, moon_alt_deg: float | None = None, moon_phase_frac: float = 0.0) -> str:
+    """
+    Infers sky brightness classification state based on Sun and Moon altitude.
+
+    Returns:
+        One of 'DAY', 'CIVIL_TWILIGHT', 'NAUTICAL_TWILIGHT', 'ASTRONOMICAL_TWILIGHT',
+        'NIGHT_MOONLIT', 'NIGHT_DARK'.
+    """
+    if sun_alt_deg is None:
+        return "NIGHT_DARK"
+
+    alt = float(sun_alt_deg)
+    if alt >= -0.833:
+        return "DAY"
+    elif alt >= -6.0:
+        return "CIVIL_TWILIGHT"
+    elif alt >= -12.0:
+        return "NAUTICAL_TWILIGHT"
+    elif alt >= -18.0:
+        return "ASTRONOMICAL_TWILIGHT"
+
+    # Deep night: check Moon influence
+    if moon_alt_deg is not None and moon_alt_deg > 0.0 and moon_phase_frac >= 0.2:
+        return "NIGHT_MOONLIT"
+
+    return "NIGHT_DARK"
+
+
 def get_direction_data(azimuth_deg: float | None) -> DirectionData:
     """Converts an azimuth in degrees into cardinal direction code and description."""
     if azimuth_deg is None or math.isnan(azimuth_deg):
@@ -75,7 +103,8 @@ CATEGORY_RULES = [
     ("flyby", None, "FLYBY"),
     ("iss", None, "FLYBY"),
     ("tiangong", None, "FLYBY"),
-    ("launch", None, "FLYBY"),
+    ("launch", None, "ROCKET_LAUNCH"),
+    ("rocket", None, "ROCKET_LAUNCH"),
     ("solstice", None, "EQUINOX_SOLSTICE"),
     ("equinox", None, "EQUINOX_SOLSTICE"),
     ("season", None, "EQUINOX_SOLSTICE"),
@@ -206,6 +235,7 @@ class EventExportData:
     angular_separation: str | None
     direction: DirectionData
     step_by_step_guide: list[str]
+    sky_brightness: str = "NIGHT_DARK"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -218,6 +248,7 @@ class EventExportData:
             "angular_separation": self.angular_separation,
             "direction": self.direction.to_dict() if isinstance(self.direction, DirectionData) else self.direction,
             "step_by_step_guide": self.step_by_step_guide,
+            "sky_brightness": self.sky_brightness,
         }
 
 
@@ -348,6 +379,22 @@ class Event:
         self.place = place
         self.extra_data = extra_data or {}
 
+        # Compute Sky Brightness
+        sun_alt = self.extra_data.get("sun_altitude")
+        moon_alt = self.extra_data.get("moon_altitude")
+        phase = self.extra_data.get("phase", 0.0)
+        phase_frac = float(phase) if isinstance(phase, (int, float)) else 0.0
+
+        if place is not None and hasattr(place, "get_altitude") and (sun_alt is None):
+            try:
+                t_sf = place.ts.utc(self.dt_utc.year, self.dt_utc.month, self.dt_utc.day, self.dt_utc.hour, self.dt_utc.minute, self.dt_utc.second)
+                sun_alt = place.get_altitude(place.sun, t_sf)
+                moon_alt = place.get_altitude(place.moon, t_sf)
+            except Exception:
+                pass
+
+        self.sky_brightness = get_sky_brightness(sun_alt, moon_alt, phase_frac)
+
         # Handle Direction
         if isinstance(direction, DirectionData):
             self.direction = direction
@@ -390,6 +437,7 @@ class Event:
             angular_separation=self.angular_separation,
             direction=self.direction,
             step_by_step_guide=self.step_by_step_guide,
+            sky_brightness=getattr(self, "sky_brightness", "NIGHT_DARK"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -416,7 +464,7 @@ class Event:
         """
         from apts.visualization.finder_chart import generate_finder_chart
 
-        return generate_finder_chart(
+        res = generate_finder_chart(
             self,
             format=format,
             theme=theme,
@@ -424,6 +472,7 @@ class Event:
             dpi=dpi,
             **kwargs,
         )
+        return res if res is not None else b"" if format == "png" else ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], place: Optional["Place"] = None) -> "Event":

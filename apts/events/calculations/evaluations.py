@@ -183,17 +183,22 @@ def calculate_event_duration(event_type: str, data: dict) -> int:
     if event_type in duration_map:
         return duration_map[event_type]
 
-    # Slow events (days)
-    # Default for conjunctions and other slow-moving events is 2 days (172800s)
+    # Slow events / Peak visibility windows
+    # For conjunctions, effective visual observation window around peak is typically 2-4 hours (7200s - 14400s)
+    # rather than multi-day ephemeris orbital overlap.
     if "Conjunction" in event_type or event_type == "Planet Solar Conjunction":
-        return 172800
+        return 7200  # 2 hours
 
-    # Default for oppositions and closest approach is 3 days (259200s)
+    # Oppositions and closest approaches: peak observation night window (~6 hours)
     if event_type in ["Opposition", "Mars Closest Approach"]:
-        return 259200
+        return 21600  # 6 hours
 
-    # Standard default for most other events (Moon phases, seasons, elongations, etc.) is 1 day
-    return 86400
+    # Meteor shower peaks (active dark window ~4 hours)
+    if event_type == "Meteor Shower":
+        return 14400  # 4 hours
+
+    # Standard default for most other events (Moon phases, seasons, elongations, etc.) is 2 hours (7200s)
+    return 7200
 
 
 # Alias for backward compatibility

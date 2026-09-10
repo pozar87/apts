@@ -523,11 +523,11 @@ class EventsTest(unittest.TestCase):
 
         # Check Moon Phase duration (static default)
         moon_event = events_df[events_df["type"] == "Moon Phase"].iloc[0]
-        self.assertEqual(moon_event["duration"], 86400) # 1 day
+        self.assertEqual(moon_event["duration"], 7200) # 2 hours
 
         # Check Conjunction duration (static default)
         conj_event = events_df[events_df["type"] == "Conjunction"].iloc[0]
-        self.assertEqual(conj_event["duration"], 172800) # 2 days
+        self.assertEqual(conj_event["duration"], 7200) # 2 hours
 
 
 if __name__ == "__main__":
