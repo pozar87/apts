@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 import matplotlib.figure
 import pytest
 
@@ -48,7 +49,7 @@ def test_generate_finder_chart_light_theme(sample_occultation_event):
     assert len(png_bytes) > 0
 
 
-def test_rocket_launch_chart_suppression():
+def test_rocket_launch_chart_rendering():
     launch_event = Event(
         category="ROCKET_LAUNCH",
         title="Falcon 9 Rocket Launch",
@@ -57,10 +58,96 @@ def test_rocket_launch_chart_suppression():
         location_name="Cape Canaveral",
     )
     png_bytes = launch_event.generate_finder_chart(format="png")
-    assert png_bytes == b""
+    assert isinstance(png_bytes, bytes)
+    assert len(png_bytes) > 0
+    assert png_bytes[:4] == b"\x89PNG"
 
     fig = plot_finder_chart(launch_event, format="figure")
-    assert fig is None
+    assert isinstance(fig, matplotlib.figure.Figure)
+
+
+def test_iss_flyby_chart_rendering():
+    flyby_event = Event(
+        category="FLYBY",
+        title="Bright ISS Pass",
+        datetime_utc=datetime(2026, 9, 8, 22, 15, tzinfo=timezone.utc),
+        best_viewing_time_local="22:15",
+        location_name="Berlin",
+        azimuth_deg=140.0,
+        altitude_deg=45.0,
+        objects=["ISS"],
+    )
+    png_bytes = flyby_event.generate_finder_chart(format="png")
+    assert isinstance(png_bytes, bytes)
+    assert len(png_bytes) > 0
+    assert png_bytes[:4] == b"\x89PNG"
+
+
+def test_meteor_shower_chart_rendering():
+    shower_event = Event(
+        category="METEOR_SHOWER",
+        title="Perseids Meteor Shower Peak",
+        datetime_utc=datetime(2026, 8, 12, 2, 0, tzinfo=timezone.utc),
+        best_viewing_time_local="02:00",
+        location_name="Warsaw",
+        azimuth_deg=45.0,
+        altitude_deg=50.0,
+        objects=["Perseids"],
+    )
+    png_bytes = shower_event.generate_finder_chart(format="png")
+    assert isinstance(png_bytes, bytes)
+    assert len(png_bytes) > 0
+
+
+def test_jovian_moon_event_chart_rendering():
+    jovian_event = Event(
+        category="JOVIAN_MOON_EVENT",
+        title="Io Shadow Transit on Jupiter",
+        datetime_utc=datetime(2026, 9, 8, 1, 30, tzinfo=timezone.utc),
+        best_viewing_time_local="01:30",
+        location_name="Madrid",
+        azimuth_deg=180.0,
+        altitude_deg=35.0,
+        objects=["Jupiter", "Io"],
+    )
+    png_bytes = jovian_event.generate_finder_chart(format="png")
+    assert isinstance(png_bytes, bytes)
+    assert len(png_bytes) > 0
+
+
+def test_planet_alignment_chart_rendering():
+    alignment_event = Event(
+        category="PLANET_ALIGNMENT",
+        title="Planetary Alignment of Venus, Mars, and Jupiter",
+        datetime_utc=datetime(2026, 9, 8, 4, 30, tzinfo=timezone.utc),
+        best_viewing_time_local="04:30",
+        location_name="Lisbon",
+        azimuth_deg=105.0,
+        altitude_deg=20.0,
+        objects=["Venus", "Mars", "Jupiter"],
+    )
+    png_bytes = alignment_event.generate_finder_chart(format="png")
+    assert isinstance(png_bytes, bytes)
+    assert len(png_bytes) > 0
+
+
+def test_east_conjunction_azimuth_alignment():
+    east_event = Event(
+        category="CONJUNCTION",
+        title="Conjunction of Moon and Jupiter",
+        datetime_utc=datetime(2026, 9, 8, 5, 0, tzinfo=timezone.utc),
+        best_viewing_time_local="05:00",
+        location_name="Warsaw",
+        azimuth_deg=108.5,
+        altitude_deg=22.0,
+        objects=["Moon", "Jupiter"],
+    )
+    fig = plot_finder_chart(east_event, format="figure")
+    ax = fig.axes[0]
+    xlim = ax.get_xlim()
+    center_az = (xlim[0] + xlim[1]) / 2.0
+    # Chart should be centered near 108.5° azimuth, NOT forced to 90.0°
+    assert abs(center_az - 108.5) < 5.0
 
 
 def test_sky_brightness_metadata_and_durations(sample_occultation_event):

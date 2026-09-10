@@ -2,7 +2,7 @@ import io
 import logging
 import math
 from datetime import timezone
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -261,7 +261,7 @@ def _plot_background_stars(
     from apts.catalogs.stars import get_bright_stars_raw
 
     p1_az, p1_alt = p1_pos
-    p2_az, p2_alt = p2_pos
+    p2_az, p2_alt = p2_pos if p2_pos is not None else (None, None)
 
     place = getattr(event_obj, "place", None)
     plotted_real = False
@@ -307,7 +307,7 @@ def _plot_background_stars(
                         zorder=6,
                     )
             plotted_real = True
-        except Exception as e:
+        except (ValueError, KeyError, AttributeError, TypeError, RuntimeError) as e:
             logger.debug(f"Failed to plot real background stars: {e}")
 
     if not plotted_real:
@@ -358,56 +358,321 @@ def _draw_single_object(
     )
 
 
-def _resolve_target_coordinates(
-    event_obj: "Event",
+def _draw_satellite_flyby_trail(
+    ax: plt.Axes,
     center_az: float,
     center_alt: float,
-    sep_deg: float,
-) -> tuple[tuple[float, float], tuple[float, float] | None]:
-    """Calculates topocentric Az/Alt for primary and secondary targets."""
+    event_obj: "Event",
+    theme: dict,
+):
+    """Renders a satellite flyby trajectory trail across the sky with arrows and peak marker."""
+    az_start, alt_start = center_az - 14.0, max(2.0, center_alt - 15.0)
+    az_peak, alt_peak = center_az, center_alt
+    az_end, alt_end = center_az + 14.0, max(2.0, center_alt - 12.0)
+
+    t_vals = np.linspace(0, 1, 100)
+    az_curve = (1 - t_vals) ** 2 * az_start + 2 * (1 - t_vals) * t_vals * az_peak + t_vals ** 2 * az_end
+    alt_curve = (1 - t_vals) ** 2 * alt_start + 2 * (1 - t_vals) * t_vals * alt_peak + t_vals ** 2 * alt_end
+
+    ax.plot(az_curve, alt_curve, color=theme["target_primary"], linewidth=4.0, alpha=0.3, zorder=10)
+    ax.plot(az_curve, alt_curve, color="#38BDF8", linestyle="-", linewidth=2.0, zorder=11)
+
+    for frac in (0.3, 0.7):
+        idx = int(frac * 100)
+        ax.annotate(
+            "",
+            xy=(az_curve[idx + 1], alt_curve[idx + 1]),
+            xytext=(az_curve[idx], alt_curve[idx]),
+            arrowprops={"arrowstyle": "->", "color": "#FACC15", "lw": 2},
+            zorder=12,
+        )
+
+    ax.scatter([az_start, az_end], [alt_start, alt_end], s=40, color=theme["text_sub"], zorder=12)
+    ax.text(az_start, alt_start - 1.5, "Rise", color=theme["text_sub"], fontsize=9, ha="center", zorder=12)
+    ax.text(az_end, alt_end - 1.5, "Set", color=theme["text_sub"], fontsize=9, ha="center", zorder=12)
+
+    ax.scatter(az_peak, alt_peak, s=160, color="#FACC15", edgecolors="#FFFFFF", linewidth=1.5, zorder=14)
+    ax.scatter(az_peak, alt_peak, s=400, color="#FACC15", alpha=0.25, zorder=13)
+    sat_name = event_obj.objects[0] if event_obj.objects else "ISS"
+    ax.text(az_peak, alt_peak + 1.8, f"{sat_name} Peak", color=theme["text_main"], fontsize=12, fontweight="bold", ha="center", zorder=15)
+
+
+def _draw_meteor_shower_radiant(
+    ax: plt.Axes,
+    center_az: float,
+    center_alt: float,
+    event_obj: "Event",
+    theme: dict,
+):
+    """Renders a meteor shower radiant point with radiating shooting star streaks."""
+    shower_name = event_obj.objects[0] if event_obj.objects else "Meteor Shower"
+
+    ax.scatter(center_az, center_alt, s=500, facecolors="none", edgecolors="#FACC15", linewidth=1.5, alpha=0.8, zorder=11)
+    ax.scatter(center_az, center_alt, s=200, facecolors="none", edgecolors="#F87171", linewidth=1.2, alpha=0.9, zorder=12)
+    ax.scatter(center_az, center_alt, s=50, color="#FACC15", zorder=13)
+
+    angles = np.array([20, 65, 110, 155, 205, 245, 290, 335])
+    np.random.seed(int(center_az * 10) % 1000)
+
+    for angle_deg in angles:
+        rad = np.radians(angle_deg)
+        dist_start = np.random.uniform(2.5, 4.0)
+        dist_len = np.random.uniform(5.0, 9.0)
+
+        x0 = center_az + dist_start * np.cos(rad)
+        y0 = center_alt + dist_start * np.sin(rad)
+        x1 = center_az + (dist_start + dist_len) * np.cos(rad)
+        y1 = center_alt + (dist_start + dist_len) * np.sin(rad)
+
+        if y1 > 0.5:
+            ax.plot([x0, x1], [y0, y1], color="#FDE047", linewidth=1.8, alpha=0.85, zorder=10)
+            ax.plot([x0, x1], [y0, y1], color="#FFFFFF", linewidth=0.8, alpha=0.95, zorder=11)
+            ax.scatter(x1, y1, s=15, color="#F87171", alpha=0.9, zorder=12)
+
+    ax.text(center_az, center_alt + 2.2, f"{shower_name} Radiant", color=theme["text_main"], fontsize=12, fontweight="bold", ha="center", zorder=15)
+
+
+def _draw_jovian_system(
+    ax: plt.Axes,
+    center_az: float,
+    center_alt: float,
+    event_obj: "Event",
+    theme: dict,
+):
+    """Renders Jupiter with equatorial cloud bands, Galilean Moons, and optional GRS marker."""
+    jup_disk = patches.Circle((center_az, center_alt), radius=1.0, facecolor="#EAB308", edgecolor="#FACC15", linewidth=1.2, zorder=12)
+    ax.add_patch(jup_disk)
+
+    band1 = patches.Rectangle((center_az - 0.95, center_alt + 0.25), 1.9, 0.25, facecolor="#9A3412", alpha=0.7, zorder=13)
+    band2 = patches.Rectangle((center_az - 0.95, center_alt - 0.50), 1.9, 0.25, facecolor="#9A3412", alpha=0.7, zorder=13)
+    ax.add_patch(band1)
+    ax.add_patch(band2)
+
+    title_lower = str(event_obj.title).lower()
+    if "grs" in title_lower or "red spot" in title_lower:
+        grs = patches.Ellipse((center_az + 0.35, center_alt - 0.38), width=0.45, height=0.3, facecolor="#DC2626", edgecolor="#991B1B", zorder=14)
+        ax.add_patch(grs)
+
+    moons_offsets = [(-3.2, "Io"), (-1.8, "Europa"), (2.2, "Ganymede"), (4.0, "Callisto")]
+    for dx, m_name in moons_offsets:
+        mx, my = center_az + dx, center_alt + (dx * 0.08)
+        ax.scatter(mx, my, s=35, color="#F8FAFC", edgecolors="#38BDF8", linewidth=0.8, zorder=14)
+        ax.text(mx, my - 1.2, m_name, color=theme["text_sub"], fontsize=8, ha="center", zorder=15)
+
+    ax.text(center_az, center_alt + 1.8, "Jupiter", color=theme["text_main"], fontsize=12, fontweight="bold", ha="center", zorder=15)
+
+
+def _draw_rocket_launch_trajectory(
+    ax: plt.Axes,
+    center_az: float,
+    center_alt: float,
+    event_obj: "Event",
+    theme: dict,
+):
+    """Renders a rising rocket launch trajectory vector curving upward from the horizon."""
+    az_start = center_az - 4.0
+    az_apex, alt_apex = center_az, center_alt
+
+    t_vals = np.linspace(0, 1, 80)
+    az_curve = (1 - t_vals) * az_start + t_vals * az_apex
+    alt_curve = (1 - (1 - t_vals) ** 2) * alt_apex
+
+    ax.plot(az_curve, alt_curve, color="#F97316", linewidth=5.0, alpha=0.3, zorder=10)
+    ax.plot(az_curve, alt_curve, color="#FACC15", linewidth=2.5, zorder=11)
+    ax.plot(az_curve, alt_curve, color="#FFFFFF", linewidth=1.0, zorder=12)
+
+    ax.scatter(az_apex, alt_apex, s=180, color="#EF4444", edgecolors="#FFFFFF", linewidth=1.5, zorder=14)
+    ax.annotate(
+        "",
+        xy=(az_curve[-1], alt_curve[-1]),
+        xytext=(az_curve[-5], alt_curve[-5]),
+        arrowprops={"arrowstyle": "-|>", "color": "#FFFFFF", "lw": 2, "mutation_scale": 15},
+        zorder=15,
+    )
+
+    title_txt = event_obj.title or "Space Launch"
+    ax.text(az_apex, alt_apex + 2.0, title_txt, color=theme["text_main"], fontsize=12, fontweight="bold", ha="center", zorder=15)
+
+
+def _draw_planet_alignment(
+    ax: plt.Axes,
+    all_positions: list[tuple[float, float]],
+    event_obj: "Event",
+    theme: dict,
+):
+    """Renders an ecliptic arc line connecting aligned planets in the sky."""
+    main_objs = event_obj.objects or ["Planet 1", "Planet 2"]
+
+    sorted_pairs = sorted(zip(all_positions, main_objs), key=lambda p: p[0][0])
+    az_vals = [p[0][0] for p in sorted_pairs]
+    alt_vals = [p[0][1] for p in sorted_pairs]
+
+    if len(az_vals) >= 2:
+        ax.plot(az_vals, alt_vals, color="#38BDF8", linestyle="--", linewidth=1.5, alpha=0.8, zorder=10)
+
+    for (az, alt), name in sorted_pairs:
+        ax.scatter(az, alt, s=120, color="#FACC15", edgecolors="#FFFFFF", linewidth=1.0, zorder=12)
+        ax.text(az, alt + 1.4, str(name).title(), color=theme["text_main"], fontsize=10, fontweight="bold", ha="center", zorder=15)
+
+    mid_az = np.mean(az_vals) if az_vals else 90.0
+    max_alt = max(alt_vals) if alt_vals else 25.0
+    ax.text(mid_az, max_alt + 3.0, "Planet Alignment Arc", color=theme["target_primary"], fontsize=11, fontweight="bold", ha="center", zorder=16)
+
+
+def _resolve_skyfield_object(name_str: str) -> Any | None:
+    """Attempts to resolve any string object name to a Skyfield object."""
+    from skyfield.api import Star
+
+    from apts.catalogs.messier import get_messier_raw
+    from apts.catalogs.stars import get_bright_stars_raw
+    from apts.utils import planetary
+
+    if not name_str or not isinstance(name_str, str):
+        return None
+
+    clean = name_str.strip()
+    clean_lower = clean.lower()
+
+    # Common synonym mapping across languages
+    synonyms = {
+        "księżyc": "moon",
+        "mond": "moon",
+        "luna": "moon",
+        "słońce": "sun",
+        "sonne": "sun",
+        "sol": "sun",
+        "jowisz": "jupiter",
+        "wenus": "venus",
+        "mars": "mars",
+        "saturn": "saturn",
+        "merkury": "mercury",
+        "merkur": "mercurio",
+        "uran": "uranus",
+        "neptun": "neptune",
+    }
+    lookup_name = synonyms.get(clean_lower, clean)
+
+    # 1. Ephemeris (major / minor planets, Sun, Moon)
+    try:
+        return planetary.get_skyfield_obj(lookup_name)
+    except (ValueError, KeyError, RuntimeError, AttributeError):
+        pass
+
+    # 2. Messier catalog
+    try:
+        messier_df = get_messier_raw()
+        m_match = messier_df[
+            messier_df["Messier"].str.lower() == clean_lower
+        ]
+        if m_match.empty:
+            m_match = messier_df[
+                messier_df["Messier"].str.lower() == f"m{clean_lower.replace('messier', '').strip()}"
+            ]
+        if not m_match.empty:
+            row = m_match.iloc[0]
+            return Star(ra_hours=float(row["ra_hours"]), dec_degrees=float(row["dec_degrees"]))
+    except (ValueError, KeyError, RuntimeError, AttributeError):
+        pass
+
+    # 3. Bright stars catalog
+    try:
+        stars_df = get_bright_stars_raw()
+        s_match = stars_df[stars_df["Name"].str.lower() == clean_lower]
+        if not s_match.empty:
+            row = s_match.iloc[0]
+            st_obj = row.get("skyfield_object")
+            if st_obj is not None:
+                return st_obj
+            return Star(ra_hours=float(row["ra_hours"]), dec_degrees=float(row["dec_degrees"]))
+    except (ValueError, KeyError, RuntimeError, AttributeError):
+        pass
+
+    return None
+
+
+def _get_observer_for_event(event_obj: "Event") -> tuple[Any, Any]:
+    """Returns Skyfield observer object and Skyfield time for the event moment."""
     place = getattr(event_obj, "place", None)
+    if place is not None and hasattr(place, "observer") and hasattr(place, "ts"):
+        dt_utc = event_obj.dt_utc
+        ts_time = place.ts.utc(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour, dt_utc.minute, dt_utc.second)
+        return place.observer, ts_time
+
+    # Default Topos observer if place is missing
+    from skyfield.api import Topos
+
+    from apts.cache import get_ephemeris, get_timescale
+
+    ts = get_timescale()
+    eph = get_ephemeris()
+    dt_utc = event_obj.dt_utc
+    ts_time = ts.utc(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour, dt_utc.minute, dt_utc.second)
+    lat = float(getattr(event_obj, "extra_data", {}).get("lat", 52.2))
+    lon = float(getattr(event_obj, "extra_data", {}).get("lon", 21.0))
+    observer = eph["earth"] + Topos(latitude_degrees=lat, longitude_degrees=lon)
+    return observer, ts_time
+
+
+def _resolve_target_coordinates(
+    event_obj: "Event",
+    sep_deg: float,
+) -> tuple[tuple[float, float], tuple[float, float] | None, list[tuple[float, float]]]:
+    """
+    Calculates topocentric Az/Alt for primary, secondary, and all listed target objects.
+    Returns (p1_pos, p2_pos, all_object_positions).
+    """
     main_objs = event_obj.objects or []
+    all_positions: list[tuple[float, float]] = []
 
-    # If place and skyfield objects available, compute exact coordinates
-    if place is not None and len(main_objs) >= 2 and hasattr(place, "get_altitude") and hasattr(place, "get_azimuth"):
-        try:
-            dt_utc = event_obj.dt_utc
-            ts_time = place.ts.utc(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour, dt_utc.minute, dt_utc.second)
+    try:
+        observer, ts_time = _get_observer_for_event(event_obj)
+        obs_at_t = observer.at(ts_time)
 
-            obj1 = main_objs[0]
-            obj2 = main_objs[1]
+        for obj_name in main_objs:
+            sf_obj = _resolve_skyfield_object(str(obj_name))
+            if sf_obj is not None:
+                app = obs_at_t.observe(sf_obj).apparent()
+                alt_o, az_o, _ = app.altaz()
+                alt_v, az_v = float(alt_o.degrees), float(az_o.degrees)
+                if not math.isnan(alt_v) and not math.isnan(az_v):
+                    all_positions.append((az_v, alt_v))
+    except (ValueError, KeyError, AttributeError, TypeError, RuntimeError) as e:
+        logger.debug(f"Could not compute topocentric positions for target objects: {e}")
 
-            alt1 = place.get_altitude(obj1, ts_time)
-            az1 = place.get_azimuth(obj1, ts_time)
-            alt2 = place.get_altitude(obj2, ts_time)
-            az2 = place.get_azimuth(obj2, ts_time)
+    # Primary position priority:
+    # 1. Computed topocentric position from primary object
+    # 2. Event azimuth_deg / altitude_deg if explicitly provided
+    # 3. Fallback default (90.0, 25.0)
+    if all_positions:
+        p1_pos = all_positions[0]
+    elif event_obj.azimuth_deg is not None and event_obj.altitude_deg is not None:
+        p1_pos = (float(event_obj.azimuth_deg), float(event_obj.altitude_deg))
+    elif event_obj.azimuth_deg is not None:
+        p1_pos = (float(event_obj.azimuth_deg), 25.0)
+    else:
+        p1_pos = (90.0, 25.0)
 
-            if not math.isnan(alt1) and not math.isnan(az1) and not math.isnan(alt2) and not math.isnan(az2):
-                return (az1, alt1), (az2, alt2)
-        except Exception as e:
-            logger.debug(f"Could not compute exact target topocentric coordinates: {e}")
+    # Secondary position priority:
+    if len(all_positions) >= 2:
+        p2_pos = all_positions[1]
+    elif len(main_objs) >= 2 or event_obj.angular_separation:
+        p2_pos = (p1_pos[0] + sep_deg * 0.8, p1_pos[1] + sep_deg * 0.6)
+    else:
+        p2_pos = None
 
-    # Fallback to event coordinates and angular separation offset
-    p1_az, p1_alt = center_az, center_alt
-    if len(main_objs) >= 2 or event_obj.angular_separation:
-        p2_az = center_az + sep_deg * 0.8
-        p2_alt = center_alt + sep_deg * 0.6
-        return (p1_az, p1_alt), (p2_az, p2_alt)
-
-    return (p1_az, p1_alt), None
+    return p1_pos, p2_pos, all_positions
 
 
 def _plot_primary_event_objects(
     ax: plt.Axes,
     event_obj: "Event",
-    center_az: float,
-    center_alt: float,
+    p1_pos: tuple[float, float],
+    p2_pos: tuple[float, float] | None,
     sep_deg: float,
     theme: dict,
 ) -> tuple[tuple[float, float], tuple[float, float] | None]:
     """Plots primary and secondary targets and separation indicator line."""
     main_objs = event_obj.objects or ["Target"]
-    p1_pos, p2_pos = _resolve_target_coordinates(event_obj, center_az, center_alt, sep_deg)
 
     p1_az, p1_alt = p1_pos
     obj1_name = main_objs[0] if len(main_objs) > 0 else "Target"
@@ -478,16 +743,22 @@ def generate_finder_chart(
 
     event_obj = event if isinstance(event, Event) else Event.from_dict(dict(event))
 
-    # Finder charts are not applicable for rocket/space launches
     cat_upper = str(event_obj.category).upper()
     title_lower = str(event_obj.title).lower()
-    if cat_upper in ("ROCKET_LAUNCH", "SPACE_LAUNCH") or "launch" in title_lower or "rocket" in title_lower:
-        return None
 
     t_theme = THEMES.get(theme, THEMES["stargazer_dark"])
 
-    center_az = float(event_obj.azimuth_deg) if event_obj.azimuth_deg is not None else 90.0
-    center_alt = max(10.0, min(80.0, float(event_obj.altitude_deg) if event_obj.altitude_deg is not None else 25.0))
+    sep_deg = _parse_separation_deg(event_obj.angular_separation)
+    p1_pos, p2_pos, all_target_positions = _resolve_target_coordinates(event_obj, sep_deg)
+
+    if p2_pos is not None:
+        center_az = (p1_pos[0] + p2_pos[0]) / 2.0
+        center_alt = (p1_pos[1] + p2_pos[1]) / 2.0
+    else:
+        center_az = p1_pos[0]
+        center_alt = p1_pos[1]
+
+    center_alt = max(10.0, min(80.0, center_alt))
 
     h_fov = float(fov_deg) if fov_deg is not None else 36.0
     v_fov = h_fov * (figsize[1] / figsize[0] if len(figsize) >= 2 and figsize[0] > 0 else 0.8)
@@ -502,8 +773,19 @@ def generate_finder_chart(
     sky_brightness = getattr(event_obj, "sky_brightness", "NIGHT_DARK")
     _setup_chart_axes_and_horizon(ax, az_min, az_max, alt_min, alt_max, sky_brightness, t_theme)
 
-    sep_deg = _parse_separation_deg(event_obj.angular_separation)
-    p1_pos, p2_pos = _plot_primary_event_objects(ax, event_obj, center_az, center_alt, sep_deg, t_theme)
+    if cat_upper in ("FLYBY", "ISS_FLYBY", "TIANGONG_FLYBY") or "flyby" in title_lower or "iss" in title_lower or "tiangong" in title_lower:
+        _draw_satellite_flyby_trail(ax, center_az, center_alt, event_obj, t_theme)
+    elif cat_upper == "METEOR_SHOWER" or "shower" in title_lower or "meteor" in title_lower:
+        _draw_meteor_shower_radiant(ax, center_az, center_alt, event_obj, t_theme)
+    elif cat_upper in ("ROCKET_LAUNCH", "SPACE_LAUNCH") or "launch" in title_lower or "rocket" in title_lower:
+        _draw_rocket_launch_trajectory(ax, center_az, center_alt, event_obj, t_theme)
+    elif (cat_upper in ("PLANET_ALIGNMENT", "CELESTIAL_CONFIGURATION") or "alignment" in title_lower) and len(all_target_positions) >= 2:
+        _draw_planet_alignment(ax, all_target_positions, event_obj, t_theme)
+    elif "jovian" in cat_upper.lower() or "jovian" in title_lower or "grs" in title_lower or ("jupiter" in title_lower and ("moon" in title_lower or "transit" in title_lower)):
+        _draw_jovian_system(ax, center_az, center_alt, event_obj, t_theme)
+    else:
+        _plot_primary_event_objects(ax, event_obj, p1_pos, p2_pos, sep_deg, t_theme)
+
     _plot_background_stars(ax, az_min, az_max, alt_max, center_az, center_alt, p1_pos, p2_pos, event_obj, t_theme)
 
     plt.subplots_adjust(left=0, right=1, bottom=0, top=1)

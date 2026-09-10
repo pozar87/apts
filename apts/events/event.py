@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -7,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from apts.place import Place
 
+logger = logging.getLogger(__name__)
 utc = timezone.utc
 
 
@@ -55,27 +57,29 @@ def get_sky_brightness(sun_alt_deg: float | None, moon_alt_deg: float | None = N
 
 def get_direction_data(azimuth_deg: float | None) -> DirectionData:
     """Converts an azimuth in degrees into cardinal direction code and description."""
+    from apts.i18n import gettext_
+
     if azimuth_deg is None or math.isnan(azimuth_deg):
-        return DirectionData(code="E", name="Look East", azimuth_deg=90.0)
+        return DirectionData(code="E", name=gettext_("Look East"), azimuth_deg=90.0)
 
     az = float(azimuth_deg) % 360.0
 
     directions = [
-        (11.25, 33.75, "NNE", "Look North-Northeast"),
-        (33.75, 56.25, "NE", "Look Northeast"),
-        (56.25, 78.75, "ENE", "Look East-Northeast"),
-        (78.75, 101.25, "E", "Look East"),
-        (101.25, 123.75, "ESE", "Look East-Southeast"),
-        (123.75, 146.25, "SE", "Look Southeast"),
-        (146.25, 168.75, "SSE", "Look South-Southeast"),
-        (168.75, 191.25, "S", "Look South"),
-        (191.25, 213.75, "SSW", "Look South-Southwest"),
-        (213.75, 236.25, "SW", "Look Southwest"),
-        (236.25, 258.75, "WSW", "Look West-Southwest"),
-        (258.75, 281.25, "W", "Look West"),
-        (281.25, 303.75, "WNW", "Look West-Northwest"),
-        (303.75, 326.25, "NW", "Look Northwest"),
-        (326.25, 348.75, "NNW", "Look North-Northwest"),
+        (11.25, 33.75, "NNE", gettext_("Look North-Northeast")),
+        (33.75, 56.25, "NE", gettext_("Look Northeast")),
+        (56.25, 78.75, "ENE", gettext_("Look East-Northeast")),
+        (78.75, 101.25, "E", gettext_("Look East")),
+        (101.25, 123.75, "ESE", gettext_("Look East-Southeast")),
+        (123.75, 146.25, "SE", gettext_("Look Southeast")),
+        (146.25, 168.75, "SSE", gettext_("Look South-Southeast")),
+        (168.75, 191.25, "S", gettext_("Look South")),
+        (191.25, 213.75, "SSW", gettext_("Look South-Southwest")),
+        (213.75, 236.25, "SW", gettext_("Look Southwest")),
+        (236.25, 258.75, "WSW", gettext_("Look West-Southwest")),
+        (258.75, 281.25, "W", gettext_("Look West")),
+        (281.25, 303.75, "WNW", gettext_("Look West-Northwest")),
+        (303.75, 326.25, "NW", gettext_("Look Northwest")),
+        (326.25, 348.75, "NNW", gettext_("Look North-Northwest")),
     ]
 
     for low, high, code, name in directions:
@@ -83,7 +87,7 @@ def get_direction_data(azimuth_deg: float | None) -> DirectionData:
             return DirectionData(code=code, name=name, azimuth_deg=az)
 
     # Wrap-around for North (348.75 to 360 / 0 to 11.25)
-    return DirectionData(code="N", name="Look North", azimuth_deg=az)
+    return DirectionData(code="N", name=gettext_("Look North"), azimuth_deg=az)
 
 
 CATEGORY_RULES = [
@@ -127,68 +131,113 @@ def get_event_category(event_name: str, event_type: str = "") -> str:
 
 def get_step_by_step_guide(category: str, title: str = "", objects: list[str] | None = None) -> list[str]:
     """Generates step-by-step observational guide instructions for an event."""
-    cat = category.upper()
-    obj_str = " or ".join(objects) if objects else "target"
+    from apts.i18n import gettext_
 
-    if cat == "OCCULTATION":
+    cat = category.upper()
+    title_lower = str(title).lower()
+    obj_str = " or ".join([gettext_(o) for o in objects]) if objects else gettext_("target")
+
+    if cat in ("FLYBY", "ISS_FLYBY", "TIANGONG_FLYBY") or "flyby" in title_lower or "iss" in title_lower:
         return [
-            "Verify that the occultation is visible from your location.",
-            "Arrive and set up equipment at least 15–30 minutes before the event.",
-            "Focus carefully before the occultation begins.",
-            "Watch continuously near the predicted disappearance time.",
-            "If possible, record the event with a camera or video setup.",
+            gettext_("Find an open viewing location with a clear view of the sky in the pass direction."),
+            gettext_("Check the exact rise time and direction before heading outside."),
+            gettext_("Watch the horizon for a bright, steady, non-blinking point of light moving across the sky."),
+            gettext_("Track the satellite visually with naked eye or wide-field binoculars."),
+            gettext_("Note the time and peak altitude as it passes overhead."),
+        ]
+    elif cat in ("ROCKET_LAUNCH", "SPACE_LAUNCH") or "launch" in title_lower or "rocket" in title_lower:
+        return [
+            gettext_("Confirm the launch schedule and trajectory azimuth prior to liftoff."),
+            gettext_("Find an elevated or unobstructed location facing the launch direction."),
+            gettext_("Look low near the horizon at T+2 to T+3 minutes for the rising exhaust plume."),
+            gettext_("Use binoculars to spot stage separation or twilight expansion effects."),
+        ]
+    elif cat == "METEOR_SHOWER" or "shower" in title_lower or "meteor" in title_lower:
+        return [
+            gettext_("Choose a dark location away from city lights."),
+            gettext_("Allow 20–30 minutes for your eyes to fully adapt to darkness."),
+            gettext_("Lie back comfortably on a reclining chair facing the radiant direction."),
+            gettext_("Observe with the naked eye for the widest field of view."),
+            gettext_("Keep warm and count the number of meteors per hour."),
+        ]
+    elif cat == "OCCULTATION":
+        return [
+            gettext_("Verify that the occultation is visible from your location."),
+            gettext_("Arrive and set up equipment at least 15–30 minutes before the event."),
+            gettext_("Focus carefully before the occultation begins."),
+            gettext_("Watch continuously near the predicted disappearance time."),
+            gettext_("If possible, record the event with a camera or video setup."),
         ]
     elif cat == "CONJUNCTION":
         return [
-            "Find an observing location with an unobstructed horizon in the specified direction.",
-            "Set up binoculars or a telescope 15–20 minutes before peak alignment.",
-            "Locate the brighter object first, then scan near it to find the companion.",
-            "Observe both objects together within the same field of view.",
-            "Capture wide-field photographs during twilight or dark sky hours.",
+            gettext_("Find an observing location with an unobstructed horizon in the specified direction."),
+            gettext_("Set up binoculars or a telescope 15–20 minutes before peak alignment."),
+            gettext_("Locate the brighter object first, then scan near it to find the companion."),
+            gettext_("Observe both objects together within the same field of view."),
+            gettext_("Capture wide-field photographs during twilight or dark sky hours."),
         ]
-    elif cat == "METEOR_SHOWER":
+    elif cat in ("PLANET_ALIGNMENT", "CELESTIAL_CONFIGURATION") or "alignment" in title_lower:
         return [
-            "Choose a dark location away from city lights.",
-            "Allow 20–30 minutes for your eyes to fully adapt to darkness.",
-            "Lie back comfortably on a reclining chair facing the radiant direction.",
-            "Observe with the naked eye for the widest field of view.",
-            "Keep warm and count the number of meteors per hour.",
+            gettext_("Find a site with a clear view spanning East to West along the ecliptic arc."),
+            gettext_("Begin observing during early twilight as the brightest planets emerge."),
+            gettext_("Scan along the ecliptic line to identify all participating planets."),
+            gettext_("Use wide-angle camera gear or binoculars to capture the full parade."),
+        ]
+    elif "jovian" in cat.lower() or "jovian" in title_lower or "grs" in title_lower or "jupiter" in title_lower:
+        return [
+            gettext_("Set up a telescope with medium-to-high magnification (100x–200x)."),
+            gettext_("Allow your optical tube time to thermally stabilize outdoors."),
+            gettext_("Locate Jupiter and identify the equatorial dark cloud bands."),
+            gettext_("Observe the positions of the four Galilean moons (Io, Europa, Ganymede, Callisto)."),
+            gettext_("Look for moon shadow transits or the Great Red Spot during peak visibility."),
         ]
     elif cat == "SOLAR_ECLIPSE":
         return [
-            "Ensure you have ISO-certified solar viewing glasses or solar filters.",
-            "Inspect all solar filters for damage before looking at the Sun.",
-            "Set up your viewing area in advance with a clear line of sight.",
-            "Observe the progression of solar coverage safely.",
-            "Never look directly at the Sun without approved solar filtration.",
+            gettext_("Ensure you have ISO-certified solar viewing glasses or solar filters."),
+            gettext_("Inspect all solar filters for damage before looking at the Sun."),
+            gettext_("Set up your viewing area in advance with a clear line of sight."),
+            gettext_("Observe the progression of solar coverage safely."),
+            gettext_("Never look directly at the Sun without approved solar filtration."),
         ]
     elif cat == "LUNAR_ECLIPSE":
         return [
-            "Find a comfortable viewing spot with a clear view of the Moon.",
-            "No special eye protection is needed; binoculars or small telescopes enhance the view.",
-            "Observe the gradual darkening and copper-red color shift during totality.",
-            "Take long-exposure photographs as the Moon passes through Earth's umbra.",
+            gettext_("Find a comfortable viewing spot with a clear view of the Moon."),
+            gettext_("No special eye protection is needed; binoculars or small telescopes enhance the view."),
+            gettext_("Observe the gradual darkening and copper-red color shift during totality."),
+            gettext_("Take long-exposure photographs as the Moon passes through Earth's umbra."),
         ]
     elif cat == "OPPOSITION":
         return [
-            "Plan your observation around midnight when the planet reaches its highest altitude.",
-            "Use a telescope with moderate to high magnification for fine surface details.",
-            "Allow your telescope to thermally acclimate to outdoor temperatures.",
-            "Observe during periods of steady atmospheric seeing.",
+            gettext_("Plan your observation around midnight when the planet reaches its highest altitude."),
+            gettext_("Use a telescope with moderate to high magnification for fine surface details."),
+            gettext_("Allow your telescope to thermally acclimate to outdoor temperatures."),
+            gettext_("Observe during periods of steady atmospheric seeing."),
         ]
     elif cat == "TRANSIT":
         return [
-            "Equip your optical setup with safe, dedicated solar filters.",
-            "Track the ingress and egress times of the transit carefully.",
-            "Use high magnification to resolve the silhouette against the solar disk.",
-            "Record timestamped images throughout the transit progression.",
+            gettext_("Equip your optical setup with safe, dedicated solar filters."),
+            gettext_("Track the ingress and egress times of the transit carefully."),
+            gettext_("Use high magnification to resolve the silhouette against the solar disk."),
+            gettext_("Record timestamped images throughout the transit progression."),
+        ]
+    elif cat in ("GREATEST_ELONGATION", "VENUS_GREAT_BRILLIANCY"):
+        return [
+            gettext_("Locate the planet low near the horizon in early morning or evening twilight."),
+            gettext_("Use binoculars or a small telescope to observe its crescent or gibbous phase."),
+            gettext_("Observe before sunrise or after sunset when contrast is optimal."),
+        ]
+    elif cat in ("MOON_PHASE", "SUPERMOON", "MOON_LIBRATION", "LUNAR_FEATURE"):
+        return [
+            gettext_("Choose a viewing spot with clear sky access toward the Moon."),
+            gettext_("Use binoculars or a telescope along the lunar terminator line for shadow details."),
+            gettext_("Observe prominent craters, mountain ranges, and maria surface features."),
         ]
     else:
         return [
-            "Check local weather and cloud cover prior to the event.",
-            f"Locate {obj_str} in the sky using cardinal directions and altitude.",
-            "Use appropriate optical aid (naked eye, binoculars, or telescope).",
-            "Observe near the predicted peak viewing time for the best view.",
+            gettext_("Check local weather and cloud cover prior to the event."),
+            gettext_("Locate {target} in the sky using cardinal directions and altitude.").format(target=obj_str),
+            gettext_("Use appropriate optical aid (naked eye, binoculars, or telescope)."),
+            gettext_("Observe near the predicted peak viewing time for the best view."),
         ]
 
 
@@ -201,26 +250,30 @@ def build_event_description(
     angular_separation: str | None = None,
 ) -> str:
     """Generates a narrative description for the event."""
-    sep_text = f" with an angular separation of {angular_separation}" if angular_separation else ""
+    from apts.i18n import gettext_
+
+    sep_text = f" {gettext_('with an angular separation of')} {angular_separation}" if angular_separation else ""
+    o1 = gettext_(objects[0]) if len(objects) >= 1 else gettext_("Target")
+    o2 = gettext_(objects[1]) if len(objects) >= 2 else gettext_("Companion")
+    loc = gettext_(location_name)
 
     if category == "OCCULTATION" and len(objects) >= 2:
-        return (
-            f"The {objects[0]} will pass directly in front of {objects[1]}, creating a lunar occultation "
-            f"visible from {location_name} at {datetime_utc_str}."
+        return gettext_("The {object1} will pass directly in front of {object2}, creating a lunar occultation visible from {location} at {time}.").format(
+            object1=o1, object2=o2, location=loc, time=datetime_utc_str
         )
     elif category == "CONJUNCTION" and len(objects) >= 2:
-        return (
-            f"{objects[0]} and {objects[1]} will share a close celestial conjunction{sep_text}, "
-            f"visible in the sky from {location_name}."
+        return gettext_("{object1} and {object2} will share a close celestial conjunction{separation}, visible in the sky from {location}.").format(
+            object1=o1, object2=o2, separation=sep_text, location=loc
         )
     elif category == "METEOR_SHOWER":
-        shower_name = objects[0] if objects else title
-        return (
-            f"Peak activity for the {shower_name} meteor shower, offering optimal viewing conditions "
-            f"from {location_name}."
+        shower_name = o1 if objects else title
+        return gettext_("Peak activity for the {shower} meteor shower, offering optimal viewing conditions from {location}.").format(
+            shower=shower_name, location=loc
         )
     else:
-        return f"{title} occurring on {datetime_utc_str}, visible from {location_name}."
+        return gettext_("{title} occurring on {time}, visible from {location}.").format(
+            title=title, time=datetime_utc_str, location=loc
+        )
 
 
 @dataclass
@@ -385,13 +438,20 @@ class Event:
         phase = self.extra_data.get("phase", 0.0)
         phase_frac = float(phase) if isinstance(phase, (int, float)) else 0.0
 
-        if place is not None and hasattr(place, "get_altitude") and (sun_alt is None):
+        if place is not None and hasattr(place, "get_altitude"):
             try:
                 t_sf = place.ts.utc(self.dt_utc.year, self.dt_utc.month, self.dt_utc.day, self.dt_utc.hour, self.dt_utc.minute, self.dt_utc.second)
-                sun_alt = place.get_altitude(place.sun, t_sf)
-                moon_alt = place.get_altitude(place.moon, t_sf)
-            except Exception:
-                pass
+                if sun_alt is None:
+                    sun_alt = place.get_altitude(place.sun, t_sf)
+                    moon_alt = place.get_altitude(place.moon, t_sf)
+                if (self.azimuth_deg is None or self.altitude_deg is None) and self.objects:
+                    alt_primary = place.get_altitude(self.objects[0], t_sf)
+                    az_primary = place.get_azimuth(self.objects[0], t_sf)
+                    if not math.isnan(alt_primary) and not math.isnan(az_primary):
+                        self.altitude_deg = float(alt_primary)
+                        self.azimuth_deg = float(az_primary)
+            except (ValueError, KeyError, AttributeError, TypeError) as e:
+                logger.debug(f"Could not resolve topocentric position for primary object: {e}")
 
         self.sky_brightness = get_sky_brightness(sun_alt, moon_alt, phase_frac)
 
@@ -402,10 +462,10 @@ class Event:
             self.direction = DirectionData(
                 code=direction.get("code", "E"),
                 name=direction.get("name", "Look East"),
-                azimuth_deg=float(direction.get("azimuth_deg", azimuth_deg if azimuth_deg is not None else 90.0)),
+                azimuth_deg=float(direction.get("azimuth_deg", self.azimuth_deg if self.azimuth_deg is not None else 90.0)),
             )
         else:
-            self.direction = get_direction_data(azimuth_deg)
+            self.direction = get_direction_data(self.azimuth_deg)
 
         # Handle Step-by-step guide
         if step_by_step_guide:
