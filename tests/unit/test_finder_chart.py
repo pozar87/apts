@@ -211,3 +211,56 @@ def test_short_event_below_horizon_warning():
     assert d.get("is_below_horizon") is True
     assert "chart_time_note" in d
     assert "warning" in d["chart_time_note"].lower() or "poniżej" in d["chart_time_note"].lower() or "below horizon" in d["chart_time_note"].lower()
+
+
+def test_first_quarter_moon_phase_rendering():
+    event = Event.from_dict({
+        "event": "First Quarter",
+        "type": "Moon Phase",
+        "date": "2026-03-25T12:00:00Z",
+    })
+    assert event.objects == ["Moon"]
+    assert event.category == "MOON_PHASE"
+
+    fig = plot_finder_chart(event, format="figure")
+    assert isinstance(fig, matplotlib.figure.Figure)
+    assert len(fig.axes) == 1
+
+
+def test_autumnal_equinox_sun_rendering():
+    event = Event.from_dict({
+        "event": "Autumnal Equinox",
+        "type": "Equinox",
+        "date": "2026-09-22T12:00:00Z",
+    })
+    assert event.objects == ["Sun"]
+    assert event.category == "EQUINOX_SOLSTICE"
+
+    fig = plot_finder_chart(event, format="figure")
+    assert isinstance(fig, matplotlib.figure.Figure)
+    assert len(fig.axes) == 1
+
+
+def test_chart_time_note_translations():
+    from apts.i18n import set_language
+    set_language("pl")
+
+    event = Event(
+        category="MOON_PHASE",
+        title="First Quarter",
+        datetime_utc=datetime(2026, 3, 25, 5, 50, tzinfo=timezone.utc),
+        best_viewing_time_local="05:50",
+        location_name="Warsaw",
+        objects=["Moon"],
+        extra_data={"lat": 52.23, "lon": 21.01},
+    )
+
+    fig = plot_finder_chart(event, format="figure")
+    assert isinstance(fig, matplotlib.figure.Figure)
+
+    d = event.to_dict()
+    assert "chart_time_note" in d
+    note = d["chart_time_note"]
+    # Check translated Polish text elements
+    assert "Szczyt" in note or "poniżej horyzontu" in note or "Wykres" in note
+    set_language("en")

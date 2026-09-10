@@ -160,6 +160,56 @@ def _draw_moon_phase(
     ax.add_patch(polygon)
 
 
+def _draw_sun_disk(
+    ax: plt.Axes,
+    x: float,
+    y: float,
+    radius_deg: float,
+    theme: dict,
+):
+    """Renders a Sun disc with solar corona/glow, maintaining circular aspect ratio matching the Moon."""
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    bbox = ax.get_window_extent()
+    ax_width = bbox.width if bbox else 1.0
+    ax_height = bbox.height if bbox else 1.0
+    data_width = xlim[1] - xlim[0]
+    data_height = ylim[1] - ylim[0]
+
+    rx = radius_deg
+    ry = radius_deg * (data_height / data_width) * (ax_width / ax_height) if data_width > 0 and ax_height > 0 else radius_deg
+
+    glow_outer = patches.Ellipse((x, y), width=3.2 * rx, height=3.2 * ry, facecolor="#FDE047", alpha=0.25, edgecolor=None, zorder=10)
+    ax.add_patch(glow_outer)
+
+    glow_inner = patches.Ellipse((x, y), width=2.2 * rx, height=2.2 * ry, facecolor="#FACC15", alpha=0.4, edgecolor=None, zorder=10)
+    ax.add_patch(glow_inner)
+
+    sun_disk = patches.Ellipse((x, y), width=2 * rx, height=2 * ry, facecolor="#F59E0B", edgecolor="#FEF08A", linewidth=1.2, zorder=11)
+    ax.add_patch(sun_disk)
+
+
+def _get_event_moon_phase_frac(event_obj: "Event") -> float:
+    """Helper to determine float phase fraction (0.0-1.0) for Moon rendering."""
+    p_val = getattr(event_obj, "extra_data", {}).get("phase")
+    if isinstance(p_val, (int, float)):
+        if float(p_val) > 1.0:
+            return (float(p_val) % 360.0) / 360.0
+        return float(p_val)
+
+    title_lower = f"{event_obj.title} {event_obj.category} {p_val}".lower()
+    if "first quarter" in title_lower or "pierwsza kwadra" in title_lower or "cuarto creciente" in title_lower or "erstes viertel" in title_lower or "primeiro quarto" in title_lower:
+        return 0.25
+    if "third quarter" in title_lower or "last quarter" in title_lower or "trzecia kwadra" in title_lower or "ostatnia kwadra" in title_lower or "cuarto menguante" in title_lower or "drittes viertel" in title_lower or "quarto minguante" in title_lower:
+        return 0.75
+    if "full moon" in title_lower or "pełnia" in title_lower or "luna llena" in title_lower or "vollmond" in title_lower or "lua cheia" in title_lower:
+        return 0.5
+    if "new moon" in title_lower or "nów" in title_lower or "luna nueva" in title_lower or "neumond" in title_lower or "lua nova" in title_lower:
+        return 0.0
+
+    return 0.25
+
+
 def _parse_separation_deg(sep_str: str | None) -> float:
     """Parses angular separation degrees from string representation."""
     if not sep_str:
@@ -336,19 +386,25 @@ def _draw_single_object(
     dot_size: float,
     event_obj: "Event",
     theme: dict,
+    is_sun: bool = False,
 ):
     """Renders an individual primary or secondary target object on the finder chart."""
+    from apts.i18n import gettext_
+
     if is_moon:
-        phase = float(event_obj.extra_data.get("phase", 0.25)) if isinstance(event_obj.extra_data.get("phase"), (int, float)) else 0.25
-        _draw_moon_phase(ax, az, alt, radius_deg=0.9, phase_frac=phase, theme=theme)
+        phase_frac = _get_event_moon_phase_frac(event_obj)
+        _draw_moon_phase(ax, az, alt, radius_deg=0.9, phase_frac=phase_frac, theme=theme)
+    elif is_sun:
+        _draw_sun_disk(ax, az, alt, radius_deg=0.9, theme=theme)
     else:
         ax.scatter(az, alt, s=dot_size, color=theme[color_key], edgecolors=theme["star"], linewidth=1.0, zorder=12)
         ax.scatter(az, alt, s=glow_size, color=theme[color_key], alpha=0.25, edgecolors="none", zorder=11)
 
+    display_name = gettext_(name).title()
     ax.text(
         az,
         alt + 1.4,
-        name.title(),
+        display_name,
         color=theme["text_main"],
         fontsize=12 if color_key == "target_primary" else 11,
         fontweight="bold",
@@ -868,14 +924,14 @@ def _draw_chart_time_note_banner(ax: plt.Axes, note_text: str | None, theme: dic
     """Renders a prominent informational banner on top of the chart figure for time shift or warning notes."""
     if not note_text:
         return
+    note_lower = str(note_text).lower()
+    is_warning = any(w in note_lower for w in ("warning", "ostrzeżenie", "advertencia", "warnung", "aviso", "below", "poniżej", "debajo", "unter", "abaixo"))
     ax.text(
         0.5,
         0.96,
         note_text,
         transform=ax.transAxes,
-        color="#FACC15"
-        if "warning" in str(note_text).lower() or " poniżej" in str(note_text).lower()
-        else theme["text_main"],
+        color="#FACC15" if is_warning else theme["text_main"],
         fontsize=9,
         fontweight="bold",
         ha="center",
@@ -905,16 +961,35 @@ def _plot_primary_event_objects(
     p1_az, p1_alt = p1_pos
     obj1_name = main_objs[0] if len(main_objs) > 0 else "Target"
 
-    moon_in_event = any("moon" in str(o).lower() or "księżyc" in str(o).lower() for o in main_objs) or event_obj.category in ("OCCULTATION", "LUNAR_ECLIPSE")
-    obj1_is_moon = "moon" in obj1_name.lower() or "księżyc" in obj1_name.lower() or (moon_in_event and obj1_name == "Moon")
+    moon_kws = ("moon", "księżyc", "mond", "luna")
+    sun_kws = ("sun", "słońce", "sonne", "sol")
 
-    _draw_single_object(ax, obj1_name, p1_az, p1_alt, obj1_is_moon, "target_primary", 350, 120, event_obj, theme)
+    moon_in_event = (
+        any(any(k in str(o).lower() for k in moon_kws) for o in main_objs)
+        or event_obj.category in ("OCCULTATION", "LUNAR_ECLIPSE", "MOON_PHASE", "SUPERMOON", "MOON_LIBRATION", "LUNAR_FEATURE")
+    )
+    obj1_is_moon = (
+        any(k in obj1_name.lower() for k in moon_kws)
+        or (moon_in_event and obj1_name in ("Moon", "Księżyc", "Mond", "Luna", "Target"))
+    )
+
+    sun_in_event = (
+        any(any(k in str(o).lower() for k in sun_kws) for o in main_objs)
+        or event_obj.category in ("EQUINOX_SOLSTICE", "SOLAR_ECLIPSE")
+    )
+    obj1_is_sun = (
+        any(k in obj1_name.lower() for k in sun_kws)
+        or (sun_in_event and obj1_name in ("Sun", "Słońce", "Sonne", "Sol", "Target"))
+    )
+
+    _draw_single_object(ax, obj1_name, p1_az, p1_alt, obj1_is_moon, "target_primary", 350, 120, event_obj, theme, is_sun=obj1_is_sun)
 
     if p2_pos is not None:
         p2_az, p2_alt = p2_pos
         obj2_name = main_objs[1] if len(main_objs) > 1 else "Companion"
-        obj2_is_moon = "moon" in obj2_name.lower() or "księżyc" in obj2_name.lower()
-        _draw_single_object(ax, obj2_name, p2_az, p2_alt, obj2_is_moon, "target_secondary", 260, 90, event_obj, theme)
+        obj2_is_moon = any(k in obj2_name.lower() for k in moon_kws)
+        obj2_is_sun = any(k in obj2_name.lower() for k in sun_kws)
+        _draw_single_object(ax, obj2_name, p2_az, p2_alt, obj2_is_moon, "target_secondary", 260, 90, event_obj, theme, is_sun=obj2_is_sun)
 
         # Separation indicator
         ax.plot([p1_az, p2_az], [p1_alt, p2_alt], color=theme["separation_line"], linestyle="--", linewidth=1.2, alpha=0.85, zorder=13)

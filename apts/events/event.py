@@ -112,6 +112,17 @@ CATEGORY_RULES = [
     ("solstice", None, "EQUINOX_SOLSTICE"),
     ("equinox", None, "EQUINOX_SOLSTICE"),
     ("season", None, "EQUINOX_SOLSTICE"),
+    ("moon phase", None, "MOON_PHASE"),
+    (None, "moon phase", "MOON_PHASE"),
+    (None, "moon_phases", "MOON_PHASE"),
+    ("first quarter", None, "MOON_PHASE"),
+    ("third quarter", None, "MOON_PHASE"),
+    ("last quarter", None, "MOON_PHASE"),
+    ("new moon", None, "MOON_PHASE"),
+    ("full moon", None, "MOON_PHASE"),
+    ("supermoon", None, "SUPERMOON"),
+    ("libration", None, "MOON_LIBRATION"),
+    ("lunar feature", None, "LUNAR_FEATURE"),
 ]
 
 
@@ -357,6 +368,20 @@ def _extract_event_objects(data: dict[str, Any]) -> list[str]:
             objs.extend([str(p) for p in p_val])
         elif isinstance(p_val, str):
             objs.append(p_val)
+
+    if not objs:
+        event_name = str(data.get("event") or data.get("title") or "").lower()
+        event_type = str(data.get("type") or "").lower()
+        category = str(data.get("category") or get_event_category(event_name, event_type)).upper()
+
+        moon_kws = ["moon", "quarter", "crescent", "gibbous", "full moon", "new moon", "księżyc", "mond", "luna", "libration", "supermoon", "lunar"]
+        sun_kws = ["sun", "solstice", "equinox", "słońce", "sonne", "sol", "autumnal", "vernal", "equinoccio", "solsticio", "tagundnachtgleiche", "równonoc", "przesilenie"]
+
+        if category in ("MOON_PHASE", "SUPERMOON", "MOON_LIBRATION", "LUNAR_FEATURE", "LUNAR_ECLIPSE") or any(kw in event_name or kw in event_type for kw in moon_kws):
+            objs.append("Moon")
+        elif category in ("EQUINOX_SOLSTICE", "SOLAR_ECLIPSE") or any(kw in event_name or kw in event_type for kw in sun_kws):
+            objs.append("Sun")
+
     return objs
 
 

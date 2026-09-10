@@ -24,6 +24,8 @@ def calculate_moon_phases(ts, start_date, end_date, eph):
             "date": ti.utc_datetime().astimezone(utc),
             "event": almanac.MOON_PHASES[yi],
             "type": "Moon Phase",
+            "object": "Moon",
+            "phase": yi * 0.25,
         }
         event_data["rarity"] = get_rarity("Moon Phase", event_data)
         event_data["duration"] = get_duration("Moon Phase", event_data)
