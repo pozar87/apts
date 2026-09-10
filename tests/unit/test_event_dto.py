@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
 import json
-import pytest
+from datetime import datetime, timezone
 
-from apts.events import Event, EventExportData, DirectionData
+from apts.events import Event
 from apts.events.event import get_direction_data, get_event_category, get_step_by_step_guide
 
 
