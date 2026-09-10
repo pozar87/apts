@@ -1028,3 +1028,150 @@ msgstr "Seeing von %(seeing)s Bogensekunden überschreitet das Limit von %(max_s
 
 msgid "Sky brightness %(sqm)s mag/arcsec² below limit of %(min_sqm)s mag/arcsec²"
 msgstr "Himmelshelligkeit von %(sqm)s mag/arcsec² unter dem Limit von %(min_sqm)s mag/arcsec²"
+
+msgid "Look East"
+msgstr "Blick nach Osten"
+
+msgid "Look North-Northeast"
+msgstr "Blick nach Nord-Nordost"
+
+msgid "Look Northeast"
+msgstr "Blick nach Nordost"
+
+msgid "Look East-Northeast"
+msgstr "Blick nach Ost-Nordost"
+
+msgid "Look East-Southeast"
+msgstr "Blick nach Ost-Südost"
+
+msgid "Look Southeast"
+msgstr "Blick nach Südost"
+
+msgid "Look South-Southeast"
+msgstr "Blick nach Süd-Südost"
+
+msgid "Look South"
+msgstr "Blick nach Süden"
+
+msgid "Look South-Southwest"
+msgstr "Blick nach Süd-Südwest"
+
+msgid "Look Southwest"
+msgstr "Blick nach Südwest"
+
+msgid "Look West-Southwest"
+msgstr "Blick nach West-Südwest"
+
+msgid "Look West"
+msgstr "Blick nach Westen"
+
+msgid "Look West-Northwest"
+msgstr "Blick nach West-Nordwest"
+
+msgid "Look Northwest"
+msgstr "Blick nach Nordwest"
+
+msgid "Look North-Northwest"
+msgstr "Blick nach Nord-Nordwest"
+
+msgid "Look North"
+msgstr "Blick nach Norden"
+
+msgid "Find an open viewing location with a clear view of the sky in the pass direction."
+msgstr "Suchen Sie einen offenen Beobachtungsort mit freier Sicht in Überflugsrichtung."
+
+msgid "Check the exact rise time and direction before heading outside."
+msgstr "Überprüfen Sie die genaue Aufgangszeit und Richtung, bevor Sie nach draußen gehen."
+
+msgid "Watch the horizon for a bright, steady, non-blinking point of light moving across the sky."
+msgstr "Beobachten Sie den Horizont nach einem hellen, stetigen Lichtpunkt, der sich bewegt."
+
+msgid "Track the satellite visually with naked eye or wide-field binoculars."
+msgstr "Verfolgen Sie den Satelliten mit bloßem Auge oder einem Weitfeld-Fernglas."
+
+msgid "Note the time and peak altitude as it passes overhead."
+msgstr "Notieren Sie die Zeit und die maximale Höhe beim Überflug."
+
+msgid "Confirm the launch schedule and trajectory azimuth prior to liftoff."
+msgstr "Bestätigen Sie den Startplan und den Trajektorien-Azimut vor dem Abheben."
+
+msgid "Find an elevated or unobstructed location facing the launch direction."
+msgstr "Finden Sie einen erhöhten oder freien Ort mit Blick in Startrichtung."
+
+msgid "Look low near the horizon at T+2 to T+3 minutes for the rising exhaust plume."
+msgstr "Suchen Sie bei T+2 bis T+3 Minuten tief am Horizont nach der Abgasfahne."
+
+msgid "Use binoculars to spot stage separation or twilight expansion effects."
+msgstr "Nutzen Sie ein Fernglas, um Stufentrennung oder Dämmerungseffekte zu erkennen."
+
+msgid "Find a site with a clear view spanning East to West along the ecliptic arc."
+msgstr "Finden Sie einen Ort mit freier Sicht von Ost nach West entlang der Ekliptik."
+
+msgid "Begin observing during early twilight as the brightest planets emerge."
+msgstr "Beginnen Sie die Beobachtung in der frühen Dämmerung, wenn die hellsten Planeten erscheinen."
+
+msgid "Scan along the ecliptic line to identify all participating planets."
+msgstr "Scannen Sie entlang der Ekliptiklinie, um alle Planeten zu identifizieren."
+
+msgid "Use wide-angle camera gear or binoculars to capture the full parade."
+msgstr "Verwenden Sie eine Weitwinkelkamera oder ein Fernglas, um die Parade festzuhalten."
+
+msgid "Set up a telescope with medium-to-high magnification (100x–200x)."
+msgstr "Bauen Sie ein Teleskop mit mittlerer bis hoher Vergrößerung auf (100x–200x)."
+
+msgid "Allow your optical tube time to thermally stabilize outdoors."
+msgstr "Lassen Sie dem Optiktubus Zeit, sich im Freien thermisch zu stabilisieren."
+
+msgid "Locate Jupiter and identify the equatorial dark cloud bands."
+msgstr "Finden Sie Jupiter und identifizieren Sie die dunklen Äquatorialbänder."
+
+msgid "Observe the positions of the four Galilean moons (Io, Europa, Ganymede, Callisto)."
+msgstr "Beobachten Sie die Positionen der vier Galileischen Monde (Io, Europa, Ganymed, Kallisto)."
+
+msgid "Look for moon shadow transits or the Great Red Spot during peak visibility."
+msgstr "Achten Sie auf Mondschattendurchgänge oder den Großen Roten Fleck."
+
+msgid "Locate the planet low near the horizon in early morning or evening twilight."
+msgstr "Suchen Sie den Planeten tief am Horizont in der Morgen- oder Abenddämmerung."
+
+msgid "Use binoculars or a small telescope to observe its crescent or gibbous phase."
+msgstr "Verwenden Sie ein Fernglas oder Teleskop, um die Sichel- oder Bauchphase zu beobachten."
+
+msgid "Observe before sunrise or after sunset when contrast is optimal."
+msgstr "Beobachten Sie vor Sonnenaufgang oder nach Sonnenuntergang bei optimalem Kontrast."
+
+msgid "Choose a viewing spot with clear sky access toward the Moon."
+msgstr "Wählen Sie einen Beobachtungsort mit freier Sicht auf den Mond."
+
+msgid "Use binoculars or a telescope along the lunar terminator line for shadow details."
+msgstr "Nutzen Sie ein Fernglas oder Teleskop entlang des Terminators für Schattendetails."
+
+msgid "Observe prominent craters, mountain ranges, and maria surface features."
+msgstr "Beobachten Sie prominente Krater, Gebirgszüge und Mondmeere."
+
+msgid "Locate {target} in the sky using cardinal directions and altitude."
+msgstr "Finden Sie {target} am Himmel mithilfe von Himmelsrichtungen und Höhe."
+
+msgid "with an angular separation of"
+msgstr "mit einem Winkelabstand von"
+
+msgid "The {object1} will pass directly in front of {object2}, creating a lunar occultation visible from {location} at {time}."
+msgstr "{object1} zieht direkt vor {object2} vorbei und erzeugt eine Okkultation, sichtbar von {location} um {time}."
+
+msgid "{object1} and {object2} will share a close celestial conjunction{separation}, visible in the sky from {location}."
+msgstr "{object1} und {object2} stehen in einer engen Konjunktion{separation}, sichtbar von {location}."
+
+msgid "Peak activity for the {shower} meteor shower, offering optimal viewing conditions from {location}."
+msgstr "Aktivitätsmaximum des Meteorstroms {shower}, mit optimalen Bedingungen von {location}."
+
+msgid "{title} occurring on {time}, visible from {location}."
+msgstr "{title} am {time}, sichtbar von {location}."
+
+msgid "target"
+msgstr "Zielobjekt"
+
+msgid "Target"
+msgstr "Zielobjekt"
+
+msgid "Companion"
+msgstr "Begleiter"

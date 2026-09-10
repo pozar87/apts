@@ -2,7 +2,11 @@ import json
 from datetime import datetime, timezone
 
 from apts.events import Event
-from apts.events.event import get_direction_data, get_event_category, get_step_by_step_guide
+from apts.events.event import (
+    get_direction_data,
+    get_event_category,
+    get_step_by_step_guide,
+)
 
 
 def test_direction_data():
@@ -35,6 +39,49 @@ def test_step_by_step_guide():
 
     conjunction_guide = get_step_by_step_guide("CONJUNCTION")
     assert len(conjunction_guide) >= 4
+
+    flyby_guide = get_step_by_step_guide("FLYBY", title="Bright ISS Pass", objects=["ISS"])
+    assert len(flyby_guide) >= 4
+    assert "Find an open viewing location" in flyby_guide[0]
+
+    launch_guide = get_step_by_step_guide("ROCKET_LAUNCH", title="Falcon 9 Rocket Launch")
+    assert len(launch_guide) >= 3
+    assert "launch schedule" in launch_guide[0].lower()
+
+    alignment_guide = get_step_by_step_guide("PLANET_ALIGNMENT", title="Planetary Alignment")
+    assert len(alignment_guide) >= 3
+
+
+def test_multilingual_guidelines_and_directions():
+    from apts.i18n import language_context
+
+    # Test Polish
+    with language_context("pl"):
+        dir_e = get_direction_data(90.0)
+        assert dir_e.name == "Patrz na wschód"
+        guide_flyby = get_step_by_step_guide("FLYBY", title="Przelot ISS")
+        assert "Znajdź otwarte miejsce" in guide_flyby[0]
+
+    # Test German
+    with language_context("de"):
+        dir_e = get_direction_data(90.0)
+        assert dir_e.name == "Blick nach Osten"
+        guide_flyby = get_step_by_step_guide("FLYBY", title="ISS Überflug")
+        assert "Suchen Sie einen offenen Beobachtungsort" in guide_flyby[0]
+
+    # Test Spanish
+    with language_context("es"):
+        dir_e = get_direction_data(90.0)
+        assert dir_e.name == "Mire hacia el Este"
+        guide_flyby = get_step_by_step_guide("FLYBY", title="Paso de la ISS")
+        assert "Busque un lugar abierto" in guide_flyby[0]
+
+    # Test Portuguese
+    with language_context("pt"):
+        dir_e = get_direction_data(90.0)
+        assert dir_e.name == "Olhe para Este"
+        guide_flyby = get_step_by_step_guide("FLYBY", title="Passagem da ISS")
+        assert "Encontre um local aberto" in guide_flyby[0]
 
 
 def test_event_dto_serialization():
