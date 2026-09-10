@@ -1175,3 +1175,21 @@ msgstr "Zielobjekt"
 
 msgid "Companion"
 msgstr "Begleiter"
+
+msgid "Peak at {time_peak} UTC ({alt_peak}) is below horizon. Chart shown for {time_chart} UTC (Alt: {alt_chart})."
+msgstr "Höhepunkt um {time_peak} UTC ({alt_peak}) liegt unter dem Horizont. Karte gezeigt für {time_chart} UTC (Höhe: {alt_chart})."
+
+msgid "Warning: Target is below horizon ({alt_peak}) at event peak time."
+msgstr "Warnung: Ziel liegt zum Zeitpunkt des Höhepunkts unter dem Horizont ({alt_peak})."
+
+msgid "Autumnal Equinox"
+msgstr "Herbst-Tagundnachtgleiche"
+
+msgid "Vernal Equinox"
+msgstr "Frühlings-Tagundnachtgleiche"
+
+msgid "Summer Solstice"
+msgstr "Sommersonnenwende"
+
+msgid "Winter Solstice"
+msgstr "Wintersonnenwende"
