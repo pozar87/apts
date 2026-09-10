@@ -58,31 +58,40 @@ def get_direction_data(azimuth_deg: float | None) -> DirectionData:
     return DirectionData(code="N", name="Look North", azimuth_deg=az)
 
 
+CATEGORY_RULES = [
+    ("occultation", None, "OCCULTATION"),
+    (None, "occultation", "OCCULTATION"),
+    ("conjunction", None, "CONJUNCTION"),
+    (None, "conjunction", "CONJUNCTION"),
+    ("lunar eclipse", None, "LUNAR_ECLIPSE"),
+    ("solar eclipse", None, "SOLAR_ECLIPSE"),
+    ("eclipse", None, "SOLAR_ECLIPSE"),
+    ("meteor shower", None, "METEOR_SHOWER"),
+    ("shower", None, "METEOR_SHOWER"),
+    (None, "meteor", "METEOR_SHOWER"),
+    ("opposition", None, "OPPOSITION"),
+    ("transit", None, "TRANSIT"),
+    ("alignment", None, "PLANET_ALIGNMENT"),
+    ("flyby", None, "FLYBY"),
+    ("iss", None, "FLYBY"),
+    ("tiangong", None, "FLYBY"),
+    ("launch", None, "FLYBY"),
+    ("solstice", None, "EQUINOX_SOLSTICE"),
+    ("equinox", None, "EQUINOX_SOLSTICE"),
+    ("season", None, "EQUINOX_SOLSTICE"),
+]
+
+
 def get_event_category(event_name: str, event_type: str = "") -> str:
     """Infers standard uppercase event category from event name and type."""
     name_lower = str(event_name).lower()
     type_lower = str(event_type).lower()
 
-    if "occultation" in name_lower or "occultation" in type_lower:
-        return "OCCULTATION"
-    if "conjunction" in name_lower or "conjunction" in type_lower:
-        return "CONJUNCTION"
-    if "lunar eclipse" in name_lower:
-        return "LUNAR_ECLIPSE"
-    if "solar eclipse" in name_lower or "eclipse" in name_lower:
-        return "SOLAR_ECLIPSE"
-    if "meteor shower" in name_lower or "shower" in name_lower or "meteor" in type_lower:
-        return "METEOR_SHOWER"
-    if "opposition" in name_lower:
-        return "OPPOSITION"
-    if "transit" in name_lower:
-        return "TRANSIT"
-    if "alignment" in name_lower:
-        return "PLANET_ALIGNMENT"
-    if "flyby" in name_lower or "iss" in name_lower or "tiangong" in name_lower or "launch" in name_lower:
-        return "FLYBY"
-    if "solstice" in name_lower or "equinox" in name_lower or "season" in name_lower:
-        return "EQUINOX_SOLSTICE"
+    for name_kw, type_kw, category in CATEGORY_RULES:
+        if name_kw and name_kw in name_lower:
+            return category
+        if type_kw and type_kw in type_lower:
+            return category
 
     return "CELESTIAL_EVENT"
 
@@ -210,6 +219,85 @@ class EventExportData:
             "direction": self.direction.to_dict() if isinstance(self.direction, DirectionData) else self.direction,
             "step_by_step_guide": self.step_by_step_guide,
         }
+
+
+def _parse_event_datetime(data: dict[str, Any]) -> datetime:
+    """Parses event UTC datetime from data dictionary."""
+    raw_date = data.get("date") or data.get("datetime_utc") or datetime.now(utc)
+    if isinstance(raw_date, str):
+        try:
+            clean_ts = raw_date.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(clean_ts)
+        except ValueError:
+            dt = datetime.now(utc)
+    elif isinstance(raw_date, datetime):
+        dt = raw_date
+    elif hasattr(raw_date, "to_pydatetime"):
+        dt = raw_date.to_pydatetime()
+    else:
+        dt = datetime.now(utc)
+
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=utc)
+
+    return dt.astimezone(utc)
+
+
+def _extract_event_objects(data: dict[str, Any]) -> list[str]:
+    """Extracts involved celestial object names from event record dictionary."""
+    objs = []
+    if data.get("object1"):
+        objs.append(str(data["object1"]))
+    if data.get("object2"):
+        objs.append(str(data["object2"]))
+    if not objs and "object" in data and data["object"]:
+        objs.append(str(data["object"]))
+    if not objs and "shower_name" in data and data["shower_name"]:
+        objs.append(str(data["shower_name"]))
+    if not objs and "planets" in data and data["planets"]:
+        p_val = data["planets"]
+        if isinstance(p_val, list):
+            objs.extend([str(p) for p in p_val])
+        elif isinstance(p_val, str):
+            objs.append(p_val)
+    return objs
+
+
+def _build_event_title(data: dict[str, Any], objs: list[str], category: str, event_name: str) -> str:
+    """Constructs display title for the event if explicit title is absent."""
+    title = data.get("title")
+    if title:
+        return title
+
+    if len(objs) >= 2 and category == "OCCULTATION":
+        return f"{objs[0].title()} occultation of {objs[1].title()}"
+    if len(objs) >= 2 and category == "CONJUNCTION":
+        return f"Conjunction of {objs[0].title()} and {objs[1].title()}"
+    if objs and category == "METEOR_SHOWER":
+        return f"{objs[0]} Meteor Shower Peak"
+
+    return str(event_name)
+
+
+def _format_angular_separation(data: dict[str, Any]) -> str | None:
+    """Formats angular separation string from event dictionary."""
+    angular_sep = data.get("angular_separation")
+    if not angular_sep and "separation_degrees" in data and data["separation_degrees"] is not None:
+        sep_val = float(data["separation_degrees"])
+        if sep_val < 1.0:
+            return f"{round(sep_val * 60.0, 1)}'"
+        return f"{round(sep_val, 1)}°"
+    return angular_sep
+
+
+def _extract_coordinates(data: dict[str, Any]) -> tuple[float | None, float | None]:
+    """Extracts float azimuth and altitude degrees from event dictionary."""
+    azimuth_deg = data.get("azimuth") or data.get("azimuth_deg")
+    altitude_deg = data.get("altitude") or data.get("altitude_deg")
+    return (
+        float(azimuth_deg) if azimuth_deg is not None else None,
+        float(altitude_deg) if altitude_deg is not None else None,
+    )
 
 
 class Event:
@@ -344,25 +432,7 @@ class Event:
         event_type = data.get("type", "")
         category = data.get("category") or get_event_category(event_name, event_type)
 
-        # Date handling
-        raw_date = data.get("date") or data.get("datetime_utc") or datetime.now(utc)
-        if isinstance(raw_date, str):
-            try:
-                clean_ts = raw_date.replace("Z", "+00:00")
-                dt = datetime.fromisoformat(clean_ts)
-            except ValueError:
-                dt = datetime.now(utc)
-        elif isinstance(raw_date, datetime):
-            dt = raw_date
-        elif hasattr(raw_date, "to_pydatetime"):
-            dt = raw_date.to_pydatetime()
-        else:
-            dt = datetime.now(utc)
-
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=utc)
-
-        dt_utc = dt.astimezone(utc)
+        dt_utc = _parse_event_datetime(data)
 
         # Best viewing local time
         if place and hasattr(place, "local_timezone") and place.local_timezone:
@@ -373,51 +443,10 @@ class Event:
         best_viewing_time_local = local_dt.strftime("%H:%M")
         location_name = getattr(place, "name", None) or data.get("location_name") or "Observer Location"
 
-        # Objects extraction
-        objs = []
-        if data.get("object1"):
-            objs.append(str(data["object1"]))
-        if data.get("object2"):
-            objs.append(str(data["object2"]))
-        if not objs and "object" in data and data["object"]:
-            objs.append(str(data["object"]))
-        if not objs and "shower_name" in data and data["shower_name"]:
-            objs.append(str(data["shower_name"]))
-        if not objs and "planets" in data and data["planets"]:
-            p_val = data["planets"]
-            if isinstance(p_val, list):
-                objs.extend([str(p) for p in p_val])
-            elif isinstance(p_val, str):
-                objs.append(p_val)
-
-        # Title construction
-        title = data.get("title")
-        if not title:
-            if len(objs) >= 2 and category == "OCCULTATION":
-                title = f"{objs[0].title()} occultation of {objs[1].title()}"
-            elif len(objs) >= 2 and category == "CONJUNCTION":
-                title = f"Conjunction of {objs[0].title()} and {objs[1].title()}"
-            elif objs and category == "METEOR_SHOWER":
-                title = f"{objs[0]} Meteor Shower Peak"
-            else:
-                title = str(event_name)
-
-        # Separation formatting
-        angular_sep = data.get("angular_separation")
-        if not angular_sep and "separation_degrees" in data and data["separation_degrees"] is not None:
-            sep_val = float(data["separation_degrees"])
-            if sep_val < 1.0:
-                angular_sep = f"{round(sep_val * 60.0, 1)}'"
-            else:
-                angular_sep = f"{round(sep_val, 1)}°"
-
-        azimuth_deg = data.get("azimuth") or data.get("azimuth_deg")
-        if azimuth_deg is not None:
-            azimuth_deg = float(azimuth_deg)
-
-        altitude_deg = data.get("altitude") or data.get("altitude_deg")
-        if altitude_deg is not None:
-            altitude_deg = float(altitude_deg)
+        objs = _extract_event_objects(data)
+        title = _build_event_title(data, objs, category, str(event_name))
+        angular_sep = _format_angular_separation(data)
+        azimuth_deg, altitude_deg = _extract_coordinates(data)
 
         return cls(
             category=category,

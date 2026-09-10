@@ -3,7 +3,7 @@ import matplotlib.figure
 import pytest
 
 from apts.events import Event
-from apts.visualization import generate_finder_chart, plot_finder_chart
+from apts.visualization import plot_finder_chart
 
 
 @pytest.fixture
