@@ -115,6 +115,35 @@ def test_event_dto_serialization():
     assert parsed["title"] == "Lunar occultation of Jupiter"
 
 
+def test_event_dto_horizon_metadata():
+    dt = datetime(2026, 9, 8, 12, 0, tzinfo=timezone.utc)
+    event = Event(
+        category="CONJUNCTION",
+        title="Conjunction of Moon and Jupiter",
+        datetime_utc=dt,
+        best_viewing_time_local="12:00",
+        location_name="Warsaw",
+        altitude_deg=-10.5,
+        objects=["Moon", "Jupiter"],
+        extra_data={
+            "is_below_horizon": True,
+            "chart_datetime_utc": "2026-09-08T22:00:00Z",
+            "chart_time_note": "Peak at 12:00 UTC is below horizon. Chart shown for 22:00 UTC (Alt: 25.0°).",
+            "target_altitude_deg": 25.0,
+        },
+    )
+
+    d = event.to_dict()
+    assert d["is_below_horizon"] is True
+    assert d["chart_datetime_utc"] == "2026-09-08T22:00:00Z"
+    assert "below horizon" in d["chart_time_note"]
+    assert d["target_altitude_deg"] == 25.0
+
+    parsed = Event.from_dict(d)
+    assert parsed.is_below_horizon is True
+    assert parsed.chart_datetime_utc == "2026-09-08T22:00:00Z"
+
+
 def test_event_from_dict_and_row():
     raw_dict = {
         "event": "Conjunction",
