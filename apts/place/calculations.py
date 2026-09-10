@@ -55,5 +55,5 @@ def calculate_moon_phase_letter(eph: Any, date: Any) -> str:
     else:
         phase_angle_deg = float(phase_angle)  # type: ignore
     lunation = cast(float, phase_angle_deg) / 360.0
-    letter = chr(ord("A") + int(round(lunation * 26)))
+    letter = chr(ord("A") + (int(round(lunation * 26)) % 26))
     return letter

@@ -289,9 +289,13 @@ class EventExportData:
     direction: DirectionData
     step_by_step_guide: list[str]
     sky_brightness: str = "NIGHT_DARK"
+    is_below_horizon: bool = False
+    chart_datetime_utc: str | None = None
+    chart_time_note: str | None = None
+    target_altitude_deg: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "category": self.category,
             "title": self.title,
             "datetime_utc": self.datetime_utc,
@@ -303,6 +307,15 @@ class EventExportData:
             "step_by_step_guide": self.step_by_step_guide,
             "sky_brightness": self.sky_brightness,
         }
+        if self.is_below_horizon:
+            d["is_below_horizon"] = self.is_below_horizon
+        if self.chart_datetime_utc:
+            d["chart_datetime_utc"] = self.chart_datetime_utc
+        if self.chart_time_note:
+            d["chart_time_note"] = self.chart_time_note
+        if self.target_altitude_deg is not None:
+            d["target_altitude_deg"] = round(float(self.target_altitude_deg), 1)
+        return d
 
 
 def _parse_event_datetime(data: dict[str, Any]) -> datetime:
@@ -455,6 +468,22 @@ class Event:
 
         self.sky_brightness = get_sky_brightness(sun_alt, moon_alt, phase_frac)
 
+        # Initialize horizon and chart metadata
+        self.is_below_horizon = bool(self.extra_data.get("is_below_horizon", False))
+        self.chart_datetime_utc = self.extra_data.get("chart_datetime_utc")
+        self.chart_time_note = self.extra_data.get("chart_time_note")
+        self.target_altitude_deg = (
+            float(self.extra_data["target_altitude_deg"])
+            if "target_altitude_deg" in self.extra_data and self.extra_data["target_altitude_deg"] is not None
+            else self.altitude_deg
+        )
+
+        if self.altitude_deg is not None:
+            if self.target_altitude_deg is None:
+                self.target_altitude_deg = float(self.altitude_deg)
+            if self.altitude_deg < 0.0:
+                self.is_below_horizon = True
+
         # Handle Direction
         if isinstance(direction, DirectionData):
             self.direction = direction
@@ -498,6 +527,10 @@ class Event:
             direction=self.direction,
             step_by_step_guide=self.step_by_step_guide,
             sky_brightness=getattr(self, "sky_brightness", "NIGHT_DARK"),
+            is_below_horizon=getattr(self, "is_below_horizon", False),
+            chart_datetime_utc=getattr(self, "chart_datetime_utc", None),
+            chart_time_note=getattr(self, "chart_time_note", None),
+            target_altitude_deg=getattr(self, "target_altitude_deg", self.altitude_deg),
         )
 
     def to_dict(self) -> dict[str, Any]:

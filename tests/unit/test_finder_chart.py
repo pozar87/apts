@@ -166,3 +166,48 @@ def test_sky_brightness_metadata_and_durations(sample_occultation_event):
 
     conj_duration = calculate_event_duration("Conjunction", {})
     assert conj_duration == 7200  # 2 hours
+
+
+def test_conjunction_below_horizon_time_shift():
+    # Conjunction of Moon and Jupiter at 20:00 UTC (Moon below horizon for Warsaw at -20.9°)
+    event = Event(
+        category="CONJUNCTION",
+        title="Conjunction of Moon and Jupiter",
+        datetime_utc=datetime(2026, 9, 8, 20, 0, tzinfo=timezone.utc),
+        best_viewing_time_local="20:00",
+        location_name="Warsaw",
+        objects=["Moon", "Jupiter"],
+        extra_data={"lat": 52.23, "lon": 21.01},
+    )
+
+    fig = plot_finder_chart(event, format="figure")
+    assert isinstance(fig, matplotlib.figure.Figure)
+
+    # Metadata should be updated after chart generation
+    d = event.to_dict()
+    assert d.get("is_below_horizon") is True
+    assert "chart_time_note" in d
+    assert "chart_datetime_utc" in d
+    assert event.chart_datetime_utc is not None
+    assert "below horizon" in d["chart_time_note"].lower() or "poniżej" in d["chart_time_note"].lower()
+
+
+def test_short_event_below_horizon_warning():
+    # Occultation at 20:00 UTC (Moon below horizon for Warsaw)
+    event = Event(
+        category="OCCULTATION",
+        title="Lunar occultation of Saturn",
+        datetime_utc=datetime(2026, 9, 8, 20, 0, tzinfo=timezone.utc),
+        best_viewing_time_local="20:00",
+        location_name="Warsaw",
+        objects=["Moon", "Saturn"],
+        extra_data={"lat": 52.23, "lon": 21.01},
+    )
+
+    fig = plot_finder_chart(event, format="figure")
+    assert isinstance(fig, matplotlib.figure.Figure)
+
+    d = event.to_dict()
+    assert d.get("is_below_horizon") is True
+    assert "chart_time_note" in d
+    assert "warning" in d["chart_time_note"].lower() or "poniżej" in d["chart_time_note"].lower() or "below horizon" in d["chart_time_note"].lower()
