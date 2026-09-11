@@ -1578,19 +1578,19 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 40000,
+            "full_well_e": 40000,  # Verified via ZWO official product specs (40ke) - https://www.zwoastro.com/product/asi585mc/
             "height": 2160,
-            "mass": 126,
+            "mass": 126,  # Verified via ZWO (126g) - https://www.zwoastro.com/product/asi585mc/
             "name": "ASI585MC",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 0.6,
+            "optical_length": 12.5,  # Verified via ZWO (12.5mm backfocus distance / CS thread) - https://www.zwoastro.com/product/asi585mc/
+            "pixel_size_um": 2.9,  # Verified via ZWO (2.9µm pixel size) - https://www.zwoastro.com/product/asi585mc/
+            "quantum_efficiency_pct": 91,  # Verified via ZWO (91% peak QE) - https://www.zwoastro.com/product/asi585mc/
+            "read_noise_e": 0.6,  # Verified via ZWO (0.6e- read noise) - https://www.zwoastro.com/product/asi585mc/
             "reversible": False,
-            "sensor_height_mm": 6.26,
-            "sensor_width_mm": 11.13,
+            "sensor_height_mm": 6.26,  # Verified via ZWO (6.26mm x 11.13mm Sony IMX585 sensor) - https://www.zwoastro.com/product/asi585mc/
+            "sensor_width_mm": 11.13,  # Verified via ZWO (6.26mm x 11.13mm Sony IMX585 sensor) - https://www.zwoastro.com/product/asi585mc/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Verified via ZWO (CS-mount native thread with 12.5mm backfocus) - https://www.zwoastro.com/product/asi585mc/
             "type": "type_camera",
             "width": 3840,
         },
