@@ -1,24 +1,9 @@
 import json
 import logging
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
-
-from apts.events.calculations.event import (
-    CATEGORY_RULES,
-    DirectionData,
-    build_event_description,
-    build_event_title,
-    extract_coordinates,
-    extract_event_objects,
-    format_angular_separation,
-    get_direction_data,
-    get_event_category,
-    get_sky_brightness,
-    get_step_by_step_guide,
-    parse_event_datetime,
-    resolve_event_topocentric_position,
-)
 
 if TYPE_CHECKING:
     from apts.place import Place
@@ -308,12 +293,6 @@ def build_event_description(
         return gettext_("{title} occurring on {time}, visible from {location}.").format(
             title=title, time=datetime_utc_str, location=loc
         )
-# For backward compatibility
-_parse_event_datetime = parse_event_datetime
-_extract_event_objects = extract_event_objects
-_build_event_title = build_event_title
-_format_angular_separation = format_angular_separation
-_extract_coordinates = extract_coordinates
 
 
 @dataclass
@@ -356,6 +335,99 @@ class EventExportData:
         if self.target_altitude_deg is not None:
             d["target_altitude_deg"] = round(float(self.target_altitude_deg), 1)
         return d
+
+
+def _parse_event_datetime(data: dict[str, Any]) -> datetime:
+    """Parses event UTC datetime from data dictionary."""
+    raw_date = data.get("date") or data.get("datetime_utc") or datetime.now(utc)
+    if isinstance(raw_date, str):
+        try:
+            clean_ts = raw_date.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(clean_ts)
+        except ValueError:
+            dt = datetime.now(utc)
+    elif isinstance(raw_date, datetime):
+        dt = raw_date
+    elif hasattr(raw_date, "to_pydatetime"):
+        dt = raw_date.to_pydatetime()
+    else:
+        dt = datetime.now(utc)
+
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=utc)
+
+    return dt.astimezone(utc)
+
+
+def _extract_event_objects(data: dict[str, Any]) -> list[str]:
+    """Extracts involved celestial object names from event record dictionary."""
+    objs = []
+    if data.get("object1"):
+        objs.append(str(data["object1"]))
+    if data.get("object2"):
+        objs.append(str(data["object2"]))
+    if not objs and "object" in data and data["object"]:
+        objs.append(str(data["object"]))
+    if not objs and "shower_name" in data and data["shower_name"]:
+        objs.append(str(data["shower_name"]))
+    if not objs and "planets" in data and data["planets"]:
+        p_val = data["planets"]
+        if isinstance(p_val, list):
+            objs.extend([str(p) for p in p_val])
+        elif isinstance(p_val, str):
+            objs.append(p_val)
+
+    if not objs:
+        event_name = str(data.get("event") or data.get("title") or "").lower()
+        event_type = str(data.get("type") or "").lower()
+        category = str(data.get("category") or get_event_category(event_name, event_type)).upper()
+
+        moon_kws = ["moon", "quarter", "crescent", "gibbous", "full moon", "new moon", "księżyc", "mond", "luna", "libration", "supermoon", "lunar"]
+        sun_kws = ["sun", "solstice", "equinox", "słońce", "sonne", "sol", "autumnal", "vernal", "equinoccio", "solsticio", "tagundnachtgleiche", "równonoc", "przesilenie"]
+
+        if category in ("MOON_PHASE", "SUPERMOON", "MOON_LIBRATION", "LUNAR_FEATURE", "LUNAR_ECLIPSE") or any(kw in event_name or kw in event_type for kw in moon_kws):
+            objs.append("Moon")
+        elif category in ("EQUINOX_SOLSTICE", "SOLAR_ECLIPSE") or any(kw in event_name or kw in event_type for kw in sun_kws):
+            objs.append("Sun")
+
+    return objs
+
+
+def _build_event_title(data: dict[str, Any], objs: list[str], category: str, event_name: str) -> str:
+    """Constructs display title for the event if explicit title is absent."""
+    title = data.get("title")
+    if title:
+        return title
+
+    if len(objs) >= 2 and category == "OCCULTATION":
+        return f"{objs[0].title()} occultation of {objs[1].title()}"
+    if len(objs) >= 2 and category == "CONJUNCTION":
+        return f"Conjunction of {objs[0].title()} and {objs[1].title()}"
+    if objs and category == "METEOR_SHOWER":
+        return f"{objs[0]} Meteor Shower Peak"
+
+    return str(event_name)
+
+
+def _format_angular_separation(data: dict[str, Any]) -> str | None:
+    """Formats angular separation string from event dictionary."""
+    angular_sep = data.get("angular_separation")
+    if not angular_sep and "separation_degrees" in data and data["separation_degrees"] is not None:
+        sep_val = float(data["separation_degrees"])
+        if sep_val < 1.0:
+            return f"{round(sep_val * 60.0, 1)}'"
+        return f"{round(sep_val, 1)}°"
+    return angular_sep
+
+
+def _extract_coordinates(data: dict[str, Any]) -> tuple[float | None, float | None]:
+    """Extracts float azimuth and altitude degrees from event dictionary."""
+    azimuth_deg = data.get("azimuth") or data.get("azimuth_deg")
+    altitude_deg = data.get("altitude") or data.get("altitude_deg")
+    return (
+        float(azimuth_deg) if azimuth_deg is not None else None,
+        float(altitude_deg) if altitude_deg is not None else None,
+    )
 
 
 class Event:
@@ -406,15 +478,26 @@ class Event:
         self.place = place
         self.extra_data = extra_data or {}
 
-        # Compute Sky Brightness & Topocentric position
+        # Compute Sky Brightness
         sun_alt = self.extra_data.get("sun_altitude")
         moon_alt = self.extra_data.get("moon_altitude")
         phase = self.extra_data.get("phase", 0.0)
         phase_frac = float(phase) if isinstance(phase, (int, float)) else 0.0
 
-        sun_alt, moon_alt, self.altitude_deg, self.azimuth_deg = resolve_event_topocentric_position(
-            place, self.dt_utc, self.objects, sun_alt, moon_alt, self.azimuth_deg, self.altitude_deg
-        )
+        if place is not None and hasattr(place, "get_altitude"):
+            try:
+                t_sf = place.ts.utc(self.dt_utc.year, self.dt_utc.month, self.dt_utc.day, self.dt_utc.hour, self.dt_utc.minute, self.dt_utc.second)
+                if sun_alt is None:
+                    sun_alt = place.get_altitude(place.sun, t_sf)
+                    moon_alt = place.get_altitude(place.moon, t_sf)
+                if (self.azimuth_deg is None or self.altitude_deg is None) and self.objects:
+                    alt_primary = place.get_altitude(self.objects[0], t_sf)
+                    az_primary = place.get_azimuth(self.objects[0], t_sf)
+                    if not math.isnan(alt_primary) and not math.isnan(az_primary):
+                        self.altitude_deg = float(alt_primary)
+                        self.azimuth_deg = float(az_primary)
+            except (ValueError, KeyError, AttributeError, TypeError) as e:
+                logger.debug(f"Could not resolve topocentric position for primary object: {e}")
 
         self.sky_brightness = get_sky_brightness(sun_alt, moon_alt, phase_frac)
 
@@ -524,7 +607,7 @@ class Event:
         event_type = data.get("type", "")
         category = data.get("category") or get_event_category(event_name, event_type)
 
-        dt_utc = parse_event_datetime(data)
+        dt_utc = _parse_event_datetime(data)
 
         # Best viewing local time
         if place and hasattr(place, "local_timezone") and place.local_timezone:
@@ -535,10 +618,10 @@ class Event:
         best_viewing_time_local = local_dt.strftime("%H:%M")
         location_name = getattr(place, "name", None) or data.get("location_name") or "Observer Location"
 
-        objs = extract_event_objects(data)
-        title = build_event_title(data, objs, category, str(event_name))
-        angular_sep = format_angular_separation(data)
-        azimuth_deg, altitude_deg = extract_coordinates(data)
+        objs = _extract_event_objects(data)
+        title = _build_event_title(data, objs, category, str(event_name))
+        angular_sep = _format_angular_separation(data)
+        azimuth_deg, altitude_deg = _extract_coordinates(data)
 
         return cls(
             category=category,
@@ -565,16 +648,3 @@ class Event:
         else:
             d = dict(row)
         return cls.from_dict(d, place=place)
-
-
-__all__ = [
-    "Event",
-    "EventExportData",
-    "DirectionData",
-    "CATEGORY_RULES",
-    "get_sky_brightness",
-    "get_direction_data",
-    "get_event_category",
-    "get_step_by_step_guide",
-    "build_event_description",
-]
