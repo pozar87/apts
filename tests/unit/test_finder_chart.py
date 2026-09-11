@@ -50,13 +50,15 @@ def test_generate_finder_chart_light_theme(sample_occultation_event):
 
 
 def test_rocket_launch_chart_rendering():
-    launch_event = Event(
-        category="ROCKET_LAUNCH",
-        title="Falcon 9 Rocket Launch",
-        datetime_utc=datetime(2026, 9, 8, 12, 0, tzinfo=timezone.utc),
-        best_viewing_time_local="12:00",
-        location_name="Cape Canaveral",
-    )
+    launch_event = Event.from_dict({
+        "event": "ZJAWISKO ASTRONOMICZNE (start kosmiczny)",
+        "title": "Falcon 9 Block 5 | Crew-13",
+        "date": "2026-09-08T12:00:00Z",
+        "azimuth": 120.0,
+        "altitude": 25.0,
+    })
+    assert launch_event.category == "ROCKET_LAUNCH"
+
     png_bytes = launch_event.generate_finder_chart(format="png")
     assert isinstance(png_bytes, bytes)
     assert len(png_bytes) > 0
@@ -64,6 +66,27 @@ def test_rocket_launch_chart_rendering():
 
     fig = plot_finder_chart(launch_event, format="figure")
     assert isinstance(fig, matplotlib.figure.Figure)
+
+
+def test_satellite_flyby_satellite_naming_and_rendering():
+    event_iss = Event.from_dict({
+        "event": "Bright ISS Flyby",
+        "date": "2026-09-08T21:00:00Z",
+        "azimuth": 180.0,
+        "altitude": 45.0,
+    })
+    assert event_iss.category == "FLYBY"
+    fig1 = plot_finder_chart(event_iss, format="figure")
+    assert isinstance(fig1, matplotlib.figure.Figure)
+
+    event_tiangong = Event.from_dict({
+        "event": "Bright Tiangong Pass",
+        "date": "2026-09-08T22:00:00Z",
+        "azimuth": 200.0,
+        "altitude": 35.0,
+    })
+    png_tg = event_tiangong.generate_finder_chart(format="png")
+    assert len(png_tg) > 1000
 
 
 def test_iss_flyby_chart_rendering():
