@@ -303,12 +303,14 @@ def _plot_background_stars(
     center_az: float,
     center_alt: float,
     p1_pos: tuple[float, float],
-    p2_pos: tuple[float, float],
+    p2_pos: tuple[float, float] | None,
     event_obj: "Event",
     theme: dict,
 ):
-    """Plots background stars using real catalog positions when place/time is available or realistic grid."""
+    """Plots background stars and Messier objects using catalog positions with labels."""
+    from apts.catalogs.messier import get_messier_raw
     from apts.catalogs.stars import get_bright_stars_raw
+    from apts.constants.graphconstants import get_messier_color
 
     p1_az, p1_alt = p1_pos
     p2_az, p2_alt = p2_pos if p2_pos is not None else (None, None)
@@ -321,16 +323,17 @@ def _plot_background_stars(
             dt_utc = event_obj.dt_utc
             ts_time = place.ts.utc(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour, dt_utc.minute, dt_utc.second)
             obs_at_t = place.observer.at(ts_time)
-            stars_df = get_bright_stars_raw()
 
+            # 1. Plot Bright Stars with names
+            stars_df = get_bright_stars_raw()
             for _, row in stars_df.iterrows():
                 st_obj = row.get("skyfield_object")
                 if st_obj is None:
                     continue
                 app = obs_at_t.observe(st_obj).apparent()
                 alt_obj, az_obj, _ = app.altaz()
-                st_alt = alt_obj.degrees
-                st_az = az_obj.degrees
+                st_alt = float(alt_obj.degrees)
+                st_az = float(az_obj.degrees)
                 st_mag = float(row.get("Magnitude_float", 3.0))
 
                 # Normalize azimuth range to chart window
@@ -345,20 +348,72 @@ def _plot_background_stars(
                     size = max(4.0, 45.0 * (2.512 ** ((4.5 - st_mag) / 2.5)))
                     alpha = max(0.3, min(1.0, (6.5 - st_mag) / 4.5))
                     ax.scatter(st_az, st_alt, s=size, color=theme["star"], alpha=alpha, edgecolors="none", zorder=5)
-                    ax.text(
-                        st_az,
-                        st_alt + 0.6,
-                        str(row.get("Name", "")),
-                        color=theme["text_sub"],
-                        fontsize=7,
-                        alpha=0.7,
-                        ha="center",
-                        va="bottom",
-                        zorder=6,
+
+                    st_name = str(row.get("Name", "")).strip()
+                    if st_name and st_mag <= 3.5:
+                        ax.text(
+                            st_az,
+                            st_alt + 0.6,
+                            st_name,
+                            color=theme["text_sub"],
+                            fontsize=8,
+                            fontweight="bold" if st_mag <= 2.0 else "normal",
+                            alpha=0.85,
+                            ha="center",
+                            va="bottom",
+                            zorder=6,
+                        )
+
+            # 2. Plot Visible Messier Objects with labels (M1, M31, M42, etc.)
+            messier_df = get_messier_raw()
+            for _, m_row in messier_df.iterrows():
+                m_obj = m_row.get("skyfield_object")
+                if m_obj is None:
+                    continue
+                app_m = obs_at_t.observe(m_obj).apparent()
+                m_alt_o, m_az_o, _ = app_m.altaz()
+                m_alt = float(m_alt_o.degrees)
+                m_az = float(m_az_o.degrees)
+
+                if m_az < az_min and m_az + 360.0 <= az_max:
+                    m_az += 360.0
+                elif m_az > az_max and m_az - 360.0 >= az_min:
+                    m_az -= 360.0
+
+                if az_min <= m_az <= az_max and 1.0 <= m_alt <= alt_max:
+                    if math.hypot(m_az - p1_az, m_alt - p1_alt) < 1.5 or (p2_pos and math.hypot(m_az - p2_az, m_alt - p2_alt) < 1.5):
+                        continue
+
+                    m_type = str(m_row.get("Type", "Other"))
+                    m_color = get_messier_color(m_type, effective_dark_mode=True)
+                    m_name = str(m_row.get("Messier", ""))
+
+                    ax.scatter(
+                        m_az,
+                        m_alt,
+                        s=30,
+                        facecolors="none",
+                        edgecolors=m_color,
+                        linewidth=1.0,
+                        linestyle="--",
+                        zorder=7,
                     )
+                    ax.scatter(m_az, m_alt, s=6, color=m_color, zorder=7)
+                    ax.text(
+                        m_az + 0.5,
+                        m_alt + 0.4,
+                        m_name,
+                        color=m_color,
+                        fontsize=8,
+                        fontweight="bold",
+                        ha="left",
+                        va="bottom",
+                        zorder=8,
+                    )
+
             plotted_real = True
         except (ValueError, KeyError, AttributeError, TypeError, RuntimeError) as e:
-            logger.debug(f"Failed to plot real background stars: {e}")
+            logger.debug(f"Failed to plot real background stars and Messier objects: {e}")
 
     if not plotted_real:
         np.random.seed(int(center_az * 100 + center_alt) % 10000)
@@ -414,6 +469,24 @@ def _draw_single_object(
     )
 
 
+def _get_satellite_name(event_obj: "Event") -> str:
+    """Helper to derive clean satellite name (ISS, Tiangong, etc.) without generic fallback."""
+    if event_obj.objects:
+        obj_name = str(event_obj.objects[0])
+        if obj_name and obj_name.lower() != "target":
+            return obj_name
+
+    title_lower = str(event_obj.title).lower()
+    cat_lower = str(event_obj.category).lower()
+
+    if "tiangong" in title_lower or "tiangong" in cat_lower or "css" in title_lower:
+        return "Tiangong"
+    if "iss" in title_lower or "iss" in cat_lower or "station" in title_lower:
+        return "ISS"
+
+    return "Satellite"
+
+
 def _draw_satellite_flyby_trail(
     ax: plt.Axes,
     center_az: float,
@@ -422,26 +495,71 @@ def _draw_satellite_flyby_trail(
     theme: dict,
 ):
     """Renders a satellite flyby trajectory trail across the sky with arrows and peak marker."""
-    az_start, alt_start = center_az - 14.0, max(2.0, center_alt - 15.0)
-    az_peak, alt_peak = center_az, center_alt
-    az_end, alt_end = center_az + 14.0, max(2.0, center_alt - 12.0)
+    from datetime import timedelta
 
-    t_vals = np.linspace(0, 1, 100)
-    az_curve = (1 - t_vals) ** 2 * az_start + 2 * (1 - t_vals) * t_vals * az_peak + t_vals ** 2 * az_end
-    alt_curve = (1 - t_vals) ** 2 * alt_start + 2 * (1 - t_vals) * t_vals * alt_peak + t_vals ** 2 * alt_end
+    from apts.skyfield_searches.satellites.flybys import _load_satellite
 
-    ax.plot(az_curve, alt_curve, color=theme["target_primary"], linewidth=4.0, alpha=0.3, zorder=10)
-    ax.plot(az_curve, alt_curve, color="#38BDF8", linestyle="-", linewidth=2.0, zorder=11)
+    sat_name = _get_satellite_name(event_obj)
 
+    # Try exact topocentric trajectory evaluation if place and satellite TLE are available
+    place = getattr(event_obj, "place", None)
+    calculated_trajectory = False
+
+    if place is not None and hasattr(place, "observer") and hasattr(place, "ts"):
+        tle_sat_name = "ISS (ZARYA)" if "iss" in sat_name.lower() else "CSS (TIANHE)" if "tiangong" in sat_name.lower() or "china" in sat_name.lower() else None
+        if tle_sat_name:
+            try:
+                sat = _load_satellite(tle_sat_name)
+                if sat is not None:
+                    dt_peak = event_obj.dt_utc
+                    ts_times = [place.ts.utc((dt_peak + timedelta(seconds=sec)).year, (dt_peak + timedelta(seconds=sec)).month, (dt_peak + timedelta(seconds=sec)).day, (dt_peak + timedelta(seconds=sec)).hour, (dt_peak + timedelta(seconds=sec)).minute, (dt_peak + timedelta(seconds=sec)).second) for sec in range(-240, 241, 10)]
+                    topos = sat - place.observer
+
+                    az_curve, alt_curve = [], []
+                    for t_sf in ts_times:
+                        alt_o, az_o, _ = topos.at(t_sf).apparent().altaz()
+                        a_deg, z_deg = float(alt_o.degrees), float(az_o.degrees)
+                        if a_deg >= 1.0:
+                            alt_curve.append(a_deg)
+                            az_curve.append(z_deg)
+
+                    if len(alt_curve) >= 5:
+                        az_curve = np.array(az_curve)
+                        alt_curve = np.array(alt_curve)
+                        calculated_trajectory = True
+
+                        az_start, alt_start = az_curve[0], alt_curve[0]
+                        az_end, alt_end = az_curve[-1], alt_curve[-1]
+                        peak_idx = int(np.argmax(alt_curve))
+                        az_peak, alt_peak = az_curve[peak_idx], alt_curve[peak_idx]
+            except (ValueError, KeyError, AttributeError, TypeError, RuntimeError) as e:
+                logger.debug(f"Could not compute topocentric satellite trajectory: {e}")
+
+    if not calculated_trajectory:
+        az_start = center_az - 18.0
+        alt_start = max(2.0, center_alt - 15.0)
+        az_peak, alt_peak = center_az, center_alt
+        az_end = center_az + 18.0
+        alt_end = max(2.0, center_alt - 12.0)
+
+        t_vals = np.linspace(0, 1, 100)
+        az_curve = (1 - t_vals) ** 2 * az_start + 2 * (1 - t_vals) * t_vals * az_peak + t_vals ** 2 * az_end
+        alt_curve = (1 - t_vals) ** 2 * alt_start + 2 * (1 - t_vals) * t_vals * alt_peak + t_vals ** 2 * alt_end
+
+    ax.plot(az_curve, alt_curve, color=theme["target_primary"], linewidth=4.5, alpha=0.3, zorder=10)
+    ax.plot(az_curve, alt_curve, color="#38BDF8", linestyle="-", linewidth=2.2, zorder=11)
+
+    n_pts = len(az_curve)
     for frac in (0.3, 0.7):
-        idx = int(frac * 100)
-        ax.annotate(
-            "",
-            xy=(az_curve[idx + 1], alt_curve[idx + 1]),
-            xytext=(az_curve[idx], alt_curve[idx]),
-            arrowprops={"arrowstyle": "->", "color": "#FACC15", "lw": 2},
-            zorder=12,
-        )
+        idx = int(frac * (n_pts - 1))
+        if idx + 1 < n_pts:
+            ax.annotate(
+                "",
+                xy=(az_curve[idx + 1], alt_curve[idx + 1]),
+                xytext=(az_curve[idx], alt_curve[idx]),
+                arrowprops={"arrowstyle": "->", "color": "#FACC15", "lw": 2},
+                zorder=12,
+            )
 
     ax.scatter([az_start, az_end], [alt_start, alt_end], s=40, color=theme["text_sub"], zorder=12)
     ax.text(az_start, alt_start - 1.5, "Rise", color=theme["text_sub"], fontsize=9, ha="center", zorder=12)
@@ -449,7 +567,6 @@ def _draw_satellite_flyby_trail(
 
     ax.scatter(az_peak, alt_peak, s=160, color="#FACC15", edgecolors="#FFFFFF", linewidth=1.5, zorder=14)
     ax.scatter(az_peak, alt_peak, s=400, color="#FACC15", alpha=0.25, zorder=13)
-    sat_name = event_obj.objects[0] if event_obj.objects else "ISS"
     ax.text(az_peak, alt_peak + 1.8, f"{sat_name} Peak", color=theme["text_main"], fontsize=12, fontweight="bold", ha="center", zorder=15)
 
 
