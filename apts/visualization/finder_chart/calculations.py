@@ -1,6 +1,5 @@
 import logging
 import math
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -139,7 +138,10 @@ def _find_optimal_chart_time(
     when the target is at good altitude for long-lasting events.
     Returns (ts_chart, target_alt_chart, chart_datetime_utc, chart_time_note).
     """
+    from datetime import timedelta
+
     from apts.i18n import gettext_
+    from apts.skyfield_searches.utils import fast_altaz
 
     dt_utc = event_obj.dt_utc
 
@@ -168,54 +170,47 @@ def _find_optimal_chart_time(
     # Target is below or near horizon (< 5.0 deg).
     if is_long_event(event_obj.category, event_obj.title) and sf_obj1 is not None:
         try:
-            from apts.cache import get_ephemeris
+            from apts.cache import get_ephemeris, get_timescale
 
             eph = get_ephemeris()
             sun = eph["sun"]
 
-            best_ts = ts_time
-            best_dt = dt_utc
-            best_score = -999999.0
-            best_alt = alt_peak
-
             ts_factory = getattr(ts_time, "ts", None) or getattr(
                 getattr(event_obj, "place", None), "ts", None
+            ) or get_timescale()
+
+            # Vectorized evaluation over +/- 12 hours grid (97 points)
+            offsets_hours = np.linspace(-12.0, 12.0, 97)
+            t_jd_vec = ts_time.tt + offsets_hours / 24.0
+            ts_vec = ts_factory.tt_jd(t_jd_vec)
+            obs_vec = observer.at(ts_vec)
+
+            # Optimization: Fast AltAz evaluation over vectorized Time array
+            alt_c_vec = fast_altaz(obs_vec, sf_obj1)[0].degrees
+            sun_alt_c_vec = fast_altaz(obs_vec, sun)[0].degrees
+
+            # Vectorized scoring logic
+            scores = np.where(
+                alt_c_vec < 0.0,
+                -1000.0 + alt_c_vec,
+                alt_c_vec + np.where(sun_alt_c_vec < -0.833, 100.0, 0.0) - np.abs(offsets_hours) * 0.5,
             )
 
-            offsets_hours = np.linspace(-12.0, 12.0, 97)
-            for dh in offsets_hours:
-                dt_cand = dt_utc + timedelta(hours=float(dh))
-                if ts_factory is not None:
-                    ts_c = ts_factory.utc(
-                        dt_cand.year,
-                        dt_cand.month,
-                        dt_cand.day,
-                        dt_cand.hour,
-                        dt_cand.minute,
-                        dt_cand.second,
-                    )
-                else:
-                    ts_c = ts_time
-
-                obs_c = observer.at(ts_c)
-                alt_c = float(obs_c.observe(sf_obj1).apparent().altaz()[0].degrees)
-                sun_alt_c = float(obs_c.observe(sun).apparent().altaz()[0].degrees)
-
-                if alt_c < 0.0:
-                    score = -1000.0 + alt_c
-                else:
-                    score = alt_c
-                    if sun_alt_c < -0.833:
-                        score += 100.0
-                    score -= abs(dh) * 0.5
-
-                if score > best_score:
-                    best_score = score
-                    best_ts = ts_c
-                    best_dt = dt_cand
-                    best_alt = alt_c
+            best_idx = int(np.argmax(scores))
+            best_alt = float(alt_c_vec[best_idx])
 
             if best_alt >= 5.0 or (alt_peak < 0.0 and best_alt > 0.0):
+                best_dh = float(offsets_hours[best_idx])
+                best_dt = dt_utc + timedelta(hours=best_dh)
+                best_ts = ts_factory.utc(
+                    best_dt.year,
+                    best_dt.month,
+                    best_dt.day,
+                    best_dt.hour,
+                    best_dt.minute,
+                    best_dt.second,
+                )
+
                 chart_datetime_str = best_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
                 time_peak_str = dt_utc.strftime("%H:%M")
                 time_chart_str = best_dt.strftime("%H:%M")
