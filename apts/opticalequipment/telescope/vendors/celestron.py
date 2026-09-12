@@ -119,7 +119,7 @@ class CelestronTelescope(Telescope):
             "name": "AstroMaster 70AZ",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 1310,
+            "mass": 1315,  # Verified via Celestron.com (2.9 lbs / 1,315g OTA weight, 70mm aperture, 900mm focal length, f/13, 1.25" visual back - https://www.celestron.com/products/astromaster-70az-telescope)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
