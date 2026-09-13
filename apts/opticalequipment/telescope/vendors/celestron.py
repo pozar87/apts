@@ -807,16 +807,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar Evolution 8",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 5670,
+            "mass": 5670, # Verified via Celestron.com (12.5 lbs / 5.67 kg OTA weight) - https://www.celestron.com/products/nexstar-evolution-8-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203.2,
-            "focal_length_mm": 2032,
-            "central_obstruction_mm": 64,
+            "aperture_mm": 203.2, # Verified via Celestron.com (203.2mm / 8" aperture) - https://www.celestron.com/products/nexstar-evolution-8-computerized-telescope
+            "focal_length_mm": 2032, # Verified via Celestron.com (2032mm focal length, f/10) - https://www.celestron.com/products/nexstar-evolution-8-computerized-telescope
+            "central_obstruction_mm": 64, # Verified via Celestron.com (64mm / 2.5" secondary mirror obstruction) - https://www.celestron.com/products/nexstar-evolution-8-computerized-telescope
         },
         "Celestron_Omni_XLT_102": {
             "brand": "Celestron",
