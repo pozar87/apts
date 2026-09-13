@@ -52,33 +52,52 @@ def _filter_ecliptic_stars(bright_stars, earth, t_mid):
     return v_ra_hours, v_dec_degrees, star_names, u_stars
 
 
-def _perform_coarse_occultation_check(observer, moon, coarse_times, u_stars):
+def _perform_coarse_occultation_check(observer, moon, earth, coarse_times, u_stars):
     """
     Perform coarse 20-minute grid separation and topocentric altitude checks.
+    Uses a fast two-stage geocentric/topocentric filtering strategy to bypass
+    expensive topocentric observer calculations when the Moon is far from stars.
     Returns potential_mask where occultations could occur.
     """
-    mpos_coarse = observer.at(coarse_times).observe(moon)
-    m_dist_coarse = mpos_coarse.distance()
-    moon_rad_coarse = np.degrees(
-        np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_coarse.km)
+    # Stage 1: Fast geocentric check (lunar topocentric parallax is < 1.05°,
+    # so a 1.3° safety margin guarantees zero missed candidates while avoiding
+    # ITRS topocentric frame rotations and GAST/nutation calculations for ~95%+ of times).
+    mpos_geo = earth.at(coarse_times).observe(moon)
+    m_dist_geo = mpos_geo.distance()
+    moon_rad_geo = np.degrees(
+        np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_geo.km)
     )
 
-    m_au_coarse = mpos_coarse.position.au
-    u_moon_coarse = m_au_coarse / np.linalg.norm(m_au_coarse, axis=0)
+    m_au_geo = mpos_geo.position.au
+    u_moon_geo = m_au_geo / np.linalg.norm(m_au_geo, axis=0)
 
-    dot_products = u_stars.T @ u_moon_coarse
-    sep_coarse = np.degrees(np.arccos(np.clip(dot_products, -1.0, 1.0)))
+    dot_products_geo = u_stars.T @ u_moon_geo
+    sep_geo = np.degrees(np.arccos(np.clip(dot_products_geo, -1.0, 1.0)))
 
-    potential_mask_sep = sep_coarse < moon_rad_coarse + 0.2
-    has_potential_star = np.any(potential_mask_sep, axis=0)
+    cand_time_mask = np.any(sep_geo < moon_rad_geo + 1.3, axis=0)
 
-    mpos_coarse_alt_deg = np.full(len(coarse_times), -999.0)
-    if np.any(has_potential_star):
-        active_coarse_times = coarse_times[has_potential_star]
-        alt, _, _ = fast_altaz(observer.at(active_coarse_times), moon)
-        mpos_coarse_alt_deg[has_potential_star] = alt.degrees
+    potential_mask = np.zeros_like(sep_geo, dtype=bool)
+    if np.any(cand_time_mask):
+        # Stage 2: For candidate times only, evaluate topocentric positions and horizon check.
+        active_times = coarse_times[cand_time_mask]
+        mpos_topo = observer.at(active_times).observe(moon)
+        m_dist_topo = mpos_topo.distance()
+        moon_rad_topo = np.degrees(
+            np.arcsin(astronomy.MOON_RADIUS_KM / m_dist_topo.km)
+        )
 
-    return potential_mask_sep & (mpos_coarse_alt_deg > -1)
+        m_au_topo = mpos_topo.position.au
+        u_moon_topo = m_au_topo / np.linalg.norm(m_au_topo, axis=0)
+
+        dot_topo = u_stars.T @ u_moon_topo
+        sep_topo = np.degrees(np.arccos(np.clip(dot_topo, -1.0, 1.0)))
+
+        alt, _, _ = fast_altaz(observer.at(active_times), moon)
+
+        topo_mask = (sep_topo < moon_rad_topo + 0.2) & (alt.degrees > -1)
+        potential_mask[:, cand_time_mask] = topo_mask
+
+    return potential_mask
 
 
 def _perform_fine_occultation_check(
@@ -193,7 +212,7 @@ def find_lunar_occultations(observer, bright_stars, start_date, end_date):
     coarse_times = times[coarse_idx]
 
     potential_mask = _perform_coarse_occultation_check(
-        observer, moon, coarse_times, u_stars
+        observer, moon, earth, coarse_times, u_stars
     )
 
     if not np.any(potential_mask):
