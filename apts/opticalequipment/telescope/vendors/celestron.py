@@ -743,16 +743,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 5SE",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 2722, # Verified via Celestron.com (96 oz / 2,722g OTA weight)
+            "mass": 2722,  # Verified via Celestron.com (6 lbs / 2,722g OTA weight, 125mm aperture, 1250mm focal length, f/10, 51mm secondary obstruction - https://www.celestron.com/products/nexstar-5se-computerized-telescope)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 125, # Verified via Celestron.com (125mm / 4.92") - https://www.celestron.com/products/nexstar-5se-computerized-telescope
-            "focal_length_mm": 1250,
-            "central_obstruction_mm": 51,
+            "aperture_mm": 125,  # Verified via Celestron.com (125mm / 4.92") - https://www.celestron.com/products/nexstar-5se-computerized-telescope
+            "focal_length_mm": 1250,  # Verified via Celestron.com (1250mm / f/10) - https://www.celestron.com/products/nexstar-5se-computerized-telescope
+            "central_obstruction_mm": 51,  # Verified via Celestron.com (51mm / 2.0" secondary obstruction) - https://www.celestron.com/products/nexstar-5se-computerized-telescope
         },
         "Celestron_NexStar_6SE": {
             "brand": "Celestron",
