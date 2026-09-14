@@ -120,7 +120,7 @@ def _compute_sky_brightness_at_time(
 ) -> str:
     """Computes topocentric sky brightness classification at a specific chart observation time."""
     from apts.cache import get_ephemeris
-    from apts.events.event import get_sky_brightness
+    from apts.events.calculations import get_sky_brightness
 
     try:
         eph = get_ephemeris()

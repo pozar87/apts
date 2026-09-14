@@ -4,6 +4,20 @@ from .evaluations import (
     get_duration,
     get_rarity,
 )
+from .event import (
+    CATEGORY_RULES,
+    DirectionData,
+    _build_event_title,
+    _extract_coordinates,
+    _extract_event_objects,
+    _format_angular_separation,
+    _parse_event_datetime,
+    build_event_description,
+    get_direction_data,
+    get_event_category,
+    get_sky_brightness,
+    get_step_by_step_guide,
+)
 from .lunar import (
     calculate_lunar_eclipses,
     calculate_lunar_features,
@@ -48,4 +62,16 @@ __all__ = [
     "calculate_nasa_comets",
     "calculate_seasons",
     "calculate_solar_eclipses",
+    "DirectionData",
+    "get_sky_brightness",
+    "get_direction_data",
+    "CATEGORY_RULES",
+    "get_event_category",
+    "get_step_by_step_guide",
+    "build_event_description",
+    "_parse_event_datetime",
+    "_extract_event_objects",
+    "_build_event_title",
+    "_format_angular_separation",
+    "_extract_coordinates",
 ]
