@@ -17,6 +17,10 @@ from .event import (
     get_event_category,
     get_sky_brightness,
     get_step_by_step_guide,
+    parse_event_datetime,
+    resolve_direction_data,
+    resolve_horizon_and_chart_metadata,
+    resolve_topocentric_state,
 )
 from .lunar import (
     calculate_lunar_eclipses,
@@ -65,6 +69,10 @@ __all__ = [
     "DirectionData",
     "get_sky_brightness",
     "get_direction_data",
+    "parse_event_datetime",
+    "resolve_topocentric_state",
+    "resolve_horizon_and_chart_metadata",
+    "resolve_direction_data",
     "CATEGORY_RULES",
     "get_event_category",
     "get_step_by_step_guide",

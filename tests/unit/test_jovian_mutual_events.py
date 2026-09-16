@@ -45,12 +45,10 @@ class TestJovianMutualEvents(unittest.TestCase):
         mock_obs_pos.separation_from.return_value.degrees = 0.001
         mock_obs_pos.distance.return_value.km = 600000000.0
 
-        # Mock altaz for visibility (via Apparent)
-        with patch("apts.skyfield_searches.jovian.utils.Apparent") as mock_app_class:
-            mock_app = MagicMock()
-            mock_app_class.return_value = mock_app
-            mock_app.altaz.return_value = (MagicMock(degrees=45), None, None)
-            mock_app.separation_from.return_value.degrees = 45 # for elongation
+        # Mock altaz for visibility
+        with patch("apts.skyfield_searches.jovian.utils.fast_altaz") as mock_fast_altaz:
+            mock_fast_altaz.return_value = (MagicMock(degrees=45), None, None)
+            mock_obs_pos.separation_from.return_value.degrees = 45 # for elongation
 
             # Mock j_obs.light_time
             mock_obs_pos.light_time = 0.03 # days

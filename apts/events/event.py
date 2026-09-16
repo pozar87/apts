@@ -1,6 +1,5 @@
 import json
 import logging
-import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional
@@ -18,6 +17,10 @@ from apts.events.calculations.event import (
     get_event_category,
     get_sky_brightness,
     get_step_by_step_guide,
+    parse_event_datetime,
+    resolve_direction_data,
+    resolve_horizon_and_chart_metadata,
+    resolve_topocentric_state,
 )
 
 if TYPE_CHECKING:
@@ -36,6 +39,10 @@ __all__ = [
     "get_event_category",
     "get_sky_brightness",
     "get_step_by_step_guide",
+    "parse_event_datetime",
+    "resolve_topocentric_state",
+    "resolve_horizon_and_chart_metadata",
+    "resolve_direction_data",
 ]
 
 
@@ -104,93 +111,44 @@ class Event:
         place: Optional["Place"] = None,
         extra_data: dict[str, Any] | None = None,
     ):
-        if isinstance(datetime_utc, datetime):
-            if datetime_utc.tzinfo is None:
-                datetime_utc = datetime_utc.replace(tzinfo=utc)
-            self.dt_utc = datetime_utc.astimezone(utc)
-            self.datetime_utc = self.dt_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            self.datetime_utc = str(datetime_utc)
-            try:
-                # Parse ISO timestamp
-                clean_ts = self.datetime_utc.replace("Z", "+00:00")
-                self.dt_utc = datetime.fromisoformat(clean_ts).astimezone(utc)
-            except ValueError:
-                self.dt_utc = datetime.now(utc)
-
+        self.dt_utc, self.datetime_utc = parse_event_datetime(datetime_utc)
         self.category = category
         self.title = title
         self.best_viewing_time_local = best_viewing_time_local
         self.location_name = location_name
         self.objects = objects or []
         self.angular_separation = angular_separation
-        self.altitude_deg = altitude_deg
-        self.azimuth_deg = azimuth_deg
         self.place = place
         self.extra_data = extra_data or {}
 
-        # Compute Sky Brightness
-        sun_alt = self.extra_data.get("sun_altitude")
-        moon_alt = self.extra_data.get("moon_altitude")
-        phase = self.extra_data.get("phase", 0.0)
-        phase_frac = float(phase) if isinstance(phase, (int, float)) else 0.0
-
-        if place is not None and hasattr(place, "get_altitude"):
-            try:
-                t_sf = place.ts.utc(self.dt_utc.year, self.dt_utc.month, self.dt_utc.day, self.dt_utc.hour, self.dt_utc.minute, self.dt_utc.second)
-                if sun_alt is None:
-                    sun_alt = place.get_altitude(place.sun, t_sf)
-                    moon_alt = place.get_altitude(place.moon, t_sf)
-                if (self.azimuth_deg is None or self.altitude_deg is None) and self.objects:
-                    alt_primary = place.get_altitude(self.objects[0], t_sf)
-                    az_primary = place.get_azimuth(self.objects[0], t_sf)
-                    if not math.isnan(alt_primary) and not math.isnan(az_primary):
-                        self.altitude_deg = float(alt_primary)
-                        self.azimuth_deg = float(az_primary)
-            except (ValueError, KeyError, AttributeError, TypeError) as e:
-                logger.debug(f"Could not resolve topocentric position for primary object: {e}")
-
-        self.sky_brightness = get_sky_brightness(sun_alt, moon_alt, phase_frac)
-
-        # Initialize horizon and chart metadata
-        self.is_below_horizon = bool(self.extra_data.get("is_below_horizon", False))
-        self.chart_datetime_utc = self.extra_data.get("chart_datetime_utc")
-        self.chart_time_note = self.extra_data.get("chart_time_note")
-        self.target_altitude_deg = (
-            float(self.extra_data["target_altitude_deg"])
-            if "target_altitude_deg" in self.extra_data and self.extra_data["target_altitude_deg"] is not None
-            else self.altitude_deg
+        # Resolve topocentric position and sky brightness
+        self.azimuth_deg, self.altitude_deg, self.sky_brightness = resolve_topocentric_state(
+            place, self.dt_utc, self.objects, azimuth_deg, altitude_deg, self.extra_data
         )
 
-        if self.altitude_deg is not None:
-            if self.target_altitude_deg is None:
-                self.target_altitude_deg = float(self.altitude_deg)
-            if self.altitude_deg < 0.0:
-                self.is_below_horizon = True
+        # Initialize horizon and chart metadata
+        (
+            self.is_below_horizon,
+            self.chart_datetime_utc,
+            self.chart_time_note,
+            self.target_altitude_deg,
+        ) = resolve_horizon_and_chart_metadata(self.altitude_deg, self.extra_data)
 
-        # Handle Direction
-        if isinstance(direction, DirectionData):
-            self.direction = direction
-        elif isinstance(direction, dict):
-            self.direction = DirectionData(
-                code=direction.get("code", "E"),
-                name=direction.get("name", "Look East"),
-                azimuth_deg=float(direction.get("azimuth_deg", self.azimuth_deg if self.azimuth_deg is not None else 90.0)),
-            )
-        else:
-            self.direction = get_direction_data(self.azimuth_deg)
+        # Resolve Direction
+        self.direction = resolve_direction_data(direction, self.azimuth_deg)
 
-        # Handle Step-by-step guide
-        if step_by_step_guide:
-            self.step_by_step_guide = step_by_step_guide
-        else:
-            self.step_by_step_guide = get_step_by_step_guide(self.category, self.title, self.objects)
+        # Resolve Step-by-step guide
+        self.step_by_step_guide = (
+            step_by_step_guide
+            if step_by_step_guide
+            else get_step_by_step_guide(self.category, self.title, self.objects)
+        )
 
-        # Handle Description
-        if description:
-            self.description = description
-        else:
-            self.description = build_event_description(
+        # Resolve Description
+        self.description = (
+            description
+            if description
+            else build_event_description(
                 self.category,
                 self.title,
                 self.objects,
@@ -198,6 +156,7 @@ class Event:
                 self.location_name,
                 self.angular_separation,
             )
+        )
 
     def to_export_data(self) -> EventExportData:
         return EventExportData(
