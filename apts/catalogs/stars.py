@@ -11,6 +11,7 @@ from ..units import get_unit_registry
 logger = logging.getLogger(__name__)
 
 _bright_stars_df = None
+_bright_stars_skyfield_obj = None
 
 
 def _load_bright_stars_with_units():
@@ -85,3 +86,18 @@ def get_bright_stars_raw() -> pd.DataFrame:
         logger.info("Loading Bright Stars catalog...")
         _bright_stars_df = _load_bright_stars_with_units()
     return _bright_stars_df  # type: ignore
+
+
+def get_bright_stars_skyfield_object() -> Star:
+    """
+    Returns a single vectorized Skyfield Star object backed by array coordinates
+    for all stars in the Bright Stars catalog.
+    """
+    global _bright_stars_skyfield_obj
+    if _bright_stars_skyfield_obj is None:
+        df = get_bright_stars_raw()
+        _bright_stars_skyfield_obj = Star(
+            ra_hours=df["ra_hours"].values,
+            dec_degrees=df["dec_degrees"].values,
+        )
+    return _bright_stars_skyfield_obj

@@ -13,6 +13,7 @@ from ..units import get_unit_registry
 logger = logging.getLogger(__name__)
 
 _messier_df = None
+_messier_skyfield_obj = None
 
 
 def _load_messier_with_units():
@@ -132,3 +133,18 @@ def get_messier_raw() -> pd.DataFrame:
         logger.info("Loading Messier catalog...")
         _messier_df = _load_messier_with_units()
     return _messier_df  # type: ignore
+
+
+def get_messier_skyfield_object() -> Star:
+    """
+    Returns a single vectorized Skyfield Star object backed by array coordinates
+    for all objects in the Messier catalog.
+    """
+    global _messier_skyfield_obj
+    if _messier_skyfield_obj is None:
+        df = get_messier_raw()
+        _messier_skyfield_obj = Star(
+            ra_hours=df["ra_hours"].values,
+            dec_degrees=df["dec_degrees"].values,
+        )
+    return _messier_skyfield_obj
