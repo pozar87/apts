@@ -240,9 +240,16 @@ def _plot_background_stars(
     theme: dict,
 ):
     """Plots background stars and Messier objects using catalog positions with labels."""
-    from apts.catalogs.messier import get_messier_raw
-    from apts.catalogs.stars import get_bright_stars_raw
+    from apts.catalogs.messier import (
+        get_messier_raw,
+        get_messier_skyfield_object,
+    )
+    from apts.catalogs.stars import (
+        get_bright_stars_raw,
+        get_bright_stars_skyfield_object,
+    )
     from apts.constants.graphconstants import get_messier_color
+    from apts.skyfield_searches.utils import fast_altaz
 
     p1_az, p1_alt = p1_pos
     p2_az, p2_alt = p2_pos if p2_pos is not None else (None, None)
@@ -263,17 +270,20 @@ def _plot_background_stars(
             )
             obs_at_t = place.observer.at(ts_time)
 
-            # 1. Plot Bright Stars with names
+            # 1. Plot Bright Stars with names (vectorized fast_altaz observation)
             stars_df = get_bright_stars_raw()
-            for _, row in stars_df.iterrows():
-                st_obj = row.get("skyfield_object")
-                if st_obj is None:
-                    continue
-                app = obs_at_t.observe(st_obj).apparent()
-                alt_obj, az_obj, _ = app.altaz()
-                st_alt = float(alt_obj.degrees)
-                st_az = float(az_obj.degrees)
-                st_mag = float(row.get("Magnitude_float", 3.0))
+            stars_sky_obj = get_bright_stars_skyfield_object()
+            alt_v, az_v, _ = fast_altaz(obs_at_t, stars_sky_obj)
+            st_alts = alt_v.degrees
+            st_azs = az_v.degrees
+
+            mags = stars_df["Magnitude_float"].to_numpy()
+            names = stars_df["Name"].to_numpy()
+
+            for i in range(len(stars_df)):
+                st_alt = float(st_alts[i])
+                st_az = float(st_azs[i])
+                st_mag = float(mags[i])
 
                 # Normalize azimuth range to chart window
                 if st_az < az_min and st_az + 360.0 <= az_max:
@@ -298,7 +308,7 @@ def _plot_background_stars(
                         zorder=5,
                     )
 
-                    st_name = str(row.get("Name", "")).strip()
+                    st_name = str(names[i]).strip() if names[i] is not None else ""
                     if st_name and st_mag <= 3.5:
                         ax.text(
                             st_az,
@@ -313,16 +323,19 @@ def _plot_background_stars(
                             zorder=6,
                         )
 
-            # 2. Plot Visible Messier Objects with labels (M1, M31, M42, etc.)
+            # 2. Plot Visible Messier Objects with labels (vectorized fast_altaz observation)
             messier_df = get_messier_raw()
-            for _, m_row in messier_df.iterrows():
-                m_obj = m_row.get("skyfield_object")
-                if m_obj is None:
-                    continue
-                app_m = obs_at_t.observe(m_obj).apparent()
-                m_alt_o, m_az_o, _ = app_m.altaz()
-                m_alt = float(m_alt_o.degrees)
-                m_az = float(m_az_o.degrees)
+            messier_sky_obj = get_messier_skyfield_object()
+            m_alt_v, m_az_v, _ = fast_altaz(obs_at_t, messier_sky_obj)
+            m_alts = m_alt_v.degrees
+            m_azs = m_az_v.degrees
+
+            m_types = messier_df["Type"].to_numpy()
+            m_names = messier_df["Messier"].to_numpy()
+
+            for i in range(len(messier_df)):
+                m_alt = float(m_alts[i])
+                m_az = float(m_azs[i])
 
                 if m_az < az_min and m_az + 360.0 <= az_max:
                     m_az += 360.0
@@ -335,9 +348,9 @@ def _plot_background_stars(
                     ):
                         continue
 
-                    m_type = str(m_row.get("Type", "Other"))
+                    m_type = str(m_types[i]) if m_types[i] is not None else "Other"
                     m_color = get_messier_color(m_type, effective_dark_mode=True)
-                    m_name = str(m_row.get("Messier", ""))
+                    m_name = str(m_names[i])
 
                     ax.scatter(
                         m_az,
