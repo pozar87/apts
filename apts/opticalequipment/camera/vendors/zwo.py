@@ -731,36 +731,36 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 8780,
-            "height": 1080,
+            "full_well_e": 8780,  # Verified via ZWO official specs (8780e- full well capacity) - https://www.zwoastro.com/product/asi220mm-mini/
+            "height": 1080,  # Verified via ZWO official specs (1920x1080 resolution) - https://www.zwoastro.com/product/asi220mm-mini/
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
-            "mass": 60,
+            "mass": 60,  # Verified via ZWO official specs (60g / 2.1 oz weight) - https://www.zwoastro.com/product/asi220mm-mini/
             "name": "ASI220MM Mini",
-            "optical_length": 8.5,
-            "pixel_size_um": 4.0,
-            "quantum_efficiency_pct": 92,
-            "read_noise_e": 0.6,
+            "optical_length": 8.5,  # Verified via ZWO official specs (8.5mm backfocus) - https://www.zwoastro.com/product/asi220mm-mini/
+            "pixel_size_um": 4.0,  # Verified via ZWO official specs (4.0um pixel size) - https://www.zwoastro.com/product/asi220mm-mini/
+            "quantum_efficiency_pct": 92,  # Verified via ZWO official specs (92% peak QE) - https://www.zwoastro.com/product/asi220mm-mini/
+            "read_noise_e": 0.6,  # Verified via ZWO official specs (0.6e- read noise) - https://www.zwoastro.com/product/asi220mm-mini/
             "reversible": False,
-            "sensor_height_mm": 4.32,
-            "sensor_width_mm": 7.68,
+            "sensor_height_mm": 4.32,  # Verified via ZWO official specs (7.68mm x 4.32mm sensor) - https://www.zwoastro.com/product/asi220mm-mini/
+            "sensor_width_mm": 7.68,  # Verified via ZWO official specs (7.68mm x 4.32mm sensor) - https://www.zwoastro.com/product/asi220mm-mini/
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
-            "width": 1920,
+            "width": 1920,  # Verified via ZWO official specs (1920x1080 resolution) - https://www.zwoastro.com/product/asi220mm-mini/
         },
         "ZWO_ASI_220MM_Mini_for_ASIAir": {
             "bf_role": "end",
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 8780, # Verified via SC2210 sensor (ASI220MM Mini)
+            "full_well_e": 8780,  # Verified via SC2210 sensor (ASI220MM Mini) - https://www.zwoastro.com/product/asi220mm-mini/
             "height": 1080,
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
-            "mass": 60,
+            "mass": 60,  # Verified via ZWO official specs - https://www.zwoastro.com/product/asi220mm-mini/
             "name": "ASI220MM Mini (for ASIAir)",
             "optical_length": 8.5,
-            "pixel_size_um": 4.0, # Verified via SC2210 sensor
-            "quantum_efficiency_pct": 92, # Verified via SC2210 sensor
+            "pixel_size_um": 4.0,  # Verified via SC2210 sensor - https://www.zwoastro.com/product/asi220mm-mini/
+            "quantum_efficiency_pct": 92,  # Verified via SC2210 sensor - https://www.zwoastro.com/product/asi220mm-mini/
             "read_noise_e": 0.6,
             "reversible": False,
             "sensor_height_mm": 4.32,
