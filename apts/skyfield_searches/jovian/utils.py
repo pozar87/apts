@@ -2,7 +2,6 @@ import logging
 from typing import cast
 
 import numpy as np
-from skyfield.positionlib import Apparent  # Re-exported for unit test mocking backwards compatibility
 
 from ..utils import fast_altaz
 
