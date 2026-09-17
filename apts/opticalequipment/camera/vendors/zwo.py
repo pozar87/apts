@@ -1805,17 +1805,17 @@ class ZwoCamera(Camera):
             "cside_thread": "",
             "full_well_e": 10550,
             "height": 3552,
-            "mass": 126,
+            "mass": 126,  # Verified via ZWO (126g) - https://www.zwoastro.com/product/asi676mc/
             "name": "ASI676MC",
-            "optical_length": 6.5,
+            "optical_length": 12.5,  # Verified via ZWO (12.5mm backfocus distance / CS thread) - https://www.zwoastro.com/product/asi676mc/
             "pixel_size_um": 2.0,
             "quantum_efficiency_pct": 83,
             "read_noise_e": 0.56,
             "reversible": False,
-            "sensor_height_mm": 7.104,
-            "sensor_width_mm": 7.104,
+            "sensor_height_mm": 7.1,
+            "sensor_width_mm": 7.1,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Verified via ZWO (CS-mount native thread with 12.5mm backfocus) - https://www.zwoastro.com/product/asi676mc/
             "type": "type_camera",
             "width": 3552,
         },
