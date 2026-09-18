@@ -1,11 +1,12 @@
-from typing import Any, Optional, cast
+from typing import Any, cast
 
-from .enums import TelescopeType, TubeMaterial
 from ...constants import GraphConstants
 from ...optics.calculations import telescope as telescope_calc
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ..base import OpticalEquipment
+from .calculations import normalize_telescope_database_entry
+from .enums import TelescopeType, TubeMaterial
 
 
 class Telescope(OpticalEquipment):
@@ -13,79 +14,25 @@ class Telescope(OpticalEquipment):
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        from ...utils import guess_optical_properties
-
-        entry = entry.copy()
-        name = entry.get("name", "")
-        if "aperture_mm" not in entry and "aperture" not in entry:
-            aperture, focal_length = guess_optical_properties(name)
-            if aperture:
-                entry["aperture_mm"] = aperture
-            if focal_length:
-                entry["focal_length_mm"] = focal_length
-        elif "focal_length_mm" not in entry and "focal_length" not in entry:
-            _, focal_length = guess_optical_properties(name)
-            if focal_length:
-                entry["focal_length_mm"] = focal_length
-        return super(Telescope, cls).normalize_database_entry(entry)
+        entry = normalize_telescope_database_entry(entry)
+        return super().normalize_database_entry(entry)
 
     _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import guess_optical_properties, map_conn, map_gender
-
-        brand = entry["brand"]
-        name = entry["name"]
+        entry = normalize_telescope_database_entry(entry)
+        brand = entry.get("brand", "Unknown")
+        name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
-        ct = map_conn(entry.get("cside_thread"))
-        cg = map_gender(entry.get("cside_gender"))
-
-        # Use explicit aperture and focal length if available, otherwise guess
-        aperture = entry.get("aperture_mm")
-        focal_length = entry.get("focal_length_mm")
-        if aperture is None or focal_length is None:
-            g_aperture, g_focal_length = guess_optical_properties(name)
-            aperture = aperture or g_aperture
-            focal_length = focal_length or g_focal_length
-
+        aperture = entry.get("aperture_mm", 80)
+        focal_length = entry.get("focal_length_mm", 500)
         central_obstruction = entry.get("central_obstruction_mm", 0)
-
-        # Map type string to TelescopeType enum
-        type_str = entry.get("type", "")
-        telescope_type = TelescopeType.REFRACTOR  # Default
-        if "refractor" in type_str:
-            telescope_type = TelescopeType.REFRACTOR
-        elif "newtonian" in type_str:
-            telescope_type = TelescopeType.NEWTONIAN_REFLECTOR
-        elif "schmidt_cassegrain" in type_str or "sct" in type_str:
-            telescope_type = TelescopeType.SCHMIDT_CASSEGRAIN
-        elif "maksutov" in type_str:
-            telescope_type = TelescopeType.MAKSUTOV_CASSEGRAIN
-        elif "catadioptric" in type_str or "astrograph" in type_str:
-            telescope_type = TelescopeType.CATADIOPTRIC
-
+        telescope_type = entry.get("telescope_type", TelescopeType.REFRACTOR)
         bf_val = entry.get("bf_role") == "start"
-
-        outputs = entry.get("outputs")
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-            if entry.get("t2_output", False):
-                from ...utils import Gender
-
-                outputs.append((ConnectionType.T2, Gender.MALE))
-        else:
-            from ...utils import map_conn, map_gender
-
-            outputs = [
-                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-                for c, g in outputs
-            ]
-
-        # Optimization: remove t2_output check in a future version after all databases are updated.
-        # For now, it's safer to keep it for items that might not have migrated to 'outputs' list.
+        outputs = entry.get("outputs", [])
 
         return cls(
             aperture or 80,
@@ -107,9 +54,9 @@ class Telescope(OpticalEquipment):
         focal_length,
         vendor="unknown telescope",
         outputs=None,
-        telescope_type: Optional[TelescopeType] = TelescopeType.REFRACTOR,
+        telescope_type: TelescopeType | None = TelescopeType.REFRACTOR,
         focuser_step_size=None,
-        tube_material: Optional[TubeMaterial] = TubeMaterial.ALUMINUM,
+        tube_material: TubeMaterial | None = TubeMaterial.ALUMINUM,
         backfocus=None,
         mass=0.0,
         optical_length=0.0,
@@ -123,7 +70,7 @@ class Telescope(OpticalEquipment):
             else:
                 outputs = [ConnectionType.F_1_25]
 
-        super(Telescope, self).__init__(
+        super().__init__(
             focal_length,
             vendor,
             mass=mass,
@@ -186,7 +133,7 @@ class Telescope(OpticalEquipment):
         aperture_mm = self.aperture.to("mm").magnitude
         return telescope_calc.calculate_dawes_limit(aperture_mm) * get_unit_registry().arcsecond
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
+    def rayleigh_limit(self, wavelength_nm: float = 550):
         """
         Calculate the maximum resolving power of your telescope using the Rayleigh Limit formula.
         θ = 1.22 * λ / D
@@ -264,12 +211,8 @@ class Telescope(OpticalEquipment):
         Register telescope in optical equipment graph. Telescope node is build out of two vertices:
         telescope node and its output. Telescope node is automatically connected with SPACE node.
         """
-        super(Telescope, self).register(equipment)
+        super().register(equipment)
         equipment.add_edge(GraphConstants.SPACE_ID, self.id())
 
     def __str__(self):
-        return "{} {}/{}".format(
-            self.get_vendor(),
-            cast(Any, self.aperture).magnitude,
-            cast(Any, self.focal_length).magnitude,
-        )
+        return f"{self.get_vendor()} {cast(Any, self.aperture).magnitude}/{cast(Any, self.focal_length).magnitude}"
