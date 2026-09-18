@@ -823,16 +823,16 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 102",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 4310,
+            "mass": 4310,  # Verified via Celestron official specs (9.5 lbs / 4.31 kg OTA weight) - https://www.celestron.com/products/omni-xlt-102-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "2\"",  # Verified via Celestron official specs (2" focuser with 1.25" adapter) - https://www.celestron.com/products/omni-xlt-102-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 102,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 102,  # Verified via Celestron official specs (102mm / 4" aperture) - https://www.celestron.com/products/omni-xlt-102-telescope
+            "focal_length_mm": 1000,  # Verified via Celestron official specs (1000mm focal length, f/9.8) - https://www.celestron.com/products/omni-xlt-102-telescope
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/omni-xlt-102-telescope
         },
         "Celestron_Omni_XLT_120": {
             "brand": "Celestron",
