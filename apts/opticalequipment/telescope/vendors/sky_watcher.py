@@ -264,9 +264,9 @@ class Sky_watcherTelescope(Telescope):
             "bf_role": "",
             "brand": "Sky-Watcher",
             "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M54",
-            "focal_length_mm": 1050,
+            "cside_gender": "Female",  # Verified via Sky-Watcher USA (3.4" linear power focuser drawtube with M74 female thread) - https://www.skywatcherusa.com/products/esprit-150mm-ed-triplet-apo-refractor
+            "cside_thread": "M74",  # Verified via Sky-Watcher USA (Drawtube thread size is M74x1) - https://www.skywatcherusa.com/products/esprit-150mm-ed-triplet-apo-refractor
+            "focal_length_mm": 1050,  # Verified via Sky-Watcher USA (150mm aperture, 1050mm focal length, f/7.0) - https://www.skywatcherusa.com/products/esprit-150mm-ed-triplet-apo-refractor
             "mass": 14520,  # Verified via Sky-Watcher Global (14.52 kg Tube Weight)
             "name": "Esprit 150ED",
             "optical_length": 0,
