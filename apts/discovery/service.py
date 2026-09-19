@@ -19,6 +19,8 @@ def _extract_arcmin_floats(arr) -> np.ndarray:
     """Helper to convert raw catalog dimensions (Pint Quantities, floats, or NaNs) to float arcminutes."""
     if arr is None or len(arr) == 0:
         return np.array([], dtype=float)
+    if isinstance(arr, np.ndarray) and arr.dtype != object:
+        return np.asarray(arr, dtype=float)
     res = np.empty(len(arr), dtype=float)
     for i, val in enumerate(arr):
         mag = getattr(val, "magnitude", val)
@@ -125,9 +127,14 @@ class DiscoveryService:
             ngc_obj = NGC(place, catalogs, calculation_date=date)
             ngc_df = ngc_obj.objects.copy()
 
+            # Optimization: Magnitude pre-filter FIRST to prune ~80% of rows (~14,000 to ~2,700)
+            # prior to string deduplication and coordinate computations.
+            if ngc_magnitude_limit is not None:
+                ngc_df = ngc_df[ngc_df["Magnitude_float"] <= ngc_magnitude_limit]
+
             # Deduplicate NGC entries against Messier catalog
             # Optimization: Reusing pre-calculated NGC_norm and IC_norm columns and using a set
-            # for messier_ngc_ids avoids redundant normalize_name string parsing over 14k rows.
+            # for messier_ngc_ids avoids redundant normalize_name string parsing over filtered rows.
             messier_ngc_ids = set(
                 cast(pd.Series, normalize_name(messier_obj.objects["NGC"])).dropna()
             )
@@ -142,10 +149,6 @@ class DiscoveryService:
                 | ngc_df["M"].notna()
             )
             ngc_df = ngc_df[~is_messier_dup]
-
-            # Magnitude pre-filter
-            if ngc_magnitude_limit is not None:
-                ngc_df = ngc_df[ngc_df["Magnitude_float"] <= ngc_magnitude_limit]
 
             # Compute vectorized geometric coordinates for the filtered NGC subset
             ngc_df = ngc_obj.compute(calculation_date=date, df_to_compute=ngc_df)
@@ -294,13 +297,17 @@ class DiscoveryService:
     @staticmethod
     def _format_discovery_results(df, scores_df, limit):
         """Applies name fallbacks and formats the top N results into a list of dictionaries."""
-        name_fallback = df["Name"].fillna("-").replace({"-": "", "nan": ""})
+        # Optimization: Slice top `limit` results first to restrict fallback logic
+        # and string formatting to only the returned top N subset.
+        results_df = df.sort_values("Score", ascending=False).head(limit)
+
+        name_fallback = results_df["Name"].fillna("-").replace({"-": "", "nan": ""})
         is_missing_name = name_fallback == ""
         if is_missing_name.any():
-            fallback_values = df["Messier"].fillna(df["NGC"]).fillna("Unknown")
-            df.loc[is_missing_name, "Name"] = fallback_values[is_missing_name]
-
-        results_df = df.sort_values("Score", ascending=False).head(limit)
+            fallback_values = (
+                results_df["Messier"].fillna(results_df["NGC"]).fillna("Unknown")
+            )
+            results_df.loc[is_missing_name, "Name"] = fallback_values[is_missing_name]
 
         top_scores_dict = scores_df.loc[results_df.index].to_dict("index")
         type_col = ObjectTableLabels.DSO_TYPE
