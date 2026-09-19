@@ -1,9 +1,13 @@
-from typing import Any, cast
-from .enums import TelescopeType, TubeMaterial
-from .base import Telescope
-import pkgutil
 import importlib
 import os
+import pkgutil
+from typing import Any, cast
+
+from .base import Telescope
+from .calculations import (
+    normalize_telescope_database_entry as normalize_telescope_database_entry,
+)
+from .enums import TelescopeType, TubeMaterial
 
 _VENDOR_MODULES = []
 vendors_path = os.path.join(os.path.dirname(__file__), 'vendors')
@@ -16,12 +20,12 @@ for loader, module_name, is_pkg in pkgutil.iter_modules([vendors_path]):
         continue
 
 if getattr(TelescopeType, '_DATABASE', None) is None:
-    setattr(TelescopeType, '_DATABASE', {})
+    TelescopeType._DATABASE = {}
 for module in _VENDOR_MODULES:
     for name, obj in vars(module).items():
         if isinstance(obj, type) and issubclass(obj, TelescopeType) and obj is not TelescopeType:
             if hasattr(obj, '_DATABASE'):
-                db = getattr(TelescopeType, '_DATABASE')
+                db = TelescopeType._DATABASE
                 if isinstance(db, dict):
                     db.update(cast(Any, obj)._DATABASE)
             for attr_name in vars(obj):
@@ -32,12 +36,12 @@ for module in _VENDOR_MODULES:
                     setattr(TelescopeType, attr_name, attr_val)
 
 if getattr(TubeMaterial, '_DATABASE', None) is None:
-    setattr(TubeMaterial, '_DATABASE', {})
+    TubeMaterial._DATABASE = {}
 for module in _VENDOR_MODULES:
     for name, obj in vars(module).items():
         if isinstance(obj, type) and issubclass(obj, TubeMaterial) and obj is not TubeMaterial:
             if hasattr(obj, '_DATABASE'):
-                db = getattr(TubeMaterial, '_DATABASE')
+                db = TubeMaterial._DATABASE
                 if isinstance(db, dict):
                     db.update(cast(Any, obj)._DATABASE)
             for attr_name in vars(obj):
