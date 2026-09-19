@@ -14,6 +14,7 @@ from apts.utils import get_default_gender, map_conn, map_gender
 EXCLUDED_KEYS = {
     "Sky_Watcher_Esprit_100ED",
     "Sky_Watcher_Esprit_120ED",
+    "Sky_Watcher_Esprit_150ED",
     "Vixen_VSD100_F3_8",
 }
 
