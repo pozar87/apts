@@ -183,22 +183,22 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 13000,
-            "height": 960,
+            "full_well_e": 13000,  # Verified via ZWO official specs (13000e- full well capacity) - https://www.zwoastro.com/product/asi120mm-mini/
+            "height": 960,  # Verified via ZWO official specs (1280x960 resolution) - https://www.zwoastro.com/product/asi120mm-mini/
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
-            "mass": 60,
+            "mass": 60,  # Verified via ZWO official specs (60g / 2.1 oz weight) - https://www.zwoastro.com/product/asi120mm-mini/
             "name": "ASI120MM Mini",
-            "optical_length": 8.5,
-            "pixel_size_um": 3.75,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 4.0,
+            "optical_length": 8.5,  # Verified via ZWO official specs (8.5mm backfocus) - https://www.zwoastro.com/product/asi120mm-mini/
+            "pixel_size_um": 3.75,  # Verified via ZWO official specs (3.75um pixel size) - https://www.zwoastro.com/product/asi120mm-mini/
+            "quantum_efficiency_pct": 80,  # Verified via ZWO official specs (80% peak QE) - https://www.zwoastro.com/product/asi120mm-mini/
+            "read_noise_e": 4.0,  # Verified via ZWO official specs (4.0e- read noise) - https://www.zwoastro.com/product/asi120mm-mini/
             "reversible": False,
-            "sensor_height_mm": 3.6,
-            "sensor_width_mm": 4.8,
+            "sensor_height_mm": 3.6,  # Verified via ZWO official specs (4.8mm x 3.6mm AR0130CS sensor) - https://www.zwoastro.com/product/asi120mm-mini/
+            "sensor_width_mm": 4.8,  # Verified via ZWO official specs (4.8mm x 3.6mm AR0130CS sensor) - https://www.zwoastro.com/product/asi120mm-mini/
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",
-            "width": 1280,
+            "width": 1280,  # Verified via ZWO official specs (1280x960 resolution) - https://www.zwoastro.com/product/asi120mm-mini/
         },
         "ZWO_ASI_120MM_S_for_ASIAir": {
             "bf_role": "end",
