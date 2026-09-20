@@ -1,4 +1,5 @@
 from .base import Barlow
+from .calculations import normalize_barlow_database_entry
 import pkgutil
 import importlib
 import os
@@ -28,4 +29,4 @@ for module in _VENDOR_MODULES:
                 if callable(attr_val):
                     setattr(Barlow, attr_name, attr_val)
 
-__all__ = ["Barlow"]
+__all__ = ["Barlow", "normalize_barlow_database_entry"]
