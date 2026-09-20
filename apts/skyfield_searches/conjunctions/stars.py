@@ -3,7 +3,7 @@ from typing import cast
 import numpy as np
 from skyfield.api import Star
 
-from ...cache import get_timescale
+from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
 from ..utils import _refine_conjunction
 
@@ -74,8 +74,15 @@ def find_conjunctions_with_stars(
 
     # Always get the body object as it is used for refinement later
     body = planetary.get_skyfield_obj(body_name)
+    eph = get_ephemeris()
+    earth = eph["earth"]
 
-    # Use precomputed positions if available, otherwise observe
+    # Optimization: Use geocentric ICRF observations during coarse candidate search.
+    # Evaluating topocentric observer.at(times).observe(body).apparent() computes
+    # topocentric frame rotation matrices and iau2000a nutation angles across thousands
+    # of time steps. Geocentric ICRF positions (earth.at(times).observe(body)) bypass
+    # nutation/GAST calculations completely while maintaining sub-arcminute candidate accuracy,
+    # and _refine_conjunction subsequently performs full topocentric minimization for final candidates.
     if precomputed_positions and body_name.lower() in precomputed_positions:
         pos_body_all = precomputed_positions[body_name.lower()]
         # Verify length matches
@@ -87,9 +94,9 @@ def find_conjunctions_with_stars(
         ):
             pos_body = pos_body_all
         else:
-            pos_body = observer.at(times).observe(body).apparent()
+            pos_body = earth.at(times).observe(body)
     else:
-        pos_body = observer.at(times).observe(body).apparent()
+        pos_body = earth.at(times).observe(body)
 
     # Unit vectors for body at all times: (3, M)
     body_au = pos_body.position.au
@@ -114,8 +121,8 @@ def find_conjunctions_with_stars(
     # Accuracy loss is sub-arcminute (mainly due to aberration), which is perfectly
     # acceptable for identifying conjunction candidates.
     t_mid = times[len(times) // 2]
-    # Observe all stars at once in ICRF
-    pos_stars = observer.at(t_mid).observe(stars_vector)
+    # Observe all stars at once in ICRF using geocentric earth observer
+    pos_stars = earth.at(t_mid).observe(stars_vector)
     # Unit vectors for stars: (3, N)
     stars_au = pos_stars.position.au
     u_stars = stars_au / np.linalg.norm(stars_au, axis=0)
