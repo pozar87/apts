@@ -47,19 +47,18 @@ def _load_messier_with_units():
         .fillna(cast(DSOType, DSOType.OTHER))
     )
 
-    # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
-    # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
-    messier_df["skyfield_object"] = [  # type: ignore
-        Star(ra_hours=ra, dec_degrees=dec)
-        for ra, dec in zip(messier_df["RA"], messier_df["Dec"])
-    ]
-
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
     ra_hours = cast(np.ndarray, messier_df["RA"].values)
     dec_degrees = cast(np.ndarray, messier_df["Dec"].values)
     messier_df["ra_hours"] = ra_hours
     messier_df["dec_degrees"] = dec_degrees
+
+    # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
+    # Optimization: zipping raw NumPy arrays bypasses Pandas Series indexing overhead
+    messier_df["skyfield_object"] = [  # type: ignore
+        Star(ra_hours=ra, dec_degrees=dec) for ra, dec in zip(ra_hours, dec_degrees)
+    ]
     messier_df["Magnitude_float"] = messier_df["Magnitude"].values
 
     # Pre-calculate trigonometric direction cosines for lightning-fast coordinate
