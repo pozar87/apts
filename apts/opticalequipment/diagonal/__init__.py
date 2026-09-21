@@ -1,7 +1,9 @@
-from .base import Diagonal
-import pkgutil
 import importlib
 import os
+import pkgutil
+
+from .base import Diagonal
+from .calculations import normalize_diagonal_database_entry
 
 _VENDOR_MODULES = []
 vendors_path = os.path.join(os.path.dirname(__file__), 'vendors')
@@ -18,7 +20,7 @@ def _merge_vendors(base_cls):
     if not hasattr(base_cls, '_DATABASE') or base_cls._DATABASE is None:
         base_cls._DATABASE = {}
     for module in _VENDOR_MODULES:
-        for name, obj in vars(module).items():
+        for obj in vars(module).values():
             if isinstance(obj, type) and issubclass(obj, base_cls) and obj is not base_cls:
                 if hasattr(obj, '_DATABASE'):
                     base_cls._DATABASE.update(obj._DATABASE)
@@ -32,4 +34,4 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(Diagonal)
 
-__all__ = ["Diagonal"]
+__all__ = ["Diagonal", "normalize_diagonal_database_entry"]
