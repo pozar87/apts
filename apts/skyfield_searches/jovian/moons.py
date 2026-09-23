@@ -1,6 +1,8 @@
-from typing import Any, cast, List, Dict
+from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac
+
 from ...cache import get_timescale
 from ...constants import astronomy
 from .utils import (
@@ -31,7 +33,10 @@ class JovianMoonState:
             final_res = np.zeros(len(t), dtype=int)
             if not np.any(visible):
                 return final_res
-            final_res[visible] = self._compute_vector(t[visible])
+            # Performance Optimization: Slice pre-computed observation arrays for full t
+            # directly using boolean mask 'visible' instead of passing sliced Time object
+            # t[visible], preventing redundant Skyfield observer/nutation re-computations.
+            final_res[visible] = self._compute_vector_sliced(t, visible)
             return final_res
 
     def _compute_scalar(self, t):
@@ -87,12 +92,23 @@ class JovianMoonState:
         return res
 
     def _compute_vector(self, t_eval):
+        # Maintained for backward compatibility
+        visible = np.ones(len(t_eval), dtype=bool)
+        return self._compute_vector_sliced(t_eval, visible)
+
+    def _compute_vector_sliced(self, t_full, visible):
         from .utils import is_inside_ellipsoid_projection_fast
 
-        data = self.ctx.get_basic_data(t_eval)
-        j_obs = data["j_obs"]
-        z_pole = data["z_pole"]
-        sun_from_j = data["sun_from_j"]
+        def _slice_obs(obs):
+            is_array = hasattr(t_full, "shape") and t_full.shape != ()
+            if is_array and hasattr(obs, "position") and getattr(obs.position.km, "ndim", 0) > 1:
+                return obs[visible]
+            return obs
+
+        data = self.ctx.get_basic_data(t_full)
+        j_obs = _slice_obs(data["j_obs"])
+        z_pole = data["z_pole"][:, visible] if data["z_pole"].ndim > 1 else data["z_pole"]
+        sun_from_j = _slice_obs(data["sun_from_j"])
 
         re = astronomy.JUPITER_RADIUS_KM
         rp = astronomy.JUPITER_POLAR_RADIUS_KM
@@ -114,11 +130,11 @@ class JovianMoonState:
         u_prime_sq_e = (1.0 - u_z_e**2) / re**2 + u_z_e**2 / rp**2
         u_prime_sq_s = (1.0 - u_z_s**2) / re**2 + u_z_s**2 / rp**2
 
-        mask_acc = np.zeros(len(t_eval), dtype=int)
+        mask_acc = np.zeros(np.sum(visible), dtype=int)
         for i, moon_id in enumerate(self.ctx.moon_map.keys()):
             if moon_id not in self.ctx.moon_objs:
                 continue
-            m_obs = self.ctx.get_moon_obs(t_eval, moon_id)
+            m_obs = _slice_obs(self.ctx.get_moon_obs(t_full, moon_id))
             p_m = m_obs.position.km - j_obs.position.km
 
             p_z = p_m[0] * z_pole[0] + p_m[1] * z_pole[1] + p_m[2] * z_pole[2]
@@ -142,7 +158,7 @@ class JovianMoonState:
         return mask_acc
 
 
-def _append_moon_events(events: List[Dict], te, ye, y_prev, moons: List):
+def _append_moon_events(events: list[dict], te, ye, y_prev, moons: list):
     """Parses state bitmask transitions and appends events."""
     event_types = [
         (1, "Transit"),

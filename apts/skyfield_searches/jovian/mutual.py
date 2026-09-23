@@ -1,6 +1,8 @@
-from typing import Any, cast, List
+from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac
+
 from ...cache import get_timescale
 from ...constants import astronomy
 from .utils import JovianSearchContext
@@ -46,7 +48,7 @@ class JovianMutualState:
     Bits per pair: 0: None, 1: m1 occ m2, 2: m2 occ m1, 3: m1 ecl m2, 4: m2 ecl m1
     """
 
-    def __init__(self, ctx: JovianSearchContext, pairs: List):
+    def __init__(self, ctx: JovianSearchContext, pairs: list):
         self.ctx = ctx
         self.pairs = pairs
         self.moon_ids = list(ctx.moon_map.keys())
@@ -59,52 +61,103 @@ class JovianMutualState:
         if not is_array:
             if not visible:
                 return 0
-            t_eval = t
+            res_acc = self._compute_pair_states(t, is_array)
+            return int(np.atleast_1d(res_acc)[0])
         else:
             if not np.any(visible):
                 return np.zeros(len(t), dtype=int)
-            t_eval = t[visible]
-
-        res_acc = self._compute_pair_states(t_eval, is_array)
-
-        if not is_array:
-            return int(np.atleast_1d(res_acc)[0])
-        else:
+            # Performance Optimization: Slice pre-computed observation arrays for full t
+            # directly using boolean mask 'visible' instead of passing sliced Time object
+            # t[visible], preventing redundant Skyfield observer/nutation re-computations.
+            res_acc = self._compute_pair_states_sliced(t, visible)
             final_res = np.zeros(len(t), dtype=int)
             final_res[visible] = res_acc
             return final_res
 
     def _compute_pair_states(self, t_eval, is_array):
+        # Maintained for backward compatibility
+        visible = np.ones(len(t_eval), dtype=bool) if is_array else np.array([True])
+        return self._compute_pair_states_sliced(t_eval, visible)
+
+    def _compute_pair_states_sliced(self, t_full, visible):
         # Use a helper to extract scalar values if needed to avoid ambiguous truth value errors
         def _get_val(v):
             return v if np.isscalar(v) else (v[0] if v.size > 0 else False)
 
-        res_acc = np.zeros(len(t_eval) if is_array else 1, dtype=int)
+        is_array = hasattr(t_full, "shape") and t_full.shape != ()
+        res_acc = np.zeros(np.sum(visible) if is_array else 1, dtype=int)
 
-        # Pre-fetch all moon observations to avoid redundant calls in the loop
-        moons_e = {mid: self.ctx.get_moon_obs(t_eval, mid) for mid in self.moon_ids}
-        moons_s = {mid: self.ctx.get_moon_sun_obs(t_eval, mid) for mid in self.moon_ids}
+        # Pre-fetch all moon observations for full t and slice with visible (if array-backed 2D array)
+        def _slice_obs(obs):
+            if is_array and hasattr(obs, "position") and getattr(obs.position.km, "ndim", 0) > 1:
+                return obs[visible]
+            return obs
+
+        moons_e = {mid: _slice_obs(self.ctx.get_moon_obs(t_full, mid)) for mid in self.moon_ids}
+        moons_s = {mid: _slice_obs(self.ctx.get_moon_sun_obs(t_full, mid)) for mid in self.moon_ids}
 
         for i, (id1, id2) in enumerate(self.pairs):
             # Earth perspective
             m1_e = moons_e[id1]
             m2_e = moons_e[id2]
-            sep_e = m1_e.separation_from(m2_e).degrees
-            r1 = _get_moon_angular_radius(id1, m1_e.distance().km)
-            r2 = _get_moon_angular_radius(id2, m2_e.distance().km)
+
+            if isinstance(m1_e.position.km, np.ndarray):
+                p1_e = m1_e.position.km
+                p2_e = m2_e.position.km
+                d1_e = m1_e.distance().km
+                d2_e = m2_e.distance().km
+
+                if is_array:
+                    u1_e = p1_e / d1_e[None, :]
+                    u2_e = p2_e / d2_e[None, :]
+                    cos_sep_e = u1_e[0] * u2_e[0] + u1_e[1] * u2_e[1] + u1_e[2] * u2_e[2]
+                else:
+                    u1_e = p1_e / d1_e
+                    u2_e = p2_e / d2_e
+                    cos_sep_e = float(np.sum(u1_e * u2_e))
+
+                sep_e = np.degrees(np.arccos(np.clip(cos_sep_e, -1.0, 1.0)))
+            else:
+                sep_e = m1_e.separation_from(m2_e).degrees
+                d1_e = m1_e.distance().km
+                d2_e = m2_e.distance().km
+
+            r1 = _get_moon_angular_radius(id1, d1_e)
+            r2 = _get_moon_angular_radius(id2, d2_e)
 
             occ = sep_e < (r1 + r2)
-            m1_front = m1_e.distance().km < m2_e.distance().km
+            m1_front = d1_e < d2_e
 
             # Sun perspective
             m1_s = moons_s[id1]
             m2_s = moons_s[id2]
-            sep_s = m1_s.separation_from(m2_s).degrees
-            r1_s = _get_moon_angular_radius(id1, m1_s.distance().km)
-            r2_s = _get_moon_angular_radius(id2, m2_s.distance().km)
+
+            if isinstance(m1_s.position.km, np.ndarray):
+                p1_s = m1_s.position.km
+                p2_s = m2_s.position.km
+                d1_s = m1_s.distance().km
+                d2_s = m2_s.distance().km
+
+                if is_array:
+                    u1_s = p1_s / d1_s[None, :]
+                    u2_s = p2_s / d2_s[None, :]
+                    cos_sep_s = u1_s[0] * u2_s[0] + u1_s[1] * u2_s[1] + u1_s[2] * u2_s[2]
+                else:
+                    u1_s = p1_s / d1_s
+                    u2_s = p2_s / d2_s
+                    cos_sep_s = float(np.sum(u1_s * u2_s))
+
+                sep_s = np.degrees(np.arccos(np.clip(cos_sep_s, -1.0, 1.0)))
+            else:
+                sep_s = m1_s.separation_from(m2_s).degrees
+                d1_s = m1_s.distance().km
+                d2_s = m2_s.distance().km
+
+            r1_s = _get_moon_angular_radius(id1, d1_s)
+            r2_s = _get_moon_angular_radius(id2, d2_s)
 
             ecl = sep_s < (r1_s + r2_s)
-            m1_caster = m1_s.distance().km < m2_s.distance().km
+            m1_caster = d1_s < d2_s
 
             pair_state = np.zeros_like(res_acc)
             if is_array:
