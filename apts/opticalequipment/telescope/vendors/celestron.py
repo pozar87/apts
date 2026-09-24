@@ -839,16 +839,16 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 120",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 5670,
+            "mass": 5670,  # Verified via Celestron.com (12.5 lbs / 5,670g OTA weight, 120mm aperture, 1000mm focal length, f/8.33, 2" visual back - https://www.celestron.com/products/omni-xlt-120-telescope)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "2\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 120,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 120,  # Verified via Celestron.com (120mm / 4.72") - https://www.celestron.com/products/omni-xlt-120-telescope
+            "focal_length_mm": 1000,  # Verified via Celestron.com (1000mm / f/8.33) - https://www.celestron.com/products/omni-xlt-120-telescope
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/omni-xlt-120-telescope
         },
         "Celestron_Omni_XLT_127_SCT": {
             "brand": "Celestron",
