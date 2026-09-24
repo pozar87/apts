@@ -12,6 +12,7 @@ from apts.utils import get_default_gender, map_conn, map_gender
 # Known exceptions where actual hardware port gender deviates from the standard convention:
 # e.g., refractors with native female drawtube threads (like Esprit 100ED M74x1)
 EXCLUDED_KEYS = {
+    "Sky_Watcher_Esprit_80ED",
     "Sky_Watcher_Esprit_100ED",
     "Sky_Watcher_Esprit_120ED",
     "Sky_Watcher_Esprit_150ED",

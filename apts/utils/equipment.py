@@ -12,6 +12,7 @@ class ConnectionType(Enum):
     M56 = "M56"
     M60 = "M60"
     M63 = "M63"
+    M66 = "M66"
     M68 = "M68"
     M72 = "M72"
     M74 = "M74"
