@@ -1,5 +1,8 @@
+from typing import ClassVar
+
 from ...utils import ConnectionType
 from ..base import IntermediateOpticalEquipment
+from .calculations import normalize_filter_database_entry
 
 
 class Filter(IntermediateOpticalEquipment):
@@ -9,46 +12,25 @@ class Filter(IntermediateOpticalEquipment):
 
     path_layer = 4
 
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
 
     @classmethod
-    def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        normalized = normalize_filter_database_entry(entry)
+        return super().normalize_database_entry(normalized)
 
-        brand = entry.get("brand", "Unknown")
-        name = entry.get("name", "Unknown")
-        vendor = f"{brand} {name}"
-        tt = map_conn(entry.get("tside_thread"))
-        # Filters usually have the same thread on both sides or are just glass.
-        # Defaulting to 1.25" if not specified.
-        conn = tt or ConnectionType.F_1_25
-        trans = entry.get("transmission", 1.0)
-        ol = entry.get("optical_length", 0)
-        mass = entry.get("mass", 0)
-
-        inputs = entry.get("inputs")
-        if inputs:
-            inputs = [
-                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-                for c, g in inputs
-            ]
-
-        outputs = entry.get("outputs")
-        if outputs:
-            outputs = [
-                (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-                for c, g in outputs
-            ]
-
+    @classmethod
+    def from_database(cls, entry: dict):
+        normalized = cls.normalize_database_entry(entry)
         return cls(
-            name,
-            vendor=vendor,
-            connection_type=conn,
-            transmission=trans,
-            optical_length=ol,
-            mass=mass,
-            inputs=inputs,
-            outputs=outputs,
+            normalized["name"],
+            vendor=normalized["vendor"],
+            connection_type=normalized["connection_type"],
+            transmission=normalized["transmission"],
+            optical_length=normalized["optical_length"],
+            mass=normalized["mass"],
+            inputs=normalized["inputs"],
+            outputs=normalized["outputs"],
         )
 
     def __init__(
@@ -64,7 +46,7 @@ class Filter(IntermediateOpticalEquipment):
         inputs=None,
         outputs=None,
     ):
-        super(Filter, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
