@@ -1,5 +1,5 @@
-from ..base import IntermediateOpticalEquipment
 from ...constants import OpticalType
+from ..base import IntermediateOpticalEquipment
 
 
 class FilterWheel(IntermediateOpticalEquipment):
@@ -7,36 +7,16 @@ class FilterWheel(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
+        from .calculations import normalize_filter_wheel_database_entry
 
-        brand = entry["brand"]
-        name = entry["name"]
-        vendor = f"{brand} {name}"
-        ol = entry.get("optical_length", 0)
-        mass = entry.get("mass", 0)
-        tt = map_conn(entry.get("tside_thread"))
-        tg = map_gender(entry.get("tside_gender"))
-        ct = map_conn(entry.get("cside_thread"))
-        cg = map_gender(entry.get("cside_gender"))
-
-        inputs = entry.get("inputs")
-        if inputs is None:
-            inputs = [(tt, tg)] if tt else []
-        else:
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
-
-        outputs = entry.get("outputs")
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-        else:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+        entry = normalize_filter_wheel_database_entry(entry)
 
         return cls(
-            vendor,
-            optical_length=ol,
-            mass=mass,
-            inputs=inputs,
-            outputs=outputs,
+            entry["vendor"],
+            optical_length=entry["optical_length"],
+            mass=entry["mass"],
+            inputs=entry["inputs"],
+            outputs=entry["outputs"],
         )
 
     def __init__(
@@ -83,36 +63,16 @@ class FilterHolder(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
+        from .calculations import normalize_filter_wheel_database_entry
 
-        brand = entry["brand"]
-        name = entry["name"]
-        vendor = f"{brand} {name}"
-        ol = entry.get("optical_length", 0)
-        mass = entry.get("mass", 0)
-        tt = map_conn(entry.get("tside_thread"))
-        tg = map_gender(entry.get("tside_gender"))
-        ct = map_conn(entry.get("cside_thread"))
-        cg = map_gender(entry.get("cside_gender"))
-
-        inputs = entry.get("inputs")
-        if inputs is None:
-            inputs = [(tt, tg)] if tt else []
-        else:
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
-
-        outputs = entry.get("outputs")
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-        else:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+        entry = normalize_filter_wheel_database_entry(entry)
 
         return cls(
-            vendor,
-            optical_length=ol,
-            mass=mass,
-            inputs=inputs,
-            outputs=outputs,
+            entry["vendor"],
+            optical_length=entry["optical_length"],
+            mass=entry["mass"],
+            inputs=entry["inputs"],
+            outputs=entry["outputs"],
         )
 
     def __init__(
