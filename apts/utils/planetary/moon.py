@@ -1,12 +1,14 @@
-import numpy as np
 from datetime import timedelta
 from typing import Any, cast
+
+import numpy as np
 from skyfield import almanac
 
 from apts.cache import get_ephemeris, get_timescale
+
 from .calculations import (
-    calculate_moon_orientation_elements,
     calculate_moon_illumination_and_waxing,
+    calculate_moon_orientation_elements,
     calculate_moon_phase_name,
     calculate_moon_position_angle_bright_limb,
     calculate_moon_selenographic_coords,
@@ -83,14 +85,16 @@ def get_moon_separation(obj, observer, time):
     """
     eph = get_ephemeris()
     moon = eph["moon"]
-    astrometric_obj = observer.at(time).observe(obj).apparent()
+    # Optimization: Use astrometric observe() instead of apparent() to bypass expensive
+    # nutation, aberration, and gravitational deflection calculations for relative separation.
+    astrometric_obj = observer.at(time).observe(obj)
 
     # Use a simple cache key based on time and observer identity
     cache_key = (time.tt, id(observer))
     if cache_key in _moon_pos_cache:
         astrometric_moon = _moon_pos_cache[cache_key]
     else:
-        astrometric_moon = observer.at(time).observe(moon).apparent()
+        astrometric_moon = observer.at(time).observe(moon)
         # Keep cache size small
         if len(_moon_pos_cache) > 100:
             _moon_pos_cache.clear()
@@ -137,8 +141,10 @@ def get_moon_position_angle_bright_limb(time: Any) -> float:
     moon = eph["moon"]
 
     t = time
-    astrometric_moon = cast(Any, earth).at(t).observe(moon).apparent()
-    astrometric_sun = cast(Any, earth).at(t).observe(sun).apparent()
+    # Optimization: Use astrometric observe() instead of apparent() to bypass redundant
+    # nutation/aberration calculations for position angle calculation.
+    astrometric_moon = cast(Any, earth).at(t).observe(moon)
+    astrometric_sun = cast(Any, earth).at(t).observe(sun)
 
     ra_m, dec_m, _ = astrometric_moon.radec()
     ra_s, dec_s, _ = astrometric_sun.radec()
