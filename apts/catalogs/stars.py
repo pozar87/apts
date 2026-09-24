@@ -25,19 +25,18 @@ def _load_bright_stars_with_units():
     for column in string_columns:
         bright_stars_df[column] = bright_stars_df[column].astype("string")
 
-    # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
-    # Optimization: avoiding row-wise apply and costly Quantity.to().magnitude calls
-    bright_stars_df["skyfield_object"] = [  # type: ignore
-        Star(ra_hours=ra, dec_degrees=dec)
-        for ra, dec in zip(bright_stars_df["RA"], bright_stars_df["Dec"])
-    ]
-
     # Store float versions for performance-critical filtering and calculations
     # to avoid Pint and Skyfield object overhead in high-frequency loops.
     ra_hours = cast(np.ndarray, bright_stars_df["RA"].values)
     dec_degrees = cast(np.ndarray, bright_stars_df["Dec"].values)
     bright_stars_df["ra_hours"] = ra_hours
     bright_stars_df["dec_degrees"] = dec_degrees
+
+    # Pre-calculate Skyfield objects using raw floats before wrapping in Quantities
+    # Optimization: zipping raw NumPy arrays bypasses Pandas Series indexing overhead
+    bright_stars_df["skyfield_object"] = [  # type: ignore
+        Star(ra_hours=ra, dec_degrees=dec) for ra, dec in zip(ra_hours, dec_degrees)
+    ]
     bright_stars_df["Magnitude_float"] = bright_stars_df["Magnitude"].values
 
     # Pre-calculate trigonometric direction cosines for lightning-fast coordinate
