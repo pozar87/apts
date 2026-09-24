@@ -161,11 +161,25 @@ class JovianSearchContext:
         j_alt, _, _ = fast_altaz(j_obs)
         s_alt, _, _ = fast_altaz(s_obs)
 
-        elongation = j_obs.separation_from(s_obs).degrees
+        # Performance Optimization: Calculate unit vector dot product directly
+        # (dot_js < cos(10°)) instead of calling j_obs.separation_from(s_obs).degrees
+        # to eliminate intermediate Skyfield Angle object allocations.
+        p_j = j_obs.position.km
+        p_s = s_obs.position.km
+        if p_j.ndim > 1:
+            u_j = p_j / np.linalg.norm(p_j, axis=0)
+            u_s = p_s / np.linalg.norm(p_s, axis=0)
+            dot_js = u_j[0] * u_s[0] + u_j[1] * u_s[1] + u_j[2] * u_s[2]
+        else:
+            u_j = p_j / np.linalg.norm(p_j)
+            u_s = p_s / np.linalg.norm(p_s)
+            dot_js = np.dot(u_j, u_s)
+
+        elongation_ok = dot_js < np.cos(np.radians(10))
         data["visible"] = (
             (cast(float, j_alt.degrees) > 0)
             & (cast(float, s_alt.degrees) <= -6)
-            & (elongation > 10)
+            & elongation_ok
         )
 
     def get_moon_obs(self, t, moon_id):

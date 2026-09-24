@@ -1,6 +1,8 @@
-from typing import Any, cast, List
+from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac
+
 from ...cache import get_timescale
 from ...constants import astronomy
 from .utils import JovianSearchContext
@@ -46,7 +48,7 @@ class JovianMutualState:
     Bits per pair: 0: None, 1: m1 occ m2, 2: m2 occ m1, 3: m1 ecl m2, 4: m2 ecl m1
     """
 
-    def __init__(self, ctx: JovianSearchContext, pairs: List):
+    def __init__(self, ctx: JovianSearchContext, pairs: list):
         self.ctx = ctx
         self.pairs = pairs
         self.moon_ids = list(ctx.moon_map.keys())
