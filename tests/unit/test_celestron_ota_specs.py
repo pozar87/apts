@@ -74,7 +74,7 @@ class TestCelestronOTASpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 100)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 660)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
-        self.assertEqual(scope.mass.to('gram').magnitude, 2200)
+        self.assertEqual(scope.mass.to('gram').magnitude, 2223)
 
 if __name__ == '__main__':
     unittest.main()

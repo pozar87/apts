@@ -679,7 +679,7 @@ class CelestronTelescope(Telescope):
             "name": "Inspire 100AZ",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 2200,
+            "mass": 2223,  # Verified via Celestron.com (4.9 lbs / 2.223 kg OTA weight, 100mm aperture, 660mm focal length, f/6.6, 1.25" visual back - https://www.celestron.com/products/inspire-100az-refractor-telescope)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
