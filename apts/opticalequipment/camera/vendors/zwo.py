@@ -608,21 +608,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 15000,
-            "height": 3672,
-            "mass": 410,
+            "full_well_e": 15000,  # Verified via ZWO official specs (15000e- full well capacity) - https://www.zwoastro.com/product/asi183/
+            "height": 3672,  # Verified via ZWO official specs (5496x3672 resolution, 20.1MP) - https://www.zwoastro.com/product/asi183/
+            "mass": 410,  # Verified via ZWO official specs (410g weight) - https://www.zwoastro.com/product/asi183/
             "name": "ASI183MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
-            "read_noise_e": 1.6,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance) - https://www.zwoastro.com/product/asi183/
+            "pixel_size_um": 2.4,  # Verified via ZWO official specs (2.4um pixel size) - https://www.zwoastro.com/product/asi183/
+            "quantum_efficiency_pct": 84,  # Verified via ZWO official specs (84% peak QE) - https://www.zwoastro.com/product/asi183/
+            "read_noise_e": 1.6,  # Verified via ZWO official specs (1.6e- read noise) - https://www.zwoastro.com/product/asi183/
             "reversible": False,
-            "sensor_height_mm": 8.8,
-            "sensor_width_mm": 13.2,
+            "sensor_height_mm": 8.8,  # Verified via ZWO official specs (13.2mm x 8.8mm Sony IMX183 color sensor) - https://www.zwoastro.com/product/asi183/
+            "sensor_width_mm": 13.2,  # Verified via ZWO official specs (13.2mm x 8.8mm Sony IMX183 color sensor) - https://www.zwoastro.com/product/asi183/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official specs (M42x0.75 female thread) - https://www.zwoastro.com/product/asi183/
             "type": "type_camera",
-            "width": 5496,
+            "width": 5496,  # Verified via ZWO official specs (5496x3672 resolution, 20.1MP) - https://www.zwoastro.com/product/asi183/
         },
         "ZWO_ASI_183MC_Pro_6_bolt_mount": {
             "bf_role": "end",
@@ -684,21 +684,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 15000,
-            "height": 3672,
-            "mass": 410,
+            "full_well_e": 15000,  # Verified via ZWO official specs (15000e- full well capacity) - https://www.zwoastro.com/product/asi183/
+            "height": 3672,  # Verified via ZWO official specs (5496x3672 resolution, 20.1MP) - https://www.zwoastro.com/product/asi183/
+            "mass": 410,  # Verified via ZWO official specs (410g weight) - https://www.zwoastro.com/product/asi183/
             "name": "ASI183MM Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 2.4,
-            "quantum_efficiency_pct": 84,
-            "read_noise_e": 1.6,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance) - https://www.zwoastro.com/product/asi183/
+            "pixel_size_um": 2.4,  # Verified via ZWO official specs (2.4um pixel size) - https://www.zwoastro.com/product/asi183/
+            "quantum_efficiency_pct": 84,  # Verified via ZWO official specs (84% peak QE) - https://www.zwoastro.com/product/asi183/
+            "read_noise_e": 1.6,  # Verified via ZWO official specs (1.6e- read noise) - https://www.zwoastro.com/product/asi183/
             "reversible": False,
-            "sensor_height_mm": 8.8,
-            "sensor_width_mm": 13.2,
+            "sensor_height_mm": 8.8,  # Verified via ZWO official specs (13.2mm x 8.8mm Sony IMX183 mono sensor) - https://www.zwoastro.com/product/asi183/
+            "sensor_width_mm": 13.2,  # Verified via ZWO official specs (13.2mm x 8.8mm Sony IMX183 mono sensor) - https://www.zwoastro.com/product/asi183/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official specs (M42x0.75 female thread) - https://www.zwoastro.com/product/asi183/
             "type": "type_camera",
-            "width": 5496,
+            "width": 5496,  # Verified via ZWO official specs (5496x3672 resolution, 20.1MP) - https://www.zwoastro.com/product/asi183/
         },
         "ZWO_ASI_183MM_Pro_6_bolt_mount": {
             "bf_role": "end",
