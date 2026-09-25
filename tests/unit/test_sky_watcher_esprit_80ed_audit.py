@@ -4,8 +4,7 @@ from apts.utils import ConnectionType, Gender
 
 
 class TestSkyWatcherEsprit80EDAudit(unittest.TestCase):
-    def test_esprit_80ed_audited_specs(self):
-        """Verify the audited hardware specifications for Sky-Watcher Esprit 80ED."""
+    def test_esprit_80ed_specs(self):
         scope = Sky_watcherTelescope.Sky_Watcher_Esprit_80ED()
         self.assertEqual(scope.get_vendor(), "Sky-Watcher Esprit 80ED")
         self.assertEqual(scope.aperture.to("mm").magnitude, 80)

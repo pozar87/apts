@@ -276,14 +276,14 @@ class Sky_watcherTelescope(Telescope):
             "type": "type_refractor",
         },
         "Sky_Watcher_Esprit_80ED": {
-            "aperture_mm": 80,
+            "aperture_mm": 80,  # Verified via Sky-Watcher USA (80mm aperture) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 0,
-            "cside_gender": "Female",  # Verified via Sky-Watcher USA (focuser drawtube has female threads) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
-            "cside_thread": "M66",  # Verified via Sky-Watcher Global (M66x1 drawtube thread) - http://skywatcher.com/product/esprit-80-ed-apo-triplet/
-            "focal_length_mm": 400,  # Verified via Sky-Watcher USA (80mm aperture, 400mm focal length, f/5.0) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
-            "mass": 3970,  # Verified via Sky-Watcher Global (3.97 kg OTA mass) - http://skywatcher.com/product/esprit-80-ed-apo-triplet/
+            "central_obstruction_mm": 0,  # Verified triplet refractor (0mm obstruction)
+            "cside_gender": "Female",  # Verified via Sky-Watcher USA (focuser drawtube with M66x1 female thread) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
+            "cside_thread": "M66",  # Verified via Sky-Watcher USA (Drawtube thread size is M66x1) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
+            "focal_length_mm": 400,  # Verified via Sky-Watcher USA (400mm focal length, f/5.0) - https://www.skywatcherusa.com/products/esprit-80mm-ed-triplet-apo-refractor
+            "mass": 3970,  # Verified via Sky-Watcher Global (3.97 kg tube weight) - http://skywatcher.com/product/esprit-80-ed-apo-triplet/
             "name": "Esprit 80ED",
             "optical_length": 0,
             "reversible": False,

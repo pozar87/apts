@@ -91,13 +91,24 @@ class JovianMoonState:
             res |= moon_mask << (4 * i)
         return res
 
-    def _compute_vector_sliced(self, t, visible):
+    def _compute_vector(self, t_eval):
+        # Maintained for backward compatibility
+        visible = np.ones(len(t_eval), dtype=bool)
+        return self._compute_vector_sliced(t_eval, visible)
+
+    def _compute_vector_sliced(self, t_full, visible):
         from .utils import is_inside_ellipsoid_projection_fast
 
-        data = self.ctx.get_basic_data(t)
-        j_obs = data["j_obs"][visible]
-        z_pole = data["z_pole"][:, visible] if data["z_pole"].ndim == 2 else data["z_pole"]
-        sun_from_j = data["sun_from_j"][visible]
+        def _slice_obs(obs):
+            is_array = hasattr(t_full, "shape") and t_full.shape != ()
+            if is_array and hasattr(obs, "position") and getattr(obs.position.km, "ndim", 0) > 1:
+                return obs[visible]
+            return obs
+
+        data = self.ctx.get_basic_data(t_full)
+        j_obs = _slice_obs(data["j_obs"])
+        z_pole = data["z_pole"][:, visible] if data["z_pole"].ndim > 1 else data["z_pole"]
+        sun_from_j = _slice_obs(data["sun_from_j"])
 
         re = astronomy.JUPITER_RADIUS_KM
         rp = astronomy.JUPITER_POLAR_RADIUS_KM
@@ -121,7 +132,7 @@ class JovianMoonState:
         for i, moon_id in enumerate(self.ctx.moon_map.keys()):
             if moon_id not in self.ctx.moon_objs:
                 continue
-            m_obs = self.ctx.get_moon_obs(t, moon_id)[visible]
+            m_obs = _slice_obs(self.ctx.get_moon_obs(t_full, moon_id))
             p_m = m_obs.position.km - j_obs.position.km
 
             p_z = p_m[0] * z_pole[0] + p_m[1] * z_pole[1] + p_m[2] * z_pole[2]
