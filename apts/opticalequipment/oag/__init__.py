@@ -1,4 +1,5 @@
 from .base import OAG
+from .calculations import normalize_oag_database_entry
 import pkgutil
 import importlib
 import os
@@ -32,4 +33,4 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(OAG)
 
-__all__ = ["OAG"]
+__all__ = ["OAG", "normalize_oag_database_entry"]
