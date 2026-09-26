@@ -1133,21 +1133,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 63700,
-            "height": 2822,
-            "mass": 410,
+            "full_well_e": 63700,  # Verified via ZWO official specs (63700e- full well capacity) - https://www.zwoastro.com/product/asi294/
+            "height": 2822,  # Verified via ZWO official specs (4144x2822 resolution, 11.7MP) - https://www.zwoastro.com/product/asi294/
+            "mass": 410,  # Verified via ZWO official specs (410g weight) - https://www.zwoastro.com/product/asi294/
             "name": "ASI294MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 4.63,
-            "quantum_efficiency_pct": 75,
-            "read_noise_e": 1.2,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance) - https://www.zwoastro.com/product/asi294/
+            "pixel_size_um": 4.63,  # Verified via ZWO official specs (4.63um pixel size) - https://www.zwoastro.com/product/asi294/
+            "quantum_efficiency_pct": 75,  # Verified via ZWO official specs (75% peak QE) - https://www.zwoastro.com/product/asi294/
+            "read_noise_e": 1.2,  # Verified via ZWO official specs (1.2e- read noise) - https://www.zwoastro.com/product/asi294/
             "reversible": False,
-            "sensor_height_mm": 13.0,
-            "sensor_width_mm": 19.1,
+            "sensor_height_mm": 13.0,  # Verified via ZWO official specs (19.1mm x 13.0mm Sony IMX294 color sensor) - https://www.zwoastro.com/product/asi294/
+            "sensor_width_mm": 19.1,  # Verified via ZWO official specs (19.1mm x 13.0mm Sony IMX294 color sensor) - https://www.zwoastro.com/product/asi294/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official specs (M42x0.75 female thread) - https://www.zwoastro.com/product/asi294/
             "type": "type_camera",
-            "width": 4144,
+            "width": 4144,  # Verified via ZWO official specs (4144x2822 resolution, 11.7MP) - https://www.zwoastro.com/product/asi294/
         },
         "ZWO_ASI_294MC_Pro_4_bolt_no_tilt_plate": {
             "bf_role": "end",
