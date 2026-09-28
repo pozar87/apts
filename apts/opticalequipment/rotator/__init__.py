@@ -1,4 +1,5 @@
 from .base import Rotator
+from .calculations import normalize_rotator_database_entry
 import pkgutil
 import importlib
 import os
@@ -32,4 +33,4 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(Rotator)
 
-__all__ = ["Rotator"]
+__all__ = ["Rotator", "normalize_rotator_database_entry"]

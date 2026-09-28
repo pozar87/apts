@@ -1,4 +1,5 @@
 from .base import AntiTilt
+from .calculations import normalize_anti_tilt_database_entry
 import pkgutil
 import importlib
 import os
@@ -36,4 +37,4 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(AntiTilt)
 
-__all__ = ["AntiTilt"]
+__all__ = ["AntiTilt", "normalize_anti_tilt_database_entry"]
