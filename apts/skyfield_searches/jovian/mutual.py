@@ -96,34 +96,49 @@ class JovianMutualState:
         moons_e = {mid: _slice_obs(self.ctx.get_moon_obs(t_full, mid)) for mid in self.moon_ids}
         moons_s = {mid: _slice_obs(self.ctx.get_moon_sun_obs(t_full, mid)) for mid in self.moon_ids}
 
+        # Optimization: Pre-calculate distance, unit direction vector, and apparent angular radius per moon
+        # before entering the 6-pair loop, avoiding redundant norm, division, and arcsin evaluations.
+        d_e_map = {}
+        u_e_map = {}
+        r_e_map = {}
+        d_s_map = {}
+        u_s_map = {}
+        r_s_map = {}
+
+        for mid in self.moon_ids:
+            m_e = moons_e[mid]
+            d_e = m_e.distance().km
+            d_e_map[mid] = d_e
+            r_e_map[mid] = _get_moon_angular_radius(mid, d_e)
+            if isinstance(m_e.position.km, np.ndarray):
+                p_e = m_e.position.km
+                u_e_map[mid] = p_e / d_e[None, :] if is_array else p_e / d_e
+
+            m_s = moons_s[mid]
+            d_s = m_s.distance().km
+            d_s_map[mid] = d_s
+            r_s_map[mid] = _get_moon_angular_radius(mid, d_s)
+            if isinstance(m_s.position.km, np.ndarray):
+                p_s = m_s.position.km
+                u_s_map[mid] = p_s / d_s[None, :] if is_array else p_s / d_s
+
         for i, (id1, id2) in enumerate(self.pairs):
             # Earth perspective
             m1_e = moons_e[id1]
             m2_e = moons_e[id2]
+            d1_e, d2_e = d_e_map[id1], d_e_map[id2]
+            r1, r2 = r_e_map[id1], r_e_map[id2]
 
             if isinstance(m1_e.position.km, np.ndarray):
-                p1_e = m1_e.position.km
-                p2_e = m2_e.position.km
-                d1_e = m1_e.distance().km
-                d2_e = m2_e.distance().km
-
+                u1_e, u2_e = u_e_map[id1], u_e_map[id2]
                 if is_array:
-                    u1_e = p1_e / d1_e[None, :]
-                    u2_e = p2_e / d2_e[None, :]
                     cos_sep_e = u1_e[0] * u2_e[0] + u1_e[1] * u2_e[1] + u1_e[2] * u2_e[2]
                 else:
-                    u1_e = p1_e / d1_e
-                    u2_e = p2_e / d2_e
                     cos_sep_e = float(np.sum(u1_e * u2_e))
 
                 sep_e = np.degrees(np.arccos(np.clip(cos_sep_e, -1.0, 1.0)))
             else:
                 sep_e = m1_e.separation_from(m2_e).degrees
-                d1_e = m1_e.distance().km
-                d2_e = m2_e.distance().km
-
-            r1 = _get_moon_angular_radius(id1, d1_e)
-            r2 = _get_moon_angular_radius(id2, d2_e)
 
             occ = sep_e < (r1 + r2)
             m1_front = d1_e < d2_e
@@ -131,30 +146,19 @@ class JovianMutualState:
             # Sun perspective
             m1_s = moons_s[id1]
             m2_s = moons_s[id2]
+            d1_s, d2_s = d_s_map[id1], d_s_map[id2]
+            r1_s, r2_s = r_s_map[id1], r_s_map[id2]
 
             if isinstance(m1_s.position.km, np.ndarray):
-                p1_s = m1_s.position.km
-                p2_s = m2_s.position.km
-                d1_s = m1_s.distance().km
-                d2_s = m2_s.distance().km
-
+                u1_s, u2_s = u_s_map[id1], u_s_map[id2]
                 if is_array:
-                    u1_s = p1_s / d1_s[None, :]
-                    u2_s = p2_s / d2_s[None, :]
                     cos_sep_s = u1_s[0] * u2_s[0] + u1_s[1] * u2_s[1] + u1_s[2] * u2_s[2]
                 else:
-                    u1_s = p1_s / d1_s
-                    u2_s = p2_s / d2_s
                     cos_sep_s = float(np.sum(u1_s * u2_s))
 
                 sep_s = np.degrees(np.arccos(np.clip(cos_sep_s, -1.0, 1.0)))
             else:
                 sep_s = m1_s.separation_from(m2_s).degrees
-                d1_s = m1_s.distance().km
-                d2_s = m2_s.distance().km
-
-            r1_s = _get_moon_angular_radius(id1, d1_s)
-            r2_s = _get_moon_angular_radius(id2, d2_s)
 
             ecl = sep_s < (r1_s + r2_s)
             m1_caster = d1_s < d2_s
