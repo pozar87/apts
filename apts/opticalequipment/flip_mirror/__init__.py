@@ -1,4 +1,5 @@
 from .base import FlipMirror
+from .calculations import normalize_flip_mirror_database_entry
 import pkgutil
 import importlib
 import os
@@ -32,4 +33,4 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(FlipMirror)
 
-__all__ = ["FlipMirror"]
+__all__ = ["FlipMirror", "normalize_flip_mirror_database_entry"]
