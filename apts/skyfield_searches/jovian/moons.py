@@ -33,9 +33,9 @@ class JovianMoonState:
             final_res = np.zeros(len(t), dtype=int)
             if not np.any(visible):
                 return final_res
-            # Performance Optimization: Slice pre-computed observation arrays for full t
-            # directly using boolean mask 'visible' instead of passing sliced Time object
-            # t[visible], preventing redundant Skyfield observer/nutation re-computations.
+            # Optimization: Slice pre-computed Skyfield observation arrays directly
+            # using the visible mask instead of evaluating Skyfield observer on t[visible],
+            # bypassing redundant ephemeris and topocentric frame matrix calculations.
             final_res[visible] = self._compute_vector_sliced(t, visible)
             return final_res
 
@@ -121,9 +121,7 @@ class JovianMoonState:
         d_j_s = sun_from_j.distance().km
         u_s = p_j_s / d_j_s[None, :]
 
-        # Optimization: For 3D time-series vectors (3, N), direct component dot products
-        # (A[0]*B[0] + A[1]*B[1] + A[2]*B[2]) are ~25-30% faster than np.einsum("ij,ij->j", A, B)
-        # by bypassing string parsing and C-engine dispatch overhead in NumPy.
+        # Optimization: Direct component dot products
         u_z_e = u_e[0] * z_pole[0] + u_e[1] * z_pole[1] + u_e[2] * z_pole[2]
         u_z_s = u_s[0] * z_pole[0] + u_s[1] * z_pole[1] + u_s[2] * z_pole[2]
 
