@@ -3,7 +3,7 @@ from typing import cast
 import numpy as np
 from skyfield import almanac
 
-from ...cache import get_timescale
+from ...cache import get_ephemeris, get_timescale
 from ...constants import astronomy
 from ...utils import planetary
 from ..utils import _refine_conjunction, fast_altaz
@@ -41,7 +41,7 @@ def _process_occultation_window(observer, moon, sun, planet, simple_name, times,
     def check_fn(t):
         return _is_occulted(t, observer, moon, sun, planet)
 
-    setattr(check_fn, "step_days", 0.005)
+    check_fn.step_days = 0.005
     t_occ, _ = almanac.find_discrete(w_start_t, w_end_t, check_fn)
 
     t_list = list(t_occ)
@@ -79,13 +79,16 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     """
     Finds occultations of planets by the Moon for a specific observer.
     Provides precise ingress and egress times.
-    Optimized via vectorized coarse check followed by windowed refinement.
+    Optimized via a two-stage geocentric/topocentric coarse check followed
+    by windowed refinement.
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     moon = planetary.get_skyfield_obj("moon")
     sun = planetary.get_skyfield_obj("sun")
+    eph = get_ephemeris()
+    earth = eph["earth"]
 
     planet_names = [
         "mercury",
@@ -108,44 +111,78 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
     coarse_idx = np.arange(0, num_steps, 10)
     coarse_times = times[coarse_idx]
 
-    obs_at_coarse_times = observer.at(coarse_times)
-    mpos_coarse = obs_at_coarse_times.observe(moon)
-    m_alt_coarse, _, m_dist_coarse = fast_altaz(
-        obs_at_coarse_times, moon, temperature_C=10.0, pressure_mbar=1013.25
+    # Optimization: Stage 1 Geocentric Coarse Filter.
+    # Evaluating topocentric observer state over all coarse_times requires
+    # expensive ITRS frame rotations, GAST, and iau2000a nutation calculations.
+    # Since topocentric lunar parallax is bounded by < 1.05°, checking geocentric
+    # unit vector separation with a 1.3° safety margin filters out ~99% of empty
+    # coarse steps instantly, preserving full accuracy while avoiding redundant
+    # topocentric observer setups.
+    mpos_geo = earth.at(coarse_times).observe(moon)
+    m_dist_geo = mpos_geo.distance()
+    moon_rad_geo = np.degrees(
+        np.arcsin(astronomy.MOON_RADIUS_KM / cast(float, m_dist_geo.km))
     )
-    moon_rad_coarse = np.degrees(
-        np.arcsin(astronomy.MOON_RADIUS_KM / cast(float, m_dist_coarse.km))
-    )
-
-    sun_alts_coarse, _, _ = fast_altaz(
-        obs_at_coarse_times, sun, temperature_C=10.0, pressure_mbar=1013.25
-    )
+    cos_threshold_geo = np.cos(np.radians(moon_rad_geo + 1.3))
+    m_au_geo = mpos_geo.position.au
+    u_moon_geo = m_au_geo / np.linalg.norm(m_au_geo, axis=0)
 
     events = []
 
     for p_idx, planet in enumerate(planet_objs):
         simple_name = simple_names[p_idx]
 
-        ppos_coarse = obs_at_coarse_times.observe(planet)
-        sep_coarse = mpos_coarse.separation_from(ppos_coarse).degrees
+        ppos_geo = earth.at(coarse_times).observe(planet)
+        p_au_geo = ppos_geo.position.au
+        u_planet_geo = p_au_geo / np.linalg.norm(p_au_geo, axis=0)
+
+        dot_geo = np.sum(u_moon_geo * u_planet_geo, axis=0)
+        cand_mask = dot_geo > cos_threshold_geo
+
+        if not np.any(cand_mask):
+            continue
+
+        # Stage 2: Evaluate topocentric positions ONLY for candidate coarse steps
+        cand_coarse_idx = coarse_idx[cand_mask]
+        cand_coarse_times = times[cand_coarse_idx]
+        obs_at_cand = observer.at(cand_coarse_times)
+
+        mpos_cand = obs_at_cand.observe(moon)
+        m_alt_cand, _, m_dist_cand = fast_altaz(
+            obs_at_cand, moon, temperature_C=10.0, pressure_mbar=1013.25
+        )
+        moon_rad_cand = np.degrees(
+            np.arcsin(astronomy.MOON_RADIUS_KM / cast(float, m_dist_cand.km))
+        )
+
+        sun_alts_cand, _, _ = fast_altaz(
+            obs_at_cand, sun, temperature_C=10.0, pressure_mbar=1013.25
+        )
+
+        ppos_cand = obs_at_cand.observe(planet)
+        sep_cand = mpos_cand.separation_from(ppos_cand).degrees
 
         potential_mask = (
-            (sep_coarse < moon_rad_coarse + 0.2)
-            & (cast(float, m_alt_coarse.degrees) > -1)
-            & (cast(float, sun_alts_coarse.degrees) <= -5)
+            (sep_cand < moon_rad_cand + 0.2)
+            & (cast(float, m_alt_cand.degrees) > -1)
+            & (cast(float, sun_alts_cand.degrees) <= -5)
         )
 
         if not np.any(potential_mask):
             continue
 
+        cand_indices_in_group = np.where(potential_mask)[0]
+        actual_coarse_indices = cand_coarse_idx[cand_indices_in_group]
+
         potential_groups = np.split(
-            np.where(potential_mask)[0],
-            np.where(np.diff(np.where(potential_mask)[0]) > 1)[0] + 1,
+            actual_coarse_indices,
+            np.where(np.diff(actual_coarse_indices) > 10)[0] + 1,
         )
 
         for group in potential_groups:
+            coarse_group = [np.where(coarse_idx == idx)[0][0] for idx in group]
             group_events = _process_occultation_window(
-                observer, moon, sun, planet, simple_name, times, group, coarse_idx, ts
+                observer, moon, sun, planet, simple_name, times, coarse_group, coarse_idx, ts
             )
             events.extend(group_events)
 
