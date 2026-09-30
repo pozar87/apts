@@ -1,4 +1,4 @@
-from apts.opticalequipment.camera.calculations import normalize_camera_database_entry
+from apts.opticalequipment.camera import Camera, normalize_camera_database_entry
 from apts.utils import ConnectionType, Gender
 
 
@@ -57,3 +57,25 @@ def test_normalize_camera_database_entry_mft_heuristics():
     assert normalized["sensor_height_mm"] == 13.0
     assert normalized["width"] == 4656
     assert normalized["height"] == 3520
+
+
+def test_camera_class_normalize_and_from_database():
+    raw_entry = {
+        "brand": "ZWO",
+        "name": "ASI533MC Pro",
+        "sensor_width_mm": 11.31,
+        "sensor_height_mm": 11.31,
+        "width": 3008,
+        "height": 3008,
+        "tside_thread": "M42",
+        "tside_gender": "Female",
+    }
+    normalized = Camera.normalize_database_entry(raw_entry)
+    assert normalized["inputs"] == [(ConnectionType.M42, Gender.FEMALE)]
+
+    cam = Camera.from_database(raw_entry)
+    assert cam.sensor_width.magnitude == 11.31
+    assert cam.sensor_height.magnitude == 11.31
+    assert cam.width == 3008
+    assert cam.height == 3008
+    assert cam.vendor == "ZWO ASI533MC Pro"
