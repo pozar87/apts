@@ -13,19 +13,16 @@ def _is_occulted(t, observer, moon, sun, planet):
     """
     Check if planet is occulted by the Moon at time t for observer.
     """
+    # Optimization: Use fast_altaz for Sun and Moon altitude checks to bypass
+    # atmospheric refraction & frame transformation overhead during discrete search steps.
     obs_at_t = observer.at(t)
     m = obs_at_t.observe(moon).apparent()
     p = obs_at_t.observe(planet).apparent()
     sep = m.separation_from(p).degrees
     rad = np.degrees(np.arcsin(astronomy.MOON_RADIUS_KM / m.distance().km))
-    alt, _, _ = m.altaz(temperature_C=10.0, pressure_mbar=1013.25)
-    sun_alt = (
-        obs_at_t.observe(sun)
-        .apparent()
-        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-        .degrees
-    )
-    return (sep < rad) & (alt.degrees > 0) & (sun_alt <= -6)
+    alt = fast_altaz(obs_at_t, moon, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+    sun_alt = fast_altaz(obs_at_t, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+    return (sep < rad) & (alt > 0) & (sun_alt <= -6)
 
 
 def _process_occultation_window(observer, moon, sun, planet, simple_name, times, group, coarse_idx, ts):
@@ -33,8 +30,8 @@ def _process_occultation_window(observer, moon, sun, planet, simple_name, times,
     Process a single contiguous window of potential occultation coarse points.
     """
     num_steps = len(times)
-    w_start_idx = max(0, coarse_idx[group[0]] - 15)
-    w_end_idx = min(num_steps - 1, coarse_idx[group[-1]] + 15)
+    w_start_idx = max(0, coarse_idx[group[0]] - 30)
+    w_end_idx = min(num_steps - 1, coarse_idx[group[-1]] + 30)
     w_start_t = times[w_start_idx]
     w_end_t = times[w_end_idx]
 
@@ -108,7 +105,9 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
         return []
     times = ts.linspace(t0, t1, num_steps)
 
-    coarse_idx = np.arange(0, num_steps, 10)
+    # Optimization: Use 1-minute coarse steps (step=30) for Stage 1 & Stage 2 coarse checks.
+    coarse_step = 30
+    coarse_idx = np.arange(0, num_steps, coarse_step)
     coarse_times = times[coarse_idx]
 
     # Optimization: Stage 1 Geocentric Coarse Filter.
@@ -176,7 +175,7 @@ def find_lunar_planetary_occultations(observer, start_date, end_date):
 
         potential_groups = np.split(
             actual_coarse_indices,
-            np.where(np.diff(actual_coarse_indices) > 10)[0] + 1,
+            np.where(np.diff(actual_coarse_indices) > coarse_step)[0] + 1,
         )
 
         for group in potential_groups:
