@@ -4,6 +4,7 @@ from skyfield.searchlib import find_minima
 
 from ...cache import get_timescale
 
+
 def _get_max_separation_at_time(t, observer, bodies, use_apparent=False):
     """
     Helper to calculate the maximum angular separation between any pair of bodies at time t.
@@ -21,24 +22,32 @@ def _get_max_separation_at_time(t, observer, bodies, use_apparent=False):
     else:
         positions = [obs.observe(b[1]) for b in bodies]
 
-    # Calculate max pairwise separation
-    if hasattr(t, 'shape') and t.shape:
-        # Vectorized case: return an array of max separations for each time
-        max_sep = np.zeros(t.shape)
-        for i in range(len(positions)):
-            for j in range(i + 1, len(positions)):
-                sep = positions[i].separation_from(positions[j]).degrees
-                max_sep = np.maximum(max_sep, sep)
-        return max_sep
+    # Optimization: Pre-calculate unit direction vectors for all bodies and track
+    # minimum dot product across body pairs. Evaluating arccos once at the end
+    # avoids allocating redundant Skyfield Angle objects and repeated trigonometric
+    # operations during find_minima step searching.
+    if hasattr(t, "shape") and t.shape:
+        u_vecs = [
+            p.position.au / np.linalg.norm(p.position.au, axis=0)
+            for p in positions
+        ]
+        min_dot = np.ones(t.shape)
+        for i in range(len(u_vecs)):
+            for j in range(i + 1, len(u_vecs)):
+                dot = np.sum(u_vecs[i] * u_vecs[j], axis=0)
+                min_dot = np.minimum(min_dot, dot)
+        return np.degrees(np.arccos(np.clip(min_dot, -1.0, 1.0)))
     else:
-        # Scalar case
-        max_sep = 0.0
-        for i in range(len(positions)):
-            for j in range(i + 1, len(positions)):
-                sep = positions[i].separation_from(positions[j]).degrees
-                if sep > max_sep:
-                    max_sep = float(sep)
-        return max_sep
+        u_vecs = [
+            p.position.au / np.linalg.norm(p.position.au)
+            for p in positions
+        ]
+        min_dot = 1.0
+        for i in range(len(u_vecs)):
+            for j in range(i + 1, len(u_vecs)):
+                dot = float(np.dot(u_vecs[i], u_vecs[j]))
+                min_dot = min(min_dot, dot)
+        return float(np.degrees(np.arccos(np.clip(min_dot, -1.0, 1.0))))
 
 def find_groupings(observer, bodies, start_date, end_date, threshold_degrees=5.0):
     """
@@ -59,7 +68,7 @@ def find_groupings(observer, bodies, start_date, end_date, threshold_degrees=5.0
         return _get_max_separation_at_time(t, observer, bodies)
 
     # Step size: Moon moves ~13 deg/day. 5 degrees threshold -> 0.1 days step is safe.
-    setattr(max_separation, 'step_days', 0.1)
+    max_separation.step_days = 0.1
 
     times, values = find_minima(t0, t1, max_separation)
 

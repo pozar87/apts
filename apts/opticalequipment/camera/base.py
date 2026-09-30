@@ -13,10 +13,15 @@ class Camera(OutputOpticalEquipment):
     _DATABASE = {}
 
     @classmethod
-    def from_database(cls, entry):
+    def normalize_database_entry(cls, entry: dict) -> dict:
         from .calculations import normalize_camera_database_entry
 
         entry = normalize_camera_database_entry(entry)
+        return super().normalize_database_entry(entry)
+
+    @classmethod
+    def from_database(cls, entry):
+        entry = cls.normalize_database_entry(entry)
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
@@ -174,6 +179,4 @@ class Camera(OutputOpticalEquipment):
         return False
 
     def __str__(self):
-        return "{} {}x{}".format(
-            self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude
-        )
+        return f"{self.vendor} {self.sensor_width.magnitude}x{self.sensor_height.magnitude}"
