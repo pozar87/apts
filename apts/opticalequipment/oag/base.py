@@ -1,42 +1,25 @@
 from ..base import IntermediateOpticalEquipment
 from ...constants import OpticalType
+from .calculations import normalize_oag_database_entry
 
 
 class OAG(IntermediateOpticalEquipment):
     _DATABASE = {}
 
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_oag_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
     def from_database(cls, entry):
-        from ...utils import map_conn, map_gender
-
-        brand = entry["brand"]
-        name = entry["name"]
-        vendor = f"{brand} {name}"
-        ol = entry.get("optical_length", 0)
-        mass = entry.get("mass", 0)
-        tt = map_conn(entry.get("tside_thread"))
-        tg = map_gender(entry.get("tside_gender"))
-        ct = map_conn(entry.get("cside_thread"))
-        cg = map_gender(entry.get("cside_gender"))
-
-        inputs = entry.get("inputs")
-        if inputs is None:
-            inputs = [(tt, tg)] if tt else []
-        else:
-            inputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in inputs]
-
-        outputs = entry.get("outputs")
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-        else:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
-
+        norm = normalize_oag_database_entry(entry)
         return cls(
-            vendor,
-            optical_length=ol,
-            mass=mass,
-            inputs=inputs,
-            outputs=outputs,
+            vendor=norm["vendor"],
+            optical_length=norm.get("optical_length", 0),
+            mass=norm.get("mass", 0),
+            inputs=norm.get("inputs"),
+            outputs=norm.get("outputs"),
         )
 
     def __init__(
