@@ -505,15 +505,15 @@ class ZwoCamera(Camera):
             "full_well_e": 32000,
             "height": 1216,
             "inputs": [("CS", "Female"), ("1.25\"", "Male")],
-            "mass": 60,
+            "mass": 60,  # Verified via ZWO official documentation (60g / 0.13 lbs mass) - https://www.zwoastro.com/product/asi174mm-mini/
             "name": "ASI174MM Mini",
-            "optical_length": 8.5,
-            "pixel_size_um": 5.86,
-            "quantum_efficiency_pct": 77,
-            "read_noise_e": 6.0,
+            "optical_length": 8.5,  # Verified via ZWO official documentation (8.5mm backfocus) - https://www.zwoastro.com/product/asi174mm-mini/
+            "pixel_size_um": 5.86,  # Verified via ZWO official documentation (5.86 µm pixel size) - https://www.zwoastro.com/product/asi174mm-mini/
+            "quantum_efficiency_pct": 77,  # Verified via ZWO official documentation (77% QE peak) - https://www.zwoastro.com/product/asi174mm-mini/
+            "read_noise_e": 3.5,  # Verified via ZWO official documentation (3.5e- minimum read noise) - https://www.zwoastro.com/product/asi174mm-mini/
             "reversible": False,
-            "sensor_height_mm": 7.1,
-            "sensor_width_mm": 11.3,
+            "sensor_height_mm": 7.13,  # Verified via ZWO official documentation (Sony IMX174, 11.34mm x 7.13mm sensor) - https://www.zwoastro.com/product/asi174mm-mini/
+            "sensor_width_mm": 11.34,  # Verified via ZWO official documentation (Sony IMX174, 11.34mm x 7.13mm sensor) - https://www.zwoastro.com/product/asi174mm-mini/
             "tside_gender": "Female",
             "tside_thread": "CS",
             "type": "type_camera",

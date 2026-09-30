@@ -1,10 +1,12 @@
 import math
-import numpy
 from typing import Any, cast
 
-from .telescope import Telescope
-from ..constants import GraphConstants, OpticalType
-from ..units import get_unit_registry
+import numpy
+
+from ...constants import GraphConstants, OpticalType
+from ...units import get_unit_registry
+from ..telescope import Telescope
+from .calculations import normalize_smart_telescope_database_entry
 
 
 class SmartTelescope(Telescope):
@@ -15,9 +17,15 @@ class SmartTelescope(Telescope):
     path_layer = 1
 
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        entry = normalize_smart_telescope_database_entry(entry)
+        return super().normalize_database_entry(entry)
+
+    @classmethod
     def from_database(cls, entry):
-        brand = entry["brand"]
-        name = entry["name"]
+        entry = cls.normalize_database_entry(entry)
+        brand = entry.get("brand", "Unknown")
+        name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
         aperture = entry["aperture"]
         focal_length = entry["focal_length"]
@@ -62,7 +70,7 @@ class SmartTelescope(Telescope):
             vendor,
             telescope_type=None,
             mass=mass,
-            outputs=[], # Smart telescope has no outputs
+            outputs=[],  # Smart telescope has no outputs
         )
         # Smart telescope is a closed system, so we don't want any inputs or outputs
         self._inputs = []
@@ -175,10 +183,4 @@ class SmartTelescope(Telescope):
 
     def __str__(self):
         # Format: <vendor> <aperture>/<focal length>
-        return "{} {}/{} ({}x{})".format(
-            self.get_vendor(),
-            self.aperture.magnitude,
-            self.focal_length.magnitude,
-            self.width,
-            self.height,
-        )
+        return f"{self.get_vendor()} {self.aperture.magnitude}/{self.focal_length.magnitude} ({self.width}x{self.height})"

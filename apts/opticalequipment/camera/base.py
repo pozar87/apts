@@ -15,6 +15,8 @@ class Camera(OutputOpticalEquipment):
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
+        from .calculations import normalize_camera_database_entry
+
         entry = normalize_camera_database_entry(entry)
         return super().normalize_database_entry(entry)
 
