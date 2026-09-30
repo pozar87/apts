@@ -103,16 +103,16 @@ class CelestronTelescope(Telescope):
             "name": "AstroMaster 130EQ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3500, # Verified via Celestron.com (7.7 lbs / 3.5 kg OTA weight)
+            "mass": 3500,  # Verified via Celestron.com (7.7 lbs / 3.5 kg OTA weight) - https://www.celestron.com/products/astromaster-130eq-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back) - https://www.celestron.com/products/astromaster-130eq-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 130,
-            "focal_length_mm": 650,
-            "central_obstruction_mm": 44, # Verified via Celestron.com (44mm / 1.73" secondary mirror obstruction) - https://www.celestron.com/products/astromaster-130eq-telescope
+            "aperture_mm": 130,  # Verified via Celestron.com (130mm / 5.11" aperture) - https://www.celestron.com/products/astromaster-130eq-telescope
+            "focal_length_mm": 650,  # Verified via Celestron.com (650mm focal length, f/5) - https://www.celestron.com/products/astromaster-130eq-telescope
+            "central_obstruction_mm": 44,  # Verified via Celestron.com (44mm / 1.73" secondary mirror obstruction) - https://www.celestron.com/products/astromaster-130eq-telescope
         },
         "Celestron_AstroMaster_70AZ": {
             "brand": "Celestron",
