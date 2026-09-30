@@ -6,6 +6,7 @@ from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ..base import OutputOpticalEquipment
+from .calculations import normalize_camera_database_entry
 
 
 class Camera(OutputOpticalEquipment):
@@ -13,10 +14,13 @@ class Camera(OutputOpticalEquipment):
     _DATABASE = {}
 
     @classmethod
-    def from_database(cls, entry):
-        from .calculations import normalize_camera_database_entry
-
+    def normalize_database_entry(cls, entry: dict) -> dict:
         entry = normalize_camera_database_entry(entry)
+        return super().normalize_database_entry(entry)
+
+    @classmethod
+    def from_database(cls, entry):
+        entry = cls.normalize_database_entry(entry)
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
         vendor = f"{brand} {name}"
@@ -174,6 +178,6 @@ class Camera(OutputOpticalEquipment):
         return False
 
     def __str__(self):
-        return "{} {}x{}".format(
-            self.vendor, self.sensor_width.magnitude, self.sensor_height.magnitude
+        return (
+            f"{self.vendor} {self.sensor_width.magnitude}x{self.sensor_height.magnitude}"
         )
