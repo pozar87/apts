@@ -6,7 +6,6 @@ from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ..base import OutputOpticalEquipment
-from .calculations import normalize_camera_database_entry
 
 
 class Camera(OutputOpticalEquipment):
