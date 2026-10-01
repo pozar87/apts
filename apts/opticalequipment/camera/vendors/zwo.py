@@ -1387,21 +1387,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 13000,
-            "height": 2160,
-            "mass": 133,
+            "full_well_e": 13000,  # Verified via ZWO (13ke- full well capacity) - https://www.zwoastro.com/product/asi485mc/
+            "height": 2160,  # Verified via ZWO (3840x2160 resolution) - https://www.zwoastro.com/product/asi485mc/
+            "mass": 133,  # Verified via ZWO (133g mass) - https://www.zwoastro.com/product/asi485mc/
             "name": "ASI485MC",
-            "optical_length": 6.5,
-            "pixel_size_um": 2.9,
-            "quantum_efficiency_pct": 85,
-            "read_noise_e": 1.0,
+            "optical_length": 12.5,  # Verified via ZWO (12.5mm back focus distance / CS thread) - https://www.zwoastro.com/product/asi485mc/
+            "pixel_size_um": 2.9,  # Verified via ZWO (2.9µm pixel size) - https://www.zwoastro.com/product/asi485mc/
+            "quantum_efficiency_pct": 85,  # Verified via ZWO (85% peak QE) - https://www.zwoastro.com/product/asi485mc/
+            "read_noise_e": 1.0,  # Verified via ZWO (1.0e- - 4.7e- read noise range) - https://www.zwoastro.com/product/asi485mc/
             "reversible": False,
-            "sensor_height_mm": 6.26,
-            "sensor_width_mm": 11.13,
+            "sensor_height_mm": 6.264,  # Verified via Sony IMX485 specification (2160 * 2.9µm = 6.264mm)
+            "sensor_width_mm": 11.136,  # Verified via Sony IMX485 specification (3840 * 2.9µm = 11.136mm)
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "CS",  # Verified via ZWO (CS-mount native female thread with 12.5mm backfocus) - https://www.zwoastro.com/product/asi485mc/
             "type": "type_camera",
-            "width": 3840,
+            "width": 3840,  # Verified via ZWO (3840x2160 resolution) - https://www.zwoastro.com/product/asi485mc/
         },
         "ZWO_ASI_585MM_Pro": {
             "bf_role": "end",
