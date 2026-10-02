@@ -127,23 +127,15 @@ def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     ts = get_timescale()
     target_epoch = epoch if epoch is not None else ts.utc(2000)
 
-    # Optimization: Bypassing expensive .apparent() place calculations (nutation,
-    # aberration, light deflection) during the coarse step-search phase.
-    def solar_longitude_at_astrometric(t):
-        _, lon, _ = earth.at(t).observe(sun).ecliptic_latlon(target_epoch)
-        return lon.degrees
+    # Optimization: Calculate analytical initial time estimate using Sun's mean orbital speed (~0.985647358 deg/day).
+    # Bypasses expensive step-by-step find_minima grid evaluation across the interval.
+    _, lon0, _ = earth.at(t0).observe(sun).ecliptic_latlon(target_epoch)
+    diff = (target_longitude - lon0.degrees + 180) % 360 - 180
+    dt_days = diff / 0.985647358
+    rough_t = ts.tt_jd(t0.tt + dt_days)
 
-    def abs_diff(t):
-        diff = solar_longitude_at_astrometric(t) - target_longitude
-        return abs((diff + 180) % 360 - 180)
-
-    abs_diff.step_days = 1.0
-    times, _ = find_minima(t0, t1, abs_diff)
-
-    if not times:
+    if rough_t.tt < t0.tt - 1.0 or rough_t.tt > t1.tt + 1.0:
         return None
-
-    rough_t = times[0]
 
     # Perform secant root-finding using high-precision .apparent() observations
     # starting at rough_t to achieve sub-arcsecond accuracy (< 1e-6 degrees)
@@ -160,7 +152,7 @@ def find_solar_longitude_time(t0, t1, target_longitude, epoch=None):
     t_b = ts.tt_jd(t_a.tt - 0.001)
     y_b = apparent_error(t_b)
 
-    for _ in range(2):
+    for _ in range(3):
         if abs(y_a - y_b) < 1e-12:
             break
         dt = y_a * (t_a.tt - t_b.tt) / (y_a - y_b)
