@@ -121,11 +121,19 @@ def find_conjunctions_between_moving_bodies(
     body_idxs, time_idxs_minus_1 = np.where(is_minima & is_below_threshold)
     time_idxs = time_idxs_minus_1 + 1
 
+    step_minutes = (
+        float(times[1].tt - times[0].tt) * 1440.0 if len(times) > 1 else 30.0
+    )
+
     events = []
     for body_idx, time_idx in zip(body_idxs, time_idxs):
         # Refine conjunction time and separation
         refined_t, refined_s = _refine_conjunction(
-            observer, body1, objs2[body_idx], times[time_idx]
+            observer,
+            body1,
+            objs2[body_idx],
+            times[time_idx],
+            window_minutes=step_minutes,
         )
         events.append(
             {
@@ -160,6 +168,21 @@ def find_all_pairs_conjunctions(
     bodies_list = list(bodies_data)
     # Assume planets for step size if not specified
     step = _get_conjunction_step_size(bodies_list[0][0], bodies_list[1:])
+
+    # Optimization: If precomputed_positions are passed with a finer step size than required
+    # for planet-planet conjunctions (step = 0.2/0.1 days), downsample (stride) the position
+    # vectors to avoid evaluating tens of thousands of redundant time steps in einsum.
+    if precomputed_positions:
+        first_pos = next(iter(precomputed_positions.values()))
+        if hasattr(first_pos, "t") and hasattr(first_pos.t, "shape") and len(first_pos.t.shape) > 0 and first_pos.t.shape[0] > 2:
+            dt_days = float(first_pos.t[1].tt - first_pos.t[0].tt)
+            if dt_days > 0 and step > dt_days:
+                stride = max(1, int(round(step / dt_days)))
+                if stride > 1:
+                    precomputed_positions = {
+                        k: v[::stride] for k, v in precomputed_positions.items()
+                    }
+
     times = _get_conjunction_times(ts, t0, t1, step, precomputed_positions)
 
     names = []
@@ -203,10 +226,18 @@ def find_all_pairs_conjunctions(
 
             minima_indices = np.where(is_minima & is_below_threshold)[0] + 1
 
+            step_minutes = (
+                float(times[1].tt - times[0].tt) * 1440.0 if len(times) > 1 else 30.0
+            )
+
             for idx in minima_indices:
                 # Refine conjunction time and separation
                 refined_t, refined_s = _refine_conjunction(
-                    observer, objs[i], objs[j], times[idx]
+                    observer,
+                    objs[i],
+                    objs[j],
+                    times[idx],
+                    window_minutes=step_minutes,
                 )
                 events.append(
                     {
