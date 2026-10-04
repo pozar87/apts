@@ -1518,21 +1518,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 50000,
-            "height": 3008,
-            "mass": 470,
+            "full_well_e": 50000,  # Verified via ZWO official product specs (50ke full well capacity) - https://www.zwoastro.com/product/asi533-pro-series/
+            "height": 3008,  # Verified via ZWO official product specs (3008x3008 resolution, 9.0MP) - https://www.zwoastro.com/product/asi533-pro-series/
+            "mass": 470,  # Verified via ZWO official product specs (470g weight) - https://www.zwoastro.com/product/asi533-pro-series/
             "name": "ASI533MM Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.0,
+            "optical_length": 17.5,  # Verified via ZWO official product specs (17.5mm backfocus distance with 11mm ring) - https://www.zwoastro.com/product/asi533-pro-series/
+            "pixel_size_um": 3.76,  # Verified via ZWO official product specs (3.76um pixel size) - https://www.zwoastro.com/product/asi533-pro-series/
+            "quantum_efficiency_pct": 91,  # Verified via ZWO official product specs (91% peak QE) - https://www.zwoastro.com/product/asi533-pro-series/
+            "read_noise_e": 1.0,  # Verified via ZWO official product specs (1.0e- read noise) - https://www.zwoastro.com/product/asi533-pro-series/
             "reversible": False,
-            "sensor_height_mm": 11.31,
-            "sensor_width_mm": 11.31,
+            "sensor_height_mm": 11.31,  # Verified via ZWO official product specs (11.31mm x 11.31mm Sony IMX533 mono sensor) - https://www.zwoastro.com/product/asi533-pro-series/
+            "sensor_width_mm": 11.31,  # Verified via ZWO official product specs (11.31mm x 11.31mm Sony IMX533 mono sensor) - https://www.zwoastro.com/product/asi533-pro-series/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official product specs (M42x0.75 female thread) - https://www.zwoastro.com/product/asi533-pro-series/
             "type": "type_camera",
-            "width": 3008,
+            "width": 3008,  # Verified via ZWO official product specs (3008x3008 resolution, 9.0MP) - https://www.zwoastro.com/product/asi533-pro-series/
         },
         "ZWO_ASI_533MM_Pro_6_bolt_mount": {
             "bf_role": "end",
