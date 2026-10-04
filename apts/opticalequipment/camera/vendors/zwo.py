@@ -843,21 +843,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 50000,
-            "height": 4176,
-            "mass": 800,
+            "full_well_e": 50000,  # Verified via ZWO official specs (50ke full well capacity) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "height": 4176,  # Verified via ZWO official specs (6248x4176 resolution, 26MP) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "mass": 800,  # Verified via ZWO official specs (800g weight with dual sensor) - https://www.zwoastro.com/product/asi2600mc-duo/
             "name": "ASI2600MC Duo",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.0,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance with M54 tilt plate) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "pixel_size_um": 3.76,  # Verified via ZWO official specs (3.76um pixel size) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "quantum_efficiency_pct": 80,  # Verified via ZWO official specs (80% peak QE) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "read_noise_e": 1.0,  # Verified via ZWO official specs (1.0e- read noise) - https://www.zwoastro.com/product/asi2600mc-duo/
             "reversible": False,
-            "sensor_height_mm": 15.7,
-            "sensor_width_mm": 23.5,
+            "sensor_height_mm": 15.7,  # Verified via ZWO official specs (23.5mm x 15.7mm Sony IMX571 APS-C sensor) - https://www.zwoastro.com/product/asi2600mc-duo/
+            "sensor_width_mm": 23.5,  # Verified via ZWO official specs (23.5mm x 15.7mm Sony IMX571 APS-C sensor) - https://www.zwoastro.com/product/asi2600mc-duo/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M54",  # Verified via ZWO official specs (M54x0.75 female thread tilt plate) - https://www.zwoastro.com/product/asi2600mc-duo/
             "type": "type_camera",
-            "width": 6248,
+            "width": 6248,  # Verified via ZWO official specs (6248x4176 resolution) - https://www.zwoastro.com/product/asi2600mc-duo/
         },
         "ZWO_ASI_2600MC_Air": {
             "bf_role": "end",
