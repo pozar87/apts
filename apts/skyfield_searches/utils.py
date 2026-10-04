@@ -29,16 +29,16 @@ def fast_altaz(observer_or_pos, skyfield_obj=None, temperature_C=None, pressure_
     return app.altaz(temperature_C=temperature_C, pressure_mbar=pressure_mbar)  # type: ignore[arg-type]
 
 
-def _refine_conjunction(observer, obj1, obj2, rough_t):
+def _refine_conjunction(observer, obj1, obj2, rough_t, window_minutes=30.0):
     """
     Refines the time of a conjunction using iterative minimization.
     """
     ts = get_timescale()
-    # Search within +/- 30 minutes of the rough time
+    window = max(30.0, float(window_minutes))
     # Optimization: Using direct Terrestrial Time Julian Date (TT JD) math is ~20x faster
     # than converting to UTC datetime, applying a timedelta, and converting back to Time.
-    t0 = ts.tt_jd(rough_t.tt - 30.0 / 1440.0)
-    t1 = ts.tt_jd(rough_t.tt + 30.0 / 1440.0)
+    t0 = ts.tt_jd(rough_t.tt - window / 1440.0)
+    t1 = ts.tt_jd(rough_t.tt + window / 1440.0)
 
     # Optimization: If obj1 or obj2 is a Star, its position in the inertial
     # frame (GCRS/BCRS) is effectively constant over the +/- 30-minute interval.

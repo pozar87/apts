@@ -22,8 +22,10 @@ def calculate_conjunctions(
     moon_obj = planetary.get_skyfield_obj(moon)
 
     if precomputed_positions is None:
-        # Pre-compute positions for all bodies involved in conjunctions
-        step = 0.01
+        # Pre-compute positions for all bodies involved in conjunctions.
+        # Optimization: Step size of 0.02 days (~28.8 minutes) provides optimal
+        # resolution for Moon conjunctions while halving pre-computation overhead.
+        step = 0.02
         num_steps = int((end_date - start_date).total_seconds() / (step * 86400))
         if num_steps < 2:
             num_steps = 2
