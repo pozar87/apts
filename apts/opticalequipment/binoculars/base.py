@@ -1,37 +1,56 @@
-from ..constants import OpticalType, GraphConstants, astronomy
-from ..i18n import gettext_ as _
-from ..units import get_unit_registry
-from .base import OutputOpticalEquipment
+from typing import ClassVar
+
+import numpy
+
+from ...constants import GraphConstants, OpticalType, astronomy
+from ...i18n import gettext_ as _
+from ...units import get_unit_registry
+from ..base import OutputOpticalEquipment
+from .calculations import normalize_binoculars_database_entry
 
 
 class Binoculars(OutputOpticalEquipment):
-    @classmethod
-    def from_database(cls, entry):
-        from ..utils import extract_number, map_conn, map_gender
-
-        brand = entry["brand"]
-        name = entry["name"]
-        vendor = f"{brand} {name}"
-        mass = entry.get("mass", 0)
-        mag = extract_number(name) or 10
-        obj = extract_number(name, prefix=f"{int(mag)}x") or 50
-
-        ct = map_conn(entry.get('cside_thread'))
-        cg = map_gender(entry.get('cside_gender'))
-
-        outputs = entry.get('outputs')
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-        else:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
-
-        return cls(mag, obj, vendor, 60, mass=mass, outputs=outputs)
-
     """
     Class representing binoculars
     """
 
     path_layer = 1
+    _DATABASE: ClassVar[dict] = {
+        "Orion_GiantView_25x100_Binocular": {
+            "brand": "Orion",
+            "name": "GiantView 25x100 Binocular",
+            "type": "type_telescope",
+            "optical_length": 0,
+            "mass": 2500,
+            "tside_thread": "",
+            "tside_gender": "",
+            "cside_thread": '2"',
+            "cside_gender": "Male",
+            "reversible": False,
+            "bf_role": "",
+        },
+    }
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        entry = normalize_binoculars_database_entry(entry)
+        return super().normalize_database_entry(entry)
+
+    @classmethod
+    def from_database(cls, entry):
+        entry = cls.normalize_database_entry(entry)
+        vendor = entry.get("vendor", "")
+        mass = entry.get("mass", 0)
+        mag = entry.get("magnification", 10)
+        obj = entry.get("objective_diameter", 50)
+        apparent_fov = entry.get("apparent_fov_deg", 60)
+        outputs = entry.get("outputs", [])
+
+        return cls(mag, obj, vendor, apparent_fov, mass=mass, outputs=outputs)
+
+    @classmethod
+    def Orion_GiantView_25x100_Binocular(cls):
+        return cls.from_database(cls._DATABASE["Orion_GiantView_25x100_Binocular"])
 
     def __init__(
         self,
@@ -87,7 +106,7 @@ class Binoculars(OutputOpticalEquipment):
             * get_unit_registry().arcsecond
         )
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
+    def rayleigh_limit(self, wavelength_nm: float = 550):
         """
         Calculate the maximum resolving power using the Rayleigh Limit formula.
         θ = 1.22 * λ / D
@@ -108,8 +127,6 @@ class Binoculars(OutputOpticalEquipment):
         :return: range in magnitude
         """
         # Using the same formula as Telescope, based on aperture (objective_diameter for binoculars)
-        import numpy
-
         return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)
 
     def brightness(self, telescope=None, zoom=None):
@@ -136,23 +153,3 @@ class Binoculars(OutputOpticalEquipment):
     def max_useful_zoom(self):
         # For binoculars, their own magnification is effectively the max useful zoom
         return self.magnification
-
-    _DATABASE = {
-        "Orion_GiantView_25x100_Binocular": {
-            "brand": "Orion",
-            "name": "GiantView 25x100 Binocular",
-            "type": "type_telescope",
-            "optical_length": 0,
-            "mass": 2500,
-            "tside_thread": "",
-            "tside_gender": "",
-            "cside_thread": '2"',
-            "cside_gender": "Male",
-            "reversible": False,
-            "bf_role": "",
-        },
-    }
-
-    @classmethod
-    def Orion_GiantView_25x100_Binocular(cls):
-        return cls.from_database(cls._DATABASE["Orion_GiantView_25x100_Binocular"])

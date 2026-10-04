@@ -1518,21 +1518,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 50000,
-            "height": 3008,
-            "mass": 470,
+            "full_well_e": 50000,  # Verified via ZWO official product specs (50ke full well capacity) - https://www.zwoastro.com/product/asi533-pro-series/
+            "height": 3008,  # Verified via ZWO official product specs (3008x3008 resolution, 9.0MP) - https://www.zwoastro.com/product/asi533-pro-series/
+            "mass": 470,  # Verified via ZWO official product specs (470g weight) - https://www.zwoastro.com/product/asi533-pro-series/
             "name": "ASI533MM Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.0,
+            "optical_length": 17.5,  # Verified via ZWO official product specs (17.5mm backfocus distance with 11mm ring) - https://www.zwoastro.com/product/asi533-pro-series/
+            "pixel_size_um": 3.76,  # Verified via ZWO official product specs (3.76um pixel size) - https://www.zwoastro.com/product/asi533-pro-series/
+            "quantum_efficiency_pct": 91,  # Verified via ZWO official product specs (91% peak QE) - https://www.zwoastro.com/product/asi533-pro-series/
+            "read_noise_e": 1.0,  # Verified via ZWO official product specs (1.0e- read noise) - https://www.zwoastro.com/product/asi533-pro-series/
             "reversible": False,
-            "sensor_height_mm": 11.31,
-            "sensor_width_mm": 11.31,
+            "sensor_height_mm": 11.31,  # Verified via ZWO official product specs (11.31mm x 11.31mm Sony IMX533 mono sensor) - https://www.zwoastro.com/product/asi533-pro-series/
+            "sensor_width_mm": 11.31,  # Verified via ZWO official product specs (11.31mm x 11.31mm Sony IMX533 mono sensor) - https://www.zwoastro.com/product/asi533-pro-series/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official product specs (M42x0.75 female thread) - https://www.zwoastro.com/product/asi533-pro-series/
             "type": "type_camera",
-            "width": 3008,
+            "width": 3008,  # Verified via ZWO official product specs (3008x3008 resolution, 9.0MP) - https://www.zwoastro.com/product/asi533-pro-series/
         },
         "ZWO_ASI_533MM_Pro_6_bolt_mount": {
             "bf_role": "end",
@@ -1641,21 +1641,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 51400,
-            "height": 6388,
-            "mass": 700,
+            "full_well_e": 51400,  # Verified via ZWO official specs (51400e- full well capacity) - https://www.zwoastro.com/product/asi6200/
+            "height": 6388,  # Verified via ZWO official specs (9576x6388 resolution, 61.17MP) - https://www.zwoastro.com/product/asi6200/
+            "mass": 700,  # Verified via ZWO official specs (700g weight) - https://www.zwoastro.com/product/asi6200/
             "name": "ASI6200MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 80,
-            "read_noise_e": 1.2,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance with tilt plate) - https://www.zwoastro.com/product/asi6200/
+            "pixel_size_um": 3.76,  # Verified via ZWO official specs (3.76um pixel size) - https://www.zwoastro.com/product/asi6200/
+            "quantum_efficiency_pct": 80,  # Verified via ZWO official specs (80% peak QE) - https://www.zwoastro.com/product/asi6200/
+            "read_noise_e": 1.2,  # Verified via ZWO official specs (1.2e- read noise) - https://www.zwoastro.com/product/asi6200/
             "reversible": False,
-            "sensor_height_mm": 24.0,
-            "sensor_width_mm": 36.0,
+            "sensor_height_mm": 24.0,  # Verified via ZWO official specs (36mm x 24mm Sony IMX455 full frame color sensor) - https://www.zwoastro.com/product/asi6200/
+            "sensor_width_mm": 36.0,  # Verified via ZWO official specs (36mm x 24mm Sony IMX455 full frame color sensor) - https://www.zwoastro.com/product/asi6200/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M54",  # Verified via ZWO official specs (native M54x0.75 female thread) - https://www.zwoastro.com/product/asi6200/
             "type": "type_camera",
-            "width": 9576,
+            "width": 9576,  # Verified via ZWO official specs (9576x6388 resolution, 61.17MP) - https://www.zwoastro.com/product/asi6200/
         },
         "ZWO_ASI_6200MC_Pro_4_bolt_no_tilt_plate": {
             "bf_role": "end",
@@ -1688,21 +1688,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 51400,
-            "height": 6388,
-            "mass": 700,
+            "full_well_e": 51400,  # Verified via ZWO official specs (51400e- full well capacity) - https://www.zwoastro.com/product/asi6200/
+            "height": 6388,  # Verified via ZWO official specs (9576x6388 resolution, 61.17MP) - https://www.zwoastro.com/product/asi6200/
+            "mass": 700,  # Verified via ZWO official specs (700g weight) - https://www.zwoastro.com/product/asi6200/
             "name": "ASI6200MM Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 3.76,
-            "quantum_efficiency_pct": 91,
-            "read_noise_e": 1.2,
+            "optical_length": 17.5,  # Verified via ZWO official specs (17.5mm backfocus distance with tilt plate) - https://www.zwoastro.com/product/asi6200/
+            "pixel_size_um": 3.76,  # Verified via ZWO official specs (3.76um pixel size) - https://www.zwoastro.com/product/asi6200/
+            "quantum_efficiency_pct": 91,  # Verified via ZWO official specs (91% peak QE) - https://www.zwoastro.com/product/asi6200/
+            "read_noise_e": 1.2,  # Verified via ZWO official specs (1.2e- read noise) - https://www.zwoastro.com/product/asi6200/
             "reversible": False,
-            "sensor_height_mm": 24.0,
-            "sensor_width_mm": 36.0,
+            "sensor_height_mm": 24.0,  # Verified via ZWO official specs (36mm x 24mm Sony IMX455 full frame mono sensor) - https://www.zwoastro.com/product/asi6200/
+            "sensor_width_mm": 36.0,  # Verified via ZWO official specs (36mm x 24mm Sony IMX455 full frame mono sensor) - https://www.zwoastro.com/product/asi6200/
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M54",  # Verified via ZWO official specs (native M54x0.75 female thread) - https://www.zwoastro.com/product/asi6200/
             "type": "type_camera",
-            "width": 9576,
+            "width": 9576,  # Verified via ZWO official specs (9576x6388 resolution, 61.17MP) - https://www.zwoastro.com/product/asi6200/
         },
         "ZWO_ASI_6200MM_Pro_4_bolt_no_tilt_plate": {
             "bf_role": "end",

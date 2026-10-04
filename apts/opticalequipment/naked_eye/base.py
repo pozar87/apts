@@ -1,7 +1,8 @@
-from ..constants import GraphConstants, OpticalType
-from ..i18n import gettext_ as _
-from ..units import get_unit_registry
-from .base import OutputOpticalEquipment
+from ..base import OutputOpticalEquipment
+from ...constants import GraphConstants, OpticalType
+from ...i18n import gettext_ as _
+from ...units import get_unit_registry
+from .calculations import normalize_naked_eye_database_entry
 
 
 class NakedEye(OutputOpticalEquipment):
@@ -10,6 +11,23 @@ class NakedEye(OutputOpticalEquipment):
     """
 
     path_layer = 1
+    _DATABASE = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_naked_eye_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
+    def from_database(cls, entry: dict):
+        norm_entry = cls.normalize_database_entry(entry)
+        return cls(
+            magnification=norm_entry["magnification"],
+            objective_diameter=norm_entry["objective_diameter"],
+            vendor=norm_entry["vendor"],
+            apparent_fov_deg=norm_entry["apparent_fov_deg"],
+            focal_length=norm_entry["focal_length"],
+        )
 
     def __init__(
         self,

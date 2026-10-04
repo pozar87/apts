@@ -4,7 +4,7 @@ import numpy as np
 
 from ..cache import get_ephemeris, get_timescale
 from ..utils import planetary
-from .utils import find_solar_longitude_time
+from .utils import fast_altaz, find_solar_longitude_time
 
 # Drift coefficients (per degree of solar longitude) for major showers.
 # Sources: International Meteor Organization (IMO), Handbook for Meteor Observers.
@@ -121,10 +121,14 @@ def _generate_shower_candidates(start_date, end_date, ts, showers=None):
             if t_e < t_s:
                 t_e = ts.utc(year + 1, data["end"][0], data["end"][1])
 
-            peak_t = find_solar_longitude_time(t_s, t_e, data["peak_lon"])
-
             s_date = t_s.utc_datetime()
             e_date = t_e.utc_datetime()
+
+            # Optimization: Fast window pre-filtering to skip showers outside the search range
+            if e_date < start_date or s_date > end_date:
+                continue
+
+            peak_t = find_solar_longitude_time(t_s, t_e, data["peak_lon"])
 
             if start_date <= s_date <= end_date:
                 candidates.append(
@@ -250,23 +254,14 @@ def find_meteor_showers(observer, start_date, end_date):
         .degrees
     )
 
-    # Altitudes for Sun and Moon
+    # Optimization: Hoist observer.at(times_vec) and use fast_altaz for Sun and Moon
+    obs_at_times = observer.at(times_vec)
     sun_alts = np.atleast_1d(
-        cast(Any, observer)
-        .at(times_vec)
-        .observe(sun)
-        .apparent()
-        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-        .degrees
+        fast_altaz(obs_at_times, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
     )
 
     moon_alts = np.atleast_1d(
-        cast(Any, observer)
-        .at(times_vec)
-        .observe(moon)
-        .apparent()
-        .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-        .degrees
+        fast_altaz(obs_at_times, moon, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
     )
 
     moon_illums = np.atleast_1d(planetary.get_moon_illumination(times_vec))
