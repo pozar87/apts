@@ -1,29 +1,24 @@
-from ..constants import OpticalType, GraphConstants, astronomy
-from ..i18n import gettext_ as _
-from ..units import get_unit_registry
-from .base import OutputOpticalEquipment
+from ...constants import OpticalType, GraphConstants, astronomy
+from ...i18n import gettext_ as _
+from ...units import get_unit_registry
+from ..base import OutputOpticalEquipment
+from .calculations import normalize_binoculars_database_entry
 
 
 class Binoculars(OutputOpticalEquipment):
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        return normalize_binoculars_database_entry(entry)
+
+    @classmethod
     def from_database(cls, entry):
-        from ..utils import extract_number, map_conn, map_gender
+        normalized = cls.normalize_database_entry(entry)
 
-        brand = entry["brand"]
-        name = entry["name"]
-        vendor = f"{brand} {name}"
-        mass = entry.get("mass", 0)
-        mag = extract_number(name) or 10
-        obj = extract_number(name, prefix=f"{int(mag)}x") or 50
-
-        ct = map_conn(entry.get('cside_thread'))
-        cg = map_gender(entry.get('cside_gender'))
-
-        outputs = entry.get('outputs')
-        if outputs is None:
-            outputs = [(ct, cg)] if ct else []
-        else:
-            outputs = [(map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g) for c, g in outputs]
+        vendor = normalized["vendor"]
+        mass = normalized["mass"]
+        mag = normalized["magnification"]
+        obj = normalized["objective_diameter"]
+        outputs = normalized["outputs"]
 
         return cls(mag, obj, vendor, 60, mass=mass, outputs=outputs)
 
