@@ -1,6 +1,8 @@
 import unittest
+
 from apts.opticalequipment.telescope.vendors.celestron import CelestronTelescope
 from apts.utils import ConnectionType, Gender
+
 
 class TestOmniXLTSpecs(unittest.TestCase):
     def test_omni_xlt_102_specs(self):
@@ -38,7 +40,7 @@ class TestOmniXLTSpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 150)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 750)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 47)
-        self.assertEqual(scope.mass.to('gram').magnitude, 5440)
+        self.assertEqual(scope.mass.to('gram').magnitude, 5443)
         self.assertAlmostEqual(scope.focal_ratio().magnitude, 750/150, places=2)
 
     def test_omni_xlt_150r_specs(self):
