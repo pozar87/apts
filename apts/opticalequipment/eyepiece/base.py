@@ -4,15 +4,17 @@ from ...constants import GraphConstants, OpticalType
 from ...units import get_unit_registry
 from ...utils import ConnectionType
 from ...optics.calculations import calculate_eyepiece_field_of_view
-from .calculations import normalize_eyepiece_database_entry
+
 
 class Eyepiece(OutputOpticalEquipment):
     path_layer = 5
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
+        from .calculations import normalize_eyepiece_database_entry
+
         entry = normalize_eyepiece_database_entry(entry)
-        return super(Eyepiece, cls).normalize_database_entry(entry)
+        return super().normalize_database_entry(entry)
 
     _DATABASE = {}
 
