@@ -362,6 +362,36 @@ def _get_observer_for_event(event_obj: "Event") -> tuple[Any, Any]:
     return observer, ts_time
 
 
+def _resolve_fallback_positions(
+    event_obj: "Event",
+    all_positions: list[tuple[float, float]],
+    main_objs: list[Any],
+    sep_deg: float,
+) -> tuple[tuple[float, float], tuple[float, float] | None]:
+    """Resolves primary and secondary target positions when topocentric positions are incomplete."""
+    if all_positions:
+        p1_pos = all_positions[0]
+    elif event_obj.azimuth_deg is not None and event_obj.altitude_deg is not None:
+        p1_pos = (float(event_obj.azimuth_deg), float(event_obj.altitude_deg))
+    elif event_obj.azimuth_deg is not None:
+        p1_pos = (float(event_obj.azimuth_deg), 25.0)
+    else:
+        p1_pos = (90.0, 25.0)
+
+    p1_pos_draw = (p1_pos[0], max(1.0, p1_pos[1]))
+
+    if len(all_positions) >= 2:
+        p2_pos = all_positions[1]
+        p2_pos_draw = (p2_pos[0], max(1.0, p2_pos[1]))
+    elif len(main_objs) >= 2 or event_obj.angular_separation:
+        p2_pos = (p1_pos[0] + sep_deg * 0.8, p1_pos[1] + sep_deg * 0.6)
+        p2_pos_draw = (p2_pos[0], max(1.0, p2_pos[1]))
+    else:
+        p2_pos_draw = None
+
+    return p1_pos_draw, p2_pos_draw
+
+
 def _resolve_target_coordinates(
     event_obj: "Event",
     sep_deg: float,
@@ -409,32 +439,9 @@ def _resolve_target_coordinates(
         logger.debug(f"Could not compute topocentric positions for target objects: {e}")
         sky_brightness = getattr(event_obj, "sky_brightness", "NIGHT_DARK")
 
-    # Primary position priority:
-    # 1. Computed topocentric position from primary object
-    # 2. Event azimuth_deg / altitude_deg if explicitly provided
-    # 3. Fallback default (90.0, 25.0)
-    if all_positions:
-        p1_pos = all_positions[0]
-    elif event_obj.azimuth_deg is not None and event_obj.altitude_deg is not None:
-        p1_pos = (float(event_obj.azimuth_deg), float(event_obj.altitude_deg))
-    elif event_obj.azimuth_deg is not None:
-        p1_pos = (float(event_obj.azimuth_deg), 25.0)
-    else:
-        p1_pos = (90.0, 25.0)
-
-    # Clamp drawing altitude to >= 1.0 deg so no object is drawn below horizon
-    p1_pos_draw = (p1_pos[0], max(1.0, p1_pos[1]))
-
-    # Secondary position priority:
-    if len(all_positions) >= 2:
-        p2_pos = all_positions[1]
-        p2_pos_draw = (p2_pos[0], max(1.0, p2_pos[1]))
-    elif len(main_objs) >= 2 or event_obj.angular_separation:
-        p2_pos = (p1_pos[0] + sep_deg * 0.8, p1_pos[1] + sep_deg * 0.6)
-        p2_pos_draw = (p2_pos[0], max(1.0, p2_pos[1]))
-    else:
-        p2_pos_draw = None
-
+    p1_pos_draw, p2_pos_draw = _resolve_fallback_positions(
+        event_obj, all_positions, main_objs, sep_deg
+    )
     all_positions_draw = [(az, max(1.0, alt)) for az, alt in all_positions]
 
     return p1_pos_draw, p2_pos_draw, all_positions_draw, sky_brightness
