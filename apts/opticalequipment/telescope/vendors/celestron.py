@@ -1015,16 +1015,16 @@ class CelestronTelescope(Telescope):
             "name": "StarSense Explorer DX 130",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3990,
+            "mass": 3990,  # Verified via Celestron.com (8.8 lbs / 3.99 kg OTA weight) - https://www.celestron.com/products/starsense-explorer-dx-130az
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" focuser with 1.25" adapter) - https://www.celestron.com/products/starsense-explorer-dx-130az
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 130,
-            "focal_length_mm": 650,
-            "central_obstruction_mm": 45,
+            "aperture_mm": 130,  # Verified via Celestron.com (130mm / 5.11" aperture) - https://www.celestron.com/products/starsense-explorer-dx-130az
+            "focal_length_mm": 650,  # Verified via Celestron.com (650mm focal length, f/5) - https://www.celestron.com/products/starsense-explorer-dx-130az
+            "central_obstruction_mm": 45,  # Verified via Celestron.com (45mm / 1.77" / 35% secondary mirror obstruction) - https://www.celestron.com/products/starsense-explorer-dx-130az
         },
         "Celestron_StarSense_Explorer_LT_114": {
             "brand": "Celestron",
