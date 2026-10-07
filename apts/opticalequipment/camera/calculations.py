@@ -1,3 +1,7 @@
+import numpy
+
+from ...optics.calculations import calculate_camera_field_of_view
+from ...units import get_unit_registry
 from ...utils import map_conn, map_gender
 
 
@@ -40,3 +44,54 @@ def normalize_camera_database_entry(entry: dict) -> dict:
         ]
 
     return entry
+
+
+def calculate_sensor_diagonal(sensor_width: float, sensor_height: float) -> float:
+    """
+    Calculates the sensor diagonal length from width and height.
+    """
+    return float(numpy.sqrt(sensor_width**2 + sensor_height**2))
+
+
+def calculate_camera_fov_width(
+    sensor_width_mm: float,
+    focal_length_mm: float,
+    barlow_magnification: float = 1.0,
+):
+    """
+    Calculates horizontal field of view in degrees.
+    """
+    ureg = get_unit_registry()
+    f_eff_mm = focal_length_mm * barlow_magnification
+    fov_deg = calculate_camera_field_of_view(sensor_width_mm, f_eff_mm)
+    return fov_deg * ureg.deg
+
+
+def calculate_camera_fov_height(
+    sensor_height_mm: float,
+    focal_length_mm: float,
+    barlow_magnification: float = 1.0,
+):
+    """
+    Calculates vertical field of view in degrees.
+    """
+    ureg = get_unit_registry()
+    f_eff_mm = focal_length_mm * barlow_magnification
+    fov_deg = calculate_camera_field_of_view(sensor_height_mm, f_eff_mm)
+    return fov_deg * ureg.deg
+
+
+def calculate_camera_fov_diagonal(
+    sensor_width_mm: float,
+    sensor_height_mm: float,
+    focal_length_mm: float,
+    barlow_magnification: float = 1.0,
+):
+    """
+    Calculates diagonal field of view in degrees.
+    """
+    ureg = get_unit_registry()
+    d_mm = calculate_sensor_diagonal(sensor_width_mm, sensor_height_mm)
+    f_eff_mm = focal_length_mm * barlow_magnification
+    fov_deg = calculate_camera_field_of_view(d_mm, f_eff_mm)
+    return fov_deg * ureg.deg
