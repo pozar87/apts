@@ -315,19 +315,19 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 20000,
+            "full_well_e": 20000,  # Verified via ZWO documentation (20000e- full well capacity)
             "height": 3520,
-            "mass": 410,
+            "mass": 410,  # Verified via ZWO documentation (410g mass, 17.5mm backfocus)
             "name": "ASI1600MC Pro",
             "optical_length": 17.5,
-            "pixel_size_um": 3.8,
-            "quantum_efficiency_pct": 60,
-            "read_noise_e": 1.2,
+            "pixel_size_um": 3.8,  # Verified via ZWO documentation (3.8µm pixel size, 4656x3520 resolution, 17.7mm x 13.4mm Panasonic MN34230 sensor)
+            "quantum_efficiency_pct": 60,  # Verified via ZWO documentation (60% peak QE)
+            "read_noise_e": 1.2,  # Verified via ZWO documentation (1.2e- read noise)
             "reversible": False,
             "sensor_height_mm": 13.4,
             "sensor_width_mm": 17.7,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO documentation (M42 female thread connection)
             "type": "type_camera",
             "width": 4656,
         },
@@ -391,19 +391,19 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 20000,
+            "full_well_e": 20000,  # Verified via ZWO documentation (20000e- full well capacity)
             "height": 3520,
-            "mass": 410,
+            "mass": 410,  # Verified via ZWO documentation (410g mass, 17.5mm backfocus)
             "name": "ASI1600MM Pro",
             "optical_length": 17.5,
-            "pixel_size_um": 3.8,
-            "quantum_efficiency_pct": 60,
-            "read_noise_e": 1.2,
+            "pixel_size_um": 3.8,  # Verified via ZWO documentation (3.8µm pixel size, 4656x3520 resolution, 17.7mm x 13.4mm Panasonic MN34230 sensor)
+            "quantum_efficiency_pct": 60,  # Verified via ZWO documentation (60% peak QE)
+            "read_noise_e": 1.2,  # Verified via ZWO documentation (1.2e- read noise)
             "reversible": False,
             "sensor_height_mm": 13.4,
             "sensor_width_mm": 17.7,
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO documentation (M42 female thread connection)
             "type": "type_camera",
             "width": 4656,
         },
