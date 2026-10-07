@@ -871,16 +871,16 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 150",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 5440,
+            "mass": 5443,  # Verified via Celestron.com (12 lbs / 5,443g OTA weight, 150mm aperture, 750mm focal length, f/5.0, 47mm / 31% secondary obstruction, 2" visual back - https://www.celestron.com/products/omni-xlt-150-telescope)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" visual back with 1.25" adapter) - https://www.celestron.com/products/omni-xlt-150-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 750,
-            "central_obstruction_mm": 47,
+            "aperture_mm": 150,  # Verified via Celestron.com (150mm / 5.91") - https://www.celestron.com/products/omni-xlt-150-telescope
+            "focal_length_mm": 750,  # Verified via Celestron.com (750mm / f/5) - https://www.celestron.com/products/omni-xlt-150-telescope
+            "central_obstruction_mm": 47,  # Verified via Celestron.com (47mm / 1.85" / 31% secondary obstruction) - https://www.celestron.com/products/omni-xlt-150-telescope
         },
         "Celestron_Omni_XLT_150R": {
             "brand": "Celestron",
