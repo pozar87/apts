@@ -9,13 +9,13 @@ from skyfield.api import Star
 if TYPE_CHECKING:
     from skyfield.api import Timescale
 
-from ..constants import ObjectTableLabels
-from ..skyfield_searches.utils import fast_altaz
-from .calculations import (
+from ...constants import ObjectTableLabels
+from ...skyfield_searches.utils import fast_altaz
+from ..calculations import (
     calculate_visible_stars_mask,
     filter_objects_by_magnitude,
 )
-from .utils import filter_technical_columns
+from ..utils import filter_technical_columns
 
 
 class VisibilityMixIn:
