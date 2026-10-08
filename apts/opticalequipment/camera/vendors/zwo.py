@@ -60,21 +60,21 @@ class ZwoCamera(Camera):
             "brand": "ZWO",
             "cside_gender": "",
             "cside_thread": "",
-            "full_well_e": 46000,
-            "height": 3284,
-            "mass": 530,
+            "full_well_e": 46000,  # Verified via ZWO official documentation (46000e- full well capacity)
+            "height": 3284,  # Verified via ZWO official documentation (4944x3284 resolution, 16MP)
+            "mass": 640,  # Verified via ZWO official documentation (640g mass for ASI071MC Pro)
             "name": "ASI071MC Pro",
-            "optical_length": 17.5,
-            "pixel_size_um": 4.78,
-            "quantum_efficiency_pct": 50,
-            "read_noise_e": 2.3,
+            "optical_length": 17.5,  # Verified via ZWO official documentation (17.5mm backfocus distance)
+            "pixel_size_um": 4.78,  # Verified via ZWO official documentation (4.78µm pixel size)
+            "quantum_efficiency_pct": 50,  # Verified via ZWO official documentation (50% peak QE)
+            "read_noise_e": 2.3,  # Verified via ZWO official documentation (2.3e- read noise at 24dB gain)
             "reversible": False,
-            "sensor_height_mm": 15.6,
-            "sensor_width_mm": 23.6,
+            "sensor_height_mm": 15.6,  # Verified via ZWO official documentation (23.6mm x 15.6mm Sony IMX071 APS-C sensor)
+            "sensor_width_mm": 23.6,  # Verified via ZWO official documentation (23.6mm x 15.6mm Sony IMX071 APS-C sensor)
             "tside_gender": "Female",
-            "tside_thread": "M42",
+            "tside_thread": "M42",  # Verified via ZWO official documentation (M42x0.75 female thread)
             "type": "type_camera",
-            "width": 4944,
+            "width": 4944,  # Verified via ZWO official documentation (4944x3284 resolution, 16MP)
         },
         "ZWO_ASI_071MC_Pro_6_bolt_mount": {
             "bf_role": "end",
