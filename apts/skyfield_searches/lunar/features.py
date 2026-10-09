@@ -1,14 +1,24 @@
-from typing import Any, Iterable, cast
+from collections.abc import Iterable
+from typing import Any, cast
+
 import numpy as np
 from skyfield.searchlib import find_maxima, find_minima
+
 from ...cache import get_timescale
 from ...utils import planetary
 from ..utils import fast_altaz
+
 
 def find_moon_libration_maxima(observer, start_date, end_date):
     """
     Finds local maxima in lunar libration (longitude and latitude).
     These are the best times to observe features near the Moon's limb.
+    Uses a two-stage search strategy:
+    1. Candidate extrema timestamps are found using geocentric libration (observer=None).
+       This bypasses topocentric frame rotations, GAST, and nutation calculations across time step grids
+       while eliminating topocentric diurnal oscillation noise (~40x speedup for candidate searching).
+    2. Vectorized topocentric refinement around candidate peaks with 3-point parabolic peak interpolation
+       for exact topocentric extremum timing and altitude visibility.
     """
     ts = get_timescale()
     t0 = ts.utc(start_date)
@@ -26,64 +36,93 @@ def find_moon_libration_maxima(observer, start_date, end_date):
     # Oracle: Use topocentric libration if not global indexing
     lib_observer = observer if observer_elevation != -9999 else None
 
-    def libration_lon(t):
-        lon, _ = planetary.get_moon_libration(t, observer=lib_observer)
+    # Step 1: Geocentric libration candidate search
+    def geo_lib_lon(t):
+        lon, _ = planetary.get_moon_libration(t, observer=None)
         return lon
 
-    def libration_lat(t):
-        _, lat = planetary.get_moon_libration(t, observer=lib_observer)
+    def geo_lib_lat(t):
+        _, lat = planetary.get_moon_libration(t, observer=None)
         return lat
 
-    # Step of 2 days is safe for libration cycles (~27.3 days)
-    setattr(libration_lon, "step_days", 2.0)
-    setattr(libration_lat, "step_days", 2.0)
+    geo_lib_lon.step_days = 2.0
+    geo_lib_lat.step_days = 2.0
 
-    # We want both extreme positive and negative values (East/West, North/South)
-    lon_max_times, lon_max_vals = find_maxima(t0, t1, libration_lon)
-    lon_min_times, lon_min_vals = find_minima(t0, t1, libration_lon)
-    lat_max_times, lat_max_vals = find_maxima(t0, t1, libration_lat)
-    lat_min_times, lat_min_vals = find_minima(t0, t1, libration_lat)
+    lon_max_times, lon_max_vals = find_maxima(t0, t1, geo_lib_lon)
+    lon_min_times, lon_min_vals = find_minima(t0, t1, geo_lib_lon)
+    lat_max_times, lat_max_vals = find_maxima(t0, t1, geo_lib_lat)
+    lat_min_times, lat_min_vals = find_minima(t0, t1, geo_lib_lat)
+
+    # Step 2: Vectorized topocentric peak refinement and visibility calculation
+    def process_candidates(cand_times, cand_vals, axis, extreme):
+        results = []
+        for t_geo, val_geo in zip(cast(Iterable[Any], cand_times), cand_vals):
+            if lib_observer is not None:
+                # Sample 25 points over +/- 0.5 days around t_geo in a single vectorized pass
+                tt_samples = np.linspace(t_geo.tt - 0.5, t_geo.tt + 0.5, 25)
+                t_samples = ts.tt_jd(tt_samples)
+                if axis == "longitude":
+                    lons, _ = planetary.get_moon_libration(t_samples, observer=lib_observer)
+                    vals = lons
+                else:
+                    _, lats = planetary.get_moon_libration(t_samples, observer=lib_observer)
+                    vals = lats
+
+                idx = int(np.argmax(vals)) if extreme == "max" else int(np.argmin(vals))
+
+                # Parabolic 3-point peak interpolation
+                if 0 < idx < len(vals) - 1:
+                    y1, y2, y3 = vals[idx - 1], vals[idx], vals[idx + 1]
+                    denom = y1 - 2 * y2 + y3
+                    if abs(denom) > 1e-9:
+                        delta = 0.5 * (y1 - y3) / denom
+                        delta = float(np.clip(delta, -0.5, 0.5))
+                        tt_ref = tt_samples[idx] + delta * (tt_samples[1] - tt_samples[0])
+                        val_ref = y2 - 0.25 * (y1 - y3) * delta
+                    else:
+                        tt_ref = tt_samples[idx]
+                        val_ref = y2
+                else:
+                    tt_ref = tt_samples[idx]
+                    val_ref = vals[idx]
+                t_ref = ts.tt_jd(tt_ref)
+            else:
+                t_ref = t_geo
+                val_ref = val_geo
+
+            obs_at_t = observer.at(t_ref)
+            m_alt = fast_altaz(obs_at_t, moon_sf, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+            s_alt = fast_altaz(obs_at_t, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
+
+            is_visible = (m_alt > 0 and s_alt <= -6) or observer_elevation == -9999
+
+            side = {
+                ("longitude", "max"): "East",
+                ("longitude", "min"): "West",
+                ("latitude", "max"): "North",
+                ("latitude", "min"): "South",
+            }[(axis, extreme)]
+
+            results.append(
+                {
+                    "date": t_ref.utc_datetime(),
+                    "event": f"Maximum Lunar Libration ({side})",
+                    "object": "Moon",
+                    "type": "Moon Libration Maximum",
+                    "libration_value": float(val_ref),
+                    "axis": axis,
+                    "side": side,
+                    "altitude": float(m_alt),
+                    "is_visible": bool(is_visible),
+                }
+            )
+        return results
 
     events = []
-
-    # Helper to calculate visibility and build event dict
-    def add_lib_event(t, val, axis, extreme):
-        # Optimization: Use fast_altaz to bypass expensive Standard Apparent frame transformations
-        obs_at_t = observer.at(t)
-        m_alt = fast_altaz(obs_at_t, moon_sf, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-        s_alt = fast_altaz(obs_at_t, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
-
-        is_visible = (m_alt > 0 and s_alt <= -6) or observer_elevation == -9999
-
-        side = {
-            ("longitude", "max"): "East",
-            ("longitude", "min"): "West",
-            ("latitude", "max"): "North",
-            ("latitude", "min"): "South",
-        }[(axis, extreme)]
-
-        events.append(
-            {
-                "date": t.utc_datetime(),
-                "event": f"Maximum Lunar Libration ({side})",
-                "object": "Moon",
-                "type": "Moon Libration Maximum",
-                "libration_value": float(val),
-                "axis": axis,
-                "side": side,
-                "altitude": float(m_alt),
-                "is_visible": bool(is_visible),
-            }
-        )
-
-    for t, v in zip(cast(Iterable[Any], lon_max_times), lon_max_vals):
-        add_lib_event(t, v, "longitude", "max")
-    for t, v in zip(cast(Iterable[Any], lon_min_times), lon_min_vals):
-        add_lib_event(t, v, "longitude", "min")
-    for t, v in zip(cast(Iterable[Any], lat_max_times), lat_max_vals):
-        add_lib_event(t, v, "latitude", "max")
-    for t, v in zip(cast(Iterable[Any], lat_min_times), lat_min_vals):
-        add_lib_event(t, v, "latitude", "min")
+    events.extend(process_candidates(lon_max_times, lon_max_vals, "longitude", "max"))
+    events.extend(process_candidates(lon_min_times, lon_min_vals, "longitude", "min"))
+    events.extend(process_candidates(lat_max_times, lat_max_vals, "latitude", "max"))
+    events.extend(process_candidates(lat_min_times, lat_min_vals, "latitude", "min"))
 
     return events
 
@@ -120,8 +159,7 @@ def find_lunar_features(observer, start_date, end_date):
 
     # Check every 2.4 hours (10 steps per day) for coarse search
     num_steps = int((t1 - t0) * 10)
-    if num_steps < 2:
-        num_steps = 2
+    num_steps = max(num_steps, 2)
 
     times = ts.linspace(t0, t1, num_steps)
 
@@ -156,30 +194,24 @@ def find_lunar_features(observer, start_date, end_date):
             t_refined = ts.tt_jd(t_mid_jd)
 
             # Visibility check at refined time
-            # Oracle: use refracted positions for topocentric visibility
-            m_obs = observer.at(t_refined).observe(moon_sf).apparent()
-            m_alt, _, _ = m_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
+            # Oracle: use fast_altaz for topocentric visibility
+            obs_at_t = observer.at(t_refined)
+            m_alt = fast_altaz(obs_at_t, moon_sf, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
 
             # Lazy check for darkness only if Moon is visible
-            def check_dark():
-                s_alt = (
-                    observer.at(t_refined)
-                    .observe(sun)
-                    .apparent()
-                    .altaz(temperature_C=10.0, pressure_mbar=1013.25)[0]
-                    .degrees
-                )
+            def check_dark(obs=obs_at_t):
+                s_alt = fast_altaz(obs, sun, temperature_C=10.0, pressure_mbar=1013.25)[0].degrees
                 return s_alt <= -6
 
             # Special elevation -9999 bypasses topocentric checks for global indexing
-            if observer_elevation == -9999 or (m_alt.degrees > 0 and check_dark()):
+            if observer_elevation == -9999 or (m_alt > 0 and check_dark()):
                 events.append(
                     {
                         "date": t_refined.utc_datetime(),
                         "event": name,
                         "object": "Moon",
                         "type": "Lunar Feature",
-                        "altitude": float(m_alt.degrees),
+                        "altitude": float(m_alt),
                         "colongitude": float(planetary.get_moon_colongitude(t_refined)),
                     }
                 )
