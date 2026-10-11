@@ -1047,16 +1047,16 @@ class CelestronTelescope(Telescope):
             "name": "StarSense Explorer LT 127AZ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 3440,
+            "mass": 3440,  # Verified via Celestron.com (7.6 lbs / 3.44 kg OTA weight) - https://www.celestron.com/products/starsense-explorer-lt-127az
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back) - https://www.celestron.com/products/starsense-explorer-lt-127az
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 127,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 41,
+            "aperture_mm": 127,  # Verified via Celestron.com (127mm / 5" aperture) - https://www.celestron.com/products/starsense-explorer-lt-127az
+            "focal_length_mm": 1000,  # Verified via Celestron.com (1000mm focal length, f/7.87) - https://www.celestron.com/products/starsense-explorer-lt-127az
+            "central_obstruction_mm": 41,  # Verified via Celestron.com (41mm / 1.6" / 32% secondary mirror obstruction) - https://www.celestron.com/products/starsense-explorer-lt-127az
         },
         "Celestron_StarSense_Explorer_LT_80AZ": {
             "brand": "Celestron",
