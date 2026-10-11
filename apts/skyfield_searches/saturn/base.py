@@ -1,8 +1,11 @@
 from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac
-from ..cache import get_timescale, get_ephemeris
-from ..utils import planetary
+
+from ...cache import get_ephemeris, get_timescale
+from ...utils import planetary
+
 
 def find_saturn_ring_crossings(start_date, end_date):
     """
@@ -70,12 +73,12 @@ def find_saturn_ring_crossings(start_date, end_date):
 
     # Saturn's orbit is ~29 years, so these events are rare.
     # Step size of 30 days is safe for finding crossings.
-    setattr(earth_crossing_state, "step_days", 30.0)
-    setattr(sun_crossing_state, "step_days", 30.0)
+    earth_crossing_state.step_days = 30.0
+    sun_crossing_state.step_days = 30.0
 
     events = []
 
-    t_e, y_e = almanac.find_discrete(t0, t1, earth_crossing_state)
+    t_e, _ = almanac.find_discrete(t0, t1, earth_crossing_state)
     for ti in t_e:
         events.append(
             {
@@ -85,7 +88,7 @@ def find_saturn_ring_crossings(start_date, end_date):
             }
         )
 
-    t_s, y_s = almanac.find_discrete(t0, t1, sun_crossing_state)
+    t_s, _ = almanac.find_discrete(t0, t1, sun_crossing_state)
     for ti in t_s:
         events.append(
             {
