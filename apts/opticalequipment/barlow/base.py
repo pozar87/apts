@@ -1,19 +1,27 @@
+from typing import ClassVar
+
 from ...utils import ConnectionType
-from ..base import OpticalEquipment
+from ..base import IntermediateOpticalEquipment
 from .calculations import normalize_barlow_database_entry
 
 
-class Barlow(OpticalEquipment):
+class Barlow(IntermediateOpticalEquipment):
+    """
+    Class representing Barlow lenses.
+    """
+
+    path_layer = 2
+    _DATABASE: ClassVar[dict] = {}
+
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
-        normalized = normalize_barlow_database_entry(entry)
-        return super(Barlow, cls).normalize_database_entry(normalized)
+        return normalize_barlow_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry: dict):
         normalized = cls.normalize_database_entry(entry)
         return cls(
-            normalized["magnification"],
+            magnification=normalized.get("magnification", 2.0),
             vendor=normalized.get("vendor", "unknown barlow"),
             inputs=normalized.get("inputs"),
             outputs=normalized.get("outputs"),
@@ -21,67 +29,57 @@ class Barlow(OpticalEquipment):
             optical_length=normalized.get("optical_length", 0.0),
         )
 
-    """
-    Class representing Barlow lenses
-    """
-
-    path_layer = 2
-
     def __init__(
         self,
-        magnification,
+        magnification=2.0,
         vendor="unknown barlow",
+        optical_length=0.0,
+        mass=0.0,
         inputs=None,
         outputs=None,
-        mass=0.0,
-        optical_length=0.0,
-        connection_type=None,
+        in_connection=None,
+        out_connection=None,
+        in_connection_type=None,
+        out_connection_type=None,
         in_gender=None,
         out_gender=None,
+        connection_type=None,
     ):
-        if inputs is None:
-            if connection_type:
-                inputs = [(connection_type, in_gender)]
+        if isinstance(magnification, str):
+            if isinstance(vendor, (int, float)):
+                magnification, vendor = vendor, magnification
             else:
-                inputs = [ConnectionType.F_1_25]
-        if outputs is None:
-            if connection_type:
-                outputs = [(connection_type, out_gender)]
-            else:
-                outputs = [ConnectionType.F_1_25]
+                vendor, magnification = magnification, 2.0
+        elif isinstance(vendor, (int, float)):
+            magnification, vendor = vendor, "unknown barlow"
 
-        super(Barlow, self).__init__(
-            0,
-            vendor,
-            mass=mass,
+        if inputs is None and in_connection is None and in_connection_type is None:
+            if connection_type:
+                in_connection = (connection_type, in_gender)
+            else:
+                in_connection = ConnectionType.F_1_25
+
+        if outputs is None and out_connection is None and out_connection_type is None:
+            if connection_type:
+                out_connection = (connection_type, out_gender)
+            else:
+                out_connection = ConnectionType.F_1_25
+
+        super().__init__(
+            vendor=vendor,
             optical_length=optical_length,
+            mass=mass,
             inputs=inputs,
             outputs=outputs,
+            in_connection=in_connection,
+            out_connection=out_connection,
+            in_connection_type=in_connection_type,
+            out_connection_type=out_connection_type,
+            in_gender=in_gender,
+            out_gender=out_gender,
         )
         self.magnification = magnification
 
-    @property
-    def connection_type(self):
-        return self._inputs[0][0] if self._inputs else None
-
-    @property
-    def in_gender(self):
-        return self._inputs[0][1] if self._inputs else None
-
-    @property
-    def out_gender(self):
-        return self._outputs[0][1] if self._outputs else None
-
-    def register(self, equipment):
-        """
-        Register barlow lens in optical equipment graph. Barlow node is build out of three vertices:
-        barlow node its input and output. Barlow node is automatically connected with them.
-        """
-        # Add barlow lens node
-        super(Barlow, self).register(equipment)
-
     def __str__(self):
         # Format: <vendor> x<magnification>
-        return "{} x{}".format(self.get_vendor(), self.magnification)
-
-    _DATABASE = {}
+        return f"{self.get_vendor()} x{self.magnification}"

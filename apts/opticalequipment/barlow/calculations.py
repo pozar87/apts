@@ -1,55 +1,34 @@
-from ...utils import ConnectionType, Gender, extract_number, map_conn, map_gender
+from ...utils import ConnectionType, Gender, extract_number
+from ..base.calculations import normalize_intermediate_database_entry
 
 
 def normalize_barlow_database_entry(entry: dict) -> dict:
     """
-    Normalizes a Barlow database entry by constructing the full vendor string,
-    extracting magnification from the item name, and mapping input and output
-    connection configurations.
+    Normalizes a Barlow database entry using standard intermediate equipment
+    normalization while processing magnification and t2_output flags.
     """
-    entry = entry.copy()
-    brand = entry.get("brand", "")
     name = entry.get("name", "")
+    t2_output = entry.get("t2_output", False) and "outputs" not in entry
 
+    normalized = normalize_intermediate_database_entry(entry)
+
+    brand = entry.get("brand", "")
     if "vendor" not in entry:
-        entry["vendor"] = f"{brand} {name}".strip() if (brand or name) else "unknown barlow"
+        normalized["vendor"] = f"{brand} {name}".strip() if (brand or name) else "unknown barlow"
 
-    entry["optical_length"] = entry.get("optical_length", 0)
-    entry["mass"] = entry.get("mass", 0)
-
-    if "magnification" not in entry:
+    if "magnification" not in normalized:
         mag = (
             extract_number(name, suffix="x")
             or extract_number(name, prefix="x")
             or extract_number(name)
             or 2.0
         )
-        entry["magnification"] = mag
+        normalized["magnification"] = mag
 
-    tt = map_conn(entry.get("tside_thread"))
-    tg = map_gender(entry.get("tside_gender"))
-    ct = map_conn(entry.get("cside_thread"))
-    cg = map_gender(entry.get("cside_gender"))
-
-    inputs = entry.get("inputs")
-    if inputs is None:
-        entry["inputs"] = [(tt, tg)] if tt else []
-    else:
-        entry["inputs"] = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in inputs
-        ]
-
-    outputs = entry.get("outputs")
-    if outputs is None:
-        outputs = [(ct, cg)] if ct else []
-        if entry.get("t2_output", False):
+    if t2_output:
+        outputs = list(normalized.get("outputs", []))
+        if (ConnectionType.T2, Gender.MALE) not in outputs:
             outputs.append((ConnectionType.T2, Gender.MALE))
-        entry["outputs"] = outputs
-    else:
-        entry["outputs"] = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in outputs
-        ]
+        normalized["outputs"] = outputs
 
-    return entry
+    return normalized
