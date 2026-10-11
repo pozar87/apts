@@ -1063,16 +1063,16 @@ class CelestronTelescope(Telescope):
             "name": "StarSense Explorer LT 80AZ",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 2450,
+            "mass": 2450,  # Verified via Celestron.com (5.4 lbs / 2,450g OTA weight) - https://www.celestron.com/products/starsense-explorer-lt-80az
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back) - https://www.celestron.com/products/starsense-explorer-lt-80az
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 80,
-            "focal_length_mm": 900,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 80,  # Verified via Celestron.com (80mm / 3.15" aperture) - https://www.celestron.com/products/starsense-explorer-lt-80az
+            "focal_length_mm": 900,  # Verified via Celestron.com (900mm focal length, f/11) - https://www.celestron.com/products/starsense-explorer-lt-80az
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/starsense-explorer-lt-80az
         },
         "Celestron_Origin": {
             "brand": "Celestron",
