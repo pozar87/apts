@@ -23,6 +23,8 @@ def find_planetary_dichotomy(
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     sun = planetary.get_skyfield_obj("sun")
+    eph = get_ephemeris()
+    earth = cast(Any, eph["earth"])
 
     planets = ["mercury", "venus"]
     events = []
@@ -31,13 +33,11 @@ def find_planetary_dichotomy(
         planet_obj = planetary.get_skyfield_obj(p_name)
         simple_name = planetary.get_simple_name(p_name)
 
-        def phase_angle_state(t):
+        def phase_angle_state(t, p_obj=planet_obj):
             # We want to find when phase angle crosses 90 degrees.
             # Use geocentric position for standard dichotomy calculation.
-            # Geocentric Earth position is used as the reference for astronomical dichotomy.
-            eph = get_ephemeris()
-            earth = cast(Any, eph["earth"])
-            astrometric = earth.at(t).observe(planet_obj)
+            # Optimization: eph and earth hoisted outside phase_angle_state to avoid redundant cache lookups.
+            astrometric = earth.at(t).observe(p_obj)
 
             # Phase angle Sun-Planet-Earth
             phase_angle = astrometric.phase_angle(sun).degrees
@@ -45,17 +45,19 @@ def find_planetary_dichotomy(
 
         # Dichotomy happens twice per synodic period.
         # Step of 5 days is safe for Mercury (~116d synodic) and Venus (~584d synodic).
-        setattr(phase_angle_state, "step_days", 5.0)
-        times, codes = almanac.find_discrete(t0, t1, phase_angle_state)
+        phase_angle_state.step_days = 5.0
+        times, _codes = almanac.find_discrete(t0, t1, phase_angle_state)
 
         for t in times:
             # High-precision observation at the event time
-            astrometric = observer.at(t).observe(planet_obj).apparent()
+            # Optimization: Hoist observer.at(t) to evaluate topocentric observer position once per event
+            obs_t = observer.at(t)
+            astrometric = obs_t.observe(planet_obj).apparent()
             alt, _, _ = astrometric.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
             # Visibility check: Planet above horizon and Sun below -6 degrees
             # Optimization: Use fast_altaz for Sun visibility check.
-            sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
+            sun_alt = fast_altaz(obs_t, sun)[0].degrees
 
             events.append(
                 {
@@ -79,6 +81,7 @@ def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any
     t0 = ts.utc(start_date)
     t1 = ts.utc(end_date)
     venus = planetary.get_skyfield_obj("venus")
+    sun = planetary.get_skyfield_obj("sun")
 
     # For planetary magnitude, we use geocentric position (earth.at(t))
     # to match standard almanac definitions for greatest brilliancy.
@@ -90,19 +93,20 @@ def find_venus_greatest_brilliancy(observer: Any, start_date: Any, end_date: Any
 
     # Venus greatest brilliancy occurs every ~584 days.
     # A step of 30 days is safe to find the minimum.
-    setattr(magnitude, "step_days", 30.0)
+    magnitude.step_days = 30.0
     times, values = find_minima(t0, t1, magnitude)
 
     events = []
     for t, mag in zip(times, values):
         # Calculate altitude and visibility at the observer's location
-        v_obs = observer.at(t).observe(venus).apparent()
+        # Optimization: Hoist observer.at(t) to evaluate topocentric observer position once per event
+        obs_t = observer.at(t)
+        v_obs = obs_t.observe(venus).apparent()
         alt, _, _ = v_obs.altaz(temperature_C=10.0, pressure_mbar=1013.25)
 
         # Sun altitude for visibility check
-        sun = planetary.get_skyfield_obj("sun")
         # Optimization: Use fast_altaz for Sun visibility check.
-        sun_alt = fast_altaz(observer.at(t), sun)[0].degrees
+        sun_alt = fast_altaz(obs_t, sun)[0].degrees
 
         events.append(
             {
@@ -146,7 +150,7 @@ def find_stationary_points(observer, planet_name, start_date, end_date):
         return (ra_vel > 0).astype(int)
 
     # Planets stay retrograde for weeks/months, so 2 days step is safe.
-    setattr(ra_state, "step_days", 2.0)
+    ra_state.step_days = 2.0
     times, codes = almanac.find_discrete(t0, t1, ra_state)
 
     events = []
@@ -253,24 +257,29 @@ def find_greatest_elongations(observer, start_date, end_date):
     for p_name in planets:
         planet = planetary.get_skyfield_obj(p_name)
 
-        def elongation(t):
-            # Elongation is the angle between the Sun and the planet as seen from Earth
-            # We use Earth center (barycentric) for standard elongation values
-            # Optimization: Hoist earth.at(t) to avoid evaluating Earth state twice per step
+        def elongation(t, p_obj=planet):
+            # Elongation is the angle between the Sun and the planet as seen from Earth.
+            # We use Earth center (barycentric) for standard elongation values.
+            # Optimization: Direct unit vector dot product calculation bypasses Skyfield Angle object allocations.
             obs_earth = earth.at(t)
-            s = obs_earth.observe(sun)
-            p = obs_earth.observe(planet)
-            return s.separation_from(p).degrees
+            s_pos = obs_earth.observe(sun).position.au
+            p_pos = obs_earth.observe(p_obj).position.au
+            u_s = s_pos / np.linalg.norm(s_pos, axis=0)
+            u_p = p_pos / np.linalg.norm(p_pos, axis=0)
+            dot = np.sum(u_s * u_p, axis=0)
+            return np.degrees(np.arccos(np.clip(dot, -1.0, 1.0)))
 
-        setattr(elongation, "step_days", 2.0)  # Elongations change slowly
+        elongation.step_days = 2.0  # Elongations change slowly
         times, separations = find_maxima(t0, t1, elongation)
 
         for t, sep in zip(cast(Any, times), separations):
             # Determine if it's Eastern or Western elongation
             # Eastern elongation: planet is east of the Sun (evening sky)
             # Western elongation: planet is west of the Sun (morning sky)
-            s_lon = cast(Any, earth).at(t).observe(sun).ecliptic_latlon()[1].degrees
-            p_lon = cast(Any, earth).at(t).observe(planet).ecliptic_latlon()[1].degrees
+            # Optimization: Hoist obs_earth = earth.at(t) to evaluate Earth state once per event
+            obs_earth = earth.at(t)
+            s_lon = obs_earth.observe(sun).ecliptic_latlon()[1].degrees
+            p_lon = obs_earth.observe(planet).ecliptic_latlon()[1].degrees
 
             diff = (p_lon - s_lon + 180) % 360 - 180
             direction = "Eastern" if diff > 0 else "Western"
