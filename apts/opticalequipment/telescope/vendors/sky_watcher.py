@@ -356,14 +356,14 @@ class Sky_watcherTelescope(Telescope):
             "type": "type_refractor",
         },
         "Sky_Watcher_Evostar_150ED": {
-            "aperture_mm": 150,
+            "aperture_mm": 150,  # Verified via Sky-Watcher Global (150mm / 5.91" aperture) - http://skywatcher.com/product/evostar-150ed/
             "bf_role": "",
             "brand": "Sky-Watcher",
-            "central_obstruction_mm": 0,
-            "cside_gender": "Male",
-            "cside_thread": "M54",
-            "focal_length_mm": 1200,
-            "mass": 9500,
+            "central_obstruction_mm": 0,  # Verified doublet refractor (0mm obstruction)
+            "cside_gender": "Female",  # Verified via Sky-Watcher USA / Global (2" dual-speed Crayford focuser visual back) - http://skywatcher.com/product/evostar-150ed/
+            "cside_thread": "2\"",  # Verified via Sky-Watcher USA / Global (Includes 2" Crayford focuser with 2" visual back) - http://skywatcher.com/product/evostar-150ed/
+            "focal_length_mm": 1200,  # Verified via Sky-Watcher Global (1200mm focal length, f/8.0) - http://skywatcher.com/product/evostar-150ed/
+            "mass": 9500,  # Verified via Sky-Watcher Global (9.5 kg / 9500g tube weight) - http://skywatcher.com/product/evostar-150ed/
             "name": "Evostar 150ED",
             "optical_length": 0,
             "reversible": False,
