@@ -1031,16 +1031,16 @@ class CelestronTelescope(Telescope):
             "name": "StarSense Explorer LT 114AZ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 2990,
+            "mass": 2990,  # Verified via Celestron.com (6.6 lbs / 2.99 kg / 2,990g OTA weight) - https://www.celestron.com/products/starsense-explorer-lt-114az
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back) - https://www.celestron.com/products/starsense-explorer-lt-114az
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 114,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 44,
+            "aperture_mm": 114,  # Verified via Celestron.com (114mm / 4.49" aperture) - https://www.celestron.com/products/starsense-explorer-lt-114az
+            "focal_length_mm": 1000,  # Verified via Celestron.com (1000mm focal length, f/8.77) - https://www.celestron.com/products/starsense-explorer-lt-114az
+            "central_obstruction_mm": 44,  # Verified via Celestron.com (44mm / 1.73" / 38.6% secondary mirror obstruction) - https://www.celestron.com/products/starsense-explorer-lt-114az
         },
         "Celestron_StarSense_Explorer_LT_127": {
             "brand": "Celestron",
