@@ -663,16 +663,16 @@ class CelestronTelescope(Telescope):
             "name": "FirstScope 76",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 640,
+            "mass": 1956,  # Verified via Celestron.com official specs (4.3 lbs / 1,956g total weight, 76mm aperture, 300mm focal length, f/3.95, 28mm / 37% secondary obstruction, 1.25" visual back - https://www.celestron.com/products/firstscope-official-product-of-international-year-of-astronomy-2009)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "1.25\"",
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 76,
-            "focal_length_mm": 300,
-            "central_obstruction_mm": 28,
+            "aperture_mm": 76,  # Verified via Celestron.com (76mm / 2.99") - https://www.celestron.com/products/firstscope-official-product-of-international-year-of-astronomy-2009
+            "focal_length_mm": 300,  # Verified via Celestron.com (300mm / f/3.95) - https://www.celestron.com/products/firstscope-official-product-of-international-year-of-astronomy-2009
+            "central_obstruction_mm": 28,  # Verified via Celestron.com (28mm / 1.1" / 37% secondary obstruction) - https://www.celestron.com/products/firstscope-official-product-of-international-year-of-astronomy-2009
         },
         "Celestron_Inspire_100AZ": {
             "brand": "Celestron",
