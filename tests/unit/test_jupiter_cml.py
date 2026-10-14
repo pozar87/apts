@@ -41,3 +41,17 @@ def test_jupiter_cml_invalid_system():
     t = ts.utc(2025, 1, 1)
     with pytest.raises(ValueError, match="Only System I"):
         planetary.get_jupiter_cml(t, system=4)
+
+def test_jupiter_cml_vectorized_djd_precision():
+    ts = get_timescale()
+    # Test array of 50 timestamps over a year
+    times_arr = ts.utc(2025, 1, np.linspace(1, 365, 50))
+
+    cml2_vec = planetary.get_jupiter_system_ii_longitude(times_arr)
+    assert isinstance(cml2_vec, np.ndarray)
+    assert len(cml2_vec) == 50
+
+    # Compare each array element with individual scalar call
+    for i, t_scalar in enumerate(times_arr):
+        cml2_single = planetary.get_jupiter_system_ii_longitude(t_scalar)
+        assert pytest.approx(cml2_vec[i], abs=1e-3) == cml2_single
