@@ -49,7 +49,7 @@ class TestOmniXLTSpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 150)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 750)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 0)
-        self.assertEqual(scope.mass.to('gram').magnitude, 7260)
+        self.assertEqual(scope.mass.to('gram').magnitude, 7257)
         self.assertAlmostEqual(scope.focal_ratio().magnitude, 750/150, places=2)
 
 if __name__ == '__main__':
