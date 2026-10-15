@@ -167,12 +167,10 @@ def _get_jupiter_cml_internal(time: Any, attr: str) -> float | np.ndarray:
     getter = operator.attrgetter(attr)
 
     if hasattr(time, "shape") and time.shape:
-        # Optimization: Use float Dublin Julian Dates (ephem.Date) and direct
-        # attribute extraction to avoid datetime parsing and ufunc dispatch overhead.
-        times_dt = time.utc_datetime()
-        djd_base = np.fromiter(
-            (float(ephem.Date(dt)) for dt in times_dt), dtype=float, count=len(times_dt)
-        )
+        # Performance Optimization: Calculate Dublin Julian Dates (ephem.Date) directly
+        # from time.tt and time.delta_t (DJD = TT_JD - delta_t/86400 - 2415020.0), bypassing
+        # expensive python datetime array creation and ephem.Date(dt) parsing loop.
+        djd_base = time.tt - (time.delta_t / 86400.0) - 2415020.0
         djd_target = djd_base - lt_days
         res = np.empty(len(time))
         for i in range(len(djd_target)):
