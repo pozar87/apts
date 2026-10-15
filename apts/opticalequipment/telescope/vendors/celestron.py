@@ -887,16 +887,16 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 150R",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 7260,
+            "mass": 7257,  # Verified via Celestron.com (16 lbs / 7.257 kg / 7,257g OTA weight, 150mm aperture, 750mm focal length, f/5.0, 2" visual back - https://www.celestron.com/products/omni-xlt-150r-telescope)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" visual back with 1.25" adapter) - https://www.celestron.com/products/omni-xlt-150r-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 750,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 150,  # Verified via Celestron.com (150mm / 5.91" aperture) - https://www.celestron.com/products/omni-xlt-150r-telescope
+            "focal_length_mm": 750,  # Verified via Celestron.com (750mm / f/5) - https://www.celestron.com/products/omni-xlt-150r-telescope
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/omni-xlt-150r-telescope
         },
         "Celestron_PowerSeeker_127EQ": {
             "brand": "Celestron",
