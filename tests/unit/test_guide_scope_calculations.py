@@ -62,6 +62,23 @@ class TestGuideScopeCalculations(unittest.TestCase):
         self.assertEqual(gs.mass.magnitude, 395)
         self.assertEqual(gs.backfocus.magnitude, 180)
 
+    def test_guide_scope_class_normalize_database_entry(self):
+        entry = {
+            "brand": "ZWO",
+            "name": "30mm F4 Guide Scope",
+            "cside_thread": "M42",
+            "cside_gender": "Female",
+            "bf_role": "start",
+            "optical_length": 25,
+            "mass": 250,
+        }
+        normalized = GuideScope.normalize_database_entry(entry)
+        self.assertEqual(normalized["vendor"], "ZWO 30mm F4 Guide Scope")
+        self.assertEqual(normalized["aperture"], 30)
+        self.assertEqual(normalized["focal_length"], 120)
+        self.assertEqual(normalized["optical_length"], 25)
+        self.assertEqual(normalized["mass"], 250)
+
 
 if __name__ == "__main__":
     unittest.main()
