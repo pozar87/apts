@@ -14,17 +14,22 @@ class Telescope(OpticalEquipment):
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
+        orig_aperture = entry.get("aperture_mm") or entry.get("aperture")
+        orig_focal_length = entry.get("focal_length_mm") or entry.get("focal_length")
         entry = normalize_telescope_database_entry(entry)
-        return super().normalize_database_entry(entry)
+        entry = super().normalize_database_entry(entry)
+        if orig_aperture is not None:
+            entry["aperture_mm"] = orig_aperture
+        if orig_focal_length is not None:
+            entry["focal_length_mm"] = orig_focal_length
+        return entry
 
     _DATABASE = {}
 
     @classmethod
     def from_database(cls, entry):
-        entry = normalize_telescope_database_entry(entry)
-        brand = entry.get("brand", "Unknown")
-        name = entry.get("name", "Unknown")
-        vendor = f"{brand} {name}"
+        entry = cls.normalize_database_entry(entry)
+        vendor = entry.get("vendor") or f"{entry.get('brand', 'Unknown')} {entry.get('name', 'Unknown')}"
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
         aperture = entry.get("aperture_mm", 80)

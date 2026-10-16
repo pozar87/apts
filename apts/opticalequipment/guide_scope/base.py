@@ -5,8 +5,13 @@ from .calculations import normalize_guide_scope_database_entry
 
 class GuideScope(Telescope):
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        entry = normalize_guide_scope_database_entry(entry)
+        return super().normalize_database_entry(entry)
+
+    @classmethod
     def from_database(cls, entry):
-        normalized = normalize_guide_scope_database_entry(entry)
+        normalized = cls.normalize_database_entry(entry)
         return cls(
             normalized["aperture"],
             normalized["focal_length"],

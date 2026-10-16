@@ -2,19 +2,21 @@ from ...utils import (
     ConnectionType,
     Gender,
     guess_optical_properties,
-    map_conn,
-    map_gender,
 )
+from ..base.calculations import normalize_intermediate_database_entry
 from .enums import TelescopeType
 
 
 def normalize_telescope_database_entry(entry: dict) -> dict:
     """
-    Normalizes a telescope database entry by guessing missing aperture and focal length,
-    mapping the telescope type string to TelescopeType enum, and normalizing output connections.
+    Normalizes a telescope database entry by delegating intermediate database entry normalization
+    to normalize_intermediate_database_entry, guessing missing aperture and focal length,
+    mapping the telescope type string to TelescopeType enum, and setting output connections.
     """
-    entry = entry.copy()
     name = entry.get("name", "")
+    t2_output = entry.get("t2_output", False)
+
+    entry = normalize_intermediate_database_entry(entry)
 
     # Guess missing aperture and focal length if not present
     aperture = entry.get("aperture_mm") or entry.get("aperture")
@@ -42,20 +44,7 @@ def normalize_telescope_database_entry(entry: dict) -> dict:
         telescope_type = TelescopeType.CATADIOPTRIC
     entry["telescope_type"] = telescope_type
 
-    # Map output connections
-    ct = map_conn(entry.get("cside_thread"))
-    cg = map_gender(entry.get("cside_gender"))
-
-    outputs = entry.get("outputs")
-    if outputs is None:
-        outputs = [(ct, cg)] if ct else []
-        if entry.get("t2_output", False):
-            outputs.append((ConnectionType.T2, Gender.MALE))
-    else:
-        outputs = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in outputs
-        ]
-    entry["outputs"] = outputs
+    if t2_output and (ConnectionType.T2, Gender.MALE) not in entry["outputs"]:
+        entry["outputs"].append((ConnectionType.T2, Gender.MALE))
 
     return entry
