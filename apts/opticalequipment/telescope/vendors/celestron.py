@@ -967,16 +967,16 @@ class CelestronTelescope(Telescope):
             "name": "RASA 8\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 7700,
+            "mass": 7711,  # Verified via Celestron official specs (17 lbs / 7.71 kg / 7,711g OTA weight) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48",  # Verified via Celestron official specs (M48 camera adapter) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203.2,
-            "focal_length_mm": 400,
-            "central_obstruction_mm": 93,
+            "aperture_mm": 203.2,  # Verified via Celestron official specs (203.2mm / 8" aperture) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
+            "focal_length_mm": 400,  # Verified via Celestron official specs (400mm focal length, f/2.0) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
+            "central_obstruction_mm": 93,  # Verified via Celestron official specs (93mm / 3.66" / 46% central obstruction) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
         },
         "Celestron_StarBright_XLT_C6_A_XLT": {
             "brand": "Celestron",
