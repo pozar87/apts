@@ -1,7 +1,7 @@
 import numpy as np
 from skyfield.searchlib import find_minima
 
-from ...cache import get_timescale
+from ...cache import get_ephemeris, get_timescale
 from ...constants import astronomy
 from ...utils import planetary
 from ..utils import _refine_conjunction
@@ -142,54 +142,80 @@ def find_planet_planet_occultations(observer, start_date, end_date):
 
     events = []
 
-    # Optimization: Pre-evaluate coarse planet positions over a 0.5-day grid in a single vectorized
-    # Skyfield observation pass to prune pairs that never come within 1.0 degree of each other (~43x speedup).
+    # Optimization: Stage 1 Geocentric Coarse Filter.
+    # Pre-evaluate coarse planet positions geocentrically over a 0.5-day grid in a single vectorized pass.
+    # Because maximum planetary topocentric parallax is < 0.01°, checking geocentric separation
+    # with a 1.2° safety margin filters out non-candidate planet pairs instantly.
+    # Topocentric observer state (observer.at(t)) is evaluated during candidate step-searching
+    # to maintain exact topocentric parallax accuracy for the specified observer.
     num_days = max((end_date - start_date).total_seconds() / 86400.0, 0.5)
     coarse_steps = max(int(np.ceil(num_days / 0.5)) + 1, 2)
     t_coarse = ts.tt_jd(np.linspace(t0.tt, t1.tt, coarse_steps))
 
-    obs_at_coarse = observer.at(t_coarse)
-    positions = {
-        p_name: obs_at_coarse.observe(planetary.get_skyfield_obj(p_name))
+    earth = get_ephemeris()["earth"]
+    obs_at_coarse_geo = earth.at(t_coarse)
+    positions_geo = {
+        p_name: obs_at_coarse_geo.observe(planetary.get_skyfield_obj(p_name))
         for p_name in planets
     }
 
+    cos_1_2deg = np.cos(np.radians(1.2))
+
     # Check all pairs of planets
     for i, p1_name in enumerate(planets):
+        p1_pos_coarse = positions_geo[p1_name].position.au
+        p1_norm_coarse = np.linalg.norm(p1_pos_coarse, axis=0)
+        u1_coarse = p1_pos_coarse / p1_norm_coarse
+
         for p2_name in planets[i + 1 :]:
-            # Fast-path: Skip pair if coarse minimum separation > 1.0 degree
-            seps = positions[p1_name].separation_from(positions[p2_name]).degrees
-            if np.min(seps) > 1.0:
+            p2_pos_coarse = positions_geo[p2_name].position.au
+            p2_norm_coarse = np.linalg.norm(p2_pos_coarse, axis=0)
+            u2_coarse = p2_pos_coarse / p2_norm_coarse
+
+            # Fast-path: Skip pair if coarse minimum geocentric separation > 1.2 degrees
+            dots_coarse = np.sum(u1_coarse * u2_coarse, axis=0)
+            if np.max(dots_coarse) < cos_1_2deg:
                 continue
 
             p1_obj = planetary.get_skyfield_obj(p1_name)
             p2_obj = planetary.get_skyfield_obj(p2_name)
+            r1_km = planetary.get_planet_radius_km(p1_name)
+            r2_km = planetary.get_planet_radius_km(p2_name)
 
             def separation(
                 t,
                 p1_obj=p1_obj,
                 p2_obj=p2_obj,
-                p1_name=p1_name,
-                p2_name=p2_name,
+                r1_km=r1_km,
+                r2_km=r2_km,
             ):
-                # Optimization: Hoist observer.at(t) to evaluate observer state once per time step
-                # and use astrometric .observe() during search phase to bypass expensive .apparent() calculations
+                # Topocentric observer evaluation maintains exact observer location accuracy
                 obs_at_t = observer.at(t)
                 p1_obs = obs_at_t.observe(p1_obj)
                 p2_obs = obs_at_t.observe(p2_obj)
-                sep = p1_obs.separation_from(p2_obs).degrees
 
-                # Calculate angular radii
-                r1 = np.degrees(
-                    np.arcsin(
-                        planetary.get_planet_radius_km(p1_name) / p1_obs.distance().km
-                    )
-                )
-                r2 = np.degrees(
-                    np.arcsin(
-                        planetary.get_planet_radius_km(p2_name) / p2_obs.distance().km
-                    )
-                )
+                pos1 = p1_obs.position.au
+                pos2 = p2_obs.position.au
+
+                is_array = hasattr(t, "shape") and len(t.shape) > 0
+                if is_array:
+                    d1 = np.linalg.norm(pos1, axis=0)
+                    d2 = np.linalg.norm(pos2, axis=0)
+                    u1 = pos1 / d1
+                    u2 = pos2 / d2
+                    dot = np.clip(np.sum(u1 * u2, axis=0), -1.0, 1.0)
+                    sep = np.degrees(np.arccos(dot))
+                    r1 = np.degrees(np.arcsin(r1_km / (d1 * astronomy.AU_KM)))
+                    r2 = np.degrees(np.arcsin(r2_km / (d2 * astronomy.AU_KM)))
+                else:
+                    d1 = np.linalg.norm(pos1)
+                    d2 = np.linalg.norm(pos2)
+                    u1 = pos1 / d1
+                    u2 = pos2 / d2
+                    dot = np.clip(np.dot(u1, u2), -1.0, 1.0)
+                    sep = np.degrees(np.arccos(dot))
+                    r1 = np.degrees(np.arcsin(r1_km / (d1 * astronomy.AU_KM)))
+                    r2 = np.degrees(np.arcsin(r2_km / (d2 * astronomy.AU_KM)))
 
                 return sep - (r1 + r2)
 
