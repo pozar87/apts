@@ -1,51 +1,22 @@
-from ...utils import map_conn, map_gender
+from ..base.calculations import normalize_intermediate_database_entry
 
 
 def normalize_oag_database_entry(entry: dict) -> dict:
     """
-    Normalizes database dictionary entries for an Off-Axis Guider (OAG) into standard fields.
+    Normalizes database dictionary entries for an Off-Axis Guider (OAG) into standard fields
+    using intermediate equipment normalization.
     """
-    norm_entry = entry.copy()
+    brand = entry.get("brand")
+    name = entry.get("name")
+    vendor = entry.get("vendor")
 
-    brand = norm_entry.get("brand", "")
-    name = norm_entry.get("name", "")
-    if brand or name:
-        vendor = f"{brand} {name}".strip()
+    norm_entry = normalize_intermediate_database_entry(entry)
+
+    if vendor is not None:
+        norm_entry["vendor"] = vendor
+    elif brand or name:
+        norm_entry["vendor"] = f"{brand or ''} {name or ''}".strip()
     else:
-        vendor = norm_entry.get("vendor", "Unknown OAG")
+        norm_entry["vendor"] = "Unknown OAG"
 
-    ol = norm_entry.get("optical_length", 0)
-    mass = norm_entry.get("mass", 0)
-    tt = map_conn(norm_entry.get("tside_thread"))
-    tg = map_gender(norm_entry.get("tside_gender"))
-    ct = map_conn(norm_entry.get("cside_thread"))
-    cg = map_gender(norm_entry.get("cside_gender"))
-
-    inputs = norm_entry.get("inputs")
-    if inputs is None:
-        inputs = [(tt, tg)] if tt else []
-    else:
-        inputs = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in inputs
-        ]
-
-    outputs = norm_entry.get("outputs")
-    if outputs is None:
-        outputs = [(ct, cg)] if ct else []
-    else:
-        outputs = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in outputs
-        ]
-
-    norm_entry.update(
-        {
-            "vendor": vendor,
-            "optical_length": ol,
-            "mass": mass,
-            "inputs": inputs,
-            "outputs": outputs,
-        }
-    )
     return norm_entry

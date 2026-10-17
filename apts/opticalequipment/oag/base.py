@@ -1,10 +1,12 @@
-from ..base import IntermediateOpticalEquipment
+from typing import ClassVar
+
 from ...constants import OpticalType
+from ..base import IntermediateOpticalEquipment
 from .calculations import normalize_oag_database_entry
 
 
 class OAG(IntermediateOpticalEquipment):
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
@@ -13,7 +15,7 @@ class OAG(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        norm = normalize_oag_database_entry(entry)
+        norm = cls.normalize_database_entry(entry)
         return cls(
             vendor=norm["vendor"],
             optical_length=norm.get("optical_length", 0),
@@ -33,7 +35,7 @@ class OAG(IntermediateOpticalEquipment):
         out_connection=None,
         guide_connection=None,
     ):
-        super(OAG, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
@@ -61,4 +63,4 @@ class OAG(IntermediateOpticalEquipment):
         return self._outputs[1][1] if len(self._outputs) > 1 else None
 
     def register(self, equipment):
-        super(OAG, self).register(equipment)
+        super().register(equipment)
