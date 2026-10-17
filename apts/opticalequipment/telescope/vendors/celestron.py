@@ -135,16 +135,16 @@ class CelestronTelescope(Telescope):
             "name": "AstroMaster 90AZ",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 1996, # Verified via Celestron.com (4.4 lbs OTA weight) - https://www.celestron.com/products/astromaster-90az-telescope
+            "mass": 1996,  # Verified via Celestron.com (4.4 lbs / 2 kg OTA weight, 90mm aperture, 1000mm focal length, f/11, 1.25" visual back - https://www.celestron.com/products/astromaster-90az-telescope)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back / erect image diagonal) - https://www.celestron.com/products/astromaster-90az-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 90,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 90,  # Verified via Celestron.com (90mm / 3.54" aperture) - https://www.celestron.com/products/astromaster-90az-telescope
+            "focal_length_mm": 1000,  # Verified via Celestron.com (1000mm focal length, f/11 focal ratio) - https://www.celestron.com/products/astromaster-90az-telescope
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/astromaster-90az-telescope
         },
         "Celestron_Astro_Fi_5_SCT": {
             "brand": "Celestron",
