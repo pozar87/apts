@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from ...constants import OpticalType
 from ..telescope import Telescope
 from .calculations import normalize_guide_scope_database_entry
@@ -5,8 +7,13 @@ from .calculations import normalize_guide_scope_database_entry
 
 class GuideScope(Telescope):
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        entry = normalize_guide_scope_database_entry(entry)
+        return super(Telescope, cls).normalize_database_entry(entry)
+
+    @classmethod
     def from_database(cls, entry):
-        normalized = normalize_guide_scope_database_entry(entry)
+        normalized = cls.normalize_database_entry(entry)
         return cls(
             normalized["aperture"],
             normalized["focal_length"],
@@ -38,4 +45,4 @@ class GuideScope(Telescope):
         )
         self._type = OpticalType.GUIDE_SCOPE
 
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
