@@ -2,28 +2,26 @@ from typing import ClassVar
 
 from ...constants import OpticalType
 from ..base import IntermediateOpticalEquipment
+from .calculations import normalize_focuser_database_entry
 
 
 class Focuser(IntermediateOpticalEquipment):
     _DATABASE: ClassVar[dict] = {}
 
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_focuser_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
     def from_database(cls, entry):
-        from .calculations import normalize_focuser_database_entry
-
-        entry = normalize_focuser_database_entry(entry)
-        vendor = entry["vendor"]
-        ol = entry["optical_length"]
-        mass = entry["mass"]
-        inputs = entry["inputs"]
-        outputs = entry["outputs"]
-
+        norm = cls.normalize_database_entry(entry)
         return cls(
-            vendor,
-            optical_length=ol,
-            mass=mass,
-            inputs=inputs,
-            outputs=outputs,
+            vendor=norm["vendor"],
+            optical_length=norm.get("optical_length", 0),
+            mass=norm.get("mass", 0),
+            inputs=norm.get("inputs"),
+            outputs=norm.get("outputs"),
         )
 
     def __init__(
