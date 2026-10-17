@@ -887,16 +887,16 @@ class CelestronTelescope(Telescope):
             "name": "Omni XLT 150R",
             "type": "refractor",
             "optical_length": 0,
-            "mass": 7260,
+            "mass": 7257,  # Verified via Celestron.com (16 lbs / 7.257 kg / 7,257g OTA weight, 150mm aperture, 750mm focal length, f/5.0, 2" visual back - https://www.celestron.com/products/omni-xlt-150r-telescope)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "2\"",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" visual back with 1.25" adapter) - https://www.celestron.com/products/omni-xlt-150r-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 750,
-            "central_obstruction_mm": 0,
+            "aperture_mm": 150,  # Verified via Celestron.com (150mm / 5.91" aperture) - https://www.celestron.com/products/omni-xlt-150r-telescope
+            "focal_length_mm": 750,  # Verified via Celestron.com (750mm / f/5) - https://www.celestron.com/products/omni-xlt-150r-telescope
+            "central_obstruction_mm": 0,  # Verified via refractor optical design (no secondary obstruction) - https://www.celestron.com/products/omni-xlt-150r-telescope
         },
         "Celestron_PowerSeeker_127EQ": {
             "brand": "Celestron",
@@ -967,16 +967,16 @@ class CelestronTelescope(Telescope):
             "name": "RASA 8\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 7700,
+            "mass": 7711,  # Verified via Celestron official specs (17 lbs / 7.71 kg / 7,711g OTA weight) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48",  # Verified via Celestron official specs (M48 camera adapter) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203.2,
-            "focal_length_mm": 400,
-            "central_obstruction_mm": 93,
+            "aperture_mm": 203.2,  # Verified via Celestron official specs (203.2mm / 8" aperture) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
+            "focal_length_mm": 400,  # Verified via Celestron official specs (400mm focal length, f/2.0) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
+            "central_obstruction_mm": 93,  # Verified via Celestron official specs (93mm / 3.66" / 46% central obstruction) - https://www.celestron.com/products/8in-rowe-ackermann-schmidt-astrograph-rasa-8-optical-tube-assembly
         },
         "Celestron_StarBright_XLT_C6_A_XLT": {
             "brand": "Celestron",
