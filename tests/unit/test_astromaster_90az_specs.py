@@ -1,5 +1,7 @@
 import unittest
+
 from apts.opticalequipment.telescope.vendors.celestron import CelestronTelescope
+
 
 class TestAstroMaster90AZ(unittest.TestCase):
     def test_astromaster_90az_specs(self):
