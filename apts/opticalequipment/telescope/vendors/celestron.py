@@ -183,16 +183,16 @@ class CelestronTelescope(Telescope):
             "name": "C11-A XLT (OTA)",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 12470,
+            "mass": 12470,  # Verified via Celestron official specs (27.5 lbs / 12.47 kg OTA weight) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron official specs (Schmidt-Cassegrain visual back) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 279.4,
-            "focal_length_mm": 2800,
-            "central_obstruction_mm": 95,
+            "aperture_mm": 279.4,  # Verified via Celestron official specs (279.4mm / 11" aperture) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2800,  # Verified via Celestron official specs (2800mm focal length, f/10 focal ratio) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 95,  # Verified via Celestron official specs (95mm / 3.75" / 34% central obstruction) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C11_EdgeHD": {
             "brand": "Celestron",
@@ -231,16 +231,16 @@ class CelestronTelescope(Telescope):
             "name": "C11 OTA",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 12470,
+            "mass": 12470,  # Verified via Celestron official specs (27.5 lbs / 12.47 kg OTA weight) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron official specs (Schmidt-Cassegrain visual back) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 279.4,
-            "focal_length_mm": 2800,
-            "central_obstruction_mm": 95,
+            "aperture_mm": 279.4,  # Verified via Celestron official specs (279.4mm / 11" aperture) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2800,  # Verified via Celestron official specs (2800mm focal length, f/10 focal ratio) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 95,  # Verified via Celestron official specs (95mm / 3.75" / 34% central obstruction) - https://www.celestron.com/products/c11-a-xlt-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C11_SCT": {
             "brand": "Celestron",
