@@ -1,7 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 import numpy
-from ...units import get_unit_registry
-from ..calculations import photometry as optics_utils
+from ....units import get_unit_registry
+from ...calculations import photometry as optics_utils
 
 if TYPE_CHECKING:
     from pint import Quantity
@@ -27,8 +27,8 @@ class PhotometryMixIn:
         :param sqm: Sky Quality Meter reading in mag/arcsec^2.
         :return: Sky flux in e-/s/pixel.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         scale = self.pixel_scale()
         if scale is None or not isinstance(self.output, (Camera, SmartTelescope)):
@@ -62,8 +62,8 @@ class PhotometryMixIn:
         :param extinction_k: Atmospheric extinction coefficient (default 0.2).
         :return: Total integrated object flux in e-/s.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         if (
             not isinstance(self.output, (Camera, SmartTelescope))
@@ -115,8 +115,8 @@ class PhotometryMixIn:
         :param in_db: If True, returns SNR in decibels (20 * log10).
         :return: SNR (dimensionless linear ratio or dB).
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         obj_flux = self.object_flux(
             magnitude, altitude=altitude, extinction_k=extinction_k
@@ -210,8 +210,8 @@ class PhotometryMixIn:
         Calculates the exposure time at which the sky noise (shot noise from the sky background)
         becomes dominant over the sensor's read noise by a given 'swamp factor'.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         flux = self.sky_flux(sqm)
         if (
@@ -260,8 +260,8 @@ class PhotometryMixIn:
         )
 
     def limiting_magnitude(self, sqm: float, integration_time: float) -> float:
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         # integration_time in seconds
         if (
@@ -280,8 +280,8 @@ class PhotometryMixIn:
         """
         Calculates the dynamic range of the camera or smart telescope in the optical path.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         if isinstance(self.output, (Camera, SmartTelescope)):
             return self.output.dynamic_range()
@@ -298,8 +298,8 @@ class PhotometryMixIn:
         Calculates the maximum exposure time before the central pixel of a point source saturates.
         Based on the full-well capacity of the sensor and the Gaussian PSF model.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         if not isinstance(self.output, (Camera, SmartTelescope)):
             return None
@@ -333,8 +333,8 @@ class PhotometryMixIn:
         Calculates the magnitude of a point source that would just saturate the sensor
         at the given exposure time and seeing conditions.
         """
-        from ...opticalequipment.camera import Camera
-        from ...opticalequipment.smart_telescope import SmartTelescope
+        from ....opticalequipment.camera import Camera
+        from ....opticalequipment.smart_telescope import SmartTelescope
 
         if not isinstance(self.output, (Camera, SmartTelescope)):
             return None
