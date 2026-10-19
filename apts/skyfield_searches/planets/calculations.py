@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -17,7 +17,7 @@ PLANET_ALIGNMENT_THRESHOLDS = {
 
 def get_best_alignment_at_time(
     lons_at_t: np.ndarray,
-    thresholds: Optional[dict[int, float]] = None,
+    thresholds: dict[int, float] | None = None,
 ) -> tuple[int, float, list[int]]:
     """
     Identifies the largest and tightest planetary alignment for a given set of longitudes.
@@ -57,7 +57,7 @@ def calculate_alignment_step_results(
     longitudes: np.ndarray,
     altitudes: np.ndarray,
     is_dark: np.ndarray,
-    thresholds: Optional[dict[int, float]] = None,
+    thresholds: dict[int, float] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Calculates alignment and visibility stats for each time step.
@@ -137,9 +137,17 @@ def aggregate_alignment_daily_results(
     Visibility is prioritized to ensure we report events when they are best seen.
     """
     by_day = defaultdict(list)
-    for i, res in enumerate(step_results):
-        day = times[i].utc_datetime().date()
-        by_day[day].append((times[i], res))
+    # Optimization: Call times.utc_datetime() once on the vectorized Time object
+    # instead of calling times[i].utc_datetime() on thousands of individual scalar Time elements.
+    if hasattr(times, "utc_datetime"):
+        utc_dts = times.utc_datetime()
+        for i, res in enumerate(step_results):
+            day = utc_dts[i].date()
+            by_day[day].append((times[i], res))
+    else:
+        for i, res in enumerate(step_results):
+            day = times[i].utc_datetime().date()
+            by_day[day].append((times[i], res))
 
     daily_results = []
     sorted_days = sorted(by_day.keys())
