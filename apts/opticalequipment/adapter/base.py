@@ -8,10 +8,14 @@ class Adapter(IntermediateOpticalEquipment):
     _DATABASE: ClassVar[dict] = {}
 
     @classmethod
-    def from_database(cls, entry):
+    def normalize_database_entry(cls, entry: dict) -> dict:
         from .calculations import normalize_adapter_database_entry
 
-        entry = normalize_adapter_database_entry(entry)
+        return normalize_adapter_database_entry(entry)
+
+    @classmethod
+    def from_database(cls, entry):
+        entry = cls.normalize_database_entry(entry)
         vendor = entry["vendor"]
         ol = entry["optical_length"]
         mass = entry["mass"]
@@ -46,10 +50,14 @@ class Spacer(IntermediateOpticalEquipment):
     _DATABASE: ClassVar[dict] = {}
 
     @classmethod
-    def from_database(cls, entry):
+    def normalize_database_entry(cls, entry: dict) -> dict:
         from .calculations import normalize_adapter_database_entry
 
-        entry = normalize_adapter_database_entry(entry)
+        return normalize_adapter_database_entry(entry)
+
+    @classmethod
+    def from_database(cls, entry):
+        entry = cls.normalize_database_entry(entry)
         vendor = entry["vendor"]
         ol = entry["optical_length"]
         mass = entry["mass"]

@@ -1,4 +1,8 @@
-from apts.opticalequipment.adapter import Adapter, Spacer, normalize_adapter_database_entry
+from apts.opticalequipment.adapter import (
+    Adapter,
+    Spacer,
+    normalize_adapter_database_entry,
+)
 from apts.utils import ConnectionType, Gender
 
 
@@ -72,3 +76,23 @@ def test_spacer_from_database():
     assert spacer.get_vendor() == "ZWO 21mm M42 Extension"
     assert spacer.optical_length.magnitude == 21
     assert spacer.mass.magnitude == 40
+
+
+def test_adapter_and_spacer_class_normalize_database_entry():
+    entry = {
+        "brand": "ZWO",
+        "name": "M42-M48 Adapter",
+        "mass": 30,
+        "optical_length": 16.5,
+        "tside_thread": "M42",
+        "tside_gender": "Female",
+        "cside_thread": "M48",
+        "cside_gender": "Male",
+    }
+    norm_adapter = Adapter.normalize_database_entry(entry)
+    norm_spacer = Spacer.normalize_database_entry(entry)
+
+    assert norm_adapter["vendor"] == "ZWO M42-M48 Adapter"
+    assert norm_adapter["inputs"] == [(ConnectionType.M42, Gender.FEMALE)]
+    assert norm_spacer["vendor"] == "ZWO M42-M48 Adapter"
+    assert norm_spacer["outputs"] == [(ConnectionType.M48, Gender.MALE)]
