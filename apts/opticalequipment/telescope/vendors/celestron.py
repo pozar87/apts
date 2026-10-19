@@ -423,16 +423,16 @@ class CelestronTelescope(Telescope):
             "name": "C8-A XLT (OTA)",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 5670,
+            "mass": 5670,  # Verified via Celestron official specs (12.5 lbs / 5.67 kg / 5,670g OTA weight) - https://www.celestron.com/products/c8-a-xlt-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron official specs (Schmidt-Cassegrain visual back) - https://www.celestron.com/products/c8-a-xlt-optical-tube-assembly-cge-dovetail
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 203.2,
-            "focal_length_mm": 2032,
-            "central_obstruction_mm": 64,
+            "aperture_mm": 203.2,  # Verified via Celestron official specs (203.2mm / 8" aperture) - https://www.celestron.com/products/c8-a-xlt-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2032,  # Verified via Celestron official specs (2032mm focal length, f/10 focal ratio) - https://www.celestron.com/products/c8-a-xlt-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 64,  # Verified via Celestron official specs (64mm / 2.5" / 31% secondary obstruction) - https://www.celestron.com/products/c8-a-xlt-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C8_EdgeHD": {
             "brand": "Celestron",
