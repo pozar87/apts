@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Any, cast
 
 import numpy as np
@@ -11,7 +10,11 @@ from ...utils import planetary
 from ..utils import fast_altaz
 from .calculations import (
     aggregate_alignment_daily_results as _aggregate_to_daily_results,
+)
+from .calculations import (
     calculate_alignment_step_results as _calculate_step_results,
+)
+from .calculations import (
     format_alignment_events as _format_alignment_events,
 )
 
@@ -36,7 +39,7 @@ def find_oppositions(observer, planet_name, start_date, end_date):
     def opposition_angle_difference(t):
         return abs(abs(ecliptic_longitude_difference(t)) - 180)
 
-    setattr(opposition_angle_difference, "step_days", 180)
+    opposition_angle_difference.step_days = 180
 
     times, _ = find_minima(t0, t1, opposition_angle_difference)
 
@@ -81,7 +84,7 @@ def find_mars_closest_approach(start_date, end_date, observer=None):
 
     # Mars closest approach happens every ~780 days.
     # Step of 30 days is safe for find_minima.
-    setattr(distance_to_earth, "step_days", 30.0)
+    distance_to_earth.step_days = 30.0
     times, values = find_minima(t0, t1, distance_to_earth)
 
     events = []
@@ -141,9 +144,10 @@ def find_planet_alignments(observer, start_date, end_date):
     if duration_days <= 0:
         return []
 
+    # Optimization: Use Skyfield's vectorized ts.linspace instead of building and parsing
+    # thousands of Python datetime objects with ts.from_datetimes.
     num_steps = int(duration_days * 24) + 1
-    t_list = [t_start.utc_datetime() + timedelta(hours=i) for i in range(num_steps)]
-    times = ts.from_datetimes(t_list)
+    times = ts.linspace(t_start, t_end, num_steps)
 
     # Pre-calculate longitudes, altitudes and sun altitude vectorized
     longitudes = []
