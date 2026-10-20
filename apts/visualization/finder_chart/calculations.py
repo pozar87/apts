@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import timedelta, timezone
+from datetime import UTC, timedelta
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from apts.events.event import Event
 
 logger = logging.getLogger(__name__)
-utc = timezone.utc
+utc = UTC
 
 
 def _get_compass_labels(az_min: float, az_max: float) -> list[tuple[float, str]]:
