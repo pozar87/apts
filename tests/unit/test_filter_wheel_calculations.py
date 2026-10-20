@@ -79,6 +79,23 @@ class TestFilterWheelCalculations(unittest.TestCase):
         self.assertEqual(fh.optical_length.magnitude, 21)
         self.assertEqual(fh.mass.magnitude, 180)
 
+    def test_class_normalize_database_entry(self):
+        raw_entry = {
+            "brand": "ZWO",
+            "name": "Filter Drawer M48",
+            "optical_length": 21,
+            "mass": 180,
+            "tside_thread": "M48",
+            "tside_gender": "Female",
+            "cside_thread": "M48",
+            "cside_gender": "Male",
+        }
+        fw_norm = FilterWheel.normalize_database_entry(raw_entry)
+        fh_norm = FilterHolder.normalize_database_entry(raw_entry)
+
+        self.assertEqual(fw_norm["vendor"], "ZWO Filter Drawer M48")
+        self.assertEqual(fh_norm["vendor"], "ZWO Filter Drawer M48")
+
 
 if __name__ == "__main__":
     unittest.main()

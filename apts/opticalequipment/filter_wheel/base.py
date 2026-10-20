@@ -1,15 +1,21 @@
+from typing import ClassVar
+
 from ...constants import OpticalType
 from ..base import IntermediateOpticalEquipment
 
 
 class FilterWheel(IntermediateOpticalEquipment):
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        from .calculations import normalize_filter_wheel_database_entry
+
+        return normalize_filter_wheel_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry):
-        from .calculations import normalize_filter_wheel_database_entry
-
-        entry = normalize_filter_wheel_database_entry(entry)
+        entry = cls.normalize_database_entry(entry)
 
         return cls(
             entry["vendor"],
@@ -29,7 +35,7 @@ class FilterWheel(IntermediateOpticalEquipment):
         in_connection=None,
         out_connection=None,
     ):
-        super(FilterWheel, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
@@ -49,7 +55,7 @@ class FilterWheel(IntermediateOpticalEquipment):
         self.attach(filter)
 
     def register(self, equipment):
-        super(FilterWheel, self).register(equipment)
+        super().register(equipment)
         for f in self.filters:
             # Connect filter wheel node to filter input
             # This allows the optical path to go: Wheel_IN -> Wheel_Node -> Filter_IN -> Filter_Node -> Filter_OUT -> Wheel_OUT
@@ -59,13 +65,17 @@ class FilterWheel(IntermediateOpticalEquipment):
 
 
 class FilterHolder(IntermediateOpticalEquipment):
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        from .calculations import normalize_filter_wheel_database_entry
+
+        return normalize_filter_wheel_database_entry(entry)
 
     @classmethod
     def from_database(cls, entry):
-        from .calculations import normalize_filter_wheel_database_entry
-
-        entry = normalize_filter_wheel_database_entry(entry)
+        entry = cls.normalize_database_entry(entry)
 
         return cls(
             entry["vendor"],
@@ -85,7 +95,7 @@ class FilterHolder(IntermediateOpticalEquipment):
         in_connection=None,
         out_connection=None,
     ):
-        super(FilterHolder, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
@@ -105,7 +115,7 @@ class FilterHolder(IntermediateOpticalEquipment):
         self.attach(filter)
 
     def register(self, equipment):
-        super(FilterHolder, self).register(equipment)
+        super().register(equipment)
         for f in self.filters:
             # Connect filter holder node to filter input
             equipment.add_edge(self.id(), f.in_id(f.in_connection_type, f.in_gender))

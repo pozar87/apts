@@ -1,13 +1,14 @@
 import unittest
 from datetime import datetime
-from skyfield.api import load, Topos, utc
+from unittest.mock import MagicMock, patch
+
+from skyfield.api import Star, Topos, load, utc
+
 from apts import skyfield_searches
+from apts.cache import get_ephemeris
 from apts.catalogs import Catalogs
 from apts.catalogs.stars import get_bright_stars_raw
-from apts.cache import get_ephemeris
 from apts.utils import planetary
-from skyfield.api import Star
-from unittest.mock import patch, MagicMock
 
 
 class SkyfieldSearchesTest(unittest.TestCase):
@@ -396,6 +397,30 @@ class SkyfieldSearchesTest(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["date"].day, 20)
         self.assertEqual(events[0]["date"].month, 4)
+
+    def test_find_groupings(self):
+        # Edge case: less than 2 bodies
+        self.assertEqual(
+            skyfield_searches.find_groupings(
+                self.observer, [], self.start_date, self.end_date
+            ),
+            [],
+        )
+
+        bodies = [
+            ("moon", planetary.get_skyfield_obj("moon")),
+            ("venus", planetary.get_skyfield_obj("venus")),
+            ("jupiter", planetary.get_skyfield_obj("jupiter barycenter")),
+        ]
+        start_date = datetime(2024, 5, 1, tzinfo=utc)
+        end_date = datetime(2024, 6, 30, tzinfo=utc)
+        events = skyfield_searches.find_groupings(
+            self.observer, bodies, start_date, end_date, threshold_degrees=10.0
+        )
+        self.assertIsInstance(events, list)
+        self.assertGreater(len(events), 0)
+        self.assertIn("max_separation_degrees", events[0])
+        self.assertEqual(events[0]["type"], "Celestial Grouping")
 
 
 if __name__ == "__main__":
