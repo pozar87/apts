@@ -279,32 +279,32 @@ class CelestronTelescope(Telescope):
             "name": "C14 EdgeHD",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 20870,
+            "mass": 20865,  # Verified via Celestron.com (46 lbs / 20.865 kg OTA weight, 355.6mm aperture, 3910mm focal length, f/11, 114mm / 32% central obstruction, 2" visual back - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron.com (3.25" Schmidt-Cassegrain thread with 2" visual back adapter) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 355.6,
-            "focal_length_mm": 3910,
-            "central_obstruction_mm": 114,
+            "aperture_mm": 355.6,  # Verified via Celestron.com (355.6mm / 14" aperture) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 3910,  # Verified via Celestron.com (3910mm focal length, f/11 focal ratio) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 114,  # Verified via Celestron.com (114mm / 4.5" / 32% central obstruction) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C14_EdgeHD_OTA": {
             "brand": "Celestron",
             "name": "C14 EdgeHD OTA",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 20870,
+            "mass": 20865,  # Verified via Celestron.com (46 lbs / 20.865 kg OTA weight, 355.6mm aperture, 3910mm focal length, f/11, 114mm / 32% central obstruction, 2" visual back - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail)
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron.com (3.25" Schmidt-Cassegrain thread with 2" visual back adapter) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 355.6,
-            "focal_length_mm": 3910,
-            "central_obstruction_mm": 114,
+            "aperture_mm": 355.6,  # Verified via Celestron.com (355.6mm / 14" aperture) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 3910,  # Verified via Celestron.com (3910mm focal length, f/11 focal ratio) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 114,  # Verified via Celestron.com (114mm / 4.5" / 32% central obstruction) - https://www.celestron.com/products/edgehd-14-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C14_OTA": {
             "brand": "Celestron",
