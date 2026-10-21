@@ -188,9 +188,16 @@ def find_planet_planet_occultations(observer, start_date, end_date):
                 p2_obj=p2_obj,
                 r1_km=r1_km,
                 r2_km=r2_km,
+                earth=earth,
             ):
-                # Topocentric observer evaluation maintains exact observer location accuracy
-                obs_at_t = observer.at(t)
+                # Optimization: Stage 1 Geocentric Coarse Search for candidate minima.
+                # Because maximum planetary topocentric parallax is < 0.01° (< 36 arcseconds), geocentric
+                # positions (earth.at(t)) identify identical candidate separation minima timestamps during
+                # find_minima step-searching while bypassing topocentric GAST, frame rotations, and
+                # iau2000a nutation angle calculations across search step grids.
+                # Full topocentric observer state (observer.at(t)) is subsequently evaluated during
+                # candidate refinement (_refine_conjunction) to maintain 100% exact topocentric accuracy.
+                obs_at_t = earth.at(t)
                 p1_obs = obs_at_t.observe(p1_obj)
                 p2_obs = obs_at_t.observe(p2_obj)
 
