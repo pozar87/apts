@@ -5,6 +5,7 @@ import logging
 from math import radians as rad
 from typing import TYPE_CHECKING, Any, Optional
 
+import zoneinfo
 from dateutil import tz
 
 from ..config import get_place_settings
@@ -77,9 +78,8 @@ class Place(PlaceImagingMixIn, PlacePathsMixIn, PlaceTimesMixIn):
         self.sun = self.eph["sun"]
         # Moon
         self.moon = self.eph["moon"]
-        self.local_timezone = tz.gettz(
-            Place.TF.timezone_at(lat=self._lat_decimal, lng=self._lon_decimal)
-        )
+        tz_name = Place.TF.timezone_at(lat=self._lat_decimal, lng=self._lon_decimal)
+        self.local_timezone = zoneinfo.ZoneInfo(tz_name) if tz_name else tz.gettz(tz_name)
         self.weather: Weather | None = None
         self.light_pollution: LightPollution | None = None
         logger.debug(f"Place {self.name} initialized, timezone: {self.local_timezone}")

@@ -90,7 +90,7 @@ class TestBackfocus(unittest.TestCase):
         self.assertEqual(cast(Any, path.total_mass()).magnitude, 2800)
 
     def test_registry(self):
-        from apts.equipment_registry import EquipmentRegistry
+        from apts.equipment import EquipmentRegistry
 
         reg = EquipmentRegistry()
         featured = reg.get_featured()

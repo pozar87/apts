@@ -3,5 +3,13 @@ from .calculations import (
     can_connect_nodes as can_connect_nodes,
     find_unique_optical_paths as find_unique_optical_paths,
 )
+from .database import EquipmentDatabase as EquipmentDatabase
+from .registry import EquipmentRegistry as EquipmentRegistry
 
-__all__ = ["Equipment", "can_connect_nodes", "find_unique_optical_paths"]
+__all__ = [
+    "Equipment",
+    "can_connect_nodes",
+    "find_unique_optical_paths",
+    "EquipmentDatabase",
+    "EquipmentRegistry",
+]

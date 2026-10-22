@@ -1,5 +1,5 @@
 import unittest
-from apts.equipment_database import EquipmentDatabase
+from apts.equipment import EquipmentDatabase
 from apts.opticalequipment import Telescope, Camera, SmartTelescope
 
 
