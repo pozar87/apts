@@ -87,16 +87,16 @@ class CelestronTelescope(Telescope):
             "name": "AstroMaster 114EQ",
             "type": "newtonian_reflector",
             "optical_length": 0,
-            "mass": 2676, # Verified via Celestron.com (5.9 lbs OTA weight)
+            "mass": 2676,  # Verified via Celestron.com (5.9 lbs / 2.676 kg / 2,676g OTA weight) - https://www.celestron.com/products/astromaster-114eq-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "1.25\"",
+            "cside_thread": "1.25\"",  # Verified via Celestron.com (1.25" visual back) - https://www.celestron.com/products/astromaster-114eq-telescope
             "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 114,
-            "focal_length_mm": 1000,
-            "central_obstruction_mm": 44, # Verified via Celestron.com (44mm / 1.73" secondary mirror obstruction) - https://www.celestron.com/products/astromaster-114eq-telescope
+            "aperture_mm": 114,  # Verified via Celestron.com (114mm / 4.49" aperture) - https://www.celestron.com/products/astromaster-114eq-telescope
+            "focal_length_mm": 1000,  # Verified via Celestron.com (1000mm focal length, f/8.77) - https://www.celestron.com/products/astromaster-114eq-telescope
+            "central_obstruction_mm": 44,  # Verified via Celestron.com (44mm / 1.73" / 38.6% secondary mirror obstruction) - https://www.celestron.com/products/astromaster-114eq-telescope
         },
         "Celestron_AstroMaster_130EQ": {
             "brand": "Celestron",
