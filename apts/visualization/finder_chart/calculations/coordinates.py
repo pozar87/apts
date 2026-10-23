@@ -1,118 +1,17 @@
 import logging
 import math
-from datetime import UTC, timedelta
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from .constants import COMPASS_POINTS, LONG_EVENT_CATEGORIES
+from .resolvers import _get_observer_for_event, _resolve_skyfield_object
+from .utils import is_long_event
 
 if TYPE_CHECKING:
     from apts.events.event import Event
 
 logger = logging.getLogger(__name__)
-utc = UTC
-
-
-def _get_compass_labels(az_min: float, az_max: float) -> list[tuple[float, str]]:
-    """Returns compass direction labels that fall within the given azimuth window."""
-    labels = []
-    for deg, code in COMPASS_POINTS:
-        d = deg
-        if d < az_min and d + 360.0 <= az_max:
-            d += 360.0
-        elif d > az_max and d - 360.0 >= az_min:
-            d -= 360.0
-
-        if az_min <= d <= az_max:
-            labels.append((d, code))
-
-    return labels
-
-
-def _get_event_moon_phase_frac(event_obj: "Event") -> float:
-    """Helper to determine float phase fraction (0.0-1.0) for Moon rendering."""
-    p_val = getattr(event_obj, "extra_data", {}).get("phase")
-    if isinstance(p_val, (int, float)):
-        if float(p_val) > 1.0:
-            return (float(p_val) % 360.0) / 360.0
-        return float(p_val)
-
-    title_lower = f"{event_obj.title} {event_obj.category} {p_val}".lower()
-    if (
-        "first quarter" in title_lower
-        or "pierwsza kwadra" in title_lower
-        or "cuarto creciente" in title_lower
-        or "erstes viertel" in title_lower
-        or "primeiro quarto" in title_lower
-    ):
-        return 0.25
-    if (
-        "third quarter" in title_lower
-        or "last quarter" in title_lower
-        or "trzecia kwadra" in title_lower
-        or "ostatnia kwadra" in title_lower
-        or "cuarto menguante" in title_lower
-        or "drittes viertel" in title_lower
-        or "quarto minguante" in title_lower
-    ):
-        return 0.75
-    if (
-        "full moon" in title_lower
-        or "pełnia" in title_lower
-        or "luna llena" in title_lower
-        or "vollmond" in title_lower
-        or "lua cheia" in title_lower
-    ):
-        return 0.5
-    if (
-        "new moon" in title_lower
-        or "nów" in title_lower
-        or "luna nueva" in title_lower
-        or "neumond" in title_lower
-        or "lua nova" in title_lower
-    ):
-        return 0.0
-
-    return 0.25
-
-
-def _parse_separation_deg(sep_str: str | None) -> float:
-    """Parses angular separation degrees from string representation."""
-    if not sep_str:
-        return 1.2
-    try:
-        clean_sep = sep_str.replace("°", "").replace("'", "").strip()
-        val = float(clean_sep)
-        if "'" in sep_str:
-            val = val / 60.0
-        return max(0.2, min(5.0, val))
-    except ValueError:
-        return 1.2
-
-
-def _hex_to_rgb(hex_str: str) -> np.ndarray:
-    clean = hex_str.lstrip("#")
-    return np.array([int(clean[i : i + 2], 16) / 255.0 for i in (0, 2, 4)])
-
-
-def is_long_event(category: str, title: str = "") -> bool:
-    """Checks if an event category or title represents a multi-hour / long-duration event."""
-    cat = str(category).upper()
-    title_lower = str(title).lower()
-    if cat in LONG_EVENT_CATEGORIES:
-        return True
-    long_keywords = [
-        "conjunction",
-        "alignment",
-        "opposition",
-        "elongation",
-        "phase",
-        "shower",
-        "solstice",
-        "equinox",
-    ]
-    return any(kw in title_lower for kw in long_keywords)
 
 
 def _compute_sky_brightness_at_time(
@@ -251,117 +150,6 @@ def _find_optimal_chart_time(
     return ts_time, alt_peak, None, warn_note
 
 
-def _resolve_skyfield_object(name_str: str) -> Any | None:
-    """Attempts to resolve any string object name to a Skyfield object."""
-    from skyfield.api import Star
-
-    from apts.catalogs.messier import get_messier_raw
-    from apts.catalogs.stars import get_bright_stars_raw
-    from apts.utils import planetary
-
-    if not name_str or not isinstance(name_str, str):
-        return None
-
-    clean = name_str.strip()
-    clean_lower = clean.lower()
-
-    # Common synonym mapping across languages
-    synonyms = {
-        "księżyc": "moon",
-        "mond": "moon",
-        "luna": "moon",
-        "słońce": "sun",
-        "sonne": "sun",
-        "sol": "sun",
-        "jowisz": "jupiter",
-        "wenus": "venus",
-        "mars": "mars",
-        "saturn": "saturn",
-        "merkury": "mercury",
-        "merkur": "mercurio",
-        "uran": "uranus",
-        "neptun": "neptune",
-    }
-    lookup_name = synonyms.get(clean_lower, clean)
-
-    # 1. Ephemeris (major / minor planets, Sun, Moon)
-    try:
-        return planetary.get_skyfield_obj(lookup_name)
-    except (ValueError, KeyError, RuntimeError, AttributeError):
-        pass
-
-    # 2. Messier catalog
-    try:
-        messier_df = get_messier_raw()
-        m_match = messier_df[messier_df["Messier"].str.lower() == clean_lower]
-        if m_match.empty:
-            m_match = messier_df[
-                messier_df["Messier"].str.lower()
-                == f"m{clean_lower.replace('messier', '').strip()}"
-            ]
-        if not m_match.empty:
-            row = m_match.iloc[0]
-            return Star(
-                ra_hours=float(row["ra_hours"]), dec_degrees=float(row["dec_degrees"])
-            )
-    except (ValueError, KeyError, RuntimeError, AttributeError):
-        pass
-
-    # 3. Bright stars catalog
-    try:
-        stars_df = get_bright_stars_raw()
-        s_match = stars_df[stars_df["Name"].str.lower() == clean_lower]
-        if not s_match.empty:
-            row = s_match.iloc[0]
-            st_obj = row.get("skyfield_object")
-            if st_obj is not None:
-                return st_obj
-            return Star(
-                ra_hours=float(row["ra_hours"]), dec_degrees=float(row["dec_degrees"])
-            )
-    except (ValueError, KeyError, RuntimeError, AttributeError):
-        pass
-
-    return None
-
-
-def _get_observer_for_event(event_obj: "Event") -> tuple[Any, Any]:
-    """Returns Skyfield observer object and Skyfield time for the event moment."""
-    place = getattr(event_obj, "place", None)
-    if place is not None and hasattr(place, "observer") and hasattr(place, "ts"):
-        dt_utc = event_obj.dt_utc
-        ts_time = place.ts.utc(
-            dt_utc.year,
-            dt_utc.month,
-            dt_utc.day,
-            dt_utc.hour,
-            dt_utc.minute,
-            dt_utc.second,
-        )
-        return place.observer, ts_time
-
-    # Default Topos observer if place is missing
-    from skyfield.api import Topos
-
-    from apts.cache import get_ephemeris, get_timescale
-
-    ts = get_timescale()
-    eph = get_ephemeris()
-    dt_utc = event_obj.dt_utc
-    ts_time = ts.utc(
-        dt_utc.year,
-        dt_utc.month,
-        dt_utc.day,
-        dt_utc.hour,
-        dt_utc.minute,
-        dt_utc.second,
-    )
-    lat = float(getattr(event_obj, "extra_data", {}).get("lat", 52.2))
-    lon = float(getattr(event_obj, "extra_data", {}).get("lon", 21.0))
-    observer = eph["earth"] + Topos(latitude_degrees=lat, longitude_degrees=lon)
-    return observer, ts_time
-
-
 def _resolve_fallback_positions(
     event_obj: "Event",
     all_positions: list[tuple[float, float]],
@@ -445,21 +233,3 @@ def _resolve_target_coordinates(
     all_positions_draw = [(az, max(1.0, alt)) for az, alt in all_positions]
 
     return p1_pos_draw, p2_pos_draw, all_positions_draw, sky_brightness
-
-
-def _get_satellite_name(event_obj: "Event") -> str:
-    """Helper to derive clean satellite name (ISS, Tiangong, etc.) without generic fallback."""
-    if event_obj.objects:
-        obj_name = str(event_obj.objects[0])
-        if obj_name and obj_name.lower() != "target":
-            return obj_name
-
-    title_lower = str(event_obj.title).lower()
-    cat_lower = str(event_obj.category).lower()
-
-    if "tiangong" in title_lower or "tiangong" in cat_lower or "css" in title_lower:
-        return "Tiangong"
-    if "iss" in title_lower or "iss" in cat_lower or "station" in title_lower:
-        return "ISS"
-
-    return "Satellite"
