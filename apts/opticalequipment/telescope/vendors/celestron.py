@@ -759,16 +759,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar 6SE",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 3629,  # Verified via Celestron.com (8 lbs / 3.6 kg OTA weight, 150mm aperture, 1500mm focal length, f/10, 56mm central obstruction - https://www.celestron.com/products/nexstar-6se-computerized-telescope)
+            "mass": 3629,  # Verified via Celestron.com (8 lbs / 3.63 kg / 3,629g OTA weight) - https://www.celestron.com/products/nexstar-6se-computerized-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron.com (Schmidt-Cassegrain visual back) - https://www.celestron.com/products/nexstar-6se-computerized-telescope
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 1500,
-            "central_obstruction_mm": 56,
+            "aperture_mm": 150,  # Verified via Celestron.com (150mm / 5.91" aperture) - https://www.celestron.com/products/nexstar-6se-computerized-telescope
+            "focal_length_mm": 1500,  # Verified via Celestron.com (1500mm focal length, f/10 focal ratio) - https://www.celestron.com/products/nexstar-6se-computerized-telescope
+            "central_obstruction_mm": 56,  # Verified via Celestron.com (56mm / 2.2" / 37% secondary mirror obstruction) - https://www.celestron.com/products/nexstar-6se-computerized-telescope
         },
         "Celestron_NexStar_8SE": {
             "brand": "Celestron",
