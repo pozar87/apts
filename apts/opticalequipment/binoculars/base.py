@@ -1,12 +1,18 @@
 from typing import ClassVar
 
-import numpy
-
-from ...constants import GraphConstants, OpticalType, astronomy
+from ...constants import GraphConstants, OpticalType
 from ...i18n import gettext_ as _
 from ...units import get_unit_registry
 from ..base import OutputOpticalEquipment
-from .calculations import normalize_binoculars_database_entry
+from .calculations import (
+    calculate_binoculars_brightness,
+    calculate_binoculars_dawes_limit,
+    calculate_binoculars_exit_pupil,
+    calculate_binoculars_fov,
+    calculate_binoculars_limiting_magnitude,
+    calculate_binoculars_rayleigh_limit,
+    normalize_binoculars_database_entry,
+)
 
 
 class Binoculars(OutputOpticalEquipment):
@@ -80,12 +86,12 @@ class Binoculars(OutputOpticalEquipment):
         return f"{self.get_vendor()} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}"
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
-        # True Field of View = Apparent FOV / Magnification
-        return self.apparent_fov_deg / self.magnification
+        return self.fov()
 
     def fov(self):
-        # True Field of View = Apparent FOV / Magnification
-        return self.apparent_fov_deg / self.magnification
+        afov_deg = self.apparent_fov_deg.to("deg").magnitude
+        fov_deg = calculate_binoculars_fov(afov_deg, self.magnification)
+        return fov_deg * get_unit_registry().deg
 
     def _zoom_divider(self):
         # For binoculars, the focal length is not typically used for zoom calculations.
@@ -94,17 +100,18 @@ class Binoculars(OutputOpticalEquipment):
         return self.focal_length
 
     def exit_pupil(self, telescope=None, zoom=None):
-        return self.objective_diameter / self.magnification
+        obj_mm = self.objective_diameter.to("mm").magnitude
+        exit_pupil_mm = calculate_binoculars_exit_pupil(obj_mm, self.magnification)
+        return exit_pupil_mm * get_unit_registry().mm
 
     def dawes_limit(self):
         """
         Calculate the maximum resolving power using the Dawes' Limit formula.
         :return: limit in arcsecond
         """
-        return (
-            round((11.6 / self.objective_diameter.to("cm")).magnitude, 3)
-            * get_unit_registry().arcsecond
-        )
+        obj_cm = self.objective_diameter.to("cm").magnitude
+        limit_arcsec = calculate_binoculars_dawes_limit(obj_cm)
+        return limit_arcsec * get_unit_registry().arcsecond
 
     def rayleigh_limit(self, wavelength_nm: float = 550):
         """
@@ -115,24 +122,23 @@ class Binoculars(OutputOpticalEquipment):
         :param wavelength_nm: wavelength in nanometers (default 550nm for green light)
         :return: limit in arcsecond
         """
-        wavelength_m = wavelength_nm * 1e-9
-        aperture_m = self.objective_diameter.to("m").magnitude
-        limit_rad = 1.22 * wavelength_m / aperture_m
-        limit_arcsec = limit_rad * astronomy.RAD_TO_ARCSEC
-        return round(limit_arcsec, 3) * get_unit_registry().arcsecond
+        obj_m = self.objective_diameter.to("m").magnitude
+        limit_arcsec = calculate_binoculars_rayleigh_limit(
+            obj_m, wavelength_nm=wavelength_nm
+        )
+        return limit_arcsec * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
         """
         Calculate approximate limiting magnitude.
         :return: range in magnitude
         """
-        # Using the same formula as Telescope, based on aperture (objective_diameter for binoculars)
-        return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)
+        obj_cm = self.objective_diameter.to("cm").magnitude
+        return calculate_binoculars_limiting_magnitude(obj_cm)
 
     def brightness(self, telescope=None, zoom=None):
-        # Relative brightness: (Exit Pupil (mm) / 7mm)^2 * 100
-        # Assuming 7mm is the max human eye pupil diameter
-        return (self.exit_pupil().to("mm").magnitude / 7) ** 2 * 100
+        exit_pupil_mm = self.exit_pupil().to("mm").magnitude
+        return calculate_binoculars_brightness(exit_pupil_mm)
 
     def register(self, equipment):
         """
