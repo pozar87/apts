@@ -1,4 +1,5 @@
 import unittest
+
 from apts.opticalequipment.telescope.vendors.celestron import CelestronTelescope
 from apts.utils import ConnectionType, Gender
 
