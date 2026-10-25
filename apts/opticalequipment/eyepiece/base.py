@@ -1,9 +1,10 @@
 from typing import Any, cast
-from ..base import OutputOpticalEquipment
+
 from ...constants import GraphConstants, OpticalType
+from ...optics.calculations import calculate_eyepiece_field_of_view
 from ...units import get_unit_registry
 from ...utils import ConnectionType
-from ...optics.calculations import calculate_eyepiece_field_of_view
+from ..base import OutputOpticalEquipment
 
 
 class Eyepiece(OutputOpticalEquipment):
@@ -21,9 +22,7 @@ class Eyepiece(OutputOpticalEquipment):
     @classmethod
     def from_database(cls, entry):
         entry = cls.normalize_database_entry(entry)
-        brand = entry.get('brand', 'Unknown')
-        name = entry.get('name', 'Unknown')
-        vendor = f'{brand} {name}'
+        vendor = entry.get('vendor', 'Unknown Eyepiece')
         fl = entry.get('focal_length_mm', 20)
         fov = entry.get('field_of_view_deg', 70)
         fs = entry.get('field_stop_mm')
