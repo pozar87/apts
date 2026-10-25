@@ -3,7 +3,15 @@ import os
 import pkgutil
 
 from .base import Binoculars
-from .calculations import normalize_binoculars_database_entry
+from .calculations import (
+    calculate_binoculars_brightness,
+    calculate_binoculars_dawes_limit,
+    calculate_binoculars_exit_pupil,
+    calculate_binoculars_fov,
+    calculate_binoculars_limiting_magnitude,
+    calculate_binoculars_rayleigh_limit,
+    normalize_binoculars_database_entry,
+)
 
 _VENDOR_MODULES = []
 vendors_path = os.path.join(os.path.dirname(__file__), "vendors")
@@ -39,4 +47,13 @@ def _merge_vendors(base_cls):
 
 _merge_vendors(Binoculars)
 
-__all__ = ["Binoculars", "normalize_binoculars_database_entry"]
+__all__ = [
+    "Binoculars",
+    "calculate_binoculars_brightness",
+    "calculate_binoculars_dawes_limit",
+    "calculate_binoculars_exit_pupil",
+    "calculate_binoculars_fov",
+    "calculate_binoculars_limiting_magnitude",
+    "calculate_binoculars_rayleigh_limit",
+    "normalize_binoculars_database_entry",
+]
