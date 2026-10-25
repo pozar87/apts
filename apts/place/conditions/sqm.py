@@ -47,14 +47,12 @@ class SqmMixIn:
 
         obs_at_t = self.observer.at(target_time)
 
+        # Optimization: Use fast_altaz to bypass expensive Standard Apparent calculations
+        # (nutation, aberration, gravitational deflection) for Sun/Moon altitude checks.
+        from ...skyfield_searches.utils import fast_altaz
+
         # Sun contribution
-        sun_alt = (
-            obs_at_t
-            .observe(self.sun)
-            .apparent()
-            .altaz()[0]
-            .degrees
-        )
+        sun_alt = fast_altaz(obs_at_t, self.sun)[0].degrees
         if sun_alt > -18:
             # Simplified twilight model: brightness increases as sun rises
             # At -18 deg, it's roughly base starlight. At -6, it's much brighter.
@@ -63,13 +61,7 @@ class SqmMixIn:
             b_total += b_sun
 
         # Moon contribution
-        moon_alt = (
-            obs_at_t
-            .observe(self.moon)
-            .apparent()
-            .altaz()[0]
-            .degrees
-        )
+        moon_alt = fast_altaz(obs_at_t, self.moon)[0].degrees
         if moon_alt > 0:
             # Import within the method to ensure patch targets on apts.place work.
             from ...place import get_planet_magnitude as _get_planet_magnitude
