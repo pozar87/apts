@@ -919,16 +919,16 @@ class CelestronTelescope(Telescope):
             "name": "RASA 11\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 19500,
+            "mass": 19504,  # Verified via Celestron official specs (43 lbs / 19.504 kg / 19,504g OTA weight) - https://www.celestron.com/products/11in-rowe-ackermann-schmidt-astrograph-rasa-11-v2-optical-tube-assembly
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48",  # Verified via Celestron official specs (M48 male camera adapter) - https://www.celestron.com/products/11in-rowe-ackermann-schmidt-astrograph-rasa-11-v2-optical-tube-assembly
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 279.4,
-            "focal_length_mm": 620,
-            "central_obstruction_mm": 114,
+            "aperture_mm": 279.4,  # Verified via Celestron official specs (279.4mm / 11" aperture) - https://www.celestron.com/products/11in-rowe-ackermann-schmidt-astrograph-rasa-11-v2-optical-tube-assembly
+            "focal_length_mm": 620,  # Verified via Celestron official specs (620mm focal length, f/2.22) - https://www.celestron.com/products/11in-rowe-ackermann-schmidt-astrograph-rasa-11-v2-optical-tube-assembly
+            "central_obstruction_mm": 114,  # Verified via Celestron official specs (114mm / 4.5" / 41% central obstruction) - https://www.celestron.com/products/11in-rowe-ackermann-schmidt-astrograph-rasa-11-v2-optical-tube-assembly
         },
         "Celestron_RASA_14": {
             "brand": "Celestron",
