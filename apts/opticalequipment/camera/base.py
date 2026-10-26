@@ -22,7 +22,7 @@ class Camera(OutputOpticalEquipment):
         entry = cls.normalize_database_entry(entry)
         brand = entry.get("brand", "Unknown")
         name = entry.get("name", "Unknown")
-        vendor = f"{brand} {name}"
+        vendor = entry.get("vendor", f"{brand} {name}")
         ol = entry.get("optical_length", 0)
         mass = entry.get("mass", 0)
         sw = entry["sensor_width_mm"]
