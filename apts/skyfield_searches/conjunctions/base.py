@@ -1,6 +1,6 @@
 from skyfield.searchlib import find_minima
 
-from ...cache import get_timescale
+from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
 from ..utils import _refine_conjunction
 
@@ -20,12 +20,20 @@ def find_conjunctions(
     p1 = planetary.get_skyfield_obj(p1_name)
     p2 = planetary.get_skyfield_obj(p2_name)
 
+    # Optimization: Stage 1 Geocentric Search for Non-Lunar Conjunction Minima.
+    # Evaluating topocentric observer state (observer.at(t)) in Skyfield over step grids
+    # forces expensive topocentric frame rotations, GAST, and iau2000a nutation angle
+    # calculations on every time step.
+    # For non-lunar bodies, topocentric parallax is < 0.0025° (a few arcseconds).
+    # Performing step-searching geocentrically (earth.at(t)) bypasses topocentric frame
+    # transformation overhead during candidate minima identification. Full topocentric
+    # observer state (observer.at(t)) and high-precision .apparent() separation
+    # calculations are applied in _refine_conjunction once candidate minima are identified.
+    has_moon = "moon" in [p1_name.lower(), p2_name.lower()]
+    center = observer if has_moon else get_ephemeris()["earth"]
+
     def separation(t):
-        # Optimization: Bypassing expensive .apparent() place calculations (nutation,
-        # aberration, light deflection) during the coarse step-search phase provides a
-        # ~20-25% speedup. High-precision .apparent() coordinate transformations are still
-        # applied in _refine_conjunction once candidate minima are identified.
-        obs_at_t = observer.at(t)
+        obs_at_t = center.at(t)
         p1_obs = obs_at_t.observe(p1)
         p2_obs = obs_at_t.observe(p2)
         return p1_obs.separation_from(p2_obs).degrees
