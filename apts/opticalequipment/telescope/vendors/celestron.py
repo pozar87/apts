@@ -263,7 +263,7 @@ class CelestronTelescope(Telescope):
             "name": "C14-A XLT (OTA)",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 20410,
+            "mass": 20412,  # Verified via Celestron.com (45 lbs / 20.412 kg / 20,412g OTA weight, 355.6mm aperture, 3910mm focal length, f/11, 114mm / 32% central obstruction, SC visual back - https://www.celestron.com/products/c14-a-xlt-optical-tube-assembly-cge-dovetail)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -311,7 +311,7 @@ class CelestronTelescope(Telescope):
             "name": "C14 OTA",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 20410,
+            "mass": 20412,  # Verified via Celestron.com (45 lbs / 20.412 kg / 20,412g OTA weight, 355.6mm aperture, 3910mm focal length, f/11, 114mm / 32% central obstruction, SC visual back - https://www.celestron.com/products/c14-a-xlt-optical-tube-assembly-cge-dovetail)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
@@ -327,7 +327,7 @@ class CelestronTelescope(Telescope):
             "name": "C14 SCT",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 20410,
+            "mass": 20412,  # Verified via Celestron.com (45 lbs / 20.412 kg / 20,412g OTA weight, 355.6mm aperture, 3910mm focal length, f/11, 114mm / 32% central obstruction, SC visual back - https://www.celestron.com/products/c14-a-xlt-optical-tube-assembly-cge-dovetail)
             "tside_thread": "",
             "tside_gender": "",
             "cside_thread": "SC (Schmidt-Cassegrain)",
