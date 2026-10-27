@@ -519,32 +519,32 @@ class CelestronTelescope(Telescope):
             "name": "C9.25 EdgeHD",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 9530,
+            "mass": 9525,  # Verified via Celestron official specs (21 lbs / 9.53 kg / 9,525g OTA weight) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",  # Verified via Celestron official specs (2" visual back / star diagonal) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 234.95,
-            "focal_length_mm": 2350,
-            "central_obstruction_mm": 85,
+            "aperture_mm": 234.95,  # Verified via Celestron official specs (234.95mm / 9.25" aperture) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2350,  # Verified via Celestron official specs (2350mm focal length, f/10 focal ratio) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 85,  # Verified via Celestron official specs (85mm / 3.35" / 36% secondary obstruction) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C9_25_EdgeHD_OTA": {
             "brand": "Celestron",
             "name": "C9.25 EdgeHD OTA",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 9530,
+            "mass": 9525,  # Verified via Celestron official specs (21 lbs / 9.53 kg / 9,525g OTA weight) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",  # Verified via Celestron official specs (2" visual back / star diagonal) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 234.95,
-            "focal_length_mm": 2350,
-            "central_obstruction_mm": 85,
+            "aperture_mm": 234.95,  # Verified via Celestron official specs (234.95mm / 9.25" aperture) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2350,  # Verified via Celestron official specs (2350mm focal length, f/10 focal ratio) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 85,  # Verified via Celestron official specs (85mm / 3.35" / 36% secondary obstruction) - https://www.celestron.com/products/edgehd-925-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C9_25_OTA": {
             "brand": "Celestron",
