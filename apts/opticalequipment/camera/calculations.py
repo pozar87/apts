@@ -2,15 +2,15 @@ import numpy
 
 from ...optics.calculations import calculate_camera_field_of_view
 from ...units import get_unit_registry
-from ...utils import map_conn, map_gender
+from ..base.calculations import normalize_intermediate_database_entry
 
 
 def normalize_camera_database_entry(entry: dict) -> dict:
     """
     Normalizes a camera database entry by filling in missing sensor dimensions
-    using fallback heuristics and mapping input connection formats.
+    using fallback heuristics and delegating intermediate entry normalization logic.
     """
-    entry = entry.copy()
+    entry = normalize_intermediate_database_entry(entry)
     name = entry.get("name", "")
 
     sw, sh = (entry.get("sensor_width_mm"), entry.get("sensor_height_mm"))
@@ -31,17 +31,6 @@ def normalize_camera_database_entry(entry: dict) -> dict:
         entry["sensor_height_mm"] = sh if sh is not None else sh_h
         entry["width"] = w if w is not None else w_h
         entry["height"] = h if h is not None else h_h
-
-    inputs = entry.get("inputs")
-    if inputs is None:
-        tt = map_conn(entry.get("tside_thread"))
-        tg = map_gender(entry.get("tside_gender"))
-        entry["inputs"] = [(tt, tg)] if tt else []
-    else:
-        entry["inputs"] = [
-            (map_conn(c), map_gender(g)) if isinstance(c, str) else (c, g)
-            for c, g in inputs
-        ]
 
     return entry
 
