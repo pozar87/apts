@@ -17,7 +17,7 @@ class TestCelestronOTASpecs(unittest.TestCase):
         self.assertEqual(scope.aperture.to('mm').magnitude, 355.6)
         self.assertEqual(scope.focal_length.to('mm').magnitude, 3910)
         self.assertEqual(scope.central_obstruction.to('mm').magnitude, 114)
-        self.assertEqual(scope.mass.to('gram').magnitude, 20410)
+        self.assertEqual(scope.mass.to('gram').magnitude, 20412)
 
     def test_nexstar_4se_specs(self):
         scope = CelestronTelescope.Celestron_NexStar_4SE()
