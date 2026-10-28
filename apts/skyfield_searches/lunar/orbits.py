@@ -1,9 +1,12 @@
 from typing import Any, cast
+
 import numpy as np
 from skyfield import almanac
 from skyfield.searchlib import find_maxima, find_minima
-from ...cache import get_timescale, get_ephemeris
+
+from ...cache import get_ephemeris, get_timescale
 from ...utils import planetary
+
 
 def find_supermoons(start_date, end_date):
     """
@@ -35,7 +38,7 @@ def find_supermoons(start_date, end_date):
         return cast(Any, earth).at(t).observe(moon).distance().km
 
     # Optimization: perform global search once instead of iteratively per Full Moon.
-    setattr(distance_to_earth, "step_days", 13.0)
+    distance_to_earth.step_days = 13.0
     t_apogees, v_apogees = find_maxima(t_padded_start, t_padded_end, distance_to_earth)
     t_perigees, v_perigees = find_minima(t_padded_start, t_padded_end, distance_to_earth)
 
@@ -86,15 +89,16 @@ def find_moon_apogee_perigee(start_date, end_date):
     def distance_to_earth(t):
         return cast(Any, earth).at(t).observe(moon).distance().km
 
-    setattr(distance_to_earth, "step_days", 13)
+    distance_to_earth.step_days = 13
 
-    max_times, _ = find_maxima(t0, t1, distance_to_earth)
-    min_times, _ = find_minima(t0, t1, distance_to_earth)
+    # Optimization: find_maxima and find_minima return (times, values) where values
+    # are the calculated distances in km. Using returned values directly bypasses
+    # redundant Skyfield observation calls at max_times and min_times.
+    max_times, max_dist = find_maxima(t0, t1, distance_to_earth)
+    min_times, min_dist = find_minima(t0, t1, distance_to_earth)
 
     events = []
-    # Optimization: pre-calculate distances for all extrema
     if len(max_times) > 0:
-        max_dist = cast(Any, earth).at(max_times).observe(moon).distance().km
         for i, t in enumerate(cast(Any, max_times)):
             events.append({
                 "date": t.utc_datetime(),
@@ -103,7 +107,6 @@ def find_moon_apogee_perigee(start_date, end_date):
                 "distance_km": float(max_dist[i])
             })
     if len(min_times) > 0:
-        min_dist = cast(Any, earth).at(min_times).observe(moon).distance().km
         for i, t in enumerate(cast(Any, min_times)):
             events.append({
                 "date": t.utc_datetime(),
