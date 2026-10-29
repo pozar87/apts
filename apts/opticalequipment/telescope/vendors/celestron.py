@@ -935,32 +935,32 @@ class CelestronTelescope(Telescope):
             "name": "RASA 14\"",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 34000,
+            "mass": 34019,  # Verified via Celestron official specs (75 lbs / 34.02 kg / 34,019g OTA weight) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48",  # Verified via Celestron official specs (M48 camera adapter) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 355.6,
-            "focal_length_mm": 790,
-            "central_obstruction_mm": 158,
+            "aperture_mm": 355.6,  # Verified via Celestron official specs (355.6mm / 14" aperture) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
+            "focal_length_mm": 790,  # Verified via Celestron official specs (790mm focal length, f/2.22) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
+            "central_obstruction_mm": 158,  # Verified via Celestron official specs (158mm / 6.2" / 44.4% central obstruction) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
         },
         "Celestron_RASA_36cm": {
             "brand": "Celestron",
             "name": "RASA 36cm",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 34000,
+            "mass": 34019,  # Verified via Celestron official specs (75 lbs / 34.02 kg / 34,019g OTA weight) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "M48",
+            "cside_thread": "M48",  # Verified via Celestron official specs (M48 camera adapter) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 355.6,
-            "focal_length_mm": 790,
-            "central_obstruction_mm": 158,
+            "aperture_mm": 355.6,  # Verified via Celestron official specs (355.6mm / 14" aperture) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
+            "focal_length_mm": 790,  # Verified via Celestron official specs (790mm focal length, f/2.22) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
+            "central_obstruction_mm": 158,  # Verified via Celestron official specs (158mm / 6.2" / 44.4% central obstruction) - https://www.celestron.com/products/36cm-rowe-ackermann-schmidt-astrograph-rasa-36cm-v2-optical-tube-assembly
         },
         "Celestron_RASA_8": {
             "brand": "Celestron",
