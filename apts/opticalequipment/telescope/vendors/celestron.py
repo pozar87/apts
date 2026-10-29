@@ -199,32 +199,32 @@ class CelestronTelescope(Telescope):
             "name": "C11 EdgeHD",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 12700,
+            "mass": 12701,  # Verified via Celestron.com (28 lbs / 12,701g / 12.7 kg OTA weight) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" star diagonal / visual back with 1.25" adapter) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 279.4,
-            "focal_length_mm": 2800,
-            "central_obstruction_mm": 95,
+            "aperture_mm": 279.4,  # Verified via Celestron.com (279.4mm / 11" aperture) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2800,  # Verified via Celestron.com (2800mm focal length, f/10 focal ratio) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 95,  # Verified via Celestron.com (95mm / 3.75" / 34% secondary mirror obstruction) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C11_EdgeHD_OTA": {
             "brand": "Celestron",
             "name": "C11 EdgeHD OTA",
             "type": "catadioptric",
             "optical_length": 0,
-            "mass": 12700,
+            "mass": 12701,  # Verified via Celestron.com (28 lbs / 12,701g / 12.7 kg OTA weight) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
-            "cside_gender": "Male",
+            "cside_thread": "2\"",  # Verified via Celestron.com (2" star diagonal / visual back with 1.25" adapter) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "cside_gender": "Female",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 279.4,
-            "focal_length_mm": 2800,
-            "central_obstruction_mm": 95,
+            "aperture_mm": 279.4,  # Verified via Celestron.com (279.4mm / 11" aperture) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "focal_length_mm": 2800,  # Verified via Celestron.com (2800mm focal length, f/10 focal ratio) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
+            "central_obstruction_mm": 95,  # Verified via Celestron.com (95mm / 3.75" / 34% secondary mirror obstruction) - https://www.celestron.com/products/edgehd-11-optical-tube-assembly-cge-dovetail
         },
         "Celestron_C11_OTA": {
             "brand": "Celestron",
