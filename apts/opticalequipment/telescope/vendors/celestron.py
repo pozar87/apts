@@ -791,16 +791,16 @@ class CelestronTelescope(Telescope):
             "name": "NexStar Evolution 6",
             "type": "schmidt_cassegrain",
             "optical_length": 0,
-            "mass": 4536, # Verified via Celestron.com (10 lbs OTA weight)
+            "mass": 4536,  # Verified via Celestron.com (10 lbs / 4.54 kg OTA weight) - https://www.celestron.com/products/nexstar-evolution-6-telescope
             "tside_thread": "",
             "tside_gender": "",
-            "cside_thread": "SC (Schmidt-Cassegrain)",
+            "cside_thread": "SC (Schmidt-Cassegrain)",  # Verified via Celestron.com (Schmidt-Cassegrain visual back) - https://www.celestron.com/products/nexstar-evolution-6-telescope
             "cside_gender": "Male",
             "reversible": False,
             "bf_role": "",
-            "aperture_mm": 150,
-            "focal_length_mm": 1500,
-            "central_obstruction_mm": 56,
+            "aperture_mm": 150,  # Verified via Celestron.com (150mm / 6" aperture) - https://www.celestron.com/products/nexstar-evolution-6-telescope
+            "focal_length_mm": 1500,  # Verified via Celestron.com (1500mm focal length, f/10) - https://www.celestron.com/products/nexstar-evolution-6-telescope
+            "central_obstruction_mm": 56,  # Verified via Celestron.com (56mm / 2.2" / 37% secondary mirror obstruction) - https://www.celestron.com/products/nexstar-evolution-6-telescope
         },
         "Celestron_NexStar_Evolution_8": {
             "brand": "Celestron",
