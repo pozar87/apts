@@ -1,18 +1,27 @@
-from ..base import IntermediateOpticalEquipment
+from typing import ClassVar
+
 from ...constants import OpticalType
+from ..base import IntermediateOpticalEquipment
 from .calculations import normalize_flip_mirror_database_entry
 
 
 class FlipMirror(IntermediateOpticalEquipment):
+    _DATABASE: ClassVar[dict] = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_flip_mirror_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
     @classmethod
     def from_database(cls, entry):
-        normalized = normalize_flip_mirror_database_entry(entry)
+        normalized = cls.normalize_database_entry(entry)
         return cls(
             normalized["vendor"],
-            optical_length=normalized["optical_length"],
-            mass=normalized["mass"],
-            inputs=normalized["inputs"],
-            outputs=normalized["outputs"],
+            optical_length=normalized.get("optical_length", 0),
+            mass=normalized.get("mass", 0),
+            inputs=normalized.get("inputs"),
+            outputs=normalized.get("outputs"),
         )
 
     def __init__(
@@ -26,7 +35,7 @@ class FlipMirror(IntermediateOpticalEquipment):
         out_connection=None,
         diagonal_connection=None,
     ):
-        super(FlipMirror, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
@@ -54,6 +63,4 @@ class FlipMirror(IntermediateOpticalEquipment):
         return self._outputs[1][1] if len(self._outputs) > 1 else None
 
     def register(self, equipment):
-        super(FlipMirror, self).register(equipment)
-
-    _DATABASE = {}
+        super().register(equipment)
