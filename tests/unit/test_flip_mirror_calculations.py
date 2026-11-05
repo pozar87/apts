@@ -1,4 +1,7 @@
-from apts.opticalequipment.flip_mirror import normalize_flip_mirror_database_entry, FlipMirror
+from apts.opticalequipment.flip_mirror import (
+    FlipMirror,
+    normalize_flip_mirror_database_entry,
+)
 from apts.utils import ConnectionType, Gender
 
 
@@ -15,6 +18,27 @@ def test_normalize_flip_mirror_database_entry():
     }
 
     normalized = normalize_flip_mirror_database_entry(raw_entry)
+
+    assert normalized["vendor"] == "Baader FlipMirror II"
+    assert normalized["optical_length"] == 59
+    assert normalized["mass"] == 290
+    assert normalized["inputs"] == [(ConnectionType.M48, Gender.FEMALE)]
+    assert normalized["outputs"] == [(ConnectionType.T2, Gender.MALE)]
+
+
+def test_flip_mirror_class_normalize_database_entry():
+    raw_entry = {
+        "brand": "Baader",
+        "name": "FlipMirror II",
+        "optical_length": 59,
+        "mass": 290,
+        "tside_thread": "M48",
+        "tside_gender": "F",
+        "cside_thread": "T2",
+        "cside_gender": "M",
+    }
+
+    normalized = FlipMirror.normalize_database_entry(raw_entry)
 
     assert normalized["vendor"] == "Baader FlipMirror II"
     assert normalized["optical_length"] == 59
