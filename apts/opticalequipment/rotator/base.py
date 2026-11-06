@@ -1,12 +1,19 @@
-from ..base import IntermediateOpticalEquipment
+from typing import ClassVar
+
 from ...constants import OpticalType
+from ..base import IntermediateOpticalEquipment
 from .calculations import normalize_rotator_database_entry
 
 
 class Rotator(IntermediateOpticalEquipment):
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_rotator_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
     def from_database(cls, entry):
-        normalized = normalize_rotator_database_entry(entry)
+        normalized = cls.normalize_database_entry(entry)
         return cls(
             normalized["vendor"],
             optical_length=normalized["optical_length"],
@@ -25,7 +32,7 @@ class Rotator(IntermediateOpticalEquipment):
         in_connection=None,
         out_connection=None,
     ):
-        super(Rotator, self).__init__(
+        super().__init__(
             vendor,
             optical_length=optical_length,
             mass=mass,
@@ -36,4 +43,4 @@ class Rotator(IntermediateOpticalEquipment):
         )
         self._type = OpticalType.ROTATOR
 
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
