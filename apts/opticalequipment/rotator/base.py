@@ -14,6 +14,11 @@ class Rotator(IntermediateOpticalEquipment):
         return super().normalize_database_entry(norm_entry)
 
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_rotator_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
     def from_database(cls, entry):
         normalized = cls.normalize_database_entry(entry)
         return cls(
@@ -44,3 +49,5 @@ class Rotator(IntermediateOpticalEquipment):
             out_connection=out_connection,
         )
         self._type = OpticalType.ROTATOR
+
+    _DATABASE: ClassVar[dict] = {}

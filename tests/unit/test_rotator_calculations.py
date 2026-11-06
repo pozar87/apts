@@ -60,3 +60,30 @@ def test_rotator_from_database():
     assert rotator.get_vendor() == "Pegasus Astro Falcon Rotator"
     assert rotator.optical_length.magnitude == 18
     assert rotator.mass.magnitude == 280
+
+
+def test_rotator_normalize_database_entry_and_get_database_entries():
+    raw_entry = {
+        "brand": "Pegasus Astro",
+        "name": "Falcon Rotator",
+        "optical_length": 18.556,
+        "mass": 280,
+        "tside_thread": "M54",
+        "tside_gender": "F",
+        "cside_thread": "M54",
+        "cside_gender": "M",
+    }
+
+    normalized = Rotator.normalize_database_entry(raw_entry)
+    assert normalized["vendor"] == "Pegasus Astro Falcon Rotator"
+    assert normalized["optical_length"] == 18.56
+    assert normalized["inputs"] == [(ConnectionType.M54, Gender.FEMALE)]
+    assert normalized["outputs"] == [(ConnectionType.M54, Gender.MALE)]
+
+    entries = Rotator.get_database_entries()
+    assert len(entries) > 0
+    for entry in entries:
+        assert "vendor" in entry
+        assert "optical_length" in entry
+        assert "inputs" in entry
+        assert "outputs" in entry

@@ -14,6 +14,11 @@ class AntiTilt(IntermediateOpticalEquipment):
         return super().normalize_database_entry(norm_entry)
 
     @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_anti_tilt_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
+    @classmethod
     def from_database(cls, entry):
         normalized = cls.normalize_database_entry(entry)
         return cls(
@@ -44,3 +49,5 @@ class AntiTilt(IntermediateOpticalEquipment):
             out_connection=out_connection,
         )
         self._type = OpticalType.ANTI_TILT
+
+    _DATABASE: ClassVar[dict] = {}
