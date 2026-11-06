@@ -6,6 +6,13 @@ from .calculations import normalize_anti_tilt_database_entry
 
 
 class AntiTilt(IntermediateOpticalEquipment):
+    _DATABASE: ClassVar[dict] = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_anti_tilt_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
         norm_entry = normalize_anti_tilt_database_entry(entry)
@@ -15,11 +22,11 @@ class AntiTilt(IntermediateOpticalEquipment):
     def from_database(cls, entry):
         normalized = cls.normalize_database_entry(entry)
         return cls(
-            normalized["vendor"],
-            optical_length=normalized["optical_length"],
-            mass=normalized["mass"],
-            inputs=normalized["inputs"],
-            outputs=normalized["outputs"],
+            vendor=normalized["vendor"],
+            optical_length=normalized.get("optical_length", 0),
+            mass=normalized.get("mass", 0),
+            inputs=normalized.get("inputs"),
+            outputs=normalized.get("outputs"),
         )
 
     def __init__(

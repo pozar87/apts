@@ -6,6 +6,13 @@ from .calculations import normalize_flip_mirror_database_entry
 
 
 class FlipMirror(IntermediateOpticalEquipment):
+    _DATABASE: ClassVar[dict] = {}
+
+    @classmethod
+    def normalize_database_entry(cls, entry: dict) -> dict:
+        norm_entry = normalize_flip_mirror_database_entry(entry)
+        return super().normalize_database_entry(norm_entry)
+
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
         norm_entry = normalize_flip_mirror_database_entry(entry)
@@ -15,11 +22,11 @@ class FlipMirror(IntermediateOpticalEquipment):
     def from_database(cls, entry):
         normalized = cls.normalize_database_entry(entry)
         return cls(
-            normalized["vendor"],
-            optical_length=normalized["optical_length"],
-            mass=normalized["mass"],
-            inputs=normalized["inputs"],
-            outputs=normalized["outputs"],
+            vendor=normalized["vendor"],
+            optical_length=normalized.get("optical_length", 0),
+            mass=normalized.get("mass", 0),
+            inputs=normalized.get("inputs"),
+            outputs=normalized.get("outputs"),
         )
 
     def __init__(
@@ -50,6 +57,7 @@ class FlipMirror(IntermediateOpticalEquipment):
                 self.add_output(diagonal_connection)
         else:
             from ...utils import ConnectionType
+
             self.add_output(ConnectionType.F_1_25)
 
     @property
