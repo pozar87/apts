@@ -1,8 +1,18 @@
-from ..base import OutputOpticalEquipment
+from typing import ClassVar
+
 from ...constants import GraphConstants, OpticalType
 from ...i18n import gettext_ as _
 from ...units import get_unit_registry
-from .calculations import normalize_naked_eye_database_entry
+from ..base import OutputOpticalEquipment
+from .calculations import (
+    calculate_naked_eye_brightness,
+    calculate_naked_eye_dawes_limit,
+    calculate_naked_eye_exit_pupil,
+    calculate_naked_eye_fov,
+    calculate_naked_eye_limiting_magnitude,
+    calculate_naked_eye_rayleigh_limit,
+    normalize_naked_eye_database_entry,
+)
 
 
 class NakedEye(OutputOpticalEquipment):
@@ -11,7 +21,7 @@ class NakedEye(OutputOpticalEquipment):
     """
 
     path_layer = 1
-    _DATABASE = {}
+    _DATABASE: ClassVar[dict] = {}
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
@@ -53,38 +63,40 @@ class NakedEye(OutputOpticalEquipment):
         return f"{self.get_vendor()} {self.magnification}x{self.objective_diameter.to('mm').magnitude:.0f}"  # pyright: ignore
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
-        return self.apparent_fov_deg / self.magnification
+        return self.fov()
 
     def _zoom_divider(self):
         return self.focal_length
 
     def fov(self):
-        return self.apparent_fov_deg / self.magnification
+        afov_deg = self.apparent_fov_deg.to("deg").magnitude
+        fov_deg = calculate_naked_eye_fov(afov_deg, self.magnification)
+        return fov_deg * get_unit_registry().deg
 
     def exit_pupil(self, telescope=None, zoom=None):
-        return self.objective_diameter / self.magnification
+        obj_mm = self.objective_diameter.to("mm").magnitude
+        exit_pupil_mm = calculate_naked_eye_exit_pupil(obj_mm, self.magnification)
+        return exit_pupil_mm * get_unit_registry().mm
 
     def dawes_limit(self):
-        return (
-            round((11.6 / self.objective_diameter.to("cm")).magnitude, 3)  # pyright: ignore
-            * get_unit_registry().arcsecond
-        )
+        obj_cm = self.objective_diameter.to("cm").magnitude
+        limit_arcsec = calculate_naked_eye_dawes_limit(obj_cm)
+        return limit_arcsec * get_unit_registry().arcsecond
 
-    def rayleigh_limit(self, wavelength_nm: float | int = 550):
-        # For simplicity and backward compatibility with current implementation,
-        # we don't use wavelength_nm here yet, but we accept it.
-        return (
-            round((13.8 / self.objective_diameter.to("cm")).magnitude, 3)  # pyright: ignore
-            * get_unit_registry().arcsecond
+    def rayleigh_limit(self, wavelength_nm: float = 550):
+        obj_cm = self.objective_diameter.to("cm").magnitude
+        limit_arcsec = calculate_naked_eye_rayleigh_limit(
+            obj_cm, wavelength_nm=wavelength_nm
         )
+        return limit_arcsec * get_unit_registry().arcsecond
 
     def limiting_magnitude(self):
-        import numpy
-
-        return 7.7 + 5 * numpy.log10(self.objective_diameter.to("cm").magnitude)  # pyright: ignore
+        obj_cm = self.objective_diameter.to("cm").magnitude
+        return calculate_naked_eye_limiting_magnitude(obj_cm)
 
     def brightness(self, telescope=None, zoom=None):
-        return (self.exit_pupil().to("mm").magnitude / 7) ** 2 * 100  # pyright: ignore
+        exit_pupil_mm = self.exit_pupil().to("mm").magnitude
+        return calculate_naked_eye_brightness(exit_pupil_mm)
 
     def register(self, equipment):
         super()._register(equipment)
