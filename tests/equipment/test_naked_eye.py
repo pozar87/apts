@@ -1,11 +1,12 @@
 import unittest
 from typing import Any, cast
+
 import numpy as np
 
 from apts.constants import EquipmentTableLabels, GraphConstants, OpticalType
 from apts.equipment import Equipment
-from apts.opticalequipment import NakedEye
 from apts.i18n import language_context
+from apts.opticalequipment import NakedEye
 
 
 class TestNakedEye(unittest.TestCase):
