@@ -57,3 +57,27 @@ def test_diagonal_from_database():
     assert diagonal.vendor == "Celestron 1.25\" Star Diagonal"
     assert diagonal.optical_length.magnitude == 75
     assert diagonal.mass.magnitude == 200
+
+
+def test_diagonal_normalize_database_entry_polymorphic():
+    class CustomDiagonal(Diagonal):
+        @classmethod
+        def normalize_database_entry(cls, entry: dict) -> dict:
+            norm = super().normalize_database_entry(entry)
+            norm["vendor"] = f"Custom: {norm['vendor']}"
+            return norm
+
+    raw_entry = {
+        "brand": "William Optics",
+        "name": "Dura-Bright 2\" Diagonal",
+        "mass": 500,
+        "optical_length": 110,
+        "tside_thread": "2\"",
+        "tside_gender": "Female",
+        "cside_thread": "2\"",
+        "cside_gender": "Male",
+    }
+    diag = CustomDiagonal.from_database(raw_entry)
+    assert diag.vendor == "Custom: William Optics Dura-Bright 2\" Diagonal"
+    assert diag.optical_length.magnitude == 110
+    assert diag.mass.magnitude == 500
