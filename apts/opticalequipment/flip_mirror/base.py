@@ -14,11 +14,6 @@ class FlipMirror(IntermediateOpticalEquipment):
         return super().normalize_database_entry(norm_entry)
 
     @classmethod
-    def normalize_database_entry(cls, entry: dict) -> dict:
-        norm_entry = normalize_flip_mirror_database_entry(entry)
-        return super().normalize_database_entry(norm_entry)
-
-    @classmethod
     def from_database(cls, entry):
         normalized = cls.normalize_database_entry(entry)
         return cls(
@@ -70,5 +65,3 @@ class FlipMirror(IntermediateOpticalEquipment):
 
     def register(self, equipment):
         super().register(equipment)
-
-    _DATABASE: ClassVar[dict] = {}

@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from ...utils import ConnectionType
 from ..base import IntermediateOpticalEquipment
 from .calculations import normalize_diagonal_database_entry
@@ -9,6 +11,7 @@ class Diagonal(IntermediateOpticalEquipment):
     """
 
     path_layer = 2
+    _DATABASE: ClassVar[dict] = {}
 
     @classmethod
     def normalize_database_entry(cls, entry: dict) -> dict:
@@ -17,7 +20,7 @@ class Diagonal(IntermediateOpticalEquipment):
 
     @classmethod
     def from_database(cls, entry):
-        norm = normalize_diagonal_database_entry(entry)
+        norm = cls.normalize_database_entry(entry)
         return cls(
             vendor=norm["vendor"],
             is_erecting=norm.get("is_erecting", False),
@@ -76,5 +79,3 @@ class Diagonal(IntermediateOpticalEquipment):
 
     def __str__(self):
         return f"{self.vendor}"
-
-    _DATABASE = {}
