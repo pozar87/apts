@@ -154,8 +154,20 @@ class WeatherAnalysisMixIn:
             if not analysis:
                 return False
             good_hours = sum(1 for hour in analysis if hour["is_good_hour"])
+            all_hours = len(analysis)
+            if all_hours == 0:
+                # No analysed hours means there is nothing to judge; treat it as
+                # "not good" instead of dividing by zero, which used to abort the
+                # whole notification for that observation.
+                logger.warning(
+                    "is_weather_good: weather analysis is empty for %s..%s; "
+                    "reporting weather as not good.",
+                    self.start,
+                    self.stop,
+                )
+                return False
             return bool(
-                (good_hours / len(analysis) * 100)
+                (good_hours / all_hours * 100)
                 >= effective_conditions.min_weather_goodness
             )
 
