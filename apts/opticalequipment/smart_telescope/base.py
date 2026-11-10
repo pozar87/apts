@@ -131,7 +131,14 @@ class SmartTelescope(Telescope):
         )
 
     def _zoom_divider(self):
-        return numpy.sqrt(self.sensor_width**2 + self.sensor_height**2)
+        sw = float(self.sensor_width.to("mm").magnitude)
+        sh = float(self.sensor_height.to("mm").magnitude)
+        diagonal = float(numpy.sqrt(sw**2 + sh**2))
+        if diagonal == 0:
+            # Unknown sensor size: report a non-finite divider so zoom becomes 0
+            # instead of raising ZeroDivisionError.
+            return float("inf") * get_unit_registry().mm
+        return diagonal * get_unit_registry().mm
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
         return self.field_of_view_height(telescope, zoom, barlow_magnification)

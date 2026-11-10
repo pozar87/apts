@@ -138,7 +138,14 @@ class Camera(OutputOpticalEquipment):
 
         sw_mm = self.sensor_width.to("mm").magnitude
         sh_mm = self.sensor_height.to("mm").magnitude
-        return calculate_sensor_diagonal(sw_mm, sh_mm) * get_unit_registry().mm
+        diagonal = calculate_sensor_diagonal(sw_mm, sh_mm)
+        if diagonal == 0:
+            # A camera with an unknown or zero sensor area cannot produce a
+            # finite magnification. Callers (zoom/FOV, the equipment exporter)
+            # treat a non-finite result as "not applicable" instead of
+            # dividing by zero.
+            return float("inf") * get_unit_registry().mm
+        return diagonal * get_unit_registry().mm
 
     def field_of_view_width(self, telescope, zoom, barlow_magnification):
         """
