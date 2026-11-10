@@ -56,6 +56,10 @@ class Eyepiece(OutputOpticalEquipment):
         return self._inputs[0][1] if self._inputs else None
 
     def _zoom_divider(self):
+        if float(self.focal_length.to("mm").magnitude) == 0:
+            # An eyepiece without a focal length cannot magnify; return a
+            # non-finite divider instead of raising ZeroDivisionError.
+            return float("inf") * get_unit_registry().mm
         return self.focal_length
 
     def field_of_view(self, telescope, zoom, barlow_magnification):
